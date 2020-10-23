@@ -1,13 +1,6 @@
-/*
- * Copyright (C) 2018 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
-
-/* global
-    require:false
-    jest:false
-    describe:false
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 // Setup mock for a server
 jest.mock('../../src/server-proxy', () => {

@@ -6,17 +6,10 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
-import {
-    CombinedState,
-} from 'reducers/interfaces';
+import { CombinedState } from 'reducers/interfaces';
 
 import { modelsActions } from 'actions/models-actions';
-import {
-    dumpAnnotationsAsync,
-    loadAnnotationsAsync,
-    exportDatasetAsync,
-    deleteTaskAsync,
-} from 'actions/tasks-actions';
+import { dumpAnnotationsAsync, loadAnnotationsAsync, exportDatasetAsync, deleteTaskAsync } from 'actions/tasks-actions';
 import { ClickParam } from 'antd/lib/menu';
 
 interface OwnProps {
@@ -41,21 +34,13 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
-        taskInstance: {
-            id: tid,
-        },
+        taskInstance: { id: tid },
     } = own;
 
     const {
-        formats: {
-            annotationFormats,
-        },
+        formats: { annotationFormats },
         tasks: {
-            activities: {
-                dumps,
-                loads,
-                exports: activeExports,
-            },
+            activities: { dumps, loads, exports: activeExports },
         },
     } = state;
 
@@ -91,10 +76,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps): JSX.Element {
     const {
         taskInstance,
-        annotationFormats: {
-            loaders,
-            dumpers,
-        },
+        annotationFormats: { loaders, dumpers },
         loadActivity,
         dumpActivities,
         exportActivities,
@@ -112,22 +94,19 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             const [additionalKey, action] = params.keyPath;
             if (action === Actions.DUMP_TASK_ANNO) {
                 const format = additionalKey;
-                const [dumper] = dumpers
-                    .filter((_dumper: any): boolean => _dumper.name === format);
+                const [dumper] = dumpers.filter((_dumper: any): boolean => _dumper.name === format);
                 if (dumper) {
                     dumpAnnotations(taskInstance, dumper);
                 }
             } else if (action === Actions.LOAD_TASK_ANNO) {
                 const format = additionalKey;
-                const [loader] = loaders
-                    .filter((_loader: any): boolean => _loader.name === format);
+                const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
                 if (loader && file) {
                     loadAnnotations(taskInstance, loader, file);
                 }
             } else if (action === Actions.EXPORT_TASK_DATASET) {
                 const format = additionalKey;
-                const [exporter] = dumpers
-                    .filter((_exporter: any): boolean => _exporter.name === format);
+                const [exporter] = dumpers.filter((_exporter: any): boolean => _exporter.name === format);
                 if (exporter) {
                     exportDataset(taskInstance, exporter);
                 }
@@ -161,7 +140,4 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(ActionsMenuContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(ActionsMenuContainer);

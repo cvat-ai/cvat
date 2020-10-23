@@ -6,35 +6,32 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const'
+import { taskName } from '../../support/const';
 
 context('Check if the UI not to crash after remove a tag', () => {
-
-    const issueId = '1540'
+    const issueId = '1540';
 
     before(() => {
-        cy.openTaskJob(taskName)
-    })
+        cy.openTaskJob(taskName);
+    });
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Add a tag', () => {
-            cy.changeAnnotationMode('Tag annotation')
+            cy.changeAnnotationMode('Tag annotation');
             cy.get('.cvat-tag-annotation-sidebar-buttons').within(() => {
-                cy.get('button')
-                .contains('Add tag')
-                .click({force: true})
-            })
-            cy.changeAnnotationMode('Standard')
-        })
+                cy.get('button').contains('Add tag').click({ force: true });
+            });
+            cy.changeAnnotationMode('Standard');
+        });
         it('Remove the tag', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
-            .should('contain', '1').and('contain', 'TAG')
-            .trigger('mouseover')
-            .trigger('keydown', {key: 'Delete'})
-        })
+                .should('contain', '1')
+                .and('contain', 'TAG')
+                .trigger('mouseover')
+                .trigger('keydown', { key: 'Delete' });
+        });
         it('Page with the error is missing', () => {
-            cy.contains('Oops, something went wrong')
-            .should('not.exist')
-        })
-    })
-})
+            cy.contains('Oops, something went wrong').should('not.exist');
+        });
+    });
+});

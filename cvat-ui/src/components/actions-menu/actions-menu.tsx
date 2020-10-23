@@ -93,41 +93,28 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
     }
 
     return (
-        <Menu
-            selectable={false}
-            className='cvat-actions-menu'
-            onClick={onClickMenuWrapper}
-        >
-            {
-                DumpSubmenu({
-                    taskMode,
-                    dumpers,
-                    dumpActivities,
-                    menuKey: Actions.DUMP_TASK_ANNO,
-                })
-            }
-            {
-                LoadSubmenu({
-                    loaders,
-                    loadActivity,
-                    onFileUpload: (file: File): void => {
-                        onClickMenuWrapper(null, file);
-                    },
-                    menuKey: Actions.LOAD_TASK_ANNO,
-                })
-            }
-            {
-                ExportSubmenu({
-                    exporters: dumpers,
-                    exportActivities,
-                    menuKey: Actions.EXPORT_TASK_DATASET,
-                })
-            }
+        <Menu selectable={false} className='cvat-actions-menu' onClick={onClickMenuWrapper}>
+            {DumpSubmenu({
+                taskMode,
+                dumpers,
+                dumpActivities,
+                menuKey: Actions.DUMP_TASK_ANNO,
+            })}
+            {LoadSubmenu({
+                loaders,
+                loadActivity,
+                onFileUpload: (file: File): void => {
+                    onClickMenuWrapper(null, file);
+                },
+                menuKey: Actions.LOAD_TASK_ANNO,
+            })}
+            {ExportSubmenu({
+                exporters: dumpers,
+                exportActivities,
+                menuKey: Actions.EXPORT_TASK_DATASET,
+            })}
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
-            <Menu.Item
-                disabled={inferenceIsActive}
-                key={Actions.RUN_AUTO_ANNOTATION}
-            >
+            <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
                 Automatic annotation
             </Menu.Item>
             <hr />

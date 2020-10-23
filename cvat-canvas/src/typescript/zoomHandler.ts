@@ -5,14 +5,9 @@
 import * as SVG from 'svg.js';
 import consts from './consts';
 
-import {
-    translateToSVG,
-} from './shared';
+import { translateToSVG } from './shared';
 
-import {
-    Geometry,
-} from './canvasModel';
-
+import { Geometry } from './canvasModel';
 
 export interface ZoomHandler {
     zoom(): void;
@@ -35,10 +30,7 @@ export class ZoomHandlerImpl implements ZoomHandler {
 
     private onSelectStart(event: MouseEvent): void {
         if (!this.selectionRect && event.which === 1) {
-            const point = translateToSVG(
-                (this.canvas.node as any as SVGSVGElement),
-                [event.clientX, event.clientY],
-            );
+            const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
             this.startSelectionPoint = {
                 x: point[0],
                 y: point[1],
@@ -52,16 +44,15 @@ export class ZoomHandlerImpl implements ZoomHandler {
         }
     }
 
-    private getSelectionBox(event: MouseEvent): {
+    private getSelectionBox(
+        event: MouseEvent,
+    ): {
         x: number;
         y: number;
         width: number;
         height: number;
     } {
-        const point = translateToSVG(
-            (this.canvas.node as any as SVGSVGElement),
-            [event.clientX, event.clientY],
-        );
+        const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         const stopSelectionPoint = {
             x: point[0],
             y: point[1],

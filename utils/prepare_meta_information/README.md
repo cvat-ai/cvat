@@ -1,6 +1,7 @@
 # Simple command line for prepare meta information for video data
 
 **Usage**
+
 ```bash
 usage: prepare.py [-h] [-chunk_size CHUNK_SIZE] video_file meta_directory
 

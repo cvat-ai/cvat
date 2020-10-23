@@ -28,25 +28,20 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             onCancel={onClose}
             width={800}
             className='cvat-settings-modal'
-            footer={(
+            footer={
                 <Button type='primary' onClick={onClose}>
                     Close
                 </Button>
-            )}
+            }
         >
             <div className='cvat-settings-tabs'>
-                <Tabs
-                    type='card'
-                    tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}
-                >
+                <Tabs type='card' tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}>
                     <Tabs.TabPane
                         tab={
-                            (
-                                <span>
-                                    <Icon type='play-circle' />
-                                    <Text>Player</Text>
-                                </span>
-                            )
+                            <span>
+                                <Icon type='play-circle' />
+                                <Text>Player</Text>
+                            </span>
                         }
                         key='player'
                     >
@@ -54,12 +49,10 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
                     </Tabs.TabPane>
                     <Tabs.TabPane
                         tab={
-                            (
-                                <span>
-                                    <Icon type='laptop' />
-                                    <Text>Workspace</Text>
-                                </span>
-                            )
+                            <span>
+                                <Icon type='laptop' />
+                                <Text>Workspace</Text>
+                            </span>
                         }
                         key='workspace'
                     >

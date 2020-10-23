@@ -22,52 +22,44 @@ export enum ModelsActionTypes {
 
 export const modelsActions = {
     getModels: () => createAction(ModelsActionTypes.GET_MODELS),
-    getModelsSuccess: (models: Model[]) => createAction(
-        ModelsActionTypes.GET_MODELS_SUCCESS, {
+    getModelsSuccess: (models: Model[]) =>
+        createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
             models,
-        },
-    ),
-    getModelsFailed: (error: any) => createAction(
-        ModelsActionTypes.GET_MODELS_FAILED, {
+        }),
+    getModelsFailed: (error: any) =>
+        createAction(ModelsActionTypes.GET_MODELS_FAILED, {
             error,
-        },
-    ),
+        }),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
-    getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => createAction(
-        ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
+    getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) =>
+        createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
             taskID,
             activeInference,
-        },
-    ),
-    getInferenceStatusFailed: (taskID: number, error: any) => createAction(
-        ModelsActionTypes.GET_INFERENCE_STATUS_FAILED, {
+        }),
+    getInferenceStatusFailed: (taskID: number, error: any) =>
+        createAction(ModelsActionTypes.GET_INFERENCE_STATUS_FAILED, {
             taskID,
             error,
-        },
-    ),
-    startInferenceFailed: (taskID: number, error: any) => createAction(
-        ModelsActionTypes.START_INFERENCE_FAILED, {
+        }),
+    startInferenceFailed: (taskID: number, error: any) =>
+        createAction(ModelsActionTypes.START_INFERENCE_FAILED, {
             taskID,
             error,
-        },
-    ),
-    cancelInferenceSuccess: (taskID: number) => createAction(
-        ModelsActionTypes.CANCEL_INFERENCE_SUCCESS, {
+        }),
+    cancelInferenceSuccess: (taskID: number) =>
+        createAction(ModelsActionTypes.CANCEL_INFERENCE_SUCCESS, {
             taskID,
-        },
-    ),
-    cancelInferenceFailed: (taskID: number, error: any) => createAction(
-        ModelsActionTypes.CANCEL_INFERENCE_FAILED, {
+        }),
+    cancelInferenceFailed: (taskID: number, error: any) =>
+        createAction(ModelsActionTypes.CANCEL_INFERENCE_FAILED, {
             taskID,
             error,
-        },
-    ),
+        }),
     closeRunModelDialog: () => createAction(ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG),
-    showRunModelDialog: (taskInstance: any) => createAction(
-        ModelsActionTypes.SHOW_RUN_MODEL_DIALOG, {
+    showRunModelDialog: (taskInstance: any) =>
+        createAction(ModelsActionTypes.SHOW_RUN_MODEL_DIALOG, {
             taskInstance,
-        },
-    ),
+        }),
 };
 
 export type ModelsActions = ActionUnion<typeof modelsActions>;
@@ -87,43 +79,45 @@ export function getModelsAsync(): ThunkAction {
     };
 }
 
-
 interface InferenceMeta {
     taskID: number;
     requestID: string;
 }
 
-function listen(
-    inferenceMeta: InferenceMeta,
-    dispatch: (action: ModelsActions) => void,
-): void {
+function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) => void): void {
     const { taskID, requestID } = inferenceMeta;
-    core.lambda.listen(requestID, (status: RQStatus, progress: number, message: string) => {
-        if (status === RQStatus.failed || status === RQStatus.unknown) {
-            dispatch(modelsActions.getInferenceStatusFailed(
-                taskID,
-                new Error(
-                    `Inference status for the task ${taskID} is ${status}. ${message}`,
-                ),
-            ));
+    core.lambda
+        .listen(requestID, (status: RQStatus, progress: number, message: string) => {
+            if (status === RQStatus.failed || status === RQStatus.unknown) {
+                dispatch(
+                    modelsActions.getInferenceStatusFailed(
+                        taskID,
+                        new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
+                    ),
+                );
 
-            return;
-        }
+                return;
+            }
 
-        dispatch(modelsActions.getInferenceStatusSuccess(taskID, {
-            status,
-            progress,
-            error: message,
-            id: requestID,
-        }));
-    }).catch((error: Error) => {
-        dispatch(modelsActions.getInferenceStatusFailed(taskID, {
-            status: 'unknown',
-            progress: 0,
-            error: error.toString(),
-            id: requestID,
-        }));
-    });
+            dispatch(
+                modelsActions.getInferenceStatusSuccess(taskID, {
+                    status,
+                    progress,
+                    error: message,
+                    id: requestID,
+                }),
+            );
+        })
+        .catch((error: Error) => {
+            dispatch(
+                modelsActions.getInferenceStatusFailed(taskID, {
+                    status: 'unknown',
+                    progress: 0,
+                    error: error.toString(),
+                    id: requestID,
+                }),
+            );
+        });
 }
 
 export function getInferenceStatusAsync(): ThunkAction {
@@ -148,11 +142,7 @@ export function getInferenceStatusAsync(): ThunkAction {
     };
 }
 
-export function startInferenceAsync(
-    taskInstance: any,
-    model: Model,
-    body: object,
-): ThunkAction {
+export function startInferenceAsync(taskInstance: any, model: Model, body: object): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
             const requestID: string = await core.lambda.run(taskInstance, model, body);
@@ -160,10 +150,13 @@ export function startInferenceAsync(
                 dispatch(action);
             };
 
-            listen({
-                taskID: taskInstance.id,
-                requestID,
-            }, dispatchCallback);
+            listen(
+                {
+                    taskID: taskInstance.id,
+                    requestID,
+                },
+                dispatchCallback,
+            );
         } catch (error) {
             dispatch(modelsActions.startInferenceFailed(taskInstance.id, error));
         }

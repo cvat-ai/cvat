@@ -6,11 +6,10 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const'
+import { taskName, labelName } from '../../support/const';
 
 context('Information about a blocked object disappears if hover the cursor over another object', () => {
-
-    const issueId = '1439'
+    const issueId = '1439';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -18,8 +17,8 @@ context('Information about a blocked object disappears if hover the cursor over 
         firstX: 250,
         firstY: 350,
         secondX: 350,
-        secondY: 450
-    }
+        secondY: 450,
+    };
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -27,33 +26,29 @@ context('Information about a blocked object disappears if hover the cursor over 
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
-        secondY: createRectangleShape2Points.secondY -150
-    }
+        secondY: createRectangleShape2Points.secondY - 150,
+    };
 
     before(() => {
-        cy.openTaskJob(taskName)
-    })
+        cy.openTaskJob(taskName);
+    });
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create multiple objects', () => {
-            cy.createRectangle(createRectangleShape2Points)
-            cy.createRectangle(createRectangleShape2PointsSecond)
-        })
+            cy.createRectangle(createRectangleShape2Points);
+            cy.createRectangle(createRectangleShape2PointsSecond);
+        });
         it('Lock all objects', () => {
-            cy.get('.cvat-objects-sidebar-states-header')
-            .find('.anticon-unlock')
-            .click()
-        })
+            cy.get('.cvat-objects-sidebar-states-header').find('.anticon-unlock').click();
+        });
         it('Mousemove to 1st object', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove')
-        })
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+        });
         it('Mousemove to 2nd object', () => {
-            cy.get('#cvat_canvas_shape_2').trigger('mousemove')
-        })
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove');
+        });
         it('Information about 1st object not exist', () => {
-            cy.get('#cvat_canvas_text_content')
-            .contains(`${labelName} 1`)
-            .should('not.exist')
-        })
-    })
-})
+            cy.get('#cvat_canvas_text_content').contains(`${labelName} 1`).should('not.exist');
+        });
+    });
+});

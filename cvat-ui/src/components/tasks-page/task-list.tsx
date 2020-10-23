@@ -17,21 +17,14 @@ export interface ContentListProps {
 }
 
 export default function TaskListComponent(props: ContentListProps): JSX.Element {
-    const {
-        currentTasksIndexes,
-        numberOfTasks,
-        currentPage,
-        onSwitchPage,
-    } = props;
-    const taskViews = currentTasksIndexes.map(
-        (tid, id): JSX.Element => <TaskItem idx={id} taskID={tid} key={tid} />,
-    );
+    const { currentTasksIndexes, numberOfTasks, currentPage, onSwitchPage } = props;
+    const taskViews = currentTasksIndexes.map((tid, id): JSX.Element => <TaskItem idx={id} taskID={tid} key={tid} />);
 
     return (
         <>
             <Row type='flex' justify='center' align='middle'>
                 <Col className='cvat-tasks-list' md={22} lg={18} xl={16} xxl={14}>
-                    { taskViews }
+                    {taskViews}
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>

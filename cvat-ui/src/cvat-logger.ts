@@ -9,6 +9,4 @@ const { logger } = core;
 const { LogType } = core.enums;
 
 export default logger;
-export {
-    LogType,
-};
+export { LogType };

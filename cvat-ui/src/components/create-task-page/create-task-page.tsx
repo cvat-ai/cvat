@@ -21,13 +21,7 @@ interface Props {
 }
 
 export default function CreateTaskPage(props: Props): JSX.Element {
-    const {
-        error,
-        status,
-        taskId,
-        onCreate,
-        installedGit,
-    } = props;
+    const { error, status, taskId, onCreate, installedGit } = props;
 
     useEffect(() => {
         if (error) {
@@ -67,12 +61,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
         <Row type='flex' justify='center' align='top' className='cvat-create-task-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>Create a new task</Text>
-                <CreateTaskContent
-                    taskId={taskId}
-                    status={status}
-                    onCreate={onCreate}
-                    installedGit={installedGit}
-                />
+                <CreateTaskContent taskId={taskId} status={status} onCreate={onCreate} installedGit={installedGit} />
             </Col>
         </Row>
     );

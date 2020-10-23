@@ -17,7 +17,6 @@ import TaskListContainer from 'containers/tasks-page/tasks-list';
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
 
-
 interface TasksPageProps {
     tasksFetching: boolean;
     gettingQuery: TasksQuery;
@@ -82,14 +81,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     }
 
     public componentDidUpdate(prevProps: TasksPageProps & RouteComponentProps): void {
-        const {
-            location,
-            gettingQuery,
-            tasksFetching,
-            numberOfHiddenTasks,
-            onGetTasks,
-            hideEmptyTasks,
-        } = this.props;
+        const { location, gettingQuery, tasksFetching, numberOfHiddenTasks, onGetTasks, hideEmptyTasks } = this.props;
 
         if (prevProps.location.search !== location.search) {
             // get new tasks if any query changes
@@ -104,9 +96,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                 message.destroy();
                 message.info(
                     <>
-                        <Text>
-                            Some tasks are temporary hidden since they are without any data
-                        </Text>
+                        <Text>Some tasks are temporary hidden since they are without any data</Text>
                         <Button
                             type='link'
                             onClick={(): void => {
@@ -116,19 +106,21 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                         >
                             Show all
                         </Button>
-                    </>, 5,
+                    </>,
+                    5,
                 );
             }
         }
     }
 
     private handleSearch = (value: string): void => {
-        const {
-            gettingQuery,
-        } = this.props;
+        const { gettingQuery } = this.props;
 
         const query = { ...gettingQuery };
-        const search = value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
+        const search = value
+            .replace(/\s+/g, ' ')
+            .replace(/\s*:+\s*/g, ':')
+            .trim();
 
         const fields = ['name', 'mode', 'owner', 'assignee', 'status', 'id'];
         for (const field of fields) {
@@ -154,7 +146,8 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         }
 
         query.page = 1;
-        if (!specificRequest && value) { // only id
+        if (!specificRequest && value) {
+            // only id
             query.search = value;
         }
 
@@ -162,9 +155,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     };
 
     private handlePagination = (page: number): void => {
-        const {
-            gettingQuery,
-        } = this.props;
+        const { gettingQuery } = this.props;
 
         // modify query object
         const query = { ...gettingQuery };
@@ -195,30 +186,20 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     }
 
     public render(): JSX.Element {
-        const {
-            tasksFetching,
-            gettingQuery,
-            numberOfVisibleTasks,
-        } = this.props;
+        const { tasksFetching, gettingQuery, numberOfVisibleTasks } = this.props;
 
         if (tasksFetching) {
-            return (
-                <Spin size='large' className='cvat-spinner' />
-            );
+            return <Spin size='large' className='cvat-spinner' />;
         }
 
         return (
             <div className='cvat-tasks-page'>
-                <TopBar
-                    onSearch={this.handleSearch}
-                    searchValue={getSearchField(gettingQuery)}
-                />
-                {numberOfVisibleTasks
-                    ? (
-                        <TaskListContainer
-                            onSwitchPage={this.handlePagination}
-                        />
-                    ) : <EmptyListComponent />}
+                <TopBar onSearch={this.handleSearch} searchValue={getSearchField(gettingQuery)} />
+                {numberOfVisibleTasks ? (
+                    <TaskListContainer onSwitchPage={this.handlePagination} />
+                ) : (
+                    <EmptyListComponent />
+                )}
                 <FeedbackComponent />
             </div>
         );

@@ -10,7 +10,6 @@ import { updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import { CombinedState } from 'reducers/interfaces';
 
-
 interface OwnProps {
     labelID: number;
 }
@@ -31,23 +30,15 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
-            annotations: {
-                states: objectStates,
-            },
-            job: {
-                labels,
-                instance: jobInstance,
-            },
+            annotations: { states: objectStates },
+            job: { labels, instance: jobInstance },
             player: {
-                frame: {
-                    number: frameNumber,
-                },
+                frame: { number: frameNumber },
             },
         },
     } = state;
 
-    const [label] = labels
-        .filter((_label: any) => _label.id === own.labelID);
+    const [label] = labels.filter((_label: any) => _label.id === own.labelID);
 
     return {
         label,
@@ -93,8 +84,9 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
             return null;
         }
 
-        const ownObjectStates = props.objectStates
-            .filter((ownObjectState: any): boolean => ownObjectState.label.id === props.labelID);
+        const ownObjectStates = props.objectStates.filter(
+            (ownObjectState: any): boolean => ownObjectState.label.id === props.labelID,
+        );
         const visible = !!ownObjectStates.length;
         let statesHidden = true;
         let statesLocked = true;
@@ -134,9 +126,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     };
 
     private switchHidden(value: boolean): void {
-        const {
-            updateAnnotations,
-        } = this.props;
+        const { updateAnnotations } = this.props;
 
         const { ownObjectStates } = this.state;
         for (const state of ownObjectStates) {
@@ -147,9 +137,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     }
 
     private switchLock(value: boolean): void {
-        const {
-            updateAnnotations,
-        } = this.props;
+        const { updateAnnotations } = this.props;
 
         const { ownObjectStates } = this.state;
         for (const state of ownObjectStates) {
@@ -160,16 +148,9 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const {
-            visible,
-            statesHidden,
-            statesLocked,
-        } = this.state;
+        const { visible, statesHidden, statesLocked } = this.state;
 
-        const {
-            labelName,
-            labelColor,
-        } = this.props;
+        const { labelName, labelColor } = this.props;
 
         return (
             <LabelItemComponent

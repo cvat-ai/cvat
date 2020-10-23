@@ -7,13 +7,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
 import Tooltip from 'antd/lib/tooltip';
 
-import {
-    ObjectOutsideIcon,
-    FirstIcon,
-    LastIcon,
-    PreviousIcon,
-    NextIcon,
-} from 'icons';
+import { ObjectOutsideIcon, FirstIcon, LastIcon, PreviousIcon, NextIcon } from 'icons';
 import { ObjectType, ShapeType } from 'reducers/interfaces';
 
 interface Props {
@@ -95,10 +89,9 @@ function ItemButtonsComponent(props: Props): JSX.Element {
         show,
     } = props;
 
-    const outsideStyle = outsideDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
-    const hiddenStyle = hiddenDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
-    const keyframeStyle = keyframeDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
-
+    const outsideStyle = outsideDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
+    const hiddenStyle = hiddenDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
+    const keyframeStyle = keyframeDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -106,93 +99,95 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                 <Col span={20} style={{ textAlign: 'center' }}>
                     <Row type='flex' justify='space-around'>
                         <Col>
-                            { navigateFirstKeyframe
-                                ? <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
-                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigateFirstKeyframe ? (
+                                <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
+                            ) : (
+                                <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
+                            )}
                         </Col>
                         <Col>
-                            { navigatePrevKeyframe
-                                ? (
-                                    <Tooltip title={`Go to previous keyframe ${prevKeyFrameShortcut}`} mouseLeaveDelay={0}>
-                                        <Icon
-                                            component={PreviousIcon}
-                                            onClick={navigatePrevKeyframe}
-                                        />
-                                    </Tooltip>
-                                )
-                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigatePrevKeyframe ? (
+                                <Tooltip title={`Go to previous keyframe ${prevKeyFrameShortcut}`} mouseLeaveDelay={0}>
+                                    <Icon component={PreviousIcon} onClick={navigatePrevKeyframe} />
+                                </Tooltip>
+                            ) : (
+                                <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
+                            )}
                         </Col>
                         <Col>
-                            { navigateNextKeyframe
-                                ? (
-                                    <Tooltip title={`Go to next keyframe ${nextKeyFrameShortcut}`} mouseLeaveDelay={0}>
-                                        <Icon
-                                            component={NextIcon}
-                                            onClick={navigateNextKeyframe}
-                                        />
-                                    </Tooltip>
-                                )
-                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigateNextKeyframe ? (
+                                <Tooltip title={`Go to next keyframe ${nextKeyFrameShortcut}`} mouseLeaveDelay={0}>
+                                    <Icon component={NextIcon} onClick={navigateNextKeyframe} />
+                                </Tooltip>
+                            ) : (
+                                <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
+                            )}
                         </Col>
                         <Col>
-                            { navigateLastKeyframe
-                                ? <Icon component={LastIcon} onClick={navigateLastKeyframe} />
-                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigateLastKeyframe ? (
+                                <Icon component={LastIcon} onClick={navigateLastKeyframe} />
+                            ) : (
+                                <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />
+                            )}
                         </Col>
                     </Row>
                     <Row type='flex' justify='space-around'>
                         <Col>
                             <Tooltip title={`Switch outside property ${switchOutsideShortcut}`} mouseLeaveDelay={0}>
-                                { outside
-                                    ? (
-                                        <Icon
-                                            component={ObjectOutsideIcon}
-                                            onClick={unsetOutside}
-                                            style={outsideStyle}
-                                        />
-                                    )
-                                    : <Icon type='select' onClick={setOutside} style={outsideStyle} />}
+                                {outside ? (
+                                    <Icon component={ObjectOutsideIcon} onClick={unsetOutside} style={outsideStyle} />
+                                ) : (
+                                    <Icon type='select' onClick={setOutside} style={outsideStyle} />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`} mouseLeaveDelay={0}>
-                                { locked
-                                    ? <Icon type='lock' theme='filled' onClick={unlock} />
-                                    : <Icon type='unlock' onClick={lock} />}
+                                {locked ? (
+                                    <Icon type='lock' theme='filled' onClick={unlock} />
+                                ) : (
+                                    <Icon type='unlock' onClick={lock} />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`} mouseLeaveDelay={0}>
-                                { occluded
-                                    ? <Icon type='team' onClick={unsetOccluded} />
-                                    : <Icon type='user' onClick={setOccluded} />}
+                                {occluded ? (
+                                    <Icon type='team' onClick={unsetOccluded} />
+                                ) : (
+                                    <Icon type='user' onClick={setOccluded} />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`} mouseLeaveDelay={0}>
-                                { hidden
-                                    ? <Icon type='eye-invisible' theme='filled' onClick={show} style={hiddenStyle} />
-                                    : <Icon type='eye' onClick={hide} style={hiddenStyle} />}
+                                {hidden ? (
+                                    <Icon type='eye-invisible' theme='filled' onClick={show} style={hiddenStyle} />
+                                ) : (
+                                    <Icon type='eye' onClick={hide} style={hiddenStyle} />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`} mouseLeaveDelay={0}>
-                                { keyframe
-                                    ? <Icon type='star' theme='filled' onClick={unsetKeyframe} style={keyframeStyle} />
-                                    : <Icon type='star' onClick={setKeyframe} style={keyframeStyle} />}
+                                {keyframe ? (
+                                    <Icon type='star' theme='filled' onClick={unsetKeyframe} style={keyframeStyle} />
+                                ) : (
+                                    <Icon type='star' onClick={setKeyframe} style={keyframeStyle} />
+                                )}
                             </Tooltip>
                         </Col>
-                        {
-                            shapeType !== ShapeType.POINTS && (
-                                <Col>
-                                    <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
-                                        { pinned
-                                            ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                            : <Icon type='pushpin' onClick={pin} />}
-                                    </Tooltip>
-                                </Col>
-                            )
-                        }
+                        {shapeType !== ShapeType.POINTS && (
+                            <Col>
+                                <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
+                                    {pinned ? (
+                                        <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                    ) : (
+                                        <Icon type='pushpin' onClick={pin} />
+                                    )}
+                                </Tooltip>
+                            </Col>
+                        )}
                     </Row>
                 </Col>
             </Row>
@@ -206,9 +201,11 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                     <Row type='flex' justify='space-around'>
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`} mouseLeaveDelay={0}>
-                                { locked
-                                    ? <Icon type='lock' onClick={unlock} theme='filled' />
-                                    : <Icon type='unlock' onClick={lock} />}
+                                {locked ? (
+                                    <Icon type='lock' onClick={unlock} theme='filled' />
+                                ) : (
+                                    <Icon type='unlock' onClick={lock} />
+                                )}
                             </Tooltip>
                         </Col>
                     </Row>
@@ -223,36 +220,38 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                 <Row type='flex' justify='space-around'>
                     <Col>
                         <Tooltip title={`Switch lock property ${switchLockShortcut}`} mouseLeaveDelay={0}>
-                            { locked
-                                ? <Icon type='lock' onClick={unlock} theme='filled' />
-                                : <Icon type='unlock' onClick={lock} />}
+                            {locked ? (
+                                <Icon type='lock' onClick={unlock} theme='filled' />
+                            ) : (
+                                <Icon type='unlock' onClick={lock} />
+                            )}
                         </Tooltip>
                     </Col>
                     <Col>
                         <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`} mouseLeaveDelay={0}>
-                            { occluded
-                                ? <Icon type='team' onClick={unsetOccluded} />
-                                : <Icon type='user' onClick={setOccluded} />}
+                            {occluded ? (
+                                <Icon type='team' onClick={unsetOccluded} />
+                            ) : (
+                                <Icon type='user' onClick={setOccluded} />
+                            )}
                         </Tooltip>
                     </Col>
                     <Col>
                         <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`} mouseLeaveDelay={0}>
-                            { hidden
-                                ? <Icon type='eye-invisible' onClick={show} />
-                                : <Icon type='eye' onClick={hide} />}
+                            {hidden ? <Icon type='eye-invisible' onClick={show} /> : <Icon type='eye' onClick={hide} />}
                         </Tooltip>
                     </Col>
-                    {
-                        shapeType !== ShapeType.POINTS && (
-                            <Col>
-                                <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
-                                    { pinned
-                                        ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                        : <Icon type='pushpin' onClick={pin} />}
-                                </Tooltip>
-                            </Col>
-                        )
-                    }
+                    {shapeType !== ShapeType.POINTS && (
+                        <Col>
+                            <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
+                                {pinned ? (
+                                    <Icon type='pushpin' theme='filled' onClick={unpin} />
+                                ) : (
+                                    <Icon type='pushpin' onClick={pin} />
+                                )}
+                            </Tooltip>
+                        </Col>
+                    )}
                 </Row>
             </Col>
         </Row>

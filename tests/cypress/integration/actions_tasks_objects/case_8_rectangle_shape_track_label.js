@@ -6,12 +6,11 @@
 
 /// <reference types="cypress" />
 
-import {taskName, labelName} from '../../support/const'
+import { taskName, labelName } from '../../support/const';
 
 context('Actions on rectangle', () => {
-
-    const caseId = '8'
-    const newLabelName = `New label for case ${caseId}`
+    const caseId = '8';
+    const newLabelName = `New label for case ${caseId}`;
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -19,8 +18,8 @@ context('Actions on rectangle', () => {
         firstX: 250,
         firstY: 350,
         secondX: 350,
-        secondY: 450
-    }
+        secondY: 450,
+    };
     const createRectangleShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
@@ -29,11 +28,11 @@ context('Actions on rectangle', () => {
         firstY: 350,
         secondX: 500,
         secondY: 350,
-        thirdX:  500,
+        thirdX: 500,
         thirdY: 450,
         fourthX: 400,
-        fourthY: 450
-    }
+        fourthY: 450,
+    };
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
@@ -41,8 +40,8 @@ context('Actions on rectangle', () => {
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
-        secondY: createRectangleShape2Points.secondY -150
-    }
+        secondY: createRectangleShape2Points.secondY - 150,
+    };
     const createRectangleTrack4Points = {
         points: 'By 4 Points',
         type: 'Track',
@@ -54,8 +53,8 @@ context('Actions on rectangle', () => {
         thirdX: createRectangleShape4Points.thirdX,
         thirdY: createRectangleShape4Points.thirdY - 150,
         fourthX: createRectangleShape4Points.fourthX,
-        fourthY: createRectangleShape4Points.fourthY - 150
-    }
+        fourthY: createRectangleShape4Points.fourthY - 150,
+    };
     const createRectangleShape2PointsNewLabel = {
         labelName: newLabelName,
         points: 'By 2 Points',
@@ -64,8 +63,8 @@ context('Actions on rectangle', () => {
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY + 150,
         secondX: createRectangleShape2Points.secondX,
-        secondY: createRectangleShape2Points.secondY + 150
-    }
+        secondY: createRectangleShape2Points.secondY + 150,
+    };
     const createRectangleShape4PointsNewLabel = {
         labelName: newLabelName,
         points: 'By 4 Points',
@@ -75,79 +74,78 @@ context('Actions on rectangle', () => {
         firstY: createRectangleShape4Points.firstY + 150,
         secondX: createRectangleShape4Points.secondX,
         secondY: createRectangleShape4Points.secondY + 150,
-        thirdX:  createRectangleShape4Points.thirdX,
+        thirdX: createRectangleShape4Points.thirdX,
         thirdY: createRectangleShape4Points.thirdY + 150,
         fourthX: createRectangleShape4Points.fourthX,
-        fourthY: createRectangleShape4Points.fourthY + 150
-    }
+        fourthY: createRectangleShape4Points.fourthY + 150,
+    };
 
     before(() => {
-        cy.openTask(taskName)
-    })
+        cy.openTask(taskName);
+    });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Add new label', () => {
-            cy.contains('button', 'Add label').click()
-            cy.get('[placeholder="Label name"]').type(newLabelName)
-            cy.contains('button', 'Done').click()
-        })
+            cy.contains('button', 'Add label').click();
+            cy.get('[placeholder="Label name"]').type(newLabelName);
+            cy.contains('button', 'Done').click();
+        });
         it('Open a job', () => {
-            cy.openJob()
-        })
+            cy.openJob();
+        });
         it('Draw a rectangle shape in two ways (by 2 points, by 4 points)', () => {
-            cy.createRectangle(createRectangleShape2Points)
-            cy.get('#cvat_canvas_shape_1')
-            .should('exist').and('be.visible')
+            cy.createRectangle(createRectangleShape2Points);
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-1')
-            .should('contain', '1').and('contain', 'RECTANGLE SHAPE').within(() => {
-                cy.get('.ant-select-selection-selected-value')
-                .should('contain', labelName)
-            })
-            cy.createRectangle(createRectangleShape4Points)
-            cy.get('#cvat_canvas_shape_2')
-            .should('exist').and('be.visible')
+                .should('contain', '1')
+                .and('contain', 'RECTANGLE SHAPE')
+                .within(() => {
+                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
+                });
+            cy.createRectangle(createRectangleShape4Points);
+            cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-2')
-            .should('contain', '2').and('contain', 'RECTANGLE SHAPE').within(() => {
-                cy.get('.ant-select-selection-selected-value')
-                .should('contain', labelName)
-            })
-        })
+                .should('contain', '2')
+                .and('contain', 'RECTANGLE SHAPE')
+                .within(() => {
+                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
+                });
+        });
         it('Draw a rectangle track in two ways (by 2 points, by 4 points)', () => {
-            cy.createRectangle(createRectangleTrack2Points)
-            cy.get('#cvat_canvas_shape_3')
-            .should('exist').and('be.visible')
+            cy.createRectangle(createRectangleTrack2Points);
+            cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-3')
-            .should('contain', '3').and('contain', 'RECTANGLE TRACK').within(() => {
-                cy.get('.ant-select-selection-selected-value')
-                .should('contain', labelName)
-            })
-            cy.createRectangle(createRectangleTrack4Points)
-            cy.get('#cvat_canvas_shape_4')
-            .should('exist').and('be.visible')
+                .should('contain', '3')
+                .and('contain', 'RECTANGLE TRACK')
+                .within(() => {
+                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
+                });
+            cy.createRectangle(createRectangleTrack4Points);
+            cy.get('#cvat_canvas_shape_4').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-4')
-            .should('contain', '4').and('contain', 'RECTANGLE TRACK').within(() => {
-                cy.get('.ant-select-selection-selected-value')
-                .should('contain', labelName)
-            })
-        })
+                .should('contain', '4')
+                .and('contain', 'RECTANGLE TRACK')
+                .within(() => {
+                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
+                });
+        });
         it('Draw a new rectangle shape in two ways (by 2 points, by 4 points) with second label', () => {
-            cy.createRectangle(createRectangleShape2PointsNewLabel)
-            cy.get('#cvat_canvas_shape_5')
-            .should('exist').and('be.visible')
+            cy.createRectangle(createRectangleShape2PointsNewLabel);
+            cy.get('#cvat_canvas_shape_5').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-5')
-            .should('contain', '5').and('contain', 'RECTANGLE SHAPE').within(() => {
-                cy.get('.ant-select-selection-selected-value')
-                .should('contain', newLabelName)
-            })
-            cy.createRectangle(createRectangleShape4PointsNewLabel)
-            cy.get('#cvat_canvas_shape_6')
-            .should('exist').and('be.visible')
+                .should('contain', '5')
+                .and('contain', 'RECTANGLE SHAPE')
+                .within(() => {
+                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
+                });
+            cy.createRectangle(createRectangleShape4PointsNewLabel);
+            cy.get('#cvat_canvas_shape_6').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-6')
-            .should('contain', '6').and('contain', 'RECTANGLE SHAPE').within(() => {
-                cy.get('.ant-select-selection-selected-value')
-                .should('contain', newLabelName)
-            })
-
-        })
-    })
-})
+                .should('contain', '6')
+                .and('contain', 'RECTANGLE SHAPE')
+                .within(() => {
+                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
+                });
+        });
+    });
+});

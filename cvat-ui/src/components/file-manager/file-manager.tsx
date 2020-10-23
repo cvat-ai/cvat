@@ -51,10 +51,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
     }
 
     public getFiles(): Files {
-        const {
-            active,
-            files,
-        } = this.state;
+        const { active, files } = this.state;
         return {
             local: active === 'local' ? files.local : [],
             share: active === 'share' ? files.share : [],
@@ -62,15 +59,14 @@ export default class FileManager extends React.PureComponent<Props, State> {
         };
     }
 
-    private loadData = (key: string): Promise<void> => new Promise<void>(
-        (resolve, reject): void => {
+    private loadData = (key: string): Promise<void> =>
+        new Promise<void>((resolve, reject): void => {
             const { onLoadData } = this.props;
 
             const success = (): void => resolve();
             const failure = (): void => reject();
             onLoadData(key, success, failure);
-        },
-    );
+        });
 
     public reset(): void {
         this.setState({
@@ -93,9 +89,11 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     multiple
                     listType='text'
                     fileList={files.local as any[]}
-                    showUploadList={files.local.length < 5 && {
-                        showRemoveIcon: false,
-                    }}
+                    showUploadList={
+                        files.local.length < 5 && {
+                            showRemoveIcon: false,
+                        }
+                    }
                     beforeUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
                         this.setState({
                             files: {
@@ -110,19 +108,14 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         <Icon type='inbox' />
                     </p>
                     <p className='ant-upload-text'>Click or drag files to this area</p>
-                    <p className='ant-upload-hint'>
-                        Support for a bulk images or a single video
-                    </p>
+                    <p className='ant-upload-hint'>Support for a bulk images or a single video</p>
                 </Upload.Dragger>
-                { files.local.length >= 5
-                    && (
-                        <>
-                            <br />
-                            <Text className='cvat-text-color'>
-                                {`${files.local.length} files selected`}
-                            </Text>
-                        </>
-                    )}
+                {files.local.length >= 5 && (
+                    <>
+                        <br />
+                        <Text className='cvat-text-color'>{`${files.local.length} files selected`}</Text>
+                    </>
+                )}
             </Tabs.TabPane>
         );
     }
@@ -134,12 +127,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
             return data.map((item: TreeNodeNormal) => {
                 if (item.children) {
                     return (
-                        <Tree.TreeNode
-                            title={item.title}
-                            key={item.key}
-                            dataRef={item}
-                            isLeaf={item.isLeaf}
-                        >
+                        <Tree.TreeNode title={item.title} key={item.key} dataRef={item} isLeaf={item.isLeaf}>
                             {renderTreeNodes(item.children)}
                         </Tree.TreeNode>
                     );
@@ -151,59 +139,55 @@ export default class FileManager extends React.PureComponent<Props, State> {
 
         const { SHARE_MOUNT_GUIDE_URL } = consts;
         const { treeData } = this.props;
-        const {
-            expandedKeys,
-            files,
-        } = this.state;
+        const { expandedKeys, files } = this.state;
 
         return (
             <Tabs.TabPane key='share' tab='Connected file share'>
-                { treeData[0].children && treeData[0].children.length
-                    ? (
-                        <Tree
-                            className='cvat-share-tree'
-                            checkable
-                            showLine
-                            checkStrictly={false}
-                            expandedKeys={expandedKeys}
-                            checkedKeys={files.share}
-                            loadData={(node: AntTreeNode): Promise<void> => this.loadData(
-                                node.props.dataRef.key,
-                            )}
-                            onExpand={(newExpandedKeys: string[]): void => {
-                                this.setState({
-                                    expandedKeys: newExpandedKeys,
-                                });
-                            }}
-                            onCheck={
-                                (checkedKeys: string[] | {
-                                    checked: string[];
-                                    halfChecked: string[];
-                                }): void => {
-                                    const keys = checkedKeys as string[];
-                                    this.setState({
-                                        files: {
-                                            ...files,
-                                            share: keys,
-                                        },
-                                    });
-                                }
-                            }
-                        >
-                            { renderTreeNodes(treeData) }
-                        </Tree>
-                    ) : (
-                        <div className='cvat-empty-share-tree'>
-                            <Empty />
-                            <Paragraph className='cvat-text-color'>
-                                Please, be sure you had
-                                <Text strong>
-                                    <a href={SHARE_MOUNT_GUIDE_URL}> mounted </a>
-                                </Text>
-                                share before you built CVAT and the shared storage contains files
-                            </Paragraph>
-                        </div>
-                    )}
+                {treeData[0].children && treeData[0].children.length ? (
+                    <Tree
+                        className='cvat-share-tree'
+                        checkable
+                        showLine
+                        checkStrictly={false}
+                        expandedKeys={expandedKeys}
+                        checkedKeys={files.share}
+                        loadData={(node: AntTreeNode): Promise<void> => this.loadData(node.props.dataRef.key)}
+                        onExpand={(newExpandedKeys: string[]): void => {
+                            this.setState({
+                                expandedKeys: newExpandedKeys,
+                            });
+                        }}
+                        onCheck={(
+                            checkedKeys:
+                                | string[]
+                                | {
+                                      checked: string[];
+                                      halfChecked: string[];
+                                  },
+                        ): void => {
+                            const keys = checkedKeys as string[];
+                            this.setState({
+                                files: {
+                                    ...files,
+                                    share: keys,
+                                },
+                            });
+                        }}
+                    >
+                        {renderTreeNodes(treeData)}
+                    </Tree>
+                ) : (
+                    <div className='cvat-empty-share-tree'>
+                        <Empty />
+                        <Paragraph className='cvat-text-color'>
+                            Please, be sure you had
+                            <Text strong>
+                                <a href={SHARE_MOUNT_GUIDE_URL}> mounted </a>
+                            </Text>
+                            share before you built CVAT and the shared storage contains files
+                        </Paragraph>
+                    </div>
+                )}
             </Tabs.TabPane>
         );
     }
@@ -240,15 +224,15 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     type='card'
                     activeKey={active}
                     tabBarGutter={5}
-                    onChange={
-                        (activeKey: string): void => this.setState({
+                    onChange={(activeKey: string): void =>
+                        this.setState({
                             active: activeKey as any,
                         })
                     }
                 >
-                    { this.renderLocalSelector() }
-                    { this.renderShareSelector() }
-                    { withRemote && this.renderRemoteSelector() }
+                    {this.renderLocalSelector()}
+                    {this.renderShareSelector()}
+                    {withRemote && this.renderRemoteSelector()}
                 </Tabs>
             </>
         );

@@ -13,7 +13,6 @@ import CanvasContextMenuContainer from 'containers/annotation-page/standard-work
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import CanvasPointContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-point-context-menu';
 
-
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
         <Layout hasSider className='cvat-standard-workspace'>
