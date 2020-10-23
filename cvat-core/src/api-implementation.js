@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,9 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
-    const { isBoolean, isInteger, isEnum, isString, checkFilter } = require('./common');
+    const {
+        isBoolean, isInteger, isEnum, isString, checkFilter,
+    } = require('./common');
 
     const { TaskStatus, TaskMode } = require('./enums');
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -193,8 +193,8 @@ const { Source } = require('./enums');
                                 data.points = [...points];
                             } else {
                                 throw new ArgumentError(
-                                    'Points are expected to be an array ' +
-                                        `but got ${
+                                    'Points are expected to be an array '
+                                        + `but got ${
                                             typeof points === 'object' ? points.constructor.name : typeof points
                                         }`,
                                 );
@@ -338,8 +338,8 @@ const { Source } = require('./enums');
                         set: (attributes) => {
                             if (typeof attributes !== 'object') {
                                 throw new ArgumentError(
-                                    'Attributes are expected to be an object ' +
-                                        `but got ${
+                                    'Attributes are expected to be an object '
+                                        + `but got ${
                                             typeof attributes === 'object'
                                                 ? attributes.constructor.name
                                                 : typeof attributes

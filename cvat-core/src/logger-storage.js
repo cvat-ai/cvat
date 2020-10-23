@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,8 +38,8 @@ class LoggerStorage {
             lastLog: null,
             ignore(previousLog, currentPayload) {
                 return (
-                    currentPayload.object_id === previousLog.payload.object_id &&
-                    currentPayload.id === previousLog.payload.id
+                    currentPayload.object_id === previousLog.payload.object_id
+                    && currentPayload.id === previousLog.payload.id
                 );
             },
         };

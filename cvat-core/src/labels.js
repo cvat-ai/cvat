@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -146,8 +146,8 @@
             data.attributes = [];
 
             if (
-                Object.prototype.hasOwnProperty.call(initialData, 'attributes') &&
-                Array.isArray(initialData.attributes)
+                Object.prototype.hasOwnProperty.call(initialData, 'attributes')
+                && Array.isArray(initialData.attributes)
             ) {
                 for (const attrData of initialData.attributes) {
                     data.attributes.push(new Attribute(attrData));

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -65,7 +65,7 @@
                 throw new PluginError('Plugin must not contain a "functions" field');
             }
 
-            (function traverse(plugin, api) {
+            function traverse(plugin, api) {
                 const decorator = {};
                 for (const key in plugin) {
                     if (Object.prototype.hasOwnProperty.call(plugin, key)) {
@@ -74,9 +74,9 @@
                                 traverse(plugin[key], api[key]);
                             }
                         } else if (
-                            ['enter', 'leave'].includes(key) &&
-                            typeof api === 'function' &&
-                            typeof (plugin[key] === 'function')
+                            ['enter', 'leave'].includes(key)
+                            && typeof api === 'function'
+                            && typeof (plugin[key] === 'function')
                         ) {
                             decorator.callback = api;
                             decorator[key] = plugin[key];
@@ -87,9 +87,9 @@
                 if (Object.keys(decorator).length) {
                     functions.push(decorator);
                 }
-            })(plug, {
-                cvat: this,
-            });
+            }
+
+            traverse(plug, { cvat: this });
 
             Object.defineProperty(plug, 'functions', {
                 value: functions,
