@@ -19,7 +19,6 @@ interface Props {
     assignee: string;
     startFrame: number;
     stopFrame: number;
-    zOrder: boolean;
     bugTracker: string;
     jobStatus: string;
     savingJobStatus: boolean;
@@ -36,7 +35,6 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         assignee,
         startFrame,
         stopFrame,
-        zOrder,
         bugTracker,
         closeStatistics,
         changeJobStatus,
@@ -170,10 +168,6 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                     <Col span={5}>
                         <Text strong className='cvat-text'>Frames</Text>
                         <Text className='cvat-text'>{stopFrame - startFrame + 1}</Text>
-                    </Col>
-                    <Col span={4}>
-                        <Text strong className='cvat-text'>Z-Order</Text>
-                        <Text className='cvat-text'>{zOrder.toString()}</Text>
                     </Col>
                 </Row>
                 { !!bugTracker && (

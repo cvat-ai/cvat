@@ -147,7 +147,6 @@ class TaskData:
                 ("start_frame", str(self._db_task.data.start_frame)),
                 ("stop_frame", str(self._db_task.data.stop_frame)),
                 ("frame_filter", self._db_task.data.frame_filter),
-                ("z_order", str(self._db_task.z_order)),
 
                 ("labels", [
                     ("label", OrderedDict([
@@ -269,6 +268,8 @@ class TaskData:
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
             if 'track_id' in shape:
+                if shape['outside']:
+                    continue
                 exported_shape = self._export_tracked_shape(shape)
             else:
                 exported_shape = self._export_labeled_shape(shape)
@@ -450,10 +451,9 @@ class TaskData:
         return None
 
 class CvatTaskDataExtractor(datumaro.SourceExtractor):
-    def __init__(self, task_data, include_images=False, include_outside=False):
+    def __init__(self, task_data, include_images=False):
         super().__init__()
         self._categories = self._load_categories(task_data)
-        self._include_outside = include_outside
 
         dm_items = []
 
@@ -568,9 +568,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             if hasattr(shape_obj, 'track_id'):
                 anno_attr['track_id'] = shape_obj.track_id
                 anno_attr['keyframe'] = shape_obj.keyframe
-
-                if not self._include_outside and shape_obj.outside:
-                    continue
 
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:

@@ -150,8 +150,6 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
       ![](static/documentation/images/image128_use_cache.jpg)
 
-    **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
-
     **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
 
     **Use cache**. Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
@@ -760,7 +758,6 @@ _Overview_:
 -  ``Start Frame`` - the number of the first frame in this job.
 -  ``End Frame`` - the number of the last frame in this job.
 -  ``Frames`` - the total number of all frames in the job.
--  ``Z-Order`` - z-order enable indicator.
 
 _Annotations statistics_:
 
@@ -1087,7 +1084,6 @@ Press ``Esc`` to cancel editing.
 
 It is used for semantic / instance segmentation.
 
-If you want to annotate polygons, make sure the ``Z-Order`` flag in ``Create new task`` dialog is enabled.
 The Z-Order flag defines the order of drawing. It is necessary to
 get the right annotation mask without extra work (additional drawing of borders).
 Z-Order can be changed by pressing ``+``/``-`` which set maximum/minimum z-order

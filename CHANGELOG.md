@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - Unreleased
 
 ### Added
+-   Removed Z-Order flag from task creation process
 -   Ability to login into CVAT-UI with token from api/v1/auth/login (<https://github.com/openvinotoolkit/cvat/pull/2234>)
 -   Added layout grids toggling ('ctrl + alt + Enter')
 -   Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
@@ -63,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Fixed CVAT startup process if the user has `umask 077` in .bashrc file (<https://github.com/openvinotoolkit/cvat/pull/2293>)
 -   Exception: Cannot read property "each" of undefined after drawing a single point (<https://github.com/openvinotoolkit/cvat/pull/2307>)
 -   Cannot read property 'label' of undefined (Fixed?) (<https://github.com/openvinotoolkit/cvat/pull/2311>)
+-   Excluded track frames marked `outside` in `CVAT for Images` export (<https://github.com/openvinotoolkit/cvat/pull/2345>)
 
 ### Security
 
