@@ -6,7 +6,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const'
+import { taskName, advancedConfigurationParams } from '../../support/const'
 
 context('Check propagation work from the latest frame', () => {
 
@@ -31,7 +31,7 @@ context('Check propagation work from the latest frame', () => {
             .click()
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('input[role="spinbutton"]')
-                .should('have.value', '2')
+                .should('have.value', advancedConfigurationParams.segmentSize - 1)
             })
         })
         it('Create a rectangle shape', () => {

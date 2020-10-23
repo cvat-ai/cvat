@@ -6,7 +6,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const'
+import { taskName, advancedConfigurationParams } from '../../support/const'
 
 context('First part of a splitted track is visible', () => {
 
@@ -34,7 +34,7 @@ context('First part of a splitted track is visible', () => {
             .click()
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('input[role="spinbutton"]')
-                .should('have.value', '2')
+                .should('have.value', advancedConfigurationParams.segmentSize - 1)
             })
         })
         it('Split track', () => {
@@ -49,7 +49,7 @@ context('First part of a splitted track is visible', () => {
             .click()
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('input[role="spinbutton"]')
-                .should('have.value', '1')
+                .should('have.value', advancedConfigurationParams.segmentSize - 2)
             })
         })
         it('First part of a splitted track is visible', () => {

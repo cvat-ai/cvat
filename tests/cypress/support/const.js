@@ -10,7 +10,7 @@ export const labelName = `Main task`
 export const taskName = `New annotation task for ${labelName}`
 export const attrName = `Attr for ${labelName}`
 export const textDefaultValue = 'Some default value for type Text'
-export const imagesCount = 30
+export const imagesCount = 50
 export const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`
 export const width = 800
 export const height = 800
@@ -23,7 +23,7 @@ export const imagesFolder = `cypress/fixtures/${imageFileName}`
 export const directoryToArchive = imagesFolder
 export const advancedConfigurationParams = {
     multiJobs: true,
-    segmentSize: 3,
+    segmentSize: 10,
     sssFrame: true,
     startFrame: 2,
     stopFrame: imagesCount,

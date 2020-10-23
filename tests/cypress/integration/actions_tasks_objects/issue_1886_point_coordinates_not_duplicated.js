@@ -6,7 +6,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const'
+import { taskName, advancedConfigurationParams } from '../../support/const'
 
 context('Point coordinates are not duplicated while polygon\'s interpolation.', () => {
 
@@ -39,7 +39,7 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
             cy.get('.cvat-player-forward-button').click()
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('input[role="spinbutton"]')
-                .should('have.value', '2')
+                .should('have.value', advancedConfigurationParams.segmentSize - 1)
             })
         })
         it('Set a keyframe for the polygon', () => {
@@ -51,7 +51,7 @@ context('Point coordinates are not duplicated while polygon\'s interpolation.', 
             cy.get('.cvat-player-previous-button').click()
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('input[role="spinbutton"]')
-                .should('have.value', '1')
+                .should('have.value', advancedConfigurationParams.segmentSize - 2)
             })
             cy.get('#cvat_canvas_shape_1').should('have.prop', 'animatedPoints')
             .then(($pointsСoordinates) => {

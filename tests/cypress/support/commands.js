@@ -77,7 +77,7 @@ Cypress.Commands.add('openTask', (taskName) => {
 Cypress.Commands.add('openJob', (jobNumber=0) => {
     let tdText = ''
     cy.get('.ant-table-tbody')
-    .contains('0-').parent().find('td').eq(0).invoke('text')
+    .contains(/^0-/).parent().find('td').eq(0).invoke('text')
     .then(($tdText) => {
         tdText = Number($tdText.match(/\d+/g)) + jobNumber
         cy.get('.ant-table-tbody')
