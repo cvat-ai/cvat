@@ -20,19 +20,19 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("call handler")
     data = event.body
-    pos_points = data.get("pos_points", data["points"][:1])
-    neg_points = data.get("neg_points", data["points"][1:])
-    crop_bbox = data.get("crop_bbox", None)
+    pos_points = data["pos_points"]
+    neg_points = data["neg_points"]
+    obj_bbox = data.get("obj_bbox", None)
     threshold = data.get("threshold", 0.8)
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     image = Image.open(buf)
 
-    if crop_bbox is None:
+    if obj_bbox is None:
         x, y = np.split(np.transpose(np.array(neg_points)), 2)
-        crop_bbox = [np.min(x), np.min(y), np.max(x), np.max(y)]
+        obj_bbox = [np.min(x), np.min(y), np.max(x), np.max(y)]
         neg_points = []
 
-    polygon = context.user_data.model.handle(image, crop_bbox,
+    polygon = context.user_data.model.handle(image, obj_bbox,
         pos_points, neg_points, threshold)
     return context.Response(body=json.dumps(polygon),
                             headers={},

@@ -29,6 +29,9 @@
             "justMyCode": false,
             "pythonPath": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
+            "env": {
+                "CVAT_SERVERLESS":  "1",
+            },
             "args": [
                 "runserver",
                 "--noreload",

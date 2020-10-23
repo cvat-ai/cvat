@@ -91,7 +91,7 @@ const mapDispatchToProps = {
     createAnnotations: createAnnotationsAsync,
 };
 
-function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
+function convertShapesForInteractor(shapes: InteractionResult[], button: number): number[][] {
     const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
         if (!(index % 2)) { // 0, 2, 4
             acc.push([
@@ -102,7 +102,7 @@ function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
         return acc;
     };
 
-    return shapes.filter((shape: InteractionResult): boolean => shape.shapeType === 'points' && shape.button === 0)
+    return shapes.filter((shape: InteractionResult): boolean => shape.shapeType === 'points' && shape.button === button)
         .map((shape: InteractionResult): number[] => shape.points)
         .flat().reduce(reducer, []);
 }
@@ -238,7 +238,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 try {
                     result = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
-                        points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
+                        pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
+                        neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
                     });
 
                     if (this.interactionIsAborted) {
