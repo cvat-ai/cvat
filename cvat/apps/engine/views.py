@@ -36,7 +36,7 @@ import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, StatusChoice, Task, StorageMethodChoice
+from cvat.apps.engine.models import Job, StatusChoice, Task, Project, StorageMethodChoice
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
