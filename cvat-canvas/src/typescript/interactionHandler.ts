@@ -226,7 +226,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 shapes,
                 shapesUpdated,
                 isDone,
-                this.threshold ? this.thresholdValue : null,
+                this.threshold ? this.thresholdValue / 2 : null,
             );
         };
         this.canvas = canvas;
