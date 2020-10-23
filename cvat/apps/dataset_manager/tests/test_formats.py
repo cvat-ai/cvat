@@ -363,13 +363,24 @@ class TaskExportTest(_DbTestBase):
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
 
-        extractor = CvatTaskDataExtractor(task_data, include_outside=False)
+        extractor = CvatTaskDataExtractor(task_data)
         dm_dataset = datumaro.components.project.Dataset.from_extractors(extractor)
         self.assertEqual(4, len(dm_dataset.get("image_1").annotations))
 
-        extractor = CvatTaskDataExtractor(task_data, include_outside=True)
-        dm_dataset = datumaro.components.project.Dataset.from_extractors(extractor)
-        self.assertEqual(5, len(dm_dataset.get("image_1").annotations))
+    def test_no_outside_shapes_in_per_frame_export(self):
+        images = self._generate_task_images(3)
+        task = self._generate_task(images)
+        self._generate_annotations(task)
+        task_ann = TaskAnnotation(task["id"])
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
+
+        outside_count = 0
+        for f in task_data.group_by_frame(include_empty=True):
+            for ann in f.labeled_shapes:
+                if getattr(ann, 'outside', None):
+                    outside_count += 1
+        self.assertEqual(0, outside_count)
 
     def test_cant_make_rel_frame_id_from_unknown(self):
         images = self._generate_task_images(3)
