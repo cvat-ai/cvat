@@ -1,0 +1,41 @@
+metadata:
+  name: dummy
+  namespace: cvat
+  annotations:
+    name: dummy
+    type: detector
+    framework: custom
+    spec: |
+      [
+        { "id": 1, "name": "person" }
+      ]
+
+spec:
+  description: Dummy function for testing overhead
+  runtime: "python:3.6"
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat/dummy
+    baseImage: python:3.6.11
+
+    directives:
+      postCopy:
+        - kind: RUN
+          value: pip install pillow
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: "http"
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      processorMountMode: volume
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
