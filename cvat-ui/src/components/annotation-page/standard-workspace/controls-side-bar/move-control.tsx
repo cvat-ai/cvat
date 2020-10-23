@@ -22,8 +22,11 @@ function MoveControl(props: Props): JSX.Element {
         <Tooltip title='Move the image' placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={MoveIcon}
-                className={activeControl === ActiveControl.DRAG_CANVAS
-                    ? 'cvat-move-control cvat-active-canvas-control' : 'cvat-move-control'}
+                className={
+                    activeControl === ActiveControl.DRAG_CANVAS
+                        ? 'cvat-move-control cvat-active-canvas-control'
+                        : 'cvat-move-control'
+                }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.DRAG_CANVAS) {
                         canvasInstance.dragCanvas(false);

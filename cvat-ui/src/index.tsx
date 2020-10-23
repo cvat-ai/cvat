@@ -120,28 +120,25 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-const ReduxAppWrapper = connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(CVATApplication);
+const ReduxAppWrapper = connect(mapStateToProps, mapDispatchToProps)(CVATApplication);
 
 ReactDOM.render(
-    (
-        <Provider store={cvatStore}>
-            <BrowserRouter>
-                <ReduxAppWrapper />
-            </BrowserRouter>
-            <LayoutGrid />
-        </Provider>
-    ),
+    <Provider store={cvatStore}>
+        <BrowserRouter>
+            <ReduxAppWrapper />
+        </BrowserRouter>
+        <LayoutGrid />
+    </Provider>,
     document.getElementById('root'),
 );
 
 window.addEventListener('error', (errorEvent: ErrorEvent) => {
-    if (errorEvent.filename
-        && typeof (errorEvent.lineno) === 'number'
-        && typeof (errorEvent.colno) === 'number'
-        && errorEvent.error) {
+    if (
+        errorEvent.filename &&
+        typeof errorEvent.lineno === 'number' &&
+        typeof errorEvent.colno === 'number' &&
+        errorEvent.error
+    ) {
         const logPayload = {
             filename: errorEvent.filename,
             line: errorEvent.lineno,

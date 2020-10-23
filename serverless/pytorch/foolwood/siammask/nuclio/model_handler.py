@@ -14,8 +14,8 @@ class ModelHandler:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         torch.backends.cudnn.benchmark = True
 
-        base_dir = os.environ.get("MODEL_PATH",
-            "/opt/nuclio/SiamMask/experiments/siammask_sharp")
+        base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
+            "/opt/nuclio/SiamMask/experiments/siammask_sharp"))
         class configPath:
             config = os.path.join(base_dir, "config_davis.json")
 

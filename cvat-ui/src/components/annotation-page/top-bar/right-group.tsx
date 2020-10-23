@@ -43,11 +43,7 @@ function RightGroup(props: Props): JSX.Element {
                 Info
             </Button>
             <div>
-                <Select
-                    className='cvat-workspace-selector'
-                    onChange={changeWorkspace}
-                    value={workspace}
-                >
+                <Select className='cvat-workspace-selector' onChange={changeWorkspace} value={workspace}>
                     {Object.values(Workspace).map((ws) => (
                         <Select.Option key={ws} value={ws}>
                             {ws}

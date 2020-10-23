@@ -52,47 +52,52 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Text strong type='secondary'>{`#${id}: `}</Text>
-                <Text strong className='cvat-text-color'>{name}</Text>
+                <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                <Text strong className='cvat-item-task-name'>
+                    {name}
+                </Text>
                 <br />
-                { owner
-                    && (
-                        <>
-                            <Text type='secondary'>
-                                {`Created ${owner ? `by ${owner}` : ''} on ${created}`}
-                            </Text>
-                            <br />
-                        </>
-                    )}
+                {owner && (
+                    <>
+                        <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
+                        <br />
+                    </>
+                )}
                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
         );
     }
 
     private renderProgress(): JSX.Element {
-        const {
-            taskInstance,
-            activeInference,
-            cancelAutoAnnotation,
-        } = this.props;
+        const { taskInstance, activeInference, cancelAutoAnnotation } = this.props;
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.jobs.length;
-        const numOfCompleted = taskInstance.jobs.filter(
-            (job: any): boolean => job.status === 'completed',
-        ).length;
+        const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.status === 'completed').length;
 
         // Progress appearence depends on number of jobs
         let progressColor = null;
         let progressText = null;
         if (numOfCompleted && numOfCompleted === numOfJobs) {
             progressColor = 'cvat-task-completed-progress';
-            progressText = <Text strong className={progressColor}>Completed</Text>;
+            progressText = (
+                <Text strong className={progressColor}>
+                    Completed
+                </Text>
+            );
         } else if (numOfCompleted) {
             progressColor = 'cvat-task-progress-progress';
-            progressText = <Text strong className={progressColor}>In Progress</Text>;
+            progressText = (
+                <Text strong className={progressColor}>
+                    In Progress
+                </Text>
+            );
         } else {
             progressColor = 'cvat-task-pending-progress';
-            progressText = <Text strong className={progressColor}>Pending</Text>;
+            progressText = (
+                <Text strong className={progressColor}>
+                    Pending
+                </Text>
+            );
         }
 
         const jobsProgress = numOfCompleted / numOfJobs;
@@ -104,7 +109,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         <svg height='8' width='8' className={progressColor}>
                             <circle cx='4' cy='4' r='4' strokeWidth='0' />
                         </svg>
-                        { progressText }
+                        {progressText}
                     </Col>
                     <Col>
                         <Text type='secondary'>{`${numOfCompleted} of ${numOfJobs} jobs`}</Text>
@@ -131,10 +136,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     private renderNavigation(): JSX.Element {
-        const {
-            taskInstance,
-            history,
-        } = this.props;
+        const { taskInstance, history } = this.props;
         const { id } = taskInstance;
 
         return (
@@ -169,10 +171,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public render(): JSX.Element {
-        const {
-            deleted,
-            hidden,
-        } = this.props;
+        const { deleted, hidden } = this.props;
         const style = {};
         if (deleted) {
             (style as any).pointerEvents = 'none';

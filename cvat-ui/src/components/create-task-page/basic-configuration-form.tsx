@@ -17,10 +17,7 @@ type Props = FormComponentProps & {
 class BasicConfigurationForm extends React.PureComponent<Props> {
     public submit(): Promise<void> {
         return new Promise((resolve, reject) => {
-            const {
-                form,
-                onSubmit,
-            } = this.props;
+            const { form, onSubmit } = this.props;
 
             form.validateFields((error, values): void => {
                 if (!error) {
@@ -47,14 +44,14 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form onSubmit={(e: React.FormEvent): void => e.preventDefault()}>
                 <Form.Item hasFeedback label={<span>Name</span>}>
-                    { getFieldDecorator('name', {
-                        rules: [{
-                            required: true,
-                            message: 'Please, specify a name',
-                        }],
-                    })(
-                        <Input />,
-                    ) }
+                    {getFieldDecorator('name', {
+                        rules: [
+                            {
+                                required: true,
+                                message: 'Please, specify a name',
+                            },
+                        ],
+                    })(<Input />)}
                 </Form.Item>
             </Form>
         );

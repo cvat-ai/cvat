@@ -19,38 +19,33 @@ interface Props {
 }
 
 function DrawPolygonControl(props: Props): JSX.Element {
-    const {
-        canvasInstance,
-        isDrawing,
-    } = props;
+    const { canvasInstance, isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing
+        ? {
+              overlayStyle: {
+                  display: 'none',
+              },
+          }
+        : {};
 
-    const dynamicIconProps = isDrawing ? {
-        className: 'cvat-active-canvas-control',
-        onClick: (): void => {
-            canvasInstance.draw({ enabled: false });
-        },
-    } : {};
+    const dynamicIconProps = isDrawing
+        ? {
+              className: 'cvat-active-canvas-control',
+              onClick: (): void => {
+                  canvasInstance.draw({ enabled: false });
+              },
+          }
+        : {};
 
     return (
         <Popover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
-            content={(
-                <DrawShapePopoverContainer shapeType={ShapeType.CUBOID} />
-            )}
+            content={<DrawShapePopoverContainer shapeType={ShapeType.CUBOID} />}
         >
-            <Icon
-                className='cvat-draw-cuboid-control'
-                {...dynamicIconProps}
-                component={CubeIcon}
-            />
+            <Icon className='cvat-draw-cuboid-control' {...dynamicIconProps} component={CubeIcon} />
         </Popover>
     );
 }

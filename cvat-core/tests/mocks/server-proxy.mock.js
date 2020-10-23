@@ -1,13 +1,6 @@
-/*
- * Copyright (C) 2018 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
-
-/* eslint import/no-extraneous-dependencies: 0 */
-
-/* global
-    require:false
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 const {
     tasksDummyData,
@@ -34,14 +27,11 @@ class ServerProxy {
                 const components = directory.split('/');
 
                 for (const component of components) {
-                    const idx = position.map(x => x.name).indexOf(component);
+                    const idx = position.map((x) => x.name).indexOf(component);
                     if (idx !== -1 && 'children' in position[idx]) {
                         position = position[idx].children;
                     } else {
-                        throw new window.cvat.exceptions.ServerError(
-                            `${component} is not a valid directory`,
-                            400,
-                        );
+                        throw new window.cvat.exceptions.ServerError(`${component} is not a valid directory`, 400);
                     }
                 }
             }
@@ -101,17 +91,19 @@ class ServerProxy {
         }
 
         async function saveTask(id, taskData) {
-            const object = tasksDummyData.results.filter(task => task.id === id)[0];
+            const object = tasksDummyData.results.filter((task) => task.id === id)[0];
             for (const prop in taskData) {
-                if (Object.prototype.hasOwnProperty.call(taskData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)) {
+                if (
+                    Object.prototype.hasOwnProperty.call(taskData, prop) &&
+                    Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
                     object[prop] = taskData[prop];
                 }
             }
         }
 
         async function createTask(taskData) {
-            const id = Math.max(...tasksDummyData.results.map(el => el.id)) + 1;
+            const id = Math.max(...tasksDummyData.results.map((el) => el.id)) + 1;
             tasksDummyData.results.push({
                 id,
                 url: `http://localhost:7000/api/v1/tasks/${id}`,
@@ -125,7 +117,6 @@ class ServerProxy {
                 updated_date: '2019-05-16T13:08:00.621797+03:00',
                 overlap: taskData.overlap ? taskData.overlap : 5,
                 segment_size: taskData.segment_size ? taskData.segment_size : 5000,
-                z_order: taskData.z_order,
                 flipped: false,
                 status: 'annotation',
                 image_quality: taskData.image_quality,
@@ -138,47 +129,55 @@ class ServerProxy {
 
         async function deleteTask(id) {
             const tasks = tasksDummyData.results;
-            const task = tasks.filter(el => el.id === id)[0];
+            const task = tasks.filter((el) => el.id === id)[0];
             if (task) {
                 tasks.splice(tasks.indexOf(task), 1);
             }
         }
 
         async function getJob(jobID) {
-            const jobs = tasksDummyData.results.reduce((acc, task) => {
-                for (const segment of task.segments) {
-                    for (const job of segment.jobs) {
-                        const copy = JSON.parse(JSON.stringify(job));
-                        copy.start_frame = segment.start_frame;
-                        copy.stop_frame = segment.stop_frame;
-                        copy.task_id = task.id;
+            const jobs = tasksDummyData.results
+                .reduce((acc, task) => {
+                    for (const segment of task.segments) {
+                        for (const job of segment.jobs) {
+                            const copy = JSON.parse(JSON.stringify(job));
+                            copy.start_frame = segment.start_frame;
+                            copy.stop_frame = segment.stop_frame;
+                            copy.task_id = task.id;
 
-                        acc.push(copy);
+                            acc.push(copy);
+                        }
                     }
+
+                    return acc;
+                }, [])
+                .filter((job) => job.id === jobID);
+
+            return (
+                jobs[0] || {
+                    detail: 'Not found.',
                 }
-
-                return acc;
-            }, []).filter(job => job.id === jobID);
-
-            return jobs[0] || {
-                detail: 'Not found.',
-            };
+            );
         }
 
         async function saveJob(id, jobData) {
-            const object = tasksDummyData.results.reduce((acc, task) => {
-                for (const segment of task.segments) {
-                    for (const job of segment.jobs) {
-                        acc.push(job);
+            const object = tasksDummyData.results
+                .reduce((acc, task) => {
+                    for (const segment of task.segments) {
+                        for (const job of segment.jobs) {
+                            acc.push(job);
+                        }
                     }
-                }
 
-                return acc;
-            }, []).filter(job => job.id === id)[0];
+                    return acc;
+                }, [])
+                .filter((job) => job.id === id)[0];
 
             for (const prop in jobData) {
-                if (Object.prototype.hasOwnProperty.call(jobData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)) {
+                if (
+                    Object.prototype.hasOwnProperty.call(jobData, prop) &&
+                    Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
                     object[prop] = jobData[prop];
                 }
             }
@@ -224,10 +223,13 @@ class ServerProxy {
 
             if (action === 'create') {
                 let idGenerator = 1000;
-                data.tracks.concat(data.tags).concat(data.shapes).map((el) => {
-                    el.id = ++idGenerator;
-                    return el;
-                });
+                data.tracks
+                    .concat(data.tags)
+                    .concat(data.shapes)
+                    .map((el) => {
+                        el.id = ++idGenerator;
+                        return el;
+                    });
 
                 return data;
             }
@@ -243,63 +245,66 @@ class ServerProxy {
             return null;
         }
 
-        Object.defineProperties(this, Object.freeze({
-            server: {
-                value: Object.freeze({
-                    about,
-                    share,
-                    formats,
-                    exception,
-                    login,
-                    logout,
-                }),
-                writable: false,
-            },
-
-            tasks: {
-                value: Object.freeze({
-                    getTasks,
-                    saveTask,
-                    createTask,
-                    deleteTask,
-                }),
-                writable: false,
-            },
-
-            jobs: {
-                value: Object.freeze({
-                    getJob,
-                    saveJob,
-                }),
-                writable: false,
-            },
-
-            users: {
-                value: Object.freeze({
-                    getUsers,
-                    getSelf,
-                }),
-                writable: false,
-            },
-
-            frames: {
-                value: Object.freeze({
-                    getData,
-                    getMeta,
-                    getPreview,
-                }),
-                writable: false,
-            },
-
-            annotations: {
-                value: {
-                    updateAnnotations,
-                    getAnnotations,
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                server: {
+                    value: Object.freeze({
+                        about,
+                        share,
+                        formats,
+                        exception,
+                        login,
+                        logout,
+                    }),
+                    writable: false,
                 },
-                // To implement on of important tests
-                writable: true,
-            },
-        }));
+
+                tasks: {
+                    value: Object.freeze({
+                        getTasks,
+                        saveTask,
+                        createTask,
+                        deleteTask,
+                    }),
+                    writable: false,
+                },
+
+                jobs: {
+                    value: Object.freeze({
+                        getJob,
+                        saveJob,
+                    }),
+                    writable: false,
+                },
+
+                users: {
+                    value: Object.freeze({
+                        getUsers,
+                        getSelf,
+                    }),
+                    writable: false,
+                },
+
+                frames: {
+                    value: Object.freeze({
+                        getData,
+                        getMeta,
+                        getPreview,
+                    }),
+                    writable: false,
+                },
+
+                annotations: {
+                    value: {
+                        updateAnnotations,
+                        getAnnotations,
+                    },
+                    // To implement on of important tests
+                    writable: true,
+                },
+            }),
+        );
     }
 }
 

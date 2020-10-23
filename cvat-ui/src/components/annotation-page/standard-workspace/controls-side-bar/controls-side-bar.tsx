@@ -84,9 +84,15 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
-            const drawing = [ActiveControl.DRAW_POINTS, ActiveControl.DRAW_POLYGON,
-                ActiveControl.DRAW_POLYLINE, ActiveControl.DRAW_RECTANGLE,
-                ActiveControl.DRAW_CUBOID, ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl);
+            const drawing = [
+                ActiveControl.DRAW_POINTS,
+                ActiveControl.DRAW_POLYGON,
+                ActiveControl.DRAW_POLYLINE,
+                ActiveControl.DRAW_RECTANGLE,
+                ActiveControl.DRAW_CUBOID,
+                ActiveControl.AI_TOOLS,
+                ActiveControl.OPENCV_TOOLS,
+            ].includes(activeControl);
 
             if (!drawing) {
                 canvasInstance.cancel();
@@ -162,11 +168,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     };
 
     return (
-        <Layout.Sider
-            className='cvat-canvas-controls-sidebar'
-            theme='light'
-            width={44}
-        >
+        <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
             <CursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
@@ -208,10 +210,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
             />
-            <SetupTagControl
-                canvasInstance={canvasInstance}
-                isDrawing={false}
-            />
+            <SetupTagControl canvasInstance={canvasInstance} isDrawing={false} />
 
             <hr />
 

@@ -9,12 +9,7 @@ import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Tooltip from 'antd/lib/tooltip';
 
-import {
-    BackgroundIcon,
-    ForegroundIcon,
-    ResetPerspectiveIcon,
-    ColorizeIcon,
-} from 'icons';
+import { BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon } from 'icons';
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
 import ColorPicker from './color-picker';
 
@@ -106,7 +101,7 @@ export default function ItemMenu(props: Props): JSX.Element {
                     </Tooltip>
                 </Menu.Item>
             )}
-            { [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
+            {[ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <Menu.Item>
                     <Button type='link' icon='retweet' onClick={switchOrientation}>
                         Switch orientation

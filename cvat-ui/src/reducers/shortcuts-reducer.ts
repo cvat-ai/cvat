@@ -4,23 +4,25 @@
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 
-import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { ShortcutsState } from './interfaces';
 
 function formatShortcuts(shortcuts: ExtendedKeyMapOptions): string {
     const list: string[] = shortcuts.sequences as string[];
-    return `[${list.map((shortcut: string): string => {
-        let keys = shortcut.split('+');
-        keys = keys.map((key: string): string => `${key ? key[0].toUpperCase() : key}${key.slice(1)}`);
-        keys = keys.join('+').split(/\s/g);
-        keys = keys.map((key: string): string => `${key ? key[0].toUpperCase() : key}${key.slice(1)}`);
-        return keys.join(' ');
-    }).join(', ')}]`;
+    return `[${list
+        .map((shortcut: string): string => {
+            let keys = shortcut.split('+');
+            keys = keys.map((key: string): string => `${key ? key[0].toUpperCase() : key}${key.slice(1)}`);
+            keys = keys.join('+').split(/\s/g);
+            keys = keys.map((key: string): string => `${key ? key[0].toUpperCase() : key}${key.slice(1)}`);
+            return keys.join(' ');
+        })
+        .join(', ')}]`;
 }
 
-const defaultKeyMap = {
+const defaultKeyMap = ({
     SWITCH_SHORTCUTS: {
         name: 'Show shortcuts',
         description: 'Open/hide the list of available shortcuts',
@@ -207,7 +209,8 @@ const defaultKeyMap = {
     },
     SWITCH_DRAW_MODE: {
         name: 'Draw mode',
-        description: 'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
         sequences: ['shift+n', 'n'],
         action: 'keydown',
     },
@@ -332,24 +335,19 @@ const defaultKeyMap = {
         sequences: ['Enter'],
         action: 'keydown',
     },
-} as any as Record<string, ExtendedKeyMapOptions>;
-
+} as any) as Record<string, ExtendedKeyMapOptions>;
 
 const defaultState: ShortcutsState = {
     visibleShortcutsHelp: false,
     keyMap: defaultKeyMap,
-    normalizedKeyMap: Object.keys(defaultKeyMap)
-        .reduce((acc: Record<string, string>, key: string) => {
-            const normalized = formatShortcuts(defaultKeyMap[key]);
-            acc[key] = normalized;
-            return acc;
-        }, {}),
+    normalizedKeyMap: Object.keys(defaultKeyMap).reduce((acc: Record<string, string>, key: string) => {
+        const normalized = formatShortcuts(defaultKeyMap[key]);
+        acc[key] = normalized;
+        return acc;
+    }, {}),
 };
 
-export default (
-    state = defaultState,
-    action: ShortcutsActions | boundariesActions | AuthActions,
-): ShortcutsState => {
+export default (state = defaultState, action: ShortcutsActions | BoundariesActions | AuthActions): ShortcutsState => {
     switch (action.type) {
         case ShortcutsActionsTypes.SWITCH_SHORTCUT_DIALOG: {
             return {

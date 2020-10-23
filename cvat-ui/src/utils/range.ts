@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 export default function range(x: number, y?: number): number[] {
-    if (typeof (x) !== 'undefined' && typeof (y) !== 'undefined') {
-        if (typeof (x) !== 'number' && typeof (y) !== 'number') {
-            throw new Error(`Range() expects number arguments. Got ${typeof (x)}, ${typeof (y)}`);
+    if (typeof x !== 'undefined' && typeof y !== 'undefined') {
+        if (typeof x !== 'number' && typeof y !== 'number') {
+            throw new Error(`Range() expects number arguments. Got ${typeof x}, ${typeof y}`);
         }
 
         if (x >= y) {
@@ -15,9 +15,9 @@ export default function range(x: number, y?: number): number[] {
         return Array.from(Array(y - x), (_: number, i: number) => i + x);
     }
 
-    if (typeof (x) !== 'undefined') {
-        if (typeof (x) !== 'number') {
-            throw new Error(`Range() expects number arguments. Got ${typeof (x)}`);
+    if (typeof x !== 'undefined') {
+        if (typeof x !== 'number') {
+            throw new Error(`Range() expects number arguments. Got ${typeof x}`);
         }
 
         return [...Array(x).keys()];

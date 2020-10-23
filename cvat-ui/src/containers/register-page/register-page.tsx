@@ -15,10 +15,15 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onRegister: (username: string, firstName: string,
-        lastName: string, email: string,
-        password1: string, password2: string,
-        userAgreement: UserConfirmation[]) => void;
+    onRegister: (
+        username: string,
+        firstName: string,
+        lastName: string,
+        email: string,
+        password1: string,
+        password2: string,
+        userAgreement: UserConfirmation[],
+    ) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -35,12 +40,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function RegisterPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <RegisterPageComponent {...props} />
-    );
+    return <RegisterPageComponent {...props} />;
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(RegisterPageContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(RegisterPageContainer);
