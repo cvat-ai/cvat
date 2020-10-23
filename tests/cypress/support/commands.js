@@ -1,6 +1,8 @@
-// Copyright (C) 2020 Intel Corporation
-//
-// SPDX-License-Identifier: MIT
+/*
+ * Copyright (C) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 /// <reference types="cypress" />
 
@@ -43,7 +45,7 @@ Cypress.Commands.add(
         multiAttrParams,
         advancedConfigurationParams,
     ) => {
-        cy.get('#cvat-create-task-button').click();
+        cy.get('#cvat-create-task-button').click({ force: true });
         cy.url().should('include', '/tasks/create');
         cy.get('[id="name"]').type(taksName);
         cy.get('.cvat-constructor-viewer-new-item').click();
@@ -69,11 +71,21 @@ Cypress.Commands.add(
 );
 
 Cypress.Commands.add('openTask', (taskName) => {
-    cy.contains('strong', taskName).parents('.cvat-tasks-list-item').contains('a', 'Open').click();
+    cy.contains('strong', taskName).parents('.cvat-tasks-list-item').contains('a', 'Open').click({ force: true });
 });
 
 Cypress.Commands.add('openJob', (jobNumber = 0) => {
-    cy.get('.ant-table-tbody').find('tr').eq(jobNumber).contains('a', 'Job #').click();
+    let tdText = '';
+    cy.get('.ant-table-tbody')
+        .contains(/^0-/)
+        .parent()
+        .find('td')
+        .eq(0)
+        .invoke('text')
+        .then(($tdText) => {
+            tdText = Number($tdText.match(/\d+/g)) + jobNumber;
+            cy.get('.ant-table-tbody').contains('a', `Job #${tdText}`).click();
+        });
     cy.url().should('include', '/jobs');
 });
 
@@ -243,7 +255,7 @@ Cypress.Commands.add('getTaskID', (taskName) => {
             cy.get('span')
                 .invoke('text')
                 .then((text) => {
-                    return String(text.match(/^#\d+:/g)).replace(/[^\d]/g, '');
+                    return String(text.match(/^#\d+\:/g)).replace(/[^\d]/g, '');
                 });
         });
 });
@@ -268,4 +280,18 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
         cy.get('#stopFrame').type(advancedConfigurationParams.stopFrame);
         cy.get('#frameStep').type(advancedConfigurationParams.frameStep);
     }
+});
+
+Cypress.Commands.add('removeAnnotations', () => {
+    cy.get('.cvat-annotation-header-button').eq(0).click();
+    cy.get('.cvat-annotation-menu').within(() => {
+        cy.contains('Remove annotations').click();
+    });
+    cy.get('.ant-modal-content').within(() => {
+        cy.get('.ant-btn-danger').click();
+    });
+});
+
+Cypress.Commands.add('goToTaskList', () => {
+    cy.get('a[value="tasks"]').click();
 });
