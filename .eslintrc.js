@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2012-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,6 +16,9 @@ module.exports = {
     plugins: ['requirejs', 'eslint-plugin-header'],
     extends: ['eslint:recommended', 'plugin:requirejs/recommended', 'prettier'],
     rules: {
-        'header/header': [2, '.header.js'],
+        'header/header': [2, 'line', [{
+            pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2020 Intel Corporation',
+            template: ' Copyright (C) 2020 Intel Corporation'
+        }, '', ' SPDX-License-Identifier: MIT']],
     },
 };
