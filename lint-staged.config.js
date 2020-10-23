@@ -1,7 +1,6 @@
 // lint-staged.config.js
 
 const micromatch = require('micromatch');
-const path = require('path');
 
 function containsInPath(pattern, list) {
     return list.filter((item) => micromatch.contains(item, pattern));
@@ -25,25 +24,19 @@ module.exports = (stagedFiles) => {
     const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
     const cvatUI = containsInPath('/cvat-ui/', eslintFiles);
 
+    const mapping = {};
     const commands = [];
-    if (prettierFiles.length) {
-        commands.push(`prettier --write ${prettierFiles.join(' ')}`);
-    }
+    mapping['prettier --write '] = prettierFiles.join(' ');
+    mapping['npm run precommit:cvat-ui -- '] = cvatUI.join(' ');
+    mapping['npm run precommit:cvat-data -- '] = cvatData.join(' ');
+    mapping['npm run precommit:cvat-core -- '] = cvatCore.join(' ');
+    mapping['npm run precommit:cvat-canvas -- '] = cvatCanvas.join(' ');
 
-    if (cvatUI.length) {
-        commands.push(`npm run precommit:cvat-ui -- ${cvatUI.join(' ')}`);
-    }
-
-    if (cvatData.length) {
-        commands.push(`npm run precommit:cvat-data -- ${cvatData.join(' ')}`);
-    }
-
-    if (cvatCore.length) {
-        commands.push(`npm run precommit:cvat-core -- ${cvatCore.join(' ')}`);
-    }
-
-    if (cvatCanvas.length) {
-        commands.push(`npm run precommit:cvat-canvas -- ${cvatCanvas.join(' ')}`);
+    for (const command of Object.keys(mapping)) {
+        const files = mapping[command];
+        if (files.length) {
+            commands.push(`${command} ${files}`);
+        }
     }
 
     return commands;
