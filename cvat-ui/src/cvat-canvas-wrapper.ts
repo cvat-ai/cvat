@@ -15,4 +15,6 @@ import {
 export type InteractionData = InteractionDataType;
 export type InteractionResult = InteractionResultType;
 
-export { Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod };
+export {
+    Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,
+};

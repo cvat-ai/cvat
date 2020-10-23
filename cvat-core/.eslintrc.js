@@ -9,13 +9,14 @@ module.exports = {
         es6: true,
         jquery: true,
         qunit: true,
+        'jest/globals': true,
     },
     parserOptions: {
         parser: 'babel-eslint',
         sourceType: 'module',
         ecmaVersion: 2018,
     },
-    plugins: ['security', 'no-unsanitized', 'no-unsafe-innerhtml'],
+    plugins: ['security', 'jest', 'no-unsanitized', 'no-unsafe-innerhtml'],
     extends: ['eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM', 'airbnb-base'],
     rules: {
         'no-await-in-loop': [0],
