@@ -1,3 +1,5 @@
+*.idea/
+
 # Project Specific
 /data/
 /models/
