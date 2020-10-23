@@ -44,7 +44,6 @@ Cypress.Commands.add('createAnnotationTask', (taksName='New annotation task',
                                               multiAttrParams,
                                               advancedConfigurationParams
                                               ) => {
-    cy.get('[value="tasks"]').click()
     cy.get('#cvat-create-task-button').click({force: true})
     cy.url().should('include', '/tasks/create')
     cy.get('[id="name"]').type(taksName)
