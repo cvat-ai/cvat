@@ -16,11 +16,7 @@ interface VisibleTopBarProps {
 }
 
 function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps): JSX.Element {
-    const {
-        searchValue,
-        history,
-        onSearch,
-    } = props;
+    const { searchValue, history, onSearch } = props;
 
     return (
         <>
@@ -32,29 +28,17 @@ function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps): JSX.E
             <Row type='flex' justify='center' align='middle'>
                 <Col md={11} lg={9} xl={8} xxl={7}>
                     <Text className='cvat-title'>Tasks</Text>
-                    <Input.Search
-                        defaultValue={searchValue}
-                        onSearch={onSearch}
-                        size='large'
-                        placeholder='Search'
-                    />
+                    <Input.Search defaultValue={searchValue} onSearch={onSearch} size='large' placeholder='Search' />
                 </Col>
-                <Col
-                    md={{ span: 11 }}
-                    lg={{ span: 9 }}
-                    xl={{ span: 8 }}
-                    xxl={{ span: 7 }}
-                >
+                <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 8 }} xxl={{ span: 7 }}>
                     <Button
                         size='large'
                         id='cvat-create-task-button'
                         type='primary'
-                        onClick={
-                            (): void => history.push('/tasks/create')
-                        }
+                        onClick={(): void => history.push('/tasks/create')}
                         icon='plus'
                     >
-                         Create new task
+                        Create new task
                     </Button>
                 </Col>
             </Row>

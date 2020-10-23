@@ -20,7 +20,6 @@ import { BackJumpIcon, ForwardJumpIcon } from 'icons';
 import { FrameSpeed, GridColor } from 'reducers/interfaces';
 import consts from 'consts';
 
-
 interface Props {
     frameStep: number;
     frameSpeed: FrameSpeed;
@@ -91,12 +90,8 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         max={maxFrameStep}
                         value={frameStep}
                         onChange={(value: number | undefined): void => {
-                            if (typeof (value) === 'number') {
-                                onChangeFrameStep(
-                                    Math.floor(
-                                        clamp(value, minFrameStep, maxFrameStep),
-                                    ),
-                                );
+                            if (typeof value === 'number') {
+                                onChangeFrameStep(Math.floor(clamp(value, minFrameStep, maxFrameStep)));
                             }
                         }}
                     />
@@ -119,25 +114,37 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             onChangeFrameSpeed(speed);
                         }}
                     >
-                        <Select.Option key='fastest' value={FrameSpeed.Fastest}>Fastest</Select.Option>
-                        <Select.Option key='fast' value={FrameSpeed.Fast}>Fast</Select.Option>
-                        <Select.Option key='usual' value={FrameSpeed.Usual}>Usual</Select.Option>
-                        <Select.Option key='slow' value={FrameSpeed.Slow}>Slow</Select.Option>
-                        <Select.Option key='slower' value={FrameSpeed.Slower}>Slower</Select.Option>
-                        <Select.Option key='slowest' value={FrameSpeed.Slowest}>Slowest</Select.Option>
+                        <Select.Option key='fastest' value={FrameSpeed.Fastest}>
+                            Fastest
+                        </Select.Option>
+                        <Select.Option key='fast' value={FrameSpeed.Fast}>
+                            Fast
+                        </Select.Option>
+                        <Select.Option key='usual' value={FrameSpeed.Usual}>
+                            Usual
+                        </Select.Option>
+                        <Select.Option key='slow' value={FrameSpeed.Slow}>
+                            Slow
+                        </Select.Option>
+                        <Select.Option key='slower' value={FrameSpeed.Slower}>
+                            Slower
+                        </Select.Option>
+                        <Select.Option key='slowest' value={FrameSpeed.Slowest}>
+                            Slowest
+                        </Select.Option>
                     </Select>
                 </Col>
             </Row>
             <Row type='flex' className='cvat-player-settings-canvas-background'>
                 <Col>
                     <Popover
-                        content={(
+                        content={
                             <CompactPicker
                                 colors={consts.CANVAS_BACKGROUND_COLORS}
                                 color={canvasBackgroundColor}
                                 onChange={(e) => onChangeCanvasBackgroundColor(e.hex)}
                             />
-                        )}
+                        }
                         overlayClassName='canvas-background-color-picker-popover'
                         trigger='click'
                     >
@@ -167,10 +174,8 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         value={gridSize}
                         disabled={!grid}
                         onChange={(value: number | undefined): void => {
-                            if (typeof (value) === 'number') {
-                                onChangeGridSize(Math.floor(
-                                    clamp(value, minGridSize, maxGridSize),
-                                ));
+                            if (typeof value === 'number') {
+                                onChangeGridSize(Math.floor(clamp(value, minGridSize, maxGridSize)));
                             }
                         }}
                     />
@@ -184,11 +189,21 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             onChangeGridColor(color);
                         }}
                     >
-                        <Select.Option key='white' value={GridColor.White}>White</Select.Option>
-                        <Select.Option key='black' value={GridColor.Black}>Black</Select.Option>
-                        <Select.Option key='red' value={GridColor.Red}>Red</Select.Option>
-                        <Select.Option key='green' value={GridColor.Green}>Green</Select.Option>
-                        <Select.Option key='blue' value={GridColor.Blue}>Blue</Select.Option>
+                        <Select.Option key='white' value={GridColor.White}>
+                            White
+                        </Select.Option>
+                        <Select.Option key='black' value={GridColor.Black}>
+                            Black
+                        </Select.Option>
+                        <Select.Option key='red' value={GridColor.Red}>
+                            Red
+                        </Select.Option>
+                        <Select.Option key='green' value={GridColor.Green}>
+                            Green
+                        </Select.Option>
+                        <Select.Option key='blue' value={GridColor.Blue}>
+                            Blue
+                        </Select.Option>
                     </Select>
                 </Col>
                 <Col span={8} className='cvat-player-settings-grid-opacity'>
@@ -246,9 +261,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row>
                 <Col span={12}>
                     <Row className='cvat-player-settings-brightness'>
-                        <Col className='cvat-text-color'>
-                            Brightness
-                        </Col>
+                        <Col className='cvat-text-color'>Brightness</Col>
                         <Col>
                             <Slider
                                 min={50}
@@ -261,9 +274,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     <Row className='cvat-player-settings-contrast'>
-                        <Col className='cvat-text-color'>
-                            Contrast
-                        </Col>
+                        <Col className='cvat-text-color'>Contrast</Col>
                         <Col>
                             <Slider
                                 min={50}
@@ -276,9 +287,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     <Row className='cvat-player-settings-saturation'>
-                        <Col className='cvat-text-color'>
-                            Saturation
-                        </Col>
+                        <Col className='cvat-text-color'>Saturation</Col>
                         <Col>
                             <Slider
                                 min={0}

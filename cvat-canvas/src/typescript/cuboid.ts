@@ -1,12 +1,3 @@
-/* eslint-disable func-names */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable curly */
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
-
 import consts from './consts';
 
 export interface Point {
@@ -26,9 +17,7 @@ function line(p1: Point, p2: Point): number[] {
     return [a, b, c];
 }
 
-function intersection(
-    p1: Point, p2: Point, p3: Point, p4: Point,
-): Point | null {
+function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null {
     const L1 = line(p1, p2);
     const L2 = line(p3, p4);
 
@@ -246,8 +235,20 @@ export class CuboidModel {
         this.rb = new Edge([3, 5], this.points);
         this.db = new Edge([7, 5], this.points);
 
-        this.edgeList = [this.fl, this.fr, this.dl, this.dr, this.ft, this.lt,
-            this.rt, this.dt, this.fb, this.lb, this.rb, this.db];
+        this.edgeList = [
+            this.fl,
+            this.fr,
+            this.dl,
+            this.dr,
+            this.ft,
+            this.lt,
+            this.rt,
+            this.dt,
+            this.fb,
+            this.lb,
+            this.rb,
+            this.db,
+        ];
     }
 
     private initFaces(): void {
@@ -324,7 +325,7 @@ function sortPointsClockwise(points: any[]): any[] {
         let ang = Math.atan2(point.y - center.y, point.x - center.x);
         if (!startAng) {
             startAng = ang;
-        // ensure that all points are clockwise of the start point
+            // ensure that all points are clockwise of the start point
         } else if (ang < startAng) {
             ang += Math.PI * 2;
         }
@@ -347,18 +348,18 @@ function setupCuboidPoints(points: Point[]): any[] {
     let p3;
     let p4;
 
-    const height = Math.abs(points[0].x - points[1].x)
-        < Math.abs(points[1].x - points[2].x)
-        ? Math.abs(points[1].y - points[0].y)
-        : Math.abs(points[1].y - points[2].y);
+    const height =
+        Math.abs(points[0].x - points[1].x) < Math.abs(points[1].x - points[2].x)
+            ? Math.abs(points[1].y - points[0].y)
+            : Math.abs(points[1].y - points[2].y);
 
     // seperate into left and right point
     // we pick the first and third point because we know assume they will be on
     // opposite corners
     if (points[0].x < points[2].x) {
-        [left,, right] = points;
+        [left, , right] = points;
     } else {
-        [right,, left] = points;
+        [right, , left] = points;
     }
 
     // get other 2 points using the given height
@@ -408,7 +409,7 @@ export function cuboidFrom4Points(flattenedPoints: any[]): any[] {
         points.push({ x, y });
     }
     const unsortedPlanePoints = points.slice(0, 3);
-    function rotate(array: any[], times: number): void{
+    function rotate(array: any[], times: number): void {
         let t = times;
         while (t--) {
             const temp = array.shift();
@@ -460,28 +461,21 @@ export function cuboidFrom4Points(flattenedPoints: any[]): any[] {
     plane2.p3 = { x: plane1.p3.x + vec.x, y: plane1.p3.y + vec.y };
     plane2.p4 = { x: plane1.p4.x + vec.x, y: plane1.p4.y + vec.y };
 
-
     let cuboidPoints;
     // right
     if (Math.abs(angle) < Math.PI / 2 - 0.1) {
         cuboidPoints = setupCuboidPoints(points);
-    // left
+        // left
     } else if (Math.abs(angle) > Math.PI / 2 + 0.1) {
         cuboidPoints = setupCuboidPoints(points);
-    // down
+        // down
     } else if (angle > 0) {
-        cuboidPoints = [
-            plane1.p1, plane2.p1, plane1.p2, plane2.p2,
-            plane1.p3, plane2.p3, plane1.p4, plane2.p4,
-        ];
+        cuboidPoints = [plane1.p1, plane2.p1, plane1.p2, plane2.p2, plane1.p3, plane2.p3, plane1.p4, plane2.p4];
         cuboidPoints[0].y += 0.1;
         cuboidPoints[4].y += 0.1;
-    // up
+        // up
     } else {
-        cuboidPoints = [
-            plane2.p1, plane1.p1, plane2.p2, plane1.p2,
-            plane2.p3, plane1.p3, plane2.p4, plane1.p4,
-        ];
+        cuboidPoints = [plane2.p1, plane1.p1, plane2.p2, plane1.p2, plane2.p3, plane1.p3, plane2.p4, plane1.p4];
         cuboidPoints[0].y += 0.1;
         cuboidPoints[4].y += 0.1;
     }

@@ -1,4 +1,6 @@
-/* eslint-disable-next-line import/prefer-default-export */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 export function clamp(value: number, min: number, max: number): number {
     return Math.max(Math.min(value, max), min);
 }

@@ -16,12 +16,8 @@ export enum PluginsActionTypes {
 
 const pluginActions = {
     checkPlugins: () => createAction(PluginsActionTypes.GET_PLUGINS),
-    checkPluginsSuccess: (list: PluginsList) => createAction(
-        PluginsActionTypes.GET_PLUGINS_SUCCESS, { list },
-    ),
-    checkPluginsFailed: (error: any) => createAction(
-        PluginsActionTypes.GET_PLUGINS_FAILED, { error },
-    ),
+    checkPluginsSuccess: (list: PluginsList) => createAction(PluginsActionTypes.GET_PLUGINS_SUCCESS, { list }),
+    checkPluginsFailed: (error: any) => createAction(PluginsActionTypes.GET_PLUGINS_FAILED, { error }),
 };
 
 export type PluginActions = ActionUnion<typeof pluginActions>;

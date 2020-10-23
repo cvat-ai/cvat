@@ -12,38 +12,25 @@ import Tooltip from 'antd/lib/tooltip';
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import { StatesOrdering } from 'reducers/interfaces';
 
-
 interface StatesOrderingSelectorComponentProps {
     statesOrdering: StatesOrdering;
     changeStatesOrdering(value: StatesOrdering): void;
 }
 
 function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentProps): JSX.Element {
-    const {
-        statesOrdering,
-        changeStatesOrdering,
-    } = props;
+    const { statesOrdering, changeStatesOrdering } = props;
 
     return (
         <Col span={16}>
             <Text strong>Sort by</Text>
             <Select value={statesOrdering} onChange={changeStatesOrdering}>
-                <Select.Option
-                    key={StatesOrdering.ID_DESCENT}
-                    value={StatesOrdering.ID_DESCENT}
-                >
+                <Select.Option key={StatesOrdering.ID_DESCENT} value={StatesOrdering.ID_DESCENT}>
                     {StatesOrdering.ID_DESCENT}
                 </Select.Option>
-                <Select.Option
-                    key={StatesOrdering.ID_ASCENT}
-                    value={StatesOrdering.ID_ASCENT}
-                >
+                <Select.Option key={StatesOrdering.ID_ASCENT} value={StatesOrdering.ID_ASCENT}>
                     {StatesOrdering.ID_ASCENT}
                 </Select.Option>
-                <Select.Option
-                    key={StatesOrdering.UPDATED}
-                    value={StatesOrdering.UPDATED}
-                >
+                <Select.Option key={StatesOrdering.UPDATED} value={StatesOrdering.UPDATED}>
                     {StatesOrdering.UPDATED}
                 </Select.Option>
             </Select>
@@ -96,29 +83,32 @@ function ObjectListHeader(props: Props): JSX.Element {
             <Row type='flex' justify='space-between' align='middle'>
                 <Col span={2}>
                     <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`} mouseLeaveDelay={0}>
-                        { statesLocked
-                            ? <Icon type='lock' onClick={unlockAllStates} theme='filled' />
-                            : <Icon type='unlock' onClick={lockAllStates} />}
+                        {statesLocked ? (
+                            <Icon type='lock' onClick={unlockAllStates} theme='filled' />
+                        ) : (
+                            <Icon type='unlock' onClick={lockAllStates} />
+                        )}
                     </Tooltip>
                 </Col>
                 <Col span={2}>
                     <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`} mouseLeaveDelay={0}>
-                        { statesHidden
-                            ? <Icon type='eye-invisible' onClick={showAllStates} />
-                            : <Icon type='eye' onClick={hideAllStates} />}
+                        {statesHidden ? (
+                            <Icon type='eye-invisible' onClick={showAllStates} />
+                        ) : (
+                            <Icon type='eye' onClick={hideAllStates} />
+                        )}
                     </Tooltip>
                 </Col>
                 <Col span={2}>
                     <Tooltip title='Expand/collapse all' mouseLeaveDelay={0}>
-                        { statesCollapsed
-                            ? <Icon type='caret-down' onClick={expandAllStates} />
-                            : <Icon type='caret-up' onClick={collapseAllStates} />}
+                        {statesCollapsed ? (
+                            <Icon type='caret-down' onClick={expandAllStates} />
+                        ) : (
+                            <Icon type='caret-up' onClick={collapseAllStates} />
+                        )}
                     </Tooltip>
                 </Col>
-                <StatesOrderingSelector
-                    statesOrdering={statesOrdering}
-                    changeStatesOrdering={changeStatesOrdering}
-                />
+                <StatesOrderingSelector statesOrdering={statesOrdering} changeStatesOrdering={changeStatesOrdering} />
             </Row>
         </div>
     );

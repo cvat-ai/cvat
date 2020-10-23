@@ -15,5 +15,13 @@
     "tabWidth": 4,
     "trailingComma": "all",
     "useTabs": false,
-    "vueIndentScriptAndStyle": false
+    "vueIndentScriptAndStyle": false,
+    "overrides": [
+        {
+            "files": ["*.json", "*.yml", "*.yaml", "*.md"],
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
 }

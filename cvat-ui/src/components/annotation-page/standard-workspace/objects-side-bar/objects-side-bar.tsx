@@ -35,9 +35,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             sidebarCollapsed,
-            canvas: {
-                instance: canvasInstance,
-            },
+            canvas: { instance: canvasInstance },
         },
     } = state;
 
@@ -60,12 +58,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 }
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
-    const {
-        sidebarCollapsed,
-        canvasInstance,
-        collapseSidebar,
-        updateTabContentHeight,
-    } = props;
+    const { sidebarCollapsed, canvasInstance, collapseSidebar, updateTabContentHeight } = props;
 
     useEffect(() => {
         const alignTabHeight = (): void => {
@@ -84,8 +77,10 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
 
     useEffect(() => {
         const listener = (event: Event): void => {
-            if ((event as TransitionEvent).propertyName === 'width'
-                    && ((event.target as any).classList as DOMTokenList).contains('ant-tabs-tab-prev')) {
+            if (
+                (event as TransitionEvent).propertyName === 'width' &&
+                ((event.target as any).classList as DOMTokenList).contains('ant-tabs-tab-prev')
+            ) {
                 canvasInstance.fit();
             }
         };
@@ -117,31 +112,21 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
                     ant-layout-sider-zero-width-trigger-left`}
                 onClick={collapseSidebar}
             >
-                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' />
-                    : <Icon type='menu-unfold' title='Hide' />}
+                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' /> : <Icon type='menu-unfold' title='Hide' />}
             </span>
 
             <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
-                <Tabs.TabPane
-                    tab={<Text strong>Objects</Text>}
-                    key='objects'
-                >
+                <Tabs.TabPane tab={<Text strong>Objects</Text>} key='objects'>
                     <ObjectsListContainer />
                 </Tabs.TabPane>
-                <Tabs.TabPane
-                    tab={<Text strong>Labels</Text>}
-                    key='labels'
-                >
+                <Tabs.TabPane tab={<Text strong>Labels</Text>} key='labels'>
                     <LabelsListContainer />
                 </Tabs.TabPane>
             </Tabs>
 
-            { !sidebarCollapsed && <AppearanceBlock /> }
+            {!sidebarCollapsed && <AppearanceBlock />}
         </Layout.Sider>
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(React.memo(ObjectsSideBar));
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo(ObjectsSideBar));

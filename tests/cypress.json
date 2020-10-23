@@ -1,18 +1,12 @@
 {
-    "video": false,
-    "baseUrl": "http://localhost:8080",
-    "viewportWidth": 1300,
-    "viewportHeight": 960,
-    "defaultCommandTimeout": 25000,
-    "env": {
-        "user": "admin",
-        "password": "12qwaszx"
-    },
-    "testFiles": [
-        "auth_page.js",
-        "issue_*.js",
-        "pr_*.js",
-        "case_*.js",
-        "remove_users_tasks.js"
-    ]
+  "video": false,
+  "baseUrl": "http://localhost:8080",
+  "viewportWidth": 1300,
+  "viewportHeight": 960,
+  "defaultCommandTimeout": 25000,
+  "env": {
+    "user": "admin",
+    "password": "12qwaszx"
+  },
+  "testFiles": ["auth_page.js", "issue_*.js", "pr_*.js", "case_*.js", "remove_users_tasks.js"]
 }

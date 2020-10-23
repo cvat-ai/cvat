@@ -9,7 +9,7 @@ metadata:
 
 spec:
   description: Person reidentification model for a general scenario
-  runtime: "python:3.6"
+  runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -22,21 +22,21 @@ spec:
 
     directives:
       preCopy:
-      - kind: USER
-        value: root
-      - kind: WORKDIR
-        value: /opt/nuclio
-      - kind: RUN
-        value: ln -s /usr/bin/pip3 /usr/bin/pip
-      - kind: RUN
-        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name person-reidentification-retail-0300 -o /opt/nuclio/open_model_zoo
-      - kind: RUN
-        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name person-reidentification-retail-0300 --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
+        - kind: USER
+          value: root
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/bin/pip
+        - kind: RUN
+          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name person-reidentification-retail-0300 -o /opt/nuclio/open_model_zoo
+        - kind: RUN
+          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name person-reidentification-retail-0300 --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
 
   triggers:
     myHttpTrigger:
       maxWorkers: 2
-      kind: "http"
+      kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB

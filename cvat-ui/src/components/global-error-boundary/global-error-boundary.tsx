@@ -40,14 +40,9 @@ interface State {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            job: {
-                instance: job,
-            },
+            job: { instance: job },
         },
-        about: {
-            server,
-            packageVersion,
-        },
+        about: { server, packageVersion },
     } = state;
 
     return {
@@ -66,7 +61,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         },
     };
 }
-
 
 type Props = StateToProps & DispatchToProps;
 class GlobalErrorBoundary extends React.PureComponent<Props, State> {
@@ -106,14 +100,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactNode {
-        const {
-            restore,
-            job,
-            serverVersion,
-            coreVersion,
-            canvasVersion,
-            uiVersion,
-        } = this.props;
+        const { restore, job, serverVersion, coreVersion, canvasVersion, uiVersion } = this.props;
 
         const { hasError, error } = this.state;
 
@@ -142,7 +129,11 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                 <Collapse accordion>
                                     <Collapse.Panel header='Error message' key='errorMessage'>
                                         <Text type='danger'>
-                                            <TextArea className='cvat-global-boundary-error-field' autoSize value={message} />
+                                            <TextArea
+                                                className='cvat-global-boundary-error-field'
+                                                autoSize
+                                                value={message}
+                                            />
                                         </Text>
                                     </Collapse.Panel>
                                 </Collapse>
@@ -155,7 +146,14 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                 <li>
                                     <Tooltip title='Copied!' trigger='click' mouseLeaveDelay={0}>
                                         {/* eslint-disable-next-line */}
-                                        <a onClick={() => {copy(message)}}> Copy </a>
+                                        <a
+                                            onClick={() => {
+                                                copy(message);
+                                            }}
+                                        >
+                                            {' '}
+                                            Copy{' '}
+                                        </a>
                                     </Tooltip>
                                     the error message to clipboard
                                 </li>
@@ -192,8 +190,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                         Press
                                         {/* eslint-disable-next-line */}
                                         <a onClick={restoreGlobalState}> here </a>
-                                        if you wish CVAT tried to restore your
-                                        annotation progress or
+                                        if you wish CVAT tried to restore your annotation progress or
                                         {/* eslint-disable-next-line */}
                                         <a onClick={() => window.location.reload()}> update </a>
                                         the page
@@ -217,7 +214,4 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(GlobalErrorBoundary);
+export default connect(mapStateToProps, mapDispatchToProps)(GlobalErrorBoundary);

@@ -15,11 +15,7 @@ export interface InteractionHandler {
 }
 
 export class InteractionHandlerImpl implements InteractionHandler {
-    private onInteraction: (
-        shapes: InteractionResult[] | null,
-        shapesUpdated?: boolean,
-        isDone?: boolean,
-    ) => void;
+    private onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private interactionData: InteractionData;
@@ -30,42 +26,46 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private crosshair: Crosshair;
 
     private prepareResult(): InteractionResult[] {
-        return this.interactionShapes.map((shape: SVG.Shape): InteractionResult => {
-            if (shape.type === 'circle') {
-                const points = [(shape as SVG.Circle).cx(), (shape as SVG.Circle).cy()];
+        return this.interactionShapes.map(
+            (shape: SVG.Shape): InteractionResult => {
+                if (shape.type === 'circle') {
+                    const points = [(shape as SVG.Circle).cx(), (shape as SVG.Circle).cy()];
+                    return {
+                        points: points.map((coord: number): number => coord - this.geometry.offset),
+                        shapeType: 'points',
+                        button: shape.attr('stroke') === 'green' ? 0 : 2,
+                    };
+                }
+
+                const bbox = ((shape.node as any) as SVGRectElement).getBBox();
+                const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
                 return {
                     points: points.map((coord: number): number => coord - this.geometry.offset),
-                    shapeType: 'points',
-                    button: shape.attr('stroke') === 'green' ? 0 : 2,
+                    shapeType: 'rectangle',
+                    button: 0,
                 };
-            }
-
-            const bbox = (shape.node as any as SVGRectElement).getBBox();
-            const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
-            return {
-                points: points.map((coord: number): number => coord - this.geometry.offset),
-                shapeType: 'rectangle',
-                button: 0,
-            };
-        });
+            },
+        );
     }
 
     private shouldRaiseEvent(ctrlKey: boolean): boolean {
         const { interactionData, interactionShapes, shapesWereUpdated } = this;
         const { minPosVertices, minNegVertices, enabled } = interactionData;
 
-        const positiveShapes = interactionShapes
-            .filter((shape: SVG.Shape): boolean => (shape as any).attr('stroke') === 'green');
-        const negativeShapes = interactionShapes
-            .filter((shape: SVG.Shape): boolean => (shape as any).attr('stroke') !== 'green');
+        const positiveShapes = interactionShapes.filter(
+            (shape: SVG.Shape): boolean => (shape as any).attr('stroke') === 'green',
+        );
+        const negativeShapes = interactionShapes.filter(
+            (shape: SVG.Shape): boolean => (shape as any).attr('stroke') !== 'green',
+        );
 
         if (interactionData.shapeType === 'rectangle') {
             return enabled && !ctrlKey && !!interactionShapes.length;
         }
 
-        const minimumVerticesAchieved = (typeof (minPosVertices) === 'undefined'
-        || minPosVertices <= positiveShapes.length) && (typeof (minNegVertices) === 'undefined'
-        || minPosVertices <= negativeShapes.length);
+        const minimumVerticesAchieved =
+            (typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length) &&
+            (typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length);
         return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
     }
 
@@ -82,12 +82,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
         const eventListener = (e: MouseEvent): void => {
             if ((e.button === 0 || e.button === 2) && !e.altKey) {
                 e.preventDefault();
-                const [cx, cy] = translateToSVG(
-                    this.canvas.node as any as SVGSVGElement,
-                    [e.clientX, e.clientY],
-                );
+                const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
                 this.currentInteractionShape = this.canvas
-                    .circle(consts.BASE_POINT_SIZE * 2 / this.geometry.scale).center(cx, cy)
+                    .circle((consts.BASE_POINT_SIZE * 2) / this.geometry.scale)
+                    .center(cx, cy)
                     .fill('white')
                     .stroke(e.button === 0 ? 'green' : 'red')
                     .addClass('cvat_interaction_point')
@@ -150,15 +148,18 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         this.currentInteractionShape = this.canvas.rect();
         this.canvas.on('mousedown.interaction', eventListener);
-        this.currentInteractionShape.on('drawstop', (): void => {
-            this.interactionShapes.push(this.currentInteractionShape);
-            this.shapesWereUpdated = true;
+        this.currentInteractionShape
+            .on('drawstop', (): void => {
+                this.interactionShapes.push(this.currentInteractionShape);
+                this.shapesWereUpdated = true;
 
-            this.canvas.off('mousedown.interaction', eventListener);
-            this.interact({ enabled: false });
-        }).addClass('cvat_canvas_shape_drawing').attr({
-            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-        });
+                this.canvas.off('mousedown.interaction', eventListener);
+                this.interact({ enabled: false });
+            })
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            });
     }
 
     private initInteraction(): void {
@@ -192,19 +193,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     public constructor(
-        onInteraction: (
-            shapes: InteractionResult[] | null,
-            shapesUpdated?: boolean,
-            isDone?: boolean,
-        ) => void,
+        onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void,
         canvas: SVG.Container,
         geometry: Geometry,
     ) {
-        this.onInteraction = (
-            shapes: InteractionResult[] | null,
-            shapesUpdated?: boolean,
-            isDone?: boolean,
-        ): void => {
+        this.onInteraction = (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean): void => {
             this.shapesWereUpdated = false;
             onInteraction(shapes, shapesUpdated, isDone);
         };
@@ -221,10 +214,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         };
 
         this.canvas.on('mousemove.interaction', (e: MouseEvent): void => {
-            const [x, y] = translateToSVG(
-                this.canvas.node as any as SVGSVGElement,
-                [e.clientX, e.clientY],
-            );
+            const [x, y] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
             this.cursorPosition = { x, y };
             if (this.crosshair) {
                 this.crosshair.move(x, y);
@@ -232,7 +222,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         document.body.addEventListener('keyup', (e: KeyboardEvent): void => {
-            if (e.keyCode === 17 && this.shouldRaiseEvent(false)) { // 17 is ctrl
+            if (e.keyCode === 17 && this.shouldRaiseEvent(false)) {
+                // 17 is ctrl
                 this.onInteraction(this.prepareResult(), true, false);
             }
         });

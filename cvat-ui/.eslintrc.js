@@ -13,17 +13,13 @@ module.exports = {
         ecmaVersion: 6,
         project: './tsconfig.json',
     },
-    plugins: ['@typescript-eslint', 'import', 'eslint-plugin-header'],
-    ignorePatterns: ['*.svg', '*.scss'],
+    plugins: ['@typescript-eslint', 'import'],
     extends: [
         'plugin:@typescript-eslint/recommended',
         'airbnb-typescript',
         'plugin:import/errors',
         'plugin:import/warnings',
         'plugin:import/typescript',
-        'prettier',
-        'prettier/@typescript-eslint',
-        'prettier/react',
     ],
     rules: {
         '@typescript-eslint/indent': ['warn', 4],
@@ -38,12 +34,29 @@ module.exports = {
         'no-plusplus': [0],
         'lines-between-class-members': 0,
         'react/no-did-update-set-state': 0, // https://github.com/airbnb/javascript/issues/1875
-        'header/header': [2, '.header-tpl.ts'],
+        quotes: ['error', 'single'],
+        'max-len': ['error', { code: 120 }],
+        'func-names': ['warn', 'never'],
+        'operator-linebreak': ['error', 'after'],
+        'react/require-default-props': 'off',
+        'react/no-unused-prop-types': 'off',
+        'react/no-array-index-key': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+        '@typescript-eslint/ban-types': [
+            'error',
+            {
+                types: {
+                    '{}': false, // TODO: try to fix with Record<string, unknown>
+                    object: false, // TODO: try to fix with Record<string, unknown>
+                    Function: false, // TODO: try to fix somehow
+                },
+            },
+        ],
     },
     settings: {
         'import/resolver': {
-            typescript: {
-                directory: './tsconfig.json',
+            node: {
+                paths: ['src'],
             },
         },
     },

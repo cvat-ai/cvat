@@ -22,23 +22,14 @@ interface InputElementParameters {
 }
 
 function renderInputElement(parameters: InputElementParameters): JSX.Element {
-    const {
-        inputType,
-        attrID,
-        clientID,
-        values,
-        currentValue,
-        onChange,
-    } = parameters;
+    const { inputType, attrID, clientID, values, currentValue, onChange } = parameters;
 
     const renderCheckbox = (): JSX.Element => (
         <>
             <Text strong>Checkbox: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
                 <Checkbox
-                    onChange={(event: CheckboxChangeEvent): void => (
-                        onChange(event.target.checked ? 'true' : 'false')
-                    )}
+                    onChange={(event: CheckboxChangeEvent): void => onChange(event.target.checked ? 'true' : 'false')}
                     checked={currentValue === 'true'}
                 />
             </div>
@@ -52,16 +43,15 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                 <Select
                     value={currentValue}
                     style={{ width: '80%' }}
-                    onChange={(value: SelectValue) => (
-                        onChange(value as string)
-                    )}
+                    onChange={(value: SelectValue) => onChange(value as string)}
                 >
-                    {values.map((value: string): JSX.Element => (
-                        <Select.Option key={value} value={value}>
-                            {value === consts.UNDEFINED_ATTRIBUTE_VALUE
-                                ? consts.NO_BREAK_SPACE : value}
-                        </Select.Option>
-                    ))}
+                    {values.map(
+                        (value: string): JSX.Element => (
+                            <Select.Option key={value} value={value}>
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                            </Select.Option>
+                        ),
+                    )}
                 </Select>
             </div>
         </>
@@ -71,28 +61,21 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         <>
             <Text strong>Values: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
-                <Radio.Group
-                    value={currentValue}
-                    onChange={(event: RadioChangeEvent) => (
-                        onChange(event.target.value)
+                <Radio.Group value={currentValue} onChange={(event: RadioChangeEvent) => onChange(event.target.value)}>
+                    {values.map(
+                        (value: string): JSX.Element => (
+                            <Radio style={{ display: 'block' }} key={value} value={value}>
+                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                            </Radio>
+                        ),
                     )}
-                >
-                    {values.map((value: string): JSX.Element => (
-                        <Radio style={{ display: 'block' }} key={value} value={value}>
-                            {value === consts.UNDEFINED_ATTRIBUTE_VALUE
-                                ? consts.NO_BREAK_SPACE : value}
-                        </Radio>
-                    ))}
                 </Radio.Group>
             </div>
         </>
     );
 
     const handleKeydown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-        if (['ArrowDown', 'ArrowUp', 'ArrowLeft',
-            'ArrowRight', 'Tab', 'Shift', 'Control']
-            .includes(event.key)
-        ) {
+        if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab', 'Shift', 'Control'].includes(event.key)) {
             event.preventDefault();
             const copyEvent = new KeyboardEvent('keydown', event);
             window.document.dispatchEvent(copyEvent);
@@ -137,11 +120,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         element = renderText();
     }
 
-    return (
-        <div className='attribute-annotation-sidebar-attr-editor'>
-            {element}
-        </div>
-    );
+    return <div className='attribute-annotation-sidebar-attr-editor'>{element}</div>;
 }
 
 interface ListParameters {
@@ -203,8 +182,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
-        const filteredValues = values
-            .filter((value: string): boolean => value !== consts.UNDEFINED_ATTRIBUTE_VALUE);
+        const filteredValues = values.filter((value: string): boolean => value !== consts.UNDEFINED_ATTRIBUTE_VALUE);
         filteredValues.slice(0, 10).forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
             keyMap[key] = {
@@ -226,12 +204,14 @@ function renderList(parameters: ListParameters): JSX.Element | null {
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>
                 <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} allowChanges />
-                {filteredValues.map((value: string, index: number): JSX.Element => (
-                    <div key={value}>
-                        <Text strong>{`${index}:`}</Text>
-                        <Text>{` ${value}`}</Text>
-                    </div>
-                ))}
+                {filteredValues.map(
+                    (value: string, index: number): JSX.Element => (
+                        <div key={value}>
+                            <Text strong>{`${index}:`}</Text>
+                            <Text>{` ${value}`}</Text>
+                        </div>
+                    ),
+                )}
             </div>
         );
     }
@@ -266,12 +246,7 @@ interface Props {
 }
 
 function AttributeEditor(props: Props): JSX.Element {
-    const {
-        attribute,
-        currentValue,
-        onChange,
-        clientID,
-    } = props;
+    const { attribute, currentValue, onChange, clientID } = props;
     const { inputType, values, id: attrID } = attribute;
 
     return (

@@ -17,7 +17,6 @@ import notification from 'antd/lib/notification';
 
 import { Model, StringObject } from 'reducers/interfaces';
 
-
 import consts from 'consts';
 
 interface Props {
@@ -28,12 +27,7 @@ interface Props {
 }
 
 function DetectorRunner(props: Props): JSX.Element {
-    const {
-        task,
-        models,
-        withCleanup,
-        runInference,
-    } = props;
+    const { task, models, withCleanup, runInference } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
     const [mapping, setMapping] = useState<StringObject>({});
@@ -51,15 +45,11 @@ function DetectorRunner(props: Props): JSX.Element {
     const model = models.filter((_model): boolean => _model.id === modelID)[0];
     const isDetector = model && model.type === 'detector';
     const isReId = model && model.type === 'reid';
-    const buttonEnabled = model && (model.type === 'reid' || (
-        model.type === 'detector' && !!Object.keys(mapping).length
-    ));
+    const buttonEnabled =
+        model && (model.type === 'reid' || (model.type === 'detector' && !!Object.keys(mapping).length));
 
-    const modelLabels = (isDetector ? model.labels : [])
-        .filter((_label: string): boolean => !(_label in mapping));
-    const taskLabels = (isDetector && !!task
-        ? task.labels.map((label: any): string => label.name) : []
-    );
+    const modelLabels = (isDetector ? model.labels : []).filter((_label: string): boolean => !(_label in mapping));
+    const taskLabels = isDetector && !!task ? task.labels.map((label: any): string => label.name) : [];
 
     if (model && model.type !== 'reid' && !model.labels.length) {
         notification.warning({
@@ -105,16 +95,18 @@ function DetectorRunner(props: Props): JSX.Element {
                     showSearch
                     filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
                         const { children } = option.props;
-                        if (typeof (children) === 'string') {
+                        if (typeof children === 'string') {
                             return children.toLowerCase().includes(input.toLowerCase());
                         }
 
                         return false;
                     }}
                 >
-                    { labels.map((label: string): JSX.Element => (
-                        <Select.Option key={label}>{label}</Select.Option>
-                    )) }
+                    {labels.map(
+                        (label: string): JSX.Element => (
+                            <Select.Option key={label}>{label}</Select.Option>
+                        ),
+                    )}
                 </Select>
             </Tooltip>
         );
@@ -129,31 +121,31 @@ function DetectorRunner(props: Props): JSX.Element {
                         placeholder='Select a model'
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
-                            const newmodel = models
-                                .filter((_model): boolean => _model.id === _modelID)[0];
-                            const newmapping = task.labels
-                                .reduce((acc: StringObject, label: any): StringObject => {
-                                    if (newmodel.labels.includes(label.name)) {
-                                        acc[label.name] = label.name;
-                                    }
-                                    return acc;
-                                }, {});
+                            const newmodel = models.filter((_model): boolean => _model.id === _modelID)[0];
+                            const newmapping = task.labels.reduce((acc: StringObject, label: any): StringObject => {
+                                if (newmodel.labels.includes(label.name)) {
+                                    acc[label.name] = label.name;
+                                }
+                                return acc;
+                            }, {});
 
                             setMapping(newmapping);
                             setMatch({ model: null, task: null });
                             setModelID(_modelID);
                         }}
                     >
-                        {models.map((_model: Model): JSX.Element => (
-                            <Select.Option key={_model.id}>{_model.name}</Select.Option>
-                        ))}
+                        {models.map(
+                            (_model: Model): JSX.Element => (
+                                <Select.Option key={_model.id}>{_model.name}</Select.Option>
+                            ),
+                        )}
                     </Select>
                 </Col>
             </Row>
-            { isDetector && !!Object.keys(mapping).length && (
+            {isDetector &&
+                !!Object.keys(mapping).length &&
                 Object.keys(mapping).map((modelLabel: string) => {
-                    const label = task.labels
-                        .filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
+                    const label = task.labels.filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
                     const color = label ? label.color : consts.NEW_LABEL_COLOR;
                     return (
                         <Row key={modelLabel} type='flex' justify='start' align='middle'>
@@ -178,36 +170,32 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Col>
                         </Row>
                     );
-                })
-            )}
-            { isDetector && !!taskLabels.length && !!modelLabels.length && (
+                })}
+            {isDetector && !!taskLabels.length && !!modelLabels.length && (
                 <>
                     <Row type='flex' justify='start' align='middle'>
                         <Col span={10}>
-                            {renderSelector(
-                                match.model || '',
-                                'Model labels',
-                                modelLabels,
-                                (modelLabel: string) => updateMatch(modelLabel, null),
+                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) =>
+                                updateMatch(modelLabel, null),
                             )}
                         </Col>
                         <Col span={10} offset={1}>
-                            {renderSelector(
-                                match.task || '',
-                                'Task labels',
-                                taskLabels,
-                                (taskLabel: string) => updateMatch(null, taskLabel),
+                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) =>
+                                updateMatch(null, taskLabel),
                             )}
                         </Col>
                         <Col span={1} offset={1}>
-                            <Tooltip title='Specify a label mapping between model labels and task labels' mouseLeaveDelay={0}>
+                            <Tooltip
+                                title='Specify a label mapping between model labels and task labels'
+                                mouseLeaveDelay={0}
+                            >
                                 <Icon className='cvat-info-circle-icon' type='question-circle' />
                             </Tooltip>
                         </Col>
                     </Row>
                 </>
             )}
-            { isDetector && withCleanup && (
+            {isDetector && withCleanup && (
                 <div>
                     <Checkbox
                         checked={cleanup}
@@ -217,7 +205,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Checkbox>
                 </div>
             )}
-            { isReId && (
+            {isReId && (
                 <div>
                     <Row type='flex' align='middle' justify='start'>
                         <Col>
@@ -231,7 +219,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     max={1}
                                     value={threshold}
                                     onChange={(value: number | undefined) => {
-                                        if (typeof (value) === 'number') {
+                                        if (typeof value === 'number') {
                                             setThreshold(value);
                                         }
                                     }}
@@ -250,7 +238,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     min={1}
                                     value={distance}
                                     onChange={(value: number | undefined) => {
-                                        if (typeof (value) === 'number') {
+                                        if (typeof value === 'number') {
                                             setDistance(value);
                                         }
                                     }}
@@ -259,7 +247,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         </Col>
                     </Row>
                 </div>
-            ) }
+            )}
             <Row type='flex' align='middle' justify='end'>
                 <Col>
                     <Button
@@ -269,10 +257,12 @@ function DetectorRunner(props: Props): JSX.Element {
                             runInference(
                                 task,
                                 model,
-                                model.type === 'detector' ? { mapping, cleanup } : {
-                                    threshold,
-                                    max_distance: distance,
-                                },
+                                model.type === 'detector'
+                                    ? { mapping, cleanup }
+                                    : {
+                                          threshold,
+                                          max_distance: distance,
+                                      },
                             );
                         }}
                     >
@@ -284,12 +274,14 @@ function DetectorRunner(props: Props): JSX.Element {
     );
 }
 
-
-export default React.memo(DetectorRunner, (prevProps: Props, nextProps: Props): boolean => (
-    prevProps.task === nextProps.task
-        && prevProps.runInference === nextProps.runInference
-        && prevProps.models.length === nextProps.models.length
-        && nextProps.models.reduce((acc: boolean, model: Model, index: number): boolean => (
-            acc && model.id === prevProps.models[index].id
-        ), true)
-));
+export default React.memo(
+    DetectorRunner,
+    (prevProps: Props, nextProps: Props): boolean =>
+        prevProps.task === nextProps.task &&
+        prevProps.runInference === nextProps.runInference &&
+        prevProps.models.length === nextProps.models.length &&
+        nextProps.models.reduce(
+            (acc: boolean, model: Model, index: number): boolean => acc && model.id === prevProps.models[index].id,
+            true,
+        ),
+);

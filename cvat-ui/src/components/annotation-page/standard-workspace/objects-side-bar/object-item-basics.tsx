@@ -96,7 +96,9 @@ function ItemTopComponent(props: Props): JSX.Element {
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
-                <Text type='secondary' style={{ fontSize: 10 }}>{type}</Text>
+                <Text type='secondary' style={{ fontSize: 10 }}>
+                    {type}
+                </Text>
             </Col>
             <Col span={12}>
                 <Tooltip title='Change current label' mouseLeaveDelay={0}>
@@ -107,18 +109,20 @@ function ItemTopComponent(props: Props): JSX.Element {
                         showSearch
                         filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
                             const { children } = option.props;
-                            if (typeof (children) === 'string') {
+                            if (typeof children === 'string') {
                                 return children.toLowerCase().includes(input.toLowerCase());
                             }
 
                             return false;
                         }}
                     >
-                        { labels.map((label: any): JSX.Element => (
-                            <Select.Option key={label.id} value={`${label.id}`}>
-                                {label.name}
-                            </Select.Option>
-                        ))}
+                        {labels.map(
+                            (label: any): JSX.Element => (
+                                <Select.Option key={label.id} value={`${label.id}`}>
+                                    {label.name}
+                                </Select.Option>
+                            ),
+                        )}
                     </Select>
                 </Tooltip>
             </Col>

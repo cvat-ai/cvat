@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { BoundariesActionTypes, boundariesActions } from 'actions/boundaries-actions';
+import { BoundariesActionTypes, BoundariesActions } from 'actions/boundaries-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { UsersActionTypes, UsersActions } from 'actions/users-actions';
 import { UsersState } from './interfaces';
@@ -15,7 +15,7 @@ const defaultState: UsersState = {
 
 export default function (
     state: UsersState = defaultState,
-    action: UsersActions | AuthActions | boundariesActions,
+    action: UsersActions | AuthActions | BoundariesActions,
 ): UsersState {
     switch (action.type) {
         case UsersActionTypes.GET_USERS: {

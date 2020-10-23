@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { ModelsState, Model } from './interfaces';
@@ -20,10 +20,7 @@ const defaultState: ModelsState = {
     inferences: {},
 };
 
-export default function (
-    state = defaultState,
-    action: ModelsActions | AuthActions | boundariesActions,
-): ModelsState {
+export default function (state = defaultState, action: ModelsActions | AuthActions | BoundariesActions): ModelsState {
     switch (action.type) {
         case ModelsActionTypes.GET_MODELS: {
             return {
@@ -71,8 +68,7 @@ export default function (
                 return {
                     ...state,
                     inferences: Object.fromEntries(
-                        Object.entries(inferences)
-                            .filter(([key]): boolean => +key !== action.payload.taskID),
+                        Object.entries(inferences).filter(([key]): boolean => +key !== action.payload.taskID),
                     ),
                 };
             }

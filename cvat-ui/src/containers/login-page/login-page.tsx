@@ -27,7 +27,4 @@ const mapDispatchToProps: DispatchToProps = {
     onLogin: loginAsync,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(LoginPageComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(LoginPageComponent);

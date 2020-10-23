@@ -20,10 +20,7 @@ type ResetPasswordFormProps = {
 class ResetPasswordFormComponent extends React.PureComponent<ResetPasswordFormProps> {
     private handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
-        const {
-            form,
-            onSubmit,
-        } = this.props;
+        const { form, onSubmit } = this.props;
 
         form.validateFields((error, values): void => {
             if (!error) {
@@ -38,13 +35,16 @@ class ResetPasswordFormComponent extends React.PureComponent<ResetPasswordFormPr
         return (
             <Form.Item hasFeedback>
                 {form.getFieldDecorator('email', {
-                    rules: [{
-                        type: 'email',
-                        message: 'The input is not valid E-mail!',
-                    }, {
-                        required: true,
-                        message: 'Please specify an email address',
-                    }],
+                    rules: [
+                        {
+                            type: 'email',
+                            message: 'The input is not valid E-mail!',
+                        },
+                        {
+                            required: true,
+                            message: 'Please specify an email address',
+                        },
+                    ],
                 })(
                     <Input
                         autoComplete='email'

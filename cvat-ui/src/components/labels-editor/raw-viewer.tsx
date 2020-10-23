@@ -9,12 +9,7 @@ import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
-import {
-    Label,
-    Attribute,
-    validateParsedLabel,
-    idGenerator,
-} from './common';
+import { Label, Attribute, validateParsedLabel, idGenerator } from './common';
 
 type Props = FormComponentProps & {
     labels: Label[];
@@ -67,18 +62,18 @@ class RawViewer extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const { labels } = this.props;
-        const convertedLabels = labels.map((label: any): Label => (
-            {
+        const convertedLabels = labels.map(
+            (label: any): Label => ({
                 ...label,
                 id: label.id < 0 ? undefined : label.id,
-                attributes: label.attributes.map((attribute: any): Attribute => (
-                    {
+                attributes: label.attributes.map(
+                    (attribute: any): Attribute => ({
                         ...attribute,
                         id: attribute.id < 0 ? undefined : attribute.id,
-                    }
-                )),
-            }
-        ));
+                    }),
+                ),
+            }),
+        );
 
         const textLabels = JSON.stringify(convertedLabels, null, 2);
         const { form } = this.props;
@@ -88,19 +83,17 @@ class RawViewer extends React.PureComponent<Props> {
                 <Form.Item>
                     {form.getFieldDecorator('labels', {
                         initialValue: textLabels,
-                        rules: [{
-                            validator: this.validateLabels,
-                        }],
+                        rules: [
+                            {
+                                validator: this.validateLabels,
+                            },
+                        ],
                     })(<Input.TextArea rows={5} className='cvat-raw-labels-viewer' />)}
                 </Form.Item>
                 <Row type='flex' justify='start' align='middle'>
                     <Col>
                         <Tooltip title='Save labels and return' mouseLeaveDelay={0}>
-                            <Button
-                                style={{ width: '150px' }}
-                                type='primary'
-                                htmlType='submit'
-                            >
+                            <Button style={{ width: '150px' }} type='primary' htmlType='submit'>
                                 Done
                             </Button>
                         </Tooltip>
