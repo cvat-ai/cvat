@@ -277,37 +277,38 @@ Please see the [Docker documentation](https://docs.docker.com/network/proxy/) fo
 
 ```bash
 # Build and run containers with Analytics component support:
-docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
+docker-compose -f docker-compose.yml \
+  -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
 
 ### Semi-automatic and automatic annotation
 
-- You have to install `nuctl` command line tool to build and deploy serverless
-functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
-- Create `cvat` project inside nuclio dashboard where you will deploy new
-serverless functions and deploy a couple of DL models. Commands below should
-be run only after CVAT has been installed using docker-compose because it
-runs nuclio dashboard which manages all serverless functions.
+-   You have to install `nuctl` command line tool to build and deploy serverless
+    functions. Download [1.5.x release](https://github.com/nuclio/nuclio/releases).
+    It wil be used to install prepared serverless functions which can run DL models
+    to automatically annotate images on the server.
 
-```bash
-nuctl create project cvat
-```
+-   Be sure that nuclio dashboard is up and running. It manages all serverless
+    functions for automatic and semi-automatic annotation. To do that you should
+    specify docker-compose.serverless.yml in command line. See an example below:
 
-```bash
-nuctl deploy --project-name cvat \
-    --path serverless/openvino/dextr/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
-    --platform local
-```
+    ```bash
+    # Build and run containers with the serverless component support:
+    docker-compose -f docker-compose.yml \
+      -f components/serverless/docker-compose.serverless.yml up -d --build
+    ```
 
-```bash
-nuctl deploy --project-name cvat \
-    --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
-    --platform local
-```
+-   Deploy built-in serverless functions from [serverless directory](/serverless)
+    or deploy your own custom serverless functions. Use [deploy.sh](/serverless/deploy.sh)
+    script which is a wrapper for `nuctl` command. Basically you need to provide to
+    the script a directory with one or more serverless functions and all of them
+    will be deployed. Commands below install DEXTR for semi-automatic
+    segmentation and YOLOv3 to detect objects automatically.
 
-Note: see [deploy.sh](/serverless/deploy.sh) script for more examples.
+    ```bash
+    deploy.sh serverless/openvino/dextr
+    deploy.sh serverless/openvino/omz/public/yolo-v3-tf
+    ```
 
 ### Stop all containers
 
