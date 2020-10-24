@@ -1,11 +1,13 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 (() => {
     const ObjectState = require('./object-state');
     const { checkObjectType } = require('./common');
-    const { colors, Source, ObjectShape, ObjectType, AttributeType, HistoryActions } = require('./enums');
+    const {
+        colors, Source, ObjectShape, ObjectType, AttributeType, HistoryActions,
+    } = require('./enums');
 
     const { DataError, ArgumentError, ScriptingError } = require('./exceptions');
 
@@ -383,17 +385,16 @@
         }
 
         updateTimestamp(updated) {
-            const anyChanges =
-                updated.label ||
-                updated.attributes ||
-                updated.points ||
-                updated.outside ||
-                updated.occluded ||
-                updated.keyframe ||
-                updated.zOrder ||
-                updated.hidden ||
-                updated.lock ||
-                updated.pinned;
+            const anyChanges = updated.label
+                || updated.attributes
+                || updated.points
+                || updated.outside
+                || updated.occluded
+                || updated.keyframe
+                || updated.zOrder
+                || updated.hidden
+                || updated.lock
+                || updated.pinned;
 
             if (anyChanges) {
                 this.updated = Date.now();
@@ -735,7 +736,9 @@
 
         // Method is used to construct ObjectState objects
         get(frame) {
-            const { prev, next, first, last } = this.boundedKeyframes(frame);
+            const {
+                prev, next, first, last,
+            } = this.boundedKeyframes(frame);
 
             return {
                 ...this.getPosition(frame, prev, next),
@@ -890,14 +893,13 @@
                 if (!labelAttributes[attrID].mutable) {
                     redoAttributes[attrID] = attributes[attrID];
                 } else if (attributes[attrID] !== current.attributes[attrID]) {
-                    mutableAttributesUpdated =
-                        mutableAttributesUpdated ||
+                    mutableAttributesUpdated = mutableAttributesUpdated
                         // not keyframe yet
-                        !(frame in this.shapes) ||
+                        || !(frame in this.shapes)
                         // keyframe, but without this attrID
-                        !(attrID in this.shapes[frame].attributes) ||
+                        || !(attrID in this.shapes[frame].attributes)
                         // keyframe with attrID, but with another value
-                        this.shapes[frame].attributes[attrID] !== attributes[attrID];
+                        || this.shapes[frame].attributes[attrID] !== attributes[attrID];
                 }
             }
             let redoShape;
@@ -990,13 +992,13 @@
             const redoShape = wasKeyframe
                 ? { ...this.shapes[frame], points }
                 : {
-                      frame,
-                      points,
-                      zOrder: current.zOrder,
-                      outside: current.outside,
-                      occluded: current.occluded,
-                      attributes: {},
-                  };
+                    frame,
+                    points,
+                    zOrder: current.zOrder,
+                    outside: current.outside,
+                    occluded: current.occluded,
+                    attributes: {},
+                };
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1019,13 +1021,13 @@
             const redoShape = wasKeyframe
                 ? { ...this.shapes[frame], outside }
                 : {
-                      frame,
-                      outside,
-                      zOrder: current.zOrder,
-                      points: current.points,
-                      occluded: current.occluded,
-                      attributes: {},
-                  };
+                    frame,
+                    outside,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    occluded: current.occluded,
+                    attributes: {},
+                };
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1048,13 +1050,13 @@
             const redoShape = wasKeyframe
                 ? { ...this.shapes[frame], occluded }
                 : {
-                      frame,
-                      occluded,
-                      zOrder: current.zOrder,
-                      points: current.points,
-                      outside: current.outside,
-                      attributes: {},
-                  };
+                    frame,
+                    occluded,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    outside: current.outside,
+                    attributes: {},
+                };
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1077,13 +1079,13 @@
             const redoShape = wasKeyframe
                 ? { ...this.shapes[frame], zOrder }
                 : {
-                      frame,
-                      zOrder,
-                      occluded: current.occluded,
-                      points: current.points,
-                      outside: current.outside,
-                      attributes: {},
-                  };
+                    frame,
+                    zOrder,
+                    occluded: current.occluded,
+                    points: current.points,
+                    outside: current.outside,
+                    attributes: {},
+                };
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1110,14 +1112,14 @@
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = keyframe
                 ? {
-                      frame,
-                      zOrder: current.zOrder,
-                      points: current.points,
-                      outside: current.outside,
-                      occluded: current.occluded,
-                      attributes: {},
-                      source: current.source,
-                  }
+                    frame,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    outside: current.outside,
+                    occluded: current.occluded,
+                    attributes: {},
+                    source: current.source,
+                }
                 : undefined;
 
             this.source = Source.MANUAL;
@@ -1232,8 +1234,8 @@
             }
 
             throw new DataError(
-                'No one left position or right position was found. ' +
-                    `Interpolation impossible. Client ID: ${this.clientID}`,
+                'No one left position or right position was found. '
+                    + `Interpolation impossible. Client ID: ${this.clientID}`,
             );
         }
     }
@@ -1441,8 +1443,8 @@
                     // Find the length of a perpendicular
                     // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
                     distances.push(
-                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) /
-                            Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
+                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1)
+                            / Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
                     );
                 } else {
                     // The link below works for lines (which have infinit length)
@@ -1526,12 +1528,11 @@
                 lowerHull.pop();
 
                 if (
-                    upperHull.length === 1 &&
-                    lowerHull.length === 1 &&
-                    upperHull[0].x === lowerHull[0].x &&
-                    upperHull[0].y === lowerHull[0].y
-                )
-                    return upperHull;
+                    upperHull.length === 1
+                    && lowerHull.length === 1
+                    && upperHull[0].x === lowerHull[0].x
+                    && upperHull[0].y === lowerHull[0].y
+                ) return upperHull;
                 return upperHull.concat(lowerHull);
             }
 
@@ -1589,9 +1590,8 @@
                 const p2 = points[i + 1] || points[0];
 
                 // perpendicular from point to straight length
-                const distance =
-                    Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x) /
-                    Math.sqrt(Math.pow(p2.y - p1.y, 2) + Math.pow(p2.x - p1.x, 2));
+                const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x)
+                    / Math.sqrt(Math.pow(p2.y - p1.y, 2) + Math.pow(p2.x - p1.x, 2));
 
                 // check if perpendicular belongs to the straight segment
                 const a = Math.pow(p1.x - x, 2) + Math.pow(p1.y - y, 2);

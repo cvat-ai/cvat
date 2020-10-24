@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,7 +31,9 @@ function build() {
         Source,
     } = require('./enums');
 
-    const { Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError } = require('./exceptions');
+    const {
+        Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
+    } = require('./exceptions');
 
     const User = require('./user');
     const pjson = require('../package.json');

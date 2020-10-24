@@ -1,12 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 module.exports = {
     env: {
         node: true,
-        browser: true,
-        es6: true,
     },
     parserOptions: {
         parser: '@typescript-eslint/parser',

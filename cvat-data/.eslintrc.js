@@ -3,13 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 module.exports = {
-    env: {
-        node: false,
-        browser: true,
-        es6: true,
-        jquery: true,
-        qunit: true,
-    },
     parserOptions: {
         parser: 'babel-eslint',
         sourceType: 'module',
