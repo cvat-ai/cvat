@@ -11,7 +11,6 @@
     "@istanbuljs/nyc-config-babel": "^1.0.1",
     "babel-plugin-istanbul": "^6.0.0",
     "babel-register": "^6.26.0",
-    "core-js": "^3.6.5",
     "coveralls": "^3.1.0",
     "eslint": "^7.11.0",
     "eslint-config-airbnb": "^18.0.1",
@@ -20,9 +19,9 @@
     "eslint-plugin-header": "^3.1.0",
     "eslint-plugin-jest": "^24.1.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "eslint-plugin-requirejs": "^4.0.0",
     "husky": "^4.3.0",
     "lint-staged": "^10.4.2",
+    "micromatch": "^4.0.2",
     "nyc": "^15.1.0",
     "prettier": "2.1.2",
     "remark-lint-emphasis-marker": "^2.0.0",
@@ -46,7 +45,11 @@
     "coverage": "npm run instrument && npm run cp && npm run rm",
     "instrument": "nyc instrument cvat-ui cvat-ui_cov && nyc instrument cvat-canvas cvat-canvas_cov && nyc instrument cvat-data cvat-data_cov && nyc instrument cvat-core cvat-core_cov",
     "cp": "cp -r cvat-ui_cov/* cvat-ui && cp -r cvat-canvas_cov/* cvat-canvas && cp -r cvat-data_cov/* cvat-data && cp -r cvat-core_cov/* cvat-core",
-    "rm": "rm -rf cvat-ui_cov cvat-canvas_cov cvat-data_cov cvat-core_cov"
+    "rm": "rm -rf cvat-ui_cov cvat-canvas_cov cvat-data_cov cvat-core_cov",
+    "precommit:cvat-data": "cd cvat-ui && eslint --fix",
+    "precommit:cvat-core": "cd cvat-ui && eslint --fix",
+    "precommit:cvat-canvas": "cd cvat-ui && eslint --fix",
+    "precommit:cvat-ui": "cd cvat-ui && eslint --fix"
   },
   "repository": {
     "type": "git",
@@ -62,12 +65,5 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
-  },
-  "lint-staged": {
-    "*.{html,css,scss,json,yaml,yml,md}": "prettier --write",
-    "*.{js,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ]
   }
 }

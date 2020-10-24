@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -56,8 +56,8 @@
             if (!(value instanceof instance)) {
                 if (value !== undefined) {
                     throw new ArgumentError(
-                        `"${name}" is expected to be ${instance.name}, but ` +
-                            `"${value.constructor.name}" has been got`,
+                        `"${name}" is expected to be ${instance.name}, but `
+                            + `"${value.constructor.name}" has been got`,
                     );
                 }
 
