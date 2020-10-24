@@ -6,66 +6,63 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const'
+import { taskName } from '../../support/const';
 
-context('The points of the previous polygon mustn\'t appear while polygon\'s interpolation.', () => {
-
-    const issueId = '1882'
+context("The points of the previous polygon mustn't appear while polygon's interpolation.", () => {
+    const issueId = '1882';
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
         switchLabel: false,
         pointsMap: [
-            {x: 309, y: 431},
-            {x: 360, y: 500},
-            {x: 320, y: 300},
-            ],
+            { x: 309, y: 431 },
+            { x: 360, y: 500 },
+            { x: 320, y: 300 },
+        ],
         complete: true,
-        numberOfPoints: null
-    }
+        numberOfPoints: null,
+    };
     const reDrawPolygonTrack = {
         reDraw: true,
         type: 'Track',
         switchLabel: false,
         pointsMap: [
-            {x: 359, y: 431},
-            {x: 410, y: 500},
-            {x: 370, y: 300},
-            ],
+            { x: 359, y: 431 },
+            { x: 410, y: 500 },
+            { x: 370, y: 300 },
+        ],
         complete: true,
-        numberOfPoints: null
-    }
+        numberOfPoints: null,
+    };
 
     before(() => {
-        cy.openTaskJob(taskName)
-    })
+        cy.openTaskJob(taskName);
+    });
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create a polygon', () => {
-            cy.createPolygon(createPolygonTrack)
-            cy.get('#cvat-objects-sidebar-state-item-1')
-            .should('contain', '1').and('contain', 'POLYGON TRACK')
-        })
+            cy.createPolygon(createPolygonTrack);
+            cy.get('#cvat-objects-sidebar-state-item-1').should('contain', '1').and('contain', 'POLYGON TRACK');
+        });
         it('Redraw the polygon', () => {
             cy.get('#cvat_canvas_shape_1')
-            .trigger('mousemove', {force: true})
-            .trigger('keydown', {key: 'n', shiftKey: true})
-            .trigger('keyup', {force: true}, {key: 'n', shiftKey: true})
-            cy.createPolygon(reDrawPolygonTrack)
-        })
+                .trigger('mousemove', { force: true })
+                .trigger('keydown', { key: 'n', shiftKey: true })
+                .trigger('keyup', { force: true }, { key: 'n', shiftKey: true });
+            cy.createPolygon(reDrawPolygonTrack);
+        });
         it('Activate auto bordering mode', () => {
-            cy.openSettings()
+            cy.openSettings();
             cy.get('.ant-modal-content').within(() => {
-                cy.contains('Workspace').click()
+                cy.contains('Workspace').click();
                 cy.get('.cvat-workspace-settings-autoborders').within(() => {
-                    cy.get('[type="checkbox"]').check()
-                })
-            })
-            cy.closeSettings()
-        })
+                    cy.get('[type="checkbox"]').check();
+                });
+            });
+            cy.closeSettings();
+        });
         it('Old points invisible', () => {
-            cy.get('.cvat_canvas_autoborder_point')
-            .should('not.exist')
-        })
-    })
-})
+            cy.get('.cvat_canvas_autoborder_point').should('not.exist');
+        });
+    });
+});
