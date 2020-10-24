@@ -81,12 +81,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function WorkspaceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <WorkspaceSettingsComponent {...props} />
-    );
+    return <WorkspaceSettingsComponent {...props} />;
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(WorkspaceSettingsContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(WorkspaceSettingsContainer);

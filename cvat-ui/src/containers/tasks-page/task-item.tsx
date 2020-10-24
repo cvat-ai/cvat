@@ -4,11 +4,7 @@
 
 import { connect } from 'react-redux';
 
-import {
-    TasksQuery,
-    CombinedState,
-    ActiveInference,
-} from 'reducers/interfaces';
+import { TasksQuery, CombinedState, ActiveInference } from 'reducers/interfaces';
 
 import TaskItemComponent from 'components/tasks-page/task-item';
 
@@ -58,7 +54,4 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     };
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(TaskItemComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(TaskItemComponent);

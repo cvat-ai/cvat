@@ -35,7 +35,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     };
 }
 
-
 function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
         onTaskUpdate(taskInstance: any): void {
@@ -47,16 +46,8 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     };
 }
 
-
 function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
-    const {
-        task,
-        installedGit,
-        activeInference,
-        registeredUsers,
-        cancelAutoAnnotation,
-        onTaskUpdate,
-    } = props;
+    const { task, installedGit, activeInference, registeredUsers, cancelAutoAnnotation, onTaskUpdate } = props;
 
     return (
         <DetailsComponent
@@ -71,7 +62,4 @@ function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JS
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(TaskPageContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(TaskPageContainer);

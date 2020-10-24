@@ -1,33 +1,32 @@
-/*
-* Copyright (C) 2019-2020 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 (() => {
     /**
-        * Share files types
-        * @enum {string}
-        * @name ShareFileType
-        * @memberof module:API.cvat.enums
-        * @property {string} DIR 'DIR'
-        * @property {string} REG 'REG'
-        * @readonly
-    */
+     * Share files types
+     * @enum {string}
+     * @name ShareFileType
+     * @memberof module:API.cvat.enums
+     * @property {string} DIR 'DIR'
+     * @property {string} REG 'REG'
+     * @readonly
+     */
     const ShareFileType = Object.freeze({
         DIR: 'DIR',
         REG: 'REG',
     });
 
     /**
-        * Task statuses
-        * @enum {string}
-        * @name TaskStatus
-        * @memberof module:API.cvat.enums
-        * @property {string} ANNOTATION 'annotation'
-        * @property {string} VALIDATION 'validation'
-        * @property {string} COMPLETED 'completed'
-        * @readonly
-    */
+     * Task statuses
+     * @enum {string}
+     * @name TaskStatus
+     * @memberof module:API.cvat.enums
+     * @property {string} ANNOTATION 'annotation'
+     * @property {string} VALIDATION 'validation'
+     * @property {string} COMPLETED 'completed'
+     * @readonly
+     */
     const TaskStatus = Object.freeze({
         ANNOTATION: 'annotation',
         VALIDATION: 'validation',
@@ -35,17 +34,17 @@
     });
 
     /**
-        * List of RQ statuses
-        * @enum {string}
-        * @name RQStatus
-        * @memberof module:API.cvat.enums
-        * @property {string} QUEUED 'queued'
-        * @property {string} STARTED 'started'
-        * @property {string} FINISHED 'finished'
-        * @property {string} FAILED 'failed'
-        * @property {string} UNKNOWN 'unknown'
-        * @readonly
-    */
+     * List of RQ statuses
+     * @enum {string}
+     * @name RQStatus
+     * @memberof module:API.cvat.enums
+     * @property {string} QUEUED 'queued'
+     * @property {string} STARTED 'started'
+     * @property {string} FINISHED 'finished'
+     * @property {string} FAILED 'failed'
+     * @property {string} UNKNOWN 'unknown'
+     * @readonly
+     */
     const RQStatus = Object.freeze({
         QUEUED: 'queued',
         STARTED: 'started',
@@ -55,31 +54,31 @@
     });
 
     /**
-        * Task modes
-        * @enum {string}
-        * @name TaskMode
-        * @memberof module:API.cvat.enums
-        * @property {string} ANNOTATION 'annotation'
-        * @property {string} INTERPOLATION 'interpolation'
-        * @readonly
-    */
+     * Task modes
+     * @enum {string}
+     * @name TaskMode
+     * @memberof module:API.cvat.enums
+     * @property {string} ANNOTATION 'annotation'
+     * @property {string} INTERPOLATION 'interpolation'
+     * @readonly
+     */
     const TaskMode = Object.freeze({
         ANNOTATION: 'annotation',
         INTERPOLATION: 'interpolation',
     });
 
     /**
-        * Attribute types
-        * @enum {string}
-        * @name AttributeType
-        * @memberof module:API.cvat.enums
-        * @property {string} CHECKBOX 'checkbox'
-        * @property {string} SELECT 'select'
-        * @property {string} RADIO 'radio'
-        * @property {string} NUMBER 'number'
-        * @property {string} TEXT 'text'
-        * @readonly
-    */
+     * Attribute types
+     * @enum {string}
+     * @name AttributeType
+     * @memberof module:API.cvat.enums
+     * @property {string} CHECKBOX 'checkbox'
+     * @property {string} SELECT 'select'
+     * @property {string} RADIO 'radio'
+     * @property {string} NUMBER 'number'
+     * @property {string} TEXT 'text'
+     * @readonly
+     */
     const AttributeType = Object.freeze({
         CHECKBOX: 'checkbox',
         RADIO: 'radio',
@@ -89,15 +88,15 @@
     });
 
     /**
-        * Object types
-        * @enum {string}
-        * @name ObjectType
-        * @memberof module:API.cvat.enums
-        * @property {string} TAG 'tag'
-        * @property {string} SHAPE 'shape'
-        * @property {string} TRACK 'track'
-        * @readonly
-    */
+     * Object types
+     * @enum {string}
+     * @name ObjectType
+     * @memberof module:API.cvat.enums
+     * @property {string} TAG 'tag'
+     * @property {string} SHAPE 'shape'
+     * @property {string} TRACK 'track'
+     * @readonly
+     */
     const ObjectType = Object.freeze({
         TAG: 'tag',
         SHAPE: 'shape',
@@ -105,17 +104,17 @@
     });
 
     /**
-        * Object shapes
-        * @enum {string}
-        * @name ObjectShape
-        * @memberof module:API.cvat.enums
-        * @property {string} RECTANGLE 'rectangle'
-        * @property {string} POLYGON 'polygon'
-        * @property {string} POLYLINE 'polyline'
-        * @property {string} POINTS 'points'
-        * @property {string} CUBOID 'cuboid'
-        * @readonly
-    */
+     * Object shapes
+     * @enum {string}
+     * @name ObjectShape
+     * @memberof module:API.cvat.enums
+     * @property {string} RECTANGLE 'rectangle'
+     * @property {string} POLYGON 'polygon'
+     * @property {string} POLYLINE 'polyline'
+     * @property {string} POINTS 'points'
+     * @property {string} CUBOID 'cuboid'
+     * @readonly
+     */
     const ObjectShape = Object.freeze({
         RECTANGLE: 'rectangle',
         POLYGON: 'polygon',
@@ -125,14 +124,14 @@
     });
 
     /**
-        * Annotation type
-        * @enum {string}
-        * @name Source
-        * @memberof module:API.cvat.enums
-        * @property {string} MANUAL 'manual'
-        * @property {string} AUTO 'auto'
-        * @readonly
-    */
+     * Annotation type
+     * @enum {string}
+     * @name Source
+     * @memberof module:API.cvat.enums
+     * @property {string} MANUAL 'manual'
+     * @property {string} AUTO 'auto'
+     * @readonly
+     */
     const Source = Object.freeze({
         MANUAL: 'manual',
         AUTO: 'auto',
@@ -211,27 +210,27 @@
     });
 
     /**
-        * Types of actions with annotations
-        * @enum {string}
-        * @name HistoryActions
-        * @memberof module:API.cvat.enums
-        * @property {string} CHANGED_LABEL Changed label
-        * @property {string} CHANGED_ATTRIBUTES Changed attributes
-        * @property {string} CHANGED_POINTS Changed points
-        * @property {string} CHANGED_OUTSIDE Changed outside
-        * @property {string} CHANGED_OCCLUDED Changed occluded
-        * @property {string} CHANGED_ZORDER Changed z-order
-        * @property {string} CHANGED_LOCK Changed lock
-        * @property {string} CHANGED_COLOR Changed color
-        * @property {string} CHANGED_HIDDEN Changed hidden
-        * @property {string} CHANGED_SOURCE Changed source
-        * @property {string} MERGED_OBJECTS Merged objects
-        * @property {string} SPLITTED_TRACK Splitted track
-        * @property {string} GROUPED_OBJECTS Grouped objects
-        * @property {string} CREATED_OBJECTS Created objects
-        * @property {string} REMOVED_OBJECT Removed object
-        * @readonly
-    */
+     * Types of actions with annotations
+     * @enum {string}
+     * @name HistoryActions
+     * @memberof module:API.cvat.enums
+     * @property {string} CHANGED_LABEL Changed label
+     * @property {string} CHANGED_ATTRIBUTES Changed attributes
+     * @property {string} CHANGED_POINTS Changed points
+     * @property {string} CHANGED_OUTSIDE Changed outside
+     * @property {string} CHANGED_OCCLUDED Changed occluded
+     * @property {string} CHANGED_ZORDER Changed z-order
+     * @property {string} CHANGED_LOCK Changed lock
+     * @property {string} CHANGED_COLOR Changed color
+     * @property {string} CHANGED_HIDDEN Changed hidden
+     * @property {string} CHANGED_SOURCE Changed source
+     * @property {string} MERGED_OBJECTS Merged objects
+     * @property {string} SPLITTED_TRACK Splitted track
+     * @property {string} GROUPED_OBJECTS Grouped objects
+     * @property {string} CREATED_OBJECTS Created objects
+     * @property {string} REMOVED_OBJECT Removed object
+     * @readonly
+     */
     const HistoryActions = Object.freeze({
         CHANGED_LABEL: 'Changed label',
         CHANGED_ATTRIBUTES: 'Changed attributes',
@@ -265,18 +264,43 @@
     };
 
     /**
-        * Array of hex colors
-        * @name colors
-        * @memberof module:API.cvat.enums
-        * @type {string[]}
-        * @readonly
-    */
+     * Array of hex colors
+     * @name colors
+     * @memberof module:API.cvat.enums
+     * @type {string[]}
+     * @readonly
+     */
     const colors = [
-        '#33ddff', '#fa3253', '#34d1b7', '#ff007c', '#ff6037', '#ddff33',
-        '#24b353', '#b83df5', '#66ff66', '#32b7fa', '#ffcc33', '#83e070',
-        '#fafa37', '#5986b3', '#8c78f0', '#ff6a4d', '#f078f0', '#2a7dd1',
-        '#b25050', '#cc3366', '#cc9933', '#aaf0d1', '#ff00cc', '#3df53d',
-        '#fa32b7', '#fa7dbb', '#ff355e', '#f59331', '#3d3df5', '#733380',
+        '#33ddff',
+        '#fa3253',
+        '#34d1b7',
+        '#ff007c',
+        '#ff6037',
+        '#ddff33',
+        '#24b353',
+        '#b83df5',
+        '#66ff66',
+        '#32b7fa',
+        '#ffcc33',
+        '#83e070',
+        '#fafa37',
+        '#5986b3',
+        '#8c78f0',
+        '#ff6a4d',
+        '#f078f0',
+        '#2a7dd1',
+        '#b25050',
+        '#cc3366',
+        '#cc9933',
+        '#aaf0d1',
+        '#ff00cc',
+        '#3df53d',
+        '#fa32b7',
+        '#fa7dbb',
+        '#ff355e',
+        '#f59331',
+        '#3d3df5',
+        '#733380',
     ];
 
     module.exports = {

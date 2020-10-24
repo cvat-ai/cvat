@@ -91,7 +91,7 @@ metadata:
 
 spec:
   description: Faster RCNN from Tensorflow Object Detection API
-  runtime: "python:3.6"
+  runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
 
@@ -116,11 +116,10 @@ spec:
         - kind: RUN
           value: pip install pillow pyyaml
 
-
   triggers:
     myHttpTrigger:
       maxWorkers: 2
-      kind: "http"
+      kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB

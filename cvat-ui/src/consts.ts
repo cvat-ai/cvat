@@ -10,9 +10,12 @@ const GITTER_URL = 'https://gitter.im/opencv-cvat';
 const GITTER_PUBLIC_URL = 'https://gitter.im/opencv-cvat/public';
 const FORUM_URL = 'https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit';
 const GITHUB_URL = 'https://github.com/opencv/cvat';
-const GITHUB_IMAGE_URL = 'https://raw.githubusercontent.com/opencv/cvat/develop/cvat/apps/documentation/static/documentation/images/cvat.jpg';
-const SHARE_MOUNT_GUIDE_URL = 'https://github.com/opencv/cvat/blob/master/cvat/apps/documentation/installation.md#share-path';
-const NUCLIO_GUIDE = 'https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/installation.md#semi-automatic-and-automatic-annotation';
+const GITHUB_IMAGE_URL =
+    'https://raw.githubusercontent.com/opencv/cvat/develop/cvat/apps/documentation/static/documentation/images/cvat.jpg';
+const SHARE_MOUNT_GUIDE_URL =
+    'https://github.com/opencv/cvat/blob/master/cvat/apps/documentation/installation.md#share-path';
+const NUCLIO_GUIDE =
+    'https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/installation.md#semi-automatic-and-automatic-annotation';
 const CANVAS_BACKGROUND_COLORS = ['#ffffff', '#f1f1f1', '#e5e5e5', '#d8d8d8', '#CCCCCC', '#B3B3B3', '#999999'];
 const NEW_LABEL_COLOR = '#b3b3b3';
 

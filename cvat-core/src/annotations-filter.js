@@ -1,19 +1,10 @@
-/*
-* Copyright (C) 2020 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
-
-/* global
-    require:false
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 const jsonpath = require('jsonpath');
-const {
-    AttributeType,
-    ObjectType,
-} = require('./enums');
+const { AttributeType, ObjectType } = require('./enums');
 const { ArgumentError } = require('./exceptions');
-
 
 class AnnotationsFilter {
     constructor() {
@@ -47,8 +38,7 @@ class AnnotationsFilter {
 
             if (operators.includes(expression[i])) {
                 if (!nestedCounter) {
-                    const subexpression = expression
-                        .substr(start + 1, i - start - 1).trim();
+                    const subexpression = expression.substr(start + 1, i - start - 1).trim();
                     splitted.push(subexpression);
                     splitted.push(expression[i]);
                     start = i;
@@ -56,18 +46,14 @@ class AnnotationsFilter {
             }
         }
 
-        const subexpression = expression
-            .substr(start + 1).trim();
+        const subexpression = expression.substr(start + 1).trim();
         splitted.push(subexpression);
 
         splitted.forEach((internalExpression) => {
             if (internalExpression === '|' || internalExpression === '&') {
                 container.push(internalExpression);
             } else {
-                this._groupByBrackets(
-                    container,
-                    internalExpression,
-                );
+                this._groupByBrackets(container, internalExpression);
             }
         });
     }
@@ -103,12 +89,8 @@ class AnnotationsFilter {
                     endBracket = i;
 
                     const subcontainer = [];
-                    const subexpression = expression
-                        .substr(startBracket + 1, endBracket - 1 - startBracket);
-                    this._splitWithOperator(
-                        subcontainer,
-                        subexpression,
-                    );
+                    const subexpression = expression.substr(startBracket + 1, endBracket - 1 - startBracket);
+                    this._splitWithOperator(subcontainer, subexpression);
 
                     container.push(subcontainer);
 
@@ -136,7 +118,7 @@ class AnnotationsFilter {
         for (const group of groups) {
             if (Array.isArray(group)) {
                 expression += `(${this._join(group)})`;
-            } else if (typeof (group) === 'string') {
+            } else if (typeof group === 'string') {
                 // it can be operator or expression
                 if (group === '|' || group === '&') {
                     expression += group;
@@ -158,11 +140,10 @@ class AnnotationsFilter {
 
     _convertObjects(statesData) {
         const objects = statesData.map((state) => {
-            const labelAttributes = state.label.attributes
-                .reduce((acc, attr) => {
-                    acc[attr.id] = attr;
-                    return acc;
-                }, {});
+            const labelAttributes = state.label.attributes.reduce((acc, attr) => {
+                acc[attr.id] = attr;
+                return acc;
+            }, {});
 
             let xtl = Number.MAX_SAFE_INTEGER;
             let xbr = Number.MIN_SAFE_INTEGER;
@@ -172,10 +153,12 @@ class AnnotationsFilter {
 
             if (state.objectType !== ObjectType.TAG) {
                 state.points.forEach((coord, idx) => {
-                    if (idx % 2) { // y
+                    if (idx % 2) {
+                        // y
                         ytl = Math.min(ytl, coord);
                         ybr = Math.max(ybr, coord);
-                    } else { // x
+                    } else {
+                        // x
                         xtl = Math.min(xtl, coord);
                         xbr = Math.max(xbr, coord);
                     }
@@ -216,7 +199,7 @@ class AnnotationsFilter {
 
     toJSONQuery(filters) {
         try {
-            if (!Array.isArray(filters) || filters.some((value) => typeof (value) !== 'string')) {
+            if (!Array.isArray(filters) || filters.some((value) => typeof value !== 'string')) {
                 throw Error('Argument must be an array of strings');
             }
 
@@ -225,7 +208,10 @@ class AnnotationsFilter {
             }
 
             const groups = [];
-            const expression = filters.map((filter) => `(${filter})`).join('|').replace(/\\"/g, '`');
+            const expression = filters
+                .map((filter) => `(${filter})`)
+                .join('|')
+                .replace(/\\"/g, '`');
             this._splitWithOperator(groups, expression);
             return [groups, `$.objects[?(${this._join(groups)})].clientID`];
         } catch (error) {

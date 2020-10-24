@@ -21,10 +21,7 @@ type LoginFormProps = {
 class LoginFormComponent extends React.PureComponent<LoginFormProps> {
     private handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
-        const {
-            form,
-            onSubmit,
-        } = this.props;
+        const { form, onSubmit } = this.props;
 
         form.validateFields((error, values): void => {
             if (!error) {
@@ -40,10 +37,12 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
         return (
             <Form.Item hasFeedback>
                 {getFieldDecorator('username', {
-                    rules: [{
-                        required: true,
-                        message: 'Please specify a username',
-                    }],
+                    rules: [
+                        {
+                            required: true,
+                            message: 'Please specify a username',
+                        },
+                    ],
                 })(
                     <Input
                         autoComplete='username'
@@ -62,10 +61,12 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
         return (
             <Form.Item hasFeedback>
                 {getFieldDecorator('password', {
-                    rules: [{
-                        required: true,
-                        message: 'Please specify a password',
-                    }],
+                    rules: [
+                        {
+                            required: true,
+                            message: 'Please specify a password',
+                        },
+                    ],
                 })(
                     <Input
                         autoComplete='current-password'

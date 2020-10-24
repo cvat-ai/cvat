@@ -12,18 +12,15 @@ interface Props {
 }
 
 export default function LabelsListComponent(props: Props): JSX.Element {
-    const {
-        listHeight,
-        labelIDs,
-    } = props;
+    const { listHeight, labelIDs } = props;
 
     return (
         <div style={{ height: listHeight }} className='cvat-objects-sidebar-labels-list'>
-            {
-                labelIDs.map((labelID: number): JSX.Element => (
+            {labelIDs.map(
+                (labelID: number): JSX.Element => (
                     <LabelItemContainer key={labelID} labelID={labelID} />
-                ))
-            }
+                ),
+            )}
         </div>
     );
 }

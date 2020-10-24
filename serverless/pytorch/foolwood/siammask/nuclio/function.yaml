@@ -9,7 +9,7 @@ metadata:
 
 spec:
   description: Fast Online Object Tracking and Segmentation
-  runtime: "python:3.6"
+  runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -22,29 +22,29 @@ spec:
 
     directives:
       preCopy:
-      - kind: WORKDIR
-        value: /opt/nuclio
-      - kind: RUN
-        value: conda create -y -n siammask python=3.6
-      - kind: SHELL
-        value: '["conda", "run", "-n", "siammask", "/bin/bash", "-c"]'
-      - kind: RUN
-        value: git clone https://github.com/foolwood/SiamMask.git
-      - kind: RUN
-        value: pip install -r SiamMask/requirements.txt jsonpickle
-      - kind: RUN
-        value: conda install -y gcc_linux-64
-      - kind: RUN
-        value: cd SiamMask && bash make.sh && cd -
-      - kind: RUN
-        value: wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth
-      - kind: ENTRYPOINT
-        value: '["conda", "run", "-n", "siammask"]'
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: conda create -y -n siammask python=3.6
+        - kind: SHELL
+          value: '["conda", "run", "-n", "siammask", "/bin/bash", "-c"]'
+        - kind: RUN
+          value: git clone https://github.com/foolwood/SiamMask.git
+        - kind: RUN
+          value: pip install -r SiamMask/requirements.txt jsonpickle
+        - kind: RUN
+          value: conda install -y gcc_linux-64
+        - kind: RUN
+          value: cd SiamMask && bash make.sh && cd -
+        - kind: RUN
+          value: wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth
+        - kind: ENTRYPOINT
+          value: '["conda", "run", "-n", "siammask"]'
 
   triggers:
     myHttpTrigger:
       maxWorkers: 2
-      kind: "http"
+      kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB

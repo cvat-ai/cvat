@@ -72,10 +72,7 @@ class CanvasImpl implements Canvas {
     }
 
     public fitCanvas(): void {
-        this.model.fitCanvas(
-            this.view.html().clientWidth,
-            this.view.html().clientHeight,
-        );
+        this.model.fitCanvas(this.view.html().clientWidth, this.view.html().clientHeight);
     }
 
     public bitmap(enable: boolean): void {

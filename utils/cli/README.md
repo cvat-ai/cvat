@@ -1,4 +1,5 @@
 # Command line interface (CLI)
+
 **Description**
 A simple command line interface for working with CVAT tasks. At the moment it
 implements a basic feature set but may serve as the starting point for a more
@@ -13,6 +14,7 @@ Overview of functionality:
 - Dump annotations (supports all formats via format string)
 
 **Usage**
+
 ```bash
 usage: cli.py [-h] [--auth USER:[PASS]] [--server-host SERVER_HOST]
               [--server-port SERVER_PORT] [--debug]
@@ -35,12 +37,14 @@ optional arguments:
                         using https connection (default: False)
   --debug               show debug output
 ```
+
 **Examples**
+
 - List all tasks
-`cli.py ls`
+  `cli.py ls`
 - Create a task
-`cli.py create "new task" --labels labels.json local file1.jpg file2.jpg`
+  `cli.py create "new task" --labels labels.json local file1.jpg file2.jpg`
 - Delete some tasks
-`cli.py delete 100 101 102`
+  `cli.py delete 100 101 102`
 - Dump annotations
-`cli.py dump --format "CVAT for images 1.1" 103 output.xml`
+  `cli.py dump --format "CVAT for images 1.1" 103 output.xml`

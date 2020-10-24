@@ -43,7 +43,7 @@ export interface ActiveElement {
 
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
-    EXTREME_POINTS = 'By 4 points'
+    EXTREME_POINTS = 'By 4 points',
 }
 
 export enum CuboidDrawingMethod {
@@ -280,23 +280,23 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public zoom(x: number, y: number, direction: number): void {
         const oldScale: number = this.data.scale;
-        const newScale: number = direction > 0 ? oldScale * 6 / 5 : oldScale * 5 / 6;
+        const newScale: number = direction > 0 ? (oldScale * 6) / 5 : (oldScale * 5) / 6;
         this.data.scale = Math.min(Math.max(newScale, FrameZoom.MIN), FrameZoom.MAX);
 
         const { angle } = this.data;
 
-        const mutiplier = Math.sin(angle * Math.PI / 180) + Math.cos(angle * Math.PI / 180);
+        const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
-            this.data.top += mutiplier * ((x - this.data.imageSize.width / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.left -= mutiplier * ((y - this.data.imageSize.height / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.top +=
+                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.left -=
+                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
         } else {
-            this.data.left += mutiplier * ((x - this.data.imageSize.width / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.top += mutiplier * ((y - this.data.imageSize.height / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.left +=
+                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.top +=
+                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
@@ -312,10 +312,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.canvasSize.height = height;
         this.data.canvasSize.width = width;
 
-        this.data.imageOffset = Math.floor(Math.max(
-            this.data.canvasSize.height / FrameZoom.MIN,
-            this.data.canvasSize.width / FrameZoom.MIN,
-        ));
+        this.data.imageOffset = Math.floor(
+            Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
+        );
 
         this.notify(UpdateReasons.FITTED_CANVAS);
         this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -367,36 +366,35 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.imageID = frameData.number;
-        frameData.data(
-            (): void => {
+        frameData
+            .data((): void => {
                 this.data.image = null;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
-            },
-        ).then((data: Image): void => {
-            if (frameData.number !== this.data.imageID) {
-                // already another image
-                return;
-            }
+            })
+            .then((data: Image): void => {
+                if (frameData.number !== this.data.imageID) {
+                    // already another image
+                    return;
+                }
 
-            this.data.imageSize = {
-                height: (frameData.height as number),
-                width: (frameData.width as number),
-            };
+                this.data.imageSize = {
+                    height: frameData.height as number,
+                    width: frameData.width as number,
+                };
 
-            this.data.image = data;
-            this.notify(UpdateReasons.IMAGE_CHANGED);
-            this.data.zLayer = zLayer;
-            this.data.objects = objectStates;
-            this.notify(UpdateReasons.OBJECTS_UPDATED);
-        }).catch((exception: any): void => {
-            throw exception;
-        });
+                this.data.image = data;
+                this.notify(UpdateReasons.IMAGE_CHANGED);
+                this.data.zLayer = zLayer;
+                this.data.objects = objectStates;
+                this.notify(UpdateReasons.OBJECTS_UPDATED);
+            })
+            .catch((exception: any): void => {
+                throw exception;
+            });
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
-        if (this.data.activeElement.clientID === clientID
-            && this.data.activeElement.attributeID === attributeID
-        ) {
+        if (this.data.activeElement.clientID === clientID && this.data.activeElement.attributeID === attributeID) {
             return;
         }
 
@@ -404,9 +402,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (typeof (clientID) === 'number') {
-            const [state] = this.objects
-                .filter((_state: any): boolean => _state.clientID === clientID);
+        if (typeof clientID === 'number') {
+            const [state] = this.objects.filter((_state: any): boolean => _state.clientID === clientID);
             if (!state || state.objectType === 'tag') {
                 return;
             }
@@ -422,7 +419,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public rotate(rotationAngle: number): void {
         if (this.data.angle !== rotationAngle) {
-            this.data.angle = (360 + Math.floor((rotationAngle) / 90) * 90) % 360;
+            this.data.angle = (360 + Math.floor(rotationAngle / 90) * 90) % 360;
             this.fit();
         }
     }
@@ -452,13 +449,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             );
         }
 
-        this.data.scale = Math.min(
-            Math.max(this.data.scale, FrameZoom.MIN),
-            FrameZoom.MAX,
-        );
+        this.data.scale = Math.min(Math.max(this.data.scale, FrameZoom.MIN), FrameZoom.MAX);
 
-        this.data.top = (this.data.canvasSize.height / 2 - this.data.imageSize.height / 2);
-        this.data.left = (this.data.canvasSize.width / 2 - this.data.imageSize.width / 2);
+        this.data.top = this.data.canvasSize.height / 2 - this.data.imageSize.height / 2;
+        this.data.left = this.data.canvasSize.width / 2 - this.data.imageSize.width / 2;
 
         this.notify(UpdateReasons.IMAGE_FITTED);
     }
@@ -482,7 +476,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw new Error('Drawing has been already started');
             } else if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
-            } else if (typeof (drawData.numberOfPoints) !== 'undefined') {
+            } else if (typeof drawData.numberOfPoints !== 'undefined') {
                 if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
                     throw new Error('A polygon consists of at least 3 points');
                 } else if (drawData.shapeType === 'polyline' && drawData.numberOfPoints < 2) {
@@ -491,10 +485,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
         }
 
-        if (typeof (drawData.redraw) === 'number') {
+        if (typeof drawData.redraw === 'number') {
             const clientID = drawData.redraw;
-            const [state] = this.data.objects
-                .filter((_state: any): boolean => _state.clientID === clientID);
+            const [state] = this.data.objects.filter((_state: any): boolean => _state.clientID === clientID);
 
             if (state) {
                 this.data.drawData = { ...drawData };
@@ -526,7 +519,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.interactionData = interactionData;
-        if (typeof (this.data.interactionData.crosshair) !== 'boolean') {
+        if (typeof this.data.interactionData.crosshair !== 'boolean') {
             this.data.interactionData.crosshair = true;
         }
 
@@ -591,18 +584,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public configure(configuration: Configuration): void {
-        if (typeof (configuration.displayAllText) !== 'undefined') {
+        if (typeof configuration.displayAllText !== 'undefined') {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
-        if (typeof (configuration.showProjections) !== 'undefined') {
+        if (typeof configuration.showProjections !== 'undefined') {
             this.data.configuration.showProjections = configuration.showProjections;
         }
-        if (typeof (configuration.autoborders) !== 'undefined') {
+        if (typeof configuration.autoborders !== 'undefined') {
             this.data.configuration.autoborders = configuration.autoborders;
         }
 
-        if (typeof (configuration.undefinedAttrValue) !== 'undefined') {
+        if (typeof configuration.undefinedAttrValue !== 'undefined') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
         }
 
@@ -610,8 +603,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
-            || (this.data.mode === Mode.DRAW && typeof (this.data.drawData.redraw) === 'number');
+        const isUnable =
+            [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
+            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }
@@ -647,10 +641,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.imageOffset = geometry.offset;
         this.data.scale = geometry.scale;
 
-        this.data.imageOffset = Math.floor(Math.max(
-            this.data.canvasSize.height / FrameZoom.MIN,
-            this.data.canvasSize.width / FrameZoom.MIN,
-        ));
+        this.data.imageOffset = Math.floor(
+            Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
+        );
     }
 
     public get zLayer(): number | null {
@@ -667,8 +660,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get objects(): any[] {
         if (this.data.zLayer !== null) {
-            return this.data.objects
-                .filter((object: any): boolean => object.zOrder <= this.data.zLayer);
+            return this.data.objects.filter((object: any): boolean => object.zOrder <= this.data.zLayer);
         }
 
         return this.data.objects;

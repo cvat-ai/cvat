@@ -2,14 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { BoundariesActionTypes, boundariesActions } from 'actions/boundaries-actions';
+import { BoundariesActionTypes, BoundariesActions } from 'actions/boundaries-actions';
 import { ShareActionTypes, ShareActions } from 'actions/share-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import {
-    ShareState,
-    ShareFileInfo,
-    ShareItem,
-} from './interfaces';
+import { ShareState, ShareFileInfo, ShareItem } from './interfaces';
 
 const defaultState: ShareState = {
     root: {
@@ -21,7 +17,7 @@ const defaultState: ShareState = {
 
 export default function (
     state: ShareState = defaultState,
-    action: ShareActions | AuthActions | boundariesActions,
+    action: ShareActions | AuthActions | BoundariesActions,
 ): ShareState {
     switch (action.type) {
         case ShareActionTypes.LOAD_SHARE_DATA_SUCCESS: {
@@ -32,18 +28,17 @@ export default function (
             let dir = state.root;
             for (const dirName of directory.split('/')) {
                 if (dirName) {
-                    [dir] = dir.children.filter(
-                        (child): boolean => child.name === dirName,
-                    );
+                    [dir] = dir.children.filter((child): boolean => child.name === dirName);
                 }
             }
 
             // Update its children
-            dir.children = (values as ShareFileInfo[])
-                .map((value): ShareItem => ({
+            dir.children = (values as ShareFileInfo[]).map(
+                (value): ShareItem => ({
                     ...value,
                     children: [],
-                }));
+                }),
+            );
 
             return {
                 ...state,

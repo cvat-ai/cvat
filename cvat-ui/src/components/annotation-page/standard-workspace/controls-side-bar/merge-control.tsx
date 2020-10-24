@@ -18,28 +18,25 @@ interface Props {
 }
 
 function MergeControl(props: Props): JSX.Element {
-    const {
-        switchMergeShortcut,
-        activeControl,
-        canvasInstance,
-        mergeObjects,
-    } = props;
+    const { switchMergeShortcut, activeControl, canvasInstance, mergeObjects } = props;
 
-    const dynamicIconProps = activeControl === ActiveControl.MERGE
-        ? {
-            className: 'cvat-merge-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.merge({ enabled: false });
-                mergeObjects(false);
-            },
-        } : {
-            className: 'cvat-merge-control',
-            onClick: (): void => {
-                canvasInstance.cancel();
-                canvasInstance.merge({ enabled: true });
-                mergeObjects(true);
-            },
-        };
+    const dynamicIconProps =
+        activeControl === ActiveControl.MERGE
+            ? {
+                  className: 'cvat-merge-control cvat-active-canvas-control',
+                  onClick: (): void => {
+                      canvasInstance.merge({ enabled: false });
+                      mergeObjects(false);
+                  },
+              }
+            : {
+                  className: 'cvat-merge-control',
+                  onClick: (): void => {
+                      canvasInstance.cancel();
+                      canvasInstance.merge({ enabled: true });
+                      mergeObjects(true);
+                  },
+              };
 
     return (
         <Tooltip title={`Merge shapes/tracks ${switchMergeShortcut}`} placement='right' mouseLeaveDelay={0}>

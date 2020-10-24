@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 #
-version: "3.3"
+version: '3.3'
 
 services:
   cvat_db:
@@ -44,15 +44,15 @@ services:
         https_proxy:
         no_proxy: nuclio,${no_proxy}
         socks_proxy:
-        USER: "django"
-        DJANGO_CONFIGURATION: "production"
-        TZ: "Etc/UTC"
-        CLAM_AV: "no"
+        USER: 'django'
+        DJANGO_CONFIGURATION: 'production'
+        TZ: 'Etc/UTC'
+        CLAM_AV: 'no'
     environment:
-      DJANGO_MODWSGI_EXTRA_ARGS: ""
+      DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
-      CVAT_REDIS_HOST: "cvat_redis"
-      CVAT_POSTGRES_HOST: "cvat_db"
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -89,7 +89,7 @@ services:
     environment:
       CVAT_HOST: localhost
     ports:
-      - "8080:80"
+      - '8080:80'
     volumes:
       - ./cvat_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro

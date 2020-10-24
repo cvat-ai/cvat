@@ -1,11 +1,12 @@
-/*
- * Copyright (C) 2019 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
-/* eslint-disable */
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
-const DtsBundleWebpack = require('dts-bundle-webpack')
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const DtsBundleWebpack = require('dts-bundle-webpack');
 
 const nodeConfig = {
     target: 'node',
@@ -22,33 +23,38 @@ const nodeConfig = {
         extensions: ['.ts', '.js', '.json'],
     },
     module: {
-        rules: [{
-            test: /\.ts$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    plugins: [
-                        '@babel/plugin-proposal-class-properties',
-                        '@babel/plugin-proposal-optional-chaining'
-                    ],
-                    presets: [
-                        ['@babel/preset-env'],
-                        ['@babel/typescript'],
-                    ],
-                    sourceType: 'unambiguous',
+        rules: [
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        plugins: [
+                            '@babel/plugin-proposal-class-properties',
+                            '@babel/plugin-proposal-optional-chaining',
+                        ],
+                        presets: [['@babel/preset-env'], ['@babel/typescript']],
+                        sourceType: 'unambiguous',
+                    },
                 },
             },
-        }, {
-            test: /\.(css|scss)$/,
-            exclude: /node_modules/,
-            use: ['style-loader', {
-                loader: 'css-loader',
-                options: {
-                    importLoaders: 2,
-                },
-            }, 'postcss-loader', 'sass-loader']
-        }],
+            {
+                test: /\.(css|scss)$/,
+                exclude: /node_modules/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            importLoaders: 2,
+                        },
+                    },
+                    'postcss-loader',
+                    'sass-loader',
+                ],
+            },
+        ],
     },
     plugins: [
         new DtsBundleWebpack({
@@ -56,7 +62,7 @@ const nodeConfig = {
             main: 'dist/declaration/src/typescript/canvas.d.ts',
             out: '../cvat-canvas.node.d.ts',
         }),
-    ]
+    ],
 };
 
 const webConfig = {
@@ -82,32 +88,43 @@ const webConfig = {
         extensions: ['.ts', '.js', '.json'],
     },
     module: {
-        rules: [{
-            test: /\.ts$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    plugins: ['@babel/plugin-proposal-class-properties'],
-                    presets: [
-                        ['@babel/preset-env', {
-                            targets: '> 2.5%', // https://github.com/browserslist/browserslist
-                        }],
-                        ['@babel/typescript'],
-                    ],
-                    sourceType: 'unambiguous',
+        rules: [
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        plugins: ['@babel/plugin-proposal-class-properties'],
+                        presets: [
+                            [
+                                '@babel/preset-env',
+                                {
+                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
+                                },
+                            ],
+                            ['@babel/typescript'],
+                        ],
+                        sourceType: 'unambiguous',
+                    },
                 },
             },
-        }, {
-            test: /\.scss$/,
-            exclude: /node_modules/,
-            use: ['style-loader', {
-                loader: 'css-loader',
-                options: {
-                    importLoaders: 2,
-                },
-            }, 'postcss-loader', 'sass-loader']
-        }],
+            {
+                test: /\.scss$/,
+                exclude: /node_modules/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            importLoaders: 2,
+                        },
+                    },
+                    'postcss-loader',
+                    'sass-loader',
+                ],
+            },
+        ],
     },
     plugins: [
         new DtsBundleWebpack({
@@ -115,7 +132,7 @@ const webConfig = {
             main: 'dist/declaration/src/typescript/canvas.d.ts',
             out: '../cvat-canvas.d.ts',
         }),
-    ]
+    ],
 };
 
-module.exports = [webConfig, nodeConfig]
+module.exports = [webConfig, nodeConfig];

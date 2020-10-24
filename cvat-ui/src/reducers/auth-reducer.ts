@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AuthState } from './interfaces';
 
@@ -17,7 +17,7 @@ const defaultState: AuthState = {
     allowResetPassword: false,
 };
 
-export default function (state = defaultState, action: AuthActions | boundariesActions): AuthState {
+export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
     switch (action.type) {
         case AuthActionTypes.AUTHORIZED_SUCCESS:
             return {
@@ -93,9 +93,10 @@ export default function (state = defaultState, action: AuthActions | boundariesA
         case AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG:
             return {
                 ...state,
-                showChangePasswordDialog: typeof action.payload.showChangePasswordDialog === 'undefined'
-                    ? !state.showChangePasswordDialog
-                    : action.payload.showChangePasswordDialog,
+                showChangePasswordDialog:
+                    typeof action.payload.showChangePasswordDialog === 'undefined'
+                        ? !state.showChangePasswordDialog
+                        : action.payload.showChangePasswordDialog,
             };
         case AuthActionTypes.REQUEST_PASSWORD_RESET:
             return {

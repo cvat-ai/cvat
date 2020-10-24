@@ -42,44 +42,40 @@ interface ReposData {
 function waitForClone(cloneResponse: any): Promise<void> {
     return new Promise((resolve, reject): void => {
         async function checkCallback(): Promise<void> {
-            core.server.request(
-                `${baseURL}/git/repository/check/${cloneResponse.rq_id}`,
-                {
+            core.server
+                .request(`${baseURL}/git/repository/check/${cloneResponse.rq_id}`, {
                     method: 'GET',
-                },
-            ).then((response: any): void => {
-                if (['queued', 'started'].includes(response.status)) {
-                    setTimeout(checkCallback, 1000);
-                } else if (response.status === 'finished') {
-                    resolve();
-                } else if (response.status === 'failed') {
-                    let message = 'Repository status check failed. ';
-                    if (response.stderr) {
-                        message += response.stderr;
-                    }
+                })
+                .then((response: any): void => {
+                    if (['queued', 'started'].includes(response.status)) {
+                        setTimeout(checkCallback, 1000);
+                    } else if (response.status === 'finished') {
+                        resolve();
+                    } else if (response.status === 'failed') {
+                        let message = 'Repository status check failed. ';
+                        if (response.stderr) {
+                            message += response.stderr;
+                        }
 
+                        reject(message);
+                    } else {
+                        const message = `Repository status check returned the status "${response.status}"`;
+                        reject(message);
+                    }
+                })
+                .catch((error: any): void => {
+                    const message = `Can not sent a request to clone the repository. ${error.toString()}`;
                     reject(message);
-                } else {
-                    const message = `Repository status check returned the status "${response.status}"`;
-                    reject(message);
-                }
-            }).catch((error: any): void => {
-                const message = `Can not sent a request to clone the repository. ${error.toString()}`;
-                reject(message);
-            });
+                });
         }
 
         setTimeout(checkCallback, 1000);
     });
 }
 
-async function cloneRepository(
-    this: any,
-    plugin: GitPlugin,
-    createdTask: any,
-): Promise<any> {
+async function cloneRepository(this: any, plugin: GitPlugin, createdTask: any): Promise<any> {
     return new Promise((resolve, reject): any => {
-        if (typeof (this.id) !== 'undefined' || plugin.data.task !== this) {
+        if (typeof this.id !== 'undefined' || plugin.data.task !== this) {
             // not the first save, we do not need to clone the repository
             // or anchor set for another task
             resolve(createdTask);
@@ -88,28 +84,27 @@ async function cloneRepository(
                 plugin.callbacks.onStatusChange('The repository is being cloned..');
             }
 
-            core.server.request(`${baseURL}/git/repository/create/${createdTask.id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                },
-                data: JSON.stringify({
-                    path: plugin.data.repos,
-                    lfs: plugin.data.lfs,
-                    tid: createdTask.id,
-                }),
-            }).then(waitForClone).then((): void => {
-                resolve(createdTask);
-            }).catch((error: any): void => {
-                createdTask.delete().finally((): void => {
-                    reject(
-                        new core.exceptions.PluginError(
-                            typeof (error) === 'string'
-                                ? error : error.message,
-                        ),
-                    );
+            core.server
+                .request(`${baseURL}/git/repository/create/${createdTask.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json',
+                    },
+                    data: JSON.stringify({
+                        path: plugin.data.repos,
+                        lfs: plugin.data.lfs,
+                        tid: createdTask.id,
+                    }),
+                })
+                .then(waitForClone)
+                .then((): void => {
+                    resolve(createdTask);
+                })
+                .catch((error: any): void => {
+                    createdTask.delete().finally((): void => {
+                        reject(new core.exceptions.PluginError(typeof error === 'string' ? error : error.message));
+                    });
                 });
-            });
         }
     });
 }
@@ -143,12 +138,9 @@ export function registerGitPlugin(): void {
 }
 
 export async function getReposData(tid: number): Promise<ReposData | null> {
-    const response = await core.server.request(
-        `${baseURL}/git/repository/get/${tid}`,
-        {
-            method: 'GET',
-        },
-    );
+    const response = await core.server.request(`${baseURL}/git/repository/get/${tid}`, {
+        method: 'GET',
+    });
 
     if (!response.url.value) {
         return null;
@@ -165,31 +157,34 @@ export async function getReposData(tid: number): Promise<ReposData | null> {
 
 export function syncRepos(tid: number): Promise<void> {
     return new Promise((resolve, reject): void => {
-        core.server.request(`${baseURL}/git/repository/push/${tid}`, {
-            method: 'GET',
-        }).then((syncResponse: any): void => {
-            async function checkSync(): Promise<void> {
-                const id = syncResponse.rq_id;
-                const response = await core.server.request(`${baseURL}/git/repository/check/${id}`, {
-                    method: 'GET',
-                });
+        core.server
+            .request(`${baseURL}/git/repository/push/${tid}`, {
+                method: 'GET',
+            })
+            .then((syncResponse: any): void => {
+                async function checkSync(): Promise<void> {
+                    const id = syncResponse.rq_id;
+                    const response = await core.server.request(`${baseURL}/git/repository/check/${id}`, {
+                        method: 'GET',
+                    });
 
-                if (['queued', 'started'].includes(response.status)) {
-                    setTimeout(checkSync, 1000);
-                } else if (response.status === 'finished') {
-                    resolve();
-                } else if (response.status === 'failed') {
-                    const message = `Can not push to remote repository. Message: ${response.stderr}`;
-                    reject(new Error(message));
-                } else {
-                    const message = `Check returned status "${response.status}".`;
-                    reject(new Error(message));
+                    if (['queued', 'started'].includes(response.status)) {
+                        setTimeout(checkSync, 1000);
+                    } else if (response.status === 'finished') {
+                        resolve();
+                    } else if (response.status === 'failed') {
+                        const message = `Can not push to remote repository. Message: ${response.stderr}`;
+                        reject(new Error(message));
+                    } else {
+                        const message = `Check returned status "${response.status}".`;
+                        reject(new Error(message));
+                    }
                 }
-            }
 
-            setTimeout(checkSync, 1000);
-        }).catch((error: any): void => {
-            reject(error);
-        });
+                setTimeout(checkSync, 1000);
+            })
+            .catch((error: any): void => {
+                reject(error);
+            });
     });
 }

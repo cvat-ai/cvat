@@ -12,7 +12,7 @@ metadata:
 
 spec:
   description: Text detector based on PixelLink architecture with MobileNetV2-like as a backbone for indoor/outdoor scenes.
-  runtime: "python:3.6"
+  runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -25,19 +25,19 @@ spec:
 
     directives:
       preCopy:
-      - kind: USER
-        value: root
-      - kind: WORKDIR
-        value: /opt/nuclio
-      - kind: RUN
-        value: ln -s /usr/bin/pip3 /usr/bin/pip
-      - kind: RUN
-        value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name text-detection-0004 -o /opt/nuclio/open_model_zoo
+        - kind: USER
+          value: root
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/bin/pip
+        - kind: RUN
+          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name text-detection-0004 -o /opt/nuclio/open_model_zoo
 
   triggers:
     myHttpTrigger:
       maxWorkers: 2
-      kind: "http"
+      kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB

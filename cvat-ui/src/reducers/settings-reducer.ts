@@ -9,12 +9,7 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
-import {
-    SettingsState,
-    GridColor,
-    FrameSpeed,
-    ColorBy,
-} from './interfaces';
+import { SettingsState, GridColor, FrameSpeed, ColorBy } from './interfaces';
 
 const defaultState: SettingsState = {
     shapes: {
