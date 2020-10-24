@@ -18,3 +18,4 @@ services:
     environment:
       CVAT_HOST: your-instance.amazonaws.com
 ```
+In case of problems with using hostname, you can also use the public IPV4 instead of hostname. For AWS or any cloud based machines where the instances need to be terminated or stopped, the public IPV4 and hostname changes with every stop and reboot. To address this efficiently, avoid using spot instances that cannot be stopped, since copying the EBS to an AMI and restarting it throws problems. On the other hand, when a regular instance is stopped and restarted, the  new hostname/IPV4 can be used in the `CVAT_HOST` variable in the `docker-compose.override.yml` and the build can happen instantly with CVAT tasks being available through the new IPV4.
