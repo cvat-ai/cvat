@@ -1,10 +1,25 @@
 ## Serverless for Computer Vision Annotation Tool (CVAT)
 
 ### Run docker container
+
+To use automatic and semi-automatic annotation models you need to install extra
+components which are used by CVAT to implement the functionality. You can do that
+by the command below:
+
 ```bash
 # From project root directory
 docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
 ```
+
+It will run [nuclio](https://github.com/nuclio/nuclio). Nuclio is a
+high-performance `serverless` framework focused on data, I/O, and compute
+intensive workloads.
+
+But it isn't enough. You have to deploy one or several serverless functions
+which you can use in UI to annotate images. Basically a serverless function
+for us is a docker container with HTTP interface which accepts some input in
+json format, executes some code to process the input, and
+
 
 ### Tutorial how to add your own DL model for automatic annotation
 
@@ -27,7 +42,7 @@ conda install -c conda-forge scipy
 ```
 
 Download weights from google drive: https://github.com/shiyinzhang/Inside-Outside-Guidance#pretrained-models
-Also we will need VOCtrainval_11-May-2012.tar dataset for evaluation: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
+Also we will need `VOCtrainval_11-May-2012.tar` dataset for evaluation: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
 
 Modify `mypath.py` in accordance with instructions inside the repo. In my case `git diff` below:
 
