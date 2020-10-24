@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, color, posX, posY, message, count) => {
     return cy.task('imageGenerator', {
