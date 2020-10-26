@@ -12,6 +12,7 @@ import StatesOrderingSelector from 'components/annotation-page/standard-workspac
 import { StatesOrdering } from 'reducers/interfaces';
 
 interface Props {
+    readonly: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsed: boolean;
@@ -27,22 +28,57 @@ interface Props {
     showAllStates(): void;
 }
 
-function ObjectListHeader(props: Props): JSX.Element {
+function LockAllSwitcher(props: Props): JSX.Element {
     const {
-        statesHidden,
-        statesLocked,
-        statesCollapsed,
-        statesOrdering,
-        switchLockAllShortcut,
-        switchHiddenAllShortcut,
-        changeStatesOrdering,
-        lockAllStates,
-        unlockAllStates,
-        collapseAllStates,
-        expandAllStates,
-        hideAllStates,
-        showAllStates,
+        statesLocked, switchLockAllShortcut, unlockAllStates, lockAllStates,
     } = props;
+    return (
+        <Col span={2}>
+            <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`} mouseLeaveDelay={0}>
+                {statesLocked ? (
+                    <Icon type='lock' onClick={unlockAllStates} theme='filled' />
+                ) : (
+                    <Icon type='unlock' onClick={lockAllStates} />
+                )}
+            </Tooltip>
+        </Col>
+    );
+}
+
+function HideAllSwitcher(props: Props): JSX.Element {
+    const {
+        statesHidden, switchHiddenAllShortcut, showAllStates, hideAllStates,
+    } = props;
+    return (
+        <Col span={2}>
+            <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`} mouseLeaveDelay={0}>
+                {statesHidden ? (
+                    <Icon type='eye-invisible' onClick={showAllStates} />
+                ) : (
+                    <Icon type='eye' onClick={hideAllStates} />
+                )}
+            </Tooltip>
+        </Col>
+    );
+}
+
+function CollapseAllSwitcher(props: Props): JSX.Element {
+    const { statesCollapsed, expandAllStates, collapseAllStates } = props;
+    return (
+        <Col span={2}>
+            <Tooltip title='Expand/collapse all' mouseLeaveDelay={0}>
+                {statesCollapsed ? (
+                    <Icon type='caret-down' onClick={expandAllStates} />
+                ) : (
+                    <Icon type='caret-up' onClick={collapseAllStates} />
+                )}
+            </Tooltip>
+        </Col>
+    );
+}
+
+function ObjectListHeader(props: Props): JSX.Element {
+    const { readonly, statesOrdering, changeStatesOrdering } = props;
 
     return (
         <div className='cvat-objects-sidebar-states-header'>
@@ -52,33 +88,13 @@ function ObjectListHeader(props: Props): JSX.Element {
                 </Col>
             </Row>
             <Row type='flex' justify='space-between' align='middle'>
-                <Col span={2}>
-                    <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`} mouseLeaveDelay={0}>
-                        {statesLocked ? (
-                            <Icon type='lock' onClick={unlockAllStates} theme='filled' />
-                        ) : (
-                            <Icon type='unlock' onClick={lockAllStates} />
-                        )}
-                    </Tooltip>
-                </Col>
-                <Col span={2}>
-                    <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`} mouseLeaveDelay={0}>
-                        {statesHidden ? (
-                            <Icon type='eye-invisible' onClick={showAllStates} />
-                        ) : (
-                            <Icon type='eye' onClick={hideAllStates} />
-                        )}
-                    </Tooltip>
-                </Col>
-                <Col span={2}>
-                    <Tooltip title='Expand/collapse all' mouseLeaveDelay={0}>
-                        {statesCollapsed ? (
-                            <Icon type='caret-down' onClick={expandAllStates} />
-                        ) : (
-                            <Icon type='caret-up' onClick={collapseAllStates} />
-                        )}
-                    </Tooltip>
-                </Col>
+                {!readonly && (
+                    <>
+                        <LockAllSwitcher {...props} />
+                        <HideAllSwitcher {...props} />
+                    </>
+                )}
+                <CollapseAllSwitcher {...props} />
                 <StatesOrderingSelector statesOrdering={statesOrdering} changeStatesOrdering={changeStatesOrdering} />
             </Row>
         </div>

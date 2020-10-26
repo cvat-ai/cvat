@@ -21,6 +21,7 @@ module.exports = {
     ],
     rules: {
         '@typescript-eslint/indent': ['warn', 4],
+        'react/static-property-placement': ['error', 'static public field'],
         'react/jsx-indent': ['warn', 4],
         'react/jsx-indent-props': ['warn', 4],
         'react/jsx-props-no-spreading': 0,
