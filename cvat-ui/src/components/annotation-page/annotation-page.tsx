@@ -15,6 +15,7 @@ import StatisticsModalContainer from 'containers/annotation-page/top-bar/statist
 import StandardWorkspaceComponent from './standard-workspace/standard-workspace';
 import AttributeAnnotationWorkspace from './attribute-annotation-workspace/attribute-annotation-workspace';
 import TagAnnotationWorkspace from './tag-annotation-workspace/tag-annotation-workspace';
+import ReviewAnnotationsWorkspace from './review-workspace/review-workspace';
 
 interface Props {
     job: any | null | undefined;
@@ -26,7 +27,9 @@ interface Props {
 }
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
-    const { job, fetching, getJob, closeJob, saveLogs, workspace } = props;
+    const {
+        job, fetching, getJob, closeJob, saveLogs, workspace,
+    } = props;
 
     const history = useHistory();
     useEffect(() => {
@@ -85,6 +88,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             {workspace === Workspace.TAG_ANNOTATION && (
                 <Layout.Content style={{ height: '100%' }}>
                     <TagAnnotationWorkspace />
+                </Layout.Content>
+            )}
+            {workspace === Workspace.REVIEW_WORKSPACE && (
+                <Layout.Content style={{ height: '100%' }}>
+                    <ReviewAnnotationsWorkspace />
                 </Layout.Content>
             )}
             <StatisticsModalContainer />

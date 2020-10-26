@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
+    const store = require('store');
     const PluginRegistry = require('./plugins');
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
@@ -12,7 +13,10 @@
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
+    const { fetchUsersLazy, collectNecessaryUsers } = require('./common');
     const User = require('./user');
+    const Issue = require('./issue');
+    const Review = require('./review');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -668,6 +672,7 @@
             const data = {
                 id: undefined,
                 assignee: undefined,
+                reviewer: undefined,
                 status: undefined,
                 start_frame: undefined,
                 stop_frame: undefined,
@@ -686,6 +691,13 @@
                 }
             }
 
+            if (typeof data.assignee !== null) {
+                data.assignee = User.objects[data.assignee];
+            }
+            if (typeof data.reviewer !== null) {
+                data.reviewer = User.objects[data.reviewer];
+            }
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -700,7 +712,7 @@
                         get: () => data.id,
                     },
                     /**
-                     * Instance of a user who is responsible for the job
+                     * Instance of a user who is responsible for the job annotations
                      * @name assignee
                      * @type {module:API.cvat.classes.User}
                      * @memberof module:API.cvat.classes.Job
@@ -714,6 +726,23 @@
                                 throw new ArgumentError('Value must be a user instance');
                             }
                             data.assignee = assignee;
+                        },
+                    },
+                    /**
+                     * Instance of a user who is responsible for review
+                     * @name reviewer
+                     * @type {module:API.cvat.classes.User}
+                     * @memberof module:API.cvat.classes.Job
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    reviewer: {
+                        get: () => data.reviewer,
+                        set: (reviewer) => {
+                            if (reviewer !== null && !(reviewer instanceof User)) {
+                                throw new ArgumentError('Value must be a user instance');
+                            }
+                            data.reviewer = reviewer;
                         },
                     },
                     /**
@@ -832,6 +861,38 @@
             const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save);
             return result;
         }
+
+        /**
+         * Method returns a list of issues for a job
+         * @method issues
+         * @memberof module:API.cvat.classes.Job
+         * @type {module:API.cvat.classes.Issue[]}
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async issues() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.issues);
+            return result;
+        }
+
+        /**
+         * Method returns a list of reviews for a job
+         * @method reviews
+         * @type {module:API.cvat.classes.Review[]}
+         * @memberof module:API.cvat.classes.Job
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async reviews() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviews);
+            return result;
+        }
     }
 
     /**
@@ -899,6 +960,7 @@
                                 url: job.url,
                                 id: job.id,
                                 assignee: job.assignee,
+                                reviewer: job.reviewer,
                                 status: job.status,
                                 start_frame: segment.start_frame,
                                 stop_frame: segment.stop_frame,
@@ -908,6 +970,13 @@
                         }
                     }
                 }
+            }
+
+            if (typeof data.assignee !== undefined) {
+                data.assignee = User.objects[data.assignee];
+            }
+            if (typeof data.owner !== undefined) {
+                data.owner = User.objects[data.owner];
             }
 
             if (Array.isArray(initialData.labels)) {
@@ -1436,18 +1505,40 @@
     buildDublicatedAPI(Task.prototype);
 
     Job.prototype.save.implementation = async function () {
-        // TODO: Add ability to change an assignee
         if (this.id) {
             const jobData = {
                 status: this.status,
                 assignee: this.assignee ? this.assignee.id : null,
+                reviewer: this.reviewer ? this.reviewer.id : null,
             };
 
-            await serverProxy.jobs.saveJob(this.id, jobData);
+            await serverProxy.jobs.save(this.id, jobData);
             return this;
         }
 
         throw new ArgumentError('Can not save job without and id');
+    };
+
+    Job.prototype.issues.implementation = async function () {
+        const result = await serverProxy.jobs.issues(this.id);
+        const necessaryUsers = collectNecessaryUsers(result);
+        await fetchUsersLazy(necessaryUsers);
+        return result.map((issue) => new Issue(issue));
+    };
+
+    Job.prototype.reviews.implementation = async function () {
+        const result = await serverProxy.jobs.reviews(this.id);
+        const reviews = result.map((review) => new Review(review));
+
+        // try to get not finished review from the local storage
+        const data = store.get(`job-${this.id}-review`);
+        if (data) {
+            reviews.push(new Review(JSON.parse(data)));
+        }
+
+        const necessaryUsers = collectNecessaryUsers(result);
+        await fetchUsersLazy(necessaryUsers);
+        return reviews;
     };
 
     Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {

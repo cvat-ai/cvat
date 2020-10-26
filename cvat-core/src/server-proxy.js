@@ -287,7 +287,7 @@
 
             async function authorized() {
                 try {
-                    await module.exports.users.getSelf();
+                    await module.exports.users.self();
                 } catch (serverError) {
                     if (serverError.code === 401) {
                         return false;
@@ -476,6 +476,36 @@
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getJobReviews(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getJobIssues(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -846,16 +876,18 @@
 
                     jobs: {
                         value: Object.freeze({
-                            getJob,
-                            saveJob,
+                            get: getJob,
+                            save: saveJob,
+                            issues: getJobIssues,
+                            reviews: getJobReviews,
                         }),
                         writable: false,
                     },
 
                     users: {
                         value: Object.freeze({
-                            getUsers,
-                            getSelf,
+                            get: getUsers,
+                            self: getSelf,
                         }),
                         writable: false,
                     },

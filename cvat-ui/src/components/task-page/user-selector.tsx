@@ -8,14 +8,24 @@ import Select from 'antd/lib/select';
 interface Props {
     value: string | null;
     users: any[];
+    style?: React.CSSProperties;
     onChange: (user: string) => void;
 }
 
 export default function UserSelector(props: Props): JSX.Element {
-    const { value, users, onChange } = props;
+    const {
+        value, users, onChange, style,
+    } = props;
 
     return (
-        <Select defaultValue={value || '—'} size='small' showSearch className='cvat-user-selector' onChange={onChange}>
+        <Select
+            style={style}
+            defaultValue={value || '—'}
+            size='small'
+            showSearch
+            className='cvat-user-selector'
+            onChange={onChange}
+        >
             <Select.Option key='-1' value='—'>
                 —
             </Select.Option>

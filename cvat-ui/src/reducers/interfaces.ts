@@ -151,6 +151,12 @@ export interface Model {
     };
 }
 
+export enum TaskStatus {
+    ANNOTATION = 'annotation',
+    REVIEW = 'validation',
+    COMPLETED = 'completed',
+}
+
 export enum RQStatus {
     unknown = 'unknown',
     queued = 'queued',
@@ -411,6 +417,7 @@ export enum Workspace {
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
     TAG_ANNOTATION = 'Tag annotation',
+    REVIEW_WORKSPACE = 'Review',
 }
 
 export enum GridColor {

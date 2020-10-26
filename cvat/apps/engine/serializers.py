@@ -63,7 +63,7 @@ class JobSerializer(serializers.ModelSerializer):
 class SimpleJobSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status')
+        fields = ('url', 'id', 'assignee', 'reviewer', 'status')
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')

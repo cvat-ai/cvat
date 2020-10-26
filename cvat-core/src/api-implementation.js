@@ -7,7 +7,13 @@
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
     const {
-        isBoolean, isInteger, isEnum, isString, checkFilter,
+        isBoolean,
+        isInteger,
+        isEnum,
+        isString,
+        checkFilter,
+        fetchUsersLazy,
+        collectNecessaryUsers,
     } = require('./common');
 
     const { TaskStatus, TaskMode } = require('./enums');
@@ -16,26 +22,6 @@
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
-
-    function attachUsers(task, users) {
-        if (task.assignee !== null) {
-            [task.assignee] = users.filter((user) => user.id === task.assignee);
-        }
-
-        for (const segment of task.segments) {
-            for (const job of segment.jobs) {
-                if (job.assignee !== null) {
-                    [job.assignee] = users.filter((user) => user.id === job.assignee);
-                }
-            }
-        }
-
-        if (task.owner !== null) {
-            [task.owner] = users.filter((user) => user.id === task.owner);
-        }
-
-        return task;
-    }
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -127,10 +113,10 @@
 
             let users = null;
             if ('self' in filter && filter.self) {
-                users = await serverProxy.users.getSelf();
+                users = await serverProxy.users.self();
                 users = [users];
             } else {
-                users = await serverProxy.users.getUsers();
+                users = await serverProxy.users.get();
             }
 
             users = users.map((user) => new User(user));
@@ -151,25 +137,26 @@
                 throw new ArgumentError('Job filter must not be empty');
             }
 
-            let tasks = null;
+            let tasks = [];
             if ('taskID' in filter) {
                 tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
             } else {
-                const job = await serverProxy.jobs.getJob(filter.jobID);
+                const job = await serverProxy.jobs.get(filter.jobID);
                 if (typeof job.task_id !== 'undefined') {
                     tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
                 }
             }
 
-            // If task was found by its id, then create task instance and get Job instance from it
-            if (tasks !== null && tasks.length) {
-                const users = (await serverProxy.users.getUsers()).map((userData) => new User(userData));
-                const task = new Task(attachUsers(tasks[0], users));
+            const necessaryUsers = collectNecessaryUsers(tasks);
+            await fetchUsersLazy(necessaryUsers);
 
+            // If task was found by its id, then create task instance and get Job instance from it
+            if (tasks.length) {
+                const task = new Task(tasks[0]);
                 return filter.jobID ? task.jobs.filter((job) => job.id === filter.jobID) : task.jobs;
             }
 
-            return [];
+            return tasks;
         };
 
         cvat.tasks.get.implementation = async (filter) => {
@@ -203,9 +190,10 @@
                 }
             }
 
-            const users = (await serverProxy.users.getUsers()).map((userData) => new User(userData));
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const tasks = tasksData.map((task) => attachUsers(task, users)).map((task) => new Task(task));
+            const necessaryUsers = collectNecessaryUsers(tasksData);
+            await fetchUsersLazy(necessaryUsers);
+            const tasks = tasksData.map((task) => new Task(task));
 
             tasks.count = tasksData.count;
 

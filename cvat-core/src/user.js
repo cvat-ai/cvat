@@ -156,8 +156,17 @@
                     },
                 }),
             );
+
+            const hash = JSON.stringify(data);
+            if (!(data.id in User.objects) || hash !== User.hashes[data.id]) {
+                User.hashes[data.id] = hash;
+                User.objects[data.id] = this;
+            }
         }
     }
+
+    User.objects = {};
+    User.hashes = {};
 
     module.exports = User;
 })();

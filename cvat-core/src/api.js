@@ -17,19 +17,7 @@ function build() {
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
 
-    const {
-        ShareFileType,
-        TaskStatus,
-        TaskMode,
-        AttributeType,
-        ObjectType,
-        ObjectShape,
-        LogType,
-        HistoryActions,
-        RQStatus,
-        colors,
-        Source,
-    } = require('./enums');
+    const enums = require('./enums');
 
     const {
         Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
@@ -685,19 +673,7 @@ function build() {
          * @namespace enums
          * @memberof module:API.cvat
          */
-        enums: {
-            ShareFileType,
-            TaskStatus,
-            TaskMode,
-            AttributeType,
-            ObjectType,
-            ObjectShape,
-            LogType,
-            HistoryActions,
-            RQStatus,
-            colors,
-            Source,
-        },
+        enums,
         /**
          * Namespace is used for access to exceptions
          * @namespace exceptions

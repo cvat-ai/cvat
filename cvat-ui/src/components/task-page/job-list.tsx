@@ -104,6 +104,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
                 return (
                     <UserSelector
+                        style={{ marginLeft: 0 }}
                         users={registeredUsers}
                         value={assignee}
                         onChange={(value: string): void => {
@@ -115,6 +116,33 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
                             // eslint-disable-next-line
                             jobInstance.assignee = userInstance;
+                            onJobUpdate(jobInstance);
+                        }}
+                    />
+                );
+            },
+        },
+        {
+            title: 'Reviewer',
+            dataIndex: 'reviewer',
+            key: 'reviewer',
+            render: (jobInstance: any): JSX.Element => {
+                const reviewer = jobInstance.reviewer ? jobInstance.reviewer.username : null;
+
+                return (
+                    <UserSelector
+                        style={{ marginLeft: 0 }}
+                        users={registeredUsers}
+                        value={reviewer}
+                        onChange={(value: string): void => {
+                            let [userInstance] = [...registeredUsers].filter((user: any) => user.username === value);
+
+                            if (userInstance === undefined) {
+                                userInstance = null;
+                            }
+
+                            // eslint-disable-next-line
+                            jobInstance.reviewer = userInstance;
                             onJobUpdate(jobInstance);
                         }}
                     />
@@ -139,6 +167,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             started: `${created.format('MMMM Do YYYY HH:MM')}`,
             duration: `${moment.duration(moment(moment.now()).diff(created)).humanize()}`,
             assignee: job,
+            reviewer: job,
         });
 
         return acc;

@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction, Dispatch, ActionCreator, Store } from 'redux';
+import {
+    AnyAction, Dispatch, ActionCreator, Store,
+} from 'redux';
 import { ThunkAction } from 'utils/redux';
 
 import {
@@ -234,7 +236,9 @@ export function switchZLayer(cur: number): AnyAction {
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, frame, showAllInterpolationTracks, jobInstance } = receiveAnnotationsParameters();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
             const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
 
@@ -892,7 +896,12 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
         try {
             const state: CombinedState = getStore().getState();
             const filters = initialFilters;
-            const { showAllInterpolationTracks } = state.settings.workspace;
+            const {
+                auth: { user },
+                settings: {
+                    workspace: { showAllInterpolationTracks },
+                },
+            } = state;
 
             dispatch({
                 type: AnnotationActionTypes.GET_JOB,
@@ -932,6 +941,8 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             // to load and decode first chunk
             await frameData.data();
             const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+            await job.issues();
+            await job.reviews();
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
 
@@ -949,6 +960,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     filters,
                     minZ,
                     maxZ,
+                    user,
                 },
             });
             dispatch(changeFrameAsync(frameNumber, false));
@@ -1077,7 +1089,9 @@ export function splitTrack(enabled: boolean): AnyAction {
 
 export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const { jobInstance, filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
+        const {
+            jobInstance, filters, frame, showAllInterpolationTracks,
+        } = receiveAnnotationsParameters();
 
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {

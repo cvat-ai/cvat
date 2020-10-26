@@ -20,6 +20,7 @@ interface StateToProps {
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
+    user: any;
 }
 
 interface DispatchToProps {
@@ -39,6 +40,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         tasks: {
             activities: { dumps, loads, exports: activeExports },
         },
+        auth: { user },
     } = state;
 
     const taskID = jobInstance.task.id;
@@ -50,6 +52,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         loadActivity: taskID in loads || jobID in jobLoads ? loads[taskID] || jobLoads[jobID] : null,
         jobInstance,
         annotationFormats,
+        user,
     };
 }
 
@@ -75,6 +78,7 @@ type Props = StateToProps & DispatchToProps & RouteComponentProps;
 function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
+        user,
         annotationFormats: { loaders, dumpers },
         loadAnnotations,
         dumpAnnotations,
@@ -127,6 +131,9 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             dumpActivities={dumpActivities}
             exportActivities={exportActivities}
             onClickMenu={onClickMenu}
+            jobStatus={jobInstance.status}
+            isAssignee={jobInstance.assignee && jobInstance.assignee.id === user.id}
+            isReviewer={jobInstance.reviewer && jobInstance.reviewer.id === user.id}
             taskID={jobInstance.task.id}
         />
     );

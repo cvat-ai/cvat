@@ -4,7 +4,7 @@
 
 module.exports = {
     env: {
-        node: false,
+        node: true,
         browser: true,
         es6: true,
         jquery: true,

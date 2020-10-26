@@ -17,6 +17,9 @@ interface Props {
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
+    jobStatus: string;
+    isAssignee: boolean;
+    isReviewer: boolean;
     taskID: number;
     onClickMenu(params: ClickParam, file?: File): void;
 }
@@ -27,10 +30,24 @@ export enum Actions {
     EXPORT_TASK_DATASET = 'export_task_dataset',
     REMOVE_ANNO = 'remove_anno',
     OPEN_TASK = 'open_task',
+    SUBMIT_ANNOTATION = 'submit_annotation',
+    SUBMIT_REVIEW = 'submit_review',
 }
 
 export default function AnnotationMenuComponent(props: Props): JSX.Element {
-    const { taskMode, loaders, dumpers, onClickMenu, loadActivity, dumpActivities, exportActivities, taskID } = props;
+    const {
+        taskMode,
+        loaders,
+        dumpers,
+        onClickMenu,
+        loadActivity,
+        dumpActivities,
+        exportActivities,
+        taskID,
+        jobStatus,
+        isAssignee,
+        isReviewer,
+    } = props;
 
     let latestParams: ClickParam | null = null;
     function onClickMenuWrapper(params: ClickParam | null, file?: File): void {
@@ -106,6 +123,12 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     Open the task
                 </a>
             </Menu.Item>
+            {jobStatus === 'annotation' && isAssignee && (
+                <Menu.Item key={Actions.SUBMIT_ANNOTATION}>Submit annotations</Menu.Item>
+            )}
+            {jobStatus === 'validation' && isReviewer && (
+                <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit review</Menu.Item>
+            )}
         </Menu>
     );
 }
