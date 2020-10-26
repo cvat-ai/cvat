@@ -98,57 +98,15 @@ context('Actions on polylines', () => {
         });
         it('Draw a polylines shape, track', () => {
             cy.createPolyline(createPolylinesShape);
-            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-1')
-                .should('contain', '1')
-                .and('contain', 'POLYLINE SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createPolyline(createPolylinesTrack);
-            cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-2')
-                .should('contain', '2')
-                .and('contain', 'POLYLINE TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a polylines shape, track with use parameter "number of points"', () => {
             cy.createPolyline(createPolylinesShapePoints);
-            cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-3')
-                .should('contain', '3')
-                .and('contain', 'POLYLINE SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createPolyline(createPolylinesTrackPoints);
-            cy.get('#cvat_canvas_shape_4').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-4')
-                .should('contain', '4')
-                .and('contain', 'POLYLINE TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a polylines shape, track with second label', () => {
             cy.createPolyline(createPolylinesShapeSwitchLabel);
-            cy.get('#cvat_canvas_shape_5').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-5')
-                .should('contain', '5')
-                .and('contain', 'POLYLINE SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
             cy.createPolyline(createPolylinesTrackSwitchLabel);
-            cy.get('#cvat_canvas_shape_6').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-6')
-                .should('contain', '6')
-                .and('contain', 'POLYLINE TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
         });
     });
 });
