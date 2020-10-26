@@ -47,7 +47,7 @@ from cvat.apps.engine.serializers import (
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
     TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     ReviewSummarySerializer, CombinedReviewSerializer, IssueSerializer,
-    CombinedIssueSerializer, CommentSerializer, CommentListSerializer
+    CombinedIssueSerializer, CommentSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -795,6 +795,8 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
             permissions.append(auth.IssueDestroyPermission)
         elif http_method in ['PATCH', 'PUT']:
             permissions.append(auth.IssueChangePermission)
+        elif http_method in ['POST']:
+            permissions.append(auth.IssueCommentPermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
@@ -836,27 +838,38 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         serializer = CommentSerializer(queryset, many=True)
         return Response(serializer.data)
 
-@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method adds list of comments to an issue'))
+    @swagger_auto_schema(method='post', operation_summary='The action adds comments to an issue',
+        responses={'201': CommentSerializer(many=True)}
+    )
+    @action(detail=True, methods=['POST'], url_path='comments/create', serializer_class=CommentSerializer)
+    def create_comments(self, request, pk):
+        self.get_object() # call to force check persmissions
+        for comment in request.data:
+            comment.update({
+                'owner': request.user.id,
+                'issue': pk
+            })
+
+        serializer = CommentSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+        db_issue = Issue.objects.prefetch_related('comment_set').get(pk=pk)
+        updated_serializer = CommentSerializer(db_issue.comment_set, many=True)
+        return Response(updated_serializer.data, status=status.HTTP_201_CREATED)
+
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a comment from an issue'))
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
-class CommentViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin,
+class CommentViewSet(viewsets.GenericViewSet,
     mixins.DestroyModelMixin, mixins.UpdateModelMixin):
     queryset = Comment.objects.all().order_by('id')
-
-    def get_serializer_class(self):
-        http_method = self.request.method
-        if http_method == 'POST':
-            return CommentListSerializer
-        return CommentSerializer
+    serializer_class = CommentSerializer
 
     def get_permissions(self):
         http_method = self.request.method
         permissions = [IsAuthenticated]
 
-        if http_method in ['POST']:
-            permissions.append(auth.CommentCreatePermission)
-        elif http_method in ['PATCH', 'PUT', 'DELETE']:
+        if http_method in ['PATCH', 'PUT', 'DELETE']:
             permissions.append(auth.CommentChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)

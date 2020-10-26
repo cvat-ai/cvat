@@ -170,10 +170,10 @@ rules.add_perm('engine.task.delete', has_admin_role | is_task_owner)
 
 rules.add_perm('engine.job.access', has_admin_role | has_observer_role |
     is_job_owner | is_job_annotator | is_job_reviewer)
-rules.add_perm('engine.job.change', has_admin_role | is_job_owner |
-    has_change_permissions)
+rules.add_perm('engine.job.change', has_admin_role | is_job_owner | has_change_permissions)
 rules.add_perm('engine.job.review', has_admin_role | (is_job_reviewer & has_change_permissions))
 
+rules.add_perm('engine.issue.change', has_admin_role | is_issue_owner)
 rules.add_perm('engine.issue.destroy', has_admin_role | is_issue_owner)
 
 rules.add_perm('engine.comment.change', has_admin_role | is_comment_owner)
@@ -304,13 +304,13 @@ class IssueChangePermission(BasePermission):
     # pylint: disable=no-self-use
     def has_object_permission(self, request, view, obj):
         db_job = obj.job
-        return (request.user.has_perm('engine.job.review', db_job)
-            and request.user.has_perm('engine.job.change', db_job))
+        return (request.user.has_perm('engine.job.change', db_job)
+            or request.user.has_perm('engine.issue.change', obj))
 
-class CommentCreatePermission(BasePermission):
+class IssueCommentPermission(BasePermission):
     # pylint: disable=no-self-use
     def has_object_permission(self, request, view, obj):
-        db_job = obj.issue.job
+        db_job = obj.job
         return request.user.has_perm('engine.job.access', db_job)
 
 class CommentChangePermission(BasePermission):
