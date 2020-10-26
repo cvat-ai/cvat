@@ -8,6 +8,7 @@ import ReactDOM from 'react-dom';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 
 interface Props {
+    readonly: boolean;
     activatedStateID: number | null;
     objectStates: any[];
     visible: boolean;
@@ -16,7 +17,9 @@ interface Props {
 }
 
 export default function CanvasContextMenu(props: Props): JSX.Element | null {
-    const { activatedStateID, objectStates, visible, left, top } = props;
+    const {
+        activatedStateID, objectStates, visible, left, top, readonly,
+    } = props;
 
     if (!visible || activatedStateID === null) {
         return null;
@@ -25,6 +28,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
     return ReactDOM.createPortal(
         <div className='cvat-canvas-context-menu' style={{ top, left }}>
             <ObjectItemContainer
+                readonly={readonly}
                 key={activatedStateID}
                 clientID={activatedStateID}
                 objectStates={objectStates}

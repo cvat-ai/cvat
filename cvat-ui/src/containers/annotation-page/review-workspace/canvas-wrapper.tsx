@@ -5,7 +5,7 @@
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
-import CanvasWrapperComponent from 'components/annotation-page/standard-workspace/canvas-wrapper';
+import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper';
 import {
     confirmCanvasReady,
     dragCanvas,

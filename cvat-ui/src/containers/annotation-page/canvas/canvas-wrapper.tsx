@@ -5,7 +5,7 @@
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
-import CanvasWrapperComponent from 'components/annotation-page/standard-workspace/canvas-wrapper';
+import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper';
 import {
     confirmCanvasReady,
     dragCanvas,
@@ -153,8 +153,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 saturationLevel,
                 resetZoom,
             },
-            workspace: { aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering },
-            shapes: { opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections },
+            workspace: {
+                aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering,
+            },
+            shapes: {
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+            },
         },
         shortcuts: { keyMap },
     } = state;

@@ -7,7 +7,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { CombinedState, ContextMenuType } from 'reducers/interfaces';
 
-import CanvasContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-context-menu';
+import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
 
 interface StateToProps {
     activatedStateID: number | null;

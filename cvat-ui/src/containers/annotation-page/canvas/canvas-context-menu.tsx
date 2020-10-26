@@ -7,7 +7,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { CombinedState, ContextMenuType } from 'reducers/interfaces';
 
-import CanvasContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-context-menu';
+import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
+
+interface OwnProps {
+    readonly: boolean;
+}
 
 interface StateToProps {
     activatedStateID: number | null;
@@ -24,7 +28,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             annotations: { activatedStateID, collapsed, states: objectStates },
             canvas: {
-                contextMenu: { visible, top, left, type },
+                contextMenu: {
+                    visible, top, left, type,
+                },
             },
         },
     } = state;
@@ -40,7 +46,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-type Props = StateToProps;
+type Props = StateToProps & OwnProps;
 
 interface State {
     latestLeft: number;
@@ -50,12 +56,13 @@ interface State {
 }
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
+    static defaultProps = {
+        readonly: false,
+    };
+
     private initialized: HTMLDivElement | null;
-
     private dragging: boolean;
-
     private dragInitPosX: number;
-
     private dragInitPosY: number;
 
     public constructor(props: Props) {
@@ -166,12 +173,15 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { left, top } = this.state;
-        const { visible, activatedStateID, objectStates, type } = this.props;
+        const {
+            visible, activatedStateID, objectStates, type, readonly,
+        } = this.props;
 
         return (
             <>
                 {type === ContextMenuType.CANVAS_SHAPE && (
                     <CanvasContextMenuComponent
+                        readonly={readonly}
                         left={left}
                         top={top}
                         visible={visible}
