@@ -16,8 +16,8 @@ from detectron2.data import MetadataCatalog
 
 def init_context(context):
     context.logger.info("Init context... 0%")
-    model_path = 'COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml'
-    model_handler = ModelLoader(model_path)
+    model_path = 'COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml'
+    model_handler = ModelLoader(model_path, 0.5)
     setattr(context.user_data, 'model_handler', model_handler)
     context.logger.info("Init context...100%")
 
@@ -28,5 +28,4 @@ def handler(context, event):
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     image = Image.open(buf)
     results = context.user_data.model_handler.infer(np.asarray(image))
-
     return context.Response(body=json.dumps(results), headers={}, content_type="application/json", status_code=200)
