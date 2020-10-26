@@ -5,8 +5,9 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
-import { ProjectsQuery } from 'reducers/interfaces';
+import { ProjectsQuery, CombinedState } from 'reducers/interfaces';
 import { getTasksSuccess, updateTaskSuccess } from 'actions/tasks-actions';
+import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
@@ -96,7 +97,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         const array = Array.from(result);
-        dispatch(getProjectsSuccess(array, result.count));
 
         const tasks: any[] = [];
         const taskPreviewPromises: Promise<any>[] = [];
@@ -108,21 +108,31 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }));
         }
 
-        dispatch(getTasksSuccess(
-            tasks,
-            await Promise.all(taskPreviewPromises),
-            tasks.length,
-            {
-                page: 1,
-                assignee: null,
-                id: null,
-                mode: null,
-                name: null,
-                owner: null,
-                search: null,
-                status: null,
-            }
-        ))
+        const taskPreviews = await Promise.all(taskPreviewPromises);
+
+        dispatch(getProjectsSuccess(array, result.count));
+
+
+        const store = getCVATStore();
+        const state: CombinedState = store.getState();
+
+        if (!state.tasks.fetching) {
+            dispatch(getTasksSuccess(
+                tasks,
+                taskPreviews,
+                tasks.length,
+                {
+                    page: 1,
+                    assignee: null,
+                    id: null,
+                    mode: null,
+                    name: null,
+                    owner: null,
+                    search: null,
+                    status: null,
+                }
+            ));
+        }
     };
 }
 
