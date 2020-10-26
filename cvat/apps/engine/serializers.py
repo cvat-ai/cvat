@@ -570,6 +570,3 @@ class CombinedReviewSerializer(ReviewSerializer):
                 models.Comment.objects.create(**comment)
 
         return db_review
-
-class CommentListSerializer(serializers.ListSerializer):
-    child = CommentSerializer()
