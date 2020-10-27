@@ -114,6 +114,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
+    private changeFileManagerTab = (key: string): void => {
+        // todo
+        // add field to state CreateTaskData.AdvancedConfiguration
+        // change state here
+        // draw checkbox depending on the state
+    };
+
     private handleSubmitClick = (): void => {
         if (!this.validateLabels()) {
             notification.error({
@@ -192,6 +199,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 <Text type='danger'>* </Text>
                 <Text className='cvat-text-color'>Select files:</Text>
                 <ConnectedFileManager
+                    onChangeActiveKey={this.changeFileManagerTab}
                     ref={(container: any): void => {
                         this.fileManagerContainer = container;
                     }}
