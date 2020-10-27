@@ -5,6 +5,7 @@
 const Comment = require('./comment');
 const User = require('./user');
 const { ArgumentError } = require('./exceptions');
+const { negativeIDGenerator } = require('./common');
 
 /**
  * Class representing a single issue
@@ -41,6 +42,10 @@ class Issue {
 
         if (data.resolver !== null) {
             data.resolver = User.objects[data.resolver];
+        }
+
+        if (typeof data.id === 'undefined') {
+            data.id = negativeIDGenerator();
         }
 
         Object.defineProperties(
@@ -162,8 +167,10 @@ class Issue {
 
     // eslint-disable-next-line
     async comment(message) {
-        // add a message to a collection, update in a local storage if issue do not have id
-        // if saved on the server, add comment immediately
+        // const comment = new Comment({ message });
+        // save on the server if positive id
+        // append saved comment to the collection
+        // else just push to comment set
     }
 
     async resolve() {
@@ -180,6 +187,33 @@ class Issue {
         }
 
         this.removed = true;
+    }
+
+    toJSON() {
+        const { comments } = this;
+        const data = {
+            roi: this.roi,
+            frame: this.frame,
+            comment_set: comments,
+        };
+
+        if (this.id > 0) {
+            data.id = this.id;
+        }
+        if (this.createdDate) {
+            data.created_date = this.createdDate;
+        }
+        if (this.resolvedDate) {
+            data.resolved_date = this.resolvedDate;
+        }
+        if (this.owner) {
+            data.owner = this.owner.id;
+        }
+        if (this.resolver) {
+            data.resolver = this.resolver.id;
+        }
+
+        return data;
     }
 }
 

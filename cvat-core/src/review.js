@@ -7,6 +7,7 @@ const Issue = require('./issue');
 const User = require('./user');
 const { ArgumentError } = require('./exceptions');
 const { ReviewStatus } = require('./enums');
+const { negativeIDGenerator } = require('./common');
 
 /**
  * Class representing a single review
@@ -39,6 +40,9 @@ class Review {
         }
         if (data.assignee !== null) {
             data.assignee = User.objects[data.assignee];
+        }
+        if (typeof data.id === 'undefined') {
+            data.id = negativeIDGenerator();
         }
 
         Object.defineProperties(
@@ -74,7 +78,7 @@ class Review {
                  * @readonly
                  */
                 issues: {
-                    get: () => data.issue_set,
+                    get: () => data.issue_set.filter((issue) => !issue.removed),
                 },
                 /**
                  * Estimated quality of the review
@@ -177,12 +181,38 @@ class Review {
         // else ignore
     }
 
-    async toLocalStorage(jobID) {
-        if (typeof jobID !== 'number') {
-            throw ArgumentError(`JobID is expected to be a number. ${jobID} got`);
+    toJSON() {
+        const { issues } = this;
+        const data = {
+            job: this.job,
+            issue_set: issues,
+        };
+
+        if (this.id > 0) {
+            data.id = this.id;
+        }
+        if (typeof this.estimated_quality !== 'undefined') {
+            data.estimated_quality = this.estimated_quality;
+        }
+        if (typeof this.status !== 'undefined') {
+            data.status = this.status;
+        }
+        if (this.reviewer) {
+            data.reviewer = this.reviewer.id;
+        }
+        if (this.assignee) {
+            data.assignee = this.assignee.id;
         }
 
-        store.set(`job-${jobID}-review`, JSON.stringify(this.__internal));
+        return data;
+    }
+
+    async toLocalStorage(jobID) {
+        if (!Number.isInteger(jobID)) {
+            throw new ArgumentError(`JobID is expected to be an integer. ${jobID} got`);
+        }
+
+        store.set(`job-${jobID}-review`, JSON.stringify(this));
     }
 }
 

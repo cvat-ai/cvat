@@ -1,0 +1,19 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-create-issue-dialog {
+    position: absolute;
+    width: $grid-unit-size * 30;
+    padding: $grid-unit-size;
+    background: $background-color-2;
+    border-radius: $grid-unit-size;
+    opacity: 0.95;
+    z-index: 100;
+
+    button {
+        width: $grid-unit-size * 12;
+    }
+}

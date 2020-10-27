@@ -37,6 +37,7 @@ import {
     changeSaturationLevel,
     switchAutomaticBordering,
 } from 'actions/settings-actions';
+import { reviewActions } from 'actions/review-actions';
 import {
     ColorBy,
     GridColor,
@@ -119,6 +120,7 @@ interface DispatchToProps {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
+    onStartIssue(ROI: number[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -301,6 +303,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
+        },
+        onStartIssue(ROI: number[]): void {
+            dispatch(reviewActions.startIssue(ROI));
         },
     };
 }

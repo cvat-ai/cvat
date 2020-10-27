@@ -89,6 +89,7 @@ interface Props {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
+    onStartIssue(ROI: number[]): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -357,9 +358,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasROISelected = (event: any): void => {
-        const { onResetCanvas } = this.props;
+        const { onResetCanvas, onStartIssue } = this.props;
         const { points } = event.detail;
-        console.log(points);
+        onStartIssue(points);
         onResetCanvas();
     };
 

@@ -26,6 +26,7 @@ module.exports = {
         'react/jsx-indent': ['warn', 4],
         'react/jsx-indent-props': ['warn', 4],
         'react/jsx-props-no-spreading': 0,
+        'implicit-arrow-linebreak': 0,
         'jsx-quotes': ['error', 'prefer-single'],
         'arrow-parens': ['error', 'always'],
         '@typescript-eslint/no-explicit-any': [0],

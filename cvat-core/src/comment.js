@@ -4,6 +4,7 @@
 
 const User = require('./user');
 const { ArgumentError } = require('./exceptions');
+const { negativeIDGenerator } = require('./common');
 
 /**
  * Class representing a single comment
@@ -29,6 +30,10 @@ class Comment {
 
         if (data.owner !== null) {
             data.owner = User.objects[data.owner];
+        }
+
+        if (typeof id === 'undefined') {
+            data.id = negativeIDGenerator();
         }
 
         Object.defineProperties(
@@ -123,6 +128,27 @@ class Comment {
         }
 
         this.removed = true;
+    }
+
+    toJSON() {
+        const data = {
+            message: this.message,
+        };
+
+        if (this.id > 0) {
+            data.id = this.id;
+        }
+        if (this.createdDate) {
+            data.created_date = this.createdDate;
+        }
+        if (this.updatedDate) {
+            data.updated_date = this.updatedDate;
+        }
+        if (this.owner) {
+            data.owner = this.owner.id;
+        }
+
+        return data;
     }
 }
 

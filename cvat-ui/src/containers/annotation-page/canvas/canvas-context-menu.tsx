@@ -154,7 +154,6 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
     private updatePositionIfOutOfScreen(): void {
         const { top, left } = this.state;
-
         const { innerWidth, innerHeight } = window;
 
         const [element] = window.document.getElementsByClassName('cvat-canvas-context-menu');

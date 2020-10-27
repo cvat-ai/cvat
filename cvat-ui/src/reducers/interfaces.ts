@@ -491,12 +491,12 @@ export interface ShortcutsState {
     normalizedKeyMap: Record<string, string>;
 }
 
-export interface MetaState {
-    initialized: boolean;
-    fetching: boolean;
-    showTasksButton: boolean;
-    showAnalyticsButton: boolean;
-    showModelsButton: boolean;
+export interface ReviewState {
+    reviews: any[];
+    issues: any[];
+    frameIssues: any[];
+    activeReview: any | null;
+    newIssueROI: number[] | null;
 }
 
 export interface CombinedState {
@@ -513,5 +513,5 @@ export interface CombinedState {
     annotation: AnnotationState;
     settings: SettingsState;
     shortcuts: ShortcutsState;
-    meta: MetaState;
+    review: ReviewState;
 }
