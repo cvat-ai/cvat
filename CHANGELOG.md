@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Fixed CVAT startup process if the user has `umask 077` in .bashrc file (<https://github.com/openvinotoolkit/cvat/pull/2293>)
 -   Exception: Cannot read property "each" of undefined after drawing a single point (<https://github.com/openvinotoolkit/cvat/pull/2307>)
 -   Cannot read property 'label' of undefined (Fixed?) (<https://github.com/openvinotoolkit/cvat/pull/2311>)
+-   'List of tasks' Kibana visualization (<https://github.com/openvinotoolkit/cvat/pull/2361>)
 
 ### Security
 
