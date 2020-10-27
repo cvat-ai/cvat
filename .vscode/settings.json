@@ -1,5 +1,4 @@
 {
-    "python.pythonPath": ".env/bin/python",
     "eslint.enable": true,
     "eslint.validate": [
         "javascript",
@@ -25,8 +24,11 @@
         }
     ],
     "python.linting.pylintEnabled": true,
-    "python.testing.unittestEnabled": true,
+    "python.testing.unittestEnabled": false,
     "licenser.license": "Custom",
     "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT",
-    "files.trimTrailingWhitespace": true
+    "files.trimTrailingWhitespace": true,
+    "python.testing.promptToConfigure": false,
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false
 }

@@ -66,7 +66,7 @@ class ModelLoader:
                 if len(contour) < 6:
                     continue
                 label = self.labels[class_id]
-
+                print(contour.ravel().tolist())
                 results.append({
                     "confidence": str(score),
                     "label": label,

@@ -1,12 +1,15 @@
 
 from PIL import Image
 
+
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
 from detectron2.utils.logger import setup_logger
 from detectron2.engine import DefaultPredictor
 from detectron2.data import MetadataCatalog
+import numpy as np
+from imantics import Polygons, Mask
 
 
 class ModelLoader:
@@ -30,9 +33,10 @@ class ModelLoader:
     def infer(self, image):
         output = self.predictor(image)['instances'].to('cpu')
         result = []
-        print(output)
         for i in range(len(output)):
             label = self.labels[output.pred_classes[i]]
-            result.append({"confidence": str(output[i].scores), "label": label, "points": output[i].pred_masks.tolist(), "type": "polygon",})
+            polygons = Mask(np.asarray(output[i].pred_masks)[0]).polygons()
+            points = polygons.points[0].ravel().tolist()
+            result.append({"confidence": str(output[i].scores), "label": label, "points": points,  "type": "polygon",})
         return result
 

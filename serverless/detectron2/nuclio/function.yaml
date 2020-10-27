@@ -99,6 +99,10 @@ spec:
   build:
     image: detectron2
     baseImage: detectron2:v0
+    directives:
+      preCopy:
+      - kind: RUN
+        value: pip3 install imantics
 
   triggers:
     myHttpTrigger:
