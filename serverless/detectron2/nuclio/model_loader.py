@@ -36,7 +36,8 @@ class ModelLoader:
         for i in range(len(output)):
             label = self.labels[output.pred_classes[i]]
             polygons = Mask(np.asarray(output[i].pred_masks)[0]).polygons()
-            points = polygons.points[0].ravel().tolist()
-            result.append({"confidence": str(output[i].scores), "label": label, "points": points,  "type": "polygon",})
+            if(len(polygons.points[0]) >= 3):
+                points = polygons.points[0].ravel().tolist()
+                result.append({"confidence": str(output[i].scores), "label": label, "points": points,  "type": "polygon",})
         return result
 
