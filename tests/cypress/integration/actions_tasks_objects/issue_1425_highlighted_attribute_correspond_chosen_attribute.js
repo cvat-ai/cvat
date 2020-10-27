@@ -6,7 +6,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('The highlighted attribute in AAM should correspond to the chosen attribute', () => {
     const issueId = '1425';
@@ -31,6 +31,11 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
         });
         it('Go to AAM', () => {
             cy.changeAnnotationMode('Attribute annotation');
+            // Select the necessary label in any case
+            cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
+                cy.get('.ant-select-selection').click();
+            });
+            cy.get('.ant-select-dropdown-menu-item').contains(labelName).click();
         });
         it('Check if highlighted attribute correspond to the chosen attribute in right panel', () => {
             cy.get('.cvat_canvas_text').within(() => {
