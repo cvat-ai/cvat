@@ -356,6 +356,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onGroupAnnotations(jobInstance, frame, states);
     };
 
+    private onCanvasROISelected = (event: any): void => {
+        const { onResetCanvas } = this.props;
+        const { points } = event.detail;
+        console.log(points);
+        onResetCanvas();
+    };
+
     private onCanvasTrackSplitted = (event: any): void => {
         const {
             jobInstance, frame, onSplitAnnotations, onSplitTrack,
@@ -695,6 +702,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.roiselected', this.onCanvasROISelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);

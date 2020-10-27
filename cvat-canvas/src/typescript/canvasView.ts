@@ -15,6 +15,7 @@ import { EditHandler, EditHandlerImpl } from './editHandler';
 import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
+import { ROISelector, ROISelectorImpl } from './roiSelector';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
 import { InteractionHandler, InteractionHandlerImpl } from './interactionHandler';
 import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
@@ -73,6 +74,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private mergeHandler: MergeHandler;
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
+    private roiSelector: ROISelector;
     private zoomHandler: ZoomHandler;
     private autoborderHandler: AutoborderHandler;
     private interactionHandler: InteractionHandler;
@@ -326,6 +328,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
             enabled: false,
         });
 
+        this.mode = Mode.IDLE;
+    }
+
+    private onROISelected(points?: number[]): void {
+        if (points) {
+            const event: CustomEvent = new CustomEvent('canvas.roiselected', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    points,
+                },
+            });
+
+            this.canvas.dispatchEvent(event);
+        } else {
+            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                bubbles: false,
+                cancelable: true,
+            });
+
+            this.canvas.dispatchEvent(event);
+        }
+
+        this.controller.selectROI(false);
         this.mode = Mode.IDLE;
     }
 
@@ -858,6 +884,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onFindObject.bind(this),
             this.adoptedContent,
         );
+        this.roiSelector = new ROISelectorImpl(
+            this.onROISelected.bind(this),
+            this.onFindObject.bind(this),
+            this.adoptedContent,
+        );
         this.zoomHandler = new ZoomHandlerImpl(this.onFocusRegion.bind(this), this.adoptedContent, this.geometry);
         this.interactionHandler = new InteractionHandlerImpl(
             this.onInteraction.bind(this),
@@ -1042,8 +1073,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.activate(this.controller.activeElement);
         } else if (reason === UpdateReasons.SELECT_ROI) {
             if (this.mode === Mode.SELECT_ROI) {
-                // activate roi
-                this.canvas.style.cursor = 'move';
+                this.roiSelector.select(true);
+                this.canvas.style.cursor = 'pointer';
+            } else {
+                this.roiSelector.select(false);
             }
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             if (this.mode === Mode.DRAG_CANVAS) {
@@ -1144,6 +1177,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.splitHandler.select(this.controller.selected);
             } else if (this.mode === Mode.GROUP) {
                 this.groupHandler.select(this.controller.selected);
+            } else if (this.mode === Mode.SELECT_ROI) {
+                this.roiSelector.selectObject(this.controller.selected);
             }
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
@@ -1156,6 +1191,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.splitHandler.cancel();
             } else if (this.mode === Mode.GROUP) {
                 this.groupHandler.cancel();
+            } else if (this.mode === Mode.SELECT_ROI) {
+                this.roiSelector.cancel();
             } else if (this.mode === Mode.EDIT) {
                 this.editHandler.cancel();
             } else if (this.mode === Mode.DRAG_CANVAS) {

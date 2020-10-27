@@ -36,6 +36,7 @@ export interface CanvasController {
     merge(mergeData: MergeData): void;
     split(splitData: SplitData): void;
     group(groupData: GroupData): void;
+    selectROI(enabled: boolean): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -101,6 +102,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public group(groupData: GroupData): void {
         this.model.group(groupData);
+    }
+
+    public selectROI(enable: boolean): void {
+        this.model.selectROI(enable);
     }
 
     public get geometry(): Geometry {
