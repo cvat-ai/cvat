@@ -450,6 +450,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SELECT_ROI: {
+            const { enabled } = action.payload;
+            const activeControl = enabled ? ActiveControl.SELECT_ROI : ActiveControl.CURSOR;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+            };
+        }
         case AnnotationActionTypes.MERGE_OBJECTS: {
             const { enabled } = action.payload;
             const activeControl = enabled ? ActiveControl.MERGE : ActiveControl.CURSOR;

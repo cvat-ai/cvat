@@ -127,6 +127,7 @@ export enum UpdateReasons {
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
+    SELECT_ROI = 'select_roi',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
     CONFIG_UPDATED = 'config_updated',
@@ -142,6 +143,7 @@ export enum Mode {
     SPLIT = 'split',
     GROUP = 'group',
     INTERACT = 'interact',
+    SELECT_ROI = 'select_roi',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
 }
@@ -183,6 +185,7 @@ export interface CanvasModel {
 
     fitCanvas(width: number, height: number): void;
     bitmap(enabled: boolean): void;
+    selectROI(enabled: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
@@ -288,15 +291,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
-            this.data.top +=
-                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.left -=
-                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            const topMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
+            const leftMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
+            this.data.top += mutiplier * topMultiplier * this.data.scale;
+            this.data.left -= mutiplier * leftMultiplier * this.data.scale;
         } else {
-            this.data.left +=
-                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.top +=
-                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            const leftMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
+            const topMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
+            this.data.left += mutiplier * leftMultiplier * this.data.scale;
+            this.data.top += mutiplier * topMultiplier * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
@@ -323,6 +326,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public bitmap(enabled: boolean): void {
         this.data.imageBitmap = enabled;
         this.notify(UpdateReasons.BITMAP);
+    }
+
+    public selectROI(enable: boolean): void {
+        if (enable && this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (!enable && this.data.mode !== Mode.SELECT_ROI) {
+            throw Error(`Canvas is not in the roi selecting mode. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = enable ? Mode.SELECT_ROI : Mode.IDLE;
+        this.notify(UpdateReasons.SELECT_ROI);
     }
 
     public dragCanvas(enable: boolean): void {
@@ -603,9 +619,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable =
-            [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
-            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
+            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }

@@ -12,26 +12,29 @@ import { Canvas } from 'cvat-canvas-wrapper';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
+    onSelectROI(enabled: boolean): void;
 }
 
 function ResizeControl(props: Props): JSX.Element {
-    const { activeControl, canvasInstance } = props;
+    const { activeControl, canvasInstance, onSelectROI } = props;
 
     return (
         <Tooltip title='Open an issue' placement='right' mouseLeaveDelay={0}>
             <Icon
                 type='message'
                 className={
-                    activeControl === ActiveControl.ZOOM_CANVAS ?
+                    activeControl === ActiveControl.SELECT_ROI ?
                         'cvat-issue-control cvat-active-canvas-control' :
                         'cvat-issue-control'
                 }
                 onClick={(): void => {
-                    if (activeControl === ActiveControl.ZOOM_CANVAS) {
-                        canvasInstance.zoomCanvas(false);
+                    if (activeControl === ActiveControl.SELECT_ROI) {
+                        canvasInstance.selectROI(false);
+                        onSelectROI(false);
                     } else {
                         canvasInstance.cancel();
-                        canvasInstance.zoomCanvas(true);
+                        canvasInstance.selectROI(true);
+                        onSelectROI(true);
                     }
                 }}
             />

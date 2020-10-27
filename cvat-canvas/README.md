@@ -50,12 +50,13 @@ Canvas itself handles:
         IDLE = 'idle',
         DRAG = 'drag',
         RESIZE = 'resize',
-        INTERACT = 'interact',
         DRAW = 'draw',
         EDIT = 'edit',
         MERGE = 'merge',
         SPLIT = 'split',
         GROUP = 'group',
+        INTERACT = 'interact',
+        SELECT_ROI = 'select_roi',
         DRAG_CANVAS = 'drag_canvas',
         ZOOM_CANVAS = 'zoom_canvas',
     }
@@ -128,6 +129,7 @@ Canvas itself handles:
 
         fitCanvas(): void;
         bitmap(enabled: boolean): void;
+        selectROI(enable: boolean): void;
         dragCanvas(enable: boolean): void;
         zoomCanvas(enable: boolean): void;
 
@@ -178,6 +180,7 @@ Standard JS events are used.
     - canvas.zoom
     - canvas.fit
     - canvas.dragshape => {id: number}
+    - canvas.roiselected => {points: number[]}
     - canvas.resizeshape => {id: number}
     - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
 ```

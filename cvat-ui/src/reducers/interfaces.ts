@@ -291,6 +291,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
+    SELECT_ROI = 'select_roi',
     AI_TOOLS = 'ai_tools',
 }
 

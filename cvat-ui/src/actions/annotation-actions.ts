@@ -123,6 +123,7 @@ export enum AnnotationActionTypes {
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
+    SELECT_ROI = 'SELECT_ROI',
     MERGE_OBJECTS = 'MERGE_OBJECTS',
     GROUP_OBJECTS = 'GROUP_OBJECTS',
     SPLIT_TRACK = 'SPLIT_TRACK',
@@ -1057,6 +1058,15 @@ export function shapeDrawn(): AnyAction {
     return {
         type: AnnotationActionTypes.SHAPE_DRAWN,
         payload: {},
+    };
+}
+
+export function selectROI(enabled: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SELECT_ROI,
+        payload: {
+            enabled,
+        },
     };
 }
 
