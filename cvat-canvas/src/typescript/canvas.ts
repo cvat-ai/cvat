@@ -28,6 +28,7 @@ const CanvasVersion = pjson.version;
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    setupReviewROIs(reviewROIs: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID?: number): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
@@ -70,6 +71,10 @@ class CanvasImpl implements Canvas {
 
     public setup(frameData: any, objectStates: any[], zLayer = 0): void {
         this.model.setup(frameData, objectStates, zLayer);
+    }
+
+    public setupReviewROIs(reviewROIs: Record<number, number[]>): void {
+        this.model.setupReviewROIs(reviewROIs);
     }
 
     public fitCanvas(): void {

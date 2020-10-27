@@ -68,6 +68,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
     private drawnStates: Record<number, DrawnState>;
+    private drawnReviewROIs: Record<number, SVG.Shape>;
     private geometry: Geometry;
     private drawHandler: DrawHandler;
     private editHandler: EditHandler;
@@ -90,6 +91,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private get mode(): Mode {
         return this.controller.mode;
+    }
+
+    private translateToCanvas(points: number[]): number[] {
+        const { offset } = this.controller.geometry;
+        return points.map((coord: number): number => coord + offset);
+    }
+
+    private translateFromCanvas(points: number[]): number[] {
+        const { offset } = this.controller.geometry;
+        return points.map((coord: number): number => coord - offset);
+    }
+
+    private stringifyToCanvas(points: number[]): string {
+        return points.reduce((acc: string, val: number, idx: number): string => {
+            if (idx % 2) {
+                return `${acc}${val} `;
+            }
+
+            return `${acc}${val},`;
+        }, '');
     }
 
     private isServiceHidden(clientID: number): boolean {
@@ -508,10 +529,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private setupObjects(states: any[]): void {
-        const { offset } = this.controller.geometry;
-        const translate = (points: number[]): number[] => points.map((coord: number): number => coord + offset);
+    private setupReviewROIs(reviewROIs: Record<number, number[]>): void {
+        for (const reviewROI of Object.keys(this.drawnReviewROIs)) {
+            this.drawnReviewROIs[+reviewROI].remove();
+        }
 
+        for (const reviewROI of Object.keys(reviewROIs)) {
+            const points = this.translateToCanvas(reviewROIs[+reviewROI]);
+            const stringified = this.stringifyToCanvas(points);
+            this.drawnReviewROIs[+reviewROI] = this.adoptedContent
+                .polygon(stringified)
+                .addClass('cvat_canvas_review_roi')
+                .attr({
+                    id: `cvat_canvas_review_roi_${reviewROI}`,
+                });
+        }
+    }
+
+    private setupObjects(states: any[]): void {
         const created = [];
         const updated = [];
         for (const state of states) {
@@ -546,8 +581,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 delete this.drawnStates[state.clientID];
             }
 
-            this.addObjects(created, translate);
-            this.updateObjects(updated, translate);
+            this.addObjects(created);
+            this.updateObjects(updated);
             this.sortObjects();
 
             if (this.controller.activeElement.clientID !== null) {
@@ -636,8 +671,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private selectize(value: boolean, shape: SVG.Element): void {
         const self = this;
-        const { offset } = this.controller.geometry;
-        const translate = (points: number[]): number[] => points.map((coord: number): number => coord - offset);
 
         function mousedownHandler(e: MouseEvent): void {
             if (e.button !== 0) return;
@@ -687,7 +720,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (state.shapeType === 'cuboid') {
                     if (e.shiftKey) {
-                        const points = translate(
+                        const points = self.translateFromCanvas(
                             pointsToNumberArray((e.target as any).parentElement.parentElement.instance.attr('points')),
                         );
                         self.onEditDone(state, points);
@@ -779,6 +812,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.svgShapes = {};
         this.svgTexts = {};
         this.drawnStates = {};
+        this.drawnReviewROIs = {};
         this.activeElement = {
             clientID: null,
             attributeID: null,
@@ -1046,6 +1080,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if ([UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
             if (this.mode === Mode.GROUP) {
                 this.groupHandler.resetSelectedObjects();
+            } else if (this.mode === Mode.SELECT_ROI) {
+                this.roiSelector.resetSelectedObjects();
             }
             this.setupObjects(this.controller.objects);
             if (this.mode === Mode.MERGE) {
@@ -1053,6 +1089,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);
+        } else if (reason === UpdateReasons.REVIEW_ROIS_UPDATED) {
+            this.setupReviewROIs(this.controller.reviewROIs);
         } else if (reason === UpdateReasons.GRID_UPDATED) {
             const size: Size = this.geometry.grid;
             this.gridPattern.setAttribute('width', `${size.width}`);
@@ -1317,7 +1355,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
     }
 
-    private updateObjects(states: any[], translate: (points: number[]) => number[]): void {
+    private updateObjects(states: any[]): void {
         for (const state of states) {
             const { clientID } = state;
             const drawnState = this.drawnStates[clientID];
@@ -1370,7 +1408,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 state.points.length !== drawnState.points.length
                 || state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
-                const translatedPoints: number[] = translate(state.points);
+                const translatedPoints: number[] = this.translateToCanvas(state.points);
 
                 if (state.shapeType === 'rectangle') {
                     const [xtl, ytl, xbr, ybr] = translatedPoints;
@@ -1382,13 +1420,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         height: ybr - ytl,
                     });
                 } else {
-                    const stringified = translatedPoints.reduce((acc: string, val: number, idx: number): string => {
-                        if (idx % 2) {
-                            return `${acc}${val} `;
-                        }
-
-                        return `${acc}${val},`;
-                    }, '');
+                    const stringified = this.stringifyToCanvas(translatedPoints);
                     if (state.shapeType !== 'cuboid') {
                         (shape as any).clear();
                     }
@@ -1417,24 +1449,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private addObjects(states: any[], translate: (points: number[]) => number[]): void {
+    private addObjects(states: any[]): void {
         const { displayAllText } = this.configuration;
 
         for (const state of states) {
             const points: number[] = state.points as number[];
-            const translatedPoints: number[] = translate(points);
+            const translatedPoints: number[] = this.translateToCanvas(points);
 
             // TODO: Use enums after typification cvat-core
             if (state.shapeType === 'rectangle') {
                 this.svgShapes[state.clientID] = this.addRect(translatedPoints, state);
             } else {
-                const stringified = translatedPoints.reduce((acc: string, val: number, idx: number): string => {
-                    if (idx % 2) {
-                        return `${acc}${val} `;
-                    }
-
-                    return `${acc}${val},`;
-                }, '');
+                const stringified = this.stringifyToCanvas(translatedPoints);
 
                 if (state.shapeType === 'polygon') {
                     this.svgShapes[state.clientID] = this.addPolygon(stringified, state);

@@ -66,6 +66,10 @@ polyline.cvat_shape_drawing_opacity {
     stroke: white;
 }
 
+.cvat_canvas_review_roi {
+    display: none;
+}
+
 polyline.cvat_canvas_shape_grouping {
     @extend .cvat_shape_action_dasharray;
     @extend .cvat_shape_action_opacity;

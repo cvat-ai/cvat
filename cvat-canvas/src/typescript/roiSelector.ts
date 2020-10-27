@@ -13,6 +13,7 @@ import { translateToSVG } from './shared';
 export interface ROISelector {
     select(enabled: boolean): void;
     selectObject(state: any): void;
+    resetSelectedObjects(): void;
     cancel(): void;
 }
 
@@ -159,5 +160,9 @@ export class ROISelectorImpl implements ROISelector {
     public cancel(): void {
         this.release();
         this.onROISelected();
+    }
+
+    public resetSelectedObjects(): void {
+        this.blurObject();
     }
 }
