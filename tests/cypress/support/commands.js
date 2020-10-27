@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -124,10 +122,12 @@ Cypress.Commands.add('switchLabel', (labelName) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    cy.get('.cvat-objects-sidebar-state-item').then((objectSidebar) => {
-        cy.get(`#cvat_canvas_shape_${objectSidebar.length}`).should('exist').and('be.visible');
-        cy.get(`#cvat-objects-sidebar-state-item-${objectSidebar.length}`)
-        .should('contain', objectSidebar.length).and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`).within(() => {
+    cy.get('.cvat_canvas_shape').last().should('have.attr', 'id').then(($cvatCanvasShapeId) => {
+        const arrCvatCanvasShapeId = $cvatCanvasShapeId.split('_')
+        const idNumCanvasShape = arrCvatCanvasShapeId[arrCvatCanvasShapeId.length - 1]
+        cy.get(`#cvat_canvas_shape_${idNumCanvasShape}`).should('exist').and('be.visible');
+        cy.get(`#cvat-objects-sidebar-state-item-${idNumCanvasShape}`)
+        .should('contain', idNumCanvasShape).and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`).within(() => {
             cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
         });
     });
@@ -217,10 +217,17 @@ Cypress.Commands.add('closeSettings', () => {
         });
 });
 
-Cypress.Commands.add('changeAnnotationMode', (mode) => {
+Cypress.Commands.add('changeAnnotationMode', (mode, labelName) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.ant-select-dropdown-menu-item').contains(mode).click();
     cy.get('.cvat-workspace-selector').should('contain.text', mode);
+    if (mode === 'Attribute annotation') {
+        // Select the necessary label in any case
+        cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
+            cy.get('.ant-select-selection').click();
+        });
+        cy.get('.ant-select-dropdown-menu-item').contains(labelName).click();
+    }
 });
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {
