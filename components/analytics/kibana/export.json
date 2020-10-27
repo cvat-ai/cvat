@@ -40,19 +40,11 @@
     "_type": "search",
     "_source": {
       "hits": 0,
-      "sort": [
-        "@timestamp",
-        "desc"
-      ],
+      "sort": ["@timestamp", "desc"],
       "kibanaSavedObjectMeta": {
         "searchSourceJSON": "{\"index\":\"ec510550-c238-11e8-8e1b-758ef07f6de8\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"event:\\\"Send exception\\\"\"},\"filter\":[]}"
       },
-      "columns": [
-        "task",
-        "type",
-        "userid",
-        "stack"
-      ],
+      "columns": ["task", "type", "userid", "stack"],
       "description": "",
       "title": "Table with exceptions",
       "version": 1

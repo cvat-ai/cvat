@@ -1,18 +1,21 @@
 # Module CVAT-CANVAS
 
 ## Description
+
 The CVAT module written in TypeScript language.
 It presents a canvas to viewing, drawing and editing of annotations.
 
 ## Versioning
+
 If you make changes in this package, please do following:
 
-- After not important changes (typos, backward compatible bug fixes, refactoring) do: ``npm version patch``
-- After changing API (backward compatible new features) do: ``npm version minor``
-- After changing API (changes that break backward compatibility) do: ``npm version major``
+- After not important changes (typos, backward compatible bug fixes, refactoring) do: `npm version patch`
+- After changing API (backward compatible new features) do: `npm version minor`
+- After changing API (changes that break backward compatibility) do: `npm version major`
 
 ## Commands
-- Building of the module from sources in the ```dist``` directory:
+
+- Building of the module from sources in the `dist` directory:
 
 ```bash
 npm run build
@@ -22,6 +25,7 @@ npm run build -- --mode=development     # without a minification
 ## Using
 
 Canvas itself handles:
+
 - Shape context menu (PKM)
 - Image moving (mousedrag)
 - Image resizing (mousewheel)
@@ -136,22 +140,23 @@ Canvas itself handles:
 
 ### API CSS
 
-- All drawn objects (shapes, tracks) have an id ```cvat_canvas_shape_{objectState.clientID}```
-- Drawn shapes and tracks have classes ```cvat_canvas_shape```,
- ```cvat_canvas_shape_activated```,
- ```cvat_canvas_shape_grouping```,
- ```cvat_canvas_shape_merging```,
- ```cvat_canvas_shape_drawing```,
- ```cvat_canvas_shape_occluded```
-- Drawn texts have the class ```cvat_canvas_text```
-- Tags have the class ```cvat_canvas_tag```
-- Canvas image has ID ```cvat_canvas_image```
-- Grid on the canvas has ID ```cvat_canvas_grid``` and ```cvat_canvas_grid_pattern```
-- Crosshair during a draw has class ```cvat_canvas_crosshair```
+- All drawn objects (shapes, tracks) have an id `cvat_canvas_shape_{objectState.clientID}`
+- Drawn shapes and tracks have classes `cvat_canvas_shape`,
+  `cvat_canvas_shape_activated`,
+  `cvat_canvas_shape_grouping`,
+  `cvat_canvas_shape_merging`,
+  `cvat_canvas_shape_drawing`,
+  `cvat_canvas_shape_occluded`
+- Drawn texts have the class `cvat_canvas_text`
+- Tags have the class `cvat_canvas_tag`
+- Canvas image has ID `cvat_canvas_image`
+- Grid on the canvas has ID `cvat_canvas_grid` and `cvat_canvas_grid_pattern`
+- Crosshair during a draw has class `cvat_canvas_crosshair`
 
 ### Events
 
 Standard JS events are used.
+
 ```js
     - canvas.setup
     - canvas.activated => {state: ObjectState}
@@ -178,31 +183,32 @@ Standard JS events are used.
 ```
 
 ### WEB
+
 ```js
-    // Create an instance of a canvas
-    const canvas = new window.canvas.Canvas();
+// Create an instance of a canvas
+const canvas = new window.canvas.Canvas();
 
-    console.log('Version ', window.canvas.CanvasVersion);
-    console.log('Current mode is ', window.canvas.mode());
+console.log('Version ', window.canvas.CanvasVersion);
+console.log('Current mode is ', window.canvas.mode());
 
-    // Put canvas to a html container
-    htmlContainer.appendChild(canvas.html());
-    canvas.fitCanvas();
+// Put canvas to a html container
+htmlContainer.appendChild(canvas.html());
+canvas.fitCanvas();
 
-    // Next you can use its API methods. For example:
-    canvas.rotate(270);
-    canvas.draw({
-        enabled: true,
-        shapeType: 'rectangle',
-        crosshair: true,
-        rectDrawingMethod: window.Canvas.RectDrawingMethod.CLASSIC,
-    });
+// Next you can use its API methods. For example:
+canvas.rotate(270);
+canvas.draw({
+  enabled: true,
+  shapeType: 'rectangle',
+  crosshair: true,
+  rectDrawingMethod: window.Canvas.RectDrawingMethod.CLASSIC,
+});
 ```
 
 ## API Reaction
 
 |              | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS | INTERACT |
-|--------------|------|-------|-------|------|-------|------|------|--------|-------------|-------------|----------|
+| ------------ | ---- | ----- | ----- | ---- | ----- | ---- | ---- | ------ | ----------- | ----------- | -------- |
 | setup()      | +    | +     | +     | +/-  | +     | +/-  | +/-  | +/-    | +           | +           | +        |
 | activate()   | +    | -     | -     | -    | -     | -    | -    | -      | -           | -           | -        |
 | rotate()     | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |

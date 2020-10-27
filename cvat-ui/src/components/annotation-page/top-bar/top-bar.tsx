@@ -147,11 +147,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     />
                 </Row>
             </Col>
-            <RightGroup
-                workspace={workspace}
-                changeWorkspace={changeWorkspace}
-                showStatistics={showStatistics}
-            />
+            <RightGroup workspace={workspace} changeWorkspace={changeWorkspace} showStatistics={showStatistics} />
         </Row>
     );
 }

@@ -56,11 +56,12 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 gettingQuery: { ...action.payload.query },
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
-            const combinedWithPreviews = action.payload.array
-                .map((task: any, index: number): Task => ({
+            const combinedWithPreviews = action.payload.array.map(
+                (task: any, index: number): Task => ({
                     instance: task,
                     preview: action.payload.previews[index],
-                }));
+                }),
+            );
 
             return {
                 ...state,
@@ -82,8 +83,10 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             const { dumper } = action.payload;
             const { dumps } = state.activities;
 
-            dumps[task.id] = task.id in dumps && !dumps[task.id].includes(dumper.name)
-                ? [...dumps[task.id], dumper.name] : dumps[task.id] || [dumper.name];
+            dumps[task.id] =
+                task.id in dumps && !dumps[task.id].includes(dumper.name)
+                    ? [...dumps[task.id], dumper.name]
+                    : dumps[task.id] || [dumper.name];
 
             return {
                 ...state,
@@ -101,8 +104,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             const { dumper } = action.payload;
             const { dumps } = state.activities;
 
-            dumps[task.id] = dumps[task.id]
-                .filter((dumperName: string): boolean => dumperName !== dumper.name);
+            dumps[task.id] = dumps[task.id].filter((dumperName: string): boolean => dumperName !== dumper.name);
 
             return {
                 ...state,
@@ -119,9 +121,10 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             const { exporter } = action.payload;
             const { exports: activeExports } = state.activities;
 
-            activeExports[task.id] = task.id in activeExports && !activeExports[task.id]
-                .includes(exporter.name) ? [...activeExports[task.id], exporter.name]
-                : activeExports[task.id] || [exporter.name];
+            activeExports[task.id] =
+                task.id in activeExports && !activeExports[task.id].includes(exporter.name)
+                    ? [...activeExports[task.id], exporter.name]
+                    : activeExports[task.id] || [exporter.name];
 
             return {
                 ...state,
@@ -139,8 +142,9 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             const { exporter } = action.payload;
             const { exports: activeExports } = state.activities;
 
-            activeExports[task.id] = activeExports[task.id]
-                .filter((exporterName: string): boolean => exporterName !== exporter.name);
+            activeExports[task.id] = activeExports[task.id].filter(
+                (exporterName: string): boolean => exporterName !== exporter.name,
+            );
 
             return {
                 ...state,
@@ -298,32 +302,36 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             return {
                 ...state,
                 updating: false,
-                current: state.current.map((task): Task => {
-                    if (task.instance.id === action.payload.task.id) {
-                        return {
-                            ...task,
-                            instance: action.payload.task,
-                        };
-                    }
+                current: state.current.map(
+                    (task): Task => {
+                        if (task.instance.id === action.payload.task.id) {
+                            return {
+                                ...task,
+                                instance: action.payload.task,
+                            };
+                        }
 
-                    return task;
-                }),
+                        return task;
+                    },
+                ),
             };
         }
         case TasksActionTypes.UPDATE_TASK_FAILED: {
             return {
                 ...state,
                 updating: false,
-                current: state.current.map((task): Task => {
-                    if (task.instance.id === action.payload.task.id) {
-                        return {
-                            ...task,
-                            instance: action.payload.task,
-                        };
-                    }
+                current: state.current.map(
+                    (task): Task => {
+                        if (task.instance.id === action.payload.task.id) {
+                            return {
+                                ...task,
+                                instance: action.payload.task,
+                            };
+                        }
 
-                    return task;
-                }),
+                        return task;
+                    },
+                ),
             };
         }
         case TasksActionTypes.HIDE_EMPTY_TASKS: {

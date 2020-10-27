@@ -5,17 +5,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import {
-    TasksState,
-    TasksQuery,
-    CombinedState,
-} from 'reducers/interfaces';
+import { TasksState, TasksQuery, CombinedState } from 'reducers/interfaces';
 
 import TasksListComponent from 'components/tasks-page/task-list';
 
-import {
-    getTasksAsync,
-} from 'actions/tasks-actions';
+import { getTasksAsync } from 'actions/tasks-actions';
 
 interface StateToProps {
     tasks: TasksState;
@@ -46,10 +40,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type TasksListContainerProps = StateToProps & DispatchToProps & OwnProps;
 
 function TasksListContainer(props: TasksListContainerProps): JSX.Element {
-    const {
-        tasks,
-        onSwitchPage,
-    } = props;
+    const { tasks, onSwitchPage } = props;
 
     return (
         <TasksListComponent
@@ -61,7 +52,4 @@ function TasksListContainer(props: TasksListContainerProps): JSX.Element {
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(TasksListContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(TasksListContainer);

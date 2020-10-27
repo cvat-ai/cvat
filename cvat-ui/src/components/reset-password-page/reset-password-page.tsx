@@ -45,10 +45,7 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
         xl: { span: 4 },
     };
 
-    const {
-        fetching,
-        onResetPassword,
-    } = props;
+    const { fetching, onResetPassword } = props;
 
     return (
         <Row type='flex' justify='center' align='middle'>
@@ -73,7 +70,4 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(ResetPasswordPagePageComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(ResetPasswordPagePageComponent);

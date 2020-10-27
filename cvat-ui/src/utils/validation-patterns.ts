@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-
 const validationPatterns = {
     validatePasswordLength: {
         pattern: /(?=.{8,})/,

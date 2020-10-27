@@ -16,9 +16,7 @@ interface Props {
 export default function DeployedModelsListComponent(props: Props): JSX.Element {
     const { models } = props;
 
-    const items = models.map((model): JSX.Element => (
-        <DeployedModelItem key={model.id} model={model} />
-    ));
+    const items = models.map((model): JSX.Element => <DeployedModelItem key={model.id} model={model} />);
 
     return (
         <>
@@ -41,7 +39,7 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
                             <Text strong>Labels</Text>
                         </Col>
                     </Row>
-                    { items }
+                    {items}
                 </Col>
             </Row>
         </>

@@ -38,34 +38,18 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
-            annotations: {
-                states,
-            },
-            job: {
-                instance: jobInstance,
-            },
+            annotations: { states },
+            job: { instance: jobInstance },
             player: {
-                frame: {
-                    number: frameNumber,
-                },
+                frame: { number: frameNumber },
             },
-            canvas: {
-                instance: canvasInstance,
-            },
+            canvas: { instance: canvasInstance },
         },
-        shortcuts: {
-            normalizedKeyMap,
-        },
+        shortcuts: { normalizedKeyMap },
     } = state;
 
-    const {
-        clientID,
-        outsideDisabled,
-        hiddenDisabled,
-        keyframeDisabled,
-    } = own;
-    const [objectState] = states
-        .filter((_objectState): boolean => _objectState.clientID === clientID);
+    const { clientID, outsideDisabled, hiddenDisabled, keyframeDisabled } = own;
+    const [objectState] = states.filter((_objectState): boolean => _objectState.clientID === clientID);
 
     return {
         objectState,
@@ -73,9 +57,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         frameNumber,
         jobInstance,
         canvasInstance,
-        outsideDisabled: typeof (outsideDisabled) === 'undefined' ? false : outsideDisabled,
-        hiddenDisabled: typeof (hiddenDisabled) === 'undefined' ? false : hiddenDisabled,
-        keyframeDisabled: typeof (keyframeDisabled) === 'undefined' ? false : keyframeDisabled,
+        outsideDisabled: typeof outsideDisabled === 'undefined' ? false : outsideDisabled,
+        hiddenDisabled: typeof hiddenDisabled === 'undefined' ? false : hiddenDisabled,
+        keyframeDisabled: typeof keyframeDisabled === 'undefined' ? false : keyframeDisabled,
     };
 }
 
@@ -198,10 +182,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private commit(): void {
-        const {
-            objectState,
-            updateAnnotations,
-        } = this.props;
+        const { objectState, updateAnnotations } = this.props;
 
         updateAnnotations([objectState]);
     }
@@ -223,12 +204,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
             keyframeDisabled,
         } = this.props;
 
-        const {
-            first,
-            prev,
-            next,
-            last,
-        } = objectState.keyframes || {
+        const { first, prev, next, last } = objectState.keyframes || {
             first: null, // shapes don't have keyframes, so we use null
             prev: null,
             next: null,
@@ -255,24 +231,10 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
                 outsideDisabled={outsideDisabled}
                 hiddenDisabled={hiddenDisabled}
                 keyframeDisabled={keyframeDisabled}
-
-                navigateFirstKeyframe={
-                    first >= frameNumber || first === null
-                        ? null : this.navigateFirstKeyframe
-                }
-                navigatePrevKeyframe={
-                    prev === frameNumber || prev === null
-                        ? null : this.navigatePrevKeyframe
-                }
-                navigateNextKeyframe={
-                    next === frameNumber || next === null
-                        ? null : this.navigateNextKeyframe
-                }
-                navigateLastKeyframe={
-                    last <= frameNumber || last === null
-                        ? null : this.navigateLastKeyframe
-                }
-
+                navigateFirstKeyframe={first >= frameNumber || first === null ? null : this.navigateFirstKeyframe}
+                navigatePrevKeyframe={prev === frameNumber || prev === null ? null : this.navigatePrevKeyframe}
+                navigateNextKeyframe={next === frameNumber || next === null ? null : this.navigateNextKeyframe}
+                navigateLastKeyframe={last <= frameNumber || last === null ? null : this.navigateLastKeyframe}
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}
@@ -290,7 +252,4 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(ItemButtonsWrapper);
+export default connect(mapStateToProps, mapDispatchToProps)(ItemButtonsWrapper);

@@ -9,85 +9,96 @@ they should reciprocate that respect in addressing your issue or assessing
 patches and features.
 
 ## Development environment
--   Install necessary dependencies:
 
-    Ubuntu 18.04
-    ```sh
-    sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
-    ```
-    ```sh
-    # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
-    curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-    ```
+- Install necessary dependencies:
 
-    MacOS 10.15
-    ```sh
-    brew install git python pyenv redis curl openssl node
-    ```
+  Ubuntu 18.04
 
--   Install FFmpeg libraries (libav*) version 4.0 or higher.
+  ```sh
+  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+  ```
 
--   Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
-for development
+  ```sh
+  # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
+  curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+  ```
 
--   Install CVAT on your local host:
-    ```sh
-    git clone https://github.com/opencv/cvat
-    cd cvat && mkdir logs keys
-    python3 -m venv .env
-    . .env/bin/activate
-    pip install -U pip wheel setuptools
-    pip install -r cvat/requirements/development.txt
-    python manage.py migrate
-    python manage.py collectstatic
-    ```
-    > Note for Mac users
-    >
-    > If you have any problems with installing dependencies from
-    > ```cvat/requirements/*.txt```, you may need to reinstall your system python
-    > In some cases after system update it can be configured incorrectly and cannot compile some native modules
+  MacOS 10.15
 
--   Create a super user for CVAT:
-    ```sh
-    $ python manage.py createsuperuser
-    Username (leave blank to use 'django'): ***
-    Email address: ***
-    Password: ***
-    Password (again): ***
-    ```
+  ```sh
+  brew install git python pyenv redis curl openssl node
+  ```
 
--   Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
-    ```sh
-    npm install && \
-    cd cvat-core && npm install && \
-    cd ../cvat-ui && npm install && npm start
-    ```
-    > Note for Mac users
-    >
-    > If you faced with error
-    >
-    > ```Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)```
-    >
-    > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+- Install FFmpeg libraries (libav\*) version 4.0 or higher.
 
--   Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
-    ```sh
-    cd .. && source .env/bin/activate && code
-    ```
+- Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
+  for development
 
--   Install following VS Code extensions:
-    - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
-    - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
-    - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-    - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
-    - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
-    - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
-    - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
+- Install CVAT on your local host:
 
--   Reload Visual Studio Code from virtual environment
+  ```sh
+  git clone https://github.com/opencv/cvat
+  cd cvat && mkdir logs keys
+  python3 -m venv .env
+  . .env/bin/activate
+  pip install -U pip wheel setuptools
+  pip install -r cvat/requirements/development.txt
+  python manage.py migrate
+  python manage.py collectstatic
+  ```
 
--   Select `server: debug` configuration and start it (F5) to run REST server and its workers
+  > Note for Mac users
+  >
+  > If you have any problems with installing dependencies from
+  > `cvat/requirements/*.txt`, you may need to reinstall your system python
+  > In some cases after system update it can be configured incorrectly and cannot compile some native modules
+
+- Create a super user for CVAT:
+
+  ```sh
+  $ python manage.py createsuperuser
+  Username (leave blank to use 'django'): ***
+  Email address: ***
+  Password: ***
+  Password (again): ***
+  ```
+
+- Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
+
+  ```sh
+  npm install && \
+  cd cvat-core && npm install && \
+  cd ../cvat-ui && npm install && npm start
+  ```
+
+  > Note for Mac users
+  >
+  > If you faced with error
+  >
+  > `Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)`
+  >
+  > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+
+- Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
+
+  ```sh
+  cd .. && source .env/bin/activate && code
+  ```
+
+- Install following VS Code extensions:
+
+  - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+  - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+  - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+  - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
+  - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
+  - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
+  - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
+
+- Reload Visual Studio Code from virtual environment
+
+- Select `server: debug` configuration and start it (F5) to run REST server and its workers
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
@@ -95,30 +106,32 @@ You have done! Now it is possible to insert breakpoints and debug server and cli
 
 You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
--   Install WSL using [this guide](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).
+- Install WSL using [this guide](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).
 
--   Following this guide install Ubuntu 18.04 Linux distribution for WSL.
+- Following this guide install Ubuntu 18.04 Linux distribution for WSL.
 
--   Run Ubuntu using start menu link or execute next command
-    ```powershell
-    wsl -d Ubuntu-18.04
-    ```
+- Run Ubuntu using start menu link or execute next command
 
--   Run all commands from this isntallation guide in WSL Ubuntu shell.
+  ```powershell
+  wsl -d Ubuntu-18.04
+  ```
+
+- Run all commands from this isntallation guide in WSL Ubuntu shell.
+
 ## Setup additional components in development environment
 
 ### DL models as serverless functions
 
 Install [nuclio platform](https://github.com/nuclio/nuclio):
+
 - You have to install `nuctl` command line tool to build and deploy serverless
-functions. Download [the latest release](
-https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md#download).
+  functions. Download [the latest release](https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md#download).
 - The simplest way to explore Nuclio is to run its graphical user interface (GUI)
-of the Nuclio dashboard. All you need in order to run the dashboard is Docker. See
-[nuclio documentation](https://github.com/nuclio/nuclio#quick-start-steps)
-for more details.
+  of the Nuclio dashboard. All you need in order to run the dashboard is Docker. See
+  [nuclio documentation](https://github.com/nuclio/nuclio#quick-start-steps)
+  for more details.
 - Create `cvat` project inside nuclio dashboard where you will deploy new
-serverless functions and deploy a couple of DL models.
+  serverless functions and deploy a couple of DL models.
 
 ```bash
 nuctl create project cvat
@@ -181,7 +194,7 @@ nuctl deploy --project-name cvat \
 </details>
 
 - Display a list of running serverless functions using `nuctl` command or see them
-in nuclio dashboard:
+  in nuclio dashboard:
 
 ```bash
 nuctl get function
@@ -198,7 +211,7 @@ nuctl get function
 </details>
 
 - Test your deployed DL model as a serverless function. The command below
-should work on Linux and Mac OS.
+  should work on Linux and Mac OS.
 
 ```bash
 image=$(curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - | base64 | tr -d '\n')
@@ -238,6 +251,7 @@ Server = nuclio
     }
 ]
 ```
+
 </details>
 ### Run Cypress tests
 - Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
@@ -258,12 +272,12 @@ little exception - we prefer 4 spaces for indentation of nested blocks and state
 The project uses [a successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model).
 Thus it has a couple of branches. Some of them are described below:
 
--   `origin/master` to be the main branch where the source code of
-HEAD always reflects a production-ready state
+- `origin/master` to be the main branch where the source code of
+  HEAD always reflects a production-ready state
 
--   `origin/develop` to be the main branch where the source code of
-HEAD always reflects a state with the latest delivered development
-changes for the next release. Some would call this the “integration branch”.
+- `origin/develop` to be the main branch where the source code of
+  HEAD always reflects a state with the latest delivered development
+  changes for the next release. Some would call this the “integration branch”.
 
 ## Using the issue tracker
 
@@ -271,13 +285,14 @@ The issue tracker is the preferred channel for [bug reports](#bugs),
 [features requests](#features) and [submitting pull
 requests](#pull-requests), but please respect the following restrictions:
 
--   Please **do not** use the issue tracker for personal support requests (use
+- Please **do not** use the issue tracker for personal support requests (use
   [Stack Overflow](http://stackoverflow.com)).
 
--   Please **do not** derail or troll issues. Keep the discussion on topic and
+- Please **do not** derail or troll issues. Keep the discussion on topic and
   respect the opinions of others.
 
 <a name="bugs"></a>
+
 ## Bug reports
 
 A bug is a _demonstrable problem_ that is caused by the code in the repository.
@@ -286,10 +301,10 @@ Good bug reports are extremely helpful - thank you!
 Guidelines for bug reports:
 
 1.  **Use the GitHub issue search** &mdash; check if the issue has already been
-   reported.
+    reported.
 
 1.  **Check if the issue has been fixed** &mdash; try to reproduce it using the
-   latest `develop` branch in the repository.
+    latest `develop` branch in the repository.
 
 1.  **Isolate the problem** &mdash; ideally create a reduced test case.
 
@@ -316,6 +331,7 @@ Example:
 > merits).
 
 <a name="features"></a>
+
 ## Feature requests
 
 Feature requests are welcome. But take a moment to find out whether your idea
@@ -324,6 +340,7 @@ case to convince the project's developers of the merits of this feature. Please
 provide as much detail and context as possible.
 
 <a name="pull-requests"></a>
+
 ## Pull requests
 
 Good pull requests - patches, improvements, new features - are a fantastic
@@ -368,10 +385,10 @@ project:
     ```
 
 1.  Commit your changes in logical chunks. Please adhere to these [git commit
-   message guidelines](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
-   or your code is unlikely be merged into the main project. Use Git's
-   [interactive rebase](https://docs.github.com/en/github/using-git/about-git-rebase)
-   feature to tidy up your commits before making them public.
+    message guidelines](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
+    or your code is unlikely be merged into the main project. Use Git's
+    [interactive rebase](https://docs.github.com/en/github/using-git/about-git-rebase)
+    feature to tidy up your commits before making them public.
 
 1.  Locally merge (or rebase) the upstream development branch into your topic branch:
 

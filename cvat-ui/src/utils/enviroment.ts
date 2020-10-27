@@ -16,10 +16,14 @@ export function isPublic(): boolean {
 export function customWaViewHit(pageName?: string, queryString?: string, hashInfo?: string): void {
     const waHitFunctionName = process.env.WA_PAGE_VIEW_HIT;
     if (waHitFunctionName) {
-        const waHitFunction = new Function('pageName', 'queryString', 'hashInfo',
+        const waHitFunction = new Function(
+            'pageName',
+            'queryString',
+            'hashInfo',
             `if (typeof ${waHitFunctionName} === 'function') {
                 ${waHitFunctionName}(pageName, queryString, hashInfo);
-            }`);
+            }`,
+        );
         try {
             waHitFunction(pageName, queryString, hashInfo);
         } catch (error) {

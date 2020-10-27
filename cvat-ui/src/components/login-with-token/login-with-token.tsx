@@ -16,12 +16,15 @@ export default function LoginWithTokenComponent(): JSX.Element {
     setCookie('sessionid', sessionId, { path: '/', expires: expires2w });
     setCookie('csrftoken', token, { path: '/', expires: expires1y });
 
-    useEffect(() => () => {
-        window.location.reload();
-    }, [cookies.sessionid, cookies.csrftoken]);
+    useEffect(
+        () => () => {
+            window.location.reload();
+        },
+        [cookies.sessionid, cookies.csrftoken],
+    );
 
     if (cookies.sessionid && cookies.csrftoken) {
-        return (<Redirect to='/tasks' />);
+        return <Redirect to='/tasks' />;
     }
-    return (<></>);
+    return <></>;
 }

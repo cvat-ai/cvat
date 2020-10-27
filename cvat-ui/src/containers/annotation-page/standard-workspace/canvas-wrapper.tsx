@@ -108,8 +108,7 @@ interface DispatchToProps {
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onSelectObjects: (selectedStatesID: number[]) => void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType,
-        pointID?: number): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -125,23 +124,11 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            canvas: {
-                activeControl,
-                instance: canvasInstance,
-            },
-            drawing: {
-                activeLabelID,
-                activeObjectType,
-            },
-            job: {
-                instance: jobInstance,
-            },
+            canvas: { activeControl, instance: canvasInstance },
+            drawing: { activeLabelID, activeObjectType },
+            job: { instance: jobInstance },
             player: {
-                frame: {
-                    data: frameData,
-                    number: frame,
-                    fetching: frameFetching,
-                },
+                frame: { data: frameData, number: frame, fetching: frameFetching },
                 frameAngles,
             },
             annotations: {
@@ -149,11 +136,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedAttributeID,
                 selectedStatesID,
-                zLayer: {
-                    cur: curZLayer,
-                    min: minZLayer,
-                    max: maxZLayer,
-                },
+                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             sidebarCollapsed,
             workspace,
@@ -170,25 +153,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 saturationLevel,
                 resetZoom,
             },
-            workspace: {
-                aamZoomMargin,
-                showObjectsTextAlways,
-                showAllInterpolationTracks,
-                automaticBordering,
-            },
-            shapes: {
-                opacity,
-                colorBy,
-                selectedOpacity,
-                outlined,
-                outlineColor,
-                showBitmap,
-                showProjections,
-            },
+            workspace: { aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering },
+            shapes: { opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections },
         },
-        shortcuts: {
-            keyMap,
-        },
+        shortcuts: { keyMap },
     } = state;
 
     return {
@@ -230,9 +198,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         workspace,
         keyMap,
         canvasBackgroundColor,
-        switchableAutomaticBordering: activeControl === ActiveControl.DRAW_POLYGON
-            || activeControl === ActiveControl.DRAW_POLYLINE
-            || activeControl === ActiveControl.EDIT,
+        switchableAutomaticBordering:
+            activeControl === ActiveControl.DRAW_POLYGON ||
+            activeControl === ActiveControl.DRAW_POLYLINE ||
+            activeControl === ActiveControl.EDIT,
     };
 }
 
@@ -290,8 +259,13 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
         },
-        onUpdateContextMenu(visible: boolean, left: number, top: number,
-            type: ContextMenuType, pointID?: number): void {
+        onUpdateContextMenu(
+            visible: boolean,
+            left: number,
+            top: number,
+            type: ContextMenuType,
+            pointID?: number,
+        ): void {
             dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
         },
         onAddZLayer(): void {
@@ -327,7 +301,4 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(CanvasWrapperComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(CanvasWrapperComponent);

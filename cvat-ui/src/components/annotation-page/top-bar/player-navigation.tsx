@@ -80,10 +80,8 @@ function PlayerNavigation(props: Props): JSX.Element {
                         type='number'
                         value={frameInputValue}
                         onChange={(value: number | undefined) => {
-                            if (typeof (value) === 'number') {
-                                setFrameInputValue(Math.floor(
-                                    clamp(value, startFrame, stopFrame),
-                                ));
+                            if (typeof value === 'number') {
+                                setFrameInputValue(Math.floor(clamp(value, startFrame, stopFrame)));
                             }
                         }}
                         onBlur={() => {

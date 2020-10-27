@@ -5,10 +5,7 @@
 import { connect } from 'react-redux';
 
 import ModelsPageComponent from 'components/models-page/models-page';
-import {
-    Model,
-    CombinedState,
-} from 'reducers/interfaces';
+import { Model, CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
     interactors: Model[];
@@ -19,12 +16,7 @@ interface StateToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
-    const {
-        interactors,
-        detectors,
-        trackers,
-        reid,
-    } = models;
+    const { interactors, detectors, trackers, reid } = models;
 
     return {
         interactors,
@@ -34,6 +26,4 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-export default connect(
-    mapStateToProps, {},
-)(ModelsPageComponent);
+export default connect(mapStateToProps, {})(ModelsPageComponent);

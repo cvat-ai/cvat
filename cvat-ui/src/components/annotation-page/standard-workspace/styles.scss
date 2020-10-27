@@ -76,18 +76,13 @@
     }
 }
 
-.cvat-rotate-canvas-controls >
-.ant-popover-content >
-.ant-popover-inner > div >
-.ant-popover-inner-content {
+.cvat-rotate-canvas-controls > .ant-popover-content > .ant-popover-inner > div > .ant-popover-inner-content {
     padding: 0;
 }
 
 .cvat-draw-shape-popover,
 .cvat-tools-control-popover {
-    > .ant-popover-content >
-    .ant-popover-inner > div >
-    .ant-popover-inner-content {
+    > .ant-popover-content > .ant-popover-inner > div > .ant-popover-inner-content {
         padding: 0;
     }
 }

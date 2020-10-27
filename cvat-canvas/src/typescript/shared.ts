@@ -83,22 +83,25 @@ export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     return output;
 }
 
-export function displayShapeSize(
-    shapesContainer: SVG.Container,
-    textContainer: SVG.Container,
-): ShapeSizeElement {
+export function displayShapeSize(shapesContainer: SVG.Container, textContainer: SVG.Container): ShapeSizeElement {
     const shapeSize: ShapeSizeElement = {
-        sizeElement: textContainer.text('').font({
-            weight: 'bolder',
-        }).fill('white').addClass('cvat_canvas_text'),
-        update(shape: SVG.Shape): void{
+        sizeElement: textContainer
+            .text('')
+            .font({
+                weight: 'bolder',
+            })
+            .fill('white')
+            .addClass('cvat_canvas_text'),
+        update(shape: SVG.Shape): void {
             const bbox = shape.bbox();
             const text = `${bbox.width.toFixed(1)}x${bbox.height.toFixed(1)}`;
             const [x, y]: number[] = translateToSVG(
-                textContainer.node as any as SVGSVGElement,
-                translateFromSVG((shapesContainer.node as any as SVGSVGElement), [bbox.x, bbox.y]),
+                (textContainer.node as any) as SVGSVGElement,
+                translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [bbox.x, bbox.y]),
             );
-            this.sizeElement.clear().plain(text)
+            this.sizeElement
+                .clear()
+                .plain(text)
                 .move(x + consts.TEXT_MARGIN, y + consts.TEXT_MARGIN);
         },
         rm(): void {
@@ -120,7 +123,9 @@ export function pointsToNumberArray(points: string | Point[]): number[] {
         }, []);
     }
 
-    return points.trim().split(/[,\s]+/g)
+    return points
+        .trim()
+        .split(/[,\s]+/g)
         .map((coord: string): number => +coord);
 }
 
@@ -138,14 +143,19 @@ export function parsePoints(source: string | number[]): Point[] {
         }, []);
     }
 
-    return source.trim().split(/\s/).map((point: string): Point => {
-        const [x, y] = point.split(',').map((coord: string): number => +coord);
-        return { x, y };
-    });
+    return source
+        .trim()
+        .split(/\s/)
+        .map(
+            (point: string): Point => {
+                const [x, y] = point.split(',').map((coord: string): number => +coord);
+                return { x, y };
+            },
+        );
 }
 
 export function stringifyPoints(points: (Point | number)[]): string {
-    if (typeof (points[0]) === 'number') {
+    if (typeof points[0] === 'number') {
         return points.reduce((acc: string, val: number, idx: number): string => {
             if (idx % 2) {
                 return `${acc},${val}`;
@@ -166,5 +176,5 @@ export function scalarProduct(a: Vector2D, b: Vector2D): number {
 }
 
 export function vectorLength(vector: Vector2D): number {
-    return Math.sqrt((vector.i ** 2) + (vector.j ** 2));
+    return Math.sqrt(vector.i ** 2 + vector.j ** 2);
 }

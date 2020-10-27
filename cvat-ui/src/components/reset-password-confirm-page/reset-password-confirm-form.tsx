@@ -21,7 +21,8 @@ export interface ResetPasswordConfirmData {
 type ResetPasswordConfirmFormProps = {
     fetching: boolean;
     onSubmit(resetPasswordConfirmData: ResetPasswordConfirmData): void;
-} & FormComponentProps & RouteComponentProps;
+} & FormComponentProps &
+    RouteComponentProps;
 
 class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswordConfirmFormProps> {
     private validateConfirmation = (_: any, value: string, callback: Function): void => {
@@ -59,11 +60,7 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
 
     private handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
-        const {
-            form,
-            onSubmit,
-            location,
-        } = this.props;
+        const { form, onSubmit, location } = this.props;
 
         const params = new URLSearchParams(location.search);
         const uid = params.get('uid');
@@ -88,17 +85,22 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
         return (
             <Form.Item hasFeedback>
                 {form.getFieldDecorator('newPassword1', {
-                    rules: [{
-                        required: true,
-                        message: 'Please input new password!',
-                    }, {
-                        validator: this.validatePassword,
-                    }],
-                })(<Input.Password
-                    autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='New password'
-                />)}
+                    rules: [
+                        {
+                            required: true,
+                            message: 'Please input new password!',
+                        },
+                        {
+                            validator: this.validatePassword,
+                        },
+                    ],
+                })(
+                    <Input.Password
+                        autoComplete='new-password'
+                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        placeholder='New password'
+                    />,
+                )}
             </Form.Item>
         );
     }
@@ -109,17 +111,22 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
         return (
             <Form.Item hasFeedback>
                 {form.getFieldDecorator('newPassword2', {
-                    rules: [{
-                        required: true,
-                        message: 'Please confirm your new password!',
-                    }, {
-                        validator: this.validateConfirmation,
-                    }],
-                })(<Input.Password
-                    autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='Confirm new password'
-                />)}
+                    rules: [
+                        {
+                            required: true,
+                            message: 'Please confirm your new password!',
+                        },
+                        {
+                            validator: this.validateConfirmation,
+                        },
+                    ],
+                })(
+                    <Input.Password
+                        autoComplete='new-password'
+                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        placeholder='Confirm new password'
+                    />,
+                )}
             </Form.Item>
         );
     }
@@ -128,10 +135,7 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
         const { fetching } = this.props;
 
         return (
-            <Form
-                onSubmit={this.handleSubmit}
-                className='cvat-reset-password-confirm-form'
-            >
+            <Form onSubmit={this.handleSubmit} className='cvat-reset-password-confirm-form'>
                 {this.renderNewPasswordField()}
                 {this.renderNewPasswordConfirmationField()}
 
@@ -151,6 +155,4 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
     }
 }
 
-export default withRouter(
-    Form.create<ResetPasswordConfirmFormProps>()(ResetPasswordConfirmFormComponent),
-);
+export default withRouter(Form.create<ResetPasswordConfirmFormProps>()(ResetPasswordConfirmFormComponent));

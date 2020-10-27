@@ -11,12 +11,7 @@ import Timeline from 'antd/lib/timeline';
 import Dropdown from 'antd/lib/dropdown';
 
 import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
-import {
-    MainMenuIcon,
-    SaveIcon,
-    UndoIcon,
-    RedoIcon,
-} from 'icons';
+import { MainMenuIcon, SaveIcon, UndoIcon, RedoIcon } from 'icons';
 
 interface Props {
     saving: boolean;
@@ -57,27 +52,15 @@ function LeftGroup(props: Props): JSX.Element {
                 title={`Save current changes ${saveShortcut}`}
                 onClick={saving ? undefined : onSaveAnnotation}
                 type='link'
-                className={saving
-                    ? 'cvat-annotation-disabled-header-button'
-                    : 'cvat-annotation-header-button'}
+                className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}
             >
                 <Icon component={SaveIcon} />
-                { saving ? 'Saving...' : 'Save' }
-                <Modal
-                    title='Saving changes on the server'
-                    visible={saving}
-                    footer={[]}
-                    closable={false}
-                >
+                {saving ? 'Saving...' : 'Save'}
+                <Modal title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
                     <Timeline pending={savingStatuses[savingStatuses.length - 1] || 'Pending..'}>
-                        {
-                            savingStatuses.slice(0, -1)
-                                .map((
-                                    status: string,
-                                    id: number,
-                                // eslint-disable-next-line react/no-array-index-key
-                                ) => <Timeline.Item key={id}>{status}</Timeline.Item>)
-                        }
+                        {savingStatuses.slice(0, -1).map((status: string, id: number) => (
+                            <Timeline.Item key={id}>{status}</Timeline.Item>
+                        ))}
                     </Timeline>
                 </Modal>
             </Button>
