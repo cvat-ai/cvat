@@ -16,6 +16,7 @@ import {
     pasteShapeAsync,
     resetAnnotationsGroup,
 } from 'actions/annotation-actions';
+// eslint-disable-next-line max-len
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
 
@@ -41,20 +42,12 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            canvas: {
-                instance: canvasInstance,
-                activeControl,
-            },
+            canvas: { instance: canvasInstance, activeControl },
         },
         settings: {
-            player: {
-                rotateAll,
-            },
+            player: { rotateAll },
         },
-        shortcuts: {
-            keyMap,
-            normalizedKeyMap,
-        },
+        shortcuts: { keyMap, normalizedKeyMap },
     } = state;
 
     return {
@@ -95,7 +88,4 @@ function dispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-export default connect(
-    mapStateToProps,
-    dispatchToProps,
-)(ControlsSideBarComponent);
+export default connect(mapStateToProps, dispatchToProps)(ControlsSideBarComponent);

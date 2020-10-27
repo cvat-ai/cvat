@@ -19,7 +19,6 @@ import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 
 import { NotificationsState } from './interfaces';
 
-
 const defaultState: NotificationsState = {
     errors: {
         auth: {
@@ -299,8 +298,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         exporting: {
-                            message: 'Could not export dataset for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not export dataset for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -331,8 +331,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         loading: {
-                            message: 'Could not upload annotation for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not upload annotation for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -347,8 +348,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     tasks: {
                         ...state.messages.tasks,
-                        loadingDone: 'Annotations have been loaded to the '
-                            + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                        loadingDone:
+                            'Annotations have been loaded to the ' +
+                            `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                     },
                 },
             };
@@ -362,8 +364,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         updating: {
-                            message: 'Could not update '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -379,8 +380,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         dumping: {
-                            message: 'Could not dump annotations for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not dump annotations for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -396,8 +398,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         deleting: {
-                            message: 'Could not delete the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not delete the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -458,8 +461,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         updating: {
-                            message: 'Could not update '
-                                + `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
+                            message:
+                                'Could not update ' +
+                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -475,8 +479,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         updating: {
-                            message: 'Could not delete '
-                                + `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
+                            message:
+                                'Could not delete ' +
+                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -552,8 +557,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         models: {
                             ...state.messages.models,
-                            inferenceDone: 'Automatic annotation finished for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            inferenceDone:
+                                'Automatic annotation finished for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                         },
                     },
                 };
@@ -587,8 +593,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         inferenceStatusFetching: {
-                            message: 'Fetching inference status for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Fetching inference status for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -619,8 +626,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         starting: {
-                            message: 'Could not infer model for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not infer model for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -636,8 +644,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         canceling: {
-                            message: 'Could not cancel model inference for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not cancel model inference for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -825,16 +834,11 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED: {
-            const {
-                job,
-                error,
-            } = action.payload;
+            const { job, error } = action.payload;
 
             const {
                 id: jobID,
-                task: {
-                    id: taskID,
-                },
+                task: { id: taskID },
             } = job;
 
             return {
@@ -844,8 +848,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     annotation: {
                         ...state.errors.annotation,
                         uploadAnnotations: {
-                            message: 'Could not upload annotations for the '
-                                + `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
+                            message:
+                                'Could not upload annotations for the ' +
+                                `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
                             reason: error.toString(),
                         },
                     },

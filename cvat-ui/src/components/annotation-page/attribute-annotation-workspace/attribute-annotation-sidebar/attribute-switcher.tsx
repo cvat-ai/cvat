@@ -18,11 +18,7 @@ interface Props {
 
 function AttributeSwitcher(props: Props): JSX.Element {
     const {
-        currentAttribute,
-        currentIndex,
-        attributesCount,
-        nextAttribute,
-        normalizedKeyMap,
+        currentAttribute, currentIndex, attributesCount, nextAttribute, normalizedKeyMap,
     } = props;
 
     const title = `${currentAttribute} [${currentIndex + 1}/${attributesCount}]`;

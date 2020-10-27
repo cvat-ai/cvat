@@ -20,14 +20,8 @@ interface Props {
 
 function ObjectSwitcher(props: Props): JSX.Element {
     const {
-        currentLabel,
-        clientID,
-        objectsCount,
-        currentIndex,
-        nextObject,
-        normalizedKeyMap,
+        currentLabel, clientID, objectsCount, currentIndex, nextObject, normalizedKeyMap,
     } = props;
-
 
     const title = `${currentLabel} ${clientID} [${currentIndex + 1}/${objectsCount}]`;
     return (

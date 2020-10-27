@@ -26,7 +26,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     return (
         <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
             <Col>
-                { taskInstance.projectId ? (
+                {taskInstance.projectId ? (
                     <Button
                         onClick={() => history.push(`/projects/${taskInstance.projectId}`)}
                         type='link'
@@ -36,11 +36,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         {`Back to project #${taskInstance.projectId}`}
                     </Button>
                 ) : (
-                    <Button
-                        onClick={() => history.push('/tasks')}
-                        type='link'
-                        size='large'
-                    >
+                    <Button onClick={() => history.push('/tasks')} type='link' size='large'>
                         <Icon type='left' />
                         Back to tasks
                     </Button>
@@ -51,18 +47,10 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                     <Col>
                         <Text className='cvat-title'>{`Task details #${id}`}</Text>
                     </Col>
-
                 </Row>
             </Col>
             <Col>
-                <Dropdown overlay={
-                    (
-                        <ActionsMenuContainer
-                            taskInstance={taskInstance}
-                        />
-                    )
-                }
-                >
+                <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
                     <Button size='large'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <Icon className='cvat-menu-icon' component={MenuIcon} />

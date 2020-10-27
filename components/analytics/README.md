@@ -5,12 +5,14 @@
 It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
 
 ### Build docker image
+
 ```bash
 # From project root directory
 docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml build
 ```
 
 ### Run docker container
+
 ```bash
 # From project root directory
 docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d
@@ -19,11 +21,12 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 At the moment it is not possible to save advanced settings. Below values should be specified manually.
 
 ## Time picker default
+
 {
-    "from": "now/d",
-    "to": "now/d",
-    "display": "Today",
-    "section": 0
+"from": "now/d",
+"to": "now/d",
+"display": "Today",
+"section": 0
 }
 
 ## Time picker quick ranges

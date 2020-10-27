@@ -1,13 +1,6 @@
-/*
- * Copyright (C) 2018 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
-
-/* eslint import/no-extraneous-dependencies: 0 */
-
-/* global
-    require:false
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 const {
     tasksDummyData,
@@ -55,10 +48,7 @@ class ServerProxy {
                     if (idx !== -1 && 'children' in position[idx]) {
                         position = position[idx].children;
                     } else {
-                        throw new window.cvat.exceptions.ServerError(
-                            `${component} is not a valid directory`,
-                            400,
-                        );
+                        throw new window.cvat.exceptions.ServerError(`${component} is not a valid directory`, 400);
                     }
                 }
             }
@@ -103,8 +93,10 @@ class ServerProxy {
         async function saveProject(id, projectData) {
             const object = projectsDummyData.results.filter((project) => project.id === id)[0];
             for (const prop in projectData) {
-                if (Object.prototype.hasOwnProperty.call(projectData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)) {
+                if (
+                    Object.prototype.hasOwnProperty.call(projectData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
                     object[prop] = projectData[prop];
                 }
             }
@@ -160,8 +152,10 @@ class ServerProxy {
         async function saveTask(id, taskData) {
             const object = tasksDummyData.results.filter((task) => task.id === id)[0];
             for (const prop in taskData) {
-                if (Object.prototype.hasOwnProperty.call(taskData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)) {
+                if (
+                    Object.prototype.hasOwnProperty.call(taskData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
                     object[prop] = taskData[prop];
                 }
             }
@@ -202,40 +196,48 @@ class ServerProxy {
         }
 
         async function getJob(jobID) {
-            const jobs = tasksDummyData.results.reduce((acc, task) => {
-                for (const segment of task.segments) {
-                    for (const job of segment.jobs) {
-                        const copy = JSON.parse(JSON.stringify(job));
-                        copy.start_frame = segment.start_frame;
-                        copy.stop_frame = segment.stop_frame;
-                        copy.task_id = task.id;
+            const jobs = tasksDummyData.results
+                .reduce((acc, task) => {
+                    for (const segment of task.segments) {
+                        for (const job of segment.jobs) {
+                            const copy = JSON.parse(JSON.stringify(job));
+                            copy.start_frame = segment.start_frame;
+                            copy.stop_frame = segment.stop_frame;
+                            copy.task_id = task.id;
 
-                        acc.push(copy);
+                            acc.push(copy);
+                        }
                     }
+
+                    return acc;
+                }, [])
+                .filter((job) => job.id === jobID);
+
+            return (
+                jobs[0] || {
+                    detail: 'Not found.',
                 }
-
-                return acc;
-            }, []).filter((job) => job.id === jobID);
-
-            return jobs[0] || {
-                detail: 'Not found.',
-            };
+            );
         }
 
         async function saveJob(id, jobData) {
-            const object = tasksDummyData.results.reduce((acc, task) => {
-                for (const segment of task.segments) {
-                    for (const job of segment.jobs) {
-                        acc.push(job);
+            const object = tasksDummyData.results
+                .reduce((acc, task) => {
+                    for (const segment of task.segments) {
+                        for (const job of segment.jobs) {
+                            acc.push(job);
+                        }
                     }
-                }
 
-                return acc;
-            }, []).filter((job) => job.id === id)[0];
+                    return acc;
+                }, [])
+                .filter((job) => job.id === id)[0];
 
             for (const prop in jobData) {
-                if (Object.prototype.hasOwnProperty.call(jobData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)) {
+                if (
+                    Object.prototype.hasOwnProperty.call(jobData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
                     object[prop] = jobData[prop];
                 }
             }
@@ -281,10 +283,13 @@ class ServerProxy {
 
             if (action === 'create') {
                 let idGenerator = 1000;
-                data.tracks.concat(data.tags).concat(data.shapes).map((el) => {
-                    el.id = ++idGenerator;
-                    return el;
-                });
+                data.tracks
+                    .concat(data.tags)
+                    .concat(data.shapes)
+                    .map((el) => {
+                        el.id = ++idGenerator;
+                        return el;
+                    });
 
                 return data;
             }
@@ -300,73 +305,76 @@ class ServerProxy {
             return null;
         }
 
-        Object.defineProperties(this, Object.freeze({
-            server: {
-                value: Object.freeze({
-                    about,
-                    share,
-                    formats,
-                    exception,
-                    login,
-                    logout,
-                }),
-                writable: false,
-            },
-
-            projects: {
-                value: Object.freeze({
-                    getProjects,
-                    saveProject,
-                    createProject,
-                    deleteProject,
-                }),
-                writable: false,
-            },
-
-            tasks: {
-                value: Object.freeze({
-                    getTasks,
-                    saveTask,
-                    createTask,
-                    deleteTask,
-                }),
-                writable: false,
-            },
-
-            jobs: {
-                value: Object.freeze({
-                    getJob,
-                    saveJob,
-                }),
-                writable: false,
-            },
-
-            users: {
-                value: Object.freeze({
-                    getUsers,
-                    getSelf,
-                }),
-                writable: false,
-            },
-
-            frames: {
-                value: Object.freeze({
-                    getData,
-                    getMeta,
-                    getPreview,
-                }),
-                writable: false,
-            },
-
-            annotations: {
-                value: {
-                    updateAnnotations,
-                    getAnnotations,
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                server: {
+                    value: Object.freeze({
+                        about,
+                        share,
+                        formats,
+                        exception,
+                        login,
+                        logout,
+                    }),
+                    writable: false,
                 },
-                // To implement on of important tests
-                writable: true,
-            },
-        }));
+
+                projects: {
+                    value: Object.freeze({
+                        getProjects,
+                        saveProject,
+                        createProject,
+                        deleteProject,
+                    }),
+                    writable: false,
+                },
+
+                tasks: {
+                    value: Object.freeze({
+                        getTasks,
+                        saveTask,
+                        createTask,
+                        deleteTask,
+                    }),
+                    writable: false,
+                },
+
+                jobs: {
+                    value: Object.freeze({
+                        getJob,
+                        saveJob,
+                    }),
+                    writable: false,
+                },
+
+                users: {
+                    value: Object.freeze({
+                        getUsers,
+                        getSelf,
+                    }),
+                    writable: false,
+                },
+
+                frames: {
+                    value: Object.freeze({
+                        getData,
+                        getMeta,
+                        getPreview,
+                    }),
+                    writable: false,
+                },
+
+                annotations: {
+                    value: {
+                        updateAnnotations,
+                        getAnnotations,
+                    },
+                    // To implement on of important tests
+                    writable: true,
+                },
+            }),
+        );
     }
 }
 

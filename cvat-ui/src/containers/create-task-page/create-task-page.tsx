@@ -35,7 +35,4 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(withRouter(CreateTaskComponent));
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(CreateTaskComponent));

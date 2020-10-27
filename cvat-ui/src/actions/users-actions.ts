@@ -27,8 +27,7 @@ export function getUsersAsync(): ThunkAction {
 
         try {
             const users = await core.users.get();
-            const wrappedUsers = users
-                .map((userData: any): any => new core.classes.User(userData));
+            const wrappedUsers = users.map((userData: any): any => new core.classes.User(userData));
             dispatch(usersActions.getUsersSuccess(wrappedUsers));
         } catch (error) {
             dispatch(usersActions.getUsersFailed(error));

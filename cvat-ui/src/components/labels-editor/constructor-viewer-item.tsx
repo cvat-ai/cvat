@@ -19,10 +19,7 @@ interface ConstructorViewerItemProps {
 
 export default function ConstructorViewerItem(props: ConstructorViewerItemProps): JSX.Element {
     const {
-        color,
-        label,
-        onUpdate,
-        onDelete,
+        color, label, onUpdate, onDelete,
     } = props;
 
     return (
@@ -38,19 +35,18 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     <Icon theme='filled' type='edit' />
                 </span>
             </Tooltip>
-            { label.id < 0
-                && (
-                    <Tooltip title='Delete label' mouseLeaveDelay={0}>
-                        <span
-                            role='button'
-                            tabIndex={0}
-                            onClick={(): void => onDelete(label)}
-                            onKeyPress={(): boolean => false}
-                        >
-                            <Icon type='close' />
-                        </span>
-                    </Tooltip>
-                )}
+            {label.id < 0 && (
+                <Tooltip title='Delete label' mouseLeaveDelay={0}>
+                    <span
+                        role='button'
+                        tabIndex={0}
+                        onClick={(): void => onDelete(label)}
+                        onKeyPress={(): boolean => false}
+                    >
+                        <Icon type='close' />
+                    </span>
+                </Tooltip>
+            )}
         </div>
     );
 }

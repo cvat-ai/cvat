@@ -10,10 +10,7 @@ import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
 import {
-    SettingsState,
-    GridColor,
-    FrameSpeed,
-    ColorBy,
+    SettingsState, GridColor, FrameSpeed, ColorBy,
 } from './interfaces';
 
 const defaultState: SettingsState = {

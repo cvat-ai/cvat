@@ -10,6 +10,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { PolylineIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
+// eslint-disable-next-line max-len
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface Props {
@@ -20,33 +21,31 @@ interface Props {
 function DrawPolylineControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing ?
+        {
+            overlayStyle: {
+                display: 'none',
+            },
+        } :
+        {};
 
-    const dynamicIconProps = isDrawing ? {
-        className: 'cvat-active-canvas-control',
-        onClick: (): void => {
-            canvasInstance.draw({ enabled: false });
-        },
-    } : {};
+    const dynamicIconProps = isDrawing ?
+        {
+            className: 'cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } :
+        {};
 
     return (
         <Popover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
-            content={(
-                <DrawShapePopoverContainer shapeType={ShapeType.POLYLINE} />
-            )}
+            content={<DrawShapePopoverContainer shapeType={ShapeType.POLYLINE} />}
         >
-            <Icon
-                className='cvat-draw-polyline-control'
-                {...dynamicIconProps}
-                component={PolylineIcon}
-            />
+            <Icon className='cvat-draw-polyline-control' {...dynamicIconProps} component={PolylineIcon} />
         </Popover>
     );
 }

@@ -8,7 +8,6 @@ import Icon from 'antd/lib/icon';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
-
 interface Props {
     labelName: string;
     labelColor: string;
@@ -46,17 +45,23 @@ function LabelItemComponent(props: Props): JSX.Element {
                 <Button style={{ background: labelColor }} className='cvat-label-item-color-button' />
             </Col>
             <Col span={14}>
-                <Text strong className='cvat-text'>{labelName}</Text>
+                <Text strong className='cvat-text'>
+                    {labelName}
+                </Text>
             </Col>
             <Col span={3}>
-                { statesLocked
-                    ? <Icon type='lock' onClick={unlockStates} />
-                    : <Icon type='unlock' onClick={lockStates} />}
+                {statesLocked ? (
+                    <Icon type='lock' onClick={unlockStates} />
+                ) : (
+                    <Icon type='unlock' onClick={lockStates} />
+                )}
             </Col>
             <Col span={3}>
-                { statesHidden
-                    ? <Icon type='eye-invisible' onClick={showStates} />
-                    : <Icon type='eye' onClick={hideStates} />}
+                {statesHidden ? (
+                    <Icon type='eye-invisible' onClick={showStates} />
+                ) : (
+                    <Icon type='eye' onClick={hideStates} />
+                )}
             </Col>
         </Row>
     );

@@ -51,9 +51,10 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
 
-
-    Object.keys(shortcutLabelMap).map((id) => Number.parseInt(id, 10))
-        .filter((id) => shortcutLabelMap[id]).forEach((id: number): void => {
+    Object.keys(shortcutLabelMap)
+        .map((id) => Number.parseInt(id, 10))
+        .filter((id) => shortcutLabelMap[id])
+        .forEach((id: number): void => {
             const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
             const key = `SETUP_${id}_TAG`;
             keyMap[key] = {
@@ -86,41 +87,33 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
                     <Text strong>Shortcuts for labels:</Text>
                 </Col>
             </Row>
-            {
-                shift(Object.keys(shortcutLabelMap), 1).slice(0, Math.min(labels.length, 10))
-                    .map((id) => (
-                        <Row key={id}>
-                            <Col>
-                                <Text strong>{`Key ${id}:`}</Text>
-                                <Select
-                                    value={`${shortcutLabelMap[Number.parseInt(id, 10)]}`}
-                                    onChange={(value: string) => {
-                                        onChangeShortcutLabel(value, Number.parseInt(id, 10));
-                                    }}
-                                    size='default'
-                                    style={{ width: 200 }}
-                                    className='cvat-tag-annotation-label-select'
-                                >
-                                    <Select.Option value=''>
-                                        <Text type='secondary'>
-                                            None
-                                        </Text>
+            {shift(Object.keys(shortcutLabelMap), 1)
+                .slice(0, Math.min(labels.length, 10))
+                .map((id) => (
+                    <Row key={id}>
+                        <Col>
+                            <Text strong>{`Key ${id}:`}</Text>
+                            <Select
+                                value={`${shortcutLabelMap[Number.parseInt(id, 10)]}`}
+                                onChange={(value: string) => {
+                                    onChangeShortcutLabel(value, Number.parseInt(id, 10));
+                                }}
+                                size='default'
+                                style={{ width: 200 }}
+                                className='cvat-tag-annotation-label-select'
+                            >
+                                <Select.Option value=''>
+                                    <Text type='secondary'>None</Text>
+                                </Select.Option>
+                                {(labels as any[]).map((label: any) => (
+                                    <Select.Option key={label.id} value={`${label.id}`}>
+                                        {label.name}
                                     </Select.Option>
-                                    {
-                                        (labels as any[]).map((label: any) => (
-                                            <Select.Option
-                                                key={label.id}
-                                                value={`${label.id}`}
-                                            >
-                                                {label.name}
-                                            </Select.Option>
-                                        ))
-                                    }
-                                </Select>
-                            </Col>
-                        </Row>
-                    ))
-            }
+                                ))}
+                            </Select>
+                        </Col>
+                    </Row>
+                ))}
         </div>
     );
 };

@@ -26,9 +26,7 @@ export const getAboutAsync = (): ThunkAction => async (dispatch): Promise<void> 
 
     try {
         const about = await core.server.about();
-        dispatch(
-            aboutActions.getAboutSuccess(about),
-        );
+        dispatch(aboutActions.getAboutSuccess(about));
     } catch (error) {
         dispatch(aboutActions.getAboutFailed(error));
     }

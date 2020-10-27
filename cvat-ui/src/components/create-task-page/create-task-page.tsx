@@ -23,12 +23,7 @@ interface Props {
 
 export default function CreateTaskPage(props: Props & RouteComponentProps): JSX.Element {
     const {
-        error,
-        status,
-        taskId,
-        location,
-        onCreate,
-        installedGit,
+        error, status, taskId, location, onCreate, installedGit,
     } = props;
 
     let projectId = null;

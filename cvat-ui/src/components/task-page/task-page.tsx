@@ -25,7 +25,7 @@ interface TaskPageComponentProps {
     getTask: () => void;
 }
 
-type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
+type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
     public componentDidUpdate(): void {
@@ -38,10 +38,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const {
-            task,
-            fetching,
-            updating,
-            getTask,
+            task, fetching, updating, getTask,
         } = this.props;
 
         if (task === null || updating) {
@@ -49,12 +46,10 @@ class TaskPageComponent extends React.PureComponent<Props> {
                 getTask();
             }
 
-            return (
-                <Spin size='large' className='cvat-spinner' />
-            );
+            return <Spin size='large' className='cvat-spinner' />;
         }
 
-        if (typeof (task) === 'undefined') {
+        if (typeof task === 'undefined') {
             return (
                 <Result
                     className='cvat-not-found'
@@ -70,8 +65,8 @@ class TaskPageComponent extends React.PureComponent<Props> {
                 <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
                         <TopBarComponent taskInstance={(task as Task).instance} />
-                        <DetailsContainer task={(task as Task)} />
-                        <JobListContainer task={(task as Task)} />
+                        <DetailsContainer task={task as Task} />
+                        <JobListContainer task={task as Task} />
                     </Col>
                 </Row>
                 <ModelRunnerModal />

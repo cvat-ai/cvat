@@ -1,7 +1,7 @@
 language: python
 
 python:
-  - "3.5"
+  - '3.5'
 
 cache:
   npm: true
@@ -9,11 +9,11 @@ cache:
     - ~/.cache
 
 addons:
-  firefox: "latest"
+  firefox: 'latest'
   chrome: stable
   apt:
     packages:
-    - libgconf-2-4
+      - libgconf-2-4
 
 services:
   - docker
@@ -42,7 +42,7 @@ script:
   - cd ./tests && npm install && cd ..
   - if [[ $TRAVIS_EVENT_TYPE == "cron" && $TRAVIS_BRANCH == "develop" ]];
     then
-      cd ./tests && npm run cypress:run:firefox && exit $?;
+    cd ./tests && npm run cypress:run:firefox && exit $?;
     fi;
   - npm install && npm run coverage
   - docker-compose up -d --build

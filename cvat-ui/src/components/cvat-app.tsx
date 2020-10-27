@@ -35,7 +35,6 @@ import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
 import '../styles.scss';
 
-
 interface CVATAppProps {
     loadFormats: () => void;
     loadUsers: () => void;
@@ -179,10 +178,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             });
         }
 
-        const {
-            notifications,
-            resetMessages,
-        } = this.props;
+        const { notifications, resetMessages } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
@@ -220,10 +216,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             console.error(error);
         }
 
-        const {
-            notifications,
-            resetErrors,
-        } = this.props;
+        const { notifications, resetErrors } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
@@ -256,9 +249,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             isModelPluginActive,
         } = this.props;
 
-        const readyForRender = (userInitialized && (user == null || !user.isVerified))
-            || (userInitialized && formatsInitialized && pluginsInitialized
-                && usersInitialized && aboutInitialized);
+        const readyForRender =
+            (userInitialized && (user == null || !user.isVerified)) ||
+            (userInitialized && formatsInitialized && pluginsInitialized && usersInitialized && aboutInitialized);
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -288,17 +281,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Row>
                             <Col>
                                 <Text>
-                                    {`The browser you are using is ${info.name} ${info.version} based on ${info.engine} .`
-                                        + ' CVAT was tested in the latest versions of Chrome and Firefox.'
-                                        + ' We recommend to use Chrome (or another Chromium based browser)'}
+                                    {`The browser you are using is ${info.name} ${info.version}` +
+                                        ` based on ${info.engine} .` +
+                                        ' CVAT was tested in the latest versions of Chrome and Firefox.' +
+                                        ' We recommend to use Chrome (or another Chromium based browser)'}
                                 </Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
-                                <Text type='secondary'>
-                                    {`The operating system is ${info.os}`}
-                                </Text>
+                                <Text type='secondary'>{`The operating system is ${info.os}`}</Text>
                             </Col>
                         </Row>
                     </>
@@ -306,7 +298,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 onOk: () => stopNotifications(true),
             });
         }
-
 
         if (readyForRender) {
             if (user && user.isVerified) {
@@ -325,7 +316,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        {isModelPluginActive && <Route exact path='/models' component={ModelsPageContainer} />}
+                                        {isModelPluginActive && (
+                                            <Route exact path='/models' component={ModelsPageContainer} />
+                                        )}
                                         <Redirect push to='/projects' />
                                     </Switch>
                                 </GlobalHotKeys>
@@ -342,18 +335,24 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
-                        <Route exact path='/auth/login-with-token/:sessionId/:token' component={LoginWithTokenComponent} />
+                        <Route
+                            exact
+                            path='/auth/login-with-token/:sessionId/:token'
+                            component={LoginWithTokenComponent}
+                        />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
-                        <Route exact path='/auth/password/reset/confirm' component={ResetPasswordPageConfirmComponent} />
+                        <Route
+                            exact
+                            path='/auth/password/reset/confirm'
+                            component={ResetPasswordPageConfirmComponent}
+                        />
                         <Redirect to='/auth/login' />
                     </Switch>
                 </GlobalErrorBoundary>
             );
         }
 
-        return (
-            <Spin size='large' className='cvat-spinner' />
-        );
+        return <Spin size='large' className='cvat-spinner' />;
     }
 }
 

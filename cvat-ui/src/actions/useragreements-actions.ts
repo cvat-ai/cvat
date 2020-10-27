@@ -16,11 +16,13 @@ export enum UserAgreementsActionTypes {
 
 const userAgreementsActions = {
     getUserAgreements: () => createAction(UserAgreementsActionTypes.GET_USER_AGREEMENTS),
-    getUserAgreementsSuccess: (userAgreements: UserAgreement[]) => (
-        createAction(UserAgreementsActionTypes.GET_USER_AGREEMENTS_SUCCESS, userAgreements)
+    // prettier-ignore
+    getUserAgreementsSuccess: (userAgreements: UserAgreement[]) => createAction(
+        UserAgreementsActionTypes.GET_USER_AGREEMENTS_SUCCESS, userAgreements,
     ),
-    getUserAgreementsFailed: (error: any) => (
-        createAction(UserAgreementsActionTypes.GET_USER_AGREEMENTS_FAILED, { error })
+    // prettier-ignore
+    getUserAgreementsFailed: (error: any) => createAction(
+        UserAgreementsActionTypes.GET_USER_AGREEMENTS_FAILED, { error },
     ),
 };
 
@@ -31,9 +33,7 @@ export const getUserAgreementsAsync = (): ThunkAction => async (dispatch): Promi
 
     try {
         const userAgreements = await core.server.userAgreements();
-        dispatch(
-            userAgreementsActions.getUserAgreementsSuccess(userAgreements),
-        );
+        dispatch(userAgreementsActions.getUserAgreementsSuccess(userAgreements));
     } catch (error) {
         dispatch(userAgreementsActions.getUserAgreementsFailed(error));
     }

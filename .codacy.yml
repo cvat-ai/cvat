@@ -1,5 +1,5 @@
 exclude_paths:
- - '**/3rdparty/**'
- - '**/engine/js/cvat-core.min.js'
- - '**/engine/js/unzip_imgs.js'
- - CHANGELOG.md
+  - '**/3rdparty/**'
+  - '**/engine/js/cvat-core.min.js'
+  - '**/engine/js/unzip_imgs.js'
+  - CHANGELOG.md

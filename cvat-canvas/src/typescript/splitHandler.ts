@@ -85,12 +85,16 @@ export class SplitHandlerImpl implements SplitHandler {
                 this.highlightedShape = shape;
                 this.highlightedShape.addClass('cvat_canvas_shape_splitting');
                 this.canvas.node.append(this.highlightedShape.node);
-                this.highlightedShape.on('click.split', (): void => {
-                    this.splitDone = true;
-                    this.onSplitDone(state);
-                }, {
-                    once: true,
-                });
+                this.highlightedShape.on(
+                    'click.split',
+                    (): void => {
+                        this.splitDone = true;
+                        this.onSplitDone(state);
+                    },
+                    {
+                        once: true,
+                    },
+                );
             }
         }
     }

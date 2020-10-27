@@ -1,13 +1,6 @@
-/*
- * Copyright (C) 2018 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
-
-/* global
-    require:false
-    jest:false
-    describe:false
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 // Setup mock for a server
 jest.mock('../../src/server-proxy', () => {
@@ -19,7 +12,6 @@ jest.mock('../../src/server-proxy', () => {
 window.cvat = require('../../src/api');
 
 const { Job } = require('../../src/session');
-
 
 // Test cases
 describe('Feature: get a list of jobs', () => {
@@ -45,7 +37,6 @@ describe('Feature: get a list of jobs', () => {
         expect(result).toHaveLength(0);
     });
 
-
     test('get jobs by a job id', async () => {
         const result = await window.cvat.jobs.get({
             jobID: 1,
@@ -64,31 +55,38 @@ describe('Feature: get a list of jobs', () => {
     });
 
     test('get jobs by invalid filter with both taskID and jobID', async () => {
-        expect(window.cvat.jobs.get({
-            taskID: 1,
-            jobID: 1,
-        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(
+            window.cvat.jobs.get({
+                taskID: 1,
+                jobID: 1,
+            }),
+        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by invalid job id', async () => {
-        expect(window.cvat.jobs.get({
-            jobID: '1',
-        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(
+            window.cvat.jobs.get({
+                jobID: '1',
+            }),
+        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by invalid task id', async () => {
-        expect(window.cvat.jobs.get({
-            taskID: '1',
-        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(
+            window.cvat.jobs.get({
+                taskID: '1',
+            }),
+        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by unknown filter', async () => {
-        expect(window.cvat.jobs.get({
-            unknown: 50,
-        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(
+            window.cvat.jobs.get({
+                unknown: 50,
+            }),
+        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 });
-
 
 describe('Feature: save job', () => {
     test('save status of a job', async () => {

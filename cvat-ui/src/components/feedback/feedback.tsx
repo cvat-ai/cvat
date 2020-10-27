@@ -30,31 +30,38 @@ import {
 import consts from 'consts';
 
 function renderContent(): JSX.Element {
-    const {
-        GITHUB_URL,
-        GITHUB_IMAGE_URL,
-        GITTER_PUBLIC_URL,
-    } = consts;
+    const { GITHUB_URL, GITHUB_IMAGE_URL, GITTER_PUBLIC_URL } = consts;
 
     return (
         <>
             <Icon type='star' />
             <Text style={{ marginLeft: '10px' }}>
                 Star us on
-                <a target='_blank' rel='noopener noreferrer' href={GITHUB_URL}> GitHub</a>
+                <a target='_blank' rel='noopener noreferrer' href={GITHUB_URL}>
+                    {' '}
+                    GitHub
+                </a>
             </Text>
             <br />
             <Icon type='like' />
             <Text style={{ marginLeft: '10px' }}>
                 Leave a
-                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}> feedback</a>
+                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}>
+                    {' '}
+                    feedback
+                </a>
             </Text>
             <hr />
             <div style={{ display: 'flex' }}>
                 <FacebookShareButton url={GITHUB_URL} quote='Computer Vision Annotation Tool'>
                     <FacebookIcon size={32} round />
                 </FacebookShareButton>
-                <VKShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool' image={GITHUB_IMAGE_URL} description='CVAT'>
+                <VKShareButton
+                    url={GITHUB_URL}
+                    title='Computer Vision Annotation Tool'
+                    image={GITHUB_IMAGE_URL}
+                    description='CVAT'
+                >
                     <VKIcon size={32} round />
                 </VKShareButton>
                 <TwitterShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool' hashtags={['CVAT']}>
@@ -79,7 +86,10 @@ function renderContent(): JSX.Element {
             <hr />
             <Text style={{ marginTop: '50px' }}>
                 Do you need help? Contact us on
-                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}> gitter</a>
+                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}>
+                    {' '}
+                    gitter
+                </a>
             </Text>
         </>
     );
@@ -92,9 +102,7 @@ export default function Feedback(): JSX.Element {
         <>
             <Popover
                 placement='leftTop'
-                title={
-                    <Text className='cvat-text-color'>Help to make CVAT better</Text>
-                }
+                title={<Text className='cvat-text-color'>Help to make CVAT better</Text>}
                 content={renderContent()}
                 visible={visible}
             >
@@ -106,8 +114,7 @@ export default function Feedback(): JSX.Element {
                         setVisible(!visible);
                     }}
                 >
-                    { visible ? <Icon type='close-circle' theme='filled' />
-                        : <Icon type='message' theme='twoTone' /> }
+                    {visible ? <Icon type='close-circle' theme='filled' /> : <Icon type='message' theme='twoTone' />}
                 </Button>
             </Popover>
         </>

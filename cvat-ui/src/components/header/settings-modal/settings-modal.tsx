@@ -35,32 +35,25 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             )}
         >
             <div className='cvat-settings-tabs'>
-                <Tabs
-                    type='card'
-                    tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}
-                >
+                <Tabs type='card' tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}>
                     <Tabs.TabPane
-                        tab={
-                            (
-                                <span>
-                                    <Icon type='play-circle' />
-                                    <Text>Player</Text>
-                                </span>
-                            )
-                        }
+                        tab={(
+                            <span>
+                                <Icon type='play-circle' />
+                                <Text>Player</Text>
+                            </span>
+                        )}
                         key='player'
                     >
                         <PlayerSettingsContainer />
                     </Tabs.TabPane>
                     <Tabs.TabPane
-                        tab={
-                            (
-                                <span>
-                                    <Icon type='laptop' />
-                                    <Text>Workspace</Text>
-                                </span>
-                            )
-                        }
+                        tab={(
+                            <span>
+                                <Icon type='laptop' />
+                                <Text>Workspace</Text>
+                            </span>
+                        )}
                         key='workspace'
                     >
                         <WorkspaceSettingsContainer />

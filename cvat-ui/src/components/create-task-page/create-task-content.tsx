@@ -57,7 +57,9 @@ const defaultState = {
 
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: any;
+
     private advancedConfigurationComponent: any;
+
     private fileManagerContainer: any;
 
     public constructor(props: Props & RouteComponentProps) {

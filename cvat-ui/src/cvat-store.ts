@@ -4,24 +4,17 @@
 
 import thunk from 'redux-thunk';
 import {
-    createStore,
-    applyMiddleware,
-    Store,
-    Reducer,
+    createStore, applyMiddleware, Store, Reducer,
 } from 'redux';
 import { createLogger } from 'redux-logger';
 import { isDev } from 'utils/enviroment';
-
 
 const logger = createLogger({
     predicate: isDev,
     collapsed: true,
 });
 
-const middlewares = [
-    thunk,
-    logger,
-];
+const middlewares = [thunk, logger];
 
 let store: Store | null = null;
 
@@ -35,10 +28,7 @@ export default function createCVATStore(createRootReducer: () => Reducer): void 
         appliedMiddlewares = composeWithDevTools(appliedMiddlewares);
     }
 
-    store = createStore(
-        createRootReducer(),
-        appliedMiddlewares,
-    );
+    store = createStore(createRootReducer(), appliedMiddlewares);
 }
 
 export function getCVATStore(): Store {

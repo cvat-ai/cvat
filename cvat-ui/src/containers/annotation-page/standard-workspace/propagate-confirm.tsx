@@ -31,20 +31,13 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            propagate: {
-                objectState,
-                frames: propagateFrames,
-            },
+            propagate: { objectState, frames: propagateFrames },
             job: {
-                instance: {
-                    stopFrame,
-                },
+                instance: { stopFrame },
                 instance: jobInstance,
             },
             player: {
-                frame: {
-                    number: frameNumber,
-                },
+                frame: { number: frameNumber },
             },
         },
     } = state;
@@ -76,12 +69,7 @@ type Props = StateToProps & DispatchToProps;
 class PropagateConfirmContainer extends React.PureComponent<Props> {
     private propagateObject = (): void => {
         const {
-            propagateObject,
-            objectState,
-            propagateFrames,
-            frameNumber,
-            stopFrame,
-            jobInstance,
+            propagateObject, objectState, propagateFrames, frameNumber, stopFrame, jobInstance,
         } = this.props;
 
         const propagateUpToFrame = Math.min(frameNumber + propagateFrames, stopFrame);
@@ -94,11 +82,7 @@ class PropagateConfirmContainer extends React.PureComponent<Props> {
     };
 
     private changeUpToFrame = (value: number): void => {
-        const {
-            stopFrame,
-            frameNumber,
-            changePropagateFrames,
-        } = this.props;
+        const { stopFrame, frameNumber, changePropagateFrames } = this.props;
 
         const propagateFrames = Math.max(0, Math.min(stopFrame, value)) - frameNumber;
         changePropagateFrames(propagateFrames);
@@ -106,11 +90,7 @@ class PropagateConfirmContainer extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const {
-            frameNumber,
-            stopFrame,
-            propagateFrames,
-            cancel,
-            objectState,
+            frameNumber, stopFrame, propagateFrames, cancel, objectState,
         } = this.props;
 
         const propagateUpToFrame = Math.min(frameNumber + propagateFrames, stopFrame);
@@ -131,7 +111,4 @@ class PropagateConfirmContainer extends React.PureComponent<Props> {
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(PropagateConfirmContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(PropagateConfirmContainer);

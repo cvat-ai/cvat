@@ -24,7 +24,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             annotations: { activatedStateID, collapsed, states: objectStates },
             canvas: {
-                contextMenu: { visible, top, left, type },
+                contextMenu: {
+                    visible, top, left, type,
+                },
             },
         },
     } = state;
@@ -51,9 +53,13 @@ interface State {
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     private initialized: HTMLDivElement | null;
+
     private dragging: boolean;
+
     private dragInitPosX: number;
+
     private dragInitPosY: number;
+
     public constructor(props: Props) {
         super(props);
 
@@ -162,7 +168,9 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { left, top } = this.state;
-        const { visible, activatedStateID, objectStates, type } = this.props;
+        const {
+            visible, activatedStateID, objectStates, type,
+        } = this.props;
 
         return (
             <>

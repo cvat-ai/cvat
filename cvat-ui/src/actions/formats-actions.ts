@@ -15,14 +15,10 @@ export enum FormatsActionTypes {
 
 const formatsActions = {
     getFormats: () => createAction(FormatsActionTypes.GET_FORMATS),
-    getFormatsSuccess: (annotationFormats: any) => (
-        createAction(FormatsActionTypes.GET_FORMATS_SUCCESS, {
-            annotationFormats,
-        })
-    ),
-    getFormatsFailed: (error: any) => (
-        createAction(FormatsActionTypes.GET_FORMATS_FAILED, { error })
-    ),
+    getFormatsSuccess: (annotationFormats: any) => createAction(FormatsActionTypes.GET_FORMATS_SUCCESS, {
+        annotationFormats,
+    }),
+    getFormatsFailed: (error: any) => createAction(FormatsActionTypes.GET_FORMATS_FAILED, { error }),
 };
 
 export type FormatsActions = ActionUnion<typeof formatsActions>;
@@ -35,9 +31,7 @@ export function getFormatsAsync(): ThunkAction {
         try {
             annotationFormats = await cvat.server.formats();
 
-            dispatch(
-                formatsActions.getFormatsSuccess(annotationFormats),
-            );
+            dispatch(formatsActions.getFormatsSuccess(annotationFormats));
         } catch (error) {
             dispatch(formatsActions.getFormatsFailed(error));
         }

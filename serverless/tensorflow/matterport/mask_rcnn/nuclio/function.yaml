@@ -94,7 +94,7 @@ spec:
   description: |
     An implementation of Mask RCNN on Python 3, Keras, and TensorFlow.
 
-  runtime: "python:3.6"
+  runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -105,23 +105,23 @@ spec:
     baseImage: tensorflow/tensorflow:2.1.0-py3
     directives:
       postCopy:
-      - kind: WORKDIR
-        value: /opt/nuclio
-      - kind: RUN
-        value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev
-      - kind: RUN
-        value: git clone https://github.com/matterport/Mask_RCNN.git
-      - kind: RUN
-        value: curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5
-      - kind: RUN
-        value: pip3 install -r Mask_RCNN/requirements.txt
-      - kind: RUN
-        value: pip3 install pycocotools tensorflow==1.13.1 keras==2.1.0 pillow pyyaml
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev
+        - kind: RUN
+          value: git clone https://github.com/matterport/Mask_RCNN.git
+        - kind: RUN
+          value: curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5
+        - kind: RUN
+          value: pip3 install -r Mask_RCNN/requirements.txt
+        - kind: RUN
+          value: pip3 install pycocotools tensorflow==1.13.1 keras==2.1.0 pillow pyyaml
 
   triggers:
     myHttpTrigger:
       maxWorkers: 2
-      kind: "http"
+      kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB

@@ -35,9 +35,24 @@ services:
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat']
     working_dir: '/home/django'
-    entrypoint: ['bash', 'wait-for-it.sh', 'elasticsearch:9200', '-t', '0', '--',
-      '/bin/bash', 'wait-for-it.sh', 'kibana:5601', '-t', '0', '--',
-      '/usr/bin/python3', 'kibana/setup.py', 'kibana/export.json']
+    entrypoint:
+      [
+        'bash',
+        'wait-for-it.sh',
+        'elasticsearch:9200',
+        '-t',
+        '0',
+        '--',
+        '/bin/bash',
+        'wait-for-it.sh',
+        'kibana:5601',
+        '-t',
+        '0',
+        '--',
+        '/usr/bin/python3',
+        'kibana/setup.py',
+        'kibana/export.json',
+      ]
     environment:
       no_proxy: elasticsearch,kibana,${no_proxy}
 
@@ -52,7 +67,7 @@ services:
       context: ./components/analytics/logstash
       args:
         ELK_VERSION: 6.4.0
-        http_proxy:  ${http_proxy}
+        http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
     depends_on: ['cvat_elasticsearch']
     restart: always
