@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvat-frontend
+  namespace: cvat
+  labels:
+    app: cvat-app
+    tier: frontend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cvat-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: frontend
+    spec:
+      containers:
+        - name: cvat-frontend-app-container
+          image: labeling.azurecr.io/cvat/ui
+          imagePullPolicy: Never
+          env:
+          - name: REACT_APP_API_PROTOCOL
+            value: "http"
+          - name: REACT_APP_API_HOST
+            value: "{MY_SERVER_URL.com}" # Is set in build process, needs to be moved to
+          - name: REACT_APP_API_PORT
+            value: "8080"
+          ports:
+          - containerPort: 80
+          resources: {}

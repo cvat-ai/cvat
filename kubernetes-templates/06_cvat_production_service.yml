@@ -1,0 +1,10 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: public-cvat-production-service
+  namespace: cvat
+spec:
+  type: ExternalName
+  externalName: cvat-proxy-service.cvat.svc.cluster.local
+  ports:
+  - port: 80

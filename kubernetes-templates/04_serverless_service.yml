@@ -1,0 +1,10 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: nuclio-service
+  namespace: cvat
+spec:
+  type: ExternalName
+  externalName: nuclio-dashboard.nuclio.svc.cluster.local
+  ports:
+  - port: 8070
