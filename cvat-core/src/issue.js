@@ -63,20 +63,20 @@ class Issue {
                 },
                 /**
                  * Region of interests of the issue
-                 * @name roi
+                 * @name ROI
                  * @type {number[]}
                  * @memberof module:API.cvat.classes.Issue
                  * @instance
                  * @readonly
                  * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
-                roi: {
-                    get: () => data.message,
+                ROI: {
+                    get: () => data.roi,
                     set: (value) => {
-                        if (!value.trim().length) {
-                            throw new ArgumentError('Value must not be empty');
+                        if (Array.isArray(value) || value.some((coord) => typeof coord !== 'number')) {
+                            throw new ArgumentError(`Array of numbers is expected. Got ${value}`);
                         }
-                        data.message = value;
+                        data.roi = value;
                     },
                 },
                 /**
@@ -192,7 +192,7 @@ class Issue {
     toJSON() {
         const { comments } = this;
         const data = {
-            roi: this.roi,
+            roi: this.ROI,
             frame: this.frame,
             comment_set: comments,
         };

@@ -17,7 +17,11 @@ const defaultState: ReviewState = {
 export default function (state: ReviewState = defaultState, action: any): ReviewState {
     switch (action.type) {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
-            const { reviews, issues, frame } = action.payload;
+            const {
+                reviews,
+                issues,
+                frameData: { number: frame },
+            } = action.payload;
             const combinedIssues = state.activeReview ? issues.concat(state.activeReview.issues) : issues;
             const frameIssues = combinedIssues.filter((issue: any): boolean => issue.frame === frame);
             return {
@@ -28,17 +32,20 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { frame } = action.payload;
+            const { number: frame } = action.payload;
             return {
                 ...state,
                 frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
             };
         }
         case ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS: {
-            const { reviewInstance } = action.payload;
+            const { reviewInstance, frame } = action.payload;
+            const combinedIssues = state.issues.concat(reviewInstance.issues);
+            const frameIssues = combinedIssues.filter((issue: any): boolean => issue.frame === frame);
             return {
                 ...state,
                 activeReview: reviewInstance,
+                frameIssues,
             };
         }
         case ReviewActionTypes.START_ISSUE: {

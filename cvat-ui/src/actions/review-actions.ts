@@ -29,12 +29,12 @@ export enum ReviewActionTypes {
 }
 
 export const reviewActions = {
-    initializeReviewSuccess: (reviewInstance: any) =>
-        createAction(ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS, { reviewInstance }),
+    initializeReviewSuccess: (reviewInstance: any, frame: number) =>
+        createAction(ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS, { reviewInstance, frame }),
     initializeReviewFailed: (error: any) => createAction(ReviewActionTypes.INITIALIZE_REVIEW_FAILED, { error }),
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
     startIssue: (ROI: number[]) => createAction(ReviewActionTypes.START_ISSUE, { ROI }),
-    finishIssueSuccess: () => createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, {}),
+    finishIssueSuccess: (frame: number) => createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame }),
     finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
     createIssueSuccess: (issues: any[]) => createAction(ReviewActionTypes.CREATE_ISSUE_SUCCESS, { issues }),
@@ -53,7 +53,15 @@ export type ReviewActions = ActionUnion<typeof reviewActions>;
 export const initializeReviewAsync = (): ThunkAction => async (dispatch, getState) => {
     try {
         const state = getState();
-        const jobInstance = state.annotation.job.instance;
+        const {
+            annotation: {
+                job: { instance: jobInstance },
+                player: {
+                    frame: { number: frame },
+                },
+            },
+        } = state;
+
         const reviews = await jobInstance.reviews();
         const count = reviews.length;
         let reviewInstance = null;
@@ -63,7 +71,7 @@ export const initializeReviewAsync = (): ThunkAction => async (dispatch, getStat
             reviewInstance = new cvat.classes.Review({ job: jobInstance.id });
         }
 
-        dispatch(reviewActions.initializeReviewSuccess(reviewInstance));
+        dispatch(reviewActions.initializeReviewSuccess(reviewInstance, frame));
     } catch (error) {
         dispatch(reviewActions.initializeReviewFailed(error));
     }
@@ -84,7 +92,7 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
     try {
         await activeReview.openIssue(jobInstance.id, frameNumber, newIssueROI, message);
         await activeReview.toLocalStorage(jobInstance.id);
-        dispatch(reviewActions.finishIssueSuccess());
+        dispatch(reviewActions.finishIssueSuccess(frameNumber));
     } catch (error) {
         dispatch(reviewActions.finishIssueFailed(error));
     }

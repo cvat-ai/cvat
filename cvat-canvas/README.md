@@ -137,6 +137,8 @@ Canvas itself handles:
         cancel(): void;
         configure(configuration: Configuration): void;
         isAbleToChangeFrame(): boolean;
+
+        readonly geometry: Geometry;
     }
 ```
 
@@ -156,6 +158,7 @@ Canvas itself handles:
 - Canvas image has ID `cvat_canvas_image`
 - Grid on the canvas has ID `cvat_canvas_grid` and `cvat_canvas_grid_pattern`
 - Crosshair during a draw has class `cvat_canvas_crosshair`
+- To stick something to a specific position you can use an element with id `cvat_canvas_attachment_board`
 
 ### Events
 

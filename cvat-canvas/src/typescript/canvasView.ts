@@ -60,6 +60,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private bitmap: HTMLCanvasElement;
     private grid: SVGSVGElement;
     private content: SVGSVGElement;
+    private attachmentBoard: HTMLDivElement;
     private adoptedContent: SVG.Container;
     private canvas: HTMLDivElement;
     private gridPath: SVGPathElement;
@@ -448,7 +449,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             obj.style.left = `${this.geometry.left}px`;
         }
 
-        for (const obj of [this.content, this.text]) {
+        for (const obj of [this.content, this.text, this.attachmentBoard]) {
             obj.style.top = `${this.geometry.top - this.geometry.offset}px`;
             obj.style.left = `${this.geometry.left - this.geometry.offset}px`;
         }
@@ -463,7 +464,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private transformCanvas(): void {
         // Transform canvas
-        for (const obj of [this.background, this.grid, this.content, this.bitmap]) {
+        for (const obj of [this.background, this.grid, this.content, this.bitmap, this.attachmentBoard]) {
             obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
         }
 
@@ -523,7 +524,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             obj.style.height = `${this.geometry.image.height}px`;
         }
 
-        for (const obj of [this.content, this.text]) {
+        for (const obj of [this.content, this.text, this.attachmentBoard]) {
             obj.style.width = `${this.geometry.image.width + this.geometry.offset * 2}px`;
             obj.style.height = `${this.geometry.image.height + this.geometry.offset * 2}px`;
         }
@@ -838,6 +839,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = SVG.adopt((this.content as any) as HTMLElement) as SVG.Container;
 
+        this.attachmentBoard = window.document.createElement('div');
+
         this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -873,6 +876,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.bitmap.setAttribute('id', 'cvat_canvas_bitmap');
         this.bitmap.style.display = 'none';
 
+        // Setup sticked div
+        this.attachmentBoard.setAttribute('id', 'cvat_canvas_attachment_board');
+
         // Setup wrappers
         this.canvas.setAttribute('id', 'cvat_canvas_wrapper');
 
@@ -890,6 +896,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.appendChild(this.bitmap);
         this.canvas.appendChild(this.grid);
         this.canvas.appendChild(this.content);
+        this.canvas.appendChild(this.attachmentBoard);
 
         const self = this;
 

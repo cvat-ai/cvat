@@ -6,14 +6,60 @@
 
 .cvat-create-issue-dialog {
     position: absolute;
+    pointer-events: auto;
     width: $grid-unit-size * 30;
     padding: $grid-unit-size;
     background: $background-color-2;
-    border-radius: $grid-unit-size;
     opacity: 0.95;
     z-index: 100;
 
     button {
         width: $grid-unit-size * 12;
+    }
+}
+
+.cvat-hidden-issue-label {
+    position: absolute;
+    min-width: 8 * $grid-unit-size;
+    opacity: 0.8;
+    z-index: 100;
+    transition: none;
+    pointer-events: auto;
+    max-width: 16 * $grid-unit-size;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 0;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-issue-dialog {
+    width: $grid-unit-size * 40;
+    position: absolute;
+    opacity: 0.8;
+    z-index: 100;
+    transition: none;
+    pointer-events: auto;
+    background: $background-color-2;
+    padding: $grid-unit-size;
+
+    .cvat-issue-dialog-chat {
+        background: $background-color-1;
+        padding: $grid-unit-size;
+        width: 100%;
+    }
+
+    .cvat-issue-dialog-footer {
+        margin-top: $grid-unit-size;
+    }
+
+    .ant-comment > .ant-comment-inner {
+        padding: 0;
+    }
+
+    &:hover {
+        opacity: 1;
     }
 }

@@ -270,6 +270,14 @@ polyline.cvat_canvas_shape_splitting {
     height: 100%;
 }
 
+#cvat_canvas_attachment_board {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+}
+
 @keyframes loadingAnimation {
     0% {
         stroke-dashoffset: 1;

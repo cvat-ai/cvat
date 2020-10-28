@@ -391,7 +391,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasClicked = (): void => {
-        if (document.activeElement instanceof HTMLElement) {
+        const { canvasInstance } = this.props;
+        if (!canvasInstance.html().contains(document.activeElement) && document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
     };

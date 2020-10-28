@@ -15,6 +15,7 @@ import {
     RectDrawingMethod,
     CuboidDrawingMethod,
     Configuration,
+    Geometry,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
@@ -52,6 +53,8 @@ interface Canvas {
     cancel(): void;
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
+
+    readonly geometry: Geometry;
 }
 
 class CanvasImpl implements Canvas {
@@ -155,6 +158,10 @@ class CanvasImpl implements Canvas {
 
     public isAbleToChangeFrame(): boolean {
         return this.model.isAbleToChangeFrame();
+    }
+
+    public get geometry(): Geometry {
+        return this.model.geometry;
     }
 }
 
