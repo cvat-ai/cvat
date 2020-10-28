@@ -2,30 +2,97 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import Select from 'antd/lib/select';
+import React, { useState, useEffect } from 'react';
+import Autocomplete from 'antd/lib/auto-complete';
+
+import getCore from 'cvat-core-wrapper';
+import { SelectValue } from 'antd/lib/select';
+
+const core = getCore();
+
+export interface User {
+    id: number;
+    username: string;
+}
 
 interface Props {
-    value: string | null;
-    users: any[];
-    onChange: (user: string) => void;
+    value: User | null;
+    onSelect: (user: User | null) => void;
 }
 
 export default function UserSelector(props: Props): JSX.Element {
-    const { value, users, onChange } = props;
+    const { value, onSelect } = props;
+    const [searchPhrase, setSearchPhrase] = useState('');
+
+    const [users, setUsers] = useState<User[]>([]);
+
+    const handleSearch = (searchValue: string): void => {
+        if (searchValue) {
+            core.users
+                .get({
+                    search: searchValue,
+                    limit: 10,
+                })
+                .then((result: User[]) => {
+                    if (result) {
+                        setUsers(result);
+                    }
+                });
+        } else {
+            setUsers([]);
+        }
+        setSearchPhrase(searchValue);
+    };
+
+    const handleFocus = (open: boolean): void => {
+        if (!users.length && open) {
+            core.users.get({ limit: 10 }).then((result: User[]) => {
+                if (result) {
+                    setUsers(result);
+                }
+            });
+        }
+        if (!open && searchPhrase && searchPhrase !== value?.username) {
+            setSearchPhrase('');
+            if (value) {
+                onSelect(null);
+            }
+        }
+    };
+
+    const handleSelect = (_value: SelectValue): void => {
+        setSearchPhrase(users.filter((user) => user.id === +_value)[0].username);
+        onSelect(_value ? users.filter((user) => user.id === +_value)[0] : null);
+    };
+
+    useEffect(() => {
+        if (value && !users.filter((user) => user.id === value.id).length) {
+            core.users.get({ id: value.id }).then((result: User[]) => {
+                const [user] = result;
+                setUsers([
+                    ...users,
+                    {
+                        id: user.id,
+                        username: user.username,
+                    },
+                ]);
+                setSearchPhrase(user.username);
+            });
+        }
+    }, [value]);
 
     return (
-        <Select defaultValue={value || '—'} size='small' showSearch className='cvat-user-selector' onChange={onChange}>
-            <Select.Option key='-1' value='—'>
-                —
-            </Select.Option>
-            {users.map(
-                (user): JSX.Element => (
-                    <Select.Option key={user.id} value={user.username}>
-                        {user.username}
-                    </Select.Option>
-                ),
-            )}
-        </Select>
+        <Autocomplete
+            value={searchPhrase}
+            placeholder='Select user'
+            onSearch={handleSearch}
+            onSelect={handleSelect}
+            className='cvat-user-search-field'
+            onDropdownVisibleChange={handleFocus}
+            dataSource={users.map((user) => ({
+                value: user.id.toString(),
+                text: user.username,
+            }))}
+        />
     );
 }

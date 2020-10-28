@@ -17,6 +17,12 @@
         padding: 20px;
         background: $background-color-1;
 
+        .cvat-task-details-user-block {
+            > div:nth-child(2) > span {
+                margin-right: 8px;
+            }
+        }
+
         > div:nth-child(2) {
             > div:nth-child(2) {
                 padding-left: 20px;

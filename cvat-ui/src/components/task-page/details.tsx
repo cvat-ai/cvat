@@ -18,7 +18,7 @@ import patterns from 'utils/validation-patterns';
 import { getReposData, syncRepos } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
-import UserSelector from './user-selector';
+import UserSelector, { User } from './user-selector';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 
 const core = getCore();
@@ -27,7 +27,6 @@ interface Props {
     previewImage: string;
     taskInstance: any;
     installedGit: boolean; // change to git repos url
-    registeredUsers: any[];
     activeInference: ActiveInference | null;
     cancelAutoAnnotation(): void;
     onTaskUpdate: (taskInstance: any) => void;
@@ -196,35 +195,26 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private renderUsers(): JSX.Element {
-        const { taskInstance, registeredUsers, onTaskUpdate } = this.props;
+        const { taskInstance, onTaskUpdate } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
-        const assignee = taskInstance.assignee ? taskInstance.assignee.username : null;
+        const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
         const assigneeSelect = (
             <UserSelector
-                users={registeredUsers}
                 value={assignee}
-                onChange={(value: string): void => {
-                    let [userInstance] = registeredUsers.filter((user: any) => user.username === value);
-
-                    if (userInstance === undefined) {
-                        userInstance = null;
-                    }
-
-                    taskInstance.assignee = userInstance;
+                onSelect={(value: User | null): void => {
+                    taskInstance.assignee = value;
                     onTaskUpdate(taskInstance);
                 }}
             />
         );
 
         return (
-            <Row type='flex' justify='space-between' align='middle'>
+            <Row className='cvat-task-details-user-block' type='flex' justify='space-between' align='middle'>
                 <Col span={12}>{owner && <Text type='secondary'>{`Created by ${owner} on ${created}`}</Text>}</Col>
                 <Col span={10}>
-                    <Text type='secondary'>
-                        Assigned to
-                        {assigneeSelect}
-                    </Text>
+                    <Text type='secondary'>Assigned to</Text>
+                    {assigneeSelect}
                 </Col>
             </Row>
         );

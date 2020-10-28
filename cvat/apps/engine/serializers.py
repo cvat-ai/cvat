@@ -13,6 +13,36 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 
+class BasicUserSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        if hasattr(self, 'initial_data'):
+            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
+            if unknown_keys:
+                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
+                    message = 'You do not have permissions to access some of' + \
+                        ' these fields: {}'.format(unknown_keys)
+                else:
+                    message = 'Got unknown fields: {}'.format(unknown_keys)
+                raise serializers.ValidationError(message)
+        return data
+
+    class Meta:
+        model = User
+        fields = ('url', 'id', 'username', 'first_name', 'last_name')
+        ordering = ['-id']
+
+class UserSerializer(serializers.ModelSerializer):
+    groups = serializers.SlugRelatedField(many=True,
+        slug_field='name', queryset=Group.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
+            'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
+            'date_joined')
+        read_only_fields = ('last_login', 'date_joined')
+        write_only_fields = ('password', )
+        ordering = ['-id']
 
 class AttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -53,16 +83,21 @@ class JobSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
+    assignee = BasicUserSerializer(allow_null=True)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status', 'start_frame',
+        fields = ('url', 'id', 'assignee', 'assignee_id', 'status', 'start_frame',
             'stop_frame', 'task_id')
 
 class SimpleJobSerializer(serializers.ModelSerializer):
+    assignee = BasicUserSerializer(allow_null=True)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
+
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status')
+        fields = ('url', 'id', 'assignee', 'assignee_id', 'status')
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
@@ -239,10 +274,14 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
+    owner = BasicUserSerializer()
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True)
+    assignee = BasicUserSerializer(allow_null=True)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee', 'owner_id', 'assignee_id',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'status', 'labels', 'segments',
             'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
@@ -278,8 +317,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
-        instance.owner = validated_data.get('owner', instance.owner)
-        instance.assignee = validated_data.get('assignee', instance.assignee)
+        instance.owner_id = validated_data.get('owner_id', instance.owner_id)
+        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker',
             instance.bug_tracker)
         instance.project = validated_data.get('project', instance.project)
@@ -337,37 +376,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'owner', 'assignee', 'bug_tracker',
             'created_date', 'updated_date', 'status')
         read_only_fields = ('created_date', 'updated_date', 'status')
-        ordering = ['-id']
-
-class BasicUserSerializer(serializers.ModelSerializer):
-    def validate(self, data):
-        if hasattr(self, 'initial_data'):
-            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
-            if unknown_keys:
-                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
-                    message = 'You do not have permissions to access some of' + \
-                        ' these fields: {}'.format(unknown_keys)
-                else:
-                    message = 'Got unknown fields: {}'.format(unknown_keys)
-                raise serializers.ValidationError(message)
-        return data
-
-    class Meta:
-        model = User
-        fields = ('url', 'id', 'username', 'first_name', 'last_name')
-        ordering = ['-id']
-
-class UserSerializer(serializers.ModelSerializer):
-    groups = serializers.SlugRelatedField(many=True,
-        slug_field='name', queryset=Group.objects.all())
-
-    class Meta:
-        model = User
-        fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
-            'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
-            'date_joined')
-        read_only_fields = ('last_login', 'date_joined')
-        write_only_fields = ('password', )
         ordering = ['-id']
 
 class ExceptionSerializer(serializers.Serializer):

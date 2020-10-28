@@ -10,7 +10,6 @@ import { getPluginsAsync } from 'actions/plugins-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
-import { getUsersAsync } from 'actions/users-actions';
 import CVATApplication from 'components/cvat-app';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
@@ -34,8 +33,6 @@ interface StateToProps {
     modelsFetching: boolean;
     userInitialized: boolean;
     userFetching: boolean;
-    usersInitialized: boolean;
-    usersFetching: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     formatsInitialized: boolean;
@@ -55,7 +52,6 @@ interface StateToProps {
 interface DispatchToProps {
     loadFormats: () => void;
     verifyAuthorized: () => void;
-    loadUsers: () => void;
     loadAbout: () => void;
     initModels: () => void;
     initPlugins: () => void;
@@ -71,7 +67,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { plugins } = state;
     const { auth } = state;
     const { formats } = state;
-    const { users } = state;
     const { about } = state;
     const { shortcuts } = state;
     const { userAgreements } = state;
@@ -84,8 +79,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         pluginsFetching: plugins.fetching,
         modelsInitialized: models.initialized,
         modelsFetching: models.fetching,
-        usersInitialized: users.initialized,
-        usersFetching: users.fetching,
         aboutInitialized: about.initialized,
         aboutFetching: about.fetching,
         formatsInitialized: formats.initialized,
@@ -110,7 +103,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadUserAgreements: (): void => dispatch(getUserAgreementsAsync()),
         initPlugins: (): void => dispatch(getPluginsAsync()),
         initModels: (): void => dispatch(getModelsAsync()),
-        loadUsers: (): void => dispatch(getUsersAsync()),
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
