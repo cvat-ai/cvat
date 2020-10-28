@@ -209,7 +209,7 @@ class Issue {
     async reopen() {
         const { id } = this;
         if (id >= 0) {
-            const response = await serverProxy.issues.unresolve(id);
+            const response = await serverProxy.issues.reopen(id);
             if (response.resolver && !(response.resolver in User.objects)) {
                 const userData = await serverProxy.users.get(response.resolver);
                 new User(userData);

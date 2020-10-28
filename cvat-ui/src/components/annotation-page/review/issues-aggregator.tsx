@@ -74,6 +74,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     }}
                     resolve={() => {
                         dispatch(resolveIssueAsync(issue.id));
+                        setExpandedIssues(expandedIssues.filter((issueID: number): boolean => issueID !== issue.id));
                     }}
                     reopen={() => {
                         dispatch(reopenIssueAsync(issue.id));
