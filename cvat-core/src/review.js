@@ -156,14 +156,8 @@ class Review {
         );
     }
 
-    async openIssue(jobID, frame, roi, initialMessage) {
-        this.__internal.issue_set.push(
-            new Issue({
-                roi,
-                frame,
-                comment_set: [{ message: initialMessage }],
-            }),
-        );
+    async openIssue(jobID, data) {
+        this.__internal.issue_set.push(new Issue(data));
 
         if (typeof this.id === 'undefined') {
             await this.toLocalStorage(jobID);

@@ -14,6 +14,11 @@ const defaultState: ReviewState = {
     newIssueROI: null,
 };
 
+function computeFrameIssues(issues: any[], activeReview: any, frame: number): any[] {
+    const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
+    return combinedIssues.filter((issue: any): boolean => issue.frame === frame);
+}
+
 export default function (state: ReviewState = defaultState, action: any): ReviewState {
     switch (action.type) {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
@@ -22,8 +27,8 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 issues,
                 frameData: { number: frame },
             } = action.payload;
-            const combinedIssues = state.activeReview ? issues.concat(state.activeReview.issues) : issues;
-            const frameIssues = combinedIssues.filter((issue: any): boolean => issue.frame === frame);
+            const frameIssues = computeFrameIssues(issues, state.activeReview, frame);
+
             return {
                 ...state,
                 reviews,
@@ -40,8 +45,8 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS: {
             const { reviewInstance, frame } = action.payload;
-            const combinedIssues = state.issues.concat(reviewInstance.issues);
-            const frameIssues = combinedIssues.filter((issue: any): boolean => issue.frame === frame);
+            const frameIssues = computeFrameIssues(state.issues, reviewInstance, frame);
+
             return {
                 ...state,
                 activeReview: reviewInstance,
@@ -57,8 +62,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
             const { frame } = action.payload;
-            const combinedIssues = state.activeReview ? state.issues.concat(state.activeReview.issues) : state.issues;
-            const frameIssues = combinedIssues.filter((issue: any): boolean => issue.frame === frame);
+            const frameIssues = computeFrameIssues(state.issues, state.activeReview, frame);
 
             return {
                 ...state,
@@ -70,6 +74,17 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 newIssueROI: null,
+            };
+        }
+        case ReviewActionTypes.RESOLVE_ISSUE_SUCCESS:
+        case ReviewActionTypes.REOPEN_ISSUE_SUCCESS:
+        case ReviewActionTypes.COMMENT_ISSUE_SUCCESS: {
+            const { issues, frameIssues } = state;
+
+            return {
+                ...state,
+                issues: [...issues],
+                frameIssues: [...frameIssues],
             };
         }
         default:

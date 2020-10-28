@@ -21,14 +21,14 @@ interface Props {
     resolved: boolean;
     collapse: () => void;
     resolve: () => void;
-    unresolve: () => void;
+    reopen: () => void;
     comment: (message: string) => void;
 }
 
 export default function IssueDialog(props: Props): JSX.Element {
     const [currentText, setCurrentText] = useState<string>('');
     const {
-        comments, id, left, top, resolved, collapse, resolve, unresolve, comment,
+        comments, id, left, top, resolved, collapse, resolve, reopen, comment,
     } = props;
     const lines = comments.map(
         (_comment: any): JSX.Element => {
@@ -51,8 +51,8 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     const resolveButton = resolved ? (
-        <Button type='primary' onClick={unresolve}>
-            Unresolve
+        <Button type='primary' onClick={reopen}>
+            Reopen
         </Button>
     ) : (
         <Button type='primary' onClick={resolve}>
@@ -74,18 +74,29 @@ export default function IssueDialog(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-issue-dialog-chat' type='flex' justify='start'>
                 <Col style={{ display: 'block' }}>{lines}</Col>
-                <Input
-                    placeholder='Print a comment here..'
-                    value={currentText}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        setCurrentText(event.target.value);
-                    }}
-                />
+            </Row>
+            <Row className='cvat-issue-dialog-input' type='flex' justify='start'>
+                <Col span={24}>
+                    <Input
+                        placeholder='Print a comment here..'
+                        value={currentText}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                            setCurrentText(event.target.value);
+                        }}
+                    />
+                </Col>
             </Row>
             <Row className='cvat-issue-dialog-footer' type='flex' justify='end'>
                 <Col>
                     {currentText.length ? (
-                        <Button type='primary' disabled={!currentText.length} onClick={() => comment(currentText)}>
+                        <Button
+                            type='primary'
+                            disabled={!currentText.length}
+                            onClick={() => {
+                                comment(currentText);
+                                setCurrentText('');
+                            }}
+                        >
                             Comment
                         </Button>
                     ) : (

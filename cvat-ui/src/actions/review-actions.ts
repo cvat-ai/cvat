@@ -17,15 +17,12 @@ export enum ReviewActionTypes {
     CANCEL_ISSUE = 'CANCEL_ISSUE',
     CREATE_ISSUE_SUCCESS = 'CREATE_ISSUE_SUCCESS',
     CREATE_ISSUE_FAILED = 'CREATE_ISSUE_FAILED',
-    // COMMENT_ISSUE = 'COMMENT_ISSUE',
+    RESOLVE_ISSUE_SUCCESS = 'RESOLVE_ISSUE_SUCCESS',
+    RESOLVE_ISSUE_FAILED = 'RESOLVE_ISSUE_FAILED',
+    REOPEN_ISSUE_SUCCESS = 'REOPEN_ISSUE_SUCCESS',
+    REOPEN_ISSUE_FAILED = 'REOPEN_ISSUE_FAILED',
     COMMENT_ISSUE_SUCCESS = 'COMMENT_ISSUE_SUCCESS',
     COMMENT_ISSUE_FAILED = 'COMMENT_ISSUE_FAILED',
-    // EDIT_ISSUE_COMMENT = 'EDIT_ISSUE_COMMENT',
-    EDIT_ISSUE_COMMENT_SUCCESS = 'EDIT_ISSUE_COMMENT_SUCCESS',
-    EDIT_ISSUE_COMMENT_FAILED = 'EDIT_ISSUE_COMMENT_FAILED',
-    // DELETE_ISSUE_COMMENT = 'DELETE_ISSUE_COMMENT',
-    DELETE_ISSUE_COMMENT_SUCCESS = 'DELETE_ISSUE_COMMENT_SUCCESS',
-    DELETE_ISSUE_COMMENT_FAILED = 'DELETE_ISSUE_COMMENT_FAILED',
 }
 
 export const reviewActions = {
@@ -37,15 +34,12 @@ export const reviewActions = {
     finishIssueSuccess: (frame: number) => createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame }),
     finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
-    createIssueSuccess: (issues: any[]) => createAction(ReviewActionTypes.CREATE_ISSUE_SUCCESS, { issues }),
-    createIssueFailed: (error: any) => createAction(ReviewActionTypes.CREATE_ISSUE_FAILED, { error }),
-    commentIssueSuccess: (issues: any[]) => createAction(ReviewActionTypes.COMMENT_ISSUE_SUCCESS, { issues }),
+    commentIssueSuccess: () => createAction(ReviewActionTypes.COMMENT_ISSUE_SUCCESS),
     commentIssueFailed: (error: any) => createAction(ReviewActionTypes.COMMENT_ISSUE_FAILED, { error }),
-    editIssueCommitSuccess: (issues: any[]) => createAction(ReviewActionTypes.EDIT_ISSUE_COMMENT_SUCCESS, { issues }),
-    editIssueCommitFailed: (error: any) => createAction(ReviewActionTypes.EDIT_ISSUE_COMMENT_FAILED, { error }),
-    deleteIssueCommentSuccess: (issues: any[]) =>
-        createAction(ReviewActionTypes.DELETE_ISSUE_COMMENT_SUCCESS, { issues }),
-    deleteIssueCommentFailed: (error: any) => createAction(ReviewActionTypes.DELETE_ISSUE_COMMENT_FAILED, { error }),
+    resolveIssueSuccess: () => createAction(ReviewActionTypes.RESOLVE_ISSUE_SUCCESS),
+    resolveIssueFailed: (error: any) => createAction(ReviewActionTypes.RESOLVE_ISSUE_FAILED, { error }),
+    reopenIssueSuccess: () => createAction(ReviewActionTypes.REOPEN_ISSUE_SUCCESS),
+    reopenIssueFailed: (error: any) => createAction(ReviewActionTypes.REOPEN_ISSUE_FAILED, { error }),
 };
 
 export type ReviewActions = ActionUnion<typeof reviewActions>;
@@ -80,6 +74,7 @@ export const initializeReviewAsync = (): ThunkAction => async (dispatch, getStat
 export const finishIssueAsync = (message: string): ThunkAction => async (dispatch, getState) => {
     const state = getState();
     const {
+        auth: { user },
         annotation: {
             job: { instance: jobInstance },
             player: {
@@ -90,10 +85,91 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
     } = state;
 
     try {
-        await activeReview.openIssue(jobInstance.id, frameNumber, newIssueROI, message);
+        await activeReview.openIssue(jobInstance.id, {
+            frame: frameNumber,
+            roi: newIssueROI,
+            owner: user.id,
+            comment_set: [
+                {
+                    message,
+                    owner: user.id,
+                },
+            ],
+        });
         await activeReview.toLocalStorage(jobInstance.id);
         dispatch(reviewActions.finishIssueSuccess(frameNumber));
     } catch (error) {
         dispatch(reviewActions.finishIssueFailed(error));
+    }
+};
+
+export const commentIssueAsync = (id: number, message: string): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+    const {
+        auth: { user },
+        annotation: {
+            job: { instance: jobInstance },
+        },
+        review: { frameIssues, activeReview },
+    } = state;
+
+    try {
+        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
+        await issue.comment({
+            message,
+            owner: user.id,
+        });
+        if (activeReview && activeReview.issues.includes(issue)) {
+            await activeReview.toLocalStorage(jobInstance.id);
+        }
+        dispatch(reviewActions.commentIssueSuccess());
+    } catch (error) {
+        dispatch(reviewActions.commentIssueFailed(error));
+    }
+};
+
+export const resolveIssueAsync = (id: number): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+    const {
+        auth: { user },
+        annotation: {
+            job: { instance: jobInstance },
+        },
+        review: { frameIssues, activeReview },
+    } = state;
+
+    try {
+        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
+        await issue.resolve(user);
+        if (activeReview && activeReview.issues.includes(issue)) {
+            await activeReview.toLocalStorage(jobInstance.id);
+        }
+
+        dispatch(reviewActions.resolveIssueSuccess());
+    } catch (error) {
+        dispatch(reviewActions.resolveIssueFailed(error));
+    }
+};
+
+export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+    const {
+        auth: { user },
+        annotation: {
+            job: { instance: jobInstance },
+        },
+        review: { frameIssues, activeReview },
+    } = state;
+
+    try {
+        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
+        await issue.reopen(user);
+        if (activeReview && activeReview.issues.includes(issue)) {
+            await activeReview.toLocalStorage(jobInstance.id);
+        }
+
+        dispatch(reviewActions.reopenIssueSuccess());
+    } catch (error) {
+        dispatch(reviewActions.reopenIssueFailed(error));
     }
 };

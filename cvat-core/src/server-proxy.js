@@ -515,6 +515,58 @@
                 return response.data;
             }
 
+            async function commentIssue(issueID, data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(
+                        `${backendAPI}/issues/${issueID}/comments/create`,
+                        JSON.stringify(data),
+                        {
+                            proxy: config.proxy,
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function resolveIssue(issueID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/issues/${issueID}/resolve`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function reopenIssue(issueID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/issues/${issueID}/reopen`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             async function saveJob(id, jobData) {
                 const { backendAPI } = config;
 
@@ -926,6 +978,15 @@
                             run: runLambdaRequest,
                             call: callLambdaFunction,
                             cancel: cancelLambdaRequest,
+                        }),
+                        writable: false,
+                    },
+
+                    issues: {
+                        value: Object.freeze({
+                            comment: commentIssue,
+                            resolve: resolveIssue,
+                            reopen: reopenIssue,
                         }),
                         writable: false,
                     },

@@ -6,6 +6,7 @@ const Comment = require('./comment');
 const User = require('./user');
 const { ArgumentError } = require('./exceptions');
 const { negativeIDGenerator } = require('./common');
+const serverProxy = require('./server-proxy');
 
 /**
  * Class representing a single issue
@@ -46,6 +47,9 @@ class Issue {
 
         if (typeof data.id === 'undefined') {
             data.id = negativeIDGenerator();
+        }
+        if (typeof data.created_date === 'undefined') {
+            data.created_date = new Date().toISOString();
         }
 
         Object.defineProperties(
@@ -165,20 +169,57 @@ class Issue {
         );
     }
 
-    // eslint-disable-next-line
-    async comment(message) {
-        // const comment = new Comment({ message });
-        // save on the server if positive id
-        // append saved comment to the collection
-        // else just push to comment set
+    async comment(data) {
+        const { id } = this;
+        if (id >= 0) {
+            const response = await serverProxy.issues.comment(id, [data]);
+            for (const comment of response) {
+                if (comment.owner && !(comment.owner in User.objects)) {
+                    const userData = await serverProxy.users.get(comment.owner);
+                    new User(userData);
+                }
+            }
+            if (response.owner && !(response.owner in User.objects)) {
+                const userData = await serverProxy.users.get(response.owner);
+                new User(userData);
+            }
+            this.__internal.comment_set = response.map((comment) => new Comment(comment));
+        } else {
+            const comment = new Comment(data);
+            this.__internal.comment_set.push(comment);
+        }
     }
 
-    async resolve() {
-        // server request, update data
+    async resolve(user) {
+        const { id } = this;
+        if (id >= 0) {
+            const response = await serverProxy.issues.resolve(id);
+            if (!(response.resolver in User.objects)) {
+                const userData = await serverProxy.users.get(response.resolver);
+                new User(userData);
+            }
+            this.__internal.resolved_date = response.resolved_date;
+            this.__internal.resolver = User.objects[response.resolver];
+        } else {
+            this.__internal.resolved_date = new Date().toISOString();
+            this.__internal.resolver = user;
+        }
     }
 
-    async unresolve() {
-        // server request, update data
+    async reopen() {
+        const { id } = this;
+        if (id >= 0) {
+            const response = await serverProxy.issues.unresolve(id);
+            if (response.resolver && !(response.resolver in User.objects)) {
+                const userData = await serverProxy.users.get(response.resolver);
+                new User(userData);
+            }
+            this.__internal.resolved_date = response.resolved_date;
+            this.__internal.resolver = response.resolver;
+        } else {
+            this.__internal.resolved_date = null;
+            this.__internal.resolver = null;
+        }
     }
 
     async delete() {

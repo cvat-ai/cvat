@@ -35,6 +35,9 @@ class Comment {
         if (typeof id === 'undefined') {
             data.id = negativeIDGenerator();
         }
+        if (typeof data.created_date === 'undefined') {
+            data.created_date = new Date().toISOString();
+        }
 
         Object.defineProperties(
             this,

@@ -94,8 +94,8 @@ class ServerProxy {
             const object = tasksDummyData.results.filter((task) => task.id === id)[0];
             for (const prop in taskData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(taskData, prop) &&
-                    Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(taskData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     object[prop] = taskData[prop];
                 }
@@ -175,8 +175,8 @@ class ServerProxy {
 
             for (const prop in jobData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(jobData, prop) &&
-                    Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(jobData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     object[prop] = jobData[prop];
                 }
@@ -272,16 +272,16 @@ class ServerProxy {
 
                 jobs: {
                     value: Object.freeze({
-                        getJob,
-                        saveJob,
+                        get: getJob,
+                        save: saveJob,
                     }),
                     writable: false,
                 },
 
                 users: {
                     value: Object.freeze({
-                        getUsers,
-                        getSelf,
+                        get: getUsers,
+                        self: getSelf,
                     }),
                     writable: false,
                 },
@@ -296,12 +296,11 @@ class ServerProxy {
                 },
 
                 annotations: {
-                    value: {
+                    value: Object.freeze({
                         updateAnnotations,
                         getAnnotations,
-                    },
-                    // To implement on of important tests
-                    writable: true,
+                    }),
+                    writable: false,
                 },
             }),
         );

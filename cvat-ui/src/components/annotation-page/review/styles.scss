@@ -10,7 +10,6 @@
     width: $grid-unit-size * 30;
     padding: $grid-unit-size;
     background: $background-color-2;
-    opacity: 0.95;
     z-index: 100;
 
     button {
@@ -36,9 +35,8 @@
 }
 
 .cvat-issue-dialog {
-    width: $grid-unit-size * 40;
+    width: $grid-unit-size * 35;
     position: absolute;
-    opacity: 0.8;
     z-index: 100;
     transition: none;
     pointer-events: auto;
@@ -48,7 +46,14 @@
     .cvat-issue-dialog-chat {
         background: $background-color-1;
         padding: $grid-unit-size;
+        max-height: $grid-unit-size * 45;
+        overflow-y: auto;
         width: 100%;
+    }
+
+    .cvat-issue-dialog-input {
+        background: $background-color-1;
+        margin-top: $grid-unit-size;
     }
 
     .cvat-issue-dialog-footer {
@@ -62,4 +67,20 @@
     &:hover {
         opacity: 1;
     }
+}
+
+.cvat-hidden-issue-indicator {
+    margin-right: $grid-unit-size;
+}
+
+.cvat-hidden-issue-resolved-indicator {
+    @extend .cvat-hidden-issue-indicator;
+
+    color: $ok-icon-color;
+}
+
+.cvat-hidden-issue-unsolved-indicator {
+    @extend .cvat-hidden-issue-indicator;
+
+    color: $danger-icon-color;
 }

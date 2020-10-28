@@ -815,11 +815,11 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         serializer = IssueSerializer(db_issue)
         return Response(serializer.data)
 
-    @swagger_auto_schema(method='patch', operation_summary='The action unresolves a specific issue',
+    @swagger_auto_schema(method='patch', operation_summary='The action reopens a specific issue',
         responses={'200': IssueSerializer()}
     )
     @action(detail=True, methods=['PATCH'], serializer_class=None)
-    def unresolve(self, request, pk):
+    def reopen(self, request, pk):
         db_issue = self.get_object()
         db_issue.resolved = False
         db_issue.resolver = None
