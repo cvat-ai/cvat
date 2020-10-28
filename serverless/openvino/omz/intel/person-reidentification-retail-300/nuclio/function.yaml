@@ -3,7 +3,7 @@ metadata:
   namespace: cvat
   annotations:
     name: Person reidentification
-    type: reid
+    type: reidsegmentation
     framework: openvino
     spec:
 

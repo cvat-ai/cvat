@@ -16,6 +16,7 @@ interface Props {
     detectors: Model[];
     trackers: Model[];
     reid: Model[];
+    reidsegmentation: Model[];
 }
 
 export default function ModelsPageComponent(props: Props): JSX.Element {
@@ -24,9 +25,11 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
         detectors,
         trackers,
         reid,
+        reidsegmentation,
     } = props;
-
-    const deployedModels = [...detectors, ...interactors, ...trackers, ...reid];
+    console.log("reidsegmentation", reidsegmentation)
+    console.log("reid", reid)
+    const deployedModels = [...detectors, ...interactors, ...trackers, ...reid, ...reidsegmentation];
 
     return (
         <div className='cvat-models-page'>

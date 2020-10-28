@@ -94,7 +94,7 @@ spec:
   description: |
     An implementation of Mask RCNN on Python 3, Keras, and TensorFlow.
 
-  runtime: "python:3.6"
+  runtime: "psudo "
   handler: main:handler
   eventTimeout: 30s
   env:

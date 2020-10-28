@@ -24,6 +24,7 @@ class LambdaType(Enum):
     INTERACTOR = "interactor"
     REID = "reid"
     TRACKER = "tracker"
+    REIDSEGMENTATION = "reidsegmentation"
     UNKNOWN = "unknown"
 
     def __str__(self):
@@ -173,6 +174,18 @@ class LambdaFunction:
                     "shape": data.get("shape", None),
                     "state": data.get("state", None)
                 })
+            elif self.kind == LambdaType.REIDSEGMENTATION:
+                payload.update({
+                    "image0": self._get_image(db_task, data["frame0"], quality),
+                    "image1": self._get_image(db_task, data["frame1"], quality),
+                    "shape0": data["shape0"],
+                    "shape1": data["shape1"]
+                })
+                max_distance = data.get("max_distance")
+                if max_distance:
+                    payload.update({
+                        "max_distance": max_distance
+                    })
             else:
                 raise ValidationError(
                     '`{}` lambda function has incorrect type: {}'
@@ -472,6 +485,10 @@ class LambdaJob:
                 dm.task.put_task_data(db_task.id, serializer.data)
 
     @staticmethod
+    def _call_reidsegmentation(function, db_task, quality, threshold, max_distance):
+        pass
+
+    @staticmethod
     def __call__(function, task, quality, cleanup, **kwargs):
         # TODO: need logging
         db_task = TaskModel.objects.get(pk=task)
@@ -486,6 +503,8 @@ class LambdaJob:
         elif function.kind == LambdaType.REID:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
+        elif function.kind == LambdaType.REIDSEGMENTATION:
+            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"))
 
 def return_response(success_code=status.HTTP_200_OK):
     def wrap_response(func):

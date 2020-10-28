@@ -23,7 +23,7 @@ spec:
       containers:
         - name: cvat-backend-app-container
           image: labeling.azurecr.io/cvat/server
-          imagePullPolicy: Never
+          imagePullPolicy: "IfNotPresent"
           resources:
             requests:
               cpu: 10m
@@ -97,3 +97,5 @@ spec:
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: cvat-backend-data
+      imagePullSecrets:
+      - name: Bl0DcsJ7leOYq5GFlLC5cgWY5q+VaELJ

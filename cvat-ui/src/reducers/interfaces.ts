@@ -173,6 +173,7 @@ export interface ModelsState {
     detectors: Model[];
     trackers: Model[];
     reid: Model[];
+    reidsegmentation: Model[];
     inferences: {
         [index: number]: ActiveInference;
     };

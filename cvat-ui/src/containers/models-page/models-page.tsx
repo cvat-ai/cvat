@@ -15,6 +15,7 @@ interface StateToProps {
     detectors: Model[];
     trackers: Model[];
     reid: Model[];
+    reidsegmentation: Model[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -24,6 +25,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         detectors,
         trackers,
         reid,
+        reidsegmentation,
     } = models;
 
     return {
@@ -31,6 +33,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         detectors,
         trackers,
         reid,
+        reidsegmentation,
     };
 }
 

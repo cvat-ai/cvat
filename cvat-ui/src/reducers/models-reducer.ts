@@ -15,6 +15,7 @@ const defaultState: ModelsState = {
     detectors: [],
     trackers: [],
     reid: [],
+    reidsegmentation: [],
     visibleRunWindows: false,
     activeRunTask: null,
     inferences: {},
@@ -39,6 +40,7 @@ export default function (
                 detectors: action.payload.models.filter((model: Model) => ['detector'].includes(model.type)),
                 trackers: action.payload.models.filter((model: Model) => ['tracker'].includes(model.type)),
                 reid: action.payload.models.filter((model: Model) => ['reid'].includes(model.type)),
+                reidsegmentation: action.payload.models.filter((model: Model) => ['reidsegmentation'].includes(model.type)),
                 initialized: true,
                 fetching: false,
             };
