@@ -18,6 +18,7 @@ interface StateToProps {
     task: any;
     detectors: Model[];
     reid: Model[];
+    reidsegmentation: Model[];
 }
 
 interface DispatchToProps {
@@ -27,13 +28,14 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
-    const { detectors, reid } = models;
-
+    const { detectors, reid, reidsegmentation } = models;
+    console.log(reidsegmentation)
     return {
         visible: models.visibleRunWindows,
         task: models.activeRunTask,
-        reid,
         detectors,
+        reid,
+        reidsegmentation,
     };
 }
 
@@ -51,6 +53,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         reid,
+        reidsegmentation,
         detectors,
         task,
         visible,
@@ -58,7 +61,7 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
         closeDialog,
     } = props;
 
-    const models = [...reid, ...detectors];
+    const models = [...reid, ...detectors, ...reidsegmentation];
 
     return (
         <Modal
