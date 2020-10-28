@@ -103,57 +103,15 @@ context('Actions on polygon', () => {
         });
         it('Draw a polygon shape, track', () => {
             cy.createPolygon(createPolygonShape);
-            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-1')
-                .should('contain', '1')
-                .and('contain', 'POLYGON SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createPolygon(createPolygonTrack);
-            cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-2')
-                .should('contain', '2')
-                .and('contain', 'POLYGON TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a polygon shape, track with use parameter "number of points"', () => {
             cy.createPolygon(createPolygonShapePoints);
-            cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-3')
-                .should('contain', '3')
-                .and('contain', 'POLYGON SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createPolygon(createPolygonTrackPoints);
-            cy.get('#cvat_canvas_shape_4').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-4')
-                .should('contain', '4')
-                .and('contain', 'POLYGON TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a polygon shape, track with second label', () => {
             cy.createPolygon(createPolygonShapeSwitchLabel);
-            cy.get('#cvat_canvas_shape_5').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-5')
-                .should('contain', '5')
-                .and('contain', 'POLYGON SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
             cy.createPolygon(createPolygonTrackSwitchLabel);
-            cy.get('#cvat_canvas_shape_6').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-6')
-                .should('contain', '6')
-                .and('contain', 'POLYGON TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
         });
     });
 });
