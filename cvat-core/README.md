@@ -18,7 +18,7 @@ If you make changes in this package, please do following:
 - Dependencies installation
 
 ```bash
-npm install
+npm ci
 ```
 
 - Building the module from sources in the `dist` directory:
