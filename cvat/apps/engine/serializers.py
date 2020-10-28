@@ -63,7 +63,7 @@ class JobSerializer(serializers.ModelSerializer):
 class SimpleJobSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status')
+        fields = ('url', 'id', 'assignee', 'reviewer', 'status')
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
@@ -510,7 +510,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 class ReviewSummarySerializer(serializers.Serializer):
     reviews = serializers.IntegerField(read_only=True)
     average_estimated_quality = serializers.FloatField(read_only=True)
-    issues_unresolved = serializers.IntegerField(read_only=True)
+    issues_unsolved = serializers.IntegerField(read_only=True)
     issues_resolved = serializers.IntegerField(read_only=True)
     assignees = serializers.ListField(allow_empty=True, read_only=True)
     reviewers = serializers.ListField(allow_empty=True, read_only=True)
@@ -525,7 +525,7 @@ class ReviewSummarySerializer(serializers.Serializer):
         return {
             'reviews': len(db_reviews),
             'average_estimated_quality': sum(qualities) / len(qualities) if qualities else 0,
-            'issues_unresolved': len(list(filter(lambda db_issue: db_issue.resolved_date is None, db_issues))),
+            'issues_unsolved': len(list(filter(lambda db_issue: db_issue.resolved_date is None, db_issues))),
             'issues_resolved': len(list(filter(lambda db_issue: db_issue.resolved_date is not None, db_issues))),
             'assignees': list(set(filter(lambda username: username is not None, assignees))),
             'reviewers': list(set(filter(lambda username: username is not None, reviewers))),

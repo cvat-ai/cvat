@@ -517,7 +517,7 @@ class JobReview(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get('reviews', None), 3)
         self.assertEqual(response.data.get('average_estimated_quality', None), 4)
-        self.assertEqual(response.data.get('issues_unresolved', None), 1)
+        self.assertEqual(response.data.get('issues_unsolved', None), 1)
         self.assertEqual(response.data.get('issues_resolved', None), 0)
         self.assertSequenceEqual(response.data.get('assignees', None), ['user2'])
         self.assertSequenceEqual(response.data.get('reviewers', None), ['user3'])
@@ -590,7 +590,7 @@ class JobReview(APITestCase):
         self.job.review_set.all().delete()
         self.job.issue_set.all().delete()
 
-    def test_api_v1_resolve_unresolve_issue(self):
+    def test_api_v1_resolve_reopen_issue(self):
         self._set_validation_status()
         response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
             self.reviewer, self.reject_review_data
@@ -603,7 +603,7 @@ class JobReview(APITestCase):
         response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
         self.assertEqual(response.data[0]['resolver'], self.assignee.id)
 
-        response = self._patch_request('/api/v1/issues/{}/unresolve'.format(issue_id), self.reviewer, {})
+        response = self._patch_request('/api/v1/issues/{}/reopen'.format(issue_id), self.reviewer, {})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
         self.assertEqual(response.data[0]['resolver'], None)
