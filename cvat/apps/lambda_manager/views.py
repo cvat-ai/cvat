@@ -488,9 +488,12 @@ class LambdaJob:
     def _call_reidsegmentation(function, db_task, quality, threshold, max_distance):
         data = dm.task.get_task_data(db_task.id)
         polygons_by_frame = [[] for _ in range(db_task.data.size)]
+        shapes_without_polygons = []
         for shape in data["shapes"]:
             if shape["type"] == str(ShapeType.POLYGON):
                 polygons_by_frame[shape["frame"]].append(shape)
+            else:
+                shapes_without_polygons.append(shape)
         paths = {}
         for frame in range(db_task.data.size - 1):
             polygons0 = polygons_by_frame[frame]
@@ -524,7 +527,7 @@ class LambdaJob:
                 path_id = len(paths)
                 paths[path_id] = [polygon]
                 polygon["path_id"] = path_id
-
+        print("paths", paths)
         tracks = []
         for path_id in paths:
             polygon0 = paths[path_id][0]
@@ -548,12 +551,13 @@ class LambdaJob:
 
         for track in tracks:
             if track["shapes"][-1]["frame"] != db_task.data.size -1:
-                polygon = track["shape"][-1].copy()
+                polygon = track["shapes"][-1].copy()
                 polygon["outside"] = True
                 polygon["frame"] += 1
-                track["shape"].append(polygon)
+                track["shapes"].append(polygon)
 
         if tracks:
+            data["shapes"] = shapes_without_polygons
             data["tracks"].extend(tracks)
             serializer = LabeledDataSerializer(data=data)
             if serializer.is_valid(raise_exception=True):

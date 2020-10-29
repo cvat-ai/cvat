@@ -1,14 +1,14 @@
 metadata:
-  name: openvino.omz.intel.person-reidentification-retail-0300
+  name: polygon-reidentification
   namespace: cvat
   annotations:
-    name: Person reidentification
-    type: reid
-    framework: openvino
+    name: Polygon reidentification
+    type: reidsegmentation
+    framework: raw
     spec:
 
 spec:
-  description: Person reidentification model for a general scenario
+  description: Segmentation reidentification for all labels
   runtime: "python:3.6"
   handler: main:handler
   eventTimeout: 30s
