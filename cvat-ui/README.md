@@ -20,7 +20,7 @@ you also need to do `npm install` to update `package-lock.json`
 - Installing dependencies:
 
 ```bash
-cd ../cvat-core && npm install && cd - && npm install
+cd ../cvat-core && npm ci && cd - && npm ci
 ```
 
 - Running development UI server with autorebuild on change
