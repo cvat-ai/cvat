@@ -178,8 +178,8 @@ class LambdaFunction:
                 payload.update({
                     "image0": self._get_image(db_task, data["frame0"], quality),
                     "image1": self._get_image(db_task, data["frame1"], quality),
-                    "shape0": data["shape0"],
-                    "shape1": data["shape1"]
+                    "polygons0": data["polygons0"],
+                    "polygons1": data["polygons1"]
                 })
                 max_distance = data.get("max_distance")
                 if max_distance:
@@ -486,7 +486,79 @@ class LambdaJob:
 
     @staticmethod
     def _call_reidsegmentation(function, db_task, quality, threshold, max_distance):
-        pass
+        data = dm.task.get_task_data(db_task.id)
+        polygons_by_frame = [[] for _ in range(db_task.data.size)]
+        for shape in data["shapes"]:
+            if shape["type"] == str(ShapeType.POLYGON):
+                polygons_by_frame[shape["frame"]].append(shape)
+        paths = {}
+        for frame in range(db_task.data.size - 1):
+            polygons0 = polygons_by_frame[frame]
+            for polygon in polygons0:
+                if "path_id" not in polygon:
+                 path_id = len(paths)
+                 paths[path_id] = [polygon]
+                 polygon["path_id"] = path_id
+
+            polygons1 = polygons_by_frame[frame + 1]
+            print("polygons0", polygons0)
+            print("polygons1", polygons1)
+            if polygons0 and polygons1:
+                print("in function")
+                matching = function.invoke(db_task, data={
+                    "frame0": frame, "frame1": frame + 1, "quality": quality,
+                    "polygons0": polygons0, "polygons1": polygons1, "threshold": threshold,
+                    "max_distance": max_distance})
+
+                for idx0, idx1 in enumerate(matching):
+                    if idx1 >= 0:
+                        path_id = polygons0[idx0]["path_id"]
+                        polygons1[idx1]["path_id"] = path_id
+                        paths[path_id].append(polygons1[idx1])
+            progress = (frame + 2) / db_task.data.size
+            if not LambdaJob._update_progress(progress):
+                break
+
+        for polygon in polygons_by_frame[db_task.data.size - 1]:
+            if "path_id" not in polygon:
+                path_id = len(paths)
+                paths[path_id] = [polygon]
+                polygon["path_id"] = path_id
+
+        tracks = []
+        for path_id in paths:
+            polygon0 = paths[path_id][0]
+            tracks.append({
+                "label_id": polygon0["label_id"],
+                "group": None,
+                "attributes": [],
+                "frame": polygon0["frame"],
+                "shapes": paths[path_id],
+                "source": str(SourceType.AUTO)
+            })
+
+            for polygon in tracks[-1]["shapes"]:
+                polygon.pop("id", None)
+                polygon.pop("path_id")
+                polygon.pop("group")
+                polygon.pop("label_id")
+                polygon.pop("source")
+                polygon["outside"] = False
+                polygon["attributes"] = []
+
+        for track in tracks:
+            if track["shapes"][-1]["frame"] != db_task.data.size -1:
+                polygon = track["shape"][-1].copy()
+                polygon["outside"] = True
+                polygon["frame"] += 1
+                track["shape"].append(polygon)
+
+        if tracks:
+            data["tracks"].extend(tracks)
+            serializer = LabeledDataSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                dm.task.put_task_data(db_task.id, serializer.data)
+
 
     @staticmethod
     def __call__(function, task, quality, cleanup, **kwargs):
