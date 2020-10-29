@@ -30,6 +30,7 @@ interface Props {
     activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
+    frameIssues: any[];
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -111,6 +112,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         });
 
         this.initialSetup();
+        this.updateIssueRegions();
         this.updateCanvas();
     }
 
@@ -122,6 +124,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             outlined,
             outlineColor,
             showBitmap,
+            frameIssues,
             frameData,
             frameAngle,
             annotations,
@@ -213,6 +216,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     `contrast(${contrastLevel / 100})` +
                     `saturate(${saturationLevel / 100})`;
             }
+        }
+
+        if (prevProps.frameIssues !== frameIssues) {
+            this.updateIssueRegions();
         }
 
         if (
@@ -623,6 +630,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
         }
+    }
+
+    private updateIssueRegions(): void {
+        const { canvasInstance, frameIssues } = this.props;
+        const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<number, number[]> => {
+            acc[issue.id] = issue.ROI;
+            return acc;
+        }, {});
+        canvasInstance.setupIssueRegions(regions);
     }
 
     private updateCanvas(): void {

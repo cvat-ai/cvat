@@ -19,7 +19,7 @@ import {
 
 export interface CanvasController {
     readonly objects: any[];
-    readonly reviewROIs: Record<number, number[]>;
+    readonly issueRegions: Record<number, number[]>;
     readonly zLayer: number | null;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
@@ -123,8 +123,8 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.zLayer;
     }
 
-    public get reviewROIs(): Record<number, number[]> {
-        return this.model.reviewROIs;
+    public get issueRegions(): Record<number, number[]> {
+        return this.model.issueRegions;
     }
 
     public get objects(): any[] {

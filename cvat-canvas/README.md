@@ -151,8 +151,8 @@ Canvas itself handles:
   `cvat_canvas_shape_merging`,
   `cvat_canvas_shape_drawing`,
   `cvat_canvas_shape_occluded`
-- Drawn review ROIs have an id `cvat_canvas_review_roi_{issue.id}`
-- Drawn review roi has the class `cvat_canvas_review_roi`
+- Drawn review ROIs have an id `cvat_canvas_issue_region_{issue.id}`
+- Drawn review roi has the class `cvat_canvas_issue_region`
 - Drawn texts have the class `cvat_canvas_text`
 - Tags have the class `cvat_canvas_tag`
 - Canvas image has ID `cvat_canvas_image`

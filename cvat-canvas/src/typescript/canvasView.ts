@@ -69,7 +69,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
     private drawnStates: Record<number, DrawnState>;
-    private drawnReviewROIs: Record<number, SVG.Shape>;
+    private drawnIssueRegions: Record<number, SVG.Shape>;
     private geometry: Geometry;
     private drawHandler: DrawHandler;
     private editHandler: EditHandler;
@@ -516,6 +516,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
+        for (const issueRegion of Object.values(this.drawnIssueRegions)) {
+            ((issueRegion as any) as SVG.Shape).attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
+            ((issueRegion as any) as SVG.Shape).attr(
+                'stroke-width',
+                `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
+            );
+        }
+
         // Transform handlers
         this.drawHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
@@ -537,20 +545,56 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private setupReviewROIs(reviewROIs: Record<number, number[]>): void {
-        for (const reviewROI of Object.keys(this.drawnReviewROIs)) {
-            this.drawnReviewROIs[+reviewROI].remove();
+    private setupIssueRegions(issueRegions: Record<number, number[]>): void {
+        for (const issueRegion of Object.keys(this.drawnIssueRegions)) {
+            this.drawnIssueRegions[+issueRegion].remove();
         }
 
-        for (const reviewROI of Object.keys(reviewROIs)) {
-            const points = this.translateToCanvas(reviewROIs[+reviewROI]);
-            const stringified = this.stringifyToCanvas(points);
-            this.drawnReviewROIs[+reviewROI] = this.adoptedContent
-                .polygon(stringified)
-                .addClass('cvat_canvas_review_roi')
-                .attr({
-                    id: `cvat_canvas_review_roi_${reviewROI}`,
-                });
+        for (const issueRegion of Object.keys(issueRegions)) {
+            const points = this.translateToCanvas(issueRegions[+issueRegion]);
+            if (points.length === 2) {
+                this.drawnIssueRegions[+issueRegion] = this.adoptedContent
+                    .circle(consts.BASE_POINT_SIZE)
+                    .move(points[0], points[1])
+                    .addClass('cvat_canvas_issue_region')
+                    .attr({
+                        id: `cvat_canvas_issue_region_${issueRegion}`,
+                    });
+            } else if (points.length === 4) {
+                const stringified = this.stringifyToCanvas([
+                    points[0],
+                    points[1],
+                    points[2],
+                    points[1],
+                    points[2],
+                    points[3],
+                    points[0],
+                    points[3],
+                ]);
+                this.drawnIssueRegions[+issueRegion] = this.adoptedContent
+                    .polygon(stringified)
+                    .addClass('cvat_canvas_issue_region')
+                    .attr({
+                        id: `cvat_canvas_issue_region_${issueRegion}`,
+                    });
+            } else {
+                const stringified = this.stringifyToCanvas(points);
+                this.drawnIssueRegions[+issueRegion] = this.adoptedContent
+                    .polygon(stringified)
+                    .addClass('cvat_canvas_issue_region')
+                    .attr({
+                        id: `cvat_canvas_issue_region_${issueRegion}`,
+                    });
+            }
+
+            ((this.drawnIssueRegions[+issueRegion] as any) as SVG.Shape).attr(
+                'r',
+                `${consts.BASE_POINT_SIZE / this.geometry.scale}`,
+            );
+            ((this.drawnIssueRegions[+issueRegion] as any) as SVG.Shape).attr(
+                'stroke-width',
+                `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
+            );
         }
     }
 
@@ -820,7 +864,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.svgShapes = {};
         this.svgTexts = {};
         this.drawnStates = {};
-        this.drawnReviewROIs = {};
+        this.drawnIssueRegions = {};
         this.activeElement = {
             clientID: null,
             attributeID: null,
@@ -1104,8 +1148,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);
-        } else if (reason === UpdateReasons.REVIEW_ROIS_UPDATED) {
-            this.setupReviewROIs(this.controller.reviewROIs);
+        } else if (reason === UpdateReasons.ISSUE_REGIONS_UPDATED) {
+            this.setupIssueRegions(this.controller.issueRegions);
         } else if (reason === UpdateReasons.GRID_UPDATED) {
             const size: Size = this.geometry.grid;
             this.gridPattern.setAttribute('width', `${size.width}`);

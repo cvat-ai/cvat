@@ -22,10 +22,31 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
         id, message, top, left, resolved, onClick,
     } = props;
 
+    const onMouseEnter = (): void => {
+        const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
+        if (element) {
+            element.style.display = 'block';
+        }
+    };
+
+    const onMouseLeave = (): void => {
+        const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
+        if (element) {
+            element.style.display = '';
+        }
+    };
+
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
         <Tooltip title={message}>
-            <Tag id={elementID} onClick={onClick} style={{ top, left }} className='cvat-hidden-issue-label'>
+            <Tag
+                id={elementID}
+                onClick={onClick}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+                style={{ top, left }}
+                className='cvat-hidden-issue-label'
+            >
                 {resolved ? (
                     <Icon className='cvat-hidden-issue-resolved-indicator' type='check' />
                 ) : (

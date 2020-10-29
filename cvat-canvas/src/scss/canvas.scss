@@ -66,8 +66,15 @@ polyline.cvat_shape_drawing_opacity {
     stroke: white;
 }
 
-.cvat_canvas_review_roi {
+.cvat_canvas_issue_region {
     display: none;
+    fill: white;
+    stroke: black;
+    opacity: 0.25;
+    animation-duration: 600ms;
+    animation-name: blink;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
 }
 
 polyline.cvat_canvas_shape_grouping {
@@ -276,6 +283,16 @@ polyline.cvat_canvas_shape_splitting {
     pointer-events: none;
     width: 100%;
     height: 100%;
+}
+
+@keyframes blink {
+    from {
+        fill: red;
+    }
+
+    to {
+        fill: greenyellow;
+    }
 }
 
 @keyframes loadingAnimation {

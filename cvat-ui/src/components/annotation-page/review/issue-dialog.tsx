@@ -30,6 +30,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     const {
         comments, id, left, top, resolved, collapse, resolve, reopen, comment,
     } = props;
+
     const lines = comments.map(
         (_comment: any): JSX.Element => {
             const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
