@@ -33,7 +33,7 @@
     "eslint-config-airbnb-typescript": "^4.0.1",
     "eslint-config-typescript-recommended": "^1.4.17",
     "eslint-plugin-import": "^2.18.2",
-    "node-sass": "^4.13.1",
+    "node-sass": "^4.14.1",
     "nodemon": "^1.19.4",
     "postcss-loader": "^3.0.0",
     "postcss-preset-env": "^6.7.0",
