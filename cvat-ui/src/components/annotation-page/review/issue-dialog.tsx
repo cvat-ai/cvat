@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Comment from 'antd/lib/comment';
@@ -30,6 +30,13 @@ export default function IssueDialog(props: Props): JSX.Element {
     const {
         comments, id, left, top, resolved, collapse, resolve, reopen, comment,
     } = props;
+
+    useEffect(() => {
+        const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
+        if (element) {
+            element.style.display = '';
+        }
+    }, []);
 
     const lines = comments.map(
         (_comment: any): JSX.Element => {
