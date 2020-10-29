@@ -95,57 +95,15 @@ context('Actions on Cuboid', () => {
         });
         it('Draw a Cuboid shape in two ways (From rectangle, by 4 points)', () => {
             cy.createCuboid(createCuboidShape2Points);
-            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-1')
-                .should('contain', '1')
-                .and('contain', 'CUBOID SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createCuboid(createCuboidShape4Points);
-            cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-2')
-                .should('contain', '2')
-                .and('contain', 'CUBOID SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a Cuboid track in two ways (From rectangle, by 4 points)', () => {
             cy.createCuboid(createCuboidTrack2Points);
-            cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-3')
-                .should('contain', '3')
-                .and('contain', 'CUBOID TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createCuboid(createCuboidTrack4Points);
-            cy.get('#cvat_canvas_shape_4').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-4')
-                .should('contain', '4')
-                .and('contain', 'CUBOID TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a new Cuboid shape in two ways (From rectangle, by 4 points) with second label', () => {
             cy.createCuboid(createCuboidShape2PointsNewLabel);
-            cy.get('#cvat_canvas_shape_5').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-5')
-                .should('contain', '5')
-                .and('contain', 'CUBOID SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
             cy.createCuboid(createCuboidShape4PointsNewLabel);
-            cy.get('#cvat_canvas_shape_6').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-6')
-                .should('contain', '6')
-                .and('contain', 'CUBOID SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
         });
     });
 });
