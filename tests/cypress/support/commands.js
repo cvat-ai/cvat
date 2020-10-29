@@ -8,6 +8,8 @@ require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 
+let selectedValueGlobal = '';
+
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password')) => {
     cy.get('[placeholder="Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
@@ -97,22 +99,39 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     if (createRectangleParams.switchLabel) {
         cy.switchLabel(createRectangleParams.labelName);
     }
-    cy.get('.cvat-draw-shape-popover-content').contains(createRectangleParams.points).click();
-    cy.get('.cvat-draw-shape-popover-content')
-        .find('button')
-        .contains(createRectangleParams.type)
-        .click({ force: true });
+    cy.contains('Draw new rectangle')
+        .parents('.cvat-draw-shape-popover-content')
+        .within(() => {
+            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                selectedValueGlobal = $labelValue.text();
+            });
+            cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
+            cy.get('button').contains(createRectangleParams.type).click({ force: true });
+        });
     cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
     cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
     if (createRectangleParams.points === 'By 4 Points') {
         cy.get('.cvat-canvas-container').click(createRectangleParams.thirdX, createRectangleParams.thirdY);
         cy.get('.cvat-canvas-container').click(createRectangleParams.fourthX, createRectangleParams.fourthY);
     }
+    cy.checkObjectParameters(createRectangleParams, 'RECTANGLE');
 });
 
 Cypress.Commands.add('switchLabel', (labelName) => {
     cy.get('.cvat-draw-shape-popover-content').find('.ant-select-selection-selected-value').click();
     cy.get('.ant-select-dropdown-menu').contains(labelName).click();
+});
+
+Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
+    cy.get('.cvat-objects-sidebar-state-item').then((objectSidebar) => {
+        cy.get(`#cvat_canvas_shape_${objectSidebar.length}`).should('exist').and('be.visible');
+        cy.get(`#cvat-objects-sidebar-state-item-${objectSidebar.length}`)
+            .should('contain', objectSidebar.length)
+            .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
+            .within(() => {
+                cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
+            });
+    });
 });
 
 Cypress.Commands.add('createPoint', (createPointParams) => {
@@ -123,6 +142,9 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.contains('Draw new points')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
+            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                selectedValueGlobal = $labelValue.text();
+            });
             if (createPointParams.numberOfPoints) {
                 createPointParams.complete = false;
                 cy.get('.ant-input-number-input').clear().type(createPointParams.numberOfPoints);
@@ -135,6 +157,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     if (createPointParams.complete) {
         cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
     }
+    cy.checkObjectParameters(createPointParams, 'POINTS');
 });
 
 Cypress.Commands.add('changeAppearance', (colorBy) => {
@@ -163,6 +186,9 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
         cy.contains('Draw new polygon')
             .parents('.cvat-draw-shape-popover-content')
             .within(() => {
+                cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                    selectedValueGlobal = $labelValue.text();
+                });
                 if (createPolygonParams.numberOfPoints) {
                     createPolygonParams.complete = false;
                     cy.get('.ant-input-number-input').clear().type(createPolygonParams.numberOfPoints);
@@ -176,6 +202,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (createPolygonParams.complete) {
         cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
     }
+    cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
 
 Cypress.Commands.add('openSettings', () => {
@@ -206,6 +233,9 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.contains('Draw new cuboid')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
+            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                selectedValueGlobal = $labelValue.text();
+            });
             cy.get('button').contains(createCuboidParams.type).click({ force: true });
         });
     cy.get('.cvat-canvas-container').click(createCuboidParams.firstX, createCuboidParams.firstY);
@@ -214,6 +244,7 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
         cy.get('.cvat-canvas-container').click(createCuboidParams.thirdX, createCuboidParams.thirdY);
         cy.get('.cvat-canvas-container').click(createCuboidParams.fourthX, createCuboidParams.fourthY);
     }
+    cy.checkObjectParameters(createCuboidParams, 'CUBOID');
 });
 
 Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
@@ -232,6 +263,9 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.contains('Draw new polyline')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
+            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                selectedValueGlobal = $labelValue.text();
+            });
             if (createPolylineParams.numberOfPoints) {
                 createPolylineParams.complete = false;
                 cy.get('.ant-input-number-input').clear().type(createPolylineParams.numberOfPoints);
@@ -244,6 +278,7 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     if (createPolylineParams.complete) {
         cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
     }
+    cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
 });
 
 Cypress.Commands.add('getTaskID', (taskName) => {
