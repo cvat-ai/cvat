@@ -44,6 +44,10 @@
     padding: $grid-unit-size;
 
     .cvat-issue-dialog-chat {
+        > div {
+            width: 100%;
+        }
+
         background: $background-color-1;
         padding: $grid-unit-size;
         max-height: $grid-unit-size * 45;
