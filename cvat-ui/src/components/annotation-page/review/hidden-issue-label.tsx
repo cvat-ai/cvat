@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { ReactPortal } from 'react';
+import React, { ReactPortal, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
 import Icon from 'antd/lib/icon';
@@ -22,19 +22,21 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
         id, message, top, left, resolved, onClick,
     } = props;
 
-    const onMouseEnter = (): void => {
+    function highlight(): void {
         const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
         if (element) {
             element.style.display = 'block';
         }
-    };
+    }
 
-    const onMouseLeave = (): void => {
+    function blur(): void {
         const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
         if (element) {
             element.style.display = '';
         }
-    };
+    }
+
+    useEffect(() => blur, []); // remove highlighting when unmount the component
 
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
@@ -42,8 +44,8 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
             <Tag
                 id={elementID}
                 onClick={onClick}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
+                onMouseEnter={highlight}
+                onMouseLeave={blur}
                 style={{ top, left }}
                 className='cvat-hidden-issue-label'
             >
