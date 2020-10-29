@@ -213,6 +213,8 @@ canvas.draw({
 });
 ```
 
+<!--lint disable maximum-line-length-->
+
 ## API Reaction
 
 |                   | IDLE | GROUP | SPLIT | DRAW | MERGE | EDIT | DRAG | RESIZE | ZOOM_CANVAS | DRAG_CANVAS | INTERACT |
@@ -236,6 +238,8 @@ canvas.draw({
 | bitmap()          | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
 | setZLayer()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
 | setupReviewROIs() | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+
+<!--lint enable maximum-line-length-->
 
 You can call setup() during editing, dragging, and resizing only to update objects, not to change a frame.
 You can change frame during draw only when you do not redraw an existing object
