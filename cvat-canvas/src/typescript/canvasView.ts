@@ -94,6 +94,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
+    private stateIsLocked(state: any): boolean {
+        const { configuration } = this.controller;
+        return state.f || configuration.forceDisableEditing;
+    }
+
     private translateToCanvas(points: number[]): number[] {
         const { offset } = this.controller.geometry;
         return points.map((coord: number): number => coord + offset);
@@ -460,6 +465,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
         this.interactionHandler.transform(this.geometry);
+        this.roiSelector.transform(this.geometry);
     }
 
     private transformCanvas(): void {
@@ -516,6 +522,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
         this.interactionHandler.transform(this.geometry);
+        this.roiSelector.transform(this.geometry);
     }
 
     private resizeCanvas(): void {
@@ -929,6 +936,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onROISelected.bind(this),
             this.onFindObject.bind(this),
             this.adoptedContent,
+            this.geometry,
         );
         this.zoomHandler = new ZoomHandlerImpl(this.onFocusRegion.bind(this), this.adoptedContent, this.geometry);
         this.interactionHandler = new InteractionHandlerImpl(
@@ -1617,7 +1625,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state && state.shapeType === 'points') {
             this.svgShapes[clientID]
                 .remember('_selectHandler')
-                .nested.style('pointer-events', state.lock ? 'none' : '');
+                .nested.style('pointer-events', this.stateIsLocked(state) ? 'none' : '');
         }
 
         if (!state || state.hidden || state.outside) {
@@ -1626,7 +1634,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const shape = this.svgShapes[clientID];
 
-        if (state.lock) {
+        if (this.stateIsLocked(state)) {
             return;
         }
 

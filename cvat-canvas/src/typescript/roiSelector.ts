@@ -8,18 +8,22 @@
 
 import * as SVG from 'svg.js';
 
+import consts from './consts';
 import { translateToSVG } from './shared';
+import { Geometry } from './canvasModel';
 
 export interface ROISelector {
     select(enabled: boolean): void;
     selectObject(state: any): void;
     resetSelectedObjects(): void;
     cancel(): void;
+    transform(geometry: Geometry): void;
 }
 
 export class ROISelectorImpl implements ROISelector {
     private onROISelected: (points?: number[]) => void;
     private onFindObject: (event: MouseEvent) => void;
+    private geometry: Geometry;
     private canvas: SVG.Container;
     private selectionRect: SVG.Rect | null;
     private highlightedShape: SVG.Shape | null;
@@ -55,6 +59,7 @@ export class ROISelectorImpl implements ROISelector {
                 height: box.ybr - box.ytl,
             });
         } else {
+            this.blurObject();
             this.onFindObject(event);
         }
     };
@@ -73,12 +78,18 @@ export class ROISelectorImpl implements ROISelector {
                 y: point[1],
             };
 
-            this.selectionRect = this.canvas.rect().addClass('cvat_canvas_shape_roi_selection');
+            this.selectionRect = this.canvas
+                .rect()
+                .attr({
+                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                })
+                .addClass('cvat_canvas_shape_roi_selection');
             this.selectionRect.attr({ ...this.startSelectionPoint });
         }
     };
 
     private onMouseUp = (): void => {
+        const { offset } = this.geometry;
         if (this.selectionRect) {
             const {
                 w, h, x, y, x2, y2,
@@ -86,9 +97,9 @@ export class ROISelectorImpl implements ROISelector {
             this.selectionRect.remove();
             this.selectionRect = null;
             if (w === 0 && h === 0) {
-                this.onROISelected([x, y]);
+                this.onROISelected([x - offset, y - offset]);
             } else {
-                this.onROISelected([x, y, x2, y2]);
+                this.onROISelected([x - offset, y - offset, x2 - offset, y2 - offset]);
             }
         }
     };
@@ -131,9 +142,11 @@ export class ROISelectorImpl implements ROISelector {
         onROISelected: (points?: number[]) => void,
         onFindObject: (event: MouseEvent) => void,
         canvas: SVG.Container,
+        geometry: Geometry,
     ) {
         this.onROISelected = onROISelected;
         this.onFindObject = onFindObject;
+        this.geometry = geometry;
         this.canvas = canvas;
         this.selectionRect = null;
         this.highlightedShape = null;
@@ -160,6 +173,15 @@ export class ROISelectorImpl implements ROISelector {
     public cancel(): void {
         this.release();
         this.onROISelected();
+    }
+
+    public transform(geometry: Geometry): void {
+        this.geometry = geometry;
+        if (this.selectionRect) {
+            this.selectionRect.attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
+            });
+        }
     }
 
     public resetSelectedObjects(): void {

@@ -56,6 +56,7 @@ export interface Configuration {
     displayAllText?: boolean;
     undefinedAttrValue?: string;
     showProjections?: boolean;
+    forceDisableEditing?: boolean;
 }
 
 export interface DrawData {
@@ -623,6 +624,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.undefinedAttrValue !== 'undefined') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
+        }
+
+        if (typeof configuration.forceDisableEditing !== 'undefined') {
+            this.data.configuration.forceDisableEditing = configuration.forceDisableEditing;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

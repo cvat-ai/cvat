@@ -94,7 +94,9 @@ interface Props {
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        const { automaticBordering, showObjectsTextAlways, canvasInstance } = this.props;
+        const {
+            automaticBordering, showObjectsTextAlways, canvasInstance, workspace,
+        } = this.props;
 
         // It's awful approach from the point of view React
         // But we do not have another way because cvat-canvas returns regular DOM element
@@ -105,6 +107,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
+            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
         });
 
         this.initialSetup();
@@ -249,6 +252,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.frameAngle !== frameAngle) {
             canvasInstance.rotate(frameAngle);
+        }
+
+        if (prevProps.workspace !== workspace) {
+            if (workspace === Workspace.REVIEW_WORKSPACE) {
+                canvasInstance.configure({
+                    forceDisableEditing: true,
+                });
+            } else if (prevProps.workspace === Workspace.REVIEW_WORKSPACE) {
+                canvasInstance.configure({
+                    forceDisableEditing: false,
+                });
+            }
         }
 
         const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
@@ -452,7 +467,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance, activatedStateID, workspace, onActivateObject,
         } = this.props;
 
-        if (workspace !== Workspace.STANDARD) {
+        if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
             return;
         }
 
