@@ -99,7 +99,6 @@ context('Merge/split features', () => {
             });
         });
         it('On the fourth frame remove "keyframe" flag from the track. The track now visible and "outside" flag is disabled.', () => {
-            cy.get('.cvat-player-next-button').click().click();
             goCheckFrameNumber(frameNum + 3);
             cy.get('#cvat-objects-sidebar-state-item-3').should('contain', '3').and('contain', 'RECTANGLE TRACK').within(() => {
                 cy.get('.cvat-object-item-button-keyframe').click();
