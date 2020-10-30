@@ -42,6 +42,7 @@ const defaultState = {
         lfs: false,
         useZipChunks: true,
         useCache: true,
+        activeTab: 'local',
     },
     labels: [],
     files: {
@@ -115,10 +116,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private changeFileManagerTab = (key: string): void => {
-        // todo
-        // add field to state CreateTaskData.AdvancedConfiguration
-        // change state here
-        // draw checkbox depending on the state
+        const values = this.state.advanced;
+        this.setState({
+            advanced: {
+                ...values,
+                activeTab: key
+            }
+        });
     };
 
     private handleSubmitClick = (): void => {
@@ -217,6 +221,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
                             installedGit={installedGit}
+                            activeTab={this.state.advanced.activeTab}
                             wrappedComponentRef={(component: any): void => {
                                 this.advancedConfigurationComponent = component;
                             }}
