@@ -29,7 +29,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, StorageMethodChoice)
+    Segment, StatusChoice, Task, StorageMethodChoice, UploadedDataStorageLocationChoice)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 
 def create_db_users(cls):
@@ -1639,7 +1639,8 @@ class TaskDataAPITestCase(APITestCase):
         return [f.to_image() for f in container.decode(stream)]
 
     def _test_api_v1_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
-                                        expected_storage_method=StorageMethodChoice.FILE_SYSTEM):
+                                        expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
+                                        expected_uploaded_data_location=None):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -1663,7 +1664,14 @@ class TaskDataAPITestCase(APITestCase):
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
             self.assertEqual(len(image_sizes), task["size"])
-            self.assertEqual(expected_storage_method, Task.objects.get(pk=task_id).data.storage_method)
+            db_data = Task.objects.get(pk=task_id).data
+            self.assertEqual(expected_storage_method, db_data.storage_method)
+            if expected_uploaded_data_location:
+                self.assertEqual(expected_uploaded_data_location, db_data.uploaded_data_storage_location)
+                # check if used share without copying inside and files doesn`t exist in ../raw/
+                if expected_uploaded_data_location is UploadedDataStorageLocationChoice.SHARE:
+                    self.assertEqual(False,
+                        os.path.exists(os.path.join(db_data.get_upload_dirname(), data.values()[0])))
 
         # check preview
         response = self._get_preview(task_id, user)
@@ -1933,6 +1941,17 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE)
+
+        self._test_api_v1_tasks_id_data_spec(
+            user,
+            task_spec.update([('name', 'cached share without copying images task #12')]),
+            task_data.update([('copy_data', True)]),
+            self.ChunkType.IMAGESET,
+            self.ChunkType.IMAGESET,
+            image_sizes,
+            StorageMethodChoice.CACHE,
+            UploadedDataStorageLocationChoice.LOCAL
+        )
 
         task_spec = {
             "name": "my cached zip archive task #10",
