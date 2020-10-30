@@ -30,5 +30,6 @@
     "files.trimTrailingWhitespace": true,
     "python.testing.promptToConfigure": false,
     "python.testing.pytestEnabled": false,
-    "python.testing.nosetestsEnabled": false
+    "python.testing.nosetestsEnabled": false,
+    "python.linting.enabled": true
 }

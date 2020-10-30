@@ -6,7 +6,9 @@
   "directories": {
     "test": "tests"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ci": "^1.0.0"
+  },
   "devDependencies": {
     "@istanbuljs/nyc-config-babel": "^1.0.1",
     "babel-plugin-istanbul": "^6.0.0",

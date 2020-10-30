@@ -33,6 +33,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [mapping, setMapping] = useState<StringObject>({});
     const [threshold, setThreshold] = useState<number>(0.5);
     const [distance, setDistance] = useState<number>(50);
+    const [frameNumber, setFrameNumber] = useState<number>(2);
     const [cleanup, setCleanup] = useState<boolean>(false);
     const [match, setMatch] = useState<{
         model: string | null;
@@ -43,12 +44,15 @@ function DetectorRunner(props: Props): JSX.Element {
     });
 
     const model = models.filter((_model): boolean => _model.id === modelID)[0];
-    console.log(model)
+    console.log(model);
     const isDetector = model && model.type === 'detector';
     const isReId = model && model.type === 'reid';
     const isReIdSegmentation = model && model.type === 'reidsegmentation';
     const buttonEnabled =
-        model && (model.type === 'reid' || model.type === 'reidsegmentation' || (model.type === 'detector' && !!Object.keys(mapping).length));
+        model &&
+        (model.type === 'reid' ||
+            model.type === 'reidsegmentation' ||
+            (model.type === 'detector' && !!Object.keys(mapping).length));
 
     const modelLabels = (isDetector ? model.labels : []).filter((_label: string): boolean => !(_label in mapping));
     const taskLabels = isDetector && !!task ? task.labels.map((label: any): string => label.name) : [];
@@ -291,6 +295,25 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Tooltip>
                         </Col>
                     </Row>
+                    <Row type='flex' align='middle' justify='start'>
+                        <Col>
+                            <Text>Frames which will be compared</Text>
+                        </Col>
+                        <Col offset={1}>
+                            <Tooltip title='Frames which will be compared'>
+                                <InputNumber
+                                    placeholder='Frame number'
+                                    min={1}
+                                    value={frameNumber}
+                                    onChange={(value: number | undefined) => {
+                                        if (typeof value === 'number') {
+                                            setFrameNumber(value);
+                                        }
+                                    }}
+                                />
+                            </Tooltip>
+                        </Col>
+                    </Row>
                 </div>
             )}
             <Row type='flex' align='middle' justify='end'>
@@ -299,11 +322,31 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {
+
+                            console.log(model.type === 'detector'
+                            ? { mapping, cleanup }
+                            : model.type === 'reidsegmentation'
+                            ? {
+                                  threshold,
+                                  max_distance: distance,
+                                  frame_number: frameNumber,
+                              }
+                            : {
+                                  threshold,
+                                  max_distance: distance,
+                              },
+                            )
                             runInference(
                                 task,
                                 model,
                                 model.type === 'detector'
                                     ? { mapping, cleanup }
+                                    : model.type === 'reidsegmentation'
+                                    ? {
+                                          threshold,
+                                          max_distance: distance,
+                                          frame_number: frameNumber,
+                                      }
                                     : {
                                           threshold,
                                           max_distance: distance,

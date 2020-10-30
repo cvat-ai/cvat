@@ -175,11 +175,16 @@ class LambdaFunction:
                     "state": data.get("state", None)
                 })
             elif self.kind == LambdaType.REIDSEGMENTATION:
+
+                compare_images = []
+                for compare_frame in data["compare_frames"]:
+                    compare_images.append(self._get_image(db_task, compare_frame, quality))
+
                 payload.update({
                     "image0": self._get_image(db_task, data["frame0"], quality),
-                    "image1": self._get_image(db_task, data["frame1"], quality),
+                    "compare_images": compare_images,
                     "polygons0": data["polygons0"],
-                    "polygons1": data["polygons1"]
+                    "compare_polygons": data["compare_polygons"]
                 })
                 max_distance = data.get("max_distance")
                 if max_distance:
@@ -240,7 +245,7 @@ class LambdaQueue:
 
         return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
 
-    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup):
+    def enqueue(self, lambda_func, threshold, frame_number, task, quality, mapping, cleanup):
         jobs = self.get_jobs()
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
@@ -260,6 +265,7 @@ class LambdaQueue:
             kwargs = {
                 "function": lambda_func,
                 "threshold": threshold,
+                "frame_number": frame_number,
                 "task": task,
                 "quality": quality,
                 "cleanup": cleanup,
@@ -485,7 +491,7 @@ class LambdaJob:
                 dm.task.put_task_data(db_task.id, serializer.data)
 
     @staticmethod
-    def _call_reidsegmentation(function, db_task, quality, threshold, max_distance):
+    def _call_reidsegmentation(function, db_task, quality, threshold, max_distance, frame_number):
         data = dm.task.get_task_data(db_task.id)
         polygons_by_frame = [[] for _ in range(db_task.data.size)]
         shapes_without_polygons = []
@@ -503,21 +509,23 @@ class LambdaJob:
                  paths[path_id] = [polygon]
                  polygon["path_id"] = path_id
 
-            polygons1 = polygons_by_frame[frame + 1]
-            print("polygons0", polygons0)
-            print("polygons1", polygons1)
-            if polygons0 and polygons1:
-                print("in function")
-                matching = function.invoke(db_task, data={
-                    "frame0": frame, "frame1": frame + 1, "quality": quality,
-                    "polygons0": polygons0, "polygons1": polygons1, "threshold": threshold,
-                    "max_distance": max_distance})
+            to_compared_polygons = []
+            to_compared_frames = []
+            for compare_frame_offset in range(1, frame_number):
+                to_compared_polygons.append(polygons_by_frame[frame + compare_frame_offset])
+                to_compared_frames.append(frame + compare_frame_offset)
 
-                for idx0, idx1 in enumerate(matching):
-                    if idx1 >= 0:
-                        path_id = polygons0[idx0]["path_id"]
-                        polygons1[idx1]["path_id"] = path_id
-                        paths[path_id].append(polygons1[idx1])
+            if polygons0 and len(to_compared_polygons) > 0:
+                matching = function.invoke(db_task, data={
+                    "frame0": frame, "compare_frames": to_compared_frames, "quality": quality,
+                    "polygons0": polygons0, "compare_polygons": to_compared_polygons, "threshold": threshold,
+                    "max_distance": max_distance, "frame_number": int(frame_number)})
+
+                    for idx0, idx1 in enumerate(matching):
+                        if idx1 >= 0:
+                            path_id = polygons0[idx0]["path_id"]
+                            polygons1[idx1]["path_id"] = path_id
+                            paths[path_id].append(polygons1[idx1])
             progress = (frame + 2) / db_task.data.size
             if not LambdaJob._update_progress(progress):
                 break
@@ -580,7 +588,7 @@ class LambdaJob:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
         elif function.kind == LambdaType.REIDSEGMENTATION:
-            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"))
+            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"), kwargs.get("frame_number"))
 
 def return_response(success_code=status.HTTP_200_OK):
     def wrap_response(func):
@@ -673,6 +681,7 @@ class RequestViewSet(viewsets.ViewSet):
         try:
             function = request.data['function']
             threshold = request.data.get('threshold')
+            frame_number = request.data.get('frame_number')
             task = request.data['task']
             quality = request.data.get("quality")
             cleanup = request.data.get('cleanup', False)
@@ -691,7 +700,7 @@ class RequestViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
-        job = queue.enqueue(lambda_func, threshold, task, quality,
+        job = queue.enqueue(lambda_func, threshold, frame_number, task, quality,
             mapping, cleanup)
 
         return job.to_dict()

@@ -16,16 +16,21 @@ def handler(context, event):
     context.logger.info("Run segmentation reidentification")
     data = event.body
     buf0 = io.BytesIO(base64.b64decode(data["image0"].encode('utf-8')))
-    buf1 = io.BytesIO(base64.b64decode(data["image1"].encode('utf-8')))
+
+    compare_images = []
+    for raw_image in data["compare_images"]:
+        buf_temp = io.BytesIO(base64.b64decode(raw_image.encode('utf-8')))
+        compare_images.append(Image.open(buf_temp))
+
+
     threshold = float(data.get("threshold", 0.5))
     max_distance = float(data.get("max_distance", 50))
     image0 = Image.open(buf0)
-    image1 = Image.open(buf1)
     polygons0 = data["polygons0"]
-    polygons1 = data["polygons1"]
+    compare_polygons = data["compare_polygons"]
 
     results = context.user_data.model.infer(image0, polygons0,
-        image1, polygons1, threshold, max_distance)
+        compare_images[0], compare_polygons[0], threshold, max_distance)
 
     return context.Response(body=json.dumps(results), headers={},
         content_type='application/json', status_code=200)
