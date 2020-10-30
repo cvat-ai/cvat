@@ -15,7 +15,7 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice, UploadedDataStorageLocationChoice as LocationChoice
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.prepare import prepare_meta
 
@@ -232,7 +232,10 @@ def _create_thread(tid, data):
             "File with meta information can be uploaded if 'Use cache' option is also selected"
 
     if data['server_files']:
-        _copy_data_from_share(data['server_files'], upload_dir)
+        if db_data.uploaded_data_storage_location == LocationChoice.LOCAL:
+            _copy_data_from_share(data['server_files'], upload_dir)
+        else:
+            upload_dir = settings.SHARE_ROOT
 
     av_scan_paths(upload_dir)
 
@@ -303,10 +306,11 @@ def _create_thread(tid, data):
                         try:
                             from cvat.apps.engine.prepare import UploadedMeta
                             if os.path.split(meta_info_file[0])[0]:
-                                os.replace(
-                                    os.path.join(upload_dir, meta_info_file[0]),
-                                    db_data.get_meta_path()
-                                )
+                                if db_data.uploaded_data_storage_location is not LocationChoice.SHARE:
+                                    os.replace(
+                                        os.path.join(upload_dir, meta_info_file[0]),
+                                        db_data.get_meta_path()
+                                    )
                             meta_info = UploadedMeta(source_path=os.path.join(upload_dir, media_files[0]),
                                                      meta_path=db_data.get_meta_path())
                             meta_info.check_seek_key_frames()
