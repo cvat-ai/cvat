@@ -83,8 +83,8 @@ class JobSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
-    assignee = BasicUserSerializer(allow_null=True)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Job
@@ -274,10 +274,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
-    owner = BasicUserSerializer()
-    owner_id = serializers.IntegerField(write_only=True, allow_null=True)
-    assignee = BasicUserSerializer(allow_null=True)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
+    owner = BasicUserSerializer(required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Task
@@ -285,7 +285,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'status', 'labels', 'segments',
             'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'owner', 'asignee',
             'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         write_once_fields = ('overlap', 'segment_size')
         ordering = ['-id']
