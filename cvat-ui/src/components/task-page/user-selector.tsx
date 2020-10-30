@@ -52,7 +52,7 @@ export default function UserSelector(props: Props): JSX.Element {
                 }
             });
         }
-        if (!open && searchPhrase && searchPhrase !== value?.username) {
+        if (!open && searchPhrase !== value?.username) {
             setSearchPhrase('');
             if (value) {
                 onSelect(null);
