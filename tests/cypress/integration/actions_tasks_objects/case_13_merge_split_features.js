@@ -35,23 +35,22 @@ context('Merge/split features', () => {
         cy.openTaskJob(taskName);
     });
 
-    function checkFrameNumber(frameNum) {
+    function goCheckFrameNumber(frameNum) {
         cy.get('.cvat-player-frame-selector').within(() => {
-            cy.get('input[role="spinbutton"]').should('have.value', frameNum);
+            cy.get('input[role="spinbutton"]').clear().type(`${frameNum}{Enter}`).should('have.value', frameNum);
         });
     }
 
     describe(`Testing case "${caseId}"`, () => {
         it('Create rectangle shape on first frame', () => {
-            checkFrameNumber(frameNum);
+            goCheckFrameNumber(frameNum);
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat_canvas_shape_1').should('have.attr', 'x').then(xCoords => {
                 xCoordinatesObjectFirstFrame = Math.floor(xCoords);
             });
         });
         it('Create rectangle shape on third frame with another position', () => {
-            cy.get('.cvat-player-next-button').click().click();
-            checkFrameNumber(frameNum + 2);
+            goCheckFrameNumber(frameNum + 2);
             cy.createRectangle(createRectangleShape2PointsSecond);
             cy.get('#cvat_canvas_shape_2').should('have.attr', 'x').then(xCoords => {
                 xCoordinatesObjectThirdFrame = Math.floor(xCoords);
@@ -60,8 +59,7 @@ context('Merge/split features', () => {
         it('Merge the objects with "Merge button"', () => {
             cy.get('.cvat-merge-control').click();
             cy.get('#cvat_canvas_shape_2').click();
-            cy.get('.cvat-player-previous-button').click().click();
-            checkFrameNumber(frameNum);
+            goCheckFrameNumber(frameNum);
             cy.get('#cvat_canvas_shape_1').click();
             cy.get('.cvat-merge-control').click();
         });
@@ -70,24 +68,20 @@ context('Merge/split features', () => {
             cy.get('#cvat-objects-sidebar-state-item-3').should('contain', '3').and('contain', 'RECTANGLE TRACK').within(() => {
                 cy.get('.cvat-object-item-button-keyframe-enabled').should('exist');
             });
-            cy.get('.cvat-player-next-button').click().click();
-            checkFrameNumber(frameNum + 2);
+            goCheckFrameNumber(frameNum + 2);
             cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-3').should('contain', '3').and('contain', 'RECTANGLE TRACK').within(() => {
                 cy.get('.cvat-object-item-button-keyframe-enabled').should('exist');
             });
         });
         it('On the second frame and on the fourth frame the track is invisible', () => {
-            cy.get('.cvat-player-previous-button').click();
-            checkFrameNumber(frameNum + 1);
+            goCheckFrameNumber(frameNum + 1);
             cy.get('#cvat_canvas_shape_3').should('exist').and('be.hidden');
-            cy.get('.cvat-player-next-button').click().click();
-            checkFrameNumber(frameNum + 3);
+            goCheckFrameNumber(frameNum + 3);
             cy.get('#cvat_canvas_shape_3').should('exist').and('be.hidden');
         });
         it('Go to the second frame and remove "outside" flag from the track. The track now visible.', () => {
-            cy.get('.cvat-player-previous-button').click().click();
-            checkFrameNumber(frameNum + 1);
+            goCheckFrameNumber(frameNum + 1);
             cy.get('#cvat-objects-sidebar-state-item-3').should('contain', '3').and('contain', 'RECTANGLE TRACK').within(() => {
                 cy.get('.cvat-object-item-button-outside').click();
                 cy.get('.cvat-object-item-button-outside-enabled').should('not.exist');
@@ -106,7 +100,7 @@ context('Merge/split features', () => {
         });
         it('On the fourth frame remove "keyframe" flag from the track. The track now visible and "outside" flag is disabled.', () => {
             cy.get('.cvat-player-next-button').click().click();
-            checkFrameNumber(frameNum + 3);
+            goCheckFrameNumber(frameNum + 3);
             cy.get('#cvat-objects-sidebar-state-item-3').should('contain', '3').and('contain', 'RECTANGLE TRACK').within(() => {
                 cy.get('.cvat-object-item-button-keyframe').click();
                 cy.get('.cvat-object-item-button-keyframe-enabled').should('not.exist');

@@ -17,11 +17,11 @@ context('Check if the UI not to crash after remove a tag', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Add a tag', () => {
-            cy.changeAnnotationMode('Tag annotation');
+            cy.changeWorkspace('Tag annotation');
             cy.get('.cvat-tag-annotation-sidebar-buttons').within(() => {
                 cy.get('button').contains('Add tag').click({ force: true });
             });
-            cy.changeAnnotationMode('Standard');
+            cy.changeWorkspace('Standard');
         });
         it('Remove the tag', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')

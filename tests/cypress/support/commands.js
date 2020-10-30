@@ -122,12 +122,16 @@ Cypress.Commands.add('switchLabel', (labelName) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    cy.get('.cvat_canvas_shape').last().should('have.attr', 'id').then(($cvatCanvasShapeId) => {
-        const arrCvatCanvasShapeId = $cvatCanvasShapeId.split('_')
-        const idNumCanvasShape = arrCvatCanvasShapeId[arrCvatCanvasShapeId.length - 1]
-        cy.get(`#cvat_canvas_shape_${idNumCanvasShape}`).should('exist').and('be.visible');
-        cy.get(`#cvat-objects-sidebar-state-item-${idNumCanvasShape}`)
-        .should('contain', idNumCanvasShape).and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`).within(() => {
+    let listCanvasShapeId = [];
+    cy.document().then((doc) => {
+        const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
+        for (let i = 0; i < listCanvasShape.length; i++) {
+            listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
+        }
+        const maxId = Math.max(...listCanvasShapeId);
+        cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').and('be.visible');
+        cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
+        .should('contain', maxId).and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`).within(() => {
             cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
         });
     });
@@ -217,17 +221,23 @@ Cypress.Commands.add('closeSettings', () => {
         });
 });
 
-Cypress.Commands.add('changeAnnotationMode', (mode, labelName) => {
+Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.ant-select-dropdown-menu-item').contains(mode).click();
     cy.get('.cvat-workspace-selector').should('contain.text', mode);
-    if (mode === 'Attribute annotation') {
-        // Select the necessary label in any case
-        cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
-            cy.get('.ant-select-selection').click();
-        });
-        cy.get('.ant-select-dropdown-menu-item').contains(labelName).click();
-    }
+    cy.changeLabelAAM(labelName);
+});
+
+Cypress.Commands.add('changeLabelAAM', (labelName) => {
+    cy.get('.cvat-workspace-selector').then((value) => {
+        const cvatWorkspaceSelectorValue = value.text();
+        if (cvatWorkspaceSelectorValue === 'Attribute annotation') {
+            cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
+                cy.get('.ant-select-selection').click();
+            });
+            cy.get('.ant-select-dropdown-menu-item').contains(labelName).click();
+        }
+    });
 });
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {

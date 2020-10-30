@@ -28,7 +28,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
             cy.createRectangle(createRectangleShape2Points);
         });
         it('Go to AAM', () => {
-            cy.changeAnnotationMode('Attribute annotation', labelName);
+            cy.changeWorkspace('Attribute annotation', labelName);
         });
         it('Check if highlighted attribute correspond to the chosen attribute in right panel', () => {
             cy.get('.cvat_canvas_text').within(() => {
