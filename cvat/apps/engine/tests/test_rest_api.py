@@ -3358,7 +3358,6 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "ImageNet 1.0":
                 annotations["tags"] = tags_wo_attrs
 
-
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
