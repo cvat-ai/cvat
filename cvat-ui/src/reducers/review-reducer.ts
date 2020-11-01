@@ -21,6 +21,7 @@ function computeFrameIssues(issues: any[], activeReview: any, frame: number): an
 
 export default function (state: ReviewState = defaultState, action: any): ReviewState {
     switch (action.type) {
+        case ReviewActionTypes.SUBMIT_REVIEW_SUCCESS:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 reviews,

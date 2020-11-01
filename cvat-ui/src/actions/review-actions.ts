@@ -23,6 +23,8 @@ export enum ReviewActionTypes {
     REOPEN_ISSUE_FAILED = 'REOPEN_ISSUE_FAILED',
     COMMENT_ISSUE_SUCCESS = 'COMMENT_ISSUE_SUCCESS',
     COMMENT_ISSUE_FAILED = 'COMMENT_ISSUE_FAILED',
+    SUBMIT_REVIEW_SUCCESS = 'SUBMIT_REVIEW_SUCCESS',
+    SUBMIT_REVIEW_FAILED = 'SUBMIT_REVIEW_FAILED',
 }
 
 export const reviewActions = {
@@ -40,6 +42,9 @@ export const reviewActions = {
     resolveIssueFailed: (error: any) => createAction(ReviewActionTypes.RESOLVE_ISSUE_FAILED, { error }),
     reopenIssueSuccess: () => createAction(ReviewActionTypes.REOPEN_ISSUE_SUCCESS),
     reopenIssueFailed: (error: any) => createAction(ReviewActionTypes.REOPEN_ISSUE_FAILED, { error }),
+    submitReviewSuccess: (reviews: any[], issues: any[], frameData: any) =>
+        createAction(ReviewActionTypes.SUBMIT_REVIEW_SUCCESS, { reviews, issues, frameData }),
+    submitReviewFailed: (error: any) => createAction(ReviewActionTypes.SUBMIT_REVIEW_FAILED, { error }),
 };
 
 export type ReviewActions = ActionUnion<typeof reviewActions>;
@@ -76,7 +81,6 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
     const {
         auth: { user },
         annotation: {
-            job: { instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
             },
@@ -85,7 +89,7 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
     } = state;
 
     try {
-        await activeReview.openIssue(jobInstance.id, {
+        await activeReview.openIssue({
             frame: frameNumber,
             roi: newIssueROI,
             owner: user.id,
@@ -96,7 +100,7 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
                 },
             ],
         });
-        await activeReview.toLocalStorage(jobInstance.id);
+        await activeReview.toLocalStorage();
         dispatch(reviewActions.finishIssueSuccess(frameNumber));
     } catch (error) {
         dispatch(reviewActions.finishIssueFailed(error));
@@ -107,9 +111,6 @@ export const commentIssueAsync = (id: number, message: string): ThunkAction => a
     const state = getState();
     const {
         auth: { user },
-        annotation: {
-            job: { instance: jobInstance },
-        },
         review: { frameIssues, activeReview },
     } = state;
 
@@ -120,7 +121,7 @@ export const commentIssueAsync = (id: number, message: string): ThunkAction => a
             owner: user.id,
         });
         if (activeReview && activeReview.issues.includes(issue)) {
-            await activeReview.toLocalStorage(jobInstance.id);
+            await activeReview.toLocalStorage();
         }
         dispatch(reviewActions.commentIssueSuccess());
     } catch (error) {
@@ -132,9 +133,6 @@ export const resolveIssueAsync = (id: number): ThunkAction => async (dispatch, g
     const state = getState();
     const {
         auth: { user },
-        annotation: {
-            job: { instance: jobInstance },
-        },
         review: { frameIssues, activeReview },
     } = state;
 
@@ -142,7 +140,7 @@ export const resolveIssueAsync = (id: number): ThunkAction => async (dispatch, g
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.resolve(user);
         if (activeReview && activeReview.issues.includes(issue)) {
-            await activeReview.toLocalStorage(jobInstance.id);
+            await activeReview.toLocalStorage();
         }
 
         dispatch(reviewActions.resolveIssueSuccess());
@@ -155,9 +153,6 @@ export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, ge
     const state = getState();
     const {
         auth: { user },
-        annotation: {
-            job: { instance: jobInstance },
-        },
         review: { frameIssues, activeReview },
     } = state;
 
@@ -165,11 +160,31 @@ export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, ge
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.reopen(user);
         if (activeReview && activeReview.issues.includes(issue)) {
-            await activeReview.toLocalStorage(jobInstance.id);
+            await activeReview.toLocalStorage();
         }
 
         dispatch(reviewActions.reopenIssueSuccess());
     } catch (error) {
         dispatch(reviewActions.reopenIssueFailed(error));
+    }
+};
+
+export const submitReviewAsync = (review: any): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+    const {
+        annotation: {
+            job: { instance: jobInstance },
+            player: { frame: frameData },
+        },
+    } = state;
+
+    try {
+        await review.submit(jobInstance.id);
+        const reviews = await jobInstance.reviews();
+        const issues = await jobInstance.issues();
+
+        dispatch(reviewActions.submitReviewSuccess(reviews, issues, frameData));
+    } catch (error) {
+        dispatch(reviewActions.submitReviewFailed(error));
     }
 };

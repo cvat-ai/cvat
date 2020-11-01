@@ -188,6 +188,9 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
     SET_AI_TOOLS_REF = 'SET_AI_TOOLS_REF',
+    SWITCH_SUBMIT_ANNOTATIONS_DIALOG = 'SWITCH_SUBMIT_ANNOTATIONS_DIALOG',
+    SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
+    SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1495,5 +1498,32 @@ export function redrawShapeAsync(): ThunkAction {
                 });
             }
         }
+    };
+}
+
+export function switchSubmitAnnotationsDialog(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SUBMIT_ANNOTATIONS_DIALOG,
+        payload: {
+            visible,
+        },
+    };
+}
+
+export function switchSubmitReviewDialog(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SUBMIT_REVIEW_DIALOG,
+        payload: {
+            visible,
+        },
+    };
+}
+
+export function setForceExitAnnotationFlag(forceExit: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG,
+        payload: {
+            forceExit,
+        },
     };
 }

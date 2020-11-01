@@ -726,6 +726,13 @@ class JobViewSet(viewsets.GenericViewSet,
     @action(detail=True, methods=['POST'], url_path='reviews/create', serializer_class=CombinedReviewSerializer)
     def create_review(self, request, pk):
         db_job = self.get_object()
+
+        if request.data['status'] == ReviewStatus.REVIEW_FURTHER:
+            if not request.data['reviewer']:
+                return Response('Must provide a new reviewer', status=status.HTTP_400_BAD_REQUEST)
+            db_job.reviewer = User.objects.get(pk=request.data['reviewer'])
+            db_job.save()
+
         request.data.update({
             'job': db_job.id,
             'reviewer': request.user.id,

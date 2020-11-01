@@ -516,6 +516,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
+        // Transform all drawn issues region
         for (const issueRegion of Object.values(this.drawnIssueRegions)) {
             ((issueRegion as any) as SVG.Shape).attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
             ((issueRegion as any) as SVG.Shape).attr(

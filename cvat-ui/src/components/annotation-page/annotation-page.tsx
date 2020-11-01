@@ -12,10 +12,12 @@ import Result from 'antd/lib/result';
 import { Workspace } from 'reducers/interfaces';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
-import StandardWorkspaceComponent from './standard-workspace/standard-workspace';
-import AttributeAnnotationWorkspace from './attribute-annotation-workspace/attribute-annotation-workspace';
-import TagAnnotationWorkspace from './tag-annotation-workspace/tag-annotation-workspace';
-import ReviewAnnotationsWorkspace from './review-workspace/review-workspace';
+import IssueAggregatorComponent from 'components/annotation-page/review/issues-aggregator';
+import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
+import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
+import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
+import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
+import SubmitAnnotationsModal from 'components/annotation-page/submit-annotations-modal';
 
 interface Props {
     job: any | null | undefined;
@@ -96,6 +98,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 </Layout.Content>
             )}
             <StatisticsModalContainer />
+            <SubmitAnnotationsModal />
+            <IssueAggregatorComponent />
         </Layout>
     );
 }

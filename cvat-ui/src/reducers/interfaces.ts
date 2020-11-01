@@ -388,6 +388,7 @@ export interface AnnotationState {
             redo: [string, number][];
         };
         saving: {
+            forceExit: boolean;
             uploading: boolean;
             statuses: string[];
         };
@@ -407,6 +408,8 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
+    submitAnnotationsDialogVisible: boolean;
+    submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
@@ -489,6 +492,12 @@ export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
+}
+
+export enum ReviewStatus {
+    ACCEPTED = 'accepted',
+    REJECTED = 'rejected',
+    REVIEW_FURTHER = 'review_further',
 }
 
 export interface ReviewState {

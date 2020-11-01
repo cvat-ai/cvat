@@ -317,3 +317,28 @@
         transform: scale(1.8);
     }
 }
+
+.cvat-submit-annotations-dialog {
+    > .ant-modal-content > .ant-modal-body {
+        > div:nth-child(2) {
+            margin-top: $grid-unit-size * 2;
+        }
+
+        > div:nth-child(3) {
+            margin-top: $grid-unit-size * 2;
+        }
+    }
+}
+
+.cvat-submit-review-dialog {
+    > .ant-modal-content > .ant-modal-body {
+        > div:nth-child(2) > div:nth-child(2) {
+            .ant-col {
+                > div:nth-child(2) {
+                    margin-top: $grid-unit-size * 2;
+                    margin-bottom: $grid-unit-size * 2;
+                }
+            }
+        }
+    }
+}

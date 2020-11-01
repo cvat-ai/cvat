@@ -6,7 +6,7 @@ import './styles.scss';
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, Workspace } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas/src/typescript/canvas';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
@@ -32,6 +32,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const newIssueROI = useSelector((state: CombinedState): number[] | null => state.review.newIssueROI);
+    const workspace = useSelector((state: CombinedState): Workspace => state.annotation.workspace);
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
 
@@ -57,6 +58,12 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     const { geometry } = canvasInstance;
     for (const issue of frameIssues) {
+        const issueResolved = !!issue.resolver;
+        if (issueResolved && workspace !== Workspace.REVIEW_WORKSPACE) {
+            // show only unresolved issues on annotation views
+            // eslint-disable-next-line
+            continue;
+        }
         const translated = issue.ROI.map((coord: number): number => coord + geometry.offset);
         const maxX = Math.max(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0));
         const minY = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 !== 0));
@@ -68,7 +75,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     top={minY}
                     left={maxX}
                     comments={issue.comments}
-                    resolved={!!issue.resolver}
+                    resolved={issueResolved}
                     collapse={() => {
                         setExpandedIssues(expandedIssues.filter((issueID: number): boolean => issueID !== issue.id));
                     }}
@@ -91,7 +98,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     id={issue.id}
                     top={minY}
                     left={maxX}
-                    resolved={!!issue.resolver}
+                    resolved={issueResolved}
                     message={issue.comments[issue.comments.length - 1].message}
                     onClick={() => {
                         setExpandedIssues([...expandedIssues, issue.id]);

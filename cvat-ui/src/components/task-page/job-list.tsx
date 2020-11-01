@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
@@ -25,6 +25,68 @@ interface Props {
     taskInstance: any;
     registeredUsers: any[];
     onJobUpdate(jobInstance: any): void;
+}
+
+function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
+    const [summary, setSummary] = useState<Record<string, any> | null>(null);
+    const [error, setError] = useState<any>(null);
+    useEffect(() => {
+        setError(null);
+        jobInstance
+            .reviewsSummary()
+            .then((_summary: Record<string, any>) => {
+                setSummary(_summary);
+            })
+            .catch((_error: any) => {
+                // eslint-disable-next-line
+                console.log(_error);
+                setError(_error);
+            });
+    }, []);
+
+    if (!summary) {
+        if (error) {
+            return <p>Could not fetch, check console output</p>;
+        }
+
+        return (
+            <>
+                <p>Loading.. </p>
+                <Icon type='loading' />
+            </>
+        );
+    }
+
+    return (
+        <table className='cvat-review-summary-description'>
+            <tbody>
+                <tr>
+                    <td>
+                        <Text strong>Reviews</Text>
+                    </td>
+                    <td>{summary.reviews}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <Text strong>Average quality</Text>
+                    </td>
+                    <td>{summary.average_estimated_quality}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <Text strong>Unsolved issues</Text>
+                    </td>
+                    <td>{summary.issues_unsolved}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <Text strong>Resolved issues</Text>
+                    </td>
+                    <td>{summary.issues_resolved}</td>
+                </tr>
+            </tbody>
+        </table>
+    );
 }
 
 function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
@@ -66,7 +128,9 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
-            render: (status: string): JSX.Element => {
+            className: 'cvat-job-item-status',
+            render: (jobInstance: any): JSX.Element => {
+                const { status } = jobInstance;
                 let progressColor = null;
                 if (status === 'completed') {
                     progressColor = 'cvat-job-completed-color';
@@ -79,6 +143,9 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 return (
                     <Text strong className={progressColor}>
                         {status}
+                        <Tooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
+                            <Icon type='question-circle' />
+                        </Tooltip>
                     </Text>
                 );
             },
@@ -163,7 +230,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             key: job.id,
             job: job.id,
             frames: `${job.startFrame}-${job.stopFrame}`,
-            status: `${job.status}`,
+            status: job,
             started: `${created.format('MMMM Do YYYY HH:MM')}`,
             duration: `${moment.duration(moment(moment.now()).diff(created)).humanize()}`,
             assignee: job,

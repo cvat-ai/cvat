@@ -65,6 +65,7 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedAttributeID: null,
         saving: {
+            forceExit: false,
             uploading: false,
             statuses: [],
         },
@@ -97,6 +98,8 @@ const defaultState: AnnotationState = {
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
+    submitAnnotationsDialogVisible: false,
+    submitReviewDialogVisible: false,
     tabContentHeight: 0,
     workspace: Workspace.STANDARD,
 };
@@ -1025,6 +1028,33 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.AI_TOOLS,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_SUBMIT_ANNOTATIONS_DIALOG: {
+            const { visible } = action.payload;
+            return {
+                ...state,
+                submitAnnotationsDialogVisible: visible,
+            };
+        }
+        case AnnotationActionTypes.SWITCH_SUBMIT_REVIEW_DIALOG: {
+            const { visible } = action.payload;
+            return {
+                ...state,
+                submitReviewDialogVisible: visible,
+            };
+        }
+        case AnnotationActionTypes.SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG: {
+            const { forceExit } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        forceExit,
+                    },
                 },
             };
         }

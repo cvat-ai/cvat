@@ -893,6 +893,32 @@
             const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviews);
             return result;
         }
+
+        /**
+         * /**
+         * @typedef {Object} ReviewSummary
+         * @property {number} reviews Number of done reviews
+         * @property {number} average_estimated_quality
+         * @property {number} issues_unsolved
+         * @property {number} issues_resolved
+         * @property {string[]} assignees
+         * @property {string[]} reviewers
+         */
+        /**
+         * Method returns brief summary of within all reviews
+         * @method reviewsSummary
+         * @type {ReviewSummary}
+         * @memberof module:API.cvat.classes.Job
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async reviewsSummary() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviewsSummary);
+            return result;
+        }
     }
 
     /**
@@ -1527,7 +1553,7 @@
     };
 
     Job.prototype.reviews.implementation = async function () {
-        const result = await serverProxy.jobs.reviews(this.id);
+        const result = await serverProxy.jobs.reviews.get(this.id);
         const reviews = result.map((review) => new Review(review));
 
         // try to get not finished review from the local storage
@@ -1539,6 +1565,11 @@
         const necessaryUsers = collectNecessaryUsers(result);
         await fetchUsersLazy(necessaryUsers);
         return reviews;
+    };
+
+    Job.prototype.reviewsSummary.implementation = async function () {
+        const result = await serverProxy.jobs.reviews.summary(this.id);
+        return result;
     };
 
     Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {

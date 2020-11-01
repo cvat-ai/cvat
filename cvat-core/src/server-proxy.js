@@ -500,6 +500,39 @@
                 return response.data;
             }
 
+            async function getReviewsSummary(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews/summary`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createReview(jobID, data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/jobs/${jobID}/reviews/create`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             async function getJobIssues(jobID) {
                 const { backendAPI } = config;
 
@@ -931,7 +964,11 @@
                             get: getJob,
                             save: saveJob,
                             issues: getJobIssues,
-                            reviews: getJobReviews,
+                            reviews: {
+                                get: getJobReviews,
+                                create: createReview,
+                                summary: getReviewsSummary,
+                            },
                         }),
                         writable: false,
                     },

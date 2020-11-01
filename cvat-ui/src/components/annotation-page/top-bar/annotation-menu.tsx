@@ -17,11 +17,12 @@ interface Props {
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
-    jobStatus: string;
     isAssignee: boolean;
     isReviewer: boolean;
-    taskID: number;
+    jobInstance: any;
     onClickMenu(params: ClickParam, file?: File): void;
+    setForceExitAnnotationFlag(forceExit: boolean): void;
+    saveAnnotations(jobInstance: any): void;
 }
 
 export enum Actions {
@@ -39,15 +40,19 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         taskMode,
         loaders,
         dumpers,
-        onClickMenu,
         loadActivity,
         dumpActivities,
         exportActivities,
-        taskID,
-        jobStatus,
         isAssignee,
         isReviewer,
+        jobInstance,
+        onClickMenu,
+        setForceExitAnnotationFlag,
+        saveAnnotations,
     } = props;
+
+    const jobStatus = jobInstance.status;
+    const taskID = jobInstance.task.id;
 
     let latestParams: ClickParam | null = null;
     function onClickMenuWrapper(params: ClickParam | null, file?: File): void {
@@ -90,6 +95,30 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 },
                 okText: 'Delete',
             });
+        } else if (copyParams.key === Actions.SUBMIT_ANNOTATION) {
+            if (jobInstance.annotations.hasUnsavedChanges()) {
+                Modal.confirm({
+                    title: 'The job has unsaved annotations',
+                    content: 'Would you like to save changes before continue?',
+                    okButtonProps: {
+                        children: 'Save',
+                    },
+                    cancelButtonProps: {
+                        children: 'No',
+                    },
+                    onOk: () => {
+                        saveAnnotations(jobInstance);
+                        onClickMenu(copyParams);
+                    },
+                    onCancel: () => {
+                        // do not ask leave confirmation twice
+                        setForceExitAnnotationFlag(true);
+                        onClickMenu(copyParams);
+                    },
+                });
+            } else {
+                onClickMenu(copyParams);
+            }
         } else {
             onClickMenu(copyParams);
         }

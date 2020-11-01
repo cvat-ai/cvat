@@ -5,9 +5,10 @@
 const store = require('store');
 const Issue = require('./issue');
 const User = require('./user');
-const { ArgumentError } = require('./exceptions');
+const { ArgumentError, DataError } = require('./exceptions');
 const { ReviewStatus } = require('./enums');
 const { negativeIDGenerator } = require('./common');
+const serverProxy = require('./server-proxy');
 
 /**
  * Class representing a single review
@@ -24,6 +25,8 @@ class Review {
             status: undefined,
             reviewer: undefined,
             assignee: undefined,
+            reviewed_frames: new Set(),
+            reviewed_states: new Set(),
         };
 
         for (const property in data) {
@@ -134,20 +137,50 @@ class Review {
                  * @memberof module:API.cvat.classes.Review
                  * @readonly
                  * @instance
+                 * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
                 reviewer: {
                     get: () => data.reviewer,
+                    set: (reviewer) => {
+                        if (!(reviewer instanceof User)) {
+                            throw new ArgumentError(`Reviewer must be an instance of the User class. Got ${reviewer}`);
+                        }
+
+                        data.reviewer = reviewer;
+                    },
                 },
                 /**
                  * An instance of a user who was assigned for annotation before the review
                  * @name assignee
                  * @type {module:API.cvat.classes.User}
-                 * @memberof module:API.cvat.classes.Issue
+                 * @memberof module:API.cvat.classes.Review
                  * @readonly
                  * @instance
                  */
                 assignee: {
                     get: () => data.assignee,
+                },
+                /**
+                 * A set of frames that have been visited during review
+                 * @name reviewedFrames
+                 * @type {number[]}
+                 * @memberof module:API.cvat.classes.Review
+                 * @readonly
+                 * @instance
+                 */
+                reviewedFrames: {
+                    get: () => Array.from(data.reviewed_frames),
+                },
+                /**
+                 * A set of reviewed states (server IDs combined with frames)
+                 * @name reviewedFrames
+                 * @type {string[]}
+                 * @memberof module:API.cvat.classes.Review
+                 * @readonly
+                 * @instance
+                 */
+                reviewedStates: {
+                    get: () => Array.from(data.reviewed_states),
                 },
                 __internal: {
                     get: () => data,
@@ -156,37 +189,77 @@ class Review {
         );
     }
 
-    async openIssue(jobID, data) {
+    async reviewFrame(frame) {
+        this.__internal.reviewed_frames.add(frame);
+    }
+
+    async reviewStates(stateIDs) {
+        stateIDs.forEach((stateID) => this.__internal.reviewed_states.add(stateID));
+    }
+
+    async openIssue(data) {
         this.__internal.issue_set.push(new Issue(data));
 
         if (typeof this.id === 'undefined') {
-            await this.toLocalStorage(jobID);
+            await this.toLocalStorage(this.job);
         }
     }
 
     // eslint-disable no-empty
     async submit() {
-        // if (typeof (this.id) !== 'undefined') {
-        //     return;
-        // }
-        // submit all issues from a local storage to server
-        // remove from local storage
-        // serializer & save the review on the server if don't have ID
-        // else ignore
+        if (typeof this.estimatedQuality === 'undefined') {
+            throw new DataError('Estimated quality is expected to be a number. Got "undefined"');
+        }
+
+        if (typeof this.status === 'undefined') {
+            throw new DataError('Review status is expected to be a string. Got "undefined"');
+        }
+
+        if (this.id < 0) {
+            const data = this.toJSON();
+            delete data.reviewed_frames; // doesn't need on server
+            delete data.reviewed_states; // doesn't need on server
+
+            const result = await serverProxy.jobs.reviews.create(this.job, data);
+            store.remove(`job-${this.job}-review`);
+            this.__internal.id = result.id;
+            this.__internal.issue_set = result.issue_set.map((issue) => new Issue(issue));
+            this.__internal.estimated_quality = result.estimated_quality;
+            this.__internal.status = result.status;
+            if (result.assignee && !(result.assignee in User.objects)) {
+                const userData = await serverProxy.users.get(result.assignee);
+                new User(userData);
+            }
+
+            if (result.assignee && !(result.assignee in User.objects)) {
+                const userData = await serverProxy.users.get(result.assignee);
+                new User(userData);
+            }
+
+            if (result.reviewer && !(result.reviewer in User.objects)) {
+                const userData = await serverProxy.users.get(result.reviewer);
+                new User(userData);
+            }
+
+            this.__internal.reviewer = User.objects[result.reviewer];
+            this.__internal.assignee = User.objects[result.assignee];
+        }
     }
 
     toJSON() {
-        const { issues } = this;
+        const { issues, reviewedFrames, reviewedStates } = this;
         const data = {
             job: this.job,
             issue_set: issues,
+            reviewed_frames: Array.from(reviewedFrames),
+            reviewed_states: Array.from(reviewedStates),
         };
 
         if (this.id > 0) {
             data.id = this.id;
         }
-        if (typeof this.estimated_quality !== 'undefined') {
-            data.estimated_quality = this.estimated_quality;
+        if (typeof this.estimatedQuality !== 'undefined') {
+            data.estimated_quality = this.estimatedQuality;
         }
         if (typeof this.status !== 'undefined') {
             data.status = this.status;
@@ -201,12 +274,8 @@ class Review {
         return data;
     }
 
-    async toLocalStorage(jobID) {
-        if (!Number.isInteger(jobID)) {
-            throw new ArgumentError(`JobID is expected to be an integer. ${jobID} got`);
-        }
-
-        store.set(`job-${jobID}-review`, JSON.stringify(this));
+    async toLocalStorage() {
+        store.set(`job-${this.job}-review`, JSON.stringify(this));
     }
 }
 
