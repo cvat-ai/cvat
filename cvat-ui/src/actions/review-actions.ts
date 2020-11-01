@@ -42,8 +42,13 @@ export const reviewActions = {
     resolveIssueFailed: (error: any) => createAction(ReviewActionTypes.RESOLVE_ISSUE_FAILED, { error }),
     reopenIssueSuccess: () => createAction(ReviewActionTypes.REOPEN_ISSUE_SUCCESS),
     reopenIssueFailed: (error: any) => createAction(ReviewActionTypes.REOPEN_ISSUE_FAILED, { error }),
-    submitReviewSuccess: (reviews: any[], issues: any[], frameData: any) =>
-        createAction(ReviewActionTypes.SUBMIT_REVIEW_SUCCESS, { reviews, issues, frameData }),
+    submitReviewSuccess: (activeReview: any, reviews: any[], issues: any[], frame: number) =>
+        createAction(ReviewActionTypes.SUBMIT_REVIEW_SUCCESS, {
+            activeReview,
+            reviews,
+            issues,
+            frame,
+        }),
     submitReviewFailed: (error: any) => createAction(ReviewActionTypes.SUBMIT_REVIEW_FAILED, { error }),
 };
 
@@ -174,7 +179,9 @@ export const submitReviewAsync = (review: any): ThunkAction => async (dispatch, 
     const {
         annotation: {
             job: { instance: jobInstance },
-            player: { frame: frameData },
+            player: {
+                frame: { number: frame },
+            },
         },
     } = state;
 
@@ -182,8 +189,9 @@ export const submitReviewAsync = (review: any): ThunkAction => async (dispatch, 
         await review.submit(jobInstance.id);
         const reviews = await jobInstance.reviews();
         const issues = await jobInstance.issues();
+        const reviewInstance = new cvat.classes.Review({ job: jobInstance.id });
 
-        dispatch(reviewActions.submitReviewSuccess(reviews, issues, frameData));
+        dispatch(reviewActions.submitReviewSuccess(reviewInstance, reviews, issues, frame));
     } catch (error) {
         dispatch(reviewActions.submitReviewFailed(error));
     }
