@@ -44,4 +44,4 @@ tensorflow==2.2.1 # Optional requirement of Datumaro
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
 diskcache==5.0.2
-git+https://github.com/openvinotoolkit/datumaro@v0.1.2
+git+https://github.com/openvinotoolkit/datumaro@v0.1.3
