@@ -728,7 +728,7 @@ class JobViewSet(viewsets.GenericViewSet,
         db_job = self.get_object()
 
         if request.data['status'] == ReviewStatus.REVIEW_FURTHER:
-            if not request.data['reviewer']:
+            if 'reviewer' not in request.data:
                 return Response('Must provide a new reviewer', status=status.HTTP_400_BAD_REQUEST)
             db_job.reviewer = User.objects.get(pk=request.data['reviewer'])
             db_job.save()

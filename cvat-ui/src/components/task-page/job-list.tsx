@@ -171,6 +171,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
                 return (
                     <UserSelector
+                        className='cvat-job-assignee-selector'
                         style={{ marginLeft: 0 }}
                         users={registeredUsers}
                         value={assignee}
@@ -198,6 +199,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
                 return (
                     <UserSelector
+                        className='cvat-job-reviewer-selector'
                         style={{ marginLeft: 0 }}
                         users={registeredUsers}
                         value={reviewer}

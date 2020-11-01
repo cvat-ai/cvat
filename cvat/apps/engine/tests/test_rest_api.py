@@ -402,7 +402,8 @@ class JobReview(APITestCase):
         cls.review_further_data = {
             "issue_set": [],
             "estimated_quality": 4,
-            "status": "review_further"
+            "status": "review_further",
+            "reviewer": cls.reviewer.id
         }
 
         cls.create_comment_data = [{

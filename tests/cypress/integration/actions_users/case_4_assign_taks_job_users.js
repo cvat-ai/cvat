@@ -112,7 +112,7 @@ context('Multiple users. Assign task, job.', () => {
             cy.get('[value="tasks"]').click();
             cy.openTask(taskName);
             cy.get('.cvat-task-job-list').within(() => {
-                cy.get('.cvat-user-selector').click({ force: true });
+                cy.get('.cvat-job-assignee-selector').click({ force: true });
             });
             cy.contains(thirdUserName).click();
             cy.logout();
