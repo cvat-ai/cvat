@@ -16,5 +16,13 @@ module.exports = (on, config) => {
             return null;
         },
     });
+    // Try to resolve "Cypress failed to make a connection to the Chrome DevTools Protocol"
+    // https://github.com/cypress-io/cypress/issues/7450
+    on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.name === 'chrome' && browser.isHeadless) {
+            launchOptions.args.push('--disable-gpu');
+            return launchOptions;
+        }
+    });
     return config;
 };
