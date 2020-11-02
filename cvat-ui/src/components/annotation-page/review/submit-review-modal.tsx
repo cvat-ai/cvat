@@ -155,6 +155,9 @@ export default function SubmitReviewModal(): JSX.Element | null {
                                 </Col>
                                 <Col offset={1}>
                                     <InputNumber
+                                        min={0}
+                                        max={5}
+                                        step={0.1}
                                         size='small'
                                         value={estimatedQuality}
                                         onChange={(value: number | undefined) => {

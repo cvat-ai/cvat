@@ -45,7 +45,7 @@ interface Canvas {
 
     fitCanvas(): void;
     bitmap(enable: boolean): void;
-    selectROI(enable: boolean): void;
+    selectRegion(enable: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
@@ -88,8 +88,8 @@ class CanvasImpl implements Canvas {
         this.model.bitmap(enable);
     }
 
-    public selectROI(enable: boolean): void {
-        this.model.selectROI(enable);
+    public selectRegion(enable: boolean): void {
+        this.model.selectRegion(enable);
     }
 
     public dragCanvas(enable: boolean): void {

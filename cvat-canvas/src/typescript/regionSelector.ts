@@ -12,7 +12,7 @@ import consts from './consts';
 import { translateToSVG } from './shared';
 import { Geometry } from './canvasModel';
 
-export interface ROISelector {
+export interface RegionSelector {
     select(enabled: boolean): void;
     selectObject(state: any): void;
     resetSelectedObjects(): void;
@@ -20,8 +20,8 @@ export interface ROISelector {
     transform(geometry: Geometry): void;
 }
 
-export class ROISelectorImpl implements ROISelector {
-    private onROISelected: (points?: number[]) => void;
+export class RegionSelectorImpl implements RegionSelector {
+    private onRegionSelected: (points?: number[]) => void;
     private onFindObject: (event: MouseEvent) => void;
     private geometry: Geometry;
     private canvas: SVG.Container;
@@ -66,7 +66,7 @@ export class ROISelectorImpl implements ROISelector {
 
     private onMouseDown = (event: MouseEvent): void => {
         if (this.highlightedState) {
-            this.onROISelected([...this.highlightedState.points]);
+            this.onRegionSelected([...this.highlightedState.points]);
             return;
         }
 
@@ -83,7 +83,7 @@ export class ROISelectorImpl implements ROISelector {
                 .attr({
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 })
-                .addClass('cvat_canvas_shape_roi_selection');
+                .addClass('cvat_canvas_shape_region_selection');
             this.selectionRect.attr({ ...this.startSelectionPoint });
         }
     };
@@ -97,9 +97,9 @@ export class ROISelectorImpl implements ROISelector {
             this.selectionRect.remove();
             this.selectionRect = null;
             if (w === 0 && h === 0) {
-                this.onROISelected([x - offset, y - offset]);
+                this.onRegionSelected([x - offset, y - offset]);
             } else {
-                this.onROISelected([x - offset, y - offset, x2 - offset, y2 - offset]);
+                this.onRegionSelected([x - offset, y - offset, x2 - offset, y2 - offset]);
             }
         }
     };
@@ -125,13 +125,13 @@ export class ROISelectorImpl implements ROISelector {
         const shape = this.canvas.select(`#cvat_canvas_shape_${this.highlightedState.clientID}`).first();
         if (shape) {
             this.highlightedShape = shape;
-            this.highlightedShape.addClass('cvat_canvas_shape_roi_selection');
+            this.highlightedShape.addClass('cvat_canvas_shape_region_selection');
         }
     }
 
     private blurObject(): void {
         if (this.highlightedState && this.highlightedShape !== null) {
-            this.highlightedShape.removeClass('cvat_canvas_shape_roi_selection');
+            this.highlightedShape.removeClass('cvat_canvas_shape_region_selection');
         }
 
         this.highlightedState = null;
@@ -139,12 +139,12 @@ export class ROISelectorImpl implements ROISelector {
     }
 
     public constructor(
-        onROISelected: (points?: number[]) => void,
+        onRegionSelected: (points?: number[]) => void,
         onFindObject: (event: MouseEvent) => void,
         canvas: SVG.Container,
         geometry: Geometry,
     ) {
-        this.onROISelected = onROISelected;
+        this.onRegionSelected = onRegionSelected;
         this.onFindObject = onFindObject;
         this.geometry = geometry;
         this.canvas = canvas;
@@ -172,7 +172,7 @@ export class ROISelectorImpl implements ROISelector {
 
     public cancel(): void {
         this.release();
-        this.onROISelected();
+        this.onRegionSelected();
     }
 
     public transform(geometry: Geometry): void {

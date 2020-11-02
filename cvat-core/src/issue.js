@@ -18,7 +18,7 @@ class Issue {
     constructor(initialData) {
         const data = {
             id: undefined,
-            roi: undefined,
+            position: undefined,
             comment_set: [],
             frame: undefined,
             created_date: undefined,
@@ -68,20 +68,20 @@ class Issue {
                 },
                 /**
                  * Region of interests of the issue
-                 * @name ROI
+                 * @name position
                  * @type {number[]}
                  * @memberof module:API.cvat.classes.Issue
                  * @instance
                  * @readonly
                  * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
-                ROI: {
-                    get: () => data.roi,
+                position: {
+                    get: () => data.position,
                     set: (value) => {
                         if (Array.isArray(value) || value.some((coord) => typeof coord !== 'number')) {
                             throw new ArgumentError(`Array of numbers is expected. Got ${value}`);
                         }
-                        data.roi = value;
+                        data.position = value;
                     },
                 },
                 /**
@@ -172,7 +172,7 @@ class Issue {
 
     /**
      * @typedef {Object} CommentData
-     * @property {number} [owner] an ID of a user who has created the comment
+     * @property {number} [author] an ID of a user who has created the comment
      * @property {string} message a comment message
      * @global
      */
@@ -232,7 +232,7 @@ class Issue {
     toJSON() {
         const { comments } = this;
         const data = {
-            roi: this.ROI,
+            position: this.position,
             frame: this.frame,
             comment_set: comments,
         };
@@ -264,27 +264,23 @@ Issue.prototype.comment.implementation = async function (data) {
     if (typeof data.message !== 'string' || data.message.length < 1) {
         throw new ArgumentError(`Comment message must be a not empty string. Got ${data.message}`);
     }
-    if (!Number.isInteger(data.owner)) {
-        throw new ArgumentError(`Owner of the comment must be an integer. Got ${data.owner}`);
+    if (!Number.isInteger(data.author)) {
+        throw new ArgumentError(`Owner of the comment must be an integer. Got ${data.author}`);
     }
 
     const copied = {
         message: data.message,
-        owner: data.owner,
+        author: data.author,
     };
 
     const { id } = this;
     if (id >= 0) {
         const response = await serverProxy.issues.comment(id, [copied]);
         for (const comment of response) {
-            if (comment.owner && !(comment.owner in User.objects)) {
-                const userData = await serverProxy.users.get(comment.owner);
+            if (comment.author && !(comment.author in User.objects)) {
+                const userData = await serverProxy.users.get(comment.author);
                 new User(userData);
             }
-        }
-        if (response.owner && !(response.owner in User.objects)) {
-            const userData = await serverProxy.users.get(response.owner);
-            new User(userData);
         }
         this.__internal.comment_set = response.map((comment) => new Comment(comment));
     } else {

@@ -230,7 +230,7 @@ class Review {
     /**
      * @typedef {Object} IssueData
      * @property {number} frame
-     * @property {number[]} roi
+     * @property {number[]} position
      * @property {number} owner
      * @property {CommentData[]} comment_set
      * @global
@@ -327,8 +327,8 @@ Review.prototype.openIssue.implementation = async function (data) {
         throw new ArgumentError(`Issue owner must be an integer. Got ${data.owner}`);
     }
 
-    if (!Array.isArray(data.roi) || data.roi.some((coord) => typeof coord !== 'number')) {
-        throw new ArgumentError(`Issue roi must be an array of numbers. Got ${data.roi}`);
+    if (!Array.isArray(data.position) || data.position.some((coord) => typeof coord !== 'number')) {
+        throw new ArgumentError(`Issue position must be an array of numbers. Got ${data.position}`);
     }
 
     if (!Array.isArray(data.comment_set)) {
@@ -337,7 +337,7 @@ Review.prototype.openIssue.implementation = async function (data) {
 
     const copied = {
         frame: data.frame,
-        roi: data.roi,
+        position: data.position,
         owner: data.owner,
         comment_set: [],
     };

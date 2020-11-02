@@ -299,7 +299,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
-    SELECT_ROI = 'select_roi',
+    OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
 }
 
@@ -513,7 +513,7 @@ export interface ReviewState {
     issues: any[];
     frameIssues: any[];
     activeReview: any | null;
-    newIssueROI: number[] | null;
+    newIssuePosition: number[] | null;
 }
 
 export interface CombinedState {

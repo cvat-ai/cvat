@@ -736,8 +736,12 @@ class JobViewSet(viewsets.GenericViewSet,
         request.data.update({
             'job': db_job.id,
             'reviewer': request.user.id,
-            'assignee': db_job.assignee.id,
         })
+
+        if db_job.assignee:
+            request.data.update({
+                'assignee': db_job.assignee.id,
+            })
 
         issue_set = request.data['issue_set']
         for issue in issue_set:

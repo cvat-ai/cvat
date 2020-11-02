@@ -23,12 +23,12 @@ interface Props {
     normalizedKeyMap: Record<string, string>;
 
     rotateFrame(rotation: Rotation): void;
-    onSelectROI(enabled: boolean): void;
+    selectIssuePosition(enabled: boolean): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
-        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, onSelectROI,
+        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, selectIssuePosition,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -71,7 +71,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <ResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <hr />
-            <IssueControl canvasInstance={canvasInstance} activeControl={activeControl} onSelectROI={onSelectROI} />
+            <IssueControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                selectIssuePosition={selectIssuePosition}
+            />
         </Layout.Sider>
     );
 }

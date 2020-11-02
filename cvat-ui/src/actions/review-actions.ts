@@ -30,7 +30,7 @@ export const reviewActions = {
         createAction(ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS, { reviewInstance, frame }),
     initializeReviewFailed: (error: any) => createAction(ReviewActionTypes.INITIALIZE_REVIEW_FAILED, { error }),
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
-    startIssue: (ROI: number[]) => createAction(ReviewActionTypes.START_ISSUE, { ROI }),
+    startIssue: (position: number[]) => createAction(ReviewActionTypes.START_ISSUE, { position }),
     finishIssueSuccess: (frame: number) => createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame }),
     finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
@@ -88,18 +88,18 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
                 frame: { number: frameNumber },
             },
         },
-        review: { activeReview, newIssueROI },
+        review: { activeReview, newIssuePosition },
     } = state;
 
     try {
         await activeReview.openIssue({
             frame: frameNumber,
-            roi: newIssueROI,
+            position: newIssuePosition,
             owner: user.id,
             comment_set: [
                 {
                     message,
-                    owner: user.id,
+                    author: user.id,
                 },
             ],
         });
@@ -121,7 +121,7 @@ export const commentIssueAsync = (id: number, message: string): ThunkAction => a
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.comment({
             message,
-            owner: user.id,
+            author: user.id,
         });
         if (activeReview && activeReview.issues.includes(issue)) {
             await activeReview.toLocalStorage();

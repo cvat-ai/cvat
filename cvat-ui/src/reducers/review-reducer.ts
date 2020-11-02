@@ -11,7 +11,7 @@ const defaultState: ReviewState = {
     issues: [], // saved on the server
     frameIssues: [], // saved on the server and not saved on the server
     activeReview: null, // not saved on the server
-    newIssueROI: null,
+    newIssuePosition: null,
 };
 
 function computeFrameIssues(issues: any[], activeReview: any, frame: number): any[] {
@@ -68,10 +68,10 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.START_ISSUE: {
-            const { ROI } = action.payload;
+            const { position } = action.payload;
             return {
                 ...state,
-                newIssueROI: ROI,
+                newIssuePosition: position,
             };
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
@@ -81,13 +81,13 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 frameIssues,
-                newIssueROI: null,
+                newIssuePosition: null,
             };
         }
         case ReviewActionTypes.CANCEL_ISSUE: {
             return {
                 ...state,
-                newIssueROI: null,
+                newIssuePosition: null,
             };
         }
         case ReviewActionTypes.RESOLVE_ISSUE_SUCCESS:

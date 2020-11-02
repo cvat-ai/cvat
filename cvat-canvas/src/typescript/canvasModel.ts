@@ -129,7 +129,7 @@ export enum UpdateReasons {
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
-    SELECT_ROI = 'select_roi',
+    SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
     CONFIG_UPDATED = 'config_updated',
@@ -145,7 +145,7 @@ export enum Mode {
     SPLIT = 'split',
     GROUP = 'group',
     INTERACT = 'interact',
-    SELECT_ROI = 'select_roi',
+    SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
 }
@@ -189,7 +189,7 @@ export interface CanvasModel {
 
     fitCanvas(width: number, height: number): void;
     bitmap(enabled: boolean): void;
-    selectROI(enabled: boolean): void;
+    selectRegion(enabled: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
@@ -334,17 +334,17 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.BITMAP);
     }
 
-    public selectROI(enable: boolean): void {
+    public selectRegion(enable: boolean): void {
         if (enable && this.data.mode !== Mode.IDLE) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (!enable && this.data.mode !== Mode.SELECT_ROI) {
-            throw Error(`Canvas is not in the roi selecting mode. Action: ${this.data.mode}`);
+        if (!enable && this.data.mode !== Mode.SELECT_REGION) {
+            throw Error(`Canvas is not in the region selecting mode. Action: ${this.data.mode}`);
         }
 
-        this.data.mode = enable ? Mode.SELECT_ROI : Mode.IDLE;
-        this.notify(UpdateReasons.SELECT_ROI);
+        this.data.mode = enable ? Mode.SELECT_REGION : Mode.IDLE;
+        this.notify(UpdateReasons.SELECT_REGION);
     }
 
     public dragCanvas(enable: boolean): void {

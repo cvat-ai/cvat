@@ -12,29 +12,29 @@ import { Canvas } from 'cvat-canvas-wrapper';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    onSelectROI(enabled: boolean): void;
+    selectIssuePosition(enabled: boolean): void;
 }
 
 function ResizeControl(props: Props): JSX.Element {
-    const { activeControl, canvasInstance, onSelectROI } = props;
+    const { activeControl, canvasInstance, selectIssuePosition } = props;
 
     return (
         <Tooltip title='Open an issue' placement='right' mouseLeaveDelay={0}>
             <Icon
                 type='message'
                 className={
-                    activeControl === ActiveControl.SELECT_ROI ?
+                    activeControl === ActiveControl.OPEN_ISSUE ?
                         'cvat-issue-control cvat-active-canvas-control' :
                         'cvat-issue-control'
                 }
                 onClick={(): void => {
-                    if (activeControl === ActiveControl.SELECT_ROI) {
-                        canvasInstance.selectROI(false);
-                        onSelectROI(false);
+                    if (activeControl === ActiveControl.OPEN_ISSUE) {
+                        canvasInstance.selectRegion(false);
+                        selectIssuePosition(false);
                     } else {
                         canvasInstance.cancel();
-                        canvasInstance.selectROI(true);
-                        onSelectROI(true);
+                        canvasInstance.selectRegion(true);
+                        selectIssuePosition(true);
                     }
                 }}
             />

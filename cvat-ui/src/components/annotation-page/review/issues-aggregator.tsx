@@ -31,7 +31,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
-    const newIssueROI = useSelector((state: CombinedState): number[] | null => state.review.newIssueROI);
+    const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
     const workspace = useSelector((state: CombinedState): Workspace => state.annotation.workspace);
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
@@ -64,7 +64,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
             // eslint-disable-next-line
             continue;
         }
-        const translated = issue.ROI.map((coord: number): number => coord + geometry.offset);
+        const translated = issue.position.map((coord: number): number => coord + geometry.offset);
         const maxX = Math.max(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0));
         const minY = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 !== 0));
         if (expandedIssues.includes(issue.id)) {
@@ -108,7 +108,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         }
     }
 
-    const translated = newIssueROI ? newIssueROI.map((coord: number): number => coord + geometry.offset) : [];
+    const translated = newIssuePosition ? newIssuePosition.map((coord: number): number => coord + geometry.offset) : [];
     const createLeft = translated.length ?
         Math.max(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0)) :
         null;

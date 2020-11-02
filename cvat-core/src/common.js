@@ -82,7 +82,7 @@
                 if (typeof instance[key] === 'object') {
                     collectNecessaryUsers(instance[key]).forEach((id) => necessaryUsers.add(id));
                 } else if (
-                    ['owner', 'assignee', 'resolver', 'reviewer'].includes(key)
+                    ['owner', 'assignee', 'resolver', 'reviewer', 'author'].includes(key)
                     && Number.isInteger(instance[key])
                 ) {
                     necessaryUsers.add(instance[key]);

@@ -15,7 +15,7 @@ import { EditHandler, EditHandlerImpl } from './editHandler';
 import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
-import { ROISelector, ROISelectorImpl } from './roiSelector';
+import { RegionSelector, RegionSelectorImpl } from './regionSelector';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
 import { InteractionHandler, InteractionHandlerImpl } from './interactionHandler';
 import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
@@ -76,7 +76,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private mergeHandler: MergeHandler;
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
-    private roiSelector: ROISelector;
+    private regionSelector: RegionSelector;
     private zoomHandler: ZoomHandler;
     private autoborderHandler: AutoborderHandler;
     private interactionHandler: InteractionHandler;
@@ -358,9 +358,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onROISelected(points?: number[]): void {
+    private onRegionSelected(points?: number[]): void {
         if (points) {
-            const event: CustomEvent = new CustomEvent('canvas.roiselected', {
+            const event: CustomEvent = new CustomEvent('canvas.regionselected', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
@@ -378,7 +378,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        this.controller.selectROI(false);
+        this.controller.selectRegion(false);
         this.mode = Mode.IDLE;
     }
 
@@ -465,7 +465,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
         this.interactionHandler.transform(this.geometry);
-        this.roiSelector.transform(this.geometry);
+        this.regionSelector.transform(this.geometry);
     }
 
     private transformCanvas(): void {
@@ -531,7 +531,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
         this.interactionHandler.transform(this.geometry);
-        this.roiSelector.transform(this.geometry);
+        this.regionSelector.transform(this.geometry);
     }
 
     private resizeCanvas(): void {
@@ -977,8 +977,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onFindObject.bind(this),
             this.adoptedContent,
         );
-        this.roiSelector = new ROISelectorImpl(
-            this.onROISelected.bind(this),
+        this.regionSelector = new RegionSelectorImpl(
+            this.onRegionSelected.bind(this),
             this.onFindObject.bind(this),
             this.adoptedContent,
             this.geometry,
@@ -1140,8 +1140,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if ([UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
             if (this.mode === Mode.GROUP) {
                 this.groupHandler.resetSelectedObjects();
-            } else if (this.mode === Mode.SELECT_ROI) {
-                this.roiSelector.resetSelectedObjects();
+            } else if (this.mode === Mode.SELECT_REGION) {
+                this.regionSelector.resetSelectedObjects();
             }
             this.setupObjects(this.controller.objects);
             if (this.mode === Mode.MERGE) {
@@ -1169,12 +1169,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
-        } else if (reason === UpdateReasons.SELECT_ROI) {
-            if (this.mode === Mode.SELECT_ROI) {
-                this.roiSelector.select(true);
+        } else if (reason === UpdateReasons.SELECT_REGION) {
+            if (this.mode === Mode.SELECT_REGION) {
+                this.regionSelector.select(true);
                 this.canvas.style.cursor = 'pointer';
             } else {
-                this.roiSelector.select(false);
+                this.regionSelector.select(false);
             }
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             if (this.mode === Mode.DRAG_CANVAS) {
@@ -1275,8 +1275,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.splitHandler.select(this.controller.selected);
             } else if (this.mode === Mode.GROUP) {
                 this.groupHandler.select(this.controller.selected);
-            } else if (this.mode === Mode.SELECT_ROI) {
-                this.roiSelector.selectObject(this.controller.selected);
+            } else if (this.mode === Mode.SELECT_REGION) {
+                this.regionSelector.selectObject(this.controller.selected);
             }
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
@@ -1289,8 +1289,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.splitHandler.cancel();
             } else if (this.mode === Mode.GROUP) {
                 this.groupHandler.cancel();
-            } else if (this.mode === Mode.SELECT_ROI) {
-                this.roiSelector.cancel();
+            } else if (this.mode === Mode.SELECT_REGION) {
+                this.regionSelector.cancel();
             } else if (this.mode === Mode.EDIT) {
                 this.editHandler.cancel();
             } else if (this.mode === Mode.DRAG_CANVAS) {

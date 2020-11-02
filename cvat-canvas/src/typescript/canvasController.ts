@@ -39,7 +39,7 @@ export interface CanvasController {
     merge(mergeData: MergeData): void;
     split(splitData: SplitData): void;
     group(groupData: GroupData): void;
-    selectROI(enabled: boolean): void;
+    selectRegion(enabled: boolean): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -107,8 +107,8 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.group(groupData);
     }
 
-    public selectROI(enable: boolean): void {
-        this.model.selectROI(enable);
+    public selectRegion(enable: boolean): void {
+        this.model.selectRegion(enable);
     }
 
     public get geometry(): Geometry {

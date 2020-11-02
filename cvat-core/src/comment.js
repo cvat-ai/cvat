@@ -19,7 +19,7 @@ class Comment {
             created_date: undefined,
             updated_date: undefined,
             removed: false,
-            owner: undefined,
+            author: undefined,
         };
 
         for (const property in data) {
@@ -28,8 +28,8 @@ class Comment {
             }
         }
 
-        if (data.owner !== null) {
-            data.owner = User.objects[data.owner];
+        if (data.author !== null) {
+            data.author = User.objects[data.author];
         }
 
         if (typeof id === 'undefined') {
@@ -90,14 +90,14 @@ class Comment {
                 },
                 /**
                  * Instance of a user who has created the comment
-                 * @name owner
+                 * @name author
                  * @type {module:API.cvat.classes.Comment}
                  * @memberof module:API.cvat.classes.Comment
                  * @readonly
                  * @instance
                  */
-                owner: {
-                    get: () => data.owner,
+                author: {
+                    get: () => data.author,
                 },
                 /**
                  * @name removed
@@ -135,8 +135,8 @@ class Comment {
         if (this.updatedDate) {
             data.updated_date = this.updatedDate;
         }
-        if (this.owner) {
-            data.owner = this.owner.id;
+        if (this.author) {
+            data.author = this.author.id;
         }
 
         return data;

@@ -90,7 +90,7 @@ interface Props {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
-    onStartIssue(ROI: number[]): void;
+    onStartIssue(position: number[]): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -321,6 +321,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
@@ -379,7 +380,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onGroupAnnotations(jobInstance, frame, states);
     };
 
-    private onCanvasROISelected = (event: any): void => {
+    private onCanvasPositionSelected = (event: any): void => {
         const { onResetCanvas, onStartIssue } = this.props;
         const { points } = event.detail;
         onStartIssue(points);
@@ -635,7 +636,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private updateIssueRegions(): void {
         const { canvasInstance, frameIssues } = this.props;
         const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<number, number[]> => {
-            acc[issue.id] = issue.ROI;
+            acc[issue.id] = issue.position;
             return acc;
         }, {});
         canvasInstance.setupIssueRegions(regions);
@@ -735,7 +736,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
-        canvasInstance.html().addEventListener('canvas.roiselected', this.onCanvasROISelected);
+        canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);

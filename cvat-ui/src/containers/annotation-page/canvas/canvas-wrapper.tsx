@@ -121,7 +121,7 @@ interface DispatchToProps {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
-    onStartIssue(ROI: number[]): void;
+    onStartIssue(position: number[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -307,8 +307,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
         },
-        onStartIssue(ROI: number[]): void {
-            dispatch(reviewActions.startIssue(ROI));
+        onStartIssue(position: number[]): void {
+            dispatch(reviewActions.startIssue(position));
         },
     };
 }

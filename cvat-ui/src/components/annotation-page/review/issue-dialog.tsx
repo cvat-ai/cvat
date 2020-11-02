@@ -46,7 +46,7 @@ export default function IssueDialog(props: Props): JSX.Element {
             return (
                 <Comment
                     key={_comment.id}
-                    author={_comment.owner ? _comment.owner.username : 'Unknown'}
+                    author={_comment.author ? _comment.author.username : 'Unknown'}
                     content={<p>{_comment.message}</p>}
                     datetime={(
                         <Tooltip title={created.format('MMMM Do YYYY')}>

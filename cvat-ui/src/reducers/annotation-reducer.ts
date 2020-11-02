@@ -453,9 +453,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SELECT_ROI: {
+        case AnnotationActionTypes.SELECT_ISSUE_POSITION: {
             const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.SELECT_ROI : ActiveControl.CURSOR;
+            const activeControl = enabled ? ActiveControl.OPEN_ISSUE : ActiveControl.CURSOR;
 
             return {
                 ...state,

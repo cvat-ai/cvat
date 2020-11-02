@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import {
-    selectROI,
+    selectIssuePosition as selectIssuePositionAction,
     mergeObjects,
     groupObjects,
     splitTrack,
@@ -33,7 +33,7 @@ interface DispatchToProps {
     groupObjects(enabled: boolean): void;
     splitTrack(enabled: boolean): void;
     rotateFrame(angle: Rotation): void;
-    onSelectROI(enabled: boolean): void;
+    selectIssuePosition(enabled: boolean): void;
     resetGroup(): void;
     repeatDrawShape(): void;
     pasteShape(): void;
@@ -71,8 +71,8 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         splitTrack(enabled: boolean): void {
             dispatch(splitTrack(enabled));
         },
-        onSelectROI(enabled: boolean): void {
-            dispatch(selectROI(enabled));
+        selectIssuePosition(enabled: boolean): void {
+            dispatch(selectIssuePositionAction(enabled));
         },
         rotateFrame(rotation: Rotation): void {
             dispatch(rotateCurrentFrame(rotation));

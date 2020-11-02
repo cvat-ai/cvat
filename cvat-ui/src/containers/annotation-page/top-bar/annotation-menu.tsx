@@ -151,6 +151,14 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         }
     };
 
+    const isAssignee =
+        jobInstance.assignee?.id === user.id ||
+        jobInstance.task.assignee?.id === user.id ||
+        jobInstance.task.assignee === null ||
+        user.isSuperuser;
+
+    const isReviewer = jobInstance.reviewer?.id === user.id || user.isSuperuser;
+
     return (
         <AnnotationMenuComponent
             taskMode={jobInstance.task.mode}
@@ -163,8 +171,8 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}
             saveAnnotations={saveAnnotations}
             jobInstance={jobInstance}
-            isAssignee={jobInstance.assignee && jobInstance.assignee.id === user.id}
-            isReviewer={jobInstance.reviewer && jobInstance.reviewer.id === user.id}
+            isAssignee={isAssignee}
+            isReviewer={isReviewer}
         />
     );
 }
