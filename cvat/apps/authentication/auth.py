@@ -117,7 +117,7 @@ def is_job_annotator(db_user, db_job):
     # A job can be annotated by any user if the task's assignee is None.
     has_rights = (db_task.assignee is None and not settings.RESTRICTIONS['reduce_task_visibility']) or is_task_assignee(db_user, db_task)
     if db_job.assignee is not None:
-        has_rights |= db_user == db_job.assignee
+        has_rights |= (db_user == db_job.assignee)
 
     return has_rights
 
@@ -144,8 +144,8 @@ def is_issue_owner(db_user, db_issue):
     return has_rights
 
 @rules.predicate
-def is_comment_owner(db_user, db_comment):
-    has_rights = (db_comment.owner == db_user)
+def is_comment_author(db_user, db_comment):
+    has_rights = (db_comment.author == db_user)
     return has_rights
 
 # AUTH PERMISSIONS RULES
@@ -176,7 +176,7 @@ rules.add_perm('engine.job.review', has_admin_role | (is_job_reviewer & has_chan
 rules.add_perm('engine.issue.change', has_admin_role | is_issue_owner)
 rules.add_perm('engine.issue.destroy', has_admin_role | is_issue_owner)
 
-rules.add_perm('engine.comment.change', has_admin_role | is_comment_owner)
+rules.add_perm('engine.comment.change', has_admin_role | is_comment_author)
 
 
 class AdminRolePermission(BasePermission):

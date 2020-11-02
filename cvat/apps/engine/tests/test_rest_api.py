@@ -376,7 +376,7 @@ class JobReview(APITestCase):
         cls.reject_review_data = {
             "issue_set": [
                 {
-                "roi": [
+                "position": [
                     50, 50, 100, 100
                 ],
                 "comment_set": [
