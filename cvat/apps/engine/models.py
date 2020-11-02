@@ -438,7 +438,7 @@ class Review(models.Model):
 
 class Issue(models.Model):
     frame = models.PositiveIntegerField()
-    roi = FloatArrayField()
+    position = FloatArrayField()
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     review = models.ForeignKey(Review, null=True, blank=True, on_delete=models.SET_NULL)
     owner = models.ForeignKey(User, null=True, blank=True, related_name='issues', on_delete=models.SET_NULL)
@@ -448,7 +448,7 @@ class Issue(models.Model):
 
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    message = models.CharField(max_length=4096, default='')
+    author = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    message = models.TextField(default='')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)

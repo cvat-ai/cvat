@@ -532,7 +532,7 @@ class ReviewSummarySerializer(serializers.Serializer):
         }
 
 class IssueSerializer(serializers.ModelSerializer):
-    roi = serializers.ListField(
+    position = serializers.ListField(
         child=serializers.FloatField(),
         allow_empty=False,
     )
@@ -541,7 +541,7 @@ class IssueSerializer(serializers.ModelSerializer):
         model = models.Issue
         fields = '__all__'
         read_only_fields = ('created_date', 'id',)
-        write_once_fields = ('frame', 'roi', 'job', 'owner', 'review', )
+        write_once_fields = ('frame', 'position', 'job', 'owner', 'review', )
         ordering = ['-id']
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -549,7 +549,7 @@ class CommentSerializer(serializers.ModelSerializer):
         model = models.Comment
         fields = '__all__'
         read_only_fields = ('created_date', 'updated_date', 'id',)
-        write_once_fields = ('issue', 'owner', )
+        write_once_fields = ('issue', 'author', )
 
 class CombinedIssueSerializer(IssueSerializer):
     comment_set = CommentSerializer(many=True)

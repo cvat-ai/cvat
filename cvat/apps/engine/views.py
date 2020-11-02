@@ -745,7 +745,7 @@ class JobViewSet(viewsets.GenericViewSet,
             issue['owner'] = request.user.id
             comment_set = issue['comment_set']
             for comment in comment_set:
-                comment['owner'] = request.user.id
+                comment['author'] = request.user.id
 
         serializer = CombinedReviewSerializer(data=request.data, partial=True)
         if serializer.is_valid(raise_exception=True):
@@ -853,7 +853,7 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         self.get_object() # call to force check persmissions
         for comment in request.data:
             comment.update({
-                'owner': request.user.id,
+                'author': request.user.id,
                 'issue': pk
             })
 
