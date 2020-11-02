@@ -15,24 +15,24 @@
     > div > span {
         font-size: 36px;
     }
+}
 
-    .cvat-create-project-content {
-        margin-top: 20px;
-        width: 100%;
-        height: auto;
-        border: 1px solid $border-color-1;
-        border-radius: 3px;
-        padding: 20px;
-        background: $background-color-1;
-        text-align: initial;
+.cvat-create-project-content {
+    margin-top: 20px;
+    width: 100%;
+    height: auto;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    padding: 20px;
+    background: $background-color-1;
+    text-align: initial;
 
-        > div:not(first-child) {
-            margin-top: 10px;
-        }
+    > div:not(first-child) {
+        margin-top: 10px;
+    }
 
-        > div:nth-child(7) > button {
-            float: right;
-            width: 120px;
-        }
+    > div:nth-child(3) {
+        display: flex;
+        justify-content: flex-end;
     }
 }

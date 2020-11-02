@@ -71,7 +71,8 @@
     justify-content: center;
 }
 
-.cvat-projects-project-item-title {
+.cvat-projects-project-item-title,
+.cvat-projects-project-item-card-preview {
     cursor: pointer;
 }
 
@@ -84,6 +85,11 @@
         display: flex;
         align-self: flex-end;
         justify-content: center;
+
+        > button {
+            color: $text-color;
+            width: inherit;
+        }
     }
 }
 
@@ -108,5 +114,6 @@
     img {
         height: 100%;
         max-height: 146px;
+        object-fit: cover;
     }
 }

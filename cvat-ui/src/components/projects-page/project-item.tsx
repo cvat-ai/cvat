@@ -21,7 +21,9 @@ interface Props {
 }
 
 export default function ProjectItemComponent(props: Props): JSX.Element {
-    const { projectInstance: { instance } } = props;
+    const {
+        projectInstance: { instance },
+    } = props;
 
     const history = useHistory();
     const ownerName = instance.owner ? instance.owner.username : null;
@@ -31,6 +33,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
 
     let projectPreview = null;
     if (instance.tasks.length) {
+        // prettier-ignore
         projectPreview = useSelector((state: CombinedState) => (
             state.tasks.current.find((task) => task.instance.id === instance.tasks[0].id)?.preview
         ));
@@ -49,45 +52,45 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
 
     return (
         <Card
-            cover={projectPreview ? (
-                <img src={projectPreview} alt='Preview' />
-            ) : (<Empty description='No tasks' />)}
+            cover={
+                projectPreview ? (
+                    <img
+                        className='cvat-projects-project-item-card-preview'
+                        src={projectPreview}
+                        alt='Preview'
+                        onClick={onOpenProject}
+                        aria-hidden
+                    />
+                ) : (
+                    <div className='cvat-projects-project-item-card-preview' onClick={onOpenProject} aria-hidden>
+                        <Empty description='No tasks' />
+                    </div>
+                )
+            }
             size='small'
             style={style}
             className='cvat-projects-project-item-card'
         >
             <Meta
                 title={(
-                    <span
-                        onClick={onOpenProject}
-                        className='cvat-projects-project-item-title'
-                        aria-hidden
-                    >
+                    <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
                         {instance.name}
                     </span>
                 )}
-
                 description={(
                     <div className='cvat-porjects-project-item-description'>
                         <div>
-                            { ownerName
-                            && (
+                            {ownerName && (
                                 <>
-                                    <Text type='secondary'>
-                                        {`Created ${ownerName ? `by ${ownerName}` : ''}`}
-                                    </Text>
+                                    <Text type='secondary'>{`Created ${ownerName ? `by ${ownerName}` : ''}`}</Text>
                                     <br />
                                 </>
                             )}
                             <Text type='secondary'>{`Last updated ${updated}`}</Text>
                         </div>
                         <div>
-                            <Dropdown
-                                overlay={
-                                    <ProjectActionsMenuComponent projectInstance={instance} />
-                                }
-                            >
-                                <Button type='link' size='small'>Actions</Button>
+                            <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={instance} />}>
+                                <Button type='link' size='large' icon='more' />
                             </Dropdown>
                         </div>
                     </div>

@@ -46,7 +46,7 @@ function getTasks(): AnyAction {
     return action;
 }
 
-function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
+export function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
