@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: cvat-frontend-app-container
-          image: labeling.azurecr.io/cvat/ui
+          image: softwarebaecker/chaoskreuzung-cvat-ui:v1
           imagePullPolicy: "IfNotPresent"
           env:
           - name: REACT_APP_API_PROTOCOL
@@ -34,8 +34,6 @@ spec:
           ports:
           - containerPort: 80
           resources: {}
-      imagePullSecrets:
-      - name: Bl0DcsJ7leOYq5GFlLC5cgWY5q+VaELJ
 
 
 
