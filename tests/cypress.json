@@ -1,8 +1,8 @@
 {
   "video": false,
   "baseUrl": "http://localhost:8080",
-  "viewportWidth": 1280,
-  "viewportHeight": 720,
+  "viewportWidth": 1300,
+  "viewportHeight": 960,
   "defaultCommandTimeout": 25000,
   "env": {
     "user": "admin",
