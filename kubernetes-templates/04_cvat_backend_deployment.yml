@@ -22,12 +22,12 @@ spec:
     spec:
       containers:
         - name: cvat-backend-app-container
-          image: softwarebaecker/chaoskreuzung-cvat-server:v1
-          imagePullPolicy: "IfNotPresent"
+          image: labeling.azurecr.io/cvat/server
+          imagePullPolicy: Always
           resources:
             requests:
-              cpu: 10m
-              memory: 100Mi
+              cpu: 1000m
+              memory: 5G
           env:
           - name: CVAT_NUCLIO_HOST
             value: "nuclio-service"
