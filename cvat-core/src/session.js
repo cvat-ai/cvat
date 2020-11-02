@@ -671,8 +671,8 @@
             super();
             const data = {
                 id: undefined,
-                assignee: undefined,
-                reviewer: undefined,
+                assignee: null,
+                reviewer: null,
                 status: undefined,
                 start_frame: undefined,
                 stop_frame: undefined,
@@ -691,10 +691,10 @@
                 }
             }
 
-            if (typeof data.assignee !== null) {
+            if (data.assignee !== null) {
                 data.assignee = User.objects[data.assignee];
             }
-            if (typeof data.reviewer !== null) {
+            if (data.reviewer !== null) {
                 data.reviewer = User.objects[data.reviewer];
             }
 
@@ -946,8 +946,8 @@
                 status: undefined,
                 size: undefined,
                 mode: undefined,
-                owner: undefined,
-                assignee: undefined,
+                owner: null,
+                assignee: null,
                 created_date: undefined,
                 updated_date: undefined,
                 bug_tracker: undefined,
@@ -998,10 +998,10 @@
                 }
             }
 
-            if (typeof data.assignee !== undefined) {
+            if (data.assignee !== null) {
                 data.assignee = User.objects[data.assignee];
             }
-            if (typeof data.owner !== undefined) {
+            if (data.owner !== null) {
                 data.owner = User.objects[data.owner];
             }
 
