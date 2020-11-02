@@ -794,33 +794,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS: {
-            return {
-                ...state,
-                job: {
-                    ...state.job,
-                    saving: true,
-                },
-            };
-        }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS: {
-            return {
-                ...state,
-                job: {
-                    ...state.job,
-                    saving: false,
-                },
-            };
-        }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
-            return {
-                ...state,
-                job: {
-                    ...state.job,
-                    saving: false,
-                },
-            };
-        }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS: {
             const { job, loader } = action.payload;
             const { loads } = state.activities;

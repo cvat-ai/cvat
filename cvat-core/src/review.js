@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 const store = require('store');
+
+const PluginRegistry = require('./plugins');
 const Issue = require('./issue');
 const User = require('./user');
 const { ArgumentError, DataError } = require('./exceptions');
@@ -25,8 +27,8 @@ class Review {
             status: undefined,
             reviewer: undefined,
             assignee: undefined,
-            reviewed_frames: new Set(),
-            reviewed_states: new Set(),
+            reviewed_frames: undefined,
+            reviewed_states: undefined,
         };
 
         for (const property in data) {
@@ -35,6 +37,8 @@ class Review {
             }
         }
 
+        data.reviewed_frames = Array.isArray(data.reviewed_frames) ? new Set(data.reviewed_frames) : new Set();
+        data.reviewed_states = Array.isArray(data.reviewed_states) ? new Set(data.reviewed_states) : new Set();
         if (data.issue_set) {
             data.issue_set = data.issue_set.map((issue) => new Issue(issue));
         }
@@ -189,61 +193,77 @@ class Review {
         );
     }
 
+    /**
+     * Method appends a frame to a set of reviewed frames
+     * Reviewed frames are saved only in local storage
+     * @method reviewFrame
+     * @memberof module:API.cvat.classes.Review
+     * @param {number} frame
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
     async reviewFrame(frame) {
-        this.__internal.reviewed_frames.add(frame);
+        const result = await PluginRegistry.apiWrapper.call(this, Review.prototype.reviewFrame, frame);
+        return result;
     }
 
+    /**
+     * Method appends a frame to a set of reviewed frames
+     * Reviewed states are saved only in local storage. They are used to automatic annotations quality assessment
+     * @method reviewStates
+     * @memberof module:API.cvat.classes.Review
+     * @param {string[]} stateIDs
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
     async reviewStates(stateIDs) {
-        stateIDs.forEach((stateID) => this.__internal.reviewed_states.add(stateID));
+        const result = await PluginRegistry.apiWrapper.call(this, Review.prototype.reviewStates, stateIDs);
+        return result;
     }
 
+    /**
+     * @typedef {Object} IssueData
+     * @property {number} frame
+     * @property {number[]} roi
+     * @property {number} owner
+     * @property {CommentData[]} comment_set
+     * @global
+     */
+    /**
+     * Method adds a new issue to the review
+     * @method openIssue
+     * @memberof module:API.cvat.classes.Review
+     * @param {IssueData} data
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
     async openIssue(data) {
-        this.__internal.issue_set.push(new Issue(data));
-
-        if (typeof this.id === 'undefined') {
-            await this.toLocalStorage(this.job);
-        }
+        const result = await PluginRegistry.apiWrapper.call(this, Review.prototype.openIssue, data);
+        return result;
     }
 
-    // eslint-disable no-empty
+    /**
+     * Method submits local review to the server
+     * @method submit
+     * @memberof module:API.cvat.classes.Review
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.DataError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
     async submit() {
-        if (typeof this.estimatedQuality === 'undefined') {
-            throw new DataError('Estimated quality is expected to be a number. Got "undefined"');
-        }
-
-        if (typeof this.status === 'undefined') {
-            throw new DataError('Review status is expected to be a string. Got "undefined"');
-        }
-
-        if (this.id < 0) {
-            const data = this.toJSON();
-            delete data.reviewed_frames; // doesn't need on server
-            delete data.reviewed_states; // doesn't need on server
-
-            const result = await serverProxy.jobs.reviews.create(this.job, data);
-            store.remove(`job-${this.job}-review`);
-            this.__internal.id = result.id;
-            this.__internal.issue_set = result.issue_set.map((issue) => new Issue(issue));
-            this.__internal.estimated_quality = result.estimated_quality;
-            this.__internal.status = result.status;
-            if (result.assignee && !(result.assignee in User.objects)) {
-                const userData = await serverProxy.users.get(result.assignee);
-                new User(userData);
-            }
-
-            if (result.assignee && !(result.assignee in User.objects)) {
-                const userData = await serverProxy.users.get(result.assignee);
-                new User(userData);
-            }
-
-            if (result.reviewer && !(result.reviewer in User.objects)) {
-                const userData = await serverProxy.users.get(result.reviewer);
-                new User(userData);
-            }
-
-            this.__internal.reviewer = User.objects[result.reviewer];
-            this.__internal.assignee = User.objects[result.assignee];
-        }
+        const result = await PluginRegistry.apiWrapper.call(this, Review.prototype.submit);
+        return result;
     }
 
     toJSON() {
@@ -278,5 +298,97 @@ class Review {
         store.set(`job-${this.job}-review`, JSON.stringify(this));
     }
 }
+
+Review.prototype.reviewFrame.implementation = function (frame) {
+    if (!Number.isInteger(frame)) {
+        throw new ArgumentError(`The argument "frame" is expected to be an integer. Got ${frame}`);
+    }
+    this.__internal.reviewed_frames.add(frame);
+};
+
+Review.prototype.reviewStates.implementation = function (stateIDs) {
+    if (!Array.isArray(stateIDs) || stateIDs.some((stateID) => typeof stateID !== 'string')) {
+        throw new ArgumentError(`The argument "stateIDs" is expected to be an array of string. Got ${stateIDs}`);
+    }
+
+    stateIDs.forEach((stateID) => this.__internal.reviewed_states.add(stateID));
+};
+
+Review.prototype.openIssue.implementation = async function (data) {
+    if (typeof data !== 'object' || data === null) {
+        throw new ArgumentError(`The argument "data" must be a not null object. Got ${data}`);
+    }
+
+    if (typeof data.frame !== 'number') {
+        throw new ArgumentError(`Issue frame must be a number. Got ${data.frame}`);
+    }
+
+    if (!Number.isInteger(data.owner)) {
+        throw new ArgumentError(`Issue owner must be an integer. Got ${data.owner}`);
+    }
+
+    if (!Array.isArray(data.roi) || data.roi.some((coord) => typeof coord !== 'number')) {
+        throw new ArgumentError(`Issue roi must be an array of numbers. Got ${data.roi}`);
+    }
+
+    if (!Array.isArray(data.comment_set)) {
+        throw new ArgumentError(`Issue comment set must be an array. Got ${data.comment_set}`);
+    }
+
+    const copied = {
+        frame: data.frame,
+        roi: data.roi,
+        owner: data.owner,
+        comment_set: [],
+    };
+
+    const issue = new Issue(copied);
+
+    for (const comment of data.comment_set) {
+        await issue.comment.implementation.call(issue, comment);
+    }
+
+    this.__internal.issue_set.push(issue);
+};
+
+Review.prototype.submit.implementation = async function () {
+    if (typeof this.estimatedQuality === 'undefined') {
+        throw new DataError('Estimated quality is expected to be a number. Got "undefined"');
+    }
+
+    if (typeof this.status === 'undefined') {
+        throw new DataError('Review status is expected to be a string. Got "undefined"');
+    }
+
+    if (this.id < 0) {
+        const data = this.toJSON();
+        delete data.reviewed_frames; // doesn't need on server
+        delete data.reviewed_states; // doesn't need on server
+
+        const result = await serverProxy.jobs.reviews.create(this.job, data);
+        store.remove(`job-${this.job}-review`);
+        this.__internal.id = result.id;
+        this.__internal.issue_set = result.issue_set.map((issue) => new Issue(issue));
+        this.__internal.estimated_quality = result.estimated_quality;
+        this.__internal.status = result.status;
+        if (result.assignee && !(result.assignee in User.objects)) {
+            const userData = await serverProxy.users.get(result.assignee);
+            new User(userData);
+        }
+
+        if (result.assignee && !(result.assignee in User.objects)) {
+            const userData = await serverProxy.users.get(result.assignee);
+            new User(userData);
+        }
+
+        if (result.reviewer && !(result.reviewer in User.objects)) {
+            const userData = await serverProxy.users.get(result.reviewer);
+            new User(userData);
+        }
+
+        this.__internal.reviewer = User.objects[result.reviewer];
+        this.__internal.assignee = User.objects[result.assignee];
+    }
+};
 
 module.exports = Review;

@@ -261,6 +261,14 @@ export interface NotificationsState {
         userAgreements: {
             fetching: null | ErrorState;
         };
+        review: {
+            initialization: null | ErrorState;
+            finishingIssue: null | ErrorState;
+            resolvingIssue: null | ErrorState;
+            reopeningIssue: null | ErrorState;
+            commentingIssue: null | ErrorState;
+            submittingReview: null | ErrorState;
+        };
     };
     messages: {
         tasks: {

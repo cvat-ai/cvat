@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+const PluginRegistry = require('./plugins');
 const Comment = require('./comment');
 const User = require('./user');
 const { ArgumentError } = require('./exceptions');
@@ -169,65 +170,63 @@ class Issue {
         );
     }
 
+    /**
+     * @typedef {Object} CommentData
+     * @property {number} [owner] an ID of a user who has created the comment
+     * @property {string} message a comment message
+     * @global
+     */
+    /**
+     * Method appends a comment to the issue
+     * For a new issue it saves comment locally, for a saved issue it saves comment on the server
+     * @method comment
+     * @memberof module:API.cvat.classes.Issue
+     * @param {CommentData} data
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     */
     async comment(data) {
-        const { id } = this;
-        if (id >= 0) {
-            const response = await serverProxy.issues.comment(id, [data]);
-            for (const comment of response) {
-                if (comment.owner && !(comment.owner in User.objects)) {
-                    const userData = await serverProxy.users.get(comment.owner);
-                    new User(userData);
-                }
-            }
-            if (response.owner && !(response.owner in User.objects)) {
-                const userData = await serverProxy.users.get(response.owner);
-                new User(userData);
-            }
-            this.__internal.comment_set = response.map((comment) => new Comment(comment));
-        } else {
-            const comment = new Comment(data);
-            this.__internal.comment_set.push(comment);
-        }
+        const result = await PluginRegistry.apiWrapper.call(this, Issue.prototype.comment, data);
+        return result;
     }
 
+    /**
+     * The method resolves the issue
+     * New issues are resolved locally, server-saved issues are resolved on the server
+     * @method resolve
+     * @memberof module:API.cvat.classes.Issue
+     * @param {module:API.cvat.classes.User} user
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     */
     async resolve(user) {
-        const { id } = this;
-        if (id >= 0) {
-            const response = await serverProxy.issues.resolve(id);
-            if (!(response.resolver in User.objects)) {
-                const userData = await serverProxy.users.get(response.resolver);
-                new User(userData);
-            }
-            this.__internal.resolved_date = response.resolved_date;
-            this.__internal.resolver = User.objects[response.resolver];
-        } else {
-            this.__internal.resolved_date = new Date().toISOString();
-            this.__internal.resolver = user;
-        }
+        const result = await PluginRegistry.apiWrapper.call(this, Issue.prototype.resolve, user);
+        return result;
     }
 
+    /**
+     * The method resolves the issue
+     * New issues are reopened locally, server-saved issues are reopened on the server
+     * @method reopen
+     * @memberof module:API.cvat.classes.Issue
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     */
     async reopen() {
-        const { id } = this;
-        if (id >= 0) {
-            const response = await serverProxy.issues.reopen(id);
-            if (response.resolver && !(response.resolver in User.objects)) {
-                const userData = await serverProxy.users.get(response.resolver);
-                new User(userData);
-            }
-            this.__internal.resolved_date = response.resolved_date;
-            this.__internal.resolver = response.resolver;
-        } else {
-            this.__internal.resolved_date = null;
-            this.__internal.resolver = null;
-        }
-    }
-
-    async delete() {
-        if (typeof this.id !== 'undefined') {
-            // TODO: make a server request to delete
-        }
-
-        this.removed = true;
+        const result = await PluginRegistry.apiWrapper.call(this, Issue.prototype.reopen);
+        return result;
     }
 
     toJSON() {
@@ -257,5 +256,77 @@ class Issue {
         return data;
     }
 }
+
+Issue.prototype.comment.implementation = async function (data) {
+    if (typeof data !== 'object' || data === null) {
+        throw new ArgumentError(`The argument "data" must be a not null object. Got ${data}`);
+    }
+    if (typeof data.message !== 'string' || data.message.length < 1) {
+        throw new ArgumentError(`Comment message must be a not empty string. Got ${data.message}`);
+    }
+    if (!Number.isInteger(data.owner)) {
+        throw new ArgumentError(`Owner of the comment must be an integer. Got ${data.owner}`);
+    }
+
+    const copied = {
+        message: data.message,
+        owner: data.owner,
+    };
+
+    const { id } = this;
+    if (id >= 0) {
+        const response = await serverProxy.issues.comment(id, [copied]);
+        for (const comment of response) {
+            if (comment.owner && !(comment.owner in User.objects)) {
+                const userData = await serverProxy.users.get(comment.owner);
+                new User(userData);
+            }
+        }
+        if (response.owner && !(response.owner in User.objects)) {
+            const userData = await serverProxy.users.get(response.owner);
+            new User(userData);
+        }
+        this.__internal.comment_set = response.map((comment) => new Comment(comment));
+    } else {
+        const comment = new Comment(copied);
+        this.__internal.comment_set.push(comment);
+    }
+};
+
+Issue.prototype.resolve.implementation = async function (user) {
+    if (!(user instanceof User)) {
+        throw new ArgumentError(`The argument "user" must be an instance of a User class. Got ${typeof user}`);
+    }
+
+    const { id } = this;
+    if (id >= 0) {
+        const response = await serverProxy.issues.resolve(id);
+        if (!(response.resolver in User.objects)) {
+            const userData = await serverProxy.users.get(response.resolver);
+            new User(userData);
+        }
+        this.__internal.resolved_date = response.resolved_date;
+        this.__internal.resolver = User.objects[response.resolver];
+    } else {
+        this.__internal.resolved_date = new Date().toISOString();
+        this.__internal.resolver = user;
+    }
+};
+
+Issue.prototype.reopen.implementation = async function () {
+    const { id } = this;
+    if (id >= 0) {
+        const response = await serverProxy.issues.reopen(id);
+        if (response.resolver && !(response.resolver in User.objects)) {
+            const userData = await serverProxy.users.get(response.resolver);
+            new User(userData);
+        }
+        this.__internal.resolved_date = response.resolved_date;
+        this.__internal.resolver = response.resolver;
+    } else {
+        this.__internal.resolved_date = null;
+        this.__internal.resolver = null;
+    }
+};
 
 module.exports = Issue;

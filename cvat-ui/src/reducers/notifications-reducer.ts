@@ -15,6 +15,7 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
+import { ReviewActionTypes } from 'actions/review-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -86,6 +87,14 @@ const defaultState: NotificationsState = {
         },
         userAgreements: {
             fetching: null,
+        },
+        review: {
+            commentingIssue: null,
+            finishingIssue: null,
+            initialization: null,
+            reopeningIssue: null,
+            resolvingIssue: null,
+            submittingReview: null,
         },
     },
     messages: {
@@ -357,8 +366,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         updating: {
-                            message:
-                                'Could not update ' + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -746,21 +754,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        savingJob: {
-                            message: 'Could not save the job on the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED: {
             const { job, error } = action.payload;
 
@@ -914,6 +907,96 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.userAgreements,
                         fetching: {
                             message: 'Could not get user agreements from the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.INITIALIZE_REVIEW_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        initialization: {
+                            message: 'Could not initialize review session',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.FINISH_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        finishingIssue: {
+                            message: 'Could not open a new issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.RESOLVE_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        resolvingIssue: {
+                            message: 'Could not resolve the issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.REOPEN_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        reopeningIssue: {
+                            message: 'Could not reopen the issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.COMMENT_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        commentingIssue: {
+                            message: 'Could not comment the issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.SUBMIT_REVIEW_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        submittingReview: {
+                            message: 'Could not submit review session to the server',
                             reason: action.payload.error.toString(),
                         },
                     },

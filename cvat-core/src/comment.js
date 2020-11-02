@@ -121,18 +121,6 @@ class Comment {
         );
     }
 
-    async save() {
-        // save after changing a message
-    }
-
-    async delete() {
-        if (typeof this.id !== 'undefined') {
-            // TODO: make a server request to delete
-        }
-
-        this.removed = true;
-    }
-
     toJSON() {
         const data = {
             message: this.message,

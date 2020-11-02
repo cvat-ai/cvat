@@ -162,9 +162,6 @@ export enum AnnotationActionTypes {
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
     COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
     COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
-    CHANGE_JOB_STATUS = 'CHANGE_JOB_STATUS',
-    CHANGE_JOB_STATUS_SUCCESS = 'CHANGE_JOB_STATUS_SUCCESS',
-    CHANGE_JOB_STATUS_FAILED = 'CHANGE_JOB_STATUS_FAILED',
     UPLOAD_JOB_ANNOTATIONS = 'UPLOAD_JOB_ANNOTATIONS',
     UPLOAD_JOB_ANNOTATIONS_SUCCESS = 'UPLOAD_JOB_ANNOTATIONS_SUCCESS',
     UPLOAD_JOB_ANNOTATIONS_FAILED = 'UPLOAD_JOB_ANNOTATIONS_FAILED',
@@ -390,36 +387,6 @@ export function uploadJobAnnotationsAsync(job: any, loader: any, file: File): Th
                 type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED,
                 payload: {
                     job,
-                    error,
-                },
-            });
-        }
-    };
-}
-
-export function changeJobStatusAsync(jobInstance: any, status: string): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const oldStatus = jobInstance.status;
-        try {
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_JOB_STATUS,
-                payload: {},
-            });
-
-            // eslint-disable-next-line no-param-reassign
-            jobInstance.status = status;
-            await jobInstance.save();
-
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS,
-                payload: {},
-            });
-        } catch (error) {
-            // eslint-disable-next-line no-param-reassign
-            jobInstance.status = oldStatus;
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED,
-                payload: {
                     error,
                 },
             });
