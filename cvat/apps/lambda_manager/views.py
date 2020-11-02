@@ -521,11 +521,11 @@ class LambdaJob:
                     "polygons0": polygons0, "compare_polygons": to_compared_polygons, "threshold": threshold,
                     "max_distance": max_distance, "frame_number": int(frame_number)})
 
-                    for idx0, idx1 in enumerate(matching):
-                        if idx1 >= 0:
-                            path_id = polygons0[idx0]["path_id"]
-                            polygons1[idx1]["path_id"] = path_id
-                            paths[path_id].append(polygons1[idx1])
+                for idx0, idx1 in enumerate(matching):
+                    if idx1 >= 0:
+                        path_id = polygons0[idx0]["path_id"]
+                        polygons1[idx1]["path_id"] = path_id
+                        paths[path_id].append(polygons1[idx1])
             progress = (frame + 2) / db_task.data.size
             if not LambdaJob._update_progress(progress):
                 break
