@@ -19,6 +19,10 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from rest_framework.permissions import IsAuthenticated
 from cvat.apps.engine.models import ShapeType, SourceType
 
+import logging
+log = logging.getLogger(__name__)
+
+
 class LambdaType(Enum):
     DETECTOR = "detector"
     INTERACTOR = "interactor"
@@ -501,6 +505,7 @@ class LambdaJob:
             else:
                 shapes_without_polygons.append(shape)
         paths = {}
+        log.error("hallo Welt")
         for frame in range(db_task.data.size - 1):
             polygons0 = polygons_by_frame[frame]
             for polygon in polygons0:
@@ -512,8 +517,9 @@ class LambdaJob:
             to_compared_polygons = []
             to_compared_frames = []
             for compare_frame_offset in range(1, frame_number):
-                to_compared_polygons.append(polygons_by_frame[frame + compare_frame_offset])
-                to_compared_frames.append(frame + compare_frame_offset)
+                if frame + compare_frame_offset <= frame:
+                    to_compared_polygons.append(polygons_by_frame[frame + compare_frame_offset])
+                    to_compared_frames.append(frame + compare_frame_offset)
 
             if polygons0 and len(to_compared_polygons) > 0:
                 all_matching = function.invoke(db_task, data={
@@ -522,22 +528,32 @@ class LambdaJob:
                     "max_distance": max_distance, "frame_number": int(frame_number)})
 
                 # complete the Path list
-                for frame_id, matching in enumerate(all_matching):
-                    for idx0, idx1 in enumerate(matching):
-                        if idx1 >= 0:
-                            path_id = polygons0[idx0]["path_id"]
-                            to_compared_polygons[frame_id][idx1]["path_id"] = path_id
-                            paths[path_id].append(to_compared_polygons[frame_id][idx1])
+
+                for idx in range(len(polygons0)):
+                    for frame_id, matching in enumerate(all_matching):
+                        if frame_id >= 0 and frame_id < frame_number and matching[idx] >= 0:
+                            path_id = polygons0[idx]["path_id"]
+                            to_compared_polygons[frame_id][matching[idx]]["path_id"] = path_id
+                            paths[path_id].append(to_compared_polygons[frame_id][matching[idx]])
+
+
+                # for frame_id, matching in enumerate(all_matching):
+                #     for idx0, idx1 in enumerate(matching):
+                #         if idx1 >= 0:
+                #             path_id = polygons0[idx0]["path_id"]
+                #             to_compared_polygons[frame_id][idx1]["path_id"] = path_id
+                #             paths[path_id].append(to_compared_polygons[frame_id][idx1])
 
 
             progress = (frame + 2) / db_task.data.size
             if not LambdaJob._update_progress(progress):
                 break
-
+        log.error(paths)
+        log.error("test")
         for polygon in polygons_by_frame[db_task.data.size - 1]:
             if "path_id" not in polygon:
                 path_id = len(paths)
-                paths[path_id] = [polygon]
+                paths[path_id] = [polygon] # here is the bug because multi frame handling
                 polygon["path_id"] = path_id
         print("paths", paths)
         tracks = []
@@ -592,7 +608,7 @@ class LambdaJob:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
         elif function.kind == LambdaType.REIDSEGMENTATION:
-            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"), 3)
+            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"), 2)
 
 def return_response(success_code=status.HTTP_200_OK):
     def wrap_response(func):

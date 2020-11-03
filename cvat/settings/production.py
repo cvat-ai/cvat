@@ -4,7 +4,7 @@
 
 from .base import *
 
-DEBUG = False
+DEBUG = True
 
 INSTALLED_APPS += [
     'mod_wsgi.server',
