@@ -28,9 +28,8 @@ def handler(context, event):
     image0 = Image.open(buf0)
     polygons0 = data["polygons0"]
     compare_polygons = data["compare_polygons"]
-
     results = context.user_data.model.infer(image0, polygons0,
-        compare_images[0], compare_polygons[0], threshold, max_distance)
+        compare_images, compare_polygons, threshold, max_distance)
 
     return context.Response(body=json.dumps(results), headers={},
         content_type='application/json', status_code=200)

@@ -19,33 +19,29 @@ class ModelHandler:
 
         self.model = ModelLoader(model_xml, model_bin)
 
-    def infer(self, image0, polygons0, image1, polygons1, threshold, distance):
+    def infer(self, image0, polygons0, compare_images, compare_polygons, threshold, distance):
 
-
-        print("polygons0", polygons0, "\n")
-        print("polygons1", polygons1, "\n")
-
-
+        all_results = []
         for polygon0 in polygons0:
             polygon0["points"] = [numpy.min(polygon0["points"][::2]), numpy.min(polygon0["points"][::1]), numpy.max(polygon0["points"][::2]), numpy.max(polygon0["points"][::1])]
-            print("polygon0", polygon0, "\n")
 
-        for polygon1 in polygons1:
-            polygon1["points"] = [numpy.min(polygon1["points"][::2]), numpy.min(polygon1["points"][::1]), numpy.max(polygon1["points"][::2]), numpy.max(polygon1["points"][::1])]
-            print("polygon1", polygon1, "\n")
+        for compare_frame_index in range(len(compare_images)):
+            for polygon1 in compare_polygons[compare_frame_index]:
+                polygon1["points"] = [numpy.min(polygon1["points"][::2]), numpy.min(polygon1["points"][::1]), numpy.max(polygon1["points"][::2]), numpy.max(polygon1["points"][::1])]
+                print("polygon1", polygon1, "\n")
 
+            similarity_matrix = self._compute_similarity_matrix(image0,
+                polygons0, compare_images[compare_frame_index], compare_polygons[compare_frame_index], distance)
 
+            row_idx, col_idx = linear_sum_assignment(similarity_matrix)
+            results = [-1] * len(polygons0)
+            for idx0, idx1 in zip(row_idx, col_idx):
+                if similarity_matrix[idx0, idx1] <= threshold:
+                    results[idx0] = int(idx1)
 
-        similarity_matrix = self._compute_similarity_matrix(image0,
-            polygons0, image1, polygons1, distance)
-
-        row_idx, col_idx = linear_sum_assignment(similarity_matrix)
-        results = [-1] * len(polygons0)
-        for idx0, idx1 in zip(row_idx, col_idx):
-            if similarity_matrix[idx0, idx1] <= threshold:
-                results[idx0] = int(idx1)
-
-        return results
+            all_results.append(results)
+        print(all_results)
+        return all_results
 
     def _match_boxes(self, box0, box1, distance):
         cx0 = (box0["points"][0] + box0["points"][2]) / 2

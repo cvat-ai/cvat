@@ -516,16 +516,20 @@ class LambdaJob:
                 to_compared_frames.append(frame + compare_frame_offset)
 
             if polygons0 and len(to_compared_polygons) > 0:
-                matching = function.invoke(db_task, data={
+                all_matching = function.invoke(db_task, data={
                     "frame0": frame, "compare_frames": to_compared_frames, "quality": quality,
                     "polygons0": polygons0, "compare_polygons": to_compared_polygons, "threshold": threshold,
                     "max_distance": max_distance, "frame_number": int(frame_number)})
 
-                for idx0, idx1 in enumerate(matching):
-                    if idx1 >= 0:
-                        path_id = polygons0[idx0]["path_id"]
-                        polygons1[idx1]["path_id"] = path_id
-                        paths[path_id].append(polygons1[idx1])
+                # complete the Path list
+                for frame_id, matching in enumerate(all_matching):
+                    for idx0, idx1 in enumerate(matching):
+                        if idx1 >= 0:
+                            path_id = polygons0[idx0]["path_id"]
+                            to_compared_polygons[frame_id][idx1]["path_id"] = path_id
+                            paths[path_id].append(to_compared_polygons[frame_id][idx1])
+
+
             progress = (frame + 2) / db_task.data.size
             if not LambdaJob._update_progress(progress):
                 break
@@ -588,7 +592,7 @@ class LambdaJob:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
         elif function.kind == LambdaType.REIDSEGMENTATION:
-            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"), kwargs.get("frame_number"))
+            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"), 3)
 
 def return_response(success_code=status.HTTP_200_OK):
     def wrap_response(func):
