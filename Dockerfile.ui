@@ -25,19 +25,19 @@ RUN npm config set loglevel info
 
 # Install cvat-data dependencies
 WORKDIR /tmp/cvat-data/
-RUN npm install
+RUN npm ci
 
 # Install cvat-core dependencies
 WORKDIR /tmp/cvat-core/
-RUN npm install
+RUN npm ci
 
 # Install cvat-canvas dependencies
 WORKDIR /tmp/cvat-canvas/
-RUN npm install
+RUN npm ci
 
 # Install cvat-ui dependencies
 WORKDIR /tmp/cvat-ui/
-RUN npm install
+RUN npm ci
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
