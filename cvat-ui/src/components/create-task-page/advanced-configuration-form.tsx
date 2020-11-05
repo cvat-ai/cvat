@@ -81,7 +81,7 @@ function isIntegerRange(min: number, max: number, _: any, value: any, callback: 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
     public submit(): Promise<void> {
         return new Promise((resolve, reject) => {
-            const { form, onSubmit } = this.props;
+            const { form, onSubmit, activeTab } = this.props;
 
             form.validateFields((error, values): void => {
                 if (!error) {
@@ -103,6 +103,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     onSubmit({
                         ...values,
                         frameFilter: values.frameStep ? `step=${values.frameStep}` : undefined,
+                        activeTab: activeTab,
                     });
                     resolve();
                 } else {
