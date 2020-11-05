@@ -39,7 +39,7 @@ class CacheInteraction:
         image_quality = 100 if writer_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter] else db_data.image_quality
         mime_type = 'video/mp4' if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter] else 'application/zip'
 
-        extractor = writer_classes[quality](image_quality)
+        writer = writer_classes[quality](image_quality)
 
         images = []
         buff = BytesIO()
@@ -53,11 +53,11 @@ class CacheInteraction:
                 meta = PrepareInfo(source_path=source_path, meta_path=db_data.get_meta_path())
                 for frame in meta.decode_needed_frames(chunk_number, db_data):
                     images.append(frame)
-                extractor.save_as_chunk([(image, source_path, None) for image in images], buff)
+                writer.save_as_chunk([(image, source_path, None) for image in images], buff)
             else:
                 with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
                     images = [os.path.join(upload_dir, line.strip()) for line in dummy_file]
-                extractor.save_as_chunk([(image, image, None) for image in images], buff)
+                writer.save_as_chunk([(image, image, None) for image in images], buff)
         except FileNotFoundError as ex:
             slogger.glob.exception(f"{ex.strerror} {ex.filename}")
 

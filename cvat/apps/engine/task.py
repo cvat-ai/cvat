@@ -250,8 +250,11 @@ def _create_thread(tid, data):
         if media_files:
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
+            source_paths=[os.path.join(upload_dir, f) for f in media_files]
+            if media_type in  ('archive', 'zip') and db_data.uploaded_data_storage_location == LocationChoice.SHARE:
+                source_paths.append(db_data.get_upload_dirname())
             extractor = MEDIA_TYPES[media_type]['extractor'](
-                source_path=[os.path.join(upload_dir, f) for f in media_files],
+                source_path=source_paths,
                 step=db_data.get_frame_step(),
                 start=db_data.start_frame,
                 stop=data['stop_frame'],
@@ -305,14 +308,9 @@ def _create_thread(tid, data):
                     if meta_info_file:
                         try:
                             from cvat.apps.engine.prepare import UploadedMeta
-                            if os.path.split(meta_info_file[0])[0]:
-                                if db_data.uploaded_data_storage_location is not LocationChoice.SHARE:
-                                    os.replace(
-                                        os.path.join(upload_dir, meta_info_file[0]),
-                                        db_data.get_meta_path()
-                                    )
                             meta_info = UploadedMeta(source_path=os.path.join(upload_dir, media_files[0]),
-                                                     meta_path=db_data.get_meta_path())
+                                                     meta_path=db_data.get_meta_path(),
+                                                     uploaded_meta=os.path.join(upload_dir, meta_info_file[0]))
                             meta_info.check_seek_key_frames()
                             meta_info.check_frames_numbers()
                             meta_info.save_meta_info()
@@ -325,6 +323,7 @@ def _create_thread(tid, data):
                             meta_info, smooth_decoding = prepare_meta(
                                 media_file=media_files[0],
                                 upload_dir=upload_dir,
+                                meta_dir=os.path.dirname(db_data.get_meta_path()),
                                 chunk_size=db_data.chunk_size
                             )
                             assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
@@ -332,6 +331,7 @@ def _create_thread(tid, data):
                         meta_info, smooth_decoding = prepare_meta(
                             media_file=media_files[0],
                             upload_dir=upload_dir,
+                            meta_dir=os.path.dirname(db_data.get_meta_path()),
                             chunk_size=db_data.chunk_size
                         )
                         assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
