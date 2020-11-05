@@ -494,6 +494,8 @@ class LambdaJob:
             if serializer.is_valid(raise_exception=True):
                 dm.task.put_task_data(db_task.id, serializer.data)
 
+
+
     @staticmethod
     def _call_reidsegmentation(function, db_task, quality, threshold, max_distance, frame_number):
         data = dm.task.get_task_data(db_task.id)
@@ -517,19 +519,18 @@ class LambdaJob:
             to_compared_polygons = []
             to_compared_frames = []
             for compare_frame_offset in range(1, frame_number):
-                if frame + compare_frame_offset <= frame:
+                if frame + compare_frame_offset <= frame_number:
                     to_compared_polygons.append(polygons_by_frame[frame + compare_frame_offset])
                     to_compared_frames.append(frame + compare_frame_offset)
 
-            if polygons0 and len(to_compared_polygons) > 0:
+            if len(polygons0) > 0 and len(to_compared_polygons) > 0:
                 all_matching = function.invoke(db_task, data={
                     "frame0": frame, "compare_frames": to_compared_frames, "quality": quality,
                     "polygons0": polygons0, "compare_polygons": to_compared_polygons, "threshold": threshold,
                     "max_distance": max_distance, "frame_number": int(frame_number)})
 
-                # complete the Path list
-
                 for idx in range(len(polygons0)):
+                    # for each polygon
                     for frame_id, matching in enumerate(all_matching):
                         if frame_id >= 0 and frame_id < frame_number and matching[idx] >= 0:
                             path_id = polygons0[idx]["path_id"]
@@ -550,13 +551,24 @@ class LambdaJob:
                 break
         log.error(paths)
         log.error("test")
-        for polygon in polygons_by_frame[db_task.data.size - 1]:
-            if "path_id" not in polygon:
-                path_id = len(paths)
-                paths[path_id] = [polygon] # here is the bug because multi frame handling
-                polygon["path_id"] = path_id
-        print("paths", paths)
+        log.error(polygons_by_frame)
+        # for polygon in polygons_by_frame[db_task.data.size - 1]:
+        #     if "path_id" not in polygon:
+        #         if paths[path_id].frame is frame_number - 1:
+        #             # last Frame
+        #             pass
+        #         elif paths[path_id].frame is 0:
+        #             # first Frame
+        #             pass
+        #         else:
+        #             pass
+
+        #         path_id = len(paths)
+        #         paths[path_id] = [polygon] # here is the bug because multi frame handling
+        #         polygon["path_id"] = path_id
+
         tracks = []
+
         for path_id in paths:
             polygon0 = paths[path_id][0]
             tracks.append({
@@ -577,12 +589,20 @@ class LambdaJob:
                 polygon["outside"] = False
                 polygon["attributes"] = []
 
+        log.error("tracks")
+        log.error(tracks)
+
         for track in tracks:
             if track["shapes"][-1]["frame"] != db_task.data.size -1:
                 polygon = track["shapes"][-1].copy()
                 polygon["outside"] = True
                 polygon["frame"] += 1
                 track["shapes"].append(polygon)
+
+
+        log.error("tracks after outside change")
+        log.error(tracks)
+
 
         if tracks:
             data["shapes"] = shapes_without_polygons
