@@ -518,7 +518,7 @@ class LambdaJob:
 
             to_compared_polygons = []
             to_compared_frames = []
-            for compare_frame_offset in range(1, frame_number):
+            for compare_frame_offset in range(1, frame_number+1):
                 if frame + compare_frame_offset <= frame_number:
                     to_compared_polygons.append(polygons_by_frame[frame + compare_frame_offset])
                     to_compared_frames.append(frame + compare_frame_offset)
@@ -528,6 +528,8 @@ class LambdaJob:
                     "frame0": frame, "compare_frames": to_compared_frames, "quality": quality,
                     "polygons0": polygons0, "compare_polygons": to_compared_polygons, "threshold": threshold,
                     "max_distance": max_distance, "frame_number": int(frame_number)})
+                log.error("all_matching")
+                log.error(all_matching)
 
                 for idx in range(len(polygons0)):
                     # for each polygon
@@ -609,6 +611,7 @@ class LambdaJob:
             data["tracks"].extend(tracks)
             serializer = LabeledDataSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
+                pass
                 dm.task.put_task_data(db_task.id, serializer.data)
 
 
