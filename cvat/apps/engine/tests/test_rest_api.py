@@ -29,7 +29,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, StorageMethodChoice, UploadedDataStorageLocationChoice)
+    Segment, StatusChoice, Task, StorageMethodChoice, UploadedDataStorageLocationChoice as StorageLocation)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 
 def create_db_users(cls):
@@ -1640,7 +1640,7 @@ class TaskDataAPITestCase(APITestCase):
 
     def _test_api_v1_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
-                                        expected_uploaded_data_location=None):
+                                        expected_uploaded_data_location=StorageLocation.LOCAL):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -1666,12 +1666,11 @@ class TaskDataAPITestCase(APITestCase):
             self.assertEqual(len(image_sizes), task["size"])
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
-            if expected_uploaded_data_location:
-                self.assertEqual(expected_uploaded_data_location, db_data.uploaded_data_storage_location)
-                # check if used share without copying inside and files doesn`t exist in ../raw/
-                if expected_uploaded_data_location is UploadedDataStorageLocationChoice.SHARE:
-                    self.assertEqual(False,
-                        os.path.exists(os.path.join(db_data.get_upload_dirname(), data.values()[0])))
+            self.assertEqual(expected_uploaded_data_location, db_data.uploaded_data_storage_location)
+            # check if used share without copying inside and files doesn`t exist in ../raw/
+            if expected_uploaded_data_location is StorageLocation.SHARE:
+                self.assertEqual(False,
+                    os.path.exists(os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))))
 
         # check preview
         response = self._get_preview(task_id, user)
@@ -1765,7 +1764,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
         task_spec = {
-            "name": "my task #2",
+            "name": "my task without copying #2",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1788,10 +1787,16 @@ class TaskDataAPITestCase(APITestCase):
             self._image_sizes[task_data["server_files[2]"]],
         ]
 
-        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
+                                             expected_uploaded_data_location=StorageLocation.SHARE)
+
+        task_spec.update([('name', 'my task #3')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                                             image_sizes, expected_uploaded_data_location=StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "my video task #1",
+            "name": "my video task #4",
             "overlap": 0,
             "segment_size": 100,
             "labels": [
@@ -1808,7 +1813,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
         task_spec = {
-            "name": "my video task #2",
+            "name": "my video task without copying #5",
             "overlap": 0,
             "segment_size": 5,
             "labels": [
@@ -1823,10 +1828,16 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
+                                             expected_uploaded_data_location=StorageLocation.SHARE)
+
+        task_spec.update([('name', 'my video task #6')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
+                                             image_sizes, expected_uploaded_data_location=StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "my video task #3",
+            "name": "my video task without copying #7",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1840,10 +1851,16 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
+                                             expected_uploaded_data_location=StorageLocation.SHARE)
+
+        task_spec.update([("name", "my video task #8")])
+        task_data.update([("copy_data", True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
+                                             image_sizes, expected_uploaded_data_location=StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "my video task #4",
+            "name": "my video task without copying #9",
             "overlap": 0,
             "segment_size": 5,
             "labels": [
@@ -1859,10 +1876,16 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO, image_sizes)
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO, image_sizes,
+                                             expected_uploaded_data_location=StorageLocation.SHARE)
+
+        task_spec.update([('name', 'my video task #10')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO,
+                                             image_sizes, expected_uploaded_data_location=StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "my archive task #6",
+            "name": "my archive task without copying #11",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1876,10 +1899,16 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
+                                             expected_uploaded_data_location=StorageLocation.SHARE)
+
+        task_spec.update([('name', 'my archive task #12')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                                             image_sizes, expected_uploaded_data_location=StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "my archive task #7",
+            "name": "my archive task #13",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1896,7 +1925,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
         task_spec = {
-            "name": "cached video task #8",
+            "name": "cached video task without copying #14",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1914,10 +1943,15 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
-            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
+            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE, StorageLocation.SHARE)
+
+        task_spec.update([('name', 'cached video task #15')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
+                                             image_sizes, StorageMethodChoice.CACHE, StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "cached images task #9",
+            "name": "cached images task without copying #16",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1940,21 +1974,15 @@ class TaskDataAPITestCase(APITestCase):
         ]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE)
+            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageLocation.SHARE)
 
-        self._test_api_v1_tasks_id_data_spec(
-            user,
-            task_spec.update([('name', 'cached share without copying images task #12')]),
-            task_data.update([('copy_data', True)]),
-            self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET,
-            image_sizes,
-            StorageMethodChoice.CACHE,
-            UploadedDataStorageLocationChoice.LOCAL
-        )
+        task_spec.update([('name', 'cached images task #17')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                                             image_sizes, StorageMethodChoice.CACHE, StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "my cached zip archive task #10",
+            "name": "my cached zip archive task without copying #18",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1972,10 +2000,15 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE)
+            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageLocation.SHARE)
+
+        task_spec.update([('name', 'my cached zip archive task #19')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                                             image_sizes, StorageMethodChoice.CACHE, StorageLocation.LOCAL)
 
         task_spec = {
-            "name": "my cached pdf task #11",
+            "name": "my cached pdf task #20",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -1997,7 +2030,7 @@ class TaskDataAPITestCase(APITestCase):
             image_sizes, StorageMethodChoice.CACHE)
 
         task_spec = {
-            "name": "my pdf task #12",
+            "name": "my pdf task #21",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -2022,7 +2055,7 @@ class TaskDataAPITestCase(APITestCase):
             os.path.join(settings.SHARE_ROOT, "videos")
         )
         task_spec = {
-            "name": "my video with meta info task #11",
+            "name": "my video with meta info task without copying #22",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -2039,7 +2072,13 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data['server_files[0]']]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
-                                            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
+                                            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE,
+                                            StorageLocation.SHARE)
+
+        task_spec.update([('name', 'my video with meta info task #23')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
+                                             image_sizes, StorageMethodChoice.CACHE, StorageLocation.LOCAL)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
