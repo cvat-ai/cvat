@@ -15,7 +15,6 @@ import patterns from 'utils/validation-patterns';
 
 export interface AdvancedConfiguration {
     bugTracker?: string;
-    zOrder: boolean;
     imageQuality?: number;
     overlapSize?: number;
     segmentSize?: number;
@@ -113,22 +112,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     public resetFields(): void {
         const { form } = this.props;
         form.resetFields();
-    }
-
-    private renderZOrder(): JSX.Element {
-        const { form } = this.props;
-        return (
-            <Form.Item help='Enables order for shapes. Useful for segmentation tasks'>
-                {form.getFieldDecorator('zOrder', {
-                    initialValue: false,
-                    valuePropName: 'checked',
-                })(
-                    <Checkbox>
-                        <Text className='cvat-text-color'>Z-order</Text>
-                    </Checkbox>,
-                )}
-            </Form.Item>
-        );
     }
 
     private renderImageQuality(): JSX.Element {
@@ -407,10 +390,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form>
-                <Row>
-                    <Col>{this.renderZOrder()}</Col>
-                </Row>
-
                 <Row>
                     <Col>{this.renderUzeZipChunks()}</Col>
                 </Row>

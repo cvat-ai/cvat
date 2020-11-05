@@ -33,11 +33,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const jobID = +params.jid;
     const {
         annotation: {
-            job: {
-                requestedId,
-                instance: job,
-                fetching,
-            },
+            job: { requestedId, instance: job, fetching },
             workspace,
         },
     } = state;
@@ -56,7 +52,6 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const searchParams = new URLSearchParams(window.location.search);
     const initialFilters: string[] = [];
     let initialFrame = 0;
-
 
     if (searchParams.has('frame')) {
         const searchFrame = +(searchParams.get('frame') as string);
@@ -90,10 +85,4 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     };
 }
 
-
-export default withRouter(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps,
-    )(AnnotationPageComponent),
-);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AnnotationPageComponent));

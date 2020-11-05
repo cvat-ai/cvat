@@ -16,10 +16,14 @@ function compareProps(prevProps: Props, nextProps: Props): boolean {
     if (prevProps.onCreate !== nextProps.onCreate) {
         return false;
     }
-    if (!(prevProps.labelNames.length === nextProps.labelNames.length
-        && prevProps.labelNames.map((value, index) => value === nextProps.labelNames[index])
-            .reduce((prevValue, curValue) => prevValue && curValue, true)
-    )) {
+    if (
+        !(
+            prevProps.labelNames.length === nextProps.labelNames.length &&
+            prevProps.labelNames
+                .map((value, index) => value === nextProps.labelNames[index])
+                .reduce((prevValue, curValue) => prevValue && curValue, true)
+        )
+    ) {
         return false;
     }
     return true;

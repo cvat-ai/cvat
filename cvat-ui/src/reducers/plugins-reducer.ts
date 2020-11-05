@@ -16,10 +16,7 @@ const defaultState: PluginsState = {
     },
 };
 
-export default function (
-    state: PluginsState = defaultState,
-    action: PluginActions,
-): PluginsState {
+export default function (state: PluginsState = defaultState, action: PluginActions): PluginsState {
     switch (action.type) {
         case PluginsActionTypes.GET_PLUGINS: {
             return {

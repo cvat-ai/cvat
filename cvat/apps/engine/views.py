@@ -714,7 +714,7 @@ class JobViewSet(viewsets.GenericViewSet,
     operation_summary='Method deletes a specific user from the server'))
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
-    queryset = User.objects.all().order_by('id')
+    queryset = User.objects.prefetch_related('groups').all().order_by('id')
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
     def get_serializer_class(self):

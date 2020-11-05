@@ -29,245 +29,253 @@ Probably you need to modify the instructions below in case you are behind a prox
 server. Proxy is an advanced topic and it is not covered by the guide.
 
 ## Ubuntu 18.04 (x86_64/amd64)
--   Open a terminal window. If you don't know how to open a terminal window on
-    Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
 
--   Type commands below into the terminal window to install `docker`. More
-    instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
+- Open a terminal window. If you don't know how to open a terminal window on
+  Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
 
-    ```sh
-    sudo apt-get update
-    sudo apt-get --no-install-recommends install -y \
-      apt-transport-https \
-      ca-certificates \
-      curl \
-      gnupg-agent \
-      software-properties-common
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    sudo add-apt-repository \
-      "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) \
-      stable"
-    sudo apt-get update
-    sudo apt-get --no-install-recommends install -y docker-ce docker-ce-cli containerd.io
-    ```
+- Type commands below into the terminal window to install `docker`. More
+  instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 
--   Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
-    to run docker without root permissions.
+  ```sh
+  sudo apt-get update
+  sudo apt-get --no-install-recommends install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  sudo add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) \
+    stable"
+  sudo apt-get update
+  sudo apt-get --no-install-recommends install -y docker-ce docker-ce-cli containerd.io
+  ```
 
-    ```sh
-    sudo groupadd docker
-    sudo usermod -aG docker $USER
-    ```
-    Log out and log back in (or reboot) so that your group membership is
-    re-evaluated. You can type `groups` command in a terminal window after
-    that and check if `docker` group is in its output.
+- Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
+  to run docker without root permissions.
 
--   Install docker-compose (1.19.0 or newer). Compose is a tool for
-    defining and running multi-container docker applications.
+  ```sh
+  sudo groupadd docker
+  sudo usermod -aG docker $USER
+  ```
 
-    ```bash
-    sudo apt-get --no-install-recommends install -y python3-pip python3-setuptools
-    sudo python3 -m pip install setuptools docker-compose
-    ```
+  Log out and log back in (or reboot) so that your group membership is
+  re-evaluated. You can type `groups` command in a terminal window after
+  that and check if `docker` group is in its output.
 
--   Clone _CVAT_ source code from the
-    [GitHub repository](https://github.com/opencv/cvat).
+- Install docker-compose (1.19.0 or newer). Compose is a tool for
+  defining and running multi-container docker applications.
 
-    ```bash
-    sudo apt-get --no-install-recommends install -y git
-    git clone https://github.com/opencv/cvat
-    cd cvat
-    ```
+  ```bash
+  sudo apt-get --no-install-recommends install -y python3-pip python3-setuptools
+  sudo python3 -m pip install setuptools docker-compose
+  ```
 
--   Build docker images by default. It will take some time to download public
-    docker image ubuntu:16.04 and install all necessary ubuntu packages to run
-    CVAT server.
+- Clone _CVAT_ source code from the
+  [GitHub repository](https://github.com/opencv/cvat).
 
-    ```bash
-    docker-compose build
-    ```
+  ```bash
+  sudo apt-get --no-install-recommends install -y git
+  git clone https://github.com/opencv/cvat
+  cd cvat
+  ```
 
--   Run docker containers. It will take some time to download public docker
-    images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
+- Build docker images by default. It will take some time to download public
+  docker image ubuntu:16.04 and install all necessary ubuntu packages to run
+  CVAT server.
 
-    ```sh
-    docker-compose up -d
-    ```
+  ```bash
+  docker-compose build
+  ```
 
--   You can register a user but by default it will not have rights even to view
-    list of tasks. Thus you should create a superuser. A superuser can use an
-    admin panel to assign correct groups to the user. Please use the command
-    below:
+- Run docker containers. It will take some time to download public docker
+  images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
 
-    ```sh
-    docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
-    ```
-    Choose a username and a password for your admin account. For more information
-    please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
+  ```sh
+  docker-compose up -d
+  ```
 
--   Google Chrome is the only browser which is supported by CVAT. You need to
-    install it as well. Type commands below in a terminal window:
+- You can register a user but by default it will not have rights even to view
+  list of tasks. Thus you should create a superuser. A superuser can use an
+  admin panel to assign correct groups to the user. Please use the command
+  below:
 
-    ```sh
-    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-    sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-    sudo apt-get update
-    sudo apt-get --no-install-recommends install -y google-chrome-stable
-    ```
+  ```sh
+  docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  ```
 
--   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
-    Type your login/password for the superuser on the login page and press the _Login_
-    button. Now you should be able to create a new annotation task. Please read the
-    [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
+  Choose a username and a password for your admin account. For more information
+  please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
+
+- Google Chrome is the only browser which is supported by CVAT. You need to
+  install it as well. Type commands below in a terminal window:
+
+  ```sh
+  curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+  sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+  sudo apt-get update
+  sudo apt-get --no-install-recommends install -y google-chrome-stable
+  ```
+
+- Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
+  Type your login/password for the superuser on the login page and press the _Login_
+  button. Now you should be able to create a new annotation task. Please read the
+  [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
 ## Windows 10
--   Install WSL2 (Windows subsystem for Linux) refer to [this official guide](https://docs.microsoft.com/windows/wsl/install-win10).
-    WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
-     needed.
 
--   Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
-    Double-click `Docker for Windows Installer` to run the installer.
-    More instructions can be found [here](https://docs.docker.com/docker-for-windows/install/).
-    Official guide for docker WSL2 backend can be found
-    [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend
-     for Docker.
+- Install WSL2 (Windows subsystem for Linux) refer to [this official guide](https://docs.microsoft.com/windows/wsl/install-win10).
+  WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
+  needed.
 
--   Download and install
-    [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
-    When installing the package please keep all options by default.
-    More information about the package can be found [here](https://gitforwindows.org).
+- Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
+  Double-click `Docker for Windows Installer` to run the installer.
+  More instructions can be found [here](https://docs.docker.com/docker-for-windows/install/).
+  Official guide for docker WSL2 backend can be found
+  [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend
+  for Docker.
 
--   Download and install [Google Chrome](https://www.google.com/chrome/). It is the only browser
-    which is supported by CVAT.
+- Download and install
+  [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
+  When installing the package please keep all options by default.
+  More information about the package can be found [here](https://gitforwindows.org).
 
--   Go to windows menu, find `Git Bash` application and run it. You should see a terminal window.
+- Download and install [Google Chrome](https://www.google.com/chrome/). It is the only browser
+  which is supported by CVAT.
 
--   Clone _CVAT_ source code from the
-    [GitHub repository](https://github.com/opencv/cvat).
+- Go to windows menu, find `Git Bash` application and run it. You should see a terminal window.
 
-    ```bash
-    git clone https://github.com/opencv/cvat
-    cd cvat
-    ```
+- Clone _CVAT_ source code from the
+  [GitHub repository](https://github.com/opencv/cvat).
 
--   Build docker images by default. It will take some time to download public
-    docker image ubuntu:16.04 and install all necessary ubuntu packages to run
-    CVAT server.
+  ```bash
+  git clone https://github.com/opencv/cvat
+  cd cvat
+  ```
 
-    ```bash
-    docker-compose build
-    ```
+- Build docker images by default. It will take some time to download public
+  docker image ubuntu:16.04 and install all necessary ubuntu packages to run
+  CVAT server.
 
--   Run docker containers. It will take some time to download public docker
-    images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
+  ```bash
+  docker-compose build
+  ```
 
-    ```sh
-    docker-compose up -d
-    ```
+- Run docker containers. It will take some time to download public docker
+  images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
 
--   You can register a user but by default it will not have rights even to view
-    list of tasks. Thus you should create a superuser. A superuser can use an
-    admin panel to assign correct groups to other users. Please use the command
-    below:
+  ```sh
+  docker-compose up -d
+  ```
 
-    ```sh
-    winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
-    ```
-    Choose a username and a password for your admin account. For more information
-    please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
+- You can register a user but by default it will not have rights even to view
+  list of tasks. Thus you should create a superuser. A superuser can use an
+  admin panel to assign correct groups to other users. Please use the command
+  below:
 
--   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
-    Type your login/password for the superuser on the login page and press the _Login_
-    button. Now you should be able to create a new annotation task. Please read the
-    [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
+  ```sh
+  winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  ```
+
+  Choose a username and a password for your admin account. For more information
+  please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
+
+- Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
+  Type your login/password for the superuser on the login page and press the _Login_
+  button. Now you should be able to create a new annotation task. Please read the
+  [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
 ## Mac OS Mojave
--   Download [Docker for Mac](https://download.docker.com/mac/stable/Docker.dmg).
-    Double-click Docker.dmg to open the installer, then drag Moby the whale
-    to the Applications folder. Double-click Docker.app in the Applications
-    folder to start Docker. More instructions can be found
-    [here](https://docs.docker.com/v17.12/docker-for-mac/install/#install-and-run-docker-for-mac).
 
--   There are several ways to install Git on a Mac. The easiest is probably to
-    install the Xcode Command Line Tools. On Mavericks (10.9) or above you can
-    do this simply by trying to run git from the Terminal the very first time.
+- Download [Docker for Mac](https://download.docker.com/mac/stable/Docker.dmg).
+  Double-click Docker.dmg to open the installer, then drag Moby the whale
+  to the Applications folder. Double-click Docker.app in the Applications
+  folder to start Docker. More instructions can be found
+  [here](https://docs.docker.com/v17.12/docker-for-mac/install/#install-and-run-docker-for-mac).
 
-    ```bash
-    git --version
-    ```
+- There are several ways to install Git on a Mac. The easiest is probably to
+  install the Xcode Command Line Tools. On Mavericks (10.9) or above you can
+  do this simply by trying to run git from the Terminal the very first time.
 
-    If you don’t have it installed already, it will prompt you to install it.
-    More instructions can be found [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
+  ```bash
+  git --version
+  ```
 
--   Download and install [Google Chrome](https://www.google.com/chrome/). It
-    is the only browser which is supported by CVAT.
+  If you don’t have it installed already, it will prompt you to install it.
+  More instructions can be found [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
--   Open a terminal window. The terminal app is in the Utilities folder in
-    Applications. To open it, either open your Applications folder, then open
-    Utilities and double-click on Terminal, or press Command - spacebar to
-    launch Spotlight and type "Terminal," then double-click the search result.
+- Download and install [Google Chrome](https://www.google.com/chrome/). It
+  is the only browser which is supported by CVAT.
 
--   Clone _CVAT_ source code from the
-    [GitHub repository](https://github.com/opencv/cvat).
+- Open a terminal window. The terminal app is in the Utilities folder in
+  Applications. To open it, either open your Applications folder, then open
+  Utilities and double-click on Terminal, or press Command - spacebar to
+  launch Spotlight and type "Terminal," then double-click the search result.
 
-    ```bash
-    git clone https://github.com/opencv/cvat
-    cd cvat
-    ```
+- Clone _CVAT_ source code from the
+  [GitHub repository](https://github.com/opencv/cvat).
 
--   Build docker images by default. It will take some time to download public
-    docker image ubuntu:16.04 and install all necessary ubuntu packages to run
-    CVAT server.
+  ```bash
+  git clone https://github.com/opencv/cvat
+  cd cvat
+  ```
 
-    ```bash
-    docker-compose build
-    ```
+- Build docker images by default. It will take some time to download public
+  docker image ubuntu:16.04 and install all necessary ubuntu packages to run
+  CVAT server.
 
--   Run docker containers. It will take some time to download public docker
-    images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
+  ```bash
+  docker-compose build
+  ```
 
-    ```sh
-    docker-compose up -d
-    ```
+- Run docker containers. It will take some time to download public docker
+  images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
 
--   You can register a user but by default it will not have rights even to view
-    list of tasks. Thus you should create a superuser. A superuser can use an
-    admin panel to assign correct groups to other users. Please use the command
-    below:
+  ```sh
+  docker-compose up -d
+  ```
 
-    ```sh
-    docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
-    ```
-    Choose a username and a password for your admin account. For more information
-    please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
+- You can register a user but by default it will not have rights even to view
+  list of tasks. Thus you should create a superuser. A superuser can use an
+  admin panel to assign correct groups to other users. Please use the command
+  below:
 
--   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
-    Type your login/password for the superuser on the login page and press the _Login_
-    button. Now you should be able to create a new annotation task. Please read the
-    [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
+  ```sh
+  docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  ```
+
+  Choose a username and a password for your admin account. For more information
+  please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
+
+- Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
+  Type your login/password for the superuser on the login page and press the _Login_
+  button. Now you should be able to create a new annotation task. Please read the
+  [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
 ## Advanced Topics
 
 ### Deploying CVAT behind a proxy
+
 If you deploy CVAT behind a proxy and do not plan to use any of [serverless functions](#semi-automatic-and-automatic-annotation)
 for automatic annotation, the exported environment variables
 `http_proxy`, `https_proxy` and `no_proxy` should be enough to build images.
 Otherwise please create or edit the file `~/.docker/config.json` in the home directory of the user
 which starts containers and add JSON such as the following:
+
 ```json
 {
- "proxies":
- {
-   "default":
-   {
-     "httpProxy": "http://proxy_server:port",
-     "httpsProxy": "http://proxy_server:port",
-     "noProxy": "*.test.example.com,.example2.com"
-   }
- }
+  "proxies": {
+    "default": {
+      "httpProxy": "http://proxy_server:port",
+      "httpsProxy": "http://proxy_server:port",
+      "noProxy": "*.test.example.com,.example2.com"
+    }
+  }
 }
 ```
+
 These environment variables are set automatically within any container.
 Please see the [Docker documentation](https://docs.docker.com/network/proxy/) for more details.
 
@@ -283,11 +291,11 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 ### Semi-automatic and automatic annotation
 
 - You have to install `nuctl` command line tool to build and deploy serverless
-functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
+  functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
 - Create `cvat` project inside nuclio dashboard where you will deploy new
-serverless functions and deploy a couple of DL models. Commands below should
-be run only after CVAT has been installed using docker-compose because it
-runs nuclio dashboard which manages all serverless functions.
+  serverless functions and deploy a couple of DL models. Commands below should
+  be run only after CVAT has been installed using docker-compose because it
+  runs nuclio dashboard which manages all serverless functions.
 
 ```bash
 nuctl create project cvat
@@ -326,7 +334,7 @@ specify the `CVAT_HOST` environment variable. The best way to do that is to crea
 all your extra settings here.
 
 ```yml
-version: "3.3"
+version: '3.3'
 
 services:
   cvat_proxy:
@@ -344,12 +352,12 @@ To do that you can mount it to CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
-version: "3.3"
+version: '3.3'
 
 services:
   cvat:
     environment:
-      CVAT_SHARE_URL: "Mounted from /mnt/share host directory"
+      CVAT_SHARE_URL: 'Mounted from /mnt/share host directory'
     volumes:
       - cvat_share:/home/django/share:ro
 
@@ -362,7 +370,7 @@ volumes:
 ```
 
 You can change the share device path to your actual share. For user convenience
-we have defined the environment variable $CVAT_SHARE_URL. This variable
+we have defined the environment variable \$CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
 
 ### Email verification
@@ -371,6 +379,7 @@ You can enable email verification for newly registered users.
 Specify these options in the [settings file](../../settings/base.py) to configure Django allauth
 to enable email verification (ACCOUNT_EMAIL_VERIFICATION = 'mandatory').
 Access is denied until the user's email address is verified.
+
 ```python
 ACCOUNT_AUTHENTICATION_METHOD = 'username'
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
@@ -380,6 +389,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 # Email backend settings for Django
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 ```
+
 Also you need to configure the Django email backend to send emails.
 This depends on the email server you are using and is not covered in this tutorial, please see
 [Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
@@ -437,15 +447,15 @@ mkdir -p $HOME/cvat/letsencrypt-webroot/.well-known/acme-challenge
 
 ```yaml
 # docker-compose.override.yml
-version: "3.3"
+version: '3.3'
 
 services:
   cvat_proxy:
     environment:
       CVAT_HOST: my-cvat-server.org
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./letsencrypt-webroot:/var/tmp/letsencrypt-webroot
       - /root/.acme.sh:/root/.acme.sh
@@ -468,8 +478,8 @@ Add a location to server with `server_name ${CVAT_HOST};` ahead others:
       root /var/tmp/letsencrypt-webroot;
     }
 ```
-You can use the [Nginx quickstart guide](http://nginx.org/en/docs/beginners_guide.html) for reference.
 
+You can use the [Nginx quickstart guide](http://nginx.org/en/docs/beginners_guide.html) for reference.
 
 ```bash
 # on the docker host
@@ -487,9 +497,10 @@ At this point your deployment is up and running, ready for run acme-challenge.
 There are multiple approaches. First one is to use helper on docker host.
 
 In a our approach
-* it is easier to setup automatic certificate updates and (than it can be done in the container).
-* leave certificates in safe place on docker host (protect from `docker-compose down` cleanup)
-* no unnecessary certificate files copying between container and host.
+
+- it is easier to setup automatic certificate updates and (than it can be done in the container).
+- leave certificates in safe place on docker host (protect from `docker-compose down` cleanup)
+- no unnecessary certificate files copying between container and host.
 
 ###### Create certificate files using an ACME challenge on docker host
 
@@ -512,11 +523,12 @@ If certificates is issued a successful we should test a renew:
 ```
 ~/.acme.sh/acme.sh --renew --force --staging -d my-cvat-server.org -w $HOME/cvat/letsencrypt-webroot --debug
 ```
+
 If success:
 
-* remove test certificate
-* issue a production certificate
-* create a cron job for user (`crontab -e`).
+- remove test certificate
+- issue a production certificate
+- create a cron job for user (`crontab -e`).
 
 ```
 ~/.acme.sh/acme.sh --remove -d my-cvat-server.org --debug
@@ -537,9 +549,9 @@ docker stop cvat_proxy
 
 Bring the configuration file `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` to the following form:
 
-* add location with redirect `return 301` to 80/tcp server.
-* change listen to `listen 443 ssl;` in main configururation server
-* add ssl certificates options and secure them.
+- add location with redirect `return 301` to 80/tcp server.
+- change listen to `listen 443 ssl;` in main configururation server
+- add ssl certificates options and secure them.
 
 Example of configuration file:
 

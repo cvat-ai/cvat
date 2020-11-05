@@ -12,7 +12,6 @@ import { modelsActions, startInferenceAsync } from 'actions/models-actions';
 import { Model, CombinedState } from 'reducers/interfaces';
 import DetectorRunner from './detector-runner';
 
-
 interface StateToProps {
     visible: boolean;
     task: any;
@@ -49,14 +48,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 }
 
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
-    const {
-        reid,
-        detectors,
-        task,
-        visible,
-        runInference,
-        closeDialog,
-    } = props;
+    const { reid, detectors, task, visible, runInference, closeDialog } = props;
 
     const models = [...reid, ...detectors];
 
@@ -82,7 +74,4 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(ModelRunnerDialog);
+export default connect(mapStateToProps, mapDispatchToProps)(ModelRunnerDialog);

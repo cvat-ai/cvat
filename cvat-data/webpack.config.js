@@ -1,6 +1,9 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 /* global
-    require:true,
-    __dirname:true,
+    __dirname:true
 */
 
 const path = require('path');
@@ -27,14 +30,18 @@ const cvatData = {
                     loader: 'babel-loader',
                     options: {
                         presets: [
-                            ['@babel/preset-env', {
-                                targets: '> 2.5%', // https://github.com/browserslist/browserslist
-                            }],
+                            [
+                                '@babel/preset-env',
+                                {
+                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
+                                },
+                            ],
                         ],
                         sourceType: 'unambiguous',
                     },
                 },
-            }, {
+            },
+            {
                 test: /\.worker\.js$/,
                 exclude: /3rdparty/,
                 use: {
@@ -44,7 +51,8 @@ const cvatData = {
                         name: '[name].[contenthash].js',
                     },
                 },
-            }, {
+            },
+            {
                 test: /3rdparty\/.*\.worker\.js$/,
                 use: {
                     loader: 'worker-loader',
@@ -56,11 +64,7 @@ const cvatData = {
             },
         ],
     },
-    plugins: [
-        new CopyPlugin([
-            './src/js/3rdparty/avc.wasm',
-        ]),
-    ],
+    plugins: [new CopyPlugin(['./src/js/3rdparty/avc.wasm'])],
 };
 
 module.exports = cvatData;

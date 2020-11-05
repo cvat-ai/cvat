@@ -1,4 +1,3 @@
-
 // Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
@@ -9,7 +8,6 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Button from 'antd/lib/button/button';
 
 import { isPublic } from 'utils/enviroment';
-
 
 function CookieDrawer(): JSX.Element {
     const [drawerVisible, setDrawerVisible] = useState(false);
@@ -36,11 +34,10 @@ function CookieDrawer(): JSX.Element {
             destroyOnClose
         >
             <Paragraph>
-                This site uses cookies for functionality, analytics, and advertising purposes
-                as described in our Cookie and Similar Technologies Notice.
-                To see what cookies we serve and set your preferences, please visit our
-                <a href='https://www.intel.com/cookies'> Cookie Consent Tool</a>
-                . By continuing to use our website, you agree to our use of cookies.
+                This site uses cookies for functionality, analytics, and advertising purposes as described in our Cookie
+                and Similar Technologies Notice. To see what cookies we serve and set your preferences, please visit our
+                <a href='https://www.intel.com/cookies'> Cookie Consent Tool</a>. By continuing to use our website, you
+                agree to our use of cookies.
             </Paragraph>
             <Button onClick={onClose} size='large' type='primary'>
                 Accept

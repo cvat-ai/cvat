@@ -22,11 +22,7 @@ import {
     changeCanvasBackgroundColor,
 } from 'actions/settings-actions';
 
-import {
-    CombinedState,
-    FrameSpeed,
-    GridColor,
-} from 'reducers/interfaces';
+import { CombinedState, FrameSpeed, GridColor } from 'reducers/interfaces';
 
 interface StateToProps {
     frameStep: number;
@@ -60,9 +56,7 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        settings: {
-            player,
-        },
+        settings: { player },
     } = state;
 
     return player;
@@ -110,12 +104,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function PlayerSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {
-    return (
-        <PlayerSettingsComponent {...props} />
-    );
+    return <PlayerSettingsComponent {...props} />;
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(PlayerSettingsContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(PlayerSettingsContainer);

@@ -4,7 +4,7 @@
 
 import getCore from 'cvat-core-wrapper';
 import { CanvasVersion } from 'cvat-canvas-wrapper';
-import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AboutActions, AboutActionTypes } from 'actions/about-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { AboutState } from './interfaces';
@@ -23,7 +23,7 @@ const defaultState: AboutState = {
 
 export default function (
     state: AboutState = defaultState,
-    action: AboutActions | AuthActions | boundariesActions,
+    action: AboutActions | AuthActions | BoundariesActions,
 ): AboutState {
     switch (action.type) {
         case AboutActionTypes.GET_ABOUT: {

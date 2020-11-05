@@ -17,23 +17,18 @@ interface Props {
 }
 
 function CursorControl(props: Props): JSX.Element {
-    const {
-        canvasInstance,
-        activeControl,
-        cursorShortkey,
-    } = props;
+    const { canvasInstance, activeControl, cursorShortkey } = props;
 
     return (
         <Tooltip title={`Cursor ${cursorShortkey}`} placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={CursorIcon}
-                className={activeControl === ActiveControl.CURSOR
-                    ? 'cvat-active-canvas-control cvat-cursor-control' : 'cvat-cursor-control'}
-                onClick={
-                    activeControl !== ActiveControl.CURSOR
-                        ? (): void => canvasInstance.cancel()
-                        : undefined
+                className={
+                    activeControl === ActiveControl.CURSOR
+                        ? 'cvat-active-canvas-control cvat-cursor-control'
+                        : 'cvat-cursor-control'
                 }
+                onClick={activeControl !== ActiveControl.CURSOR ? (): void => canvasInstance.cancel() : undefined}
             />
         </Tooltip>
     );

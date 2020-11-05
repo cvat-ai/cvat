@@ -22,8 +22,11 @@ function ResizeControl(props: Props): JSX.Element {
         <Tooltip title='Select a region of interest' placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={ZoomIcon}
-                className={activeControl === ActiveControl.ZOOM_CANVAS
-                    ? 'cvat-resize-control cvat-active-canvas-control' : 'cvat-resize-control'}
+                className={
+                    activeControl === ActiveControl.ZOOM_CANVAS
+                        ? 'cvat-resize-control cvat-active-canvas-control'
+                        : 'cvat-resize-control'
+                }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.ZOOM_CANVAS) {
                         canvasInstance.zoomCanvas(false);

@@ -19,24 +19,14 @@ interface Props {
 }
 
 export default function ModelsPageComponent(props: Props): JSX.Element {
-    const {
-        interactors,
-        detectors,
-        trackers,
-        reid,
-    } = props;
+    const { interactors, detectors, trackers, reid } = props;
 
     const deployedModels = [...detectors, ...interactors, ...trackers, ...reid];
 
     return (
         <div className='cvat-models-page'>
             <TopBarComponent />
-            { deployedModels.length
-                ? (
-                    <DeployedModelsList models={deployedModels} />
-                ) : (
-                    <EmptyListComponent />
-                )}
+            {deployedModels.length ? <DeployedModelsList models={deployedModels} /> : <EmptyListComponent />}
             <FeedbackComponent />
         </div>
     );

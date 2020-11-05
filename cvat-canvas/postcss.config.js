@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/* eslint-disable */
 module.exports = {
     parser: false,
     plugins: {

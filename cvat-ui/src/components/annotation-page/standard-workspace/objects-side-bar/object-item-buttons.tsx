@@ -8,11 +8,7 @@ import Icon from 'antd/lib/icon';
 import Tooltip from 'antd/lib/tooltip';
 
 import {
-    ObjectOutsideIcon,
-    FirstIcon,
-    LastIcon,
-    PreviousIcon,
-    NextIcon,
+    ObjectOutsideIcon, FirstIcon, LastIcon, PreviousIcon, NextIcon,
 } from 'icons';
 import { ObjectType, ShapeType } from 'reducers/interfaces';
 
@@ -95,10 +91,40 @@ function ItemButtonsComponent(props: Props): JSX.Element {
         show,
     } = props;
 
-    const outsideStyle = outsideDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
-    const hiddenStyle = hiddenDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
-    const keyframeStyle = keyframeDisabled ? { opacity: 0.5, pointerEvents: 'none' as 'none' } : {};
+    const outsideStyle = outsideDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
+    const hiddenStyle = hiddenDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
+    const keyframeStyle = keyframeDisabled ? { opacity: 0.5, pointerEvents: 'none' as const } : {};
 
+    const classes = {
+        firstKeyFrame: { className: 'cvat-object-item-button-first-keyframe' },
+        prevKeyFrame: { className: 'cvat-object-item-button-prev-keyframe' },
+        nextKeyFrame: { className: 'cvat-object-item-button-next-keyframe' },
+        lastKeyFrame: { className: 'cvat-object-item-button-last-keyframe' },
+        outside: {
+            enabled: { className: 'cvat-object-item-button-outside cvat-object-item-button-outside-enabled' },
+            disabled: { className: 'cvat-object-item-button-outside' },
+        },
+        lock: {
+            enabled: { className: 'cvat-object-item-button-lock cvat-object-item-button-lock-enabled' },
+            disabled: { className: 'cvat-object-item-button-lock' },
+        },
+        occluded: {
+            enabled: { className: 'cvat-object-item-button-occluded cvat-object-item-button-occluded-enabled' },
+            disabled: { className: 'cvat-object-item-button-occluded' },
+        },
+        pinned: {
+            enabled: { className: 'cvat-object-item-button-pinned cvat-object-item-button-pinned-enabled' },
+            disabled: { className: 'cvat-object-item-button-pinned' },
+        },
+        hidden: {
+            enabled: { className: 'cvat-object-item-button-hidden cvat-object-item-button-hidden-enabled' },
+            disabled: { className: 'cvat-object-item-button-hidden' },
+        },
+        keyframe: {
+            enabled: { className: 'cvat-object-item-button-keyframe cvat-object-item-button-keyframe-enabled' },
+            disabled: { className: 'cvat-object-item-button-keyframe' },
+        },
+    };
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -106,93 +132,155 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                 <Col span={20} style={{ textAlign: 'center' }}>
                     <Row type='flex' justify='space-around'>
                         <Col>
-                            { navigateFirstKeyframe
-                                ? <Icon component={FirstIcon} onClick={navigateFirstKeyframe} />
-                                : <Icon component={FirstIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigateFirstKeyframe ? (
+                                <Icon
+                                    {...classes.firstKeyFrame}
+                                    component={FirstIcon}
+                                    onClick={navigateFirstKeyframe}
+                                />
+                            ) : (
+                                <Icon
+                                    {...classes.firstKeyFrame}
+                                    component={FirstIcon}
+                                    style={{ opacity: 0.5, pointerEvents: 'none' }}
+                                />
+                            )}
                         </Col>
                         <Col>
-                            { navigatePrevKeyframe
-                                ? (
-                                    <Tooltip title={`Go to previous keyframe ${prevKeyFrameShortcut}`} mouseLeaveDelay={0}>
-                                        <Icon
-                                            component={PreviousIcon}
-                                            onClick={navigatePrevKeyframe}
-                                        />
-                                    </Tooltip>
-                                )
-                                : <Icon component={PreviousIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigatePrevKeyframe ? (
+                                <Tooltip title={`Go to previous keyframe ${prevKeyFrameShortcut}`} mouseLeaveDelay={0}>
+                                    <Icon
+                                        {...classes.prevKeyFrame}
+                                        component={PreviousIcon}
+                                        onClick={navigatePrevKeyframe}
+                                    />
+                                </Tooltip>
+                            ) : (
+                                <Icon
+                                    {...classes.prevKeyFrame}
+                                    component={PreviousIcon}
+                                    style={{ opacity: 0.5, pointerEvents: 'none' }}
+                                />
+                            )}
                         </Col>
                         <Col>
-                            { navigateNextKeyframe
-                                ? (
-                                    <Tooltip title={`Go to next keyframe ${nextKeyFrameShortcut}`} mouseLeaveDelay={0}>
-                                        <Icon
-                                            component={NextIcon}
-                                            onClick={navigateNextKeyframe}
-                                        />
-                                    </Tooltip>
-                                )
-                                : <Icon component={NextIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigateNextKeyframe ? (
+                                <Tooltip title={`Go to next keyframe ${nextKeyFrameShortcut}`} mouseLeaveDelay={0}>
+                                    <Icon
+                                        {...classes.nextKeyFrame}
+                                        component={NextIcon}
+                                        onClick={navigateNextKeyframe}
+                                    />
+                                </Tooltip>
+                            ) : (
+                                <Icon
+                                    {...classes.nextKeyFrame}
+                                    component={NextIcon}
+                                    style={{ opacity: 0.5, pointerEvents: 'none' }}
+                                />
+                            )}
                         </Col>
                         <Col>
-                            { navigateLastKeyframe
-                                ? <Icon component={LastIcon} onClick={navigateLastKeyframe} />
-                                : <Icon component={LastIcon} style={{ opacity: 0.5, pointerEvents: 'none' }} />}
+                            {navigateLastKeyframe ? (
+                                <Icon {...classes.lastKeyFrame} component={LastIcon} onClick={navigateLastKeyframe} />
+                            ) : (
+                                <Icon
+                                    {...classes.lastKeyFrame}
+                                    component={LastIcon}
+                                    style={{ opacity: 0.5, pointerEvents: 'none' }}
+                                />
+                            )}
                         </Col>
                     </Row>
                     <Row type='flex' justify='space-around'>
                         <Col>
                             <Tooltip title={`Switch outside property ${switchOutsideShortcut}`} mouseLeaveDelay={0}>
-                                { outside
-                                    ? (
-                                        <Icon
-                                            component={ObjectOutsideIcon}
-                                            onClick={unsetOutside}
-                                            style={outsideStyle}
-                                        />
-                                    )
-                                    : <Icon type='select' onClick={setOutside} style={outsideStyle} />}
+                                {outside ? (
+                                    <Icon
+                                        {...classes.outside.enabled}
+                                        component={ObjectOutsideIcon}
+                                        onClick={unsetOutside}
+                                        style={outsideStyle}
+                                    />
+                                ) : (
+                                    <Icon
+                                        type='select'
+                                        {...classes.outside.disabled}
+                                        onClick={setOutside}
+                                        style={outsideStyle}
+                                    />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`} mouseLeaveDelay={0}>
-                                { locked
-                                    ? <Icon type='lock' theme='filled' onClick={unlock} />
-                                    : <Icon type='unlock' onClick={lock} />}
+                                {locked ? (
+                                    <Icon {...classes.lock.enabled} type='lock' theme='filled' onClick={unlock} />
+                                ) : (
+                                    <Icon {...classes.lock.disabled} type='unlock' onClick={lock} />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`} mouseLeaveDelay={0}>
-                                { occluded
-                                    ? <Icon type='team' onClick={unsetOccluded} />
-                                    : <Icon type='user' onClick={setOccluded} />}
+                                {occluded ? (
+                                    <Icon {...classes.occluded.enabled} type='team' onClick={unsetOccluded} />
+                                ) : (
+                                    <Icon {...classes.occluded.disabled} type='user' onClick={setOccluded} />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`} mouseLeaveDelay={0}>
-                                { hidden
-                                    ? <Icon type='eye-invisible' theme='filled' onClick={show} style={hiddenStyle} />
-                                    : <Icon type='eye' onClick={hide} style={hiddenStyle} />}
+                                {hidden ? (
+                                    <Icon
+                                        {...classes.hidden.enabled}
+                                        type='eye-invisible'
+                                        theme='filled'
+                                        onClick={show}
+                                        style={hiddenStyle}
+                                    />
+                                ) : (
+                                    <Icon {...classes.hidden.disabled} type='eye' onClick={hide} style={hiddenStyle} />
+                                )}
                             </Tooltip>
                         </Col>
                         <Col>
                             <Tooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`} mouseLeaveDelay={0}>
-                                { keyframe
-                                    ? <Icon type='star' theme='filled' onClick={unsetKeyframe} style={keyframeStyle} />
-                                    : <Icon type='star' onClick={setKeyframe} style={keyframeStyle} />}
+                                {keyframe ? (
+                                    <Icon
+                                        {...classes.keyframe.enabled}
+                                        type='star'
+                                        theme='filled'
+                                        onClick={unsetKeyframe}
+                                        style={keyframeStyle}
+                                    />
+                                ) : (
+                                    <Icon
+                                        {...classes.keyframe.disabled}
+                                        type='star'
+                                        onClick={setKeyframe}
+                                        style={keyframeStyle}
+                                    />
+                                )}
                             </Tooltip>
                         </Col>
-                        {
-                            shapeType !== ShapeType.POINTS && (
-                                <Col>
-                                    <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
-                                        { pinned
-                                            ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                            : <Icon type='pushpin' onClick={pin} />}
-                                    </Tooltip>
-                                </Col>
-                            )
-                        }
+                        {shapeType !== ShapeType.POINTS && (
+                            <Col>
+                                <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
+                                    {pinned ? (
+                                        <Icon
+                                            {...classes.pinned.enabled}
+                                            type='pushpin'
+                                            theme='filled'
+                                            onClick={unpin}
+                                        />
+                                    ) : (
+                                        <Icon {...classes.pinned.disabled} type='pushpin' onClick={pin} />
+                                    )}
+                                </Tooltip>
+                            </Col>
+                        )}
                     </Row>
                 </Col>
             </Row>
@@ -206,9 +294,11 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                     <Row type='flex' justify='space-around'>
                         <Col>
                             <Tooltip title={`Switch lock property ${switchLockShortcut}`} mouseLeaveDelay={0}>
-                                { locked
-                                    ? <Icon type='lock' onClick={unlock} theme='filled' />
-                                    : <Icon type='unlock' onClick={lock} />}
+                                {locked ? (
+                                    <Icon {...classes.lock.enabled} type='lock' onClick={unlock} theme='filled' />
+                                ) : (
+                                    <Icon {...classes.lock.disabled} type='unlock' onClick={lock} />
+                                )}
                             </Tooltip>
                         </Col>
                     </Row>
@@ -223,36 +313,42 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                 <Row type='flex' justify='space-around'>
                     <Col>
                         <Tooltip title={`Switch lock property ${switchLockShortcut}`} mouseLeaveDelay={0}>
-                            { locked
-                                ? <Icon type='lock' onClick={unlock} theme='filled' />
-                                : <Icon type='unlock' onClick={lock} />}
+                            {locked ? (
+                                <Icon {...classes.lock.enabled} type='lock' onClick={unlock} theme='filled' />
+                            ) : (
+                                <Icon {...classes.lock.disabled} type='unlock' onClick={lock} />
+                            )}
                         </Tooltip>
                     </Col>
                     <Col>
                         <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`} mouseLeaveDelay={0}>
-                            { occluded
-                                ? <Icon type='team' onClick={unsetOccluded} />
-                                : <Icon type='user' onClick={setOccluded} />}
+                            {occluded ? (
+                                <Icon {...classes.occluded.enabled} type='team' onClick={unsetOccluded} />
+                            ) : (
+                                <Icon {...classes.occluded.disabled} type='user' onClick={setOccluded} />
+                            )}
                         </Tooltip>
                     </Col>
                     <Col>
                         <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`} mouseLeaveDelay={0}>
-                            { hidden
-                                ? <Icon type='eye-invisible' onClick={show} />
-                                : <Icon type='eye' onClick={hide} />}
+                            {hidden ? (
+                                <Icon {...classes.hidden.enabled} type='eye-invisible' onClick={show} />
+                            ) : (
+                                <Icon {...classes.hidden.disabled} type='eye' onClick={hide} />
+                            )}
                         </Tooltip>
                     </Col>
-                    {
-                        shapeType !== ShapeType.POINTS && (
-                            <Col>
-                                <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
-                                    { pinned
-                                        ? <Icon type='pushpin' theme='filled' onClick={unpin} />
-                                        : <Icon type='pushpin' onClick={pin} />}
-                                </Tooltip>
-                            </Col>
-                        )
-                    }
+                    {shapeType !== ShapeType.POINTS && (
+                        <Col>
+                            <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
+                                {pinned ? (
+                                    <Icon {...classes.pinned.enabled} type='pushpin' theme='filled' onClick={unpin} />
+                                ) : (
+                                    <Icon {...classes.pinned.disabled} type='pushpin' onClick={pin} />
+                                )}
+                            </Tooltip>
+                        </Col>
+                    )}
                 </Row>
             </Col>
         </Row>

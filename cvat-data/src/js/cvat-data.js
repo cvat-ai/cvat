@@ -1,11 +1,6 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
-
-/* global
-   require:true
-*/
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 const { Mutex } = require('async-mutex');
 // eslint-disable-next-line max-classes-per-file
@@ -19,14 +14,12 @@ const BlockType = Object.freeze({
 });
 
 class FrameProvider {
-    constructor(blockType, blockSize, cachedBlockCount,
-        decodedBlocksCacheSize = 5, maxWorkerThreadCount = 2) {
+    constructor(blockType, blockSize, cachedBlockCount, decodedBlocksCacheSize = 5, maxWorkerThreadCount = 2) {
         this._frames = {};
         this._cachedBlockCount = Math.max(1, cachedBlockCount); // number of stored blocks
         this._decodedBlocksCacheSize = decodedBlocksCacheSize;
         this._blocksRanges = [];
         this._blocks = {};
-        this._blockSize = blockSize;
         this._running = false;
         this._blockType = blockType;
         this._currFrame = -1;
@@ -42,15 +35,14 @@ class FrameProvider {
     }
 
     async _worker() {
-        if (this._requestedBlockDecode !== null
-            && this._decodeThreadCount < this._maxWorkerThreadCount) {
+        if (this._requestedBlockDecode !== null && this._decodeThreadCount < this._maxWorkerThreadCount) {
             await this.startDecode();
         }
         this._timerId = setTimeout(this._worker.bind(this), 100);
     }
 
     isChunkCached(start, end) {
-        return (`${start}:${end}` in this._blocksRanges);
+        return `${start}:${end}` in this._blocksRanges;
     }
 
     /* This method removes extra data from a cache when memory overflow */
@@ -68,8 +60,10 @@ class FrameProvider {
         const distance = Math.floor(this._decodedBlocksCacheSize / 2);
         for (let i = 0; i < this._blocksRanges.length; i++) {
             const [start, end] = this._blocksRanges[i].split(':').map((el) => +el);
-            if (end < this._currFrame - distance * this._blockSize
-                || start > this._currFrame + distance * this._blockSize) {
+            if (
+                end < this._currFrame - distance * this._blockSize ||
+                start > this._currFrame + distance * this._blockSize
+            ) {
                 for (let j = start; j <= end; j++) {
                     delete this._frames[j];
                 }
@@ -81,8 +75,7 @@ class FrameProvider {
         const release = await this._mutex.acquire();
         try {
             if (this._requestedBlockDecode !== null) {
-                if (start === this._requestedBlockDecode.start
-                    && end === this._requestedBlockDecode.end) {
+                if (start === this._requestedBlockDecode.start && end === this._requestedBlockDecode.end) {
                     this._requestedBlockDecode.resolveCallback = resolveCallback;
                     this._requestedBlockDecode.rejectCallback = rejectCallback;
                 } else if (this._requestedBlockDecode.rejectCallback) {
@@ -158,8 +151,7 @@ class FrameProvider {
     }
 
     static cropImage(imageBuffer, imageWidth, imageHeight, xOffset, yOffset, width, height) {
-        if (xOffset === 0 && width === imageWidth
-            && yOffset === 0 && height === imageHeight) {
+        if (xOffset === 0 && width === imageWidth && yOffset === 0 && height === imageHeight) {
             return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
         }
         const source = new Uint32Array(imageBuffer);
@@ -170,11 +162,7 @@ class FrameProvider {
         const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
 
         if (imageWidth === width) {
-            return new ImageData(
-                new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize),
-                width,
-                height,
-            );
+            return new ImageData(new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize), width, height);
         }
 
         let writeIdx = 0;
@@ -207,14 +195,20 @@ class FrameProvider {
                 let index = start;
 
                 worker.onmessage = (e) => {
-                    if (e.data.consoleLog) { // ignore initialization message
+                    if (e.data.consoleLog) {
+                        // ignore initialization message
                         return;
                     }
 
                     const scaleFactor = Math.ceil(this._height / e.data.height);
                     this._frames[index] = FrameProvider.cropImage(
-                        e.data.buf, e.data.width, e.data.height, 0, 0,
-                        Math.floor(width / scaleFactor), Math.floor(height / scaleFactor),
+                        e.data.buf,
+                        e.data.width,
+                        e.data.height,
+                        0,
+                        0,
+                        Math.floor(width / scaleFactor),
+                        Math.floor(height / scaleFactor),
                     );
 
                     if (this._decodingBlocks[`${start}:${end}`].resolveCallback) {
@@ -302,10 +296,10 @@ class FrameProvider {
                         // but document.createElement doesn't work in worker
                         // so, we get raw data and decode it here, no other way
 
-                        const createImageBitmap = async function(blob) {
-                            return new Promise((resolve,reject) => {
-                                let img = document.createElement('img');
-                                img.addEventListener('load', function() {
+                        const createImageBitmap = async function (blob) {
+                            return new Promise((resolve) => {
+                                const img = document.createElement('img');
+                                img.addEventListener('load', function () {
                                     resolve(this);
                                 });
                                 img.src = URL.createObjectURL(blob);
@@ -322,9 +316,7 @@ class FrameProvider {
                     }
 
                     if (event.data.index in this._promisedFrames) {
-                        this._promisedFrames[event.data.index].resolve(
-                            this._frames[event.data.index],
-                        );
+                        this._promisedFrames[event.data.index].resolve(this._frames[event.data.index]);
                         delete this._promisedFrames[event.data.index];
                     }
 
@@ -357,9 +349,7 @@ class FrameProvider {
         Is an array of strings like "start:end"
     */
     get cachedFrames() {
-        return [...this._blocksRanges].sort(
-            (a, b) => a.split(':')[0] - b.split(':')[0],
-        );
+        return [...this._blocksRanges].sort((a, b) => a.split(':')[0] - b.split(':')[0]);
     }
 }
 

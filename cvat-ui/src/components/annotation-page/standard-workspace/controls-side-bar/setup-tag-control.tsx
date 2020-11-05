@@ -19,20 +19,20 @@ interface Props {
 function SetupTagControl(props: Props): JSX.Element {
     const { isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing
+        ? {
+              overlayStyle: {
+                  display: 'none',
+              },
+          }
+        : {};
 
     return (
         <Popover
             {...dynamcPopoverPros}
             placement='right'
             overlayClassName='cvat-draw-shape-popover'
-            content={(
-                <SetupTagPopoverContainer />
-            )}
+            content={<SetupTagPopoverContainer />}
         >
             <Icon className='cvat-setup-tag-control' component={TagIcon} />
         </Popover>
