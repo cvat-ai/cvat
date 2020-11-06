@@ -519,9 +519,12 @@ class LambdaJob:
             to_compared_polygons = []
             to_compared_frames = []
             for compare_frame_offset in range(1, frame_number+1):
-                if frame + compare_frame_offset <= frame_number:
+                if frame + compare_frame_offset < db_task.data.size:
                     to_compared_polygons.append(polygons_by_frame[frame + compare_frame_offset])
                     to_compared_frames.append(frame + compare_frame_offset)
+            if(len(to_compared_polygons) > 0):
+                log.error("to_compared_polygons")
+                log.error(to_compared_polygons)
 
             if len(polygons0) > 0 and len(to_compared_polygons) > 0:
                 all_matching = function.invoke(db_task, data={
@@ -537,7 +540,8 @@ class LambdaJob:
                         if frame_id >= 0 and frame_id < frame_number and matching[idx] >= 0:
                             path_id = polygons0[idx]["path_id"]
                             to_compared_polygons[frame_id][matching[idx]]["path_id"] = path_id
-                            paths[path_id].append(to_compared_polygons[frame_id][matching[idx]])
+                            if to_compared_polygons[frame_id][matching[idx]] not in paths[path_id]:
+                                paths[path_id].append(to_compared_polygons[frame_id][matching[idx]])
 
 
                 # for frame_id, matching in enumerate(all_matching):
@@ -581,8 +585,11 @@ class LambdaJob:
                 "shapes": paths[path_id],
                 "source": str(SourceType.AUTO)
             })
-
+            log.error("tracks")
+            log.error(tracks)
             for polygon in tracks[-1]["shapes"]:
+                log.error("polygon")
+                log.error(polygon)
                 polygon.pop("id", None)
                 polygon.pop("path_id")
                 polygon.pop("group")
