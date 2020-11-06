@@ -75,7 +75,7 @@ context('Group features', () => {
                 for (let i=0; i<$listObjectsSidebarStateItem.length; i++) {
                     cy.get($listObjectsSidebarStateItem[i]).should('have.css', 'background-color').then($bColorObjectsSidebarStateItem => {
                         // expected rgba(224, 224, 224, 0.533) to include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
-                        expect($bColorObjectsSidebarStateItem).contain(fillChangeAppearance.match(/\d+, \d+, \d+/))
+                        expect($bColorObjectsSidebarStateItem).contain(fillChangeAppearance.match(/\d+, \d+, \d+/));
                     });
                 }
             });
