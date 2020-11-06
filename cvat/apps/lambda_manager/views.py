@@ -507,7 +507,7 @@ class LambdaJob:
             else:
                 shapes_without_polygons.append(shape)
         paths = {}
-        log.error("hallo Welt")
+
         for frame in range(db_task.data.size - 1):
             polygons0 = polygons_by_frame[frame]
             for polygon in polygons0:
@@ -522,17 +522,12 @@ class LambdaJob:
                 if frame + compare_frame_offset < db_task.data.size:
                     to_compared_polygons.append(polygons_by_frame[frame + compare_frame_offset])
                     to_compared_frames.append(frame + compare_frame_offset)
-            if(len(to_compared_polygons) > 0):
-                log.error("to_compared_polygons")
-                log.error(to_compared_polygons)
 
             if len(polygons0) > 0 and len(to_compared_polygons) > 0:
                 all_matching = function.invoke(db_task, data={
                     "frame0": frame, "compare_frames": to_compared_frames, "quality": quality,
                     "polygons0": polygons0, "compare_polygons": to_compared_polygons, "threshold": threshold,
                     "max_distance": max_distance, "frame_number": int(frame_number)})
-                log.error("all_matching")
-                log.error(all_matching)
 
                 for idx in range(len(polygons0)):
                     # for each polygon
@@ -555,9 +550,6 @@ class LambdaJob:
             progress = (frame + 2) / db_task.data.size
             if not LambdaJob._update_progress(progress):
                 break
-        log.error(paths)
-        log.error("test")
-        log.error(polygons_by_frame)
         # for polygon in polygons_by_frame[db_task.data.size - 1]:
         #     if "path_id" not in polygon:
         #         if paths[path_id].frame is frame_number - 1:
@@ -585,21 +577,17 @@ class LambdaJob:
                 "shapes": paths[path_id],
                 "source": str(SourceType.AUTO)
             })
-            log.error("tracks")
-            log.error(tracks)
-            for polygon in tracks[-1]["shapes"]:
-                log.error("polygon")
-                log.error(polygon)
-                polygon.pop("id", None)
-                polygon.pop("path_id")
-                polygon.pop("group")
-                polygon.pop("label_id")
-                polygon.pop("source")
-                polygon["outside"] = False
-                polygon["attributes"] = []
 
-        log.error("tracks")
-        log.error(tracks)
+            for polygon in tracks[-1]["shapes"]:
+                if "path_id" in polygon:
+                    polygon.pop("id", None)
+                    polygon.pop("path_id")
+                    polygon.pop("group")
+                    polygon.pop("label_id")
+                    polygon.pop("source")
+                    polygon["outside"] = False
+                    polygon["attributes"] = []
+
 
         for track in tracks:
             if track["shapes"][-1]["frame"] != db_task.data.size -1:
@@ -607,11 +595,6 @@ class LambdaJob:
                 polygon["outside"] = True
                 polygon["frame"] += 1
                 track["shapes"].append(polygon)
-
-
-        log.error("tracks after outside change")
-        log.error(tracks)
-
 
         if tracks:
             data["shapes"] = shapes_without_polygons
