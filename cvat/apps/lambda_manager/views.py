@@ -638,7 +638,7 @@ class LambdaJob:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
         elif function.kind == LambdaType.REIDSEGMENTATION:
-            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"), 2)
+            LambdaJob._call_reidsegmentation(function, db_task, quality, kwargs.get("threshold"), kwargs.get("max_distance"), kwargs.get("frame_number"))
 
 def return_response(success_code=status.HTTP_200_OK):
     def wrap_response(func):
