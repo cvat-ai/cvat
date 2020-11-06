@@ -6,6 +6,7 @@ import av
 from collections import OrderedDict
 import hashlib
 import os
+from cvat.apps.engine.utils import rotate_image
 
 class WorkWithVideo:
     def __init__(self, **kwargs):
@@ -23,7 +24,6 @@ class WorkWithVideo:
         video_stream = next(stream for stream in container.streams if stream.type == 'video')
         video_stream.thread_type = 'AUTO'
         return video_stream
-
 
 class AnalyzeVideo(WorkWithVideo):
     def check_type_first_frame(self):
@@ -76,7 +76,17 @@ class PrepareInfo(WorkWithVideo):
 
     @property
     def frame_sizes(self):
+        container = self._open_video_container(self.source_path, 'r')
         frame = next(iter(self.key_frames.values()))
+        if container.streams.video[0].metadata.get('rotate'):
+            frame = av.VideoFrame().from_ndarray(
+                rotate_image(
+                    frame.to_ndarray(format='bgr24'),
+                    360 - int(container.streams.video[0].metadata.get('rotate'))
+                ),
+                format ='bgr24'
+            )
+        self._close_video_container(container)
         return (frame.width, frame.height)
 
     def check_key_frame(self, container, video_stream, key_frame):
@@ -150,6 +160,14 @@ class PrepareInfo(WorkWithVideo):
                 if frame_number < start_chunk_frame_number:
                     continue
                 elif frame_number < end_chunk_frame_number and not ((frame_number - start_chunk_frame_number) % step):
+                    if video_stream.metadata.get('rotate'):
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(
+                                frame.to_ndarray(format='bgr24'),
+                                360 - int(container.streams.video[0].metadata.get('rotate'))
+                            ),
+                            format ='bgr24'
+                        )
                     yield frame
                 elif (frame_number - start_chunk_frame_number) % step:
                     continue
@@ -177,6 +195,14 @@ class UploadedMeta(PrepareInfo):
         container.seek(offset=next(iter(self.key_frames.values())), stream=video_stream)
         for packet in container.demux(video_stream):
             for frame in packet.decode():
+                if video_stream.metadata.get('rotate'):
+                    frame = av.VideoFrame().from_ndarray(
+                        rotate_image(
+                            frame.to_ndarray(format='bgr24'),
+                            360 - int(container.streams.video[0].metadata.get('rotate'))
+                        ),
+                        format ='bgr24'
+                    )
                 self._close_video_container(container)
                 return (frame.width, frame.height)
 
