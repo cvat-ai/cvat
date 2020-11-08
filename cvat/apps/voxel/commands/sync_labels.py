@@ -15,7 +15,7 @@ class SyncLabels(VoxelCommand):
         self.task_id = task_id
         self.video_uuid = self._sanitize_video_uuid(video_uuid)
         # Note: this file needs to be available in the prod Docker container
-        key_path = '{}/keys/sodium-carving-227300-6d23b84328c2.json'.format(os.getcwd())
+        key_path = '{}/voxel_keys/sodium-carving-227300-6d23b84328c2.json'.format(os.getcwd())
         credentials = service_account.Credentials.from_service_account_file(key_path)
         self.db = firestore.Client(credentials=credentials, project="sodium-carving-227300")
 

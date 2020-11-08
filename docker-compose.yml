@@ -6,29 +6,29 @@
 version: '3.3'
 
 services:
-  cvat_db:
-    container_name: cvat_db
-    image: postgres:10-alpine
-    networks:
-      default:
-        aliases:
-          - db
-    restart: always
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_DB: cvat
-      POSTGRES_HOST_AUTH_METHOD: trust
-    volumes:
-      - cvat_db:/var/lib/postgresql/data
+    cvat_db:
+        container_name: cvat_db
+        image: postgres:10-alpine
+        networks:
+            default:
+                aliases:
+                    - db
+        restart: always
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_DB: cvat
+            POSTGRES_HOST_AUTH_METHOD: trust
+        volumes:
+            - cvat_db:/var/lib/postgresql/data
 
-  cvat_redis:
-    container_name: cvat_redis
-    image: redis:4.0-alpine
-    networks:
-      default:
-        aliases:
-          - redis
-    restart: always
+    cvat_redis:
+        container_name: cvat_redis
+        image: redis:4.0-alpine
+        networks:
+            default:
+                aliases:
+                    - redis
+        restart: always
 
   cvat:
     container_name: cvat
@@ -59,6 +59,7 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
+      - ./voxel_keys:/home/django/voxel_keys
 
   cvat_ui:
     container_name: cvat_ui
@@ -73,12 +74,12 @@ services:
         socks_proxy:
       dockerfile: Dockerfile.ui
 
-    networks:
-      default:
-        aliases:
-          - ui
-    depends_on:
-      - cvat
+        networks:
+            default:
+                aliases:
+                    - ui
+        depends_on:
+            - cvat
 
   cvat_proxy:
     container_name: cvat_proxy
@@ -104,8 +105,8 @@ networks:
         - subnet: 172.28.0.0/24
 
 volumes:
-  cvat_db:
-  cvat_data:
-  cvat_keys:
-  cvat_logs:
-  cvat_models:
+    cvat_db:
+    cvat_data:
+    cvat_keys:
+    cvat_logs:
+    cvat_models:
