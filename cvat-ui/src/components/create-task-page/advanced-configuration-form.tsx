@@ -31,7 +31,7 @@ export interface AdvancedConfiguration {
 }
 
 const initialValues: AdvancedConfiguration = {
-    imageQuality: 70,
+    imageQuality: 100,
     lfs: false,
     useZipChunks: true,
     useCache: true,
