@@ -1548,6 +1548,16 @@ class TaskDataAPITestCase(APITestCase):
             video.write(data.read())
         cls._image_sizes[filename] = img_sizes
 
+        filename = "test_rotated_90_video.mp4"
+        path = os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4')
+        container = av.open(path, 'r')
+        for frame in container.decode(video=0):
+            # pyav ignores rotation record in metadata when decoding frames
+            img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
+            break
+        container.close()
+        cls._image_sizes[filename] = img_sizes
+
         filename = os.path.join("videos", "test_video_1.mp4")
         path = os.path.join(settings.SHARE_ROOT, filename)
         os.makedirs(os.path.dirname(path))
@@ -2079,6 +2089,47 @@ class TaskDataAPITestCase(APITestCase):
         task_data.update([('copy_data', True)])
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, StorageMethodChoice.CACHE, StorageLocation.LOCAL)
+
+        task_spec = {
+            "name": "my cached video task #14",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
+            "image_quality": 70,
+            "use_zip_chunks": True
+        }
+
+        image_sizes = self._image_sizes['test_rotated_90_video.mp4']
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.FILE_SYSTEM)
+
+        task_spec = {
+            "name": "my video task #15",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
+            "image_quality": 70,
+            "use_cache": True,
+            "use_zip_chunks": True
+        }
+
+        image_sizes = self._image_sizes['test_rotated_90_video.mp4']
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
@@ -3412,6 +3463,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                                       + polygon_shapes_wo_attrs \
                                       + polygon_shapes_with_attrs
                 annotations["tags"] = tags_with_attrs + tags_wo_attrs
+
+            elif annotation_format == "ImageNet 1.0":
+                annotations["tags"] = tags_wo_attrs
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))

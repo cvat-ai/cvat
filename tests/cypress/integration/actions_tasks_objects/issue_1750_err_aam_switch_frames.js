@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -39,11 +37,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
             cy.createRectangle(createRectangleShape2PointsSecond);
         });
         it('Go to AAM', () => {
-            cy.get('.cvat-workspace-selector').click();
-            cy.get('.ant-select-dropdown-menu-item')
-                .contains('Attribute annotation')
-                .click()
-                .should('contain.text', 'Attribute annotation');
+            cy.changeWorkspace('Attribute annotation', labelName);
         });
         it('Go to next frame', () => {
             cy.get('.cvat-player-next-button').click();
@@ -65,6 +59,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
         });
         it('Page with the error is missing', () => {
             cy.contains('Oops, something went wrong').should('not.exist');
+            cy.changeLabelAAM(labelName);
             cy.get('.attribute-annotation-sidebar-object-switcher').should('contain', `${labelName} 2 [2/2]`);
         });
     });
