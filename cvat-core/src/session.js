@@ -1608,7 +1608,6 @@
          * @method save
          * @returns {module:API.cvat.classes.Project}
          * @memberof module:API.cvat.classes.Project
-         * @param {function} [onUpdate] - the function which is used only if project hasn't
          * been created yet. It called in order to notify about creation status.
          * It receives the string parameter which is a status message
          * @readonly
@@ -1617,8 +1616,8 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async save(onUpdate = () => {}) {
-            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save, onUpdate);
+        async save() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save);
             return result;
         }
 
