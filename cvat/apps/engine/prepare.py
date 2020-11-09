@@ -180,7 +180,7 @@ class PrepareInfo(WorkWithVideo):
 class UploadedMeta(PrepareInfo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        uploaded_meta = kwargs.get('uploaded_meta_path')
+        uploaded_meta = kwargs.get('uploaded_meta')
         assert uploaded_meta is not None , 'No uploaded meta path'
 
         with open(uploaded_meta, 'r') as meta_file:
