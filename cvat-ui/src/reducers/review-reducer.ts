@@ -54,7 +54,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
             const { number: frame } = action.payload;
             return {
                 ...state,
-                frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
+                frameIssues: computeFrameIssues(state.issues, state.activeReview, frame),
             };
         }
         case ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS: {

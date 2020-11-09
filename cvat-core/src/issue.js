@@ -150,7 +150,7 @@ class Issue {
                 },
                 /**
                  * @name removed
-                 * @type {module:API.cvat.classes.Comment}
+                 * @type {boolean}
                  * @memberof module:API.cvat.classes.Comment
                  * @instance
                  */

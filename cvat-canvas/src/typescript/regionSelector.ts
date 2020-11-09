@@ -2,10 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Copyright (C) 2019-2020 Intel Corporation
-//
-// SPDX-License-Identifier: MIT
-
 import * as SVG from 'svg.js';
 
 import consts from './consts';

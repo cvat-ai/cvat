@@ -43,7 +43,7 @@ function MessageForm(props: FormProps): JSX.Element {
             <Form.Item>
                 {getFieldDecorator('issue_description', {
                     rules: [{ required: true, message: 'Please, fill out the field' }],
-                })(<Input placeholder='Please, describe the issue' />)}
+                })(<Input autoComplete='off' placeholder='Please, describe the issue' />)}
             </Form.Item>
             <Row type='flex' justify='space-between'>
                 <Col>

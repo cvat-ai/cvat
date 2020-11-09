@@ -91,7 +91,7 @@ class Comment {
                 /**
                  * Instance of a user who has created the comment
                  * @name author
-                 * @type {module:API.cvat.classes.Comment}
+                 * @type {module:API.cvat.classes.User}
                  * @memberof module:API.cvat.classes.Comment
                  * @readonly
                  * @instance
@@ -101,7 +101,7 @@ class Comment {
                 },
                 /**
                  * @name removed
-                 * @type {module:API.cvat.classes.Comment}
+                 * @type {boolean}
                  * @memberof module:API.cvat.classes.Comment
                  * @instance
                  */

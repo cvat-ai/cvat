@@ -47,8 +47,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         canvasInstance.html().addEventListener('canvas.fit', listener);
 
         return () => {
-            canvasInstance.html().addEventListener('canvas.zoom', listener);
-            canvasInstance.html().addEventListener('canvas.fit', listener);
+            canvasInstance.html().removeEventListener('canvas.zoom', listener);
+            canvasInstance.html().removeEventListener('canvas.fit', listener);
         };
     }, []);
 

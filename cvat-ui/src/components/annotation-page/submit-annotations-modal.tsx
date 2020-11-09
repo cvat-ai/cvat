@@ -43,9 +43,7 @@ export default function SubmitAnnotationsModal(): JSX.Element | null {
             destroyOnClose
             onCancel={close}
             onOk={submitAnnotations}
-            okButtonProps={{
-                children: 'Submit',
-            }}
+            okText='Submit'
         >
             <Row type='flex' justify='start'>
                 <Col>

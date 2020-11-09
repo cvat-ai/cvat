@@ -39,6 +39,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
     const subKeyMap = {
         CANCEL: keyMap.CANCEL,
+        OPEN_REVIEW_ISSUE: keyMap.OPEN_REVIEW_ISSUE,
     };
 
     const handlers = {
@@ -46,6 +47,17 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             preventDefault(event);
             if (activeControl !== ActiveControl.CURSOR) {
                 canvasInstance.cancel();
+            }
+        },
+        OPEN_REVIEW_ISSUE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeControl === ActiveControl.OPEN_ISSUE) {
+                canvasInstance.selectRegion(false);
+                selectIssuePosition(false);
+            } else {
+                canvasInstance.cancel();
+                canvasInstance.selectRegion(true);
+                selectIssuePosition(true);
             }
         },
     };

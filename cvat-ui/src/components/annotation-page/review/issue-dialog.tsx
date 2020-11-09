@@ -41,7 +41,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     const lines = comments.map(
         (_comment: any): JSX.Element => {
             const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
-            const diff = moment.duration(moment(moment.now()).diff(created)).humanize();
+            const diff = created.fromNow();
 
             return (
                 <Comment

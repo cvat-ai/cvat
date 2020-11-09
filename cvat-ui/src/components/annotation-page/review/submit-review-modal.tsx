@@ -10,6 +10,7 @@ import Title from 'antd/lib/typography/Title';
 import Modal from 'antd/lib/modal';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import RadioButton from 'antd/lib/radio/radioButton';
+import Description from 'antd/lib/descriptions';
 import { Row, Col } from 'antd/lib/grid';
 
 import UserSelector from 'components/task-page/user-selector';
@@ -42,7 +43,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
     const reviewedStates = activeReview ? activeReview.reviewedStates.length : 0;
 
     const [reviewer, setReviewer] = useState(job.reviewer ? job.reviewer : users[0]);
-    const [reviewStatus, setReviewStatus] = useState<string>(ReviewStatus.REVIEW_FURTHER);
+    const [reviewStatus, setReviewStatus] = useState<string>(ReviewStatus.ACCEPTED);
     const [estimatedQuality, setEstimatedQuality] = useState<number>(0);
 
     useEffect(() => {
@@ -69,11 +70,10 @@ export default function SubmitReviewModal(): JSX.Element | null {
             className='cvat-submit-review-dialog'
             visible={isVisible}
             destroyOnClose
-            onCancel={close}
             onOk={submitReview}
-            okButtonProps={{
-                children: 'Submit',
-            }}
+            onCancel={close}
+            okText='Submit'
+            width={650}
         >
             <Row type='flex' justify='start'>
                 <Col>
@@ -82,43 +82,20 @@ export default function SubmitReviewModal(): JSX.Element | null {
             </Row>
             <Row type='flex' justify='start'>
                 <Col span={12}>
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <Text strong>Estimated quality: </Text>
-                                </td>
-                                <td>{estimatedQuality}</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <Text strong>Issues: </Text>
-                                </td>
-                                <td>
-                                    <Text>{numberOfIssues}</Text>
-                                    {!!numberOfNewIssues && <Text strong>{` (+${numberOfNewIssues})`}</Text>}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <Text strong>Reviewed frames: </Text>
-                                </td>
-                                <td>{reviewedFrames}</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <Text strong>Reviewed objects: </Text>
-                                </td>
-                                <td>{reviewedStates}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <Description title='Review summary' layout='horizontal' column={1} size='small' bordered>
+                        <Description.Item label='Estimated quality: '>{estimatedQuality}</Description.Item>
+                        <Description.Item label='Issues: '>
+                            <Text>{numberOfIssues}</Text>
+                            {!!numberOfNewIssues && <Text strong>{` (+${numberOfNewIssues})`}</Text>}
+                        </Description.Item>
+                        <Description.Item label='Reviewed frames '>{reviewedFrames}</Description.Item>
+                        <Description.Item label='Reviewed objects: '>{reviewedStates}</Description.Item>
+                    </Description>
                 </Col>
-                <Col span={12}>
+                <Col span={11} offset={1}>
                     <Row>
                         <Col>
                             <Radio.Group
-                                size='small'
                                 value={reviewStatus}
                                 onChange={(event: RadioChangeEvent) => {
                                     if (typeof event.target.value !== 'undefined') {
@@ -126,9 +103,9 @@ export default function SubmitReviewModal(): JSX.Element | null {
                                     }
                                 }}
                             >
+                                <RadioButton value={ReviewStatus.ACCEPTED}>Accept</RadioButton>
                                 <RadioButton value={ReviewStatus.REVIEW_FURTHER}>Review next</RadioButton>
-                                <RadioButton value={ReviewStatus.REJECTED}>Rejected</RadioButton>
-                                <RadioButton value={ReviewStatus.ACCEPTED}>Accepted</RadioButton>
+                                <RadioButton value={ReviewStatus.REJECTED}>Reject</RadioButton>
                             </Radio.Group>
                             {reviewStatus === ReviewStatus.REVIEW_FURTHER && (
                                 <Row type='flex' justify='start'>
