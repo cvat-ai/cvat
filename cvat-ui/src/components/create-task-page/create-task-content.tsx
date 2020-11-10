@@ -23,6 +23,7 @@ export interface CreateTaskData {
     advanced: AdvancedConfiguration;
     labels: any[];
     files: Files;
+    activeFileManagerTab: string;
 }
 
 interface Props {
@@ -42,7 +43,6 @@ const defaultState = {
         lfs: false,
         useZipChunks: true,
         useCache: true,
-        activeTab: 'local',
     },
     labels: [],
     files: {
@@ -50,6 +50,7 @@ const defaultState = {
         share: [],
         remote: [],
     },
+    activeFileManagerTab: 'local',
 };
 
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
@@ -116,12 +117,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private changeFileManagerTab = (key: string): void => {
-        const values = this.state.advanced;
+        const values = this.state;
         this.setState({
-            advanced: {
-                ...values,
-                activeTab: key
-            }
+            ...values,
+            activeFileManagerTab: key
         });
     };
 
@@ -221,7 +220,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
                             installedGit={installedGit}
-                            activeTab={this.state.advanced.activeTab}
+                            activeFileManagerTab={this.state.activeFileManagerTab}
                             wrappedComponentRef={(component: any): void => {
                                 this.advancedConfigurationComponent = component;
                             }}

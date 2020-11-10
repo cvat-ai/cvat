@@ -26,14 +26,13 @@ export interface AdvancedConfiguration {
     useZipChunks: boolean;
     dataChunkSize?: number;
     useCache: boolean;
-    activeTab: string;
     copyData?: boolean;
 }
 
 type Props = FormComponentProps & {
     onSubmit(values: AdvancedConfiguration): void;
     installedGit: boolean;
-    activeTab: string;
+    activeFileManagerTab: string;
 };
 
 function isPositiveInteger(_: any, value: any, callback: any): void {
@@ -81,7 +80,7 @@ function isIntegerRange(min: number, max: number, _: any, value: any, callback: 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
     public submit(): Promise<void> {
         return new Promise((resolve, reject) => {
-            const { form, onSubmit, activeTab } = this.props;
+            const { form, onSubmit } = this.props;
 
             form.validateFields((error, values): void => {
                 if (!error) {
@@ -103,7 +102,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     onSubmit({
                         ...values,
                         frameFilter: values.frameStep ? `step=${values.frameStep}` : undefined,
-                        activeTab: activeTab,
                     });
                     resolve();
                 } else {
@@ -410,11 +408,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { installedGit, activeTab } = this.props;
+        const { installedGit, activeFileManagerTab } = this.props;
         return (
             <Form>
 
-                {activeTab === 'share' ? this.renderCopyDataChechbox() : null}
+                {activeFileManagerTab === 'share' ? this.renderCopyDataChechbox() : null}
 
                 <Row>
                     <Col>{this.renderUzeZipChunks()}</Col>
