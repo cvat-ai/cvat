@@ -14,6 +14,7 @@ import av
 import numpy as np
 from pyunpack import Archive
 from PIL import Image, ImageFile
+from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -228,6 +229,16 @@ class VideoReader(IMediaReader):
                 for image in packet.decode():
                     frame_num += 1
                     if self._has_frame(frame_num - 1):
+                        if packet.stream.metadata.get('rotate'):
+                            old_image = image
+                            image = av.VideoFrame().from_ndarray(
+                                rotate_image(
+                                    image.to_ndarray(format='bgr24'),
+                                    360 - int(container.streams.video[0].metadata.get('rotate'))
+                                ),
+                                format ='bgr24'
+                            )
+                            image.pts = old_image.pts
                         yield (image, self._source_path[0], image.pts)
 
     def __iter__(self):
@@ -252,7 +263,15 @@ class VideoReader(IMediaReader):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
-        return self._get_preview(preview.to_image())
+        return self._get_preview(preview.to_image() if not stream.metadata.get('rotate') \
+            else av.VideoFrame().from_ndarray(
+                rotate_image(
+                    preview.to_ndarray(format='bgr24'),
+                    360 - int(container.streams.video[0].metadata.get('rotate'))
+                ),
+                format ='bgr24'
+            ).to_image()
+        )
 
     def get_image_size(self, i):
         image = (next(iter(self)))[0]

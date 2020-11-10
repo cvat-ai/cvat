@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -102,13 +100,14 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
         cy.switchLabel(createRectangleParams.labelName);
     }
     cy.contains('Draw new rectangle')
-    .parents('.cvat-draw-shape-popover-content').within(() => {
-        cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
-            selectedValueGlobal = $labelValue.text();
+        .parents('.cvat-draw-shape-popover-content')
+        .within(() => {
+            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                selectedValueGlobal = $labelValue.text();
+            });
+            cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
+            cy.get('button').contains(createRectangleParams.type).click({ force: true });
         });
-        cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
-        cy.get('button').contains(createRectangleParams.type).click({ force: true });
-    })
     cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
     cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
     if (createRectangleParams.points === 'By 4 Points') {
@@ -124,12 +123,20 @@ Cypress.Commands.add('switchLabel', (labelName) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    cy.get('.cvat-objects-sidebar-state-item').then((objectSidebar) => {
-        cy.get(`#cvat_canvas_shape_${objectSidebar.length}`).should('exist').and('be.visible');
-        cy.get(`#cvat-objects-sidebar-state-item-${objectSidebar.length}`)
-        .should('contain', objectSidebar.length).and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`).within(() => {
-            cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
-        });
+    let listCanvasShapeId = [];
+    cy.document().then((doc) => {
+        const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
+        for (let i = 0; i < listCanvasShape.length; i++) {
+            listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
+        }
+        const maxId = Math.max(...listCanvasShapeId);
+        cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').and('be.visible');
+        cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
+            .should('contain', maxId)
+            .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
+            .within(() => {
+                cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
+            });
     });
 });
 
@@ -217,10 +224,23 @@ Cypress.Commands.add('closeSettings', () => {
         });
 });
 
-Cypress.Commands.add('changeAnnotationMode', (mode) => {
+Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.ant-select-dropdown-menu-item').contains(mode).click();
     cy.get('.cvat-workspace-selector').should('contain.text', mode);
+    cy.changeLabelAAM(labelName);
+});
+
+Cypress.Commands.add('changeLabelAAM', (labelName) => {
+    cy.get('.cvat-workspace-selector').then((value) => {
+        const cvatWorkspaceSelectorValue = value.text();
+        if (cvatWorkspaceSelectorValue === 'Attribute annotation') {
+            cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
+                cy.get('.ant-select-selection').click();
+            });
+            cy.get('.ant-select-dropdown-menu-item').contains(labelName).click();
+        }
+    });
 });
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {

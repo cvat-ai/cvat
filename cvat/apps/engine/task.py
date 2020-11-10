@@ -294,6 +294,7 @@ def _create_thread(tid, data):
 
     if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
        for media_type, media_files in media.items():
+
             if not media_files:
                 continue
 
