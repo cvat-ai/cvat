@@ -45,9 +45,9 @@ context('Group features', () => {
         secondY: createRectangleTrack2Points.secondY,
     };
 
-    let fillChangeAppearance = '';
-    let fillGroupedShape = '';
-    let fillGroupedTrack = '';
+    let defaultGroupColor = '';
+    let shapesGroupColor = '';
+    let tracksGroupColor = '';
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -65,9 +65,9 @@ context('Group features', () => {
             cy.get('.cvat_canvas_shape').then($listCanvasShapes => {
                 for (let i=0; i<$listCanvasShapes.length; i++) {
                     cy.get($listCanvasShapes[i]).should('have.css', 'fill').then($fill => {
+                        defaultGroupColor = $fill;
                         // expected rgb(224, 224, 224) to equal rgb(224, 224, 224)
-                        expect($fill).to.be.equal($fill);
-                        fillChangeAppearance = $fill;
+                        expect(defaultGroupColor).to.be.equal($fill);
                     });
                 }
             });
@@ -75,56 +75,56 @@ context('Group features', () => {
                 for (let i=0; i<$listObjectsSidebarStateItem.length; i++) {
                     cy.get($listObjectsSidebarStateItem[i]).should('have.css', 'background-color').then($bColorObjectsSidebarStateItem => {
                         // expected rgba(224, 224, 224, 0.533) to include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
-                        expect($bColorObjectsSidebarStateItem).contain(fillChangeAppearance.match(/\d+, \d+, \d+/));
+                        expect($bColorObjectsSidebarStateItem).contain(defaultGroupColor.match(/\d+, \d+, \d+/));
                     });
                 }
             });
         });
         it('With group button unite two shapes. They have corresponding colors.', () => {
             cy.get('.cvat-group-control').click();
-            for (let shapeToGroup of ['#cvat_canvas_shape_1', '#cvat_canvas_shape_2']) {
+            for (const shapeToGroup of ['#cvat_canvas_shape_1', '#cvat_canvas_shape_2']) {
                 cy.get(shapeToGroup).click();
             }
             cy.get('.cvat-group-control').click();
-            for (let groupedShape of ['#cvat_canvas_shape_1', '#cvat_canvas_shape_2']) {
-                cy.get(groupedShape).should('have.css', 'fill').then($fillGroupedShape => {
+            for (const groupedShape of ['#cvat_canvas_shape_1', '#cvat_canvas_shape_2']) {
+                cy.get(groupedShape).should('have.css', 'fill').then($shapesGroupColor => {
                     // expected rgb(250, 50, 83) to not equal rgb(224, 224, 224)
-                    expect($fillGroupedShape).to.not.equal(fillChangeAppearance);
+                    expect($shapesGroupColor).to.not.equal(defaultGroupColor);
+                    shapesGroupColor = $shapesGroupColor;
                     // expected rgb(250, 50, 83) to equal rgb(250, 50, 83)
-                    expect($fillGroupedShape).to.be.equal($fillGroupedShape);
-                    fillGroupedShape = $fillGroupedShape;
+                    expect(shapesGroupColor).to.be.equal($shapesGroupColor);
                 });
             }
-            for (let objectSideBarShape of ['#cvat-objects-sidebar-state-item-1', '#cvat-objects-sidebar-state-item-2']) {
+            for (const objectSideBarShape of ['#cvat-objects-sidebar-state-item-1', '#cvat-objects-sidebar-state-item-2']) {
                 cy.get(objectSideBarShape).should('have.css', 'background-color').then($bColorobjectSideBarShape => {
                     // expected rgba(250, 50, 83, 0.533) to not include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
-                    expect($bColorobjectSideBarShape).to.not.contain(fillChangeAppearance.match(/\d+, \d+, \d+/));
+                    expect($bColorobjectSideBarShape).to.not.contain(defaultGroupColor.match(/\d+, \d+, \d+/));
                     // expected rgba(250, 50, 83, 0.533) to include [ 250, 50, 83, index: 4, input: 'rgb(250, 50, 83)', groups: undefined ]
-                    expect($bColorobjectSideBarShape).to.be.contain(fillGroupedShape.match(/\d+, \d+, \d+/));
+                    expect($bColorobjectSideBarShape).to.be.contain(shapesGroupColor.match(/\d+, \d+, \d+/));
                 });
             }
         });
         it('With group button unite two track. They have corresponding colors.', () => {
             cy.get('.cvat-group-control').click();
-            for (let trackToGroup of ['#cvat_canvas_shape_3', '#cvat_canvas_shape_4']) {
+            for (const trackToGroup of ['#cvat_canvas_shape_3', '#cvat_canvas_shape_4']) {
                 cy.get(trackToGroup).click();
             }
             cy.get('.cvat-group-control').click();
-            for (let groupedTrack of ['#cvat_canvas_shape_3', '#cvat_canvas_shape_4']) {
-                cy.get(groupedTrack).should('have.css', 'fill').then($fillGroupedTrack => {
+            for (const groupedTrack of ['#cvat_canvas_shape_3', '#cvat_canvas_shape_4']) {
+                cy.get(groupedTrack).should('have.css', 'fill').then($tracksGroupColor => {
                     // expected rgb(250, 50, 83) to not equal rgb(224, 224, 224)
-                    expect($fillGroupedTrack).to.not.equal(fillChangeAppearance);
+                    expect($tracksGroupColor).to.not.equal(defaultGroupColor);
+                    tracksGroupColor = $tracksGroupColor;
                     // expected rgb(250, 50, 83) to equal rgb(250, 50, 83)
-                    expect($fillGroupedTrack).to.be.equal($fillGroupedTrack);
-                    fillGroupedTrack = $fillGroupedTrack;
+                    expect(tracksGroupColor).to.be.equal($tracksGroupColor);
                 });
             }
-            for (let objectSideBarTrack of ['#cvat-objects-sidebar-state-item-3', '#cvat-objects-sidebar-state-item-4']) {
+            for (const objectSideBarTrack of ['#cvat-objects-sidebar-state-item-3', '#cvat-objects-sidebar-state-item-4']) {
                 cy.get(objectSideBarTrack).should('have.css', 'background-color').then($bColorobjectSideBarTrack => {
                     // expected rgba(52, 209, 183, 0.533) to not include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
-                    expect($bColorobjectSideBarTrack).to.not.contain(fillChangeAppearance.match(/\d+, \d+, \d+/));
+                    expect($bColorobjectSideBarTrack).to.not.contain(defaultGroupColor.match(/\d+, \d+, \d+/));
                     // expected rgba(52, 209, 183, 0.533) to include [ 52, 209, 183, index: 4, input: 'rgb(52, 209, 183)', groups: undefined ]
-                    expect($bColorobjectSideBarTrack).to.be.contain(fillGroupedTrack.match(/\d+, \d+, \d+/));
+                    expect($bColorobjectSideBarTrack).to.be.contain(tracksGroupColor.match(/\d+, \d+, \d+/));
                 });
             }
         });
