@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Autocomplete from 'antd/lib/auto-complete';
+import Input from 'antd/lib/input';
 
 import getCore from 'cvat-core-wrapper';
 import { SelectValue } from 'antd/lib/select';
@@ -46,6 +47,7 @@ export default function UserSelector(props: Props): JSX.Element {
     const [searchPhrase, setSearchPhrase] = useState('');
 
     const [users, setUsers] = useState<User[]>([]);
+    const autocompleteRef = useRef<Autocomplete | null>(null);
 
     const handleSearch = (searchValue: string): void => {
         if (searchValue) {
@@ -95,8 +97,9 @@ export default function UserSelector(props: Props): JSX.Element {
 
     return (
         <Autocomplete
+            ref={autocompleteRef}
             value={searchPhrase}
-            placeholder='Select user'
+            placeholder='Select a user'
             onSearch={handleSearch}
             onSelect={handleSelect}
             className='cvat-user-search-field'
@@ -105,6 +108,8 @@ export default function UserSelector(props: Props): JSX.Element {
                 value: user.id.toString(),
                 text: user.username,
             }))}
-        />
+        >
+            <Input onPressEnter={() => autocompleteRef.current?.blur()} />
+        </Autocomplete>
     );
 }
