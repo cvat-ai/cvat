@@ -8,6 +8,8 @@ import Autocomplete from 'antd/lib/auto-complete';
 import getCore from 'cvat-core-wrapper';
 import { SelectValue } from 'antd/lib/select';
 
+import debounce from 'lodash/debounce';
+
 const core = getCore();
 
 export interface User {
@@ -20,6 +22,25 @@ interface Props {
     onSelect: (user: User | null) => void;
 }
 
+const searchUsers = debounce(
+    (searchValue: string, setUsers: (users: User[]) => void): void => {
+        core.users
+            .get({
+                search: searchValue,
+                limit: 10,
+            })
+            .then((result: User[]) => {
+                if (result) {
+                    setUsers(result);
+                }
+            });
+    },
+    250,
+    {
+        maxWait: 750,
+    },
+);
+
 export default function UserSelector(props: Props): JSX.Element {
     const { value, onSelect } = props;
     const [searchPhrase, setSearchPhrase] = useState('');
@@ -28,16 +49,7 @@ export default function UserSelector(props: Props): JSX.Element {
 
     const handleSearch = (searchValue: string): void => {
         if (searchValue) {
-            core.users
-                .get({
-                    search: searchValue,
-                    limit: 10,
-                })
-                .then((result: User[]) => {
-                    if (result) {
-                        setUsers(result);
-                    }
-                });
+            searchUsers(searchValue, setUsers);
         } else {
             setUsers([]);
         }
