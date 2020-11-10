@@ -18,6 +18,7 @@
   - [PASCAL VOC and mask](#voc)
   - [YOLO](#yolo)
   - [TF detection API](#tfrecord)
+  - [ImageNet](#imagenet)
 
 ## How to add a new annotation format support<a id="how-to-add"></a>
 
@@ -802,3 +803,35 @@ taskname.zip/
 ```
 
 - supported annotations: Rectangles, Polygons, Masks (as polygons)
+
+### [ImageNet](http://www.image-net.org)<a id="imagenet" />
+
+#### ImageNet Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+# if we save images:
+taskname.zip/
+└── label1/
+    ├── label1_image1.jpg
+    └── label1_image2.jpg
+└── label2/
+    ├── label2_image1.jpg
+    ├── label2_image3.jpg
+    └── label2_image4.jpg
+
+# if we keep only annotation:
+taskname.zip/
+└── <any_subset_name>.txt
+└── synsets.txt
+
+```
+
+- supported annotations: Labels
+
+#### ImageNet Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Labels
