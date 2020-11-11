@@ -15,7 +15,7 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice, UploadedDataStorageLocationChoice as LocationChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.prepare import prepare_meta
 
@@ -232,7 +232,7 @@ def _create_thread(tid, data):
             "File with meta information can be uploaded if 'Use cache' option is also selected"
 
     if data['server_files']:
-        if db_data.uploaded_data_storage_location == LocationChoice.LOCAL:
+        if db_data.storage == StorageChoice.LOCAL:
             _copy_data_from_share(data['server_files'], upload_dir)
         else:
             upload_dir = settings.SHARE_ROOT
@@ -251,7 +251,7 @@ def _create_thread(tid, data):
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if media_type in  ('archive', 'zip') and db_data.uploaded_data_storage_location == LocationChoice.SHARE:
+            if media_type in  ('archive', 'zip') and db_data.storage == StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
             extractor = MEDIA_TYPES[media_type]['extractor'](
                 source_path=source_paths,

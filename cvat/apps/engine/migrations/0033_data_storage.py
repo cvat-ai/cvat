@@ -13,10 +13,10 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='data',
-            name='uploaded_data_storage_location',
+            name='storage',
             field=models.CharField(
                 choices=[('local', 'LOCAL'), ('share', 'SHARE')],
-                default=cvat.apps.engine.models.UploadedDataStorageLocationChoice['LOCAL'],
+                default=cvat.apps.engine.models.StorageChoice['LOCAL'],
                 max_length=15
             ),
         ),

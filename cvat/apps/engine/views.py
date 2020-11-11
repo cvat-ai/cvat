@@ -37,7 +37,7 @@ from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, StorageMethodChoice, UploadedDataStorageLocationChoice
+    Job, StatusChoice, Task, StorageMethodChoice, StorageChoice
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
@@ -402,8 +402,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 db_task.data.storage_method = StorageMethodChoice.CACHE
                 db_task.data.save(update_fields=['storage_method'])
             if data['server_files'] and data.get('copy_data') == False:
-                db_task.data.uploaded_data_storage_location = UploadedDataStorageLocationChoice.SHARE
-                db_task.data.save(update_fields=['uploaded_data_storage_location'])
+                db_task.data.storage = StorageChoice.SHARE
+                db_task.data.save(update_fields=['storage'])
             # if the value of stop_frame is 0, then inside the function we cannot know
             # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:

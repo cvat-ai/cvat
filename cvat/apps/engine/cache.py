@@ -10,7 +10,7 @@ from django.conf import settings
 
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter)
-from cvat.apps.engine.models import DataChoice, UploadedDataStorageLocationChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.prepare import PrepareInfo
 from .log import slogger
 
@@ -44,9 +44,9 @@ class CacheInteraction:
         images = []
         buff = BytesIO()
         upload_dir = {
-                UploadedDataStorageLocationChoice.LOCAL: db_data.get_upload_dirname(),
-                UploadedDataStorageLocationChoice.SHARE: settings.SHARE_ROOT
-            }[db_data.uploaded_data_storage_location]
+                StorageChoice.LOCAL: db_data.get_upload_dirname(),
+                StorageChoice.SHARE: settings.SHARE_ROOT
+            }[db_data.storage]
         try:
             if os.path.exists(db_data.get_meta_path()):
                 source_path = os.path.join(upload_dir, db_data.video.path)

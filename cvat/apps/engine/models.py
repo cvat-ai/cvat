@@ -54,7 +54,7 @@ class StorageMethodChoice(str, Enum):
     def __str__(self):
         return self.value
 
-class UploadedDataStorageLocationChoice(str, Enum):
+class StorageChoice(str, Enum):
     #AWS_S3 = 'aws_s3_bucket'
     LOCAL = 'local'
     SHARE = 'share'
@@ -78,8 +78,7 @@ class Data(models.Model):
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
-    uploaded_data_storage_location = models.CharField(max_length=15, choices=UploadedDataStorageLocationChoice.choices(),
-                                     default=UploadedDataStorageLocationChoice.LOCAL)
+    storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
 
     class Meta:
         default_permissions = ()
