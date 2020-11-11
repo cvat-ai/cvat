@@ -8,26 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0-beta] - Unreleased
 
 ### Added
+
 -
 
 ### Changed
+
 -
 
 ### Deprecated
+
 -
 
 ### Removed
+
 -
 
 ### Fixed
+
 -
 
 ### Security
+
 -
 
 ## [1.2.0-alpha] - 2020-11-09
 
 ### Added
+
 - Ability to login into CVAT-UI with token from api/v1/auth/login (<https://github.com/openvinotoolkit/cvat/pull/2234>)
 - Added layout grids toggling ('ctrl + alt + Enter')
 - Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
@@ -48,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional chaining plugin for cvat-canvas and cvat-ui (<https://github.com/openvinotoolkit/cvat/pull/2249>)
 - MOTS png mask format support (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 - Ability to correct upload video with a rotation record in the metadata (<https://github.com/openvinotoolkit/cvat/pull/2218>)
+- User search field for assignee fields (<https://github.com/openvinotoolkit/cvat/pull/2370>)
 
 ### Changed
 
@@ -64,7 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Removed Z-Order flag from task creation process
-
 
 ### Fixed
 

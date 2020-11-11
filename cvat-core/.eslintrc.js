@@ -4,6 +4,7 @@
 
 module.exports = {
     env: {
+        amd: true,
         node: false,
         browser: true,
         es6: true,
