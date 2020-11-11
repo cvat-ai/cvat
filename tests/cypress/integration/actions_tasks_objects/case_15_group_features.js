@@ -66,8 +66,6 @@ context('Group features', () => {
                 for (let i=0; i<$listCanvasShapes.length; i++) {
                     cy.get($listCanvasShapes[i]).should('have.css', 'fill').then($fill => {
                         defaultGroupColor = $fill;
-                        // expected rgb(224, 224, 224) to equal rgb(224, 224, 224)
-                        expect(defaultGroupColor).to.be.equal($fill);
                     });
                 }
             });
@@ -91,8 +89,6 @@ context('Group features', () => {
                     // expected rgb(250, 50, 83) to not equal rgb(224, 224, 224)
                     expect($shapesGroupColor).to.not.equal(defaultGroupColor);
                     shapesGroupColor = $shapesGroupColor;
-                    // expected rgb(250, 50, 83) to equal rgb(250, 50, 83)
-                    expect(shapesGroupColor).to.be.equal($shapesGroupColor);
                 });
             }
             for (const objectSideBarShape of ['#cvat-objects-sidebar-state-item-1', '#cvat-objects-sidebar-state-item-2']) {
@@ -115,8 +111,6 @@ context('Group features', () => {
                     // expected rgb(250, 50, 83) to not equal rgb(224, 224, 224)
                     expect($tracksGroupColor).to.not.equal(defaultGroupColor);
                     tracksGroupColor = $tracksGroupColor;
-                    // expected rgb(250, 50, 83) to equal rgb(250, 50, 83)
-                    expect(tracksGroupColor).to.be.equal($tracksGroupColor);
                 });
             }
             for (const objectSideBarTrack of ['#cvat-objects-sidebar-state-item-3', '#cvat-objects-sidebar-state-item-4']) {
