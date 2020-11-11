@@ -704,7 +704,16 @@ class JobViewSet(viewsets.GenericViewSet,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+class UserFilter(filters.FilterSet):
+    class Meta:
+        model = User
+        fields = ("id",)
+
+
 @method_decorator(name='list', decorator=swagger_auto_schema(
+    manual_parameters=[
+            openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this user",type=openapi.TYPE_NUMBER),
+    ],
     operation_summary='Method provides a paginated list of users registered on the server'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(
     operation_summary='Method provides information of a specific user'))
@@ -716,6 +725,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all().order_by('id')
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    search_fields = ('username', 'first_name', 'last_name')
+    filterset_class = UserFilter
 
     def get_serializer_class(self):
         user = self.request.user

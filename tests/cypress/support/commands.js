@@ -100,13 +100,14 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
         cy.switchLabel(createRectangleParams.labelName);
     }
     cy.contains('Draw new rectangle')
-    .parents('.cvat-draw-shape-popover-content').within(() => {
-        cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
-            selectedValueGlobal = $labelValue.text();
+        .parents('.cvat-draw-shape-popover-content')
+        .within(() => {
+            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                selectedValueGlobal = $labelValue.text();
+            });
+            cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
+            cy.get('button').contains(createRectangleParams.type).click({ force: true });
         });
-        cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
-        cy.get('button').contains(createRectangleParams.type).click({ force: true });
-    })
     cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
     cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
     if (createRectangleParams.points === 'By 4 Points') {
@@ -131,9 +132,11 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
         const maxId = Math.max(...listCanvasShapeId);
         cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').and('be.visible');
         cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
-        .should('contain', maxId).and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`).within(() => {
-            cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
-        });
+            .should('contain', maxId)
+            .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
+            .within(() => {
+                cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
+            });
     });
 });
 

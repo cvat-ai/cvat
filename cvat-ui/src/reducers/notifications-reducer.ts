@@ -9,7 +9,6 @@ import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
 import { ShareActionTypes } from 'actions/share-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
-import { UsersActionTypes } from 'actions/users-actions';
 import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
@@ -357,8 +356,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         updating: {
-                            message:
-                                'Could not update ' + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -425,21 +423,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.formats,
                         fetching: {
                             message: 'Could not get formats from the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case UsersActionTypes.GET_USERS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    users: {
-                        ...state.errors.users,
-                        fetching: {
-                            message: 'Could not get users from the server',
                             reason: action.payload.error.toString(),
                         },
                     },
