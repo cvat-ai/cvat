@@ -4,12 +4,9 @@
 
 module.exports = {
     env: {
-        amd: true,
-        node: false,
+        node: true,
         browser: true,
         es6: true,
-        jquery: true,
-        qunit: true,
         'jest/globals': true,
     },
     parserOptions: {
@@ -17,7 +14,7 @@ module.exports = {
         sourceType: 'module',
         ecmaVersion: 2018,
     },
-    plugins: ['security', 'jest', 'no-unsanitized', 'no-unsafe-innerhtml'],
+    plugins: ['security', 'jest', 'no-unsafe-innerhtml'],
     extends: ['eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM', 'airbnb-base'],
     rules: {
         'no-await-in-loop': [0],

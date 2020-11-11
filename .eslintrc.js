@@ -4,14 +4,13 @@
 
 module.exports = {
     env: {
-        node: false,
+        node: true,
         browser: true,
         es6: true,
-        jquery: true,
-        qunit: true,
     },
     parserOptions: {
-        sourceType: 'script',
+        sourceType: 'module',
+        ecmaVersion: 2018,
     },
     plugins: ['eslint-plugin-header'],
     extends: ['eslint:recommended', 'prettier'],
