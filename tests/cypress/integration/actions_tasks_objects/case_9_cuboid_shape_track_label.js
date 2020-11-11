@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -82,17 +80,11 @@ context('Actions on Cuboid', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a Cuboid shape in two ways (From rectangle, by 4 points)', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.createCuboid(createCuboidShape4Points);

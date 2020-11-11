@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -90,17 +88,11 @@ context('Actions on polygon', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a polygon shape, track', () => {
             cy.createPolygon(createPolygonShape);
             cy.createPolygon(createPolygonTrack);
