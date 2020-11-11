@@ -9,7 +9,7 @@ context('Check User Guide.', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('User Guide is available.', () => {
-            cy.visit('documentation/user_guide.html')
+            cy.visit('documentation/user_guide.html');
         });
         it('Checking for the several elements.', () => {
             cy.get('#users-guide');
