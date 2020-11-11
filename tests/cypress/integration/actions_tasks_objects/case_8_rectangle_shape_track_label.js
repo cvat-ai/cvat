@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Actions on rectangle', () => {
     const caseId = '8';

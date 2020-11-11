@@ -1,11 +1,10 @@
-/* eslint-disable no-undef */
 // Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Actions on polylines', () => {
     const caseId = '11';
