@@ -37,7 +37,6 @@ import '../styles.scss';
 
 interface CVATAppProps {
     loadFormats: () => void;
-    loadUsers: () => void;
     loadAbout: () => void;
     verifyAuthorized: () => void;
     loadUserAgreements: () => void;
@@ -57,8 +56,6 @@ interface CVATAppProps {
     modelsFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
-    usersInitialized: boolean;
-    usersFetching: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
@@ -95,7 +92,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const {
             verifyAuthorized,
             loadFormats,
-            loadUsers,
             loadAbout,
             loadUserAgreements,
             initPlugins,
@@ -105,8 +101,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userFetching,
             formatsInitialized,
             formatsFetching,
-            usersInitialized,
-            usersFetching,
             aboutInitialized,
             aboutFetching,
             pluginsInitialized,
@@ -144,10 +138,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
-        }
-
-        if (!usersInitialized && !usersFetching) {
-            loadUsers();
         }
 
         if (!aboutInitialized && !aboutFetching) {
@@ -238,7 +228,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public render(): JSX.Element {
         const {
             userInitialized,
-            usersInitialized,
             aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
@@ -251,7 +240,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const readyForRender =
             (userInitialized && (user == null || !user.isVerified)) ||
-            (userInitialized && formatsInitialized && pluginsInitialized && usersInitialized && aboutInitialized);
+            (userInitialized && formatsInitialized && pluginsInitialized && aboutInitialized);
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -273,7 +262,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (showPlatformNotification()) {
             stopNotifications(false);
-            const info = platformInfo();
+            const {
+                name, version, engine, os,
+            } = platformInfo();
+
             Modal.warning({
                 title: 'Unsupported platform detected',
                 content: (
@@ -281,8 +273,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Row>
                             <Col>
                                 <Text>
-                                    {`The browser you are using is ${info.name} ${info.version}` +
-                                        ` based on ${info.engine} .` +
+                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
                                         ' CVAT was tested in the latest versions of Chrome and Firefox.' +
                                         ' We recommend to use Chrome (or another Chromium based browser)'}
                                 </Text>
@@ -290,7 +281,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         </Row>
                         <Row>
                             <Col>
-                                <Text type='secondary'>{`The operating system is ${info.os}`}</Text>
+                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
                             </Col>
                         </Row>
                     </>

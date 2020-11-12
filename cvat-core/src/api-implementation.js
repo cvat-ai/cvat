@@ -17,31 +17,6 @@
     const { ArgumentError } = require('./exceptions');
     const { Task, Project } = require('./session');
 
-    function attachUsers(instance, users, instanceType) {
-        if (instance.owner !== null) {
-            [instance.owner] = users.filter((user) => user.id === instance.owner);
-        }
-
-        if (instance.assignee !== null) {
-            [instance.assignee] = users.filter((user) => user.id === instance.assignee);
-        }
-
-        if (instanceType === 'project') {
-            instance.tasks = instance.tasks.map((task) => attachUsers(task, users, 'task'));
-            return instance;
-        }
-
-        for (const segment of instance.segments) {
-            for (const job of segment.jobs) {
-                if (job.assignee !== null) {
-                    [job.assignee] = users.filter((user) => user.id === job.assignee);
-                }
-            }
-        }
-
-        return instance;
-    }
-
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
@@ -132,7 +107,10 @@
 
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
+                id: isInteger,
                 self: isBoolean,
+                search: isString,
+                limit: isInteger,
             });
 
             let users = null;
@@ -140,7 +118,13 @@
                 users = await serverProxy.users.getSelf();
                 users = [users];
             } else {
-                users = await serverProxy.users.getUsers();
+                const searchParams = {};
+                for (const key in filter) {
+                    if (filter[key] && key !== 'self') {
+                        searchParams[key] = filter[key];
+                    }
+                }
+                users = await serverProxy.users.getUsers(new URLSearchParams(searchParams).toString());
             }
 
             users = users.map((user) => new User(user));
@@ -173,8 +157,7 @@
 
             // If task was found by its id, then create task instance and get Job instance from it
             if (tasks !== null && tasks.length) {
-                const users = (await serverProxy.users.getUsers()).map((userData) => new User(userData));
-                const task = new Task(attachUsers(tasks[0], users, 'task'));
+                const task = new Task(tasks[0]);
 
                 return filter.jobID ? task.jobs.filter((job) => job.id === filter.jobID) : task.jobs;
             }
@@ -218,9 +201,8 @@
                 }
             }
 
-            const users = (await serverProxy.users.getUsers()).map((userData) => new User(userData));
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const tasks = tasksData.map((task) => attachUsers(task, users, 'task')).map((task) => new Task(task));
+            const tasks = tasksData.map((task) => new Task(task));
 
             tasks.count = tasksData.count;
 
@@ -258,12 +240,9 @@
                 }
             }
 
-            const users = (await serverProxy.users.getUsers()).map((userData) => new User(userData));
             const projectsData = await serverProxy.projects.getProjects(searchParams.toString());
             // prettier-ignore
-            const projects = projectsData
-                .map((project) => attachUsers(project, users, 'project'))
-                .map((project) => new Project(project));
+            const projects = projectsData.map((project) => new Project(project));
 
             projects.count = projectsData.count;
 

@@ -1,27 +1,22 @@
 {
     "python.pythonPath": ".env/bin/python",
     "eslint.enable": true,
-    "eslint.validate": [
+    "eslint.probe": [
         "javascript",
         "typescript",
-        "typescriptreact",
+        "typescriptreact"
     ],
+    "eslint.onIgnoredFiles": "warn",
     "eslint.workingDirectories": [
         {
-            "directory":  "./cvat-core",
-            "changeProcessCWD": true
+            "directory": "${cwd}",
         },
         {
-            "directory":  "./cvat-canvas",
-            "changeProcessCWD": true
+            "pattern":  "cvat-*"
         },
         {
-            "directory":  "./cvat-ui",
-            "changeProcessCWD": true
-        },
-        {
-            "directory":  ".",
-            "changeProcessCWD": true
+            "directory": "tests",
+            "!cwd": true
         }
     ],
     "python.linting.pylintEnabled": true,

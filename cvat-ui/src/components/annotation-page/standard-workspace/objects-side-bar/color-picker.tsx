@@ -33,8 +33,7 @@ interface Props {
     | 'leftTop'
     | 'leftBottom'
     | 'rightTop'
-    | 'rightBottom'
-    | undefined;
+    | 'rightBottom';
 }
 
 function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {

@@ -686,6 +686,8 @@
                 }
             }
 
+            if (data.assignee) data.assignee = new User(data.assignee);
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -883,6 +885,9 @@
                     data[property] = initialData[property];
                 }
             }
+
+            if (data.assignee) data.assignee = new User(data.assignee);
+            if (data.owner) data.owner = new User(data.owner);
 
             data.labels = [];
             data.jobs = [];
@@ -1677,7 +1682,7 @@
         if (this.id) {
             const jobData = {
                 status: this.status,
-                assignee: this.assignee ? this.assignee.id : null,
+                assignee_id: this.assignee ? this.assignee.id : null,
             };
 
             await serverProxy.jobs.saveJob(this.id, jobData);
@@ -1886,7 +1891,7 @@
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
             const taskData = {
-                assignee: this.assignee ? this.assignee.id : null,
+                assignee_id: this.assignee ? this.assignee.id : null,
                 name: this.name,
                 bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],

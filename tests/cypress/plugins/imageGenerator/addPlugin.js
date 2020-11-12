@@ -20,7 +20,7 @@ function imageGenerator(args) {
     const count = args.count;
     return new Promise((resolve, reject) => {
         for (let i = 1; i <= count; i++) {
-            const image = new jimp(width, height, color, function (err, image) {
+            new jimp(width, height, color, function (err, image) {
                 if (err) reject(err);
                 jimp.loadFont(jimp.FONT_SANS_64_BLACK, function (err, font) {
                     if (err) reject(err);

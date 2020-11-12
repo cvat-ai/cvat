@@ -170,7 +170,10 @@ class ServerProxy {
                 project_id: taskData.project_id || null,
                 size: 5000,
                 mode: 'interpolation',
-                owner: 2,
+                owner: {
+                    id: 2,
+                    username: 'bsekache',
+                },
                 assignee: null,
                 bug_tracker: taskData.bug_tracker,
                 created_date: '2019-05-16T13:08:00.621747+03:00',
