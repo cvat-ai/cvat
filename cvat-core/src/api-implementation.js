@@ -119,7 +119,7 @@
                         searchParams[key] = filter[key];
                     }
                 }
-                users = await serverProxy.users.getUsers(new URLSearchParams(searchParams).toString());
+                users = await serverProxy.users.get(new URLSearchParams(searchParams).toString());
             }
 
             users = users.map((user) => new User(user));

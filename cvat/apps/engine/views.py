@@ -719,7 +719,7 @@ class JobViewSet(viewsets.GenericViewSet,
     def reviews(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.review_set
-        serializer = ReviewSerializer(queryset, many=True)
+        serializer = ReviewSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
     @swagger_auto_schema(method='post', operation_summary='Submit a review for the job')

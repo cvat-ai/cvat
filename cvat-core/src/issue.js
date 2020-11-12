@@ -224,12 +224,12 @@ class Issue {
         return result;
     }
 
-    _serialize() {
+    serialize() {
         const { comments } = this;
         const data = {
             position: this.position,
             frame: this.frame,
-            comment_set: comments,
+            comment_set: comments.map((comment) => comment.serialize()),
         };
 
         if (this.id > 0) {
@@ -252,10 +252,11 @@ class Issue {
     }
 
     toJSON() {
-        const data = this._serialize();
+        const data = this.serialize();
         const { owner, resolver, ...updated } = data;
         return {
             ...updated,
+            comment_set: this.comments.map((comment) => comment.toJSON()),
             owner_id: owner ? owner.id : undefined,
             resolver_id: resolver ? resolver.id : undefined,
         };
@@ -269,8 +270,8 @@ Issue.prototype.comment.implementation = async function (data) {
     if (typeof data.message !== 'string' || data.message.length < 1) {
         throw new ArgumentError(`Comment message must be a not empty string. Got ${data.message}`);
     }
-    if (!Number.isInteger(data.author)) {
-        throw new ArgumentError(`Owner of the comment must be an integer. Got ${data.author}`);
+    if (!(data.author instanceof User)) {
+        throw new ArgumentError(`Author of the comment must a User instance. Got ${data.author}`);
     }
 
     const copied = {
@@ -281,12 +282,6 @@ Issue.prototype.comment.implementation = async function (data) {
     const { id } = this;
     if (id >= 0) {
         const response = await serverProxy.issues.comment(id, [copied]);
-        for (const comment of response) {
-            if (comment.author && !(comment.author in User.objects)) {
-                const userData = await serverProxy.users.get(comment.author);
-                new User(userData);
-            }
-        }
         this.__internal.comment_set = response.map((comment) => new Comment(comment));
     } else {
         const comment = new Comment(copied);
@@ -302,12 +297,8 @@ Issue.prototype.resolve.implementation = async function (user) {
     const { id } = this;
     if (id >= 0) {
         const response = await serverProxy.issues.resolve(id);
-        if (!(response.resolver in User.objects)) {
-            const userData = await serverProxy.users.get(response.resolver);
-            new User(userData);
-        }
         this.__internal.resolved_date = response.resolved_date;
-        this.__internal.resolver = User.objects[response.resolver];
+        this.__internal.resolver = new User(response.resolver);
     } else {
         this.__internal.resolved_date = new Date().toISOString();
         this.__internal.resolver = user;
@@ -318,10 +309,6 @@ Issue.prototype.reopen.implementation = async function () {
     const { id } = this;
     if (id >= 0) {
         const response = await serverProxy.issues.reopen(id);
-        if (response.resolver && !(response.resolver in User.objects)) {
-            const userData = await serverProxy.users.get(response.resolver);
-            new User(userData);
-        }
         this.__internal.resolved_date = response.resolved_date;
         this.__internal.resolver = response.resolver;
     } else {

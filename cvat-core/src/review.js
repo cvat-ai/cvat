@@ -264,11 +264,11 @@ class Review {
         return result;
     }
 
-    _serialize() {
+    serialize() {
         const { issues, reviewedFrames, reviewedStates } = this;
         const data = {
             job: this.job,
-            issue_set: issues,
+            issue_set: issues.map((issue) => issue.serialize()),
             reviewed_frames: Array.from(reviewedFrames),
             reviewed_states: Array.from(reviewedStates),
         };
@@ -293,7 +293,7 @@ class Review {
     }
 
     toJSON() {
-        const data = this._serialize();
+        const data = this.serialize();
         const {
             reviewer,
             assignee,
@@ -301,15 +301,17 @@ class Review {
             reviewed_states: reviewedStates,
             ...updated
         } = data;
+
         return {
             ...updated,
+            issue_set: this.issues.map((issue) => issue.toJSON()),
             reviewer_id: reviewer ? reviewer.id : undefined,
             assignee_id: assignee ? assignee.id : undefined,
         };
     }
 
     async toLocalStorage() {
-        const data = this._serialize();
+        const data = this.serialize();
         store.set(`job-${this.job}-review`, JSON.stringify(data));
     }
 }
@@ -338,8 +340,8 @@ Review.prototype.openIssue.implementation = async function (data) {
         throw new ArgumentError(`Issue frame must be a number. Got ${data.frame}`);
     }
 
-    if (!Number.isInteger(data.owner)) {
-        throw new ArgumentError(`Issue owner must be an integer. Got ${data.owner}`);
+    if (!(data.owner instanceof User)) {
+        throw new ArgumentError(`Issue owner must be a User instance. Got ${data.owner}`);
     }
 
     if (!Array.isArray(data.position) || data.position.some((coord) => typeof coord !== 'number')) {
@@ -378,29 +380,15 @@ Review.prototype.submit.implementation = async function () {
     if (this.id < 0) {
         const data = this.toJSON();
 
-        const result = await serverProxy.jobs.reviews.create(this.job, data);
+        const response = await serverProxy.jobs.reviews.create(this.job, data);
         store.remove(`job-${this.job}-review`);
-        this.__internal.id = result.id;
-        this.__internal.issue_set = result.issue_set.map((issue) => new Issue(issue));
-        this.__internal.estimated_quality = result.estimated_quality;
-        this.__internal.status = result.status;
-        if (result.assignee && !(result.assignee in User.objects)) {
-            const userData = await serverProxy.users.get(result.assignee);
-            new User(userData);
-        }
+        this.__internal.id = response.id;
+        this.__internal.issue_set = response.issue_set.map((issue) => new Issue(issue));
+        this.__internal.estimated_quality = response.estimated_quality;
+        this.__internal.status = response.status;
 
-        if (result.assignee && !(result.assignee in User.objects)) {
-            const userData = await serverProxy.users.get(result.assignee);
-            new User(userData);
-        }
-
-        if (result.reviewer && !(result.reviewer in User.objects)) {
-            const userData = await serverProxy.users.get(result.reviewer);
-            new User(userData);
-        }
-
-        this.__internal.reviewer = User.objects[result.reviewer];
-        this.__internal.assignee = User.objects[result.assignee];
+        if (response.reviewer) this.__internal.reviewer = new User(response.reviewer);
+        if (response.assignee) this.__internal.assignee = new User(response.assignee);
     }
 };
 

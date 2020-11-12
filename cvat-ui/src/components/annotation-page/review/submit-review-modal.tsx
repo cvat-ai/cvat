@@ -13,7 +13,7 @@ import RadioButton from 'antd/lib/radio/radioButton';
 import Description from 'antd/lib/descriptions';
 import { Row, Col } from 'antd/lib/grid';
 
-import UserSelector from 'components/task-page/user-selector';
+import UserSelector, { User } from 'components/task-page/user-selector';
 import { CombinedState, ReviewStatus } from 'reducers/interfaces';
 import { switchSubmitReviewDialog } from 'actions/annotation-actions';
 import { submitReviewAsync } from 'actions/review-actions';
@@ -33,7 +33,6 @@ function computeEstimatedQuality(reviewedStates: number, openedIssues: number): 
 export default function SubmitReviewModal(): JSX.Element | null {
     const dispatch = useDispatch();
     const isVisible = useSelector((state: CombinedState): boolean => state.annotation.submitReviewDialogVisible);
-    const users = useSelector((state: CombinedState): any[] => state.users.users);
     const job = useSelector((state: CombinedState): any => state.annotation.job.instance);
     const activeReview = useSelector((state: CombinedState): any => state.review.activeReview);
     const numberOfIssues = useSelector((state: CombinedState): any => state.review.issues.length);
@@ -42,7 +41,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
     const reviewedFrames = activeReview ? activeReview.reviewedFrames.length : 0;
     const reviewedStates = activeReview ? activeReview.reviewedStates.length : 0;
 
-    const [reviewer, setReviewer] = useState(job.reviewer ? job.reviewer : users[0]);
+    const [reviewer, setReviewer] = useState<User | null>(job.reviewer ? job.reviewer : null);
     const [reviewStatus, setReviewStatus] = useState<string>(ReviewStatus.ACCEPTED);
     const [estimatedQuality, setEstimatedQuality] = useState<number>(0);
 
@@ -113,16 +112,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
                                         <Text type='secondary'>Reviewer: </Text>
                                     </Col>
                                     <Col offset={1}>
-                                        <UserSelector
-                                            value={reviewer.username}
-                                            users={users}
-                                            onChange={(id: string) => {
-                                                const [user] = users.filter((_user: any): boolean => _user.id === +id);
-                                                if (user) {
-                                                    setReviewer(user);
-                                                }
-                                            }}
-                                        />
+                                        <UserSelector value={reviewer} onSelect={setReviewer} />
                                     </Col>
                                 </Row>
                             )}

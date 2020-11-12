@@ -11,7 +11,7 @@ import Title from 'antd/lib/typography/Title';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 
-import UserSelector from 'components/task-page/user-selector';
+import UserSelector, { User } from 'components/task-page/user-selector';
 import { CombinedState, TaskStatus } from 'reducers/interfaces';
 import { switchSubmitAnnotationsDialog } from 'actions/annotation-actions';
 import { updateJobAsync } from 'actions/tasks-actions';
@@ -21,9 +21,8 @@ export default function SubmitAnnotationsModal(): JSX.Element | null {
     const history = useHistory();
     const isVisible = useSelector((state: CombinedState): boolean => state.annotation.submitAnnotationsDialogVisible);
     const fetching = useSelector((state: CombinedState): boolean => state.annotation.annotations.saving.uploading);
-    const users = useSelector((state: CombinedState): any[] => state.users.users);
     const job = useSelector((state: CombinedState): any => state.annotation.job.instance);
-    const [reviewer, setReviewer] = useState(job.reviewer ? job.reviewer : users[0]);
+    const [reviewer, setReviewer] = useState<User | null>(job.reviewer ? job.reviewer : null);
     const close = (): AnyAction => dispatch(switchSubmitAnnotationsDialog(false));
     const submitAnnotations = (): void => {
         job.reviewer = reviewer;
@@ -55,16 +54,7 @@ export default function SubmitAnnotationsModal(): JSX.Element | null {
                     <Text type='secondary'>Reviewer: </Text>
                 </Col>
                 <Col offset={1}>
-                    <UserSelector
-                        value={reviewer.username}
-                        users={users}
-                        onChange={(id: string) => {
-                            const [user] = users.filter((_user: any): boolean => _user.id === +id);
-                            if (user) {
-                                setReviewer(user);
-                            }
-                        }}
-                    />
+                    <UserSelector value={reviewer} onSelect={setReviewer} />
                 </Col>
             </Row>
             <Row type='flex' justify='start'>

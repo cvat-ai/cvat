@@ -156,15 +156,9 @@
                     },
                 }),
             );
-
-            const hash = JSON.stringify(data);
-            if (data.id !== null && (!(data.id in User.objects) || hash !== User.hashes[data.id])) {
-                User.hashes[data.id] = hash;
-                User.objects[data.id] = this;
-            }
         }
 
-        toJSON() {
+        serialize() {
             return {
                 id: this.id,
                 username: this.username,
@@ -180,10 +174,11 @@
                 email_verification_required: this.isVerified,
             };
         }
-    }
 
-    User.objects = {};
-    User.hashes = {};
+        toJSON() {
+            return this.serialize();
+        }
+    }
 
     module.exports = User;
 })();

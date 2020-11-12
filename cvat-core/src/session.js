@@ -996,13 +996,6 @@
                 }
             }
 
-            if (data.assignee !== null) {
-                data.assignee = User.objects[data.assignee];
-            }
-            if (data.owner !== null) {
-                data.owner = User.objects[data.owner];
-            }
-
             if (Array.isArray(initialData.labels)) {
                 for (const label of initialData.labels) {
                     const classInstance = new Label(label);

@@ -119,7 +119,7 @@ class Comment {
         );
     }
 
-    _serialize() {
+    serialize() {
         const data = {
             message: this.message,
         };
@@ -134,14 +134,14 @@ class Comment {
             data.updated_date = this.updatedDate;
         }
         if (this.author) {
-            data.author = this.author.toJSON();
+            data.author = this.author.serialize();
         }
 
         return data;
     }
 
     toJSON() {
-        const data = this._serialize();
+        const data = this.serialize();
         const { author, ...updated } = data;
         return {
             ...updated,

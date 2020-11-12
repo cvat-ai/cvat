@@ -164,41 +164,33 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Assignee',
             dataIndex: 'assignee',
             key: 'assignee',
-            render: (jobInstance: any): JSX.Element => {
-                const assignee = jobInstance.assignee ? jobInstance.assignee : null;
-
-                return (
-                    <UserSelector
-                        className='cvat-job-assignee-selector'
-                        value={assignee}
-                        onSelect={(value: User | null): void => {
-                            // eslint-disable-next-line
-                            jobInstance.assignee = value;
-                            onJobUpdate(jobInstance);
-                        }}
-                    />
-                );
-            },
+            render: (jobInstance: any): JSX.Element => (
+                <UserSelector
+                    className='cvat-job-assignee-selector'
+                    value={jobInstance.assignee}
+                    onSelect={(value: User | null): void => {
+                        // eslint-disable-next-line
+                        jobInstance.assignee = value;
+                        onJobUpdate(jobInstance);
+                    }}
+                />
+            ),
         },
         {
             title: 'Reviewer',
             dataIndex: 'reviewer',
             key: 'reviewer',
-            render: (jobInstance: any): JSX.Element => {
-                const reviewer = jobInstance.reviewer ? jobInstance.reviewer.username : null;
-
-                return (
-                    <UserSelector
-                        className='cvat-job-reviewer-selector'
-                        value={reviewer}
-                        onSelect={(value: User | null): void => {
-                            // eslint-disable-next-line
-                            jobInstance.reviewer = value;
-                            onJobUpdate(jobInstance);
-                        }}
-                    />
-                );
-            },
+            render: (jobInstance: any): JSX.Element => (
+                <UserSelector
+                    className='cvat-job-reviewer-selector'
+                    value={jobInstance.reviewer}
+                    onSelect={(value: User | null): void => {
+                        // eslint-disable-next-line
+                        jobInstance.reviewer = value;
+                        onJobUpdate(jobInstance);
+                    }}
+                />
+            ),
         },
     ];
 
