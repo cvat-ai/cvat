@@ -500,20 +500,14 @@
                 }
             }
 
-            async function getUsers(id = null) {
+            async function getUsers(filter = 'page_size=all') {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    if (id === null) {
-                        response = await Axios.get(`${backendAPI}/users?page_size=all`, {
-                            proxy: config.proxy,
-                        });
-                    } else {
-                        response = await Axios.get(`${backendAPI}/users/${id}`, {
-                            proxy: config.proxy,
-                        });
-                    }
+                    response = await Axios.get(`${backendAPI}/users?${filter}`, {
+                        proxy: config.proxy,
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
