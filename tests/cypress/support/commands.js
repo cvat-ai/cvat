@@ -167,7 +167,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
 });
 
 Cypress.Commands.add('changeAppearance', (colorBy) => {
-    cy.get('.cvat-objects-appearance-content').within(() => {
+    cy.get('.cvat-appearance-color-by-radio-group').within(() => {
         cy.get('[type="radio"]').check(colorBy, { force: true });
     });
 });
@@ -248,13 +248,13 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     if (createCuboidParams.switchLabel) {
         cy.switchLabel(createCuboidParams.labelName);
     }
-    cy.get('.cvat-draw-shape-popover-content').contains(createCuboidParams.points).click();
     cy.contains('Draw new cuboid')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
             cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
+            cy.contains(createCuboidParams.points).click();
             cy.get('button').contains(createCuboidParams.type).click({ force: true });
         });
     cy.get('.cvat-canvas-container').click(createCuboidParams.firstX, createCuboidParams.firstY);
