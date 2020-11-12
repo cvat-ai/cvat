@@ -198,9 +198,10 @@ context('Lock/hide features.', () => {
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_draggable');
         });
         it('Go to "Labels" tab.', () => {
-            // Hide all objects for convenience of next testing.
+            // Hide and unhide all objects for convenience of next testing.
             cy.get('.cvat-objects-sidebar-states-header').within(() => {
                 cy.get('i[aria-label="icon: eye"]').click();
+                cy.get('i[aria-label="icon: eye-invisible"]').click();
             });
             cy.get('.cvat-objects-sidebar').within(() => {
                 cy.contains('Labels').click();
@@ -209,9 +210,9 @@ context('Lock/hide features.', () => {
         it('Repeat hide/lock for one of the labels. Objects with other labels weren’t affected.', () => {
             const objectsSameLabel = ['cvat_canvas_shape_1', 'cvat_canvas_shape_2', 'cvat_canvas_shape_3'];
             cy.get('.cvat-objects-sidebar-labels-list').within(() => {
-                // Unhide all object with "Main task" label (#cvat_canvas_shape_1-3).
+                // Hide all object with "Main task" label (#cvat_canvas_shape_1-3).
                 cy.contains(labelName).parents('.cvat-objects-sidebar-label-item').within(() => {
-                    cy.get('i[aria-label="icon: eye-invisible"]').click();
+                    cy.get('i[aria-label="icon: eye"]').click();
                     cy.get('i[aria-label="icon: unlock"]').click();
                 });
             });
@@ -219,7 +220,7 @@ context('Lock/hide features.', () => {
                 for (let i=0; i<objectList.length; i++) {
                     // Checking whether the class exists on all objects except for objects with the "Main task" label.
                     if (!objectsSameLabel.includes(objectList[i].id)) {
-                        cy.get(objectList[i]).should('have.class', 'cvat_canvas_hidden');
+                        cy.get(objectList[i]).should('not.have.class', 'cvat_canvas_hidden');
                     }
                 }
             });
