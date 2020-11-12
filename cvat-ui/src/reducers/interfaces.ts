@@ -508,6 +508,10 @@ export interface ReviewState {
     frameIssues: any[];
     activeReview: any | null;
     newIssuePosition: number[] | null;
+    fetching: {
+        reviewId: number | null;
+        issueId: number | null;
+    };
 }
 
 export interface CombinedState {

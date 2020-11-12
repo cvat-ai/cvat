@@ -19,6 +19,7 @@ interface Props {
     left: number;
     top: number;
     resolved: boolean;
+    isFetching: boolean;
     collapse: () => void;
     resolve: () => void;
     reopen: () => void;
@@ -28,7 +29,7 @@ interface Props {
 export default function IssueDialog(props: Props): JSX.Element {
     const [currentText, setCurrentText] = useState<string>('');
     const {
-        comments, id, left, top, resolved, collapse, resolve, reopen, comment,
+        comments, id, left, top, resolved, isFetching, collapse, resolve, reopen, comment,
     } = props;
 
     useEffect(() => {
@@ -59,11 +60,11 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     const resolveButton = resolved ? (
-        <Button type='primary' onClick={reopen}>
+        <Button loading={isFetching} type='primary' onClick={reopen}>
             Reopen
         </Button>
     ) : (
-        <Button type='primary' onClick={resolve}>
+        <Button loading={isFetching} type='primary' onClick={resolve}>
             Resolve
         </Button>
     );
@@ -98,6 +99,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                 <Col>
                     {currentText.length ? (
                         <Button
+                            loading={isFetching}
                             type='primary'
                             disabled={!currentText.length}
                             onClick={() => {

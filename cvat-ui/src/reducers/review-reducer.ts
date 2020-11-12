@@ -12,6 +12,10 @@ const defaultState: ReviewState = {
     frameIssues: [], // saved on the server and not saved on the server
     activeReview: null, // not saved on the server
     newIssuePosition: null,
+    fetching: {
+        reviewId: null,
+        issueId: null,
+    },
 };
 
 function computeFrameIssues(issues: any[], activeReview: any, frame: number): any[] {
@@ -36,6 +40,16 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 frameIssues,
             };
         }
+        case ReviewActionTypes.SUBMIT_REVIEW: {
+            const { reviewId } = action.payload;
+            return {
+                ...state,
+                fetching: {
+                    ...state.fetching,
+                    reviewId,
+                },
+            };
+        }
         case ReviewActionTypes.SUBMIT_REVIEW_SUCCESS: {
             const {
                 activeReview, reviews, issues, frame,
@@ -48,6 +62,19 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 reviews,
                 issues,
                 frameIssues,
+                fetching: {
+                    ...state.fetching,
+                    reviewId: null,
+                },
+            };
+        }
+        case ReviewActionTypes.SUBMIT_REVIEW_FAILED: {
+            return {
+                ...state,
+                fetching: {
+                    ...state.fetching,
+                    reviewId: null,
+                },
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
@@ -90,6 +117,29 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 newIssuePosition: null,
             };
         }
+        case ReviewActionTypes.COMMENT_ISSUE:
+        case ReviewActionTypes.RESOLVE_ISSUE:
+        case ReviewActionTypes.REOPEN_ISSUE: {
+            const { issueId } = action.payload;
+            return {
+                ...state,
+                fetching: {
+                    ...state.fetching,
+                    issueId,
+                },
+            };
+        }
+        case ReviewActionTypes.COMMENT_ISSUE_FAILED:
+        case ReviewActionTypes.RESOLVE_ISSUE_FAILED:
+        case ReviewActionTypes.REOPEN_ISSUE_FAILED: {
+            return {
+                ...state,
+                fetching: {
+                    ...state.fetching,
+                    issueId: null,
+                },
+            };
+        }
         case ReviewActionTypes.RESOLVE_ISSUE_SUCCESS:
         case ReviewActionTypes.REOPEN_ISSUE_SUCCESS:
         case ReviewActionTypes.COMMENT_ISSUE_SUCCESS: {
@@ -99,6 +149,10 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 ...state,
                 issues: [...issues],
                 frameIssues: [...frameIssues],
+                fetching: {
+                    ...state.fetching,
+                    issueId: null,
+                },
             };
         }
         default:

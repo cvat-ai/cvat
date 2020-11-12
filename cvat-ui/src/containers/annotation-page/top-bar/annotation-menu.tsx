@@ -7,9 +7,9 @@ import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
 import { ClickParam } from 'antd/lib/menu/index';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, TaskStatus } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
-import { dumpAnnotationsAsync, exportDatasetAsync } from 'actions/tasks-actions';
+import { dumpAnnotationsAsync, exportDatasetAsync, updateJobAsync } from 'actions/tasks-actions';
 import {
     uploadJobAnnotationsAsync,
     removeAnnotationsAsync,
@@ -37,6 +37,7 @@ interface DispatchToProps {
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any): void;
+    updateJob(jobInstance: any): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -91,6 +92,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         saveAnnotations(jobInstance: any): void {
             dispatch(saveAnnotationsAsync(jobInstance));
         },
+        updateJob(jobInstance: any): void {
+            dispatch(updateJobAsync(jobInstance));
+        },
     };
 }
 
@@ -113,6 +117,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         switchSubmitReviewDialog,
         setForceExitAnnotationFlag,
         saveAnnotations,
+        updateJob,
     } = props;
 
     const onClickMenu = (params: ClickParam, file?: File): void => {
@@ -145,6 +150,10 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
                 switchSubmitAnnotationsDialog(true);
             } else if (action === Actions.SUBMIT_REVIEW) {
                 switchSubmitReviewDialog(true);
+            } else if (action === Actions.RESET_JOB_STATUS) {
+                jobInstance.status = TaskStatus.ANNOTATION;
+                updateJob(jobInstance);
+                history.push(`/tasks/${jobInstance.task.id}`);
             } else if (action === Actions.OPEN_TASK) {
                 history.push(`/tasks/${jobInstance.task.id}`);
             }

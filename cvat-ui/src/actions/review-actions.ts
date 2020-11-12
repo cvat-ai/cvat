@@ -15,12 +15,16 @@ export enum ReviewActionTypes {
     FINISH_ISSUE_SUCCESS = 'FINISH_ISSUE_SUCCESS',
     FINISH_ISSUE_FAILED = 'FINISH_ISSUE_FAILED',
     CANCEL_ISSUE = 'CANCEL_ISSUE',
+    RESOLVE_ISSUE = 'RESOLVE_ISSUE',
     RESOLVE_ISSUE_SUCCESS = 'RESOLVE_ISSUE_SUCCESS',
     RESOLVE_ISSUE_FAILED = 'RESOLVE_ISSUE_FAILED',
+    REOPEN_ISSUE = 'REOPEN_ISSUE',
     REOPEN_ISSUE_SUCCESS = 'REOPEN_ISSUE_SUCCESS',
     REOPEN_ISSUE_FAILED = 'REOPEN_ISSUE_FAILED',
+    COMMENT_ISSUE = 'COMMENT_ISSUE',
     COMMENT_ISSUE_SUCCESS = 'COMMENT_ISSUE_SUCCESS',
     COMMENT_ISSUE_FAILED = 'COMMENT_ISSUE_FAILED',
+    SUBMIT_REVIEW = 'SUBMIT_REVIEW',
     SUBMIT_REVIEW_SUCCESS = 'SUBMIT_REVIEW_SUCCESS',
     SUBMIT_REVIEW_FAILED = 'SUBMIT_REVIEW_FAILED',
 }
@@ -34,12 +38,16 @@ export const reviewActions = {
     finishIssueSuccess: (frame: number) => createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame }),
     finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
+    commentIssue: (issueId: number) => createAction(ReviewActionTypes.COMMENT_ISSUE, { issueId }),
     commentIssueSuccess: () => createAction(ReviewActionTypes.COMMENT_ISSUE_SUCCESS),
     commentIssueFailed: (error: any) => createAction(ReviewActionTypes.COMMENT_ISSUE_FAILED, { error }),
+    resolveIssue: (issueId: number) => createAction(ReviewActionTypes.RESOLVE_ISSUE, { issueId }),
     resolveIssueSuccess: () => createAction(ReviewActionTypes.RESOLVE_ISSUE_SUCCESS),
     resolveIssueFailed: (error: any) => createAction(ReviewActionTypes.RESOLVE_ISSUE_FAILED, { error }),
+    reopenIssue: (issueId: number) => createAction(ReviewActionTypes.REOPEN_ISSUE, { issueId }),
     reopenIssueSuccess: () => createAction(ReviewActionTypes.REOPEN_ISSUE_SUCCESS),
     reopenIssueFailed: (error: any) => createAction(ReviewActionTypes.REOPEN_ISSUE_FAILED, { error }),
+    submitReview: (reviewId: number) => createAction(ReviewActionTypes.SUBMIT_REVIEW, { reviewId }),
     submitReviewSuccess: (activeReview: any, reviews: any[], issues: any[], frame: number) =>
         createAction(ReviewActionTypes.SUBMIT_REVIEW_SUCCESS, {
             activeReview,
@@ -118,6 +126,7 @@ export const commentIssueAsync = (id: number, message: string): ThunkAction => a
     } = state;
 
     try {
+        dispatch(reviewActions.commentIssue(id));
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.comment({
             message,
@@ -140,6 +149,7 @@ export const resolveIssueAsync = (id: number): ThunkAction => async (dispatch, g
     } = state;
 
     try {
+        dispatch(reviewActions.resolveIssue(id));
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.resolve(user);
         if (activeReview && activeReview.issues.includes(issue)) {
@@ -160,6 +170,7 @@ export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, ge
     } = state;
 
     try {
+        dispatch(reviewActions.reopenIssue(id));
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.reopen(user);
         if (activeReview && activeReview.issues.includes(issue)) {
@@ -184,7 +195,10 @@ export const submitReviewAsync = (review: any): ThunkAction => async (dispatch, 
     } = state;
 
     try {
+        dispatch(reviewActions.submitReview(review.id));
         await review.submit(jobInstance.id);
+        const jobs = await cvat.jobs.get({ jobID: jobInstance.id });
+        jobInstance.status = jobs[0].status;
         const reviews = await jobInstance.reviews();
         const issues = await jobInstance.issues();
         const reviewInstance = new cvat.classes.Review({ job: jobInstance.id });

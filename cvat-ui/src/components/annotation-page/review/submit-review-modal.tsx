@@ -19,6 +19,7 @@ import { switchSubmitReviewDialog } from 'actions/annotation-actions';
 import { submitReviewAsync } from 'actions/review-actions';
 import { clamp } from 'utils/math';
 import InputNumber from 'antd/lib/input-number';
+import { useHistory } from 'react-router';
 
 function computeEstimatedQuality(reviewedStates: number, openedIssues: number): number {
     if (reviewedStates === 0 && openedIssues === 0) {
@@ -32,11 +33,13 @@ function computeEstimatedQuality(reviewedStates: number, openedIssues: number): 
 
 export default function SubmitReviewModal(): JSX.Element | null {
     const dispatch = useDispatch();
+    const history = useHistory();
     const isVisible = useSelector((state: CombinedState): boolean => state.annotation.submitReviewDialogVisible);
     const job = useSelector((state: CombinedState): any => state.annotation.job.instance);
     const activeReview = useSelector((state: CombinedState): any => state.review.activeReview);
+    const reviewIsBeingSubmitted = useSelector((state: CombinedState): any => state.review.fetching.reviewId);
     const numberOfIssues = useSelector((state: CombinedState): any => state.review.issues.length);
-
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const numberOfNewIssues = activeReview ? activeReview.issues.length : 0;
     const reviewedFrames = activeReview ? activeReview.reviewedFrames.length : 0;
     const reviewedStates = activeReview ? activeReview.reviewedStates.length : 0;
@@ -44,10 +47,6 @@ export default function SubmitReviewModal(): JSX.Element | null {
     const [reviewer, setReviewer] = useState<User | null>(job.reviewer ? job.reviewer : null);
     const [reviewStatus, setReviewStatus] = useState<string>(ReviewStatus.ACCEPTED);
     const [estimatedQuality, setEstimatedQuality] = useState<number>(0);
-
-    useEffect(() => {
-        setEstimatedQuality(computeEstimatedQuality(reviewedStates, numberOfNewIssues));
-    }, [reviewedStates, numberOfNewIssues]);
 
     const close = (): AnyAction => dispatch(switchSubmitReviewDialog(false));
     const submitReview = (): void => {
@@ -57,8 +56,20 @@ export default function SubmitReviewModal(): JSX.Element | null {
             activeReview.reviewer = reviewer;
         }
         dispatch(submitReviewAsync(activeReview));
-        close();
     };
+
+    useEffect(() => {
+        setEstimatedQuality(computeEstimatedQuality(reviewedStates, numberOfNewIssues));
+    }, [reviewedStates, numberOfNewIssues]);
+    useEffect(() => {
+        if (!isSubmitting && activeReview && activeReview.id === reviewIsBeingSubmitted) {
+            setIsSubmitting(true);
+        } else if (isSubmitting && reviewIsBeingSubmitted === null) {
+            setIsSubmitting(false);
+            close();
+            history.push(`/tasks/${job.task.id}`);
+        }
+    }, [reviewIsBeingSubmitted, activeReview]);
 
     if (!isVisible) {
         return null;
@@ -69,6 +80,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
             className='cvat-submit-review-dialog'
             visible={isVisible}
             destroyOnClose
+            confirmLoading={isSubmitting}
             onOk={submitReview}
             onCancel={close}
             okText='Submit'

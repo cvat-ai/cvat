@@ -33,6 +33,7 @@ export enum Actions {
     OPEN_TASK = 'open_task',
     SUBMIT_ANNOTATION = 'submit_annotation',
     SUBMIT_REVIEW = 'submit_review',
+    RESET_JOB_STATUS = 'reset_job_status',
 }
 
 export default function AnnotationMenuComponent(props: Props): JSX.Element {
@@ -119,6 +120,16 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             } else {
                 onClickMenu(copyParams);
             }
+        } else if (copyParams.key === Actions.RESET_JOB_STATUS) {
+            Modal.confirm({
+                title: 'The job status is going to be switched',
+                content: 'Status will be changed to "annotations". Would you like to continue?',
+                okText: 'Continue',
+                cancelText: 'Cancel',
+                onOk: () => {
+                    onClickMenu(copyParams);
+                },
+            });
         } else {
             onClickMenu(copyParams);
         }
@@ -157,6 +168,9 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             )}
             {jobStatus === 'validation' && isReviewer && (
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit review</Menu.Item>
+            )}
+            {jobStatus === 'completed' && isReviewer && (
+                <Menu.Item key={Actions.RESET_JOB_STATUS}>Reset status</Menu.Item>
             )}
         </Menu>
     );

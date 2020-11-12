@@ -33,6 +33,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
     const workspace = useSelector((state: CombinedState): Workspace => state.annotation.workspace);
+    const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
 
@@ -75,6 +76,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     id={issue.id}
                     top={minY}
                     left={maxX}
+                    isFetching={issueFetching !== null}
                     comments={issue.comments}
                     resolved={issueResolved}
                     collapse={() => {
