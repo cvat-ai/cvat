@@ -12,6 +12,7 @@ context('Lock/hide features.', () => {
     const newLabelName2 = `Second label case ${caseId}`;
     const newLabelName3 = `Third label case ${caseId}`;
     const newLabelName4 = `Fourth label case ${caseId}`;
+    let cvatObjectsSidebarStateItem1 = '';
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
@@ -40,7 +41,7 @@ context('Lock/hide features.', () => {
         firstX: 400,
         firstY: 350,
         secondX: 500,
-        secondY: 350,
+        secondY: 320,
         thirdX: 500,
         thirdY: 450,
         fourthX: 400,
@@ -110,6 +111,10 @@ context('Lock/hide features.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Draw several objects (different shapes, tracks, tags, labels)', () => {
             cy.createPolygon(createPolygonShape);
+            // Get css "background-color" for further comparison.
+            cy.get('#cvat-objects-sidebar-state-item-1').then($cvatObjectsSidebarStateItem1 => {
+                cvatObjectsSidebarStateItem1 = $cvatObjectsSidebarStateItem1.css('background-color');
+            });
             cy.createRectangle(createRectangleTrack2Points);
             cy.createCuboid(createCuboidShape4Points);
             cy.createPolyline(createPolylinesShapeSwitchLabel);
@@ -190,8 +195,7 @@ context('Lock/hide features.', () => {
             });
             cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_draggable');
             cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
-                cy.get('.cvat-object-item-button-pinned').click();
-                cy.get('.cvat-object-item-button-pinned-enabled').should('not.exist');
+                cy.get('.cvat-object-item-button-pinned').click().should('not.have.class', 'cvat-object-item-button-pinned-enabled');
                 // Unhide polygon shape.
                 cy.get('.cvat-object-item-button-hidden').click().should('not.have.class', 'cvat-object-item-button-hidden-enabled');
             });
@@ -210,10 +214,10 @@ context('Lock/hide features.', () => {
         it('Repeat hide/lock for one of the labels. Objects with other labels weren’t affected.', () => {
             const objectsSameLabel = ['cvat_canvas_shape_1', 'cvat_canvas_shape_2', 'cvat_canvas_shape_3'];
             cy.get('.cvat-objects-sidebar-labels-list').within(() => {
-                // Hide all object with "Main task" label (#cvat_canvas_shape_1-3).
+                // Hide and lock all object with "Main task" label (#cvat_canvas_shape_1-3).
                 cy.contains(labelName).parents('.cvat-objects-sidebar-label-item').within(() => {
-                    cy.get('i[aria-label="icon: eye"]').click();
-                    cy.get('i[aria-label="icon: unlock"]').click();
+                    cy.get('.cvat-label-item-button-hidden').click().should('have.class', 'cvat-label-item-button-hidden-enabled');
+                    cy.get('.cvat-label-item-button-lock').click().should('have.class', 'cvat-label-item-button-lock-enabled');
                 });
             });
             cy.get('.cvat_canvas_shape').then(objectList => {
@@ -221,6 +225,23 @@ context('Lock/hide features.', () => {
                     // Checking whether the class exists on all objects except for objects with the "Main task" label.
                     if (!objectsSameLabel.includes(objectList[i].id)) {
                         cy.get(objectList[i]).should('not.have.class', 'cvat_canvas_hidden');
+                    }
+                }
+            });
+            // Go to "Object" tab to check whether objects can change their labels.
+            cy.get('.cvat-objects-sidebar').within(() => {
+                cy.contains('Objects').click();
+            });
+            // Objects that have a label different from the "Main task" should not be blocked.
+            cy.get('.cvat-objects-sidebar-state-item').then(objectSidebarList => {
+                for (let i=0; i<objectSidebarList.length; i++) {
+                    if (!objectSidebarList[i].textContent.match(new RegExp(`${labelName}`, 'g'))) {
+                        cy.get(objectSidebarList[i]).within(() => {
+                            cy.get('.ant-select-selection-selected-value').click({force: true});
+                        });
+                        cy.get('.ant-select-dropdown-menu').last().contains(labelName).click({force: true});
+                        // Checking that the css parameter "background-color" has become the same as the ".cvat-objects-sidebar-state-item" with "Main task" label.
+                        cy.get(objectSidebarList[i]).should('have.css', 'background-color', cvatObjectsSidebarStateItem1);
                     }
                 }
             });
