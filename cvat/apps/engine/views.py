@@ -719,7 +719,7 @@ class JobViewSet(viewsets.GenericViewSet,
     def reviews(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.review_set
-        serializer = ReviewSerializer(queryset, many=True)
+        serializer = ReviewSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
     @swagger_auto_schema(method='post', operation_summary='Submit a review for the job')
@@ -728,24 +728,28 @@ class JobViewSet(viewsets.GenericViewSet,
         db_job = self.get_object()
 
         if request.data['status'] == ReviewStatus.REVIEW_FURTHER:
-            if 'reviewer' not in request.data:
+            if 'reviewer_id' not in request.data:
                 return Response('Must provide a new reviewer', status=status.HTTP_400_BAD_REQUEST)
-            db_job.reviewer = User.objects.get(pk=request.data['reviewer'])
+            db_job.reviewer = User.objects.get(pk=request.data['reviewer_id'])
             db_job.save()
 
         request.data.update({
             'job': db_job.id,
-            'reviewer': request.user.id,
-            'assignee': db_job.assignee.id,
+            'reviewer_id': request.user.id,
         })
+
+        if db_job.assignee:
+            request.data.update({
+                'assignee_id': db_job.assignee.id,
+            })
 
         issue_set = request.data['issue_set']
         for issue in issue_set:
             issue['job'] = db_job.id
-            issue['owner'] = request.user.id
+            issue['owner_id'] = request.user.id
             comment_set = issue['comment_set']
             for comment in comment_set:
-                comment['author'] = request.user.id
+                comment['author_id'] = request.user.id
 
         serializer = CombinedReviewSerializer(data=request.data, partial=True)
         if serializer.is_valid(raise_exception=True):
@@ -756,7 +760,7 @@ class JobViewSet(viewsets.GenericViewSet,
             elif instance.status == ReviewStatus.REJECTED:
                 db_job.status = StatusChoice.ANNOTATION
                 db_job.save()
-            return Response(CombinedReviewSerializer(instance).data, status=status.HTTP_201_CREATED)
+            return Response(CombinedReviewSerializer(instance, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(method='get', operation_summary='Get a brief summary about done reviews')
     @action(detail=True, methods=['GET'], url_path='reviews/summary', serializer_class=ReviewSummarySerializer)
@@ -772,7 +776,7 @@ class JobViewSet(viewsets.GenericViewSet,
     def issues(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.issue_set
-        serializer = CombinedIssueSerializer(queryset, many=True)
+        serializer = CombinedIssueSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))
@@ -819,7 +823,7 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         db_issue.resolver = request.user
         db_issue.resolved_date = datetime.now()
         db_issue.save()
-        serializer = IssueSerializer(db_issue)
+        serializer = IssueSerializer(db_issue, context={'request': request})
         return Response(serializer.data)
 
     @swagger_auto_schema(method='patch', operation_summary='The action reopens a specific issue',
@@ -832,7 +836,7 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         db_issue.resolver = None
         db_issue.resolved_date = None
         db_issue.save()
-        serializer = IssueSerializer(db_issue)
+        serializer = IssueSerializer(db_issue, context={'request': request})
         return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
@@ -842,7 +846,7 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
     def comments(self, request, pk):
         db_issue = self.get_object()
         queryset = db_issue.comment_set
-        serializer = CommentSerializer(queryset, many=True)
+        serializer = CommentSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
     @swagger_auto_schema(method='post', operation_summary='The action adds comments to an issue',
@@ -853,7 +857,7 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         self.get_object() # call to force check persmissions
         for comment in request.data:
             comment.update({
-                'author': request.user.id,
+                'author_id': request.user.id,
                 'issue': pk
             })
 
@@ -861,7 +865,7 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         if serializer.is_valid():
             serializer.save()
         db_issue = Issue.objects.prefetch_related('comment_set').get(pk=pk)
-        updated_serializer = CommentSerializer(db_issue.comment_set, many=True)
+        updated_serializer = CommentSerializer(db_issue.comment_set, context={'request': request}, many=True)
         return Response(updated_serializer.data, status=status.HTTP_201_CREATED)
 
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
@@ -883,7 +887,15 @@ class CommentViewSet(viewsets.GenericViewSet,
 
         return [perm() for perm in permissions]
 
+class UserFilter(filters.FilterSet):
+    class Meta:
+        model = User
+        fields = ("id",)
+
 @method_decorator(name='list', decorator=swagger_auto_schema(
+    manual_parameters=[
+            openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this user",type=openapi.TYPE_NUMBER),
+    ],
     operation_summary='Method provides a paginated list of users registered on the server'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(
     operation_summary='Method provides information of a specific user'))
@@ -895,6 +907,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all().order_by('id')
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    search_fields = ('username', 'first_name', 'last_name')
+    filterset_class = UserFilter
 
     def get_serializer_class(self):
         user = self.request.user
