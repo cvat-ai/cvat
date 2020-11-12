@@ -1,5 +1,5 @@
 metadata:
-  name: openvino.omz.intel.text-detection-0004
+  name: openvino-omz-intel-text-detection-0004
   namespace: cvat
   annotations:
     name: Text detection v4
