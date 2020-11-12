@@ -94,8 +94,8 @@ class ServerProxy {
             const object = tasksDummyData.results.filter((task) => task.id === id)[0];
             for (const prop in taskData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(taskData, prop) &&
-                    Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(taskData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     object[prop] = taskData[prop];
                 }
@@ -110,7 +110,10 @@ class ServerProxy {
                 name: taskData.name,
                 size: 5000,
                 mode: 'interpolation',
-                owner: 2,
+                owner: {
+                    id: 2,
+                    username: 'bsekache',
+                },
                 assignee: null,
                 bug_tracker: taskData.bug_tracker,
                 created_date: '2019-05-16T13:08:00.621747+03:00',
@@ -175,8 +178,8 @@ class ServerProxy {
 
             for (const prop in jobData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(jobData, prop) &&
-                    Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(jobData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     object[prop] = jobData[prop];
                 }
