@@ -81,9 +81,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     };
 
     private onSetup = (): void => {
-        const {
-            frame, labels, jobInstance, canvasInstance, onAnnotationCreate, onRememberObject,
-        } = this.props;
+        const { frame, labels, jobInstance, canvasInstance, onAnnotationCreate, onRememberObject } = this.props;
 
         const { selectedLabelID } = this.state;
 

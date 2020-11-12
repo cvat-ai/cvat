@@ -100,9 +100,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactNode {
-        const {
-            restore, job, serverVersion, coreVersion, canvasVersion, uiVersion,
-        } = this.props;
+        const { restore, job, serverVersion, coreVersion, canvasVersion, uiVersion } = this.props;
 
         const { hasError, error } = this.state;
 
@@ -154,8 +152,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                             }}
                                         >
                                             {' '}
-                                            Copy
-                                            {' '}
+                                            Copy{' '}
                                         </a>
                                     </Tooltip>
                                     the error message to clipboard

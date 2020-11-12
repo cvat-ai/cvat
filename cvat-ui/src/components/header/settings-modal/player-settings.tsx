@@ -138,13 +138,13 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row type='flex' className='cvat-player-settings-canvas-background'>
                 <Col>
                     <Popover
-                        content={(
+                        content={
                             <CompactPicker
                                 colors={consts.CANVAS_BACKGROUND_COLORS}
                                 color={canvasBackgroundColor}
                                 onChange={(e) => onChangeCanvasBackgroundColor(e.hex)}
                             />
-                        )}
+                        }
                         overlayClassName='canvas-background-color-picker-popover'
                         trigger='click'
                     >

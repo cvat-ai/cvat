@@ -18,9 +18,7 @@ import ColorPicker from 'components/annotation-page/standard-workspace/objects-s
 import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import consts from 'consts';
-import {
-    equalArrayHead, idGenerator, Label, Attribute,
-} from './common';
+import { equalArrayHead, idGenerator, Label, Attribute } from './common';
 
 export enum AttributeType {
     SELECT = 'SELECT',

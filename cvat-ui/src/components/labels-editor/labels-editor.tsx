@@ -185,16 +185,14 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
 
     public render(): JSX.Element {
         const { labels } = this.props;
-        const {
-            savedLabels, unsavedLabels, constructorMode, labelForUpdate,
-        } = this.state;
+        const { savedLabels, unsavedLabels, constructorMode, labelForUpdate } = this.state;
 
         return (
             <Tabs
                 defaultActiveKey='2'
                 type='card'
                 tabBarStyle={{ marginBottom: '0px' }}
-                tabBarExtraContent={(
+                tabBarExtraContent={
                     <>
                         <Tooltip title='Copied to clipboard!' trigger='click' mouseLeaveDelay={0}>
                             <Button
@@ -221,27 +219,27 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
                             </Button>
                         </Tooltip>
                     </>
-                )}
+                }
             >
                 <Tabs.TabPane
-                    tab={(
+                    tab={
                         <span>
                             <Icon type='edit' />
                             <Text>Raw</Text>
                         </span>
-                    )}
+                    }
                     key='1'
                 >
                     <RawViewer labels={[...savedLabels, ...unsavedLabels]} onSubmit={this.handleRawSubmit} />
                 </Tabs.TabPane>
 
                 <Tabs.TabPane
-                    tab={(
+                    tab={
                         <span>
                             <Icon type='build' />
                             <Text>Constructor</Text>
                         </span>
-                    )}
+                    }
                     key='2'
                 >
                     {constructorMode === ConstructorMode.SHOW && (

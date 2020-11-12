@@ -18,9 +18,7 @@ interface ConstructorViewerItemProps {
 }
 
 export default function ConstructorViewerItem(props: ConstructorViewerItemProps): JSX.Element {
-    const {
-        color, label, onUpdate, onDelete,
-    } = props;
+    const { color, label, onUpdate, onDelete } = props;
 
     return (
         <div style={{ background: color || consts.NEW_LABEL_COLOR }} className='cvat-constructor-viewer-item'>

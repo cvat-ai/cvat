@@ -112,8 +112,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col>
                     <Text type='secondary'>
                         {' '}
-                        Show text for an object on the canvas not only when the object is activated
-                        {' '}
+                        Show text for an object on the canvas not only when the object is activated{' '}
                     </Text>
                 </Col>
             </Row>
@@ -132,8 +131,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col>
                     <Text type='secondary'>
                         {' '}
-                        Enable automatic bordering for polygons and polylines during drawing/editing
-                        {' '}
+                        Enable automatic bordering for polygons and polylines during drawing/editing{' '}
                     </Text>
                 </Col>
             </Row>

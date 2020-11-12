@@ -59,13 +59,14 @@ export default class FileManager extends React.PureComponent<Props, State> {
         };
     }
 
-    private loadData = (key: string): Promise<void> => new Promise<void>((resolve, reject): void => {
-        const { onLoadData } = this.props;
+    private loadData = (key: string): Promise<void> =>
+        new Promise<void>((resolve, reject): void => {
+            const { onLoadData } = this.props;
 
-        const success = (): void => resolve();
-        const failure = (): void => reject();
-        onLoadData(key, success, failure);
-    });
+            const success = (): void => resolve();
+            const failure = (): void => reject();
+            onLoadData(key, success, failure);
+        });
 
     public reset(): void {
         this.setState({
@@ -158,11 +159,11 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         }}
                         onCheck={(
                             checkedKeys:
-                            | string[]
-                            | {
-                                checked: string[];
-                                halfChecked: string[];
-                            },
+                                | string[]
+                                | {
+                                      checked: string[];
+                                      halfChecked: string[];
+                                  },
                         ): void => {
                             const keys = checkedKeys as string[];
                             this.setState({
@@ -223,9 +224,11 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     type='card'
                     activeKey={active}
                     tabBarGutter={5}
-                    onChange={(activeKey: string): void => this.setState({
-                        active: activeKey as any,
-                    })}
+                    onChange={(activeKey: string): void =>
+                        this.setState({
+                            active: activeKey as any,
+                        })
+                    }
                 >
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
