@@ -274,17 +274,12 @@ Issue.prototype.comment.implementation = async function (data) {
         throw new ArgumentError(`Author of the comment must a User instance. Got ${data.author}`);
     }
 
-    const copied = {
-        message: data.message,
-        author: data.author,
-    };
-
+    const comment = new Comment(data);
     const { id } = this;
     if (id >= 0) {
-        const response = await serverProxy.issues.comment(id, [copied]);
-        this.__internal.comment_set = response.map((comment) => new Comment(comment));
+        const response = await serverProxy.issues.comment(id, [comment.toJSON()]);
+        this.__internal.comment_set = response.map((_comment) => new Comment(_comment));
     } else {
-        const comment = new Comment(copied);
         this.__internal.comment_set.push(comment);
     }
 };

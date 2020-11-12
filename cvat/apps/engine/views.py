@@ -862,7 +862,7 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
             })
 
         serializer = CommentSerializer(data=request.data, many=True)
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
         db_issue = Issue.objects.prefetch_related('comment_set').get(pk=pk)
         updated_serializer = CommentSerializer(db_issue.comment_set, context={'request': request}, many=True)
