@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 
 import { CombinedState } from 'reducers/interfaces';
 import CreateTaskComponent from 'components/create-task-page/create-task-page';
@@ -35,4 +34,4 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(withRouter(CreateTaskComponent));
+export default connect(mapStateToProps, mapDispatchToProps)(CreateTaskComponent);

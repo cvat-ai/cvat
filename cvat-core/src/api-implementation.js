@@ -22,10 +22,13 @@
             [instance.owner] = users.filter((user) => user.id === instance.owner);
         }
 
-        if (instanceType === 'project') return instance;
-
         if (instance.assignee !== null) {
             [instance.assignee] = users.filter((user) => user.id === instance.assignee);
+        }
+
+        if (instanceType === 'project') {
+            instance.tasks = instance.tasks.map((task) => attachUsers(task, users, 'task'));
+            return instance;
         }
 
         for (const segment of instance.segments) {

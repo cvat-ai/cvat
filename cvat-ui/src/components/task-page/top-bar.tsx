@@ -19,7 +19,6 @@ interface DetailsComponentProps {
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
     const { taskInstance } = props;
-    const { id } = taskInstance;
 
     const history = useHistory();
 
@@ -33,7 +32,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         size='large'
                     >
                         <Icon type='left' />
-                        {`Back to project #${taskInstance.projectId}`}
+                        Back to project
                     </Button>
                 ) : (
                     <Button onClick={() => history.push('/tasks')} type='link' size='large'>
@@ -41,13 +40,6 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         Back to tasks
                     </Button>
                 )}
-            </Col>
-            <Col>
-                <Row>
-                    <Col>
-                        <Text className='cvat-title'>{`Task details #${id}`}</Text>
-                    </Col>
-                </Row>
             </Col>
             <Col>
                 <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>

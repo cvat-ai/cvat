@@ -19,10 +19,12 @@ export default function ProjectListComponent(): JSX.Element {
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
 
     function changePage(p: number): void {
-        dispatch(getProjectsAsync({
-            ...gettingQuery,
-            page: p,
-        }));
+        dispatch(
+            getProjectsAsync({
+                ...gettingQuery,
+                page: p,
+            }),
+        );
     }
 
     return (
@@ -32,7 +34,7 @@ export default function ProjectListComponent(): JSX.Element {
                     <Row gutter={[8, 8]}>
                         {projectInstances.map(
                             (instance: any): JSX.Element => (
-                                <Col xs={8} sm={8} xl={6} key={instance.instance.id}>
+                                <Col xs={8} sm={8} xl={6} key={instance.id}>
                                     <ProjectItem projectInstance={instance} />
                                 </Col>
                             ),

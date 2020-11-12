@@ -16,7 +16,6 @@ import {
     pasteShapeAsync,
     resetAnnotationsGroup,
 } from 'actions/annotation-actions';
-// eslint-disable-next-line max-len
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
 

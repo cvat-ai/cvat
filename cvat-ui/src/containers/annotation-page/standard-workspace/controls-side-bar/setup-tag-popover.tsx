@@ -7,7 +7,6 @@ import { connect } from 'react-redux';
 
 import { CombinedState, ObjectType } from 'reducers/interfaces';
 import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
-// eslint-disable-next-line max-len
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas-wrapper';

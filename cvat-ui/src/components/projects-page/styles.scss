@@ -5,14 +5,14 @@
 @import '../../base.scss';
 
 .cvat-projects-page {
-    padding-top: 15px;
-    padding-bottom: 40px;
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size * 5;
     height: 100%;
     position: fixed;
     width: 100%;
 
     > div:nth-child(1) {
-        padding-bottom: 10px;
+        padding-bottom: $grid-unit-size;
 
         div > {
             span {
@@ -25,12 +25,12 @@
 /* empty-projects icon */
 .cvat-empty-projects-list {
     > div:nth-child(1) {
-        margin-top: 50px;
+        margin-top: $grid-unit-size * 6;
     }
 
     > div:nth-child(2) {
         > div {
-            margin-top: 20px;
+            margin-top: $grid-unit-size * 3;
 
             /* No projects created yet */
             > span {
@@ -42,7 +42,7 @@
 
     /* To get started with your annotation project .. */
     > div:nth-child(3) {
-        margin-top: 10px;
+        margin-top: $grid-unit-size;
     }
 }
 
@@ -52,7 +52,7 @@
 
         > span:nth-child(2) {
             width: 200px;
-            margin-left: 10px;
+            margin-left: $grid-unit-size;
         }
     }
 
@@ -63,7 +63,7 @@
 }
 
 .cvat-create-project-button {
-    padding: 0 30px;
+    padding: 0 $grid-unit-size * 4;
 }
 
 .cvat-projects-pagination {
@@ -108,7 +108,7 @@
 
 .cvat-projects-project-item-card {
     .ant-empty {
-        margin: 8px;
+        margin: $grid-unit-size;
     }
 
     img {

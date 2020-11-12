@@ -31,9 +31,7 @@ export interface ProjectsQuery {
     [key: string]: string | number | null | undefined;
 }
 
-export interface Project {
-    instance: any; // cvat-core instance
-}
+export type Project = any;
 
 export interface ProjectsState {
     initialized: boolean;

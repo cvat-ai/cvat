@@ -14,16 +14,16 @@ interface Props {
 }
 
 export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
-    const { projectInstance: instance } = props;
+    const { projectInstance } = props;
 
     const dispatch = useDispatch();
 
     const onDeleteProject = (): void => {
         Modal.confirm({
-            title: `The project ${instance.id} will be deleted`,
+            title: `The project ${projectInstance.id} will be deleted`,
             content: 'All related data (images, annotations) will be lost. Continue?',
             onOk: () => {
-                dispatch(deleteProjectAsync(instance));
+                dispatch(deleteProjectAsync(projectInstance));
             },
             okButtonProps: {
                 type: 'danger',

@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
-import { RouteComponentProps } from 'react-router';
+import { useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
@@ -21,10 +21,12 @@ interface Props {
     installedGit: boolean;
 }
 
-export default function CreateTaskPage(props: Props & RouteComponentProps): JSX.Element {
+export default function CreateTaskPage(props: Props): JSX.Element {
     const {
-        error, status, taskId, location, onCreate, installedGit,
+        error, status, taskId, onCreate, installedGit,
     } = props;
+
+    const location = useLocation();
 
     let projectId = null;
     const params = new URLSearchParams(location.search);

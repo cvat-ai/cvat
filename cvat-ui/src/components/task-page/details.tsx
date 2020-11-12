@@ -189,7 +189,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
-    private renderUsers(): JSX.Element {
+    private renderDescription(): JSX.Element {
         const { taskInstance, registeredUsers, onTaskUpdate } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee.username : null;
@@ -213,7 +213,11 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
         return (
             <Row type='flex' justify='space-between' align='middle'>
-                <Col span={12}>{owner && <Text type='secondary'>{`Created by ${owner} on ${created}`}</Text>}</Col>
+                <Col span={12}>
+                    {owner && (
+                        <Text type='secondary'>{`Task #${taskInstance.id} сreated by ${owner} on ${created}`}</Text>
+                    )}
+                </Col>
                 <Col span={10}>
                     <Text type='secondary'>
                         Assigned to
@@ -336,7 +340,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         </Row>
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
-                        {this.renderUsers()}
+                        {this.renderDescription()}
                         <Row type='flex' justify='space-between' align='middle'>
                             <Col span={12}>
                                 <BugTrackerEditor instance={taskInstance} onChange={onTaskUpdate} />

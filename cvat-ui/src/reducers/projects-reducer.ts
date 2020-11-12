@@ -50,18 +50,12 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 current: [],
             };
         case ProjectsActionTypes.GET_PROJECTS_SUCCESS: {
-            const projects = action.payload.array.map(
-                (project: any): Project => ({
-                    instance: project,
-                }),
-            );
-
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 count: action.payload.count,
-                current: projects,
+                current: action.payload.array,
             };
         }
         case ProjectsActionTypes.GET_PROJECTS_FAILED: {
@@ -115,31 +109,35 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case ProjectsActionTypes.UPDATE_PROJECT_SUCCESS: {
             return {
                 ...state,
-                current: state.current.map((project): Project => {
-                    if (project.instance.id === action.payload.project.id) {
-                        return {
-                            ...project,
-                            instance: action.payload.project,
-                        };
-                    }
+                current: state.current.map(
+                    (project): Project => {
+                        if (project.instance.id === action.payload.project.id) {
+                            return {
+                                ...project,
+                                instance: action.payload.project,
+                            };
+                        }
 
-                    return project;
-                }),
+                        return project;
+                    },
+                ),
             };
         }
         case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
             return {
                 ...state,
-                current: state.current.map((project): Project => {
-                    if (project.instance.id === action.payload.project.id) {
-                        return {
-                            ...project,
-                            instance: action.payload.project,
-                        };
-                    }
+                current: state.current.map(
+                    (project): Project => {
+                        if (project.instance.id === action.payload.project.id) {
+                            return {
+                                ...project,
+                                instance: action.payload.project,
+                            };
+                        }
 
-                    return project;
-                }),
+                        return project;
+                    },
+                ),
             };
         }
         case ProjectsActionTypes.DELETE_PROJECT: {

@@ -17,13 +17,13 @@ import { getProjectsAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
 import DetailsComponent from './details';
+import ProjectTopBar from './top-bar';
 
 interface ParamType {
     id: string;
 }
 
 export default function ProjectPageComponent(): JSX.Element {
-    // TODO: need to optimize renders here
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
@@ -34,16 +34,16 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
     const tasks = useSelector((state: CombinedState) => state.tasks.current);
 
-    const filteredProjects = projects.filter(
-        (project) => project.instance.id === id,
-    );
+    const filteredProjects = projects.filter((project) => project.id === id);
     const project = filteredProjects[0];
     const deleteActivity = project && id in deletes ? deletes[id] : null;
 
     useEffect(() => {
-        dispatch(getProjectsAsync({
-            id,
-        }));
+        dispatch(
+            getProjectsAsync({
+                id,
+            }),
+        );
     }, [id, dispatch]);
 
     if (deleteActivity) {
@@ -51,9 +51,7 @@ export default function ProjectPageComponent(): JSX.Element {
     }
 
     if (projectsFetching) {
-        return (
-            <Spin size='large' className='cvat-spinner' />
-        );
+        return <Spin size='large' className='cvat-spinner' />;
     }
 
     if (!project) {
@@ -70,6 +68,7 @@ export default function ProjectPageComponent(): JSX.Element {
     return (
         <Row type='flex' justify='center' align='top' className='cvat-project-page'>
             <Col md={22} lg={18} xl={16} xxl={14}>
+                <ProjectTopBar projectInstance={project} />
                 <DetailsComponent project={project} />
                 <Row type='flex' justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>
                     <Col>
@@ -87,19 +86,21 @@ export default function ProjectPageComponent(): JSX.Element {
                         </Button>
                     </Col>
                 </Row>
-                {tasks.filter((task) => task.instance.projectId === project.instance.id).map((task: Task) => (
-                    <TaskItem
-                        key={task.instance.id}
-                        deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
-                        hidden={false}
-                        activeInference={tasksActiveInferences[task.instance.id] || null}
-                        cancelAutoAnnotation={() => {
-                            dispatch(cancelInferenceAsync(task.instance.id));
-                        }}
-                        previewImage={task.preview}
-                        taskInstance={task.instance}
-                    />
-                ))}
+                {tasks
+                    .filter((task) => task.instance.projectId === project.id)
+                    .map((task: Task) => (
+                        <TaskItem
+                            key={task.instance.id}
+                            deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
+                            hidden={false}
+                            activeInference={tasksActiveInferences[task.instance.id] || null}
+                            cancelAutoAnnotation={() => {
+                                dispatch(cancelInferenceAsync(task.instance.id));
+                            }}
+                            previewImage={task.preview}
+                            taskInstance={task.instance}
+                        />
+                    ))}
             </Col>
         </Row>
     );

@@ -62,7 +62,7 @@ class LabelSerializer(serializers.ModelSerializer):
             logger.info("{} label was updated".format(db_label.name))
         if not validated_data.get('color', None):
             label_names = [l.name for l in
-                models.Label.objects.filter(**instance).exclude(id=db_label.id).order_by('id')
+                instance.label_set.exclude(id=db_label.id).order_by('id')
             ]
             db_label.color = get_label_color(db_label.name, label_names)
         else:
@@ -331,8 +331,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
-        if validated_data.get('label_set', None) is not None and instance.project_id:
-            raise serializers.ValidationError('Cannot update label_set of task in project')
         instance.name = validated_data.get('name', instance.name)
         instance.owner = validated_data.get('owner', instance.owner)
         instance.assignee = validated_data.get('assignee', instance.assignee)

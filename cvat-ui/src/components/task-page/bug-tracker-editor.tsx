@@ -16,10 +16,7 @@ interface Props {
 }
 
 export default function BugTrackerEditorComponent(props: Props): JSX.Element {
-    const {
-        instance,
-        onChange,
-    } = props;
+    const { instance, onChange } = props;
 
     const [bugTracker, setBugTracker] = useState(instance.bugTracker);
     const [bugTrackerEditing, setBugTrackerEditing] = useState(false);
@@ -34,9 +31,9 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                 Modal.error({
                     title: `Could not update the ${instanceType} ${instance.id}`,
                     content: 'Issue tracker is expected to be URL',
-                    onOk: (() => {
+                    onOk: () => {
                         shown = false;
-                    }),
+                    },
                 });
                 shown = true;
             }
@@ -51,9 +48,11 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
 
     if (bugTracker) {
         return (
-            <Row>
+            <Row className='cvat-issue-tracker'>
                 <Col>
-                    <Text strong className='cvat-text-color'>Issue Tracker</Text>
+                    <Text strong className='cvat-text-color'>
+                        Issue Tracker
+                    </Text>
                     <br />
                     <Text editable={{ onChange: onChangeValue }}>{bugTracker}</Text>
                     <Button
@@ -66,7 +65,7 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                         }}
                         className='cvat-open-bug-tracker-button'
                     >
-                            Open the issue
+                        Open the issue
                     </Button>
                 </Col>
             </Row>
@@ -74,9 +73,11 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
     }
 
     return (
-        <Row>
+        <Row className='cvat-issue-tracker'>
             <Col>
-                <Text strong className='cvat-text-color'>Issue Tracker</Text>
+                <Text strong className='cvat-text-color'>
+                    Issue Tracker
+                </Text>
                 <br />
                 <Text
                     editable={{

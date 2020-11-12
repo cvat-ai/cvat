@@ -34,5 +34,9 @@
     > div:nth-child(3) {
         display: flex;
         justify-content: flex-end;
+
+        > button {
+            width: 120px;
+        }
     }
 }

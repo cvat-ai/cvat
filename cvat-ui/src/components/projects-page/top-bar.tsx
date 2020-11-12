@@ -19,23 +19,16 @@ export default function TopBarComponent(): JSX.Element {
                 <Text className='cvat-title'>Projects</Text>
                 <SearchField />
             </Col>
-            <Col
-                md={{ span: 11 }}
-                lg={{ span: 9 }}
-                xl={{ span: 8 }}
-                xxl={{ span: 7 }}
-            >
+            <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 8 }} xxl={{ span: 7 }}>
                 <Button
                     size='large'
                     id='cvat-create-project-button'
                     className='cvat-create-project-button'
                     type='primary'
-                    onClick={
-                        (): void => history.push('/projects/create')
-                    }
+                    onClick={(): void => history.push('/projects/create')}
                     icon='plus'
                 >
-                        Create new project
+                    Create new project
                 </Button>
             </Col>
         </Row>
