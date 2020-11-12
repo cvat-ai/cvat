@@ -147,7 +147,7 @@ context('Appearance features', () => {
             });
             // Disable "Outlined borders" and check css "stroke" for polyline.
             cy.get('.cvat-appearance-outlinded-borders-checkbox').click();
-            cy.get('#cvat_canvas_shape_3').should('have.css', 'stroke', 'rgb(224, 224, 224)') // have CSS property stroke with the value rgb(224, 224, 224)
+            cy.get('#cvat_canvas_shape_3').should('have.css', 'stroke', 'rgb(224, 224, 224)'); // have CSS property stroke with the value rgb(224, 224, 224)
         });
     });
 });
