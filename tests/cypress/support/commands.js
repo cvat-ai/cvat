@@ -167,7 +167,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
 });
 
 Cypress.Commands.add('changeAppearance', (colorBy) => {
-    cy.get('.cvat-objects-appearance-content').within(() => {
+    cy.get('.cvat-appearance-color-by-radio-group').within(() => {
         cy.get('[type="radio"]').check(colorBy, { force: true });
     });
 });
