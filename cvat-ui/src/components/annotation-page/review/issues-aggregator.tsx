@@ -64,9 +64,10 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
             // eslint-disable-next-line
             continue;
         }
+        const offset = 15;
         const translated = issue.position.map((coord: number): number => coord + geometry.offset);
-        const maxX = Math.max(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0));
-        const minY = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 !== 0));
+        const maxX = Math.max(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0)) + offset;
+        const minY = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 !== 0)) + offset;
         if (expandedIssues.includes(issue.id)) {
             issueDialogs.push(
                 <IssueDialog

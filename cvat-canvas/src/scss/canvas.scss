@@ -70,11 +70,14 @@ polyline.cvat_shape_drawing_opacity {
     display: none;
     fill: white;
     stroke: black;
-    opacity: 0.25;
-    animation-duration: 600ms;
+    animation-duration: 1.5s;
     animation-name: blink;
     animation-iteration-count: infinite;
-    animation-direction: alternate;
+    animation-direction: alternate-reverse;
+}
+
+circle.cvat_canvas_issue_region {
+    opacity: 1 !important;
 }
 
 polyline.cvat_canvas_shape_grouping {
@@ -286,12 +289,14 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 @keyframes blink {
-    from {
-        fill: red;
+    0% {
+        fill: #09c;
+        opacity: 0.3;
     }
 
-    to {
-        fill: greenyellow;
+    100% {
+        fill: #fff;
+        opacity: 0.2;
     }
 }
 

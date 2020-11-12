@@ -11,6 +11,7 @@
     padding: $grid-unit-size;
     background: $background-color-2;
     z-index: 100;
+    transform-origin: top left;
 
     button {
         width: $grid-unit-size * 12;
@@ -28,6 +29,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     border-radius: 0;
+    transform-origin: top left;
 
     &:hover {
         opacity: 1;
@@ -42,6 +44,7 @@
     pointer-events: auto;
     background: $background-color-2;
     padding: $grid-unit-size;
+    transform-origin: top left;
 
     .cvat-issue-dialog-chat {
         > div {
