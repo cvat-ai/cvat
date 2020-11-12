@@ -13,7 +13,6 @@
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
-    const { fetchUsersLazy, collectNecessaryUsers } = require('./common');
     const User = require('./user');
     const Issue = require('./issue');
     const Review = require('./review');
@@ -691,12 +690,8 @@
                 }
             }
 
-            if (data.assignee !== null) {
-                data.assignee = User.objects[data.assignee];
-            }
-            if (data.reviewer !== null) {
-                data.reviewer = User.objects[data.reviewer];
-            }
+            if (data.assignee) data.assignee = new User(data.assignee);
+            if (data.reviewer) data.reviewer = new User(data.reviewer);
 
             Object.defineProperties(
                 this,
@@ -969,6 +964,9 @@
                     data[property] = initialData[property];
                 }
             }
+
+            if (data.assignee) data.assignee = new User(data.assignee);
+            if (data.owner) data.owner = new User(data.owner);
 
             data.labels = [];
             data.jobs = [];
@@ -1534,8 +1532,8 @@
         if (this.id) {
             const jobData = {
                 status: this.status,
-                assignee: this.assignee ? this.assignee.id : null,
-                reviewer: this.reviewer ? this.reviewer.id : null,
+                assignee_id: this.assignee ? this.assignee.id : null,
+                reviewer_id: this.reviewer ? this.reviewer.id : null,
             };
 
             await serverProxy.jobs.save(this.id, jobData);
@@ -1547,8 +1545,6 @@
 
     Job.prototype.issues.implementation = async function () {
         const result = await serverProxy.jobs.issues(this.id);
-        const necessaryUsers = collectNecessaryUsers(result);
-        await fetchUsersLazy(necessaryUsers);
         return result.map((issue) => new Issue(issue));
     };
 
@@ -1562,8 +1558,6 @@
             reviews.push(new Review(JSON.parse(data)));
         }
 
-        const necessaryUsers = collectNecessaryUsers(result);
-        await fetchUsersLazy(necessaryUsers);
         return reviews;
     };
 
@@ -1771,7 +1765,7 @@
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
             const taskData = {
-                assignee: this.assignee ? this.assignee.id : null,
+                assignee_id: this.assignee ? this.assignee.id : null,
                 name: this.name,
                 bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],

@@ -34,16 +34,11 @@ class Issue {
             }
         }
 
+        if (data.owner && !(data.owner instanceof User)) data.owner = new User(data.owner);
+        if (data.resolver && !(data.resolver instanceof User)) data.resolver = new User(data.resolver);
+
         if (data.comment_set) {
             data.comment_set = data.comment_set.map((comment) => new Comment(comment));
-        }
-
-        if (data.owner !== null) {
-            data.owner = User.objects[data.owner];
-        }
-
-        if (data.resolver !== null) {
-            data.resolver = User.objects[data.resolver];
         }
 
         if (typeof data.id === 'undefined') {
@@ -229,7 +224,7 @@ class Issue {
         return result;
     }
 
-    toJSON() {
+    _serialize() {
         const { comments } = this;
         const data = {
             position: this.position,
@@ -247,13 +242,23 @@ class Issue {
             data.resolved_date = this.resolvedDate;
         }
         if (this.owner) {
-            data.owner = this.owner.id;
+            data.owner = this.owner.toJSON();
         }
         if (this.resolver) {
-            data.resolver = this.resolver.id;
+            data.resolver = this.resolver.toJSON();
         }
 
         return data;
+    }
+
+    toJSON() {
+        const data = this._serialize();
+        const { owner, resolver, ...updated } = data;
+        return {
+            ...updated,
+            owner_id: owner ? owner.id : undefined,
+            resolver_id: resolver ? resolver.id : undefined,
+        };
     }
 }
 

@@ -37,17 +37,15 @@ class Review {
             }
         }
 
+        if (data.reviewer && !(data.reviewer instanceof User)) data.reviewer = new User(data.reviewer);
+        if (data.assignee && !(data.assignee instanceof User)) data.assignee = new User(data.assignee);
+
         data.reviewed_frames = Array.isArray(data.reviewed_frames) ? new Set(data.reviewed_frames) : new Set();
         data.reviewed_states = Array.isArray(data.reviewed_states) ? new Set(data.reviewed_states) : new Set();
         if (data.issue_set) {
             data.issue_set = data.issue_set.map((issue) => new Issue(issue));
         }
-        if (data.reviewer !== null) {
-            data.reviewer = User.objects[data.reviewer];
-        }
-        if (data.assignee !== null) {
-            data.assignee = User.objects[data.assignee];
-        }
+
         if (typeof data.id === 'undefined') {
             data.id = negativeIDGenerator();
         }
@@ -266,7 +264,7 @@ class Review {
         return result;
     }
 
-    toJSON() {
+    _serialize() {
         const { issues, reviewedFrames, reviewedStates } = this;
         const data = {
             job: this.job,
@@ -285,17 +283,34 @@ class Review {
             data.status = this.status;
         }
         if (this.reviewer) {
-            data.reviewer = this.reviewer.id;
+            data.reviewer = this.reviewer.toJSON();
         }
         if (this.assignee) {
-            data.assignee = this.assignee.id;
+            data.reviewer = this.assignee.toJSON();
         }
 
         return data;
     }
 
+    toJSON() {
+        const data = this._serialize();
+        const {
+            reviewer,
+            assignee,
+            reviewed_frames: reviewedFrames,
+            reviewed_states: reviewedStates,
+            ...updated
+        } = data;
+        return {
+            ...updated,
+            reviewer_id: reviewer ? reviewer.id : undefined,
+            assignee_id: assignee ? assignee.id : undefined,
+        };
+    }
+
     async toLocalStorage() {
-        store.set(`job-${this.job}-review`, JSON.stringify(this));
+        const data = this._serialize();
+        store.set(`job-${this.job}-review`, JSON.stringify(data));
     }
 }
 
@@ -362,8 +377,6 @@ Review.prototype.submit.implementation = async function () {
 
     if (this.id < 0) {
         const data = this.toJSON();
-        delete data.reviewed_frames; // doesn't need on server
-        delete data.reviewed_states; // doesn't need on server
 
         const result = await serverProxy.jobs.reviews.create(this.job, data);
         store.remove(`job-${this.job}-review`);

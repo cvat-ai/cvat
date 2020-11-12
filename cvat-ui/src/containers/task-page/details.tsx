@@ -15,7 +15,6 @@ interface OwnProps {
 }
 
 interface StateToProps {
-    registeredUsers: any[];
     activeInference: ActiveInference | null;
     installedGit: boolean;
 }
@@ -29,7 +28,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { list } = state.plugins;
 
     return {
-        registeredUsers: state.users.users,
         installedGit: list.GIT_INTEGRATION,
         activeInference: state.models.inferences[own.task.instance.id] || null,
     };
@@ -47,14 +45,15 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
 }
 
 function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
-    const { task, installedGit, activeInference, registeredUsers, cancelAutoAnnotation, onTaskUpdate } = props;
+    const {
+        task, installedGit, activeInference, cancelAutoAnnotation, onTaskUpdate,
+    } = props;
 
     return (
         <DetailsComponent
             previewImage={task.preview}
             taskInstance={task.instance}
             installedGit={installedGit}
-            registeredUsers={registeredUsers}
             activeInference={activeInference}
             onTaskUpdate={onTaskUpdate}
             cancelAutoAnnotation={cancelAutoAnnotation}

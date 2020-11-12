@@ -93,12 +93,6 @@ export interface PluginsState {
     list: PluginsList;
 }
 
-export interface UsersState {
-    users: any[];
-    fetching: boolean;
-    initialized: boolean;
-}
-
 export interface AboutState {
     server: any;
     packageVersion: {
@@ -519,7 +513,6 @@ export interface ReviewState {
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
-    users: UsersState;
     about: AboutState;
     share: ShareState;
     formats: FormatsState;

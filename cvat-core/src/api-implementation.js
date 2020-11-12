@@ -7,13 +7,7 @@
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
     const {
-        isBoolean,
-        isInteger,
-        isEnum,
-        isString,
-        checkFilter,
-        fetchUsersLazy,
-        collectNecessaryUsers,
+        isBoolean, isInteger, isEnum, isString, checkFilter,
     } = require('./common');
 
     const { TaskStatus, TaskMode } = require('./enums');
@@ -108,7 +102,10 @@
 
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
+                id: isInteger,
                 self: isBoolean,
+                search: isString,
+                limit: isInteger,
             });
 
             let users = null;
@@ -116,7 +113,13 @@
                 users = await serverProxy.users.self();
                 users = [users];
             } else {
-                users = await serverProxy.users.get();
+                const searchParams = {};
+                for (const key in filter) {
+                    if (filter[key] && key !== 'self') {
+                        searchParams[key] = filter[key];
+                    }
+                }
+                users = await serverProxy.users.getUsers(new URLSearchParams(searchParams).toString());
             }
 
             users = users.map((user) => new User(user));
@@ -146,9 +149,6 @@
                     tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
                 }
             }
-
-            const necessaryUsers = collectNecessaryUsers(tasks);
-            await fetchUsersLazy(necessaryUsers);
 
             // If task was found by its id, then create task instance and get Job instance from it
             if (tasks.length) {
@@ -191,8 +191,6 @@
             }
 
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const necessaryUsers = collectNecessaryUsers(tasksData);
-            await fetchUsersLazy(necessaryUsers);
             const tasks = tasksData.map((task) => new Task(task));
 
             tasks.count = tasksData.count;

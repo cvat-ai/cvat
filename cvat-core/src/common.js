@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
-    const User = require('./user');
-    const serverProxy = require('./server-proxy');
     const { ArgumentError } = require('./exceptions');
 
     function isBoolean(value) {
@@ -70,44 +68,6 @@
         return true;
     }
 
-    function collectNecessaryUsers(instance) {
-        const necessaryUsers = new Set();
-
-        if (Array.isArray(instance)) {
-            for (const oneInstance of instance) {
-                collectNecessaryUsers(oneInstance).forEach((id) => necessaryUsers.add(id));
-            }
-        } else if (typeof instance === 'object' && instance !== null) {
-            for (const key of Object.keys(instance)) {
-                if (typeof instance[key] === 'object') {
-                    collectNecessaryUsers(instance[key]).forEach((id) => necessaryUsers.add(id));
-                } else if (
-                    ['owner', 'assignee', 'resolver', 'reviewer', 'author'].includes(key)
-                    && Number.isInteger(instance[key])
-                ) {
-                    necessaryUsers.add(instance[key]);
-                }
-            }
-        }
-
-        return Array.from(necessaryUsers);
-    }
-
-    async function fetchUsersLazy(necessaryUsers) {
-        let needFetch = false;
-        for (const user of necessaryUsers) {
-            if (!(user in User.objects)) {
-                needFetch = true;
-                break;
-            }
-        }
-
-        if (needFetch) {
-            const users = await serverProxy.users.get();
-            users.map((user) => new User(user));
-        }
-    }
-
     function negativeIDGenerator() {
         const value = negativeIDGenerator.start;
         negativeIDGenerator.start -= 1;
@@ -122,8 +82,6 @@
         isString,
         checkFilter,
         checkObjectType,
-        fetchUsersLazy,
-        collectNecessaryUsers,
         negativeIDGenerator,
     };
 })();

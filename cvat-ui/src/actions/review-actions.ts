@@ -95,11 +95,11 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
         await activeReview.openIssue({
             frame: frameNumber,
             position: newIssuePosition,
-            owner: user.id,
+            owner: user,
             comment_set: [
                 {
                     message,
-                    author: user.id,
+                    author: user,
                 },
             ],
         });
@@ -121,7 +121,7 @@ export const commentIssueAsync = (id: number, message: string): ThunkAction => a
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.comment({
             message,
-            author: user.id,
+            author: user,
         });
         if (activeReview && activeReview.issues.includes(issue)) {
             await activeReview.toLocalStorage();

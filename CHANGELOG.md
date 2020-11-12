@@ -5,11 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - Unreleased
+## [1.2.0-beta] - Unreleased
 
 ### Added
 
-- Removed Z-Order flag from task creation process
+-
+
+### Changed
+
+-
+
+### Deprecated
+
+-
+
+### Removed
+
+-
+
+### Fixed
+
+- Django templates for email and user guide (<https://github.com/openvinotoolkit/cvat/pull/2412>)
+
+### Security
+
+-
+
+## [1.2.0-alpha] - 2020-11-09
+
+### Added
+
 - Ability to login into CVAT-UI with token from api/v1/auth/login (<https://github.com/openvinotoolkit/cvat/pull/2234>)
 - Added layout grids toggling ('ctrl + alt + Enter')
 - Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
@@ -29,6 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to upload prepared meta information along with a video when creating a task (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 - Optional chaining plugin for cvat-canvas and cvat-ui (<https://github.com/openvinotoolkit/cvat/pull/2249>)
 - MOTS png mask format support (<https://github.com/openvinotoolkit/cvat/pull/2198>)
+- Ability to correct upload video with a rotation record in the metadata (<https://github.com/openvinotoolkit/cvat/pull/2218>)
+- User search field for assignee fields (<https://github.com/openvinotoolkit/cvat/pull/2370>)
 
 ### Changed
 
@@ -42,13 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Track frames in skips between annotation is presented in MOT and MOTS formats are marked `outside` (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 - UI packages installation with `npm ci` instead of `npm install` (<https://github.com/openvinotoolkit/cvat/pull/2350>)
 
-### Deprecated
-
--
-
 ### Removed
 
--
+- Removed Z-Order flag from task creation process
 
 ### Fixed
 
@@ -71,10 +94,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Excluded track frames marked `outside` in `CVAT for Images` export (<https://github.com/openvinotoolkit/cvat/pull/2345>)
 - 'List of tasks' Kibana visualization (<https://github.com/openvinotoolkit/cvat/pull/2361>)
 - An error on exporting not `jpg` or `png` images in TF Detection API format (<https://github.com/openvinotoolkit/datumaro/issues/35>)
-
-### Security
-
--
 
 ## [1.1.0] - 2020-08-31
 

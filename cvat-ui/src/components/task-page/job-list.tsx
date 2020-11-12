@@ -15,7 +15,7 @@ import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
 import getCore from 'cvat-core-wrapper';
-import UserSelector from './user-selector';
+import UserSelector, { User } from './user-selector';
 
 const core = getCore();
 
@@ -23,7 +23,6 @@ const baseURL = core.config.backendAPI.slice(0, -7);
 
 interface Props {
     taskInstance: any;
-    registeredUsers: any[];
     onJobUpdate(jobInstance: any): void;
 }
 
@@ -92,7 +91,6 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
     const {
         taskInstance,
-        registeredUsers,
         onJobUpdate,
         history: { push },
     } = props;
@@ -167,23 +165,15 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             dataIndex: 'assignee',
             key: 'assignee',
             render: (jobInstance: any): JSX.Element => {
-                const assignee = jobInstance.assignee ? jobInstance.assignee.username : null;
+                const assignee = jobInstance.assignee ? jobInstance.assignee : null;
 
                 return (
                     <UserSelector
                         className='cvat-job-assignee-selector'
-                        style={{ marginLeft: 0 }}
-                        users={registeredUsers}
                         value={assignee}
-                        onChange={(value: string): void => {
-                            let [userInstance] = [...registeredUsers].filter((user: any) => user.username === value);
-
-                            if (userInstance === undefined) {
-                                userInstance = null;
-                            }
-
+                        onSelect={(value: User | null): void => {
                             // eslint-disable-next-line
-                            jobInstance.assignee = userInstance;
+                            jobInstance.assignee = value;
                             onJobUpdate(jobInstance);
                         }}
                     />
@@ -200,18 +190,10 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 return (
                     <UserSelector
                         className='cvat-job-reviewer-selector'
-                        style={{ marginLeft: 0 }}
-                        users={registeredUsers}
                         value={reviewer}
-                        onChange={(value: string): void => {
-                            let [userInstance] = [...registeredUsers].filter((user: any) => user.username === value);
-
-                            if (userInstance === undefined) {
-                                userInstance = null;
-                            }
-
+                        onSelect={(value: User | null): void => {
                             // eslint-disable-next-line
-                            jobInstance.reviewer = userInstance;
+                            jobInstance.reviewer = value;
                             onJobUpdate(jobInstance);
                         }}
                     />

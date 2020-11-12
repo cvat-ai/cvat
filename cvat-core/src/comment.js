@@ -28,9 +28,7 @@ class Comment {
             }
         }
 
-        if (data.author !== null) {
-            data.author = User.objects[data.author];
-        }
+        if (data.author && !(data.author instanceof User)) data.author = new User(data.author);
 
         if (typeof id === 'undefined') {
             data.id = negativeIDGenerator();
@@ -121,7 +119,7 @@ class Comment {
         );
     }
 
-    toJSON() {
+    _serialize() {
         const data = {
             message: this.message,
         };
@@ -136,10 +134,19 @@ class Comment {
             data.updated_date = this.updatedDate;
         }
         if (this.author) {
-            data.author = this.author.id;
+            data.author = this.author.toJSON();
         }
 
         return data;
+    }
+
+    toJSON() {
+        const data = this._serialize();
+        const { author, ...updated } = data;
+        return {
+            ...updated,
+            author_id: author ? author.id : undefined,
+        };
     }
 }
 
