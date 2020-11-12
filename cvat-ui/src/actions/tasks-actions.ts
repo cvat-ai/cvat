@@ -445,7 +445,7 @@ function updateTask(): AnyAction {
     return action;
 }
 
-function updateTaskSuccess(task: any): AnyAction {
+export function updateTaskSuccess(task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_SUCCESS,
         payload: { task },
