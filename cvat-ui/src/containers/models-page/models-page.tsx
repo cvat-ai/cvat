@@ -16,9 +16,7 @@ interface StateToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
-    const {
-        interactors, detectors, trackers, reid,
-    } = models;
+    const { interactors, detectors, trackers, reid } = models;
 
     return {
         interactors,

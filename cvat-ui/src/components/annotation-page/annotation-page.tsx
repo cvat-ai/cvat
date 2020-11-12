@@ -26,9 +26,7 @@ interface Props {
 }
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
-    const {
-        job, fetching, getJob, closeJob, saveLogs, workspace,
-    } = props;
+    const { job, fetching, getJob, closeJob, saveLogs, workspace } = props;
 
     const history = useHistory();
     useEffect(() => {

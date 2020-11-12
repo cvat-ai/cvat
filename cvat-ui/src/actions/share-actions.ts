@@ -17,13 +17,11 @@ export enum ShareActionTypes {
 
 const shareActions = {
     loadShareData: () => createAction(ShareActionTypes.LOAD_SHARE_DATA),
-    // prettier-ignore
-    loadShareDataSuccess: (values: ShareFileInfo[], directory: string) => createAction(
-        ShareActionTypes.LOAD_SHARE_DATA_SUCCESS, {
+    loadShareDataSuccess: (values: ShareFileInfo[], directory: string) =>
+        createAction(ShareActionTypes.LOAD_SHARE_DATA_SUCCESS, {
             values,
             directory,
-        },
-    ),
+        }),
     loadShareDataFailed: (error: any) => createAction(ShareActionTypes.LOAD_SHARE_DATA_FAILED, { error }),
 };
 

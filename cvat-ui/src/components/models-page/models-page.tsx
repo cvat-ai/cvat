@@ -19,9 +19,7 @@ interface Props {
 }
 
 export default function ModelsPageComponent(props: Props): JSX.Element {
-    const {
-        interactors, detectors, trackers, reid,
-    } = props;
+    const { interactors, detectors, trackers, reid } = props;
 
     const deployedModels = [...detectors, ...interactors, ...trackers, ...reid];
 

@@ -9,9 +9,7 @@ import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
-import {
-    Label, Attribute, validateParsedLabel, idGenerator,
-} from './common';
+import { Label, Attribute, validateParsedLabel, idGenerator } from './common';
 
 type Props = FormComponentProps & {
     labels: Label[];

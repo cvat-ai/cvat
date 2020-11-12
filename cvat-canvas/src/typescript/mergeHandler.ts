@@ -40,8 +40,8 @@ export class MergeHandlerImpl implements MergeHandler {
 
     private checkConstraints(state: any): boolean {
         return (
-            !this.constraints
-            || (state.label.id === this.constraints.labelID && state.shapeType === this.constraints.shapeType)
+            !this.constraints ||
+            (state.label.id === this.constraints.labelID && state.shapeType === this.constraints.shapeType)
         );
     }
 

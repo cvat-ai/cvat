@@ -96,13 +96,13 @@ function ObjectItemComponent(props: Props): JSX.Element {
     } = props;
 
     const type =
-        objectType === ObjectType.TAG ?
-            ObjectType.TAG.toUpperCase() :
-            `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
+        objectType === ObjectType.TAG
+            ? ObjectType.TAG.toUpperCase()
+            : `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
 
-    const className = !activated ?
-        'cvat-objects-sidebar-state-item' :
-        'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
+    const className = !activated
+        ? 'cvat-objects-sidebar-state-item'
+        : 'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>

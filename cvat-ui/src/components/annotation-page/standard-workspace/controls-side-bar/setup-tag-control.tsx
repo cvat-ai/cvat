@@ -9,7 +9,6 @@ import Icon from 'antd/lib/icon';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { TagIcon } from 'icons';
 
-// eslint-disable-next-line max-len
 import SetupTagPopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 interface Props {
@@ -20,13 +19,13 @@ interface Props {
 function SetupTagControl(props: Props): JSX.Element {
     const { isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ?
-        {
-            overlayStyle: {
-                display: 'none',
-            },
-        } :
-        {};
+    const dynamcPopoverPros = isDrawing
+        ? {
+              overlayStyle: {
+                  display: 'none',
+              },
+          }
+        : {};
 
     return (
         <Popover

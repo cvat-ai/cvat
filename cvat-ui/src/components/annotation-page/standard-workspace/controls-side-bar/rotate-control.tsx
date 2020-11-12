@@ -23,7 +23,7 @@ function RotateControl(props: Props): JSX.Element {
         <Popover
             overlayClassName='cvat-rotate-canvas-controls'
             placement='right'
-            content={(
+            content={
                 <>
                     <Tooltip
                         title={`Rotate the image anticlockwise ${anticlockwiseShortcut}`}
@@ -48,7 +48,7 @@ function RotateControl(props: Props): JSX.Element {
                         />
                     </Tooltip>
                 </>
-            )}
+            }
             trigger='hover'
         >
             <Icon className='cvat-rotate-canvas-control' component={RotateIcon} />

@@ -22,9 +22,7 @@ interface InputElementParameters {
 }
 
 function renderInputElement(parameters: InputElementParameters): JSX.Element {
-    const {
-        inputType, attrID, clientID, values, currentValue, onChange,
-    } = parameters;
+    const { inputType, attrID, clientID, values, currentValue, onChange } = parameters;
 
     const renderCheckbox = (): JSX.Element => (
         <>
@@ -248,9 +246,7 @@ interface Props {
 }
 
 function AttributeEditor(props: Props): JSX.Element {
-    const {
-        attribute, currentValue, onChange, clientID,
-    } = props;
+    const { attribute, currentValue, onChange, clientID } = props;
     const { inputType, values, id: attrID } = attribute;
 
     return (

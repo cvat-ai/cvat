@@ -43,9 +43,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.Element {
-    const {
-        fetching, onChangePassword, visible, onClose,
-    } = props;
+    const { fetching, onChangePassword, visible, onClose } = props;
 
     return (
         <Modal

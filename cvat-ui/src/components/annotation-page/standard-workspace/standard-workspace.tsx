@@ -7,7 +7,6 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 
 import CanvasWrapperContainer from 'containers/annotation-page/standard-workspace/canvas-wrapper';
-// eslint-disable-next-line max-len
 import ControlsSideBarContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import PropagateConfirmContainer from 'containers/annotation-page/standard-workspace/propagate-confirm';
 import CanvasContextMenuContainer from 'containers/annotation-page/standard-workspace/canvas-context-menu';

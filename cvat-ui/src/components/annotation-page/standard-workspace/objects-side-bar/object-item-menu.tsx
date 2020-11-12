@@ -9,9 +9,7 @@ import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Tooltip from 'antd/lib/tooltip';
 
-import {
-    BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
-} from 'icons';
+import { BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon } from 'icons';
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
 import ColorPicker from './color-picker';
 

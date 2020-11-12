@@ -68,9 +68,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 class PropagateConfirmContainer extends React.PureComponent<Props> {
     private propagateObject = (): void => {
-        const {
-            propagateObject, objectState, propagateFrames, frameNumber, stopFrame, jobInstance,
-        } = this.props;
+        const { propagateObject, objectState, propagateFrames, frameNumber, stopFrame, jobInstance } = this.props;
 
         const propagateUpToFrame = Math.min(frameNumber + propagateFrames, stopFrame);
         propagateObject(jobInstance, objectState, frameNumber + 1, propagateUpToFrame);
@@ -89,9 +87,7 @@ class PropagateConfirmContainer extends React.PureComponent<Props> {
     };
 
     public render(): JSX.Element {
-        const {
-            frameNumber, stopFrame, propagateFrames, cancel, objectState,
-        } = this.props;
+        const { frameNumber, stopFrame, propagateFrames, cancel, objectState } = this.props;
 
         const propagateUpToFrame = Math.min(frameNumber + propagateFrames, stopFrame);
 

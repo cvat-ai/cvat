@@ -2,9 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    AnyAction, Dispatch, ActionCreator, Store,
-} from 'redux';
+import { AnyAction, Dispatch, ActionCreator, Store } from 'redux';
 import { ThunkAction } from 'utils/redux';
 
 import {
@@ -236,9 +234,7 @@ export function switchZLayer(cur: number): AnyAction {
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const {
-                filters, frame, showAllInterpolationTracks, jobInstance,
-            } = receiveAnnotationsParameters();
+            const { filters, frame, showAllInterpolationTracks, jobInstance } = receiveAnnotationsParameters();
             const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
 
@@ -1081,9 +1077,7 @@ export function splitTrack(enabled: boolean): AnyAction {
 
 export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const {
-            jobInstance, filters, frame, showAllInterpolationTracks,
-        } = receiveAnnotationsParameters();
+        const { jobInstance, filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {

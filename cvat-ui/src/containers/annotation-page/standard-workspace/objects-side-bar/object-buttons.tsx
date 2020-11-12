@@ -48,9 +48,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const {
-        clientID, outsideDisabled, hiddenDisabled, keyframeDisabled,
-    } = own;
+    const { clientID, outsideDisabled, hiddenDisabled, keyframeDisabled } = own;
     const [objectState] = states.filter((_objectState): boolean => _objectState.clientID === clientID);
 
     return {
@@ -206,9 +204,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
             keyframeDisabled,
         } = this.props;
 
-        const {
-            first, prev, next, last,
-        } = objectState.keyframes || {
+        const { first, prev, next, last } = objectState.keyframes || {
             first: null, // shapes don't have keyframes, so we use null
             prev: null,
             next: null,

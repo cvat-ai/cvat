@@ -65,9 +65,7 @@ class StatisticsModalContainer extends React.PureComponent<Props> {
     };
 
     public render(): JSX.Element {
-        const {
-            jobInstance, visible, collecting, data, closeStatistics, jobStatus, savingJobStatus,
-        } = this.props;
+        const { jobInstance, visible, collecting, data, closeStatistics, jobStatus, savingJobStatus } = this.props;
 
         return (
             <StatisticsModalComponent

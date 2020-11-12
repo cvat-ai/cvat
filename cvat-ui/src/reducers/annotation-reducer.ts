@@ -9,9 +9,7 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
-import {
-    AnnotationState, ActiveControl, ShapeType, ObjectType, ContextMenuType, Workspace,
-} from './interfaces';
+import { AnnotationState, ActiveControl, ShapeType, ObjectType, ContextMenuType, Workspace } from './interfaces';
 
 const defaultState: AnnotationState = {
     activities: {
@@ -130,8 +128,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job,
                     labels: job.task.labels,
                     attributes: job.task.labels.reduce((acc: Record<number, any[]>, label: any): Record<
-                    number,
-                    any[]
+                        number,
+                        any[]
                     > => {
                         acc[label.id] = label.attributes;
                         return acc;
@@ -196,15 +194,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const {
-                number, data, filename, states, minZ, maxZ, curZ, delay, changeTime,
-            } = action.payload;
+            const { number, data, filename, states, minZ, maxZ, curZ, delay, changeTime } = action.payload;
 
             const activatedStateID = states
                 .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID) ?
-                state.annotations.activatedStateID :
-                null;
+                .includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID
+                : null;
 
             return {
                 ...state,
@@ -249,9 +245,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 player: {
                     ...state.player,
-                    // prettier-ignore
-                    frameAngles: state.player.frameAngles.map(
-                        (_angle: number, idx: number) => (rotateAll || offset === idx ? angle : _angle),
+                    frameAngles: state.player.frameAngles.map((_angle: number, idx: number) =>
+                        rotateAll || offset === idx ? angle : _angle,
                     ),
                 },
             };
@@ -399,9 +394,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
-            const {
-                shapeType, labelID, objectType, points, activeControl, rectDrawingMethod,
-            } = action.payload;
+            const { shapeType, labelID, objectType, points, activeControl, rectDrawingMethod } = action.payload;
 
             return {
                 ...state,
@@ -496,9 +489,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS: {
-            const {
-                history, states: updatedStates, minZ, maxZ,
-            } = action.payload;
+            const { history, states: updatedStates, minZ, maxZ } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
@@ -860,9 +851,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU: {
-            const {
-                visible, left, top, type, pointID,
-            } = action.payload;
+            const { visible, left, top, type, pointID } = action.payload;
 
             return {
                 ...state,
@@ -881,15 +870,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.REDO_ACTION_SUCCESS:
         case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
-            const {
-                history, states, minZ, maxZ,
-            } = action.payload;
+            const { history, states, minZ, maxZ } = action.payload;
 
             const activatedStateID = states
                 .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID) ?
-                state.annotations.activatedStateID :
-                null;
+                .includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID
+                : null;
 
             return {
                 ...state,
@@ -910,9 +897,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states, minZ, maxZ } = action.payload;
             const activatedStateID = states
                 .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID) ?
-                state.annotations.activatedStateID :
-                null;
+                .includes(state.annotations.activatedStateID)
+                ? state.annotations.activatedStateID
+                : null;
 
             return {
                 ...state,

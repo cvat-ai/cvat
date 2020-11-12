@@ -35,9 +35,7 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
 }
 
 function ItemAttributesComponent(props: Props): JSX.Element {
-    const {
-        collapsed, attributes, values, changeAttribute, collapse,
-    } = props;
+    const { collapsed, attributes, values, changeAttribute, collapse } = props;
 
     const sorted = [...attributes].sort((a: any, b: any): number => a.inputType.localeCompare(b.inputType));
 

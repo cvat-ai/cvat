@@ -10,7 +10,6 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { PointIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
-// eslint-disable-next-line max-len
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface Props {
@@ -21,22 +20,22 @@ interface Props {
 function DrawPointsControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ?
-        {
-            overlayStyle: {
-                display: 'none',
-            },
-        } :
-        {};
+    const dynamcPopoverPros = isDrawing
+        ? {
+              overlayStyle: {
+                  display: 'none',
+              },
+          }
+        : {};
 
-    const dynamicIconProps = isDrawing ?
-        {
-            className: 'cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.draw({ enabled: false });
-            },
-        } :
-        {};
+    const dynamicIconProps = isDrawing
+        ? {
+              className: 'cvat-active-canvas-control',
+              onClick: (): void => {
+                  canvasInstance.draw({ enabled: false });
+              },
+          }
+        : {};
 
     return (
         <Popover

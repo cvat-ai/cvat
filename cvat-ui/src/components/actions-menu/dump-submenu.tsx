@@ -22,9 +22,7 @@ interface Props {
 }
 
 export default function DumpSubmenu(props: Props): JSX.Element {
-    const {
-        taskMode, menuKey, dumpers, dumpActivities,
-    } = props;
+    const { taskMode, menuKey, dumpers, dumpActivities } = props;
 
     return (
         <Menu.SubMenu key={menuKey} title='Dump annotations'>

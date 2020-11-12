@@ -93,10 +93,7 @@ export class EditHandlerImpl implements EditHandler {
                     (this.editLine as any).draw('point', e);
                 } else {
                     const deltaTreshold = 15;
-                    // prettier-ignore
-                    const delta = Math.sqrt(
-                        ((e.clientX - lastDrawnPoint.x) ** 2) + ((e.clientY - lastDrawnPoint.y) ** 2),
-                    );
+                    const delta = Math.sqrt((e.clientX - lastDrawnPoint.x) ** 2 + (e.clientY - lastDrawnPoint.y) ** 2);
                     if (delta > deltaTreshold) {
                         (this.editLine as any).draw('point', e);
                     }
@@ -211,11 +208,11 @@ export class EditHandlerImpl implements EditHandler {
         }
 
         const cutIndexes1 = oldPoints.reduce(
-            (acc: string[], _: string, i: number): (string | number)[] => (i >= stop || i <= start ? [...acc, i] : acc),
+            (acc: string[], _: string, i: number) => (i >= stop || i <= start ? [...acc, i] : acc),
             [],
         );
         const cutIndexes2 = oldPoints.reduce(
-            (acc: string[], _: string, i: number): (string | number)[] => (i <= stop && i >= start ? [...acc, i] : acc),
+            (acc: string[], _: string, i: number) => (i <= stop && i >= start ? [...acc, i] : acc),
             [],
         );
 
@@ -226,10 +223,7 @@ export class EditHandlerImpl implements EditHandler {
                 .map((point: string[]): number[] => [+point[0], +point[1]]);
             let length = 0;
             for (let i = 1; i < points.length; i++) {
-                // prettier-ignore
-                length += Math.sqrt(
-                    ((points[i][0] - points[i - 1][0]) ** 2) + ((points[i][1] - points[i - 1][1]) ** 2),
-                );
+                length += Math.sqrt((points[i][0] - points[i - 1][0]) ** 2 + (points[i][1] - points[i - 1][1]) ** 2);
             }
 
             return length;

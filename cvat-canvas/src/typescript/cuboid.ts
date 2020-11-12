@@ -1,6 +1,3 @@
-// Copyright (C) 2020 Intel Corporation
-//
-// SPDX-License-Identifier: MIT
 import consts from './consts';
 
 export interface Point {
@@ -351,9 +348,10 @@ function setupCuboidPoints(points: Point[]): any[] {
     let p3;
     let p4;
 
-    const height = Math.abs(points[0].x - points[1].x) < Math.abs(points[1].x - points[2].x)
-        ? Math.abs(points[1].y - points[0].y)
-        : Math.abs(points[1].y - points[2].y);
+    const height =
+        Math.abs(points[0].x - points[1].x) < Math.abs(points[1].x - points[2].x)
+            ? Math.abs(points[1].y - points[0].y)
+            : Math.abs(points[1].y - points[2].y);
 
     // seperate into left and right point
     // we pick the first and third point because we know assume they will be on

@@ -63,12 +63,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             return enabled && !ctrlKey && !!interactionShapes.length;
         }
 
-        // prettier-ignore
-        const minimumVerticesAchieved = (
-            typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length
-        ) && (
-            typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length
-        );
+        const minimumVerticesAchieved =
+            (typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length) &&
+            (typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length);
         return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
     }
 

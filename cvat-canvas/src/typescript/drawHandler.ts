@@ -18,9 +18,7 @@ import {
 } from './shared';
 import Crosshair from './crosshair';
 import consts from './consts';
-import {
-    DrawData, Geometry, RectDrawingMethod, Configuration, CuboidDrawingMethod,
-} from './canvasModel';
+import { DrawData, Geometry, RectDrawingMethod, Configuration, CuboidDrawingMethod } from './canvasModel';
 
 import { cuboidFrom4Points } from './cuboid';
 
@@ -75,9 +73,9 @@ export class DrawHandlerImpl implements DrawHandler {
     private getFinalPolyshapeCoordinates(
         targetPoints: number[],
     ): {
-            points: number[];
-            box: Box;
-        } {
+        points: number[];
+        box: Box;
+    } {
         const { offset } = this.geometry;
         const points = targetPoints.map((coord: number): number => coord - offset);
         const box = {
@@ -108,9 +106,9 @@ export class DrawHandlerImpl implements DrawHandler {
     private getFinalCuboidCoordinates(
         targetPoints: number[],
     ): {
-            points: number[];
-            box: Box;
-        } {
+        points: number[];
+        box: Box;
+    } {
         const { offset } = this.geometry;
         let points = targetPoints;
 
@@ -156,10 +154,8 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (cuboidOffsets.length === points.length / 2) {
             cuboidOffsets.forEach((offsetCoords: number[]): void => {
-                // prettier-ignore
-                if ((Math.sqrt(offsetCoords[0] ** 2) + (offsetCoords[1] ** 2)) < minCuboidOffset.d) {
-                    // prettier-ignore
-                    minCuboidOffset.d = Math.sqrt((offsetCoords[0] ** 2) + (offsetCoords[1] ** 2));
+                if (Math.sqrt(offsetCoords[0] ** 2 + offsetCoords[1] ** 2) < minCuboidOffset.d) {
+                    minCuboidOffset.d = Math.sqrt(offsetCoords[0] ** 2 + offsetCoords[1] ** 2);
                     [minCuboidOffset.dx, minCuboidOffset.dy] = offsetCoords;
                 }
             });
@@ -217,8 +213,8 @@ export class DrawHandlerImpl implements DrawHandler {
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
             if (
-                this.drawData.shapeType !== 'rectangle'
-                && this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC
+                this.drawData.shapeType !== 'rectangle' &&
+                this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC
             ) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
@@ -369,10 +365,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 } else {
                     this.drawInstance.draw('update', e);
                     const deltaTreshold = 15;
-                    // prettier-ignore
-                    const delta = Math.sqrt(
-                        ((e.clientX - lastDrawnPoint.x) ** 2) + ((e.clientY - lastDrawnPoint.y) ** 2),
-                    );
+                    const delta = Math.sqrt((e.clientX - lastDrawnPoint.x) ** 2 + (e.clientY - lastDrawnPoint.y) ** 2);
                     if (delta > deltaTreshold) {
                         this.drawInstance.draw('point', e);
                     }
@@ -393,16 +386,17 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToNumberArray((e.target as SVGElement).getAttribute('points'));
             const { shapeType, redraw: clientID } = this.drawData;
-            const { points, box } = shapeType === 'cuboid'
-                ? this.getFinalCuboidCoordinates(targetPoints)
-                : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points, box } =
+                shapeType === 'cuboid'
+                    ? this.getFinalCuboidCoordinates(targetPoints)
+                    : this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
 
             if (this.canceled) return;
             if (
-                shapeType === 'polygon'
-                && (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD
-                && points.length >= 3 * 2
+                shapeType === 'polygon' &&
+                (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD &&
+                points.length >= 3 * 2
             ) {
                 this.onDrawDone(
                     {
@@ -413,9 +407,9 @@ export class DrawHandlerImpl implements DrawHandler {
                     Date.now() - this.startTimestamp,
                 );
             } else if (
-                shapeType === 'polyline'
-                && (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD)
-                && points.length >= 2 * 2
+                shapeType === 'polyline' &&
+                (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD) &&
+                points.length >= 2 * 2
             ) {
                 this.onDrawDone(
                     {
@@ -533,9 +527,10 @@ export class DrawHandlerImpl implements DrawHandler {
                 .split(/[,\s]/g)
                 .map((coord: string): number => +coord);
 
-            const { points } = this.drawData.initialState.shapeType === 'cuboid'
-                ? this.getFinalCuboidCoordinates(targetPoints)
-                : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points } =
+                this.drawData.initialState.shapeType === 'cuboid'
+                    ? this.getFinalCuboidCoordinates(targetPoints)
+                    : this.getFinalPolyshapeCoordinates(targetPoints);
 
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();

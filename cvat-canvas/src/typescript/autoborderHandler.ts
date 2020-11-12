@@ -28,14 +28,14 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private auxiliaryGroupID: number | null;
     private auxiliaryClicks: number[];
     private listeners: Record<
-    number,
-    Record<
-    number,
-    {
-        click: (event: MouseEvent) => void;
-        dblclick: (event: MouseEvent) => void;
-    }
-    >
+        number,
+        Record<
+            number,
+            {
+                click: (event: MouseEvent) => void;
+                dblclick: (event: MouseEvent) => void;
+            }
+        >
     >;
 
     public constructor(frameContent: SVGSVGElement) {
@@ -172,9 +172,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                             } else {
                                 // sign defines bypass direction
                                 const landmarks = this.auxiliaryClicks;
-                                const sign = Math.sign(landmarks[2] - landmarks[0])
-                                    * Math.sign(landmarks[1] - landmarks[0])
-                                    * Math.sign(landmarks[2] - landmarks[1]);
+                                const sign =
+                                    Math.sign(landmarks[2] - landmarks[0]) *
+                                    Math.sign(landmarks[1] - landmarks[0]) *
+                                    Math.sign(landmarks[2] - landmarks[1]);
 
                                 // go via a polygon and get vertexes
                                 // the first vertex has been already drawn

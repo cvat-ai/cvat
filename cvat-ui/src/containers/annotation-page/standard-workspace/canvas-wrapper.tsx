@@ -153,12 +153,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 saturationLevel,
                 resetZoom,
             },
-            workspace: {
-                aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering,
-            },
-            shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
-            },
+            workspace: { aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering },
+            shapes: { opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections },
         },
         shortcuts: { keyMap },
     } = state;

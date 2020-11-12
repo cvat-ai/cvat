@@ -17,9 +17,7 @@ export interface ContentListProps {
 }
 
 export default function TaskListComponent(props: ContentListProps): JSX.Element {
-    const {
-        currentTasksIndexes, numberOfTasks, currentPage, onSwitchPage,
-    } = props;
+    const { currentTasksIndexes, numberOfTasks, currentPage, onSwitchPage } = props;
     const taskViews = currentTasksIndexes.map((tid, id): JSX.Element => <TaskItem idx={id} taskID={tid} key={tid} />);
 
     return (

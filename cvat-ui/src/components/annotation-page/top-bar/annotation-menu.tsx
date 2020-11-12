@@ -30,9 +30,7 @@ export enum Actions {
 }
 
 export default function AnnotationMenuComponent(props: Props): JSX.Element {
-    const {
-        taskMode, loaders, dumpers, onClickMenu, loadActivity, dumpActivities, exportActivities, taskID,
-    } = props;
+    const { taskMode, loaders, dumpers, onClickMenu, loadActivity, dumpActivities, exportActivities, taskID } = props;
 
     let latestParams: ClickParam | null = null;
     function onClickMenuWrapper(params: ClickParam | null, file?: File): void {

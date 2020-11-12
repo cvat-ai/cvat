@@ -58,9 +58,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 }
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
-    const {
-        sidebarCollapsed, canvasInstance, collapseSidebar, updateTabContentHeight,
-    } = props;
+    const { sidebarCollapsed, canvasInstance, collapseSidebar, updateTabContentHeight } = props;
 
     useEffect(() => {
         const alignTabHeight = (): void => {

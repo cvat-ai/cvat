@@ -288,23 +288,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
-            // prettier-ignore
-            this.data.top += mutiplier * (
-                (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)
-            ) * this.data.scale;
-            // prettier-ignore
-            this.data.left -= mutiplier * (
-                (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)
-            ) * this.data.scale;
+            this.data.top +=
+                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.left -=
+                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
         } else {
-            // prettier-ignore
-            this.data.left += mutiplier * (
-                (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)
-            ) * this.data.scale;
-            // prettier-ignore
-            this.data.top += mutiplier * (
-                (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)
-            ) * this.data.scale;
+            this.data.left +=
+                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.top +=
+                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
@@ -611,8 +603,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
-            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable =
+            [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
+            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }

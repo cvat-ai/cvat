@@ -11,9 +11,7 @@ import Timeline from 'antd/lib/timeline';
 import Dropdown from 'antd/lib/dropdown';
 
 import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
-import {
-    MainMenuIcon, SaveIcon, UndoIcon, RedoIcon,
-} from 'icons';
+import { MainMenuIcon, SaveIcon, UndoIcon, RedoIcon } from 'icons';
 
 interface Props {
     saving: boolean;

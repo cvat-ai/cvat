@@ -455,8 +455,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Transform all text
         for (const key in this.svgShapes) {
             if (
-                Object.prototype.hasOwnProperty.call(this.svgShapes, key)
-                && Object.prototype.hasOwnProperty.call(this.svgTexts, key)
+                Object.prototype.hasOwnProperty.call(this.svgShapes, key) &&
+                Object.prototype.hasOwnProperty.call(this.svgTexts, key)
             ) {
                 this.updateTextPosition(this.svgTexts[key], this.svgShapes[key]);
             }
@@ -874,9 +874,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content.addEventListener('mousedown', (event): void => {
             if ([0, 1].includes(event.button)) {
                 if (
-                    [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT].includes(this.mode)
-                    || event.button === 1
-                    || event.altKey
+                    [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT].includes(this.mode) ||
+                    event.button === 1 ||
+                    event.altKey
                 ) {
                     self.controller.enableDrag(event.clientX, event.clientY);
                 }
@@ -1325,8 +1325,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (
-                state.points.length !== drawnState.points.length
-                || state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
+                state.points.length !== drawnState.points.length ||
+                state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
                 const translatedPoints: number[] = translate(state.points);
 
@@ -1601,13 +1601,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const p2 = e.detail.p;
                     const delta = 1;
                     const { offset } = this.controller.geometry;
-                    // prettier-ignore
-                    if (Math.sqrt(((p1.x - p2.x) ** 2) + ((p1.y - p2.y) ** 2)) >= delta) {
+                    if (Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2) >= delta) {
                         const points = pointsToNumberArray(
-                            shape.attr('points')
-                                || `${shape.attr('x')},${shape.attr('y')} `
-                                    + `${shape.attr('x') + shape.attr('width')},`
-                                    + `${shape.attr('y') + shape.attr('height')}`,
+                            shape.attr('points') ||
+                                `${shape.attr('x')},${shape.attr('y')} ` +
+                                    `${shape.attr('x') + shape.attr('width')},` +
+                                    `${shape.attr('y') + shape.attr('height')}`,
                         ).map((x: number): number => x - offset);
 
                         this.drawnStates[state.clientID].points = points;
@@ -1678,10 +1677,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const { offset } = this.controller.geometry;
 
                     const points = pointsToNumberArray(
-                        shape.attr('points')
-                            || `${shape.attr('x')},${shape.attr('y')} `
-                                + `${shape.attr('x') + shape.attr('width')},`
-                                + `${shape.attr('y') + shape.attr('height')}`,
+                        shape.attr('points') ||
+                            `${shape.attr('x')},${shape.attr('y')} ` +
+                                `${shape.attr('x') + shape.attr('width')},` +
+                                `${shape.attr('y') + shape.attr('height')}`,
                     ).map((x: number): number => x - offset);
 
                     this.drawnStates[state.clientID].points = points;
@@ -1758,8 +1757,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Find the best place for a text
         let [clientX, clientY]: number[] = [box.x + box.width, box.y];
         if (
-            clientX + ((text.node as any) as SVGTextElement).getBBox().width + consts.TEXT_MARGIN
-            > this.canvas.offsetWidth
+            clientX + ((text.node as any) as SVGTextElement).getBBox().width + consts.TEXT_MARGIN >
+            this.canvas.offsetWidth
         ) {
             [clientX, clientY] = [box.x, box.y];
         }
@@ -1779,9 +1778,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addText(state: any): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
-        const {
-            label, clientID, attributes, source,
-        } = state;
+        const { label, clientID, attributes, source } = state;
         const attrNames = label.attributes.reduce((acc: any, val: any): void => {
             acc[val.id] = val.name;
             return acc;

@@ -231,9 +231,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     private undo = (): void => {
-        const {
-            undo, jobInstance, frameNumber, canvasInstance,
-        } = this.props;
+        const { undo, jobInstance, frameNumber, canvasInstance } = this.props;
 
         if (canvasInstance.isAbleToChangeFrame()) {
             undo(jobInstance, frameNumber);
@@ -241,9 +239,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private redo = (): void => {
-        const {
-            redo, jobInstance, frameNumber, canvasInstance,
-        } = this.props;
+        const { redo, jobInstance, frameNumber, canvasInstance } = this.props;
 
         if (canvasInstance.isAbleToChangeFrame()) {
             redo(jobInstance, frameNumber);
@@ -257,9 +253,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onSwitchPlay = (): void => {
-        const {
-            frameNumber, jobInstance, onSwitchPlay, playing,
-        } = this.props;
+        const { frameNumber, jobInstance, onSwitchPlay, playing } = this.props;
 
         if (playing) {
             onSwitchPlay(false);
@@ -269,9 +263,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onFirstFrame = (): void => {
-        const {
-            frameNumber, jobInstance, playing, onSwitchPlay,
-        } = this.props;
+        const { frameNumber, jobInstance, playing, onSwitchPlay } = this.props;
 
         const newFrame = jobInstance.startFrame;
         if (newFrame !== frameNumber) {
@@ -283,9 +275,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onBackward = (): void => {
-        const {
-            frameNumber, frameStep, jobInstance, playing, onSwitchPlay,
-        } = this.props;
+        const { frameNumber, frameStep, jobInstance, playing, onSwitchPlay } = this.props;
 
         const newFrame = Math.max(jobInstance.startFrame, frameNumber - frameStep);
         if (newFrame !== frameNumber) {
@@ -298,9 +288,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     private onPrevFrame = (): void => {
         const { prevButtonType } = this.state;
-        const {
-            frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame,
-        } = this.props;
+        const { frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame } = this.props;
         const { startFrame } = jobInstance;
 
         const newFrame = Math.max(jobInstance.startFrame, frameNumber - 1);
@@ -320,9 +308,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     private onNextFrame = (): void => {
         const { nextButtonType } = this.state;
-        const {
-            frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame,
-        } = this.props;
+        const { frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame } = this.props;
         const { stopFrame } = jobInstance;
 
         const newFrame = Math.min(jobInstance.stopFrame, frameNumber + 1);
@@ -341,9 +327,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onForward = (): void => {
-        const {
-            frameNumber, frameStep, jobInstance, playing, onSwitchPlay,
-        } = this.props;
+        const { frameNumber, frameStep, jobInstance, playing, onSwitchPlay } = this.props;
 
         const newFrame = Math.min(jobInstance.stopFrame, frameNumber + frameStep);
         if (newFrame !== frameNumber) {
@@ -355,9 +339,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onLastFrame = (): void => {
-        const {
-            frameNumber, jobInstance, playing, onSwitchPlay,
-        } = this.props;
+        const { frameNumber, jobInstance, playing, onSwitchPlay } = this.props;
 
         const newFrame = jobInstance.stopFrame;
         if (newFrame !== frameNumber) {

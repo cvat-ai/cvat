@@ -51,10 +51,8 @@ export const authActions = {
     changePassword: () => createAction(AuthActionTypes.CHANGE_PASSWORD),
     changePasswordSuccess: () => createAction(AuthActionTypes.CHANGE_PASSWORD_SUCCESS),
     changePasswordFailed: (error: any) => createAction(AuthActionTypes.CHANGE_PASSWORD_FAILED, { error }),
-    // prettier-ignore
-    switchChangePasswordDialog: (showChangePasswordDialog: boolean) => createAction(
-        AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { showChangePasswordDialog },
-    ),
+    switchChangePasswordDialog: (showChangePasswordDialog: boolean) =>
+        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { showChangePasswordDialog }),
     requestPasswordReset: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET),
     requestPasswordResetSuccess: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS),
     requestPasswordResetFailed: (error: any) => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED, { error }),
@@ -62,13 +60,11 @@ export const authActions = {
     resetPasswordSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_SUCCESS),
     resetPasswordFailed: (error: any) => createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error }),
     loadServerAuthActions: () => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS),
-    // prettier-ignore
-    loadServerAuthActionsSuccess: (allowChangePassword: boolean, allowResetPassword: boolean) => createAction(
-        AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS, {
+    loadServerAuthActionsSuccess: (allowChangePassword: boolean, allowResetPassword: boolean) =>
+        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS, {
             allowChangePassword,
             allowResetPassword,
-        },
-    ),
+        }),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
 };
 

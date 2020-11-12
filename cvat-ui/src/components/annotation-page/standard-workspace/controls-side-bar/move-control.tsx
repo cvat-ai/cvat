@@ -23,9 +23,9 @@ function MoveControl(props: Props): JSX.Element {
             <Icon
                 component={MoveIcon}
                 className={
-                    activeControl === ActiveControl.DRAG_CANVAS ?
-                        'cvat-move-control cvat-active-canvas-control' :
-                        'cvat-move-control'
+                    activeControl === ActiveControl.DRAG_CANVAS
+                        ? 'cvat-move-control cvat-active-canvas-control'
+                        : 'cvat-move-control'
                 }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.DRAG_CANVAS) {
