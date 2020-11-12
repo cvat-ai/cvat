@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 const store = require('store');
+const quickhull = require('quickhull');
 
 const PluginRegistry = require('./plugins');
 const Issue = require('./issue');
@@ -352,9 +353,24 @@ Review.prototype.openIssue.implementation = async function (data) {
         throw new ArgumentError(`Issue comment set must be an array. Got ${data.comment_set}`);
     }
 
+    // get a hull for a set of points to avoid intersections
+    const points = data.position.reduce((acc, coord, index, arr) => {
+        if (index % 2) acc.push({ x: arr[index - 1], y: coord });
+        return acc;
+    }, []);
+
+    let hull = null;
+    if (points.length > 2) {
+        hull = quickhull(points)
+            .map((point) => [point.x, point.y])
+            .flat();
+    } else {
+        hull = data.position;
+    }
+
     const copied = {
         frame: data.frame,
-        position: data.position,
+        position: hull,
         owner: data.owner,
         comment_set: [],
     };
