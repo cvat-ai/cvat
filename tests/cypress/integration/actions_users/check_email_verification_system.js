@@ -27,7 +27,7 @@ context('Check email verification system', { browser: 'firefox' }, () => {
     });
 
     describe(`Case: "${caseId}"`, () => {
-        it('Register user', () => {
+        it('Register user. Notification exist. The response status is successful.', () => {
             cy.server().route('POST', '/api/v1/auth/register').as('userRegister');
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             cy.get('.ant-notification-topRight')
