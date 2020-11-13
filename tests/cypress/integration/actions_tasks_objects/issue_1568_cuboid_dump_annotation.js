@@ -18,17 +18,13 @@ context('Dump annotation if cuboid created', () => {
         secondY: 450,
     };
 
-    function save() {
-        cy.get('button').contains('Save').click({ force: true });
-    }
-
     before(() => {
         cy.openTaskJob(taskName);
     });
 
     after('Go to task list', () => {
         cy.removeAnnotations();
-        save();
+        cy.saveJob();
     });
 
     describe(`Testing issue "${issueId}"`, () => {
@@ -38,7 +34,7 @@ context('Dump annotation if cuboid created', () => {
         });
         it('Dump an annotation', () => {
             cy.get('.cvat-annotation-header-left-group').within(() => {
-                save();
+                cy.saveJob();
                 cy.get('button').contains('Menu').trigger('mouseover', { force: true });
             });
             cy.get('.cvat-annotation-menu').within(() => {
