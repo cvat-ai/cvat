@@ -8,7 +8,7 @@ import { taskName, labelName } from '../../support/const';
 
 context('Check error сannot read property at saving job', () => {
 
-    const issueIds = '2053, 2202';
+    const prId = '2203';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -23,13 +23,18 @@ context('Check error сannot read property at saving job', () => {
         cy.openTaskJob(taskName);
     });
 
-    describe(`Testing issues "${issueIds}"`, () => {
+    after('Go to task list', () => {
+        cy.removeAnnotations();
+        cy.saveJob();
+    });
+
+    describe(`Testing pr "${prId}"`, () => {
         it('Create an object in first frame', () => {
             cy.createRectangle(createRectangleShape2Points);
         });
 
         it('Go to next frame and create an object in second frame', () => {
-            cy.get('body').type('f');
+            cy.get('.cvat-player-next-button').click();
             cy.createRectangle(createRectangleShape2Points);
         });
 
@@ -38,7 +43,7 @@ context('Check error сannot read property at saving job', () => {
         });
 
         it('Save job and go to previous frame at saving job', () => {
-            cy.get('button').contains('Save').click({ force: true });
+            cy.saveJob();
             cy.get('body').type('d');
         });
 
