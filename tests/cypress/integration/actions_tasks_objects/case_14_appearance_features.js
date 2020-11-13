@@ -116,7 +116,7 @@ context('Appearance features', () => {
             .should('have.attr', 'projections', 'true');
             cy.get('.cvat_canvas_cuboid_projections').should('be.visible');
             // Deactivate all objects
-            cy.get('.cvat-canvas-container').click();
+            cy.get('.cvat-canvas-container').click(500, 500);
         });
         it('Activate checkbox "outlined borders" with a red color. The borders are red on the objects.', () => {
             cy.get('.cvat-appearance-outlinded-borders-checkbox').click();
