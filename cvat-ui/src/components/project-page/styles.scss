@@ -17,6 +17,10 @@
         margin-bottom: $grid-unit-size * 2;
     }
 
+    .ant-row-flex:nth-child(2) .ant-col:nth-child(2) > span {
+        margin-right: $grid-unit-size;
+    }
+
     .cvat-project-details-actions {
         display: flex;
         align-items: center;

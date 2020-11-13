@@ -40,9 +40,7 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
         } else {
             setBugTracker(value);
             setBugTrackerEditing(false);
-
-            instance.bugTracker = value;
-            onChange(instance);
+            onChange(value);
         }
     };
 

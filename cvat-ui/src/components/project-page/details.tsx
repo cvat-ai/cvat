@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 
 import getCore from 'cvat-core-wrapper';
-import { Project, CombinedState } from 'reducers/interfaces';
+import { Project } from 'reducers/interfaces';
 import { updateProjectAsync } from 'actions/projects-actions';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
@@ -26,7 +26,6 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const { project } = props;
 
     const dispatch = useDispatch();
-    const registeredUsers = useSelector((state: CombinedState) => state.users.users);
     const [projectName, setProjectName] = useState(project.name);
 
     return (
@@ -57,8 +56,9 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                     </Text>
                     <BugTrackerEditor
                         instance={project}
-                        onChange={(_project): void => {
-                            dispatch(updateProjectAsync(_project));
+                        onChange={(bugTracker): void => {
+                            project.bugTracker = bugTracker;
+                            dispatch(updateProjectAsync(project));
                         }}
                     />
                 </Col>
@@ -66,15 +66,8 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                     <Text type='secondary'>Assigned to</Text>
                     <UserSelector
                         value={project.assignee}
-                        users={registeredUsers}
-                        onChange={(value) => {
-                            let [userInstance] = registeredUsers.filter((user: any) => user.username === value);
-
-                            if (userInstance === undefined) {
-                                userInstance = null;
-                            }
-
-                            project.assignee = userInstance;
+                        onSelect={(user) => {
+                            project.assignee = user;
                             dispatch(updateProjectAsync(project));
                         }}
                     />

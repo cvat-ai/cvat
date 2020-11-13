@@ -283,7 +283,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderAdvancedBlock()}
 
                 <Col span={18}>{loading ? <Alert message={status} /> : null}</Col>
-                <Col span={6}>
+                <Col span={6} className='cvat-create-task-submit-section'>
                     <Button loading={loading} disabled={loading} type='primary' onClick={this.handleSubmitClick}>
                         Submit
                     </Button>

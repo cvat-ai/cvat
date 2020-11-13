@@ -17,6 +17,7 @@ import { getReposData, syncRepos } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import UserSelector, { User } from './user-selector';
+import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 
 const core = getCore();
@@ -204,7 +205,11 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
         return (
             <Row className='cvat-task-details-user-block' type='flex' justify='space-between' align='middle'>
-                <Col span={12}>{owner && <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>}</Col>
+                <Col span={12}>
+                    {owner && (
+                        <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
+                    )}
+                </Col>
                 <Col span={10}>
                     <Text type='secondary'>Assigned to</Text>
                     {assigneeSelect}
@@ -328,7 +333,13 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         {this.renderDescription()}
                         <Row type='flex' justify='space-between' align='middle'>
                             <Col span={12}>
-                                <BugTrackerEditor instance={taskInstance} onChange={onTaskUpdate} />
+                                <BugTrackerEditor
+                                    instance={taskInstance}
+                                    onChange={(bugTracker) => {
+                                        taskInstance.bugTracker = bugTracker;
+                                        onTaskUpdate(taskInstance);
+                                    }}
+                                />
                             </Col>
                             <Col span={10}>
                                 <AutomaticAnnotationProgress
