@@ -2,7 +2,5 @@ version: "3.3"
 
 services:
   cvat:
-    volumes:
-      - ./email_settings.py:/home/django/email_settings.py:ro
     environment:
-      DJANGO_SETTINGS_MODULE: email_settings
+      DJANGO_SETTINGS_MODULE: tests.email_settings

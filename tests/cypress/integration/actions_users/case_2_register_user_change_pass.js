@@ -13,7 +13,7 @@ const randomString = (isPassword) => {
     return isPassword ? `${result}${Math.floor(Math.random() * 10)}` : result;
 };
 
-context('Register user, change password, login with new password', () => {
+context('Register user, change password, login with new password', { browser: 'chrome' }, () => {
     const caseId = '2';
     const firstName = `${randomString()}`;
     const lastName = `${randomString()}`;

@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Multiple users. Assign task, job.', () => {
+context('Multiple users. Assign task, job.', { browser: 'chrome' }, () => {
     const caseId = '4';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
