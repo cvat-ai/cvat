@@ -33,3 +33,4 @@ by `/jobs?task=:id2` in the future_.
 delete an endpoint or modify its behaviors.
 
 Link: [Best practices for REST API design](https://stackoverflow.blog/2020/03/02/best-practices-for-rest-api-design/)
+Link: [Flat vs. nested resources](https://stackoverflow.com/questions/20951419/what-are-best-practices-for-rest-nested-resources)
