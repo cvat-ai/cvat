@@ -33,7 +33,7 @@ before_script:
   - chmod a+rwx ${HOST_COVERAGE_DATA_DIR}
 
 script:
-  - if [[ $TRAVIS_EVENT_TYPE == "cron" || $TRAVIS_BRANCH == "dkru/cypress-test-check-email-verification" ]];
+  - if [[ $TRAVIS_EVENT_TYPE == "cron" && $TRAVIS_BRANCH == "develop" ]];
     then
     docker-compose -f docker-compose.yml -f ./tests/docker-compose.email.yml up -d --build;
     docker exec -it cvat bash -ic 'python3 ~/manage.py migrate';
