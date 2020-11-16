@@ -1603,7 +1603,6 @@
                     tasks: {
                         get: () => [...data.tasks],
                     },
-                    // TODO: Do we need logger here
                 }),
             );
         }

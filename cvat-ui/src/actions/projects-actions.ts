@@ -71,8 +71,7 @@ function getProjectsFailed(error: any): AnyAction {
     return action;
 }
 
-export function getProjectsAsync(query: Partial<ProjectsQuery>):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getProjects());
         dispatch(updateProjectsGettingQuery(query));
@@ -102,26 +101,24 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         const taskPreviewPromises: Promise<any>[] = [];
 
         for (const project of array) {
-            taskPreviewPromises.push(...(project as any).tasks.map((task: any): string => {
-                tasks.push(task);
-                return (task as any).frames.preview().catch(() => '');
-            }));
+            taskPreviewPromises.push(
+                ...(project as any).tasks.map((task: any): string => {
+                    tasks.push(task);
+                    return (task as any).frames.preview().catch(() => '');
+                }),
+            );
         }
 
         const taskPreviews = await Promise.all(taskPreviewPromises);
 
         dispatch(getProjectsSuccess(array, result.count));
 
-
         const store = getCVATStore();
         const state: CombinedState = store.getState();
 
         if (!state.tasks.fetching) {
-            dispatch(getTasksSuccess(
-                tasks,
-                taskPreviews,
-                tasks.length,
-                {
+            dispatch(
+                getTasksSuccess(tasks, taskPreviews, tasks.length, {
                     page: 1,
                     assignee: null,
                     id: null,
@@ -130,8 +127,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                     owner: null,
                     search: null,
                     status: null,
-                }
-            ));
+                }),
+            );
         }
     };
 }
@@ -167,8 +164,7 @@ function createProjectFailed(error: any): AnyAction {
     return action;
 }
 
-export function createProjectAsync(data: any):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function createProjectAsync(data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const projectInstance = new cvat.classes.Project(data);
 
@@ -214,8 +210,7 @@ function updateProjectFailed(project: any, error: any): AnyAction {
     return action;
 }
 
-export function updateProjectAsync(projectInstance: any):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function updateProjectAsync(projectInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(updateProject());
@@ -269,8 +264,7 @@ function deleteProjectFailed(projectId: number, error: any): AnyAction {
     return action;
 }
 
-export function deleteProjectAsync(projectInstance: any):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function deleteProjectAsync(projectInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(deleteProject(projectInstance.id));
         try {

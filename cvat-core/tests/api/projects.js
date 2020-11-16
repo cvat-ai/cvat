@@ -1,13 +1,6 @@
-/*
- * Copyright (C) 2018 Intel Corporation
- * SPDX-License-Identifier: MIT
-*/
-
-/* global
-    require:false
-    jest:false
-    describe:false
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 // Setup mock for a server
 jest.mock('../../src/server-proxy', () => {
@@ -52,9 +45,11 @@ describe('Feature: get projects', () => {
     });
 
     test('get a project by an invalid id', async () => {
-        expect(window.cvat.projects.get({
-            id: '1',
-        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(
+            window.cvat.projects.get({
+                id: '1',
+            }),
+        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get projects by filters', async () => {
@@ -69,9 +64,11 @@ describe('Feature: get projects', () => {
     });
 
     test('get projects by invalid filters', async () => {
-        expect(window.cvat.projects.get({
-            unknown: '5',
-        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(
+            window.cvat.projects.get({
+                unknown: '5',
+            }),
+        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 });
 
@@ -101,14 +98,16 @@ describe('Feature: save a project', () => {
 
         const labelsLength = result[0].labels.length;
         const newLabel = new window.cvat.classes.Label({
-            name: 'My boss\'s car',
-            attributes: [{
-                default_value: 'false',
-                input_type: 'checkbox',
-                mutable: true,
-                name: 'parked',
-                values: ['false'],
-            }],
+            name: "My boss's car",
+            attributes: [
+                {
+                    default_value: 'false',
+                    input_type: 'checkbox',
+                    mutable: true,
+                    name: 'parked',
+                    values: ['false'],
+                },
+            ],
         });
 
         result[0].labels = [...result[0].labels, newLabel];
@@ -119,7 +118,7 @@ describe('Feature: save a project', () => {
         });
 
         expect(result[0].labels).toHaveLength(labelsLength + 1);
-        const appendedLabel = result[0].labels.filter((el) => el.name === 'My boss\'s car');
+        const appendedLabel = result[0].labels.filter((el) => el.name === "My boss's car");
         expect(appendedLabel).toHaveLength(1);
         expect(appendedLabel[0].attributes).toHaveLength(1);
         expect(appendedLabel[0].attributes[0].name).toBe('parked');
@@ -131,21 +130,25 @@ describe('Feature: save a project', () => {
     test('save new project without an id', async () => {
         const project = new window.cvat.classes.Project({
             name: 'New Empty Project',
-            labels: [{
-                name: 'car',
-                attributes: [{
-                    default_value: 'false',
-                    input_type: 'checkbox',
-                    mutable: true,
-                    name: 'parked',
-                    values: ['false'],
-                }],
-            }],
+            labels: [
+                {
+                    name: 'car',
+                    attributes: [
+                        {
+                            default_value: 'false',
+                            input_type: 'checkbox',
+                            mutable: true,
+                            name: 'parked',
+                            values: ['false'],
+                        },
+                    ],
+                },
+            ],
             bug_tracker: 'bug tracker value',
         });
 
         const result = await project.save();
-        expect(typeof (result.id)).toBe('number');
+        expect(typeof result.id).toBe('number');
     });
 });
 

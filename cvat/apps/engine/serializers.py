@@ -92,7 +92,7 @@ class LabelSerializer(serializers.ModelSerializer):
             logger.info("{} label was updated".format(db_label.name))
         if not validated_data.get('color', None):
             label_names = [l.name for l in
-                instance.label_set.exclude(id=db_label.id).order_by('id')
+                instance[tuple(instance.keys())[0]].label_set.exclude(id=db_label.id).order_by('id')
             ]
             db_label.color = get_label_color(db_label.name, label_names)
         else:

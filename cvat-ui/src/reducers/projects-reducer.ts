@@ -111,11 +111,8 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 ...state,
                 current: state.current.map(
                     (project): Project => {
-                        if (project.instance.id === action.payload.project.id) {
-                            return {
-                                ...project,
-                                instance: action.payload.project,
-                            };
+                        if (project.id === action.payload.project.id) {
+                            return action.payload.project;
                         }
 
                         return project;
@@ -128,11 +125,8 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 ...state,
                 current: state.current.map(
                     (project): Project => {
-                        if (project.instance.id === action.payload.project.id) {
-                            return {
-                                ...project,
-                                instance: action.payload.project,
-                            };
+                        if (project.id === action.payload.project.id) {
+                            return action.payload.project;
                         }
 
                         return project;
