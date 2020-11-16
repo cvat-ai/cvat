@@ -611,7 +611,7 @@ class JobReview(APITestCase):
         response = self._patch_request('/api/v1/issues/{}/reopen'.format(issue_id), self.reviewer, {})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
-        self.assertEqual(response.data[0]['resolver_id'], None)
+        self.assertEqual(response.data[0]['resolver']['id'], None)
 
         response = self._patch_request('/api/v1/issues/{}/resolve'.format(issue_id), self.reviewer, {})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
