@@ -18,6 +18,9 @@ services:
       POSTGRES_USER: root
       POSTGRES_DB: cvat
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: rockrobo666
+    ports:
+      - '15432:5432'
     volumes:
       - cvat_db:/var/lib/postgresql/data
 
@@ -53,11 +56,13 @@ services:
       ALLOWED_HOSTS: '*'
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
+      CVAT_SHARE_URL: "Mounted from rockrobo_data"
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
+      - /home/jiangrong/dev/downloads/rockrobo_data:/home/django/share:ro
 
   cvat_ui:
     container_name: cvat_ui
@@ -87,7 +92,8 @@ services:
       - cvat
       - cvat_ui
     environment:
-      CVAT_HOST: localhost
+      # CVAT_HOST: localhost
+      CVAT_HOST: "rongdev 192.168.50.153"
     ports:
       - '8080:80'
     volumes:
