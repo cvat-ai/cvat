@@ -1,5 +1,5 @@
 metadata:
-  name: tf.faster_rcnn_inception_v2_coco
+  name: tf-faster-rcnn-inception-v2-coco
   namespace: cvat
   annotations:
     name: Faster RCNN via Tensorflow

@@ -1,5 +1,5 @@
 metadata:
-  name: pth.foolwood.siammask
+  name: pth-foolwood-siammask
   namespace: cvat
   annotations:
     name: SiamMask
