@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import { updateAnnotationsAsync } from 'actions/annotation-actions';
 
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers/interfaces';
 
 interface OwnProps {
     labelID: number;
@@ -92,8 +92,8 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         let statesLocked = true;
 
         ownObjectStates.forEach((objectState: any) => {
-            const { lock } = objectState;
-            if (!lock) {
+            const { lock, objectType } = objectState;
+            if (!lock && objectType !== ObjectType.TAG) {
                 statesHidden = statesHidden && objectState.hidden;
                 statesLocked = statesLocked && objectState.lock;
             }
