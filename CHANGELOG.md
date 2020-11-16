@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Django templates for email and user guide (<https://github.com/openvinotoolkit/cvat/pull/2412>)
 - Saving relative paths in dummy chunks instead of absolute(<https://github.com/openvinotoolkit/cvat/pull/2424>)
+- AI tools windows closes after model selection (<https://github.com/openvinotoolkit/cvat/pull/2439>)
+- AI tools submit buttons are inactive by default in some cases (<https://github.com/openvinotoolkit/cvat/pull/2439>)
 
 ### Security
 
