@@ -522,7 +522,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
-                            defaultValue={trackers[0].name}
+                            defaultValue={trackers[0].id}
                             onChange={this.setActiveTracker}
                         >
                             {trackers.map(
@@ -614,7 +614,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
-                            defaultValue={interactors[0].name}
+                            defaultValue={interactors[0].id}
                             onChange={this.setActiveInteractor}
                         >
                             {interactors.map(
@@ -795,6 +795,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     {...dynamcPopoverPros}
                     placement='right'
                     overlayClassName='cvat-tools-control-popover'
+                    mouseLeaveDelay={1}
                     content={this.renderPopoverContent()}
                 >
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
