@@ -524,6 +524,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             style={{ width: '100%' }}
                             defaultValue={trackers[0].id}
                             onChange={this.setActiveTracker}
+                            showSearch
+                            filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                                const { children } = option.props;
+                                if (typeof children === 'string') {
+                                    return children.toLowerCase().includes(input.toLowerCase());
+                                }
+
+                                return false;
+                            }}
                         >
                             {trackers.map(
                                 (interactor: Model): JSX.Element => (
@@ -616,6 +625,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             style={{ width: '100%' }}
                             defaultValue={interactors[0].id}
                             onChange={this.setActiveInteractor}
+                            showSearch
+                            filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                                const { children } = option.props;
+                                if (typeof children === 'string') {
+                                    return children.toLowerCase().includes(input.toLowerCase());
+                                }
+
+                                return false;
+                            }}
                         >
                             {interactors.map(
                                 (interactor: Model): JSX.Element => (

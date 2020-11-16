@@ -135,6 +135,15 @@ function DetectorRunner(props: Props): JSX.Element {
                             setMatch({ model: null, task: null });
                             setModelID(_modelID);
                         }}
+                        showSearch
+                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                            const { children } = option.props;
+                            if (typeof children === 'string') {
+                                return children.toLowerCase().includes(input.toLowerCase());
+                            }
+
+                            return false;
+                        }}
                     >
                         {models.map(
                             (_model: Model): JSX.Element => (
