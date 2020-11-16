@@ -27,7 +27,9 @@ interface Props {
 }
 
 function DetectorRunner(props: Props): JSX.Element {
-    const { task, models, withCleanup, runInference } = props;
+    const {
+        task, models, withCleanup, runInference,
+    } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
     const [mapping, setMapping] = useState<StringObject>({});
@@ -175,14 +177,10 @@ function DetectorRunner(props: Props): JSX.Element {
                 <>
                     <Row type='flex' justify='start' align='middle'>
                         <Col span={10}>
-                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) =>
-                                updateMatch(modelLabel, null),
-                            )}
+                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) => updateMatch(modelLabel, null))}
                         </Col>
                         <Col span={10} offset={1}>
-                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) =>
-                                updateMatch(null, taskLabel),
-                            )}
+                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) => updateMatch(null, taskLabel))}
                         </Col>
                         <Col span={1} offset={1}>
                             <Tooltip
@@ -257,12 +255,12 @@ function DetectorRunner(props: Props): JSX.Element {
                             runInference(
                                 task,
                                 model,
-                                model.type === 'detector'
-                                    ? { mapping, cleanup }
-                                    : {
-                                          threshold,
-                                          max_distance: distance,
-                                      },
+                                model.type === 'detector' ?
+                                    { mapping, cleanup } :
+                                    {
+                                        threshold,
+                                        max_distance: distance,
+                                    },
                             );
                         }}
                     >
@@ -276,8 +274,7 @@ function DetectorRunner(props: Props): JSX.Element {
 
 export default React.memo(
     DetectorRunner,
-    (prevProps: Props, nextProps: Props): boolean =>
-        prevProps.task === nextProps.task &&
+    (prevProps: Props, nextProps: Props): boolean => prevProps.task === nextProps.task &&
         prevProps.runInference === nextProps.runInference &&
         prevProps.models.length === nextProps.models.length &&
         nextProps.models.reduce(
