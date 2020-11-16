@@ -1,5 +1,5 @@
 metadata:
-  name: openvino.omz.public.faster_rcnn_inception_v2_coco
+  name: openvino-omz-public-faster_rcnn_inception_v2_coco
   namespace: cvat
   annotations:
     name: Faster RCNN

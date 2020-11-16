@@ -354,7 +354,7 @@ def _create_thread(tid, data):
                     img_sizes = []
                     with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
                         for path, frame_id in chunk_paths:
-                            dummy_chunk.write(path + '\n')
+                            dummy_chunk.write(os.path.relpath(path, upload_dir) + '\n')
                             img_sizes.append(extractor.get_image_size(frame_id))
 
                     db_images.extend([

@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Django templates for email and user guide (<https://github.com/openvinotoolkit/cvat/pull/2412>)
+- Saving relative paths in dummy chunks instead of absolute(<https://github.com/openvinotoolkit/cvat/pull/2424>)
 
 ### Security
 
