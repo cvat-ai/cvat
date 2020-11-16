@@ -23,7 +23,7 @@ context('Check error сannot read property at saving job', () => {
         cy.openTaskJob(taskName);
     });
 
-    after('Go to task list', () => {
+    after('Remove annotations and save job', () => {
         cy.removeAnnotations();
         cy.saveJob();
     });
