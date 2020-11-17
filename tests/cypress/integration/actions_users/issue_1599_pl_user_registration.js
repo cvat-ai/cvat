@@ -40,7 +40,7 @@ context('Issue 1599 (Polish alphabet).', () => {
         });
 
         it('Successful registration', () => {
-            cy.url().should('include', '/projects');
+            cy.url().should('include', '/tasks');
         });
     });
 });
