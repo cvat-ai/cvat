@@ -48,3 +48,14 @@ optional arguments:
   `cli.py delete 100 101 102`
 - Dump annotations
   `cli.py dump --format "CVAT for images 1.1" 103 output.xml`
+
+
+python3 cli.py \
+  --auth admin:rockrobo123 \
+  --server-host 192.168.50.153 \
+  --server-port 8080 \
+  create test1 \
+  --labels labels.json \
+  --overlap 0 \
+  --segment_size 100 \
+  local /home/jiangrong/dev/downloads/rockrobo_data/det_testset/neice_final/VOC2007/JPEGImages/StereoVision_L_999508_44_0_1_5154_D_FakePoop_708_-144.jpeg

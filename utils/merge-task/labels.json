@@ -1,0 +1,173 @@
+[
+  {
+    "name": "laundry basket",
+    "color": "#d68b85",
+    "attributes": []
+  },
+  {
+    "name": "folding chair",
+    "color": "#587c62",
+    "attributes": []
+  },
+  {
+    "name": "dock(rubys+tanosv)",
+    "color": "#3df53d",
+    "attributes": []
+  },
+  {
+    "name": "cleaning robot",
+    "color": "#b25050",
+    "attributes": []
+  },
+  {
+    "name": "scale",
+    "id": 41,
+    "color": "#cc9933",
+    "attributes": []
+  },
+  {
+    "name": "whole bar stool b",
+    "color": "#f078f0",
+    "attributes": []
+  },
+  {
+    "name": "dust pan",
+    "color": "#cc9933",
+    "attributes": []
+  },
+  {
+    "name": "whole bar stool a",
+    "color": "#5986b3",
+    "attributes": []
+  },
+  {
+    "name": "shoe",
+    "color": "#ddff33",
+    "attributes": []
+  },
+  {
+    "name": "fan c",
+    "color": "#4c4c53",
+    "attributes": []
+  },
+  {
+    "name": "flat base",
+    "color": "#75866b",
+    "attributes": []
+  },
+  {
+    "name": "floor lamp",
+    "color": "#979e3a",
+    "attributes": []
+  },
+  {
+    "name": "coat rack",
+    "color": "#24b353",
+    "attributes": []
+  },
+  {
+    "name": "pet feces",
+    "color": "#fa3253",
+    "attributes": []
+  },
+  {
+    "name": "sock",
+    "color": "#8b8bfa",
+    "attributes": []
+  },
+  {
+    "name": "power strip",
+    "color": "#c57a62",
+    "attributes": []
+  },
+  {
+    "name": "rocking chair",
+    "color": "#6f90c9",
+    "attributes": []
+  },
+  {
+    "name": "bar stool a",
+    "color": "#8c78f0",
+    "attributes": []
+  },
+  {
+    "name": "fan",
+    "color": "#cc3366",
+    "attributes": []
+  },
+  {
+    "name": "fan b",
+    "color": "#a79686",
+    "attributes": []
+  },
+  {
+    "name": "fake poop a",
+    "color": "#24b353",
+    "attributes": []
+  },
+  {
+    "name": "whole fan b",
+    "color": "#f59331",
+    "attributes": []
+  },
+  {
+    "name": "door mark b",
+    "color": "#32b7fa",
+    "attributes": []
+  },
+  {
+    "name": "door mark c",
+    "color": "#607e5b",
+    "attributes": []
+  },
+  {
+    "name": "door mark a",
+    "color": "#e9fae3",
+    "attributes": []
+  },
+  {
+    "name": "whole fan c",
+    "color": "#7a328a",
+    "attributes": []
+  },
+  {
+    "name": "wheel",
+    "color": "#aaf0d1",
+    "attributes": []
+  },
+  {
+    "name": "bar stool b",
+    "color": "#ff6a4d",
+    "attributes": []
+  },
+  {
+    "name": "dock(ruby)",
+    "color": "#33ddff",
+    "attributes": []
+  },
+  {
+    "name": "whole fan",
+    "color": "#afafd1",
+    "attributes": []
+  },
+  {
+    "name": "wire",
+    "color": "#83e070",
+    "attributes": []
+  },
+  {
+    "name": "fake poop b",
+    "color": "#74c274",
+    "attributes": []
+  },
+  {
+    "name": "handheld cleaner",
+    "color": "#f668d1",
+    "attributes": []
+  },
+  {
+    "name": "clothing item",
+    "color": "#ff6a4d",
+    "attributes": []
+  }
+]

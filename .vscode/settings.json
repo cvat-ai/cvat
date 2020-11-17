@@ -1,27 +1,35 @@
 {
-    "python.pythonPath": ".env/bin/python",
+    "python.pythonPath": "/usr/bin/python3",
     "eslint.enable": true,
-    "eslint.probe": [
+    "eslint.validate": [
         "javascript",
         "typescript",
-        "typescriptreact"
+        "typescriptreact",
     ],
-    "eslint.onIgnoredFiles": "warn",
     "eslint.workingDirectories": [
         {
-            "directory": "${cwd}",
+            "directory":  "./cvat-core",
+            "changeProcessCWD": true
         },
         {
-            "pattern":  "cvat-*"
+            "directory":  "./cvat-canvas",
+            "changeProcessCWD": true
         },
         {
-            "directory": "tests",
-            "!cwd": true
+            "directory":  "./cvat-ui",
+            "changeProcessCWD": true
+        },
+        {
+            "directory":  ".",
+            "changeProcessCWD": true
         }
     ],
     "python.linting.pylintEnabled": true,
-    "python.testing.unittestEnabled": true,
+    "python.testing.unittestEnabled": false,
     "licenser.license": "Custom",
     "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT",
-    "files.trimTrailingWhitespace": true
+    "files.trimTrailingWhitespace": true,
+    "python.testing.promptToConfigure": false,
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false
 }

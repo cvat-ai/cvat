@@ -23,21 +23,32 @@ nuctl deploy --project-name cvat \
     --platform local
 
 ########## list all tasks ##########
-python3 ./cli.py \
---auth admin:rockrobo123 \
+python3 ../utils/cli/cli.py \
+--auth admin:admin \
 --server-host 192.168.50.153 \
 --server-port 8080 \
 ls
 
 ########## delete tasks #############
 python3 ../utils/cli/cli.py \
---auth admin:rockrobo123 \
+--auth admin:admin \
 --server-host 192.168.50.153 \
 --server-port 8080 \
 delete 12
 
+############ create tasks #############
+python3 ../utils/cli/cli.py \
+--auth admin:admin \
+--server-host 192.168.50.153 \
+--server-port 8080 \
+create "20201001_R0401S00900297" \
+--labels ./labels.json \
+--overlap 0 \
+--segment_size 100 \
+share data_pipeline/20201001_R0401S00900297/StereoVision_E_L_12271814_47_0_0_178_0_1_85.jpeg \
+data_pipeline/20201001_R0401S00900297/StereoVision_E_L_12273814_-48_0_0_208_9_237_67.jpeg
 
-psql -h 0.0.0.0 -p 15432 -U root -W rockrobo666 -d cvat
+psql -h 0.0.0.0 -p 15432 -U root -d cvat
 
 create view engine_image_v as
 select
@@ -58,3 +69,26 @@ and i.frame between s.start_frame and s.stop_frame
 inner join engine_job j
 on s.id = j.segment_id
 ;
+
+select '/home/jiangrong/dev/cvat/assets/cvat_data/data/' || data_id || '/raw/' || path
+from
+(select
+l.*
+,label.name as label_name
+,i.task_id
+,i.path
+,i.data_id
+from engine_labeledimage l
+inner join engine_label label
+on l.label_id = label.id
+and label.name in ('pick')
+inner join engine_image_v as i
+on l.frame = i.frame
+and l.job_id = i.job_id
+and i.task_id in (29,33)) as tmp
+;
+
+
+
+
+

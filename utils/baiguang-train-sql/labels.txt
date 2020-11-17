@@ -1,0 +1,34 @@
+36 | fake poop b        |       3 | #74c274
+37 | laundry basket     |       3 | #d68b85
+38 | folding chair      |       3 | #587c62
+39 | dock(rubys+tanosv) |       3 | #3df53d
+40 | cleaning robot     |       3 | #b25050
+41 | scale              |       3 | #cc9933
+42 | whole bar stool b  |       3 | #f078f0
+43 | dust pan           |       3 | #cc9933
+44 | whole bar stool a  |       3 | #5986b3
+45 | shoe               |       3 | #ddff33
+46 | fan c              |       3 | #4c4c53
+47 | flat base          |       3 | #75866b
+48 | floor lamp         |       3 | #979e3a
+49 | coat rack          |       3 | #24b353
+50 | pet feces          |       3 | #fa3253
+51 | sock               |       3 | #8b8bfa
+52 | handheld cleaner   |       3 | #f668d1
+53 | power strip        |       3 | #c57a62
+54 | rocking chair      |       3 | #6f90c9
+55 | bar stool a        |       3 | #8c78f0
+56 | fan                |       3 | #cc3366
+57 | fan b              |       3 | #a79686
+58 | fake poop a        |       3 | #24b353
+59 | whole fan b        |       3 | #f59331
+60 | door mark b        |       3 | #32b7fa
+61 | door mark c        |       3 | #607e5b
+62 | door mark a        |       3 | #e9fae3
+63 | whole fan c        |       3 | #7a328a
+64 | wheel              |       3 | #aaf0d1
+65 | bar stool b        |       3 | #ff6a4d
+66 | dock(ruby)         |       3 | #33ddff
+67 | whole fan          |       3 | #afafd1
+68 | wire               |       3 | #83e070
+69 | clothing item      |       3 | #ff6a4d

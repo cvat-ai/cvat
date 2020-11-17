@@ -70,6 +70,7 @@ class CLI():
                 'segment_size': segment_size,
                 'bug_tracker': bug,
         }
+        print(url, data)
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
