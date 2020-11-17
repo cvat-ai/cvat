@@ -18,7 +18,9 @@ import ColorPicker from 'components/annotation-page/standard-workspace/objects-s
 import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import consts from 'consts';
-import { equalArrayHead, idGenerator, Label, Attribute } from './common';
+import {
+    equalArrayHead, idGenerator, Label, Attribute,
+} from './common';
 
 export enum AttributeType {
     SELECT = 'SELECT',
@@ -318,9 +320,9 @@ class LabelForm extends React.PureComponent<Props, {}> {
         );
     }
 
-    private renderAttribute = (key: number, index: number): JSX.Element => {
+    private renderAttribute = (key: number): JSX.Element => {
         const { label, form } = this.props;
-        const attr = label && index < label.attributes.length ? label.attributes[index] : null;
+        const attr = label ? label.attributes.filter((_attr: any): boolean => _attr.id === key)[0] : null;
 
         return (
             <Form.Item key={key}>

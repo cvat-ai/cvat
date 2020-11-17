@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.10.1",
+  "version": "1.10.2",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -57,7 +57,7 @@
     "@types/react-router-dom": "^5.1.6",
     "@types/react-share": "^3.0.3",
     "@types/redux-logger": "^3.0.8",
-    "antd": "^3.26.18",
+    "antd": "^3.26.19",
     "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "file:../cvat-canvas",
     "cvat-core": "file:../cvat-core",
