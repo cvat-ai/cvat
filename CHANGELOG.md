@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Saving relative paths in dummy chunks instead of absolute (<https://github.com/openvinotoolkit/cvat/pull/2424>)
 - Objects with a specific label cannot be displayed if at least one tag with the label exist (<https://github.com/openvinotoolkit/cvat/pull/2435>)
 - Wrong attribute can be removed in labels editor (<https://github.com/openvinotoolkit/cvat/pull/2436>)
+- UI fails with the error "Cannot read property 'label' of undefined" (<https://github.com/openvinotoolkit/cvat/pull/2442>)
 
 ### Security
 
