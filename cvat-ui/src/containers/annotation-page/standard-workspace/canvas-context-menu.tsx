@@ -24,7 +24,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             annotations: { activatedStateID, collapsed, states: objectStates },
             canvas: {
-                contextMenu: { visible, top, left, type },
+                contextMenu: {
+                    visible, top, left, type,
+                },
+                ready,
             },
         },
     } = state;
@@ -33,7 +36,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         collapsed: activatedStateID !== null ? collapsed[activatedStateID] : undefined,
         objectStates,
-        visible,
+        visible:
+            activatedStateID !== null &&
+            visible &&
+            ready &&
+            objectStates.map((_state: any): number => _state.clientID).includes(activatedStateID),
         left,
         top,
         type,
@@ -166,7 +173,9 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { left, top } = this.state;
-        const { visible, activatedStateID, objectStates, type } = this.props;
+        const {
+            visible, activatedStateID, objectStates, type,
+        } = this.props;
 
         return (
             <>

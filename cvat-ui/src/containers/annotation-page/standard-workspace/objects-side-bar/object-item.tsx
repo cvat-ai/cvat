@@ -7,7 +7,9 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import { ActiveControl, CombinedState, ColorBy, ShapeType } from 'reducers/interfaces';
+import {
+    ActiveControl, CombinedState, ColorBy, ShapeType,
+} from 'reducers/interfaces';
 import {
     collapseObjectItems,
     updateAnnotationsAsync,
@@ -83,40 +85,25 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
 
-    try {
-        const collapsedState =
-            typeof statesCollapsed[clientID] === 'undefined' ? initialCollapsed : statesCollapsed[clientID];
+    const collapsedState =
+        typeof statesCollapsed[clientID] === 'undefined' ? initialCollapsed : statesCollapsed[clientID];
 
-        return {
-            objectState: states[index],
-            collapsed: collapsedState,
-            attributes: jobAttributes[states[index].label.id],
-            labels,
-            ready,
-            activeControl,
-            colorBy,
-            jobInstance,
-            frameNumber,
-            activated: activatedStateID === clientID,
-            minZLayer,
-            maxZLayer,
-            normalizedKeyMap,
-            aiToolsRef,
-        };
-    } catch (exception) {
-        // we have an exception here sometimes
-        // but I cannot understand when it happens and what is the root reason
-        // maybe this temporary hack helps us
-        const dataObject = {
-            index,
-            frameNumber,
-            clientID: own.clientID,
-            stateIDs,
-        };
-        throw new Error(
-            `${exception.toString()} in mapStateToProps of ObjectItemContainer. Data are ${JSON.stringify(dataObject)}`,
-        );
-    }
+    return {
+        objectState: states[index],
+        collapsed: collapsedState,
+        attributes: jobAttributes[states[index].label.id],
+        labels,
+        ready,
+        activeControl,
+        colorBy,
+        jobInstance,
+        frameNumber,
+        activated: activatedStateID === clientID,
+        minZLayer,
+        maxZLayer,
+        normalizedKeyMap,
+        aiToolsRef,
+    };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -219,7 +206,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private activate = (): void => {
-        const { activateObject, objectState, ready, activeControl } = this.props;
+        const {
+            activateObject, objectState, ready, activeControl,
+        } = this.props;
 
         if (ready && activeControl === ActiveControl.CURSOR) {
             activateObject(objectState.clientID);
@@ -324,7 +313,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { objectState, collapsed, labels, attributes, activated, colorBy, normalizedKeyMap } = this.props;
+        const {
+            objectState, collapsed, labels, attributes, activated, colorBy, normalizedKeyMap,
+        } = this.props;
 
         let stateColor = '';
         if (colorBy === ColorBy.INSTANCE) {
