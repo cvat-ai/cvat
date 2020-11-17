@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Objects with a specific label cannot be displayed if at least one tag with the label exist (<https://github.com/openvinotoolkit/cvat/pull/2435>)
 - Wrong attribute can be removed in labels editor (<https://github.com/openvinotoolkit/cvat/pull/2436>)
 - UI fails with the error "Cannot read property 'label' of undefined" (<https://github.com/openvinotoolkit/cvat/pull/2442>)
+- Exception: "Value must be a user instance" (<https://github.com/openvinotoolkit/cvat/pull/2441>)
 
 ### Security
 
