@@ -18,8 +18,6 @@ context('Check hide/unhide functionality from label tab for object and tag with 
         secondY: 250
     };
 
-
-
     before(() => {
         cy.openTaskJob(taskName);
     });
