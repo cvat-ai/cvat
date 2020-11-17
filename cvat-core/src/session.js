@@ -1712,7 +1712,7 @@
                     case 'name':
                         taskData.name = this.name;
                         break;
-                    case 'bugTracker':
+                    case 'bug_tracker':
                         taskData.bug_tracker = this.bugTracker;
                         break;
                     case 'labels':
