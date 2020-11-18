@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+ import { taskName, labelName } from '../../support/const';
 
 context('Actions on points', () => {
     const caseId = '12';
     const newLabelName = `New label for case ${caseId}`;
     const createPointsShape = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -22,7 +22,7 @@ context('Actions on points', () => {
     };
     const createPointsTrack = {
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -33,7 +33,7 @@ context('Actions on points', () => {
     };
     const createPointsShapePoints = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
@@ -45,7 +45,7 @@ context('Actions on points', () => {
     };
     const createPointsTrackPoints = {
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 500, y: 200 },
             { x: 550, y: 200 },
@@ -57,7 +57,6 @@ context('Actions on points', () => {
     };
     const createPointsShapeSwitchLabel = {
         type: 'Shape',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 600, y: 200 },
@@ -69,7 +68,6 @@ context('Actions on points', () => {
     };
     const createPointsTrackSwitchLabel = {
         type: 'Track',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 700, y: 200 },

@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+ import { taskName, labelName } from '../../support/const';
 
 context('Merge/split features', () => {
     const caseId = '13';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -20,7 +20,7 @@ context('Merge/split features', () => {
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape2Points.firstX + 300,
         firstY: createRectangleShape2Points.firstY,
         secondX: createRectangleShape2Points.secondX + 300,

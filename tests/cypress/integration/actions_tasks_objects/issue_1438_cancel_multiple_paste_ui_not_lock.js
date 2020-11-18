@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+ import { taskName, labelName } from '../../support/const';
 
 context('Cancel "multiple paste". UI is not locked.', () => {
     const issueId = '1438';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,

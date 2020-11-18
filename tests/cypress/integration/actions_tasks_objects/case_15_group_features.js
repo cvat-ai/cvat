@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+ import { taskName, labelName } from '../../support/const';
 
 context('Group features', () => {
     const caseId = '15';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -20,7 +20,7 @@ context('Group features', () => {
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape2Points.firstX + 300,
         firstY: createRectangleShape2Points.firstY,
         secondX: createRectangleShape2Points.secondX + 300,
@@ -29,7 +29,7 @@ context('Group features', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 600,
         secondX: 350,
@@ -38,7 +38,7 @@ context('Group features', () => {
     const createRectangleTrack2PointsSecond = {
         points: 'By 2 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleTrack2Points.firstX + 300,
         firstY: createRectangleTrack2Points.firstY,
         secondX: createRectangleTrack2Points.secondX + 300,

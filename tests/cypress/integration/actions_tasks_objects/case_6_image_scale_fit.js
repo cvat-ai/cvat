@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+ import { taskName } from '../../support/const';
 
 context('Check if the image is scaled and then fitted', () => {
     const caseId = '6';

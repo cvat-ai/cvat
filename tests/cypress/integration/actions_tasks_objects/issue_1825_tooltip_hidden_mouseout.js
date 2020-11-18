@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+ import { taskName } from '../../support/const';
 
 context('Tooltip does not interfere with interaction with elements.', () => {
     const issueId = '1825';
