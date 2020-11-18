@@ -51,7 +51,7 @@
         display: flex;
 
         > span:nth-child(2) {
-            width: 200px;
+            width: $grid-unit-size * 25;
             margin-left: $grid-unit-size;
         }
     }
@@ -113,7 +113,7 @@
 
     img {
         height: 100%;
-        max-height: 146px;
+        max-height: $grid-unit-size * 18;
         object-fit: cover;
     }
 }

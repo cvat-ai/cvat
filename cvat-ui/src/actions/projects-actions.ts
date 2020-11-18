@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
-import { ThunkAction } from 'redux-thunk';
 
+import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { ProjectsQuery, CombinedState } from 'reducers/interfaces';
 import { getTasksSuccess, updateTaskSuccess } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
@@ -27,6 +27,37 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
 }
+
+// prettier-ignore
+const projectActions = {
+    getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
+    getProjectsSuccess: (array: any[], count: number) => (
+        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
+    ),
+    getProjectsFailed: (error: any) => createAction(ProjectsActionTypes.GET_PROJECTS_FAILED, { error }),
+    updateProjectsGettingQuery: (query: Partial<ProjectsQuery>) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY, { query })
+    ),
+    createProjects: () => createAction(ProjectsActionTypes.CREATE_PROJECT),
+    createProjectsSuccess: (projectId: number) => (
+        createAction(ProjectsActionTypes.CREATE_PROJECT_SUCCESS, { projectId })
+    ),
+    createProjectsFailed: (error: any) => createAction(ProjectsActionTypes.CREATE_PROJECT_FAILED, { error }),
+    updateProjects: () => createAction(ProjectsActionTypes.UPDATE_PROJECT),
+    updateProjectsSuccess: (project: any) => createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project }),
+    updateProjectsFailed: (project: any, error: any) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { project, error })
+    ),
+    deleteProjects: (projectId: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectId }),
+    deleteProjectsSuccess: (projectId: number) => (
+        createAction(ProjectsActionTypes.DELETE_PROJECT_SUCCESS, { projectId })
+    ),
+    deleteProjectsFailed: (projectId: number, error: any) => (
+        createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
+    ),
+};
+
+export type ProjectActions = ActionUnion<typeof projectActions>;
 
 function updateProjectsGettingQuery(query: Partial<ProjectsQuery>): AnyAction {
     const action = {
@@ -71,7 +102,7 @@ function getProjectsFailed(error: any): AnyAction {
     return action;
 }
 
-export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getProjects());
         dispatch(updateProjectsGettingQuery(query));
@@ -164,7 +195,7 @@ function createProjectFailed(error: any): AnyAction {
     return action;
 }
 
-export function createProjectAsync(data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function createProjectAsync(data: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const projectInstance = new cvat.classes.Project(data);
 
@@ -210,7 +241,7 @@ function updateProjectFailed(project: any, error: any): AnyAction {
     return action;
 }
 
-export function updateProjectAsync(projectInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function updateProjectAsync(projectInstance: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(updateProject());
@@ -264,7 +295,7 @@ function deleteProjectFailed(projectId: number, error: any): AnyAction {
     return action;
 }
 
-export function deleteProjectAsync(projectInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function deleteProjectAsync(projectInstance: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(deleteProject(projectInstance.id));
         try {
