@@ -396,7 +396,7 @@ Review.prototype.submit.implementation = async function () {
     if (this.id < 0) {
         const data = this.toJSON();
 
-        const response = await serverProxy.jobs.reviews.create(this.job, data);
+        const response = await serverProxy.jobs.reviews.create(data);
         store.remove(`job-${this.job}-review`);
         this.__internal.id = response.id;
         this.__internal.issue_set = response.issue_set.map((issue) => new Issue(issue));

@@ -277,8 +277,11 @@ Issue.prototype.comment.implementation = async function (data) {
     const comment = new Comment(data);
     const { id } = this;
     if (id >= 0) {
-        const response = await serverProxy.issues.comment(id, [comment.toJSON()]);
-        this.__internal.comment_set = response.map((_comment) => new Comment(_comment));
+        const jsonified = comment.toJSON();
+        jsonified.issue = id;
+        const response = await serverProxy.comments.create(jsonified);
+        const savedComment = new Comment(response);
+        this.__internal.comment_set.push(savedComment);
     } else {
         this.__internal.comment_set.push(comment);
     }
@@ -291,7 +294,7 @@ Issue.prototype.resolve.implementation = async function (user) {
 
     const { id } = this;
     if (id >= 0) {
-        const response = await serverProxy.issues.resolve(id);
+        const response = await serverProxy.issues.update(id, { resolver_id: user.id });
         this.__internal.resolved_date = response.resolved_date;
         this.__internal.resolver = new User(response.resolver);
     } else {
@@ -303,7 +306,7 @@ Issue.prototype.resolve.implementation = async function (user) {
 Issue.prototype.reopen.implementation = async function () {
     const { id } = this;
     if (id >= 0) {
-        const response = await serverProxy.issues.reopen(id);
+        const response = await serverProxy.issues.update(id, { resolver_id: null });
         this.__internal.resolved_date = response.resolved_date;
         this.__internal.resolver = response.resolver;
     } else {

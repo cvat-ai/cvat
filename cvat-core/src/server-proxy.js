@@ -515,12 +515,12 @@
                 return response.data;
             }
 
-            async function createReview(jobID, data) {
+            async function createReview(data) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.post(`${backendAPI}/jobs/${jobID}/reviews/create`, JSON.stringify(data), {
+                    response = await Axios.post(`${backendAPI}/reviews`, JSON.stringify(data), {
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -548,35 +548,16 @@
                 return response.data;
             }
 
-            async function commentIssue(issueID, data) {
+            async function createComment(data) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.post(
-                        `${backendAPI}/issues/${issueID}/comments/create`,
-                        JSON.stringify(data),
-                        {
-                            proxy: config.proxy,
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                        },
-                    );
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-
-                return response.data;
-            }
-
-            async function resolveIssue(issueID) {
-                const { backendAPI } = config;
-
-                let response = null;
-                try {
-                    response = await Axios.patch(`${backendAPI}/issues/${issueID}/resolve`, {
+                    response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
                         proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -585,13 +566,16 @@
                 return response.data;
             }
 
-            async function reopenIssue(issueID) {
+            async function updateIssue(issueID, data) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.patch(`${backendAPI}/issues/${issueID}/reopen`, {
+                    response = await Axios.patch(`${backendAPI}/issues/${issueID}`, JSON.stringify(data), {
                         proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -1015,9 +999,14 @@
 
                     issues: {
                         value: Object.freeze({
-                            comment: commentIssue,
-                            resolve: resolveIssue,
-                            reopen: reopenIssue,
+                            update: updateIssue,
+                        }),
+                        writable: false,
+                    },
+
+                    comments: {
+                        value: Object.freeze({
+                            create: createComment,
                         }),
                         writable: false,
                     },
