@@ -33,7 +33,7 @@ module.exports = {
         'lines-between-class-members': 0,
         'react/no-did-update-set-state': 0, // https://github.com/airbnb/javascript/issues/1875
         quotes: ['error', 'single'],
-        'max-len': ['error', { code: 120 }],
+        'max-len': ['error', { code: 120, ignoreStrings: true }],
         'func-names': ['warn', 'never'],
         'operator-linebreak': ['error', 'after'],
         'react/require-default-props': 'off',

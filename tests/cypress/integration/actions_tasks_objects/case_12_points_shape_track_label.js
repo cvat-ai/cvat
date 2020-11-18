@@ -1,12 +1,10 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Actions on points', () => {
     const caseId = '12';
@@ -84,70 +82,22 @@ context('Actions on points', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a points shape, track', () => {
             cy.createPoint(createPointsShape);
-            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-1')
-                .should('contain', '1')
-                .and('contain', 'POINTS SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createPoint(createPointsTrack);
-            cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-2')
-                .should('contain', '2')
-                .and('contain', 'POINTS TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a points shape, track with use parameter "number of points"', () => {
             cy.createPoint(createPointsShapePoints);
-            cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-3')
-                .should('contain', '3')
-                .and('contain', 'POINTS SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
             cy.createPoint(createPointsTrackPoints);
-            cy.get('#cvat_canvas_shape_4').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-4')
-                .should('contain', '4')
-                .and('contain', 'POINTS TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', labelName);
-                });
         });
         it('Draw a points shape, track with second label', () => {
             cy.createPoint(createPointsShapeSwitchLabel);
-            cy.get('#cvat_canvas_shape_5').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-5')
-                .should('contain', '5')
-                .and('contain', 'POINTS SHAPE')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
             cy.createPoint(createPointsTrackSwitchLabel);
-            cy.get('#cvat_canvas_shape_6').should('exist').and('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-6')
-                .should('contain', '6')
-                .and('contain', 'POINTS TRACK')
-                .within(() => {
-                    cy.get('.ant-select-selection-selected-value').should('contain', newLabelName);
-                });
         });
     });
 });
