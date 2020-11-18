@@ -486,25 +486,6 @@ class JobReview(APITestCase):
         self.assertEqual(self.job.status, 'validation')
         self.job.review_set.first().delete()
 
-    def test_api_v1_job_review_summary(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.review_further_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._get_request('/api/v1/jobs/{}/reviews/summary'.format(self.job.id), self.reviewer)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data.get('reviews', None), 3)
-        self.assertEqual(response.data.get('average_estimated_quality', None), 4)
-        self.assertEqual(response.data.get('issues_unsolved', None), 1)
-        self.assertEqual(response.data.get('issues_resolved', None), 0)
-        self.assertSequenceEqual(response.data.get('assignees', None), ['user2'])
-        self.assertSequenceEqual(response.data.get('reviewers', None), ['user3'])
-        self.job.review_set.all().delete()
-
     def test_api_v1_create_review_comment(self):
         self._set_validation_status()
         response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
