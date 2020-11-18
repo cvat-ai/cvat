@@ -43,13 +43,14 @@ context('Check error сannot read property at saving job', () => {
         });
 
         it('Save job and go to previous frame at saving job', () => {
+            cy.server().route('PATCH', '/api/v1/jobs/**').as('saveJob');
             cy.saveJob();
             cy.get('body').type('d');
+            cy.wait('@saveJob').its('status').should('equal', 200);
         });
 
         it('Page with the error is missing', () => {
-            cy.wait(100);
-            cy.contains('Oops, something went wrong').should('not.exist');
+            cy.get('.cvat-global-boundary').should('not.exist');
         });
     });
 });
