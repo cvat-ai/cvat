@@ -870,17 +870,20 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
 
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a comment from an issue'))
-@method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
 class CommentViewSet(viewsets.GenericViewSet,
     mixins.DestroyModelMixin, mixins.UpdateModelMixin):
     queryset = Comment.objects.all().order_by('id')
     serializer_class = CommentSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+
+    def update(self, *args, **kwargs):
+        raise MethodNotAllowed('PUT', detail='Use PATCH instead')
 
     def get_permissions(self):
         http_method = self.request.method
         permissions = [IsAuthenticated]
 
-        if http_method in ['PATCH', 'PUT', 'DELETE']:
+        if http_method in ['PATCH', 'DELETE']:
             permissions.append(auth.CommentChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)
