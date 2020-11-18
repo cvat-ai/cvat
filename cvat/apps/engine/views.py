@@ -806,8 +806,6 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
             permissions.append(auth.IssueDestroyPermission)
         elif http_method in ['PATCH', 'PUT']:
             permissions.append(auth.IssueChangePermission)
-        elif http_method in ['POST']:
-            permissions.append(auth.IssueCommentPermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
@@ -849,35 +847,25 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         serializer = CommentSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(method='post', operation_summary='The action adds comments to an issue',
-        responses={'201': CommentSerializer(many=True)}
-    )
-    @action(detail=True, methods=['POST'], url_path='comments/create', serializer_class=CommentSerializer)
-    def create_comments(self, request, pk):
-        self.get_object() # call to force check persmissions
-        for comment in request.data:
-            comment.update({
-                'author_id': request.user.id,
-                'issue': pk
-            })
-
-        serializer = CommentSerializer(data=request.data, many=True)
-        if serializer.is_valid():
-            serializer.save()
-        db_issue = Issue.objects.prefetch_related('comment_set').get(pk=pk)
-        updated_serializer = CommentSerializer(db_issue.comment_set, context={'request': request}, many=True)
-        return Response(updated_serializer.data, status=status.HTTP_201_CREATED)
-
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a comment from an issue'))
 class CommentViewSet(viewsets.GenericViewSet,
-    mixins.DestroyModelMixin, mixins.UpdateModelMixin):
+    mixins.DestroyModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):
     queryset = Comment.objects.all().order_by('id')
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
 
-    def update(self, *args, **kwargs):
-        raise MethodNotAllowed('PUT', detail='Use PATCH instead')
+    def create(self, request, *args, **kwargs):
+        request.data.update({
+            'author_id': request.user.id,
+        })
+        issue_id = request.data['issue']
+        try:
+            db_issue = Issue.objects.get(pk=1)
+        except MyModel.DoesNotExist:
+            raise Http404('Issue with id {} does not exist'.format(issue_id))
+        self.check_object_permissions(self.request, db_issue)
+        return super().create(request, args, kwargs)
 
     def get_permissions(self):
         http_method = self.request.method
@@ -885,6 +873,8 @@ class CommentViewSet(viewsets.GenericViewSet,
 
         if http_method in ['PATCH', 'DELETE']:
             permissions.append(auth.CommentChangePermission)
+        elif http_method in ['POST']:
+            permissions.append(auth.CommentCreatePermission)
         else:
             permissions.append(auth.AdminRolePermission)
 

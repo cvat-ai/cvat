@@ -307,9 +307,9 @@ class IssueChangePermission(BasePermission):
         return (request.user.has_perm('engine.job.change', db_job)
             or request.user.has_perm('engine.issue.change', obj))
 
-class IssueCommentPermission(BasePermission):
+class CommentCreatePermission(BasePermission):
     # pylint: disable=no-self-use
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, db_issue):
         db_job = obj.job
         return request.user.has_perm('engine.job.access', db_job)
 

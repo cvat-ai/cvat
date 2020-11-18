@@ -531,10 +531,13 @@ class JobReview(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         issue_id = response.data['issue_set'][0]['id']
-        response = self._post_request('/api/v1/issues/{}/comments/create'.format(issue_id),
-            self.assignee, self.create_comment_data
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        comments = self.create_comment_data[:]
+        for comment in comments:
+            comment.update({
+                'issue': issue_id
+            })
+            response = self._post_request('/api/v1/comments', self.assignee, comment)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
         self.assertIsInstance(response.data, cls = list)
         self.assertEqual(len(response.data), 5)
@@ -548,10 +551,13 @@ class JobReview(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         issue_id = response.data['issue_set'][0]['id']
-        response = self._post_request('/api/v1/issues/{}/comments/create'.format(issue_id),
-            self.assignee, self.create_comment_data
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        comments = self.create_comment_data[:]
+        for comment in comments:
+            comment.update({
+                'issue': issue_id
+            })
+            response = self._post_request('/api/v1/comments', self.assignee, comment)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
         last_comment = max(response.data, key=lambda comment: comment['id'])
         last_comment.update({
@@ -579,10 +585,13 @@ class JobReview(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         issue_id = response.data['issue_set'][0]['id']
-        response = self._post_request('/api/v1/issues/{}/comments/create'.format(issue_id),
-            self.assignee, self.create_comment_data
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        comments = self.create_comment_data[:]
+        for comment in comments:
+            comment.update({
+                'issue': issue_id
+            })
+            response = self._post_request('/api/v1/comments', self.assignee, comment)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
         last_comment = max(response.data, key=lambda comment: comment['id'])
         response = self._delete_request('/api/v1/comments/{}'.format(last_comment['id']), self.reviewer)
