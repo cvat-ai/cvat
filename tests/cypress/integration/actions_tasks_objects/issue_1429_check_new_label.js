@@ -30,9 +30,7 @@ context('Check if the new label reflects in the options', () => {
             cy.url().should('include', '/tasks').and('not.contain', '/jobs');
         });
         it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
+            cy.addNewLabel(newLabelName);
         });
         it('Open the job again', () => {
             cy.openJob();

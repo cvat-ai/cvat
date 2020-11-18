@@ -1,5 +1,5 @@
 metadata:
-  name: openvino.omz.semantic-segmentation-adas-0001
+  name: openvino-omz-semantic-segmentation-adas-0001
   namespace: cvat
   annotations:
     name: Semantic segmentation for ADAS
