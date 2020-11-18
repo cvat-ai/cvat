@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Cancel "multiple paste". UI is not locked.', () => {
     const issueId = '1438';

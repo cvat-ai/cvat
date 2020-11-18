@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Filter property "shape" work correctly', () => {
     const issueId = '1444';

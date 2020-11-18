@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('When delete a point, the required point is deleted.', () => {
     const issueId = '1391';

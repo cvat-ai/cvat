@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Points track it is still invisible on next frames', () => {
     const issueId = '1368';

@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Appearance features', () => {
     const caseId = '14';

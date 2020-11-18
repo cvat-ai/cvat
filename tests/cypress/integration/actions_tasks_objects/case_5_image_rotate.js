@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Check if the image is rotated', () => {
     const caseId = '5';

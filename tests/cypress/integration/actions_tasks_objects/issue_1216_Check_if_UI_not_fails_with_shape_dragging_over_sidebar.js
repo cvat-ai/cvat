@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Check if UI not fails with shape dragging over sidebar', () => {
     const issueId = '1216';

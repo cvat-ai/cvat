@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Check if the UI fails by moving to the next frame while dragging the object', () => {
     const prId = '1370';

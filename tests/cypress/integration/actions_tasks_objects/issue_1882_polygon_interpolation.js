@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
- import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context("The points of the previous polygon mustn't appear while polygon's interpolation.", () => {
     const issueId = '1882';
