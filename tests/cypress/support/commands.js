@@ -49,6 +49,7 @@ Cypress.Commands.add(
         multiAttrParams,
         advancedConfigurationParams,
         forProject = false,
+        attachToProject = false,
         projectName,
     ) => {
         cy.get('#cvat-create-task-button').click({ force: true });
@@ -67,7 +68,10 @@ Cypress.Commands.add(
             }
             cy.contains('button', 'Done').click();
         } else {
-            cy.log(`projectName: ${projectName}`)
+            if (attachToProject) {
+                cy.get('.cvat-project-search-field').click();
+                cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains(new RegExp(`^${projectName}$`, 'g')).click();
+            }
             cy.get('.cvat-project-search-field').within(() => {
                 cy.get('[type="text"]').should('have.value', projectName);
             });
@@ -89,6 +93,7 @@ Cypress.Commands.add(
 
 Cypress.Commands.add('openTask', (taskName) => {
     cy.contains('strong', taskName).parents('.cvat-tasks-list-item').contains('a', 'Open').click({ force: true });
+    cy.get('.cvat-task-details').should('exist')
 });
 
 Cypress.Commands.add('openJob', (jobNumber = 0) => {
@@ -390,6 +395,11 @@ Cypress.Commands.add('goToProjectsList', () => {
     cy.url().should('include', '/projects');
 });
 
+Cypress.Commands.add('goToRegisterPage', () => {
+    cy.get('a[href="/auth/register"]').click();
+    cy.url().should('include', '/auth/register');
+});
+
 Cypress.Commands.add('createProjects', (projectName, labelName, attrName, textDefaultValue, multiAttrParams) => {
     cy.get('#cvat-create-project-button').click();
     cy.get('#name').type(projectName);
@@ -408,11 +418,12 @@ Cypress.Commands.add('createProjects', (projectName, labelName, attrName, textDe
         cy.contains('Submit').click();
     });
     cy.contains('The project has been created').should('exist');
+    cy.goToProjectsList();
 });
 
 Cypress.Commands.add('openProject', (projectName) => {
-    cy.goToProjectsList();
     cy.contains(projectName).click({ force: true });
+    cy.get('.cvat-project-details').should('exist');
 });
 
 Cypress.Commands.add('getProjectID', (projectName) => {
