@@ -650,12 +650,10 @@ class JobViewSet(viewsets.GenericViewSet,
 
     def get_permissions(self):
         http_method = self.request.method
-        http_path = self.request.path
         permissions = [IsAuthenticated]
 
         if http_method in SAFE_METHODS:
-            if not http_path.endswith('/reviews'):
-                permissions.append(auth.JobAccessPermission)
+            permissions.append(auth.JobAccessPermission)
         elif http_method in ['PATCH', 'PUT', 'DELETE']:
             permissions.append(auth.JobChangePermission)
         else:
