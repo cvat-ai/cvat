@@ -80,17 +80,11 @@ context('Actions on rectangle', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a rectangle shape in two ways (by 2 points, by 4 points)', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.createRectangle(createRectangleShape4Points);

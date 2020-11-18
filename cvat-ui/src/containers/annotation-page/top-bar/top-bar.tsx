@@ -306,7 +306,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     private onPrevFrame = (): void => {
         const { prevButtonType } = this.state;
         const {
-            frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame,
+            frameNumber, jobInstance, playing, onSwitchPlay,
         } = this.props;
         const { startFrame } = jobInstance;
 
@@ -315,12 +315,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             if (playing) {
                 onSwitchPlay(false);
             }
+
             if (prevButtonType === 'regular') {
                 this.changeFrame(newFrame);
             } else if (prevButtonType === 'filtered') {
-                searchAnnotations(jobInstance, frameNumber - 1, startFrame);
+                this.searchAnnotations(frameNumber - 1, startFrame);
             } else {
-                searchEmptyFrame(jobInstance, frameNumber - 1, startFrame);
+                this.searchEmptyFrame(frameNumber - 1, startFrame);
             }
         }
     };
@@ -328,7 +329,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     private onNextFrame = (): void => {
         const { nextButtonType } = this.state;
         const {
-            frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame,
+            frameNumber, jobInstance, playing, onSwitchPlay,
         } = this.props;
         const { stopFrame } = jobInstance;
 
@@ -337,12 +338,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             if (playing) {
                 onSwitchPlay(false);
             }
+
             if (nextButtonType === 'regular') {
                 this.changeFrame(newFrame);
             } else if (nextButtonType === 'filtered') {
-                searchAnnotations(jobInstance, frameNumber + 1, stopFrame);
+                this.searchAnnotations(frameNumber + 1, stopFrame);
             } else {
-                searchEmptyFrame(jobInstance, frameNumber + 1, stopFrame);
+                this.searchEmptyFrame(frameNumber + 1, stopFrame);
             }
         }
     };
@@ -444,6 +446,20 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         const { onChangeFrame, canvasInstance } = this.props;
         if (canvasInstance.isAbleToChangeFrame()) {
             onChangeFrame(frame);
+        }
+    }
+
+    private searchAnnotations(start: number, stop: number): void {
+        const { canvasInstance, jobInstance, searchAnnotations } = this.props;
+        if (canvasInstance.isAbleToChangeFrame()) {
+            searchAnnotations(jobInstance, start, stop);
+        }
+    }
+
+    private searchEmptyFrame(start: number, stop: number): void {
+        const { canvasInstance, jobInstance, searchAnnotations } = this.props;
+        if (canvasInstance.isAbleToChangeFrame()) {
+            searchAnnotations(jobInstance, start, stop);
         }
     }
 

@@ -33,7 +33,7 @@
     "webpack-cli": "^3.3.2"
   },
   "dependencies": {
-    "axios": "^0.20.0",
+    "axios": "^0.21.0",
     "browser-or-node": "^1.2.1",
     "cvat-data": "../cvat-data",
     "detect-browser": "^5.2.0",

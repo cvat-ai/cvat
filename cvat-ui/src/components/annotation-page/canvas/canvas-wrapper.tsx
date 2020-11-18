@@ -230,10 +230,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             this.updateCanvas();
         }
 
-        if (
-            prevProps.frame !== frameData.number &&
-            ((resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION) || workspace === Workspace.TAG_ANNOTATION)
-        ) {
+        if (prevProps.frame !== frameData.number && resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
             canvasInstance.html().addEventListener(
                 'canvas.setup',
                 () => {

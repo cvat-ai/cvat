@@ -31,6 +31,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 contextMenu: {
                     visible, top, left, type,
                 },
+                ready,
             },
         },
     } = state;
@@ -39,7 +40,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         collapsed: activatedStateID !== null ? collapsed[activatedStateID] : undefined,
         objectStates,
-        visible,
+        visible:
+            activatedStateID !== null &&
+            visible &&
+            ready &&
+            objectStates.map((_state: any): number => _state.clientID).includes(activatedStateID),
         left,
         top,
         type,
