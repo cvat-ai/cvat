@@ -11,6 +11,7 @@ from distutils.util import strtobool
 from tempfile import mkstemp
 
 import django_rq
+from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -650,15 +651,12 @@ class JobViewSet(viewsets.GenericViewSet,
 
     def get_permissions(self):
         http_method = self.request.method
-        http_path = self.request.path
         permissions = [IsAuthenticated]
 
         if http_method in SAFE_METHODS:
             permissions.append(auth.JobAccessPermission)
         elif http_method in ["PATCH", "PUT", "DELETE"]:
             permissions.append(auth.JobChangePermission)
-        elif http_method == 'POST' and http_path.endswith('reviews/create'):
-            permissions.append(auth.JobReviewPermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
@@ -722,46 +720,6 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer = ReviewSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(method='post', operation_summary='Submit a review for the job')
-    @action(detail=True, methods=['POST'], url_path='reviews/create', serializer_class=CombinedReviewSerializer)
-    def create_review(self, request, pk):
-        db_job = self.get_object()
-
-        if request.data['status'] == ReviewStatus.REVIEW_FURTHER:
-            if 'reviewer_id' not in request.data:
-                return Response('Must provide a new reviewer', status=status.HTTP_400_BAD_REQUEST)
-            db_job.reviewer = User.objects.get(pk=request.data['reviewer_id'])
-            db_job.save()
-
-        request.data.update({
-            'job': db_job.id,
-            'reviewer_id': request.user.id,
-        })
-
-        if db_job.assignee:
-            request.data.update({
-                'assignee_id': db_job.assignee.id,
-            })
-
-        issue_set = request.data['issue_set']
-        for issue in issue_set:
-            issue['job'] = db_job.id
-            issue['owner_id'] = request.user.id
-            comment_set = issue['comment_set']
-            for comment in comment_set:
-                comment['author_id'] = request.user.id
-
-        serializer = CombinedReviewSerializer(data=request.data, partial=True)
-        if serializer.is_valid(raise_exception=True):
-            instance = serializer.save()
-            if instance.status == ReviewStatus.ACCEPTED:
-                db_job.status = StatusChoice.COMPLETED
-                db_job.save()
-            elif instance.status == ReviewStatus.REJECTED:
-                db_job.status = StatusChoice.ANNOTATION
-                db_job.save()
-            return Response(CombinedReviewSerializer(instance, context={'request': request}).data, status=status.HTTP_201_CREATED)
-
     @swagger_auto_schema(method='get', operation_summary='Get a brief summary about done reviews')
     @action(detail=True, methods=['GET'], url_path='reviews/summary', serializer_class=ReviewSummarySerializer)
     def reviews_summary(self, request, pk):
@@ -779,22 +737,93 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer = CombinedIssueSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
+@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Submit a review for a job'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))
-class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin):
+class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.CreateModelMixin):
     queryset = Review.objects.all().order_by('id')
-    serializer_class = ReviewSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CombinedReviewSerializer
+        else:
+            return ReviewSerializer
 
     def get_permissions(self):
-        permissions = [IsAuthenticated, auth.AdminRolePermission]
+        permissions = [IsAuthenticated]
+        if self.request.method == 'POST':
+            permissions.append(auth.JobReviewPermission)
+        else:
+            permissions.append(auth.AdminRolePermission)
+
         return [perm() for perm in permissions]
 
+    def create(self, request, *args, **kwargs):
+        job_id = request.data['job']
+        db_job = get_object_or_404(Job, pk=job_id)
+        self.check_object_permissions(self.request, db_job)
+
+        if request.data['status'] == ReviewStatus.REVIEW_FURTHER:
+            if 'reviewer_id' not in request.data:
+                return Response('Must provide a new reviewer', status=status.HTTP_400_BAD_REQUEST)
+            reviewer_id = request.data['reviewer_id']
+            reviewer = get_object_or_404(User, pk=reviewer_id)
+
+        request.data.update({
+            'reviewer_id': request.user.id,
+        })
+        if db_job.assignee:
+            request.data.update({
+                'assignee_id': db_job.assignee.id,
+            })
+
+        issue_set = request.data['issue_set']
+        for issue in issue_set:
+            issue['job'] = db_job.id
+            issue['owner_id'] = request.user.id
+            comment_set = issue['comment_set']
+            for comment in comment_set:
+                comment['author_id'] = request.user.id
+
+        serializer = self.get_serializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+
+        if serializer.data['status'] == ReviewStatus.ACCEPTED:
+            db_job.status = StatusChoice.COMPLETED
+            db_job.save()
+        elif serializer.data['status'] == ReviewStatus.REJECTED:
+            db_job.status = StatusChoice.ANNOTATION
+            db_job.save()
+        else:
+            db_job.reviewer = reviewer
+            db_job.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
-class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates an issue. It is used to resolve/reopen an issue'))
+class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.UpdateModelMixin):
     queryset = Issue.objects.all().order_by('id')
+    http_method_names = ['get', 'patch', 'delete', 'options']
 
     def get_serializer_class(self):
         return IssueSerializer
+
+    def partial_update(self, request, *args, **kwargs):
+        db_issue = self.get_object()
+        if 'resolver_id' in request.data and request.data['resolver_id'] and db_issue.resolver is None:
+            # resolve
+            db_issue.resolver = request.user
+            db_issue.resolved_date = datetime.now()
+            db_issue.save(update_fields=['resolver', 'resolved_date'])
+        elif 'resolver_id' in request.data and not request.data['resolver_id'] and db_issue.resolver is not None:
+            # reopen
+            db_issue.resolver = None
+            db_issue.resolved_date = None
+            db_issue.save(update_fields=['resolver', 'resolved_date'])
+        serializer = self.get_serializer(db_issue)
+        return Response(serializer.data)
 
     def get_permissions(self):
         http_method = self.request.method
@@ -804,40 +833,12 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
             permissions.append(auth.IssueAccessPermission)
         elif http_method in ['DELETE']:
             permissions.append(auth.IssueDestroyPermission)
-        elif http_method in ['PATCH', 'PUT']:
+        elif http_method in ['PATCH']:
             permissions.append(auth.IssueChangePermission)
-        elif http_method in ['POST']:
-            permissions.append(auth.IssueCommentPermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
         return [perm() for perm in permissions]
-
-    @swagger_auto_schema(method='patch', operation_summary='The action resolves a specific issue',
-        responses={'200': IssueSerializer()}
-    )
-    @action(detail=True, methods=['PATCH'], serializer_class=None)
-    def resolve(self, request, pk):
-        db_issue = self.get_object()
-        db_issue.resolved = True
-        db_issue.resolver = request.user
-        db_issue.resolved_date = datetime.now()
-        db_issue.save()
-        serializer = IssueSerializer(db_issue, context={'request': request})
-        return Response(serializer.data)
-
-    @swagger_auto_schema(method='patch', operation_summary='The action reopens a specific issue',
-        responses={'200': IssueSerializer()}
-    )
-    @action(detail=True, methods=['PATCH'], serializer_class=None)
-    def reopen(self, request, pk):
-        db_issue = self.get_object()
-        db_issue.resolved = False
-        db_issue.resolver = None
-        db_issue.resolved_date = None
-        db_issue.save()
-        serializer = IssueSerializer(db_issue, context={'request': request})
-        return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
         responses={'200': CommentSerializer(many=True)}
@@ -849,39 +850,31 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
         serializer = CommentSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(method='post', operation_summary='The action adds comments to an issue',
-        responses={'201': CommentSerializer(many=True)}
-    )
-    @action(detail=True, methods=['POST'], url_path='comments/create', serializer_class=CommentSerializer)
-    def create_comments(self, request, pk):
-        self.get_object() # call to force check persmissions
-        for comment in request.data:
-            comment.update({
-                'author_id': request.user.id,
-                'issue': pk
-            })
-
-        serializer = CommentSerializer(data=request.data, many=True)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-        db_issue = Issue.objects.prefetch_related('comment_set').get(pk=pk)
-        updated_serializer = CommentSerializer(db_issue.comment_set, context={'request': request}, many=True)
-        return Response(updated_serializer.data, status=status.HTTP_201_CREATED)
-
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a comment from an issue'))
-@method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
 class CommentViewSet(viewsets.GenericViewSet,
-    mixins.DestroyModelMixin, mixins.UpdateModelMixin):
+    mixins.DestroyModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):
     queryset = Comment.objects.all().order_by('id')
     serializer_class = CommentSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+
+    def create(self, request, *args, **kwargs):
+        request.data.update({
+            'author_id': request.user.id,
+        })
+        issue_id = request.data['issue']
+        db_issue = get_object_or_404(Issue, pk=issue_id)
+        self.check_object_permissions(self.request, db_issue.job)
+        return super().create(request, args, kwargs)
 
     def get_permissions(self):
         http_method = self.request.method
         permissions = [IsAuthenticated]
 
-        if http_method in ['PATCH', 'PUT', 'DELETE']:
+        if http_method in ['PATCH', 'DELETE']:
             permissions.append(auth.CommentChangePermission)
+        elif http_method in ['POST']:
+            permissions.append(auth.CommentCreatePermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
