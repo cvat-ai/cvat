@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Actions on rectangle', () => {
     const caseId = '8';
@@ -12,7 +12,7 @@ context('Actions on rectangle', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -21,7 +21,7 @@ context('Actions on rectangle', () => {
     const createRectangleShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -34,7 +34,7 @@ context('Actions on rectangle', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
@@ -43,7 +43,7 @@ context('Actions on rectangle', () => {
     const createRectangleTrack4Points = {
         points: 'By 4 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape4Points.firstX,
         firstY: createRectangleShape4Points.firstY - 150,
         secondX: createRectangleShape4Points.secondX - 100,
@@ -57,7 +57,6 @@ context('Actions on rectangle', () => {
         labelName: newLabelName,
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: true,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY + 150,
         secondX: createRectangleShape2Points.secondX,
@@ -67,7 +66,6 @@ context('Actions on rectangle', () => {
         labelName: newLabelName,
         points: 'By 4 Points',
         type: 'Shape',
-        switchLabel: true,
         firstX: createRectangleShape4Points.firstX,
         firstY: createRectangleShape4Points.firstY + 150,
         secondX: createRectangleShape4Points.secondX,

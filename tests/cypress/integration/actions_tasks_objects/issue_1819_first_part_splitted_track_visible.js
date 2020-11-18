@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName, advancedConfigurationParams } from '../../support/const';
+import { taskName, advancedConfigurationParams, labelName } from '../../support/const';
 
 context('First part of a splitted track is visible', () => {
     const issueId = '1819';
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
