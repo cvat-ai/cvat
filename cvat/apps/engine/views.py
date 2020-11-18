@@ -802,11 +802,28 @@ class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.Cr
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
-class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates an issue. It is used to resolve/reopen an issue'))
+class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.UpdateModelMixin):
     queryset = Issue.objects.all().order_by('id')
+    http_method_names = ['patch', 'delete', 'options']
 
     def get_serializer_class(self):
         return IssueSerializer
+
+    def partial_update(self, request, *args, **kwargs):
+        db_issue = self.get_object()
+        if 'resolver_id' in request.data and request.data['resolver_id'] and db_issue.resolver is None:
+            # resolve
+            db_issue.resolver = request.user
+            db_issue.resolved_date = datetime.now()
+            db_issue.save(update_fields=['resolver', 'resolved_date'])
+        elif 'resolver_id' in request.data and not request.data['resolver_id'] and db_issue.resolver is not None:
+            # reopen
+            db_issue.resolver = None
+            db_issue.resolved_date = None
+            db_issue.save(update_fields=['resolver', 'resolved_date'])
+        serializer = self.get_serializer(db_issue)
+        return Response(serializer.data)
 
     def get_permissions(self):
         http_method = self.request.method
@@ -816,38 +833,12 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin):
             permissions.append(auth.IssueAccessPermission)
         elif http_method in ['DELETE']:
             permissions.append(auth.IssueDestroyPermission)
-        elif http_method in ['PATCH', 'PUT']:
+        elif http_method in ['PATCH']:
             permissions.append(auth.IssueChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)
 
         return [perm() for perm in permissions]
-
-    @swagger_auto_schema(method='patch', operation_summary='The action resolves a specific issue',
-        responses={'200': IssueSerializer()}
-    )
-    @action(detail=True, methods=['PATCH'], serializer_class=None)
-    def resolve(self, request, pk):
-        db_issue = self.get_object()
-        db_issue.resolved = True
-        db_issue.resolver = request.user
-        db_issue.resolved_date = datetime.now()
-        db_issue.save()
-        serializer = IssueSerializer(db_issue, context={'request': request})
-        return Response(serializer.data)
-
-    @swagger_auto_schema(method='patch', operation_summary='The action reopens a specific issue',
-        responses={'200': IssueSerializer()}
-    )
-    @action(detail=True, methods=['PATCH'], serializer_class=None)
-    def reopen(self, request, pk):
-        db_issue = self.get_object()
-        db_issue.resolved = False
-        db_issue.resolver = None
-        db_issue.resolved_date = None
-        db_issue.save()
-        serializer = IssueSerializer(db_issue, context={'request': request})
-        return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
         responses={'200': CommentSerializer(many=True)}
