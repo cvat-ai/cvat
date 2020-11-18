@@ -374,6 +374,7 @@ class JobReview(APITestCase):
         cls.job.assignee = cls.assignee
         cls.job.save()
         cls.reject_review_data = {
+            "job": cls.job.id,
             "issue_set": [
                 {
                 "position": [
@@ -394,12 +395,14 @@ class JobReview(APITestCase):
         }
 
         cls.accept_review_data = {
+            "job": cls.job.id,
             "issue_set": [],
             "estimated_quality": 5,
             "status": "accepted"
         }
 
         cls.review_further_data = {
+            "job": cls.job.id,
             "issue_set": [],
             "estimated_quality": 4,
             "status": "review_further",
@@ -452,38 +455,24 @@ class JobReview(APITestCase):
 
     def test_api_v1_job_annotation_review(self):
         self._set_annotation_status()
-        response = self._post_request(
-            '/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.accept_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.assignee, self.accept_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.assignee, self.accept_review_data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_job_validation_review_create(self):
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer,
-            self.accept_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self._fetch_job_from_db()
         self.assertEqual(self.job.status, 'completed')
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.assignee,
-            self.accept_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.assignee, self.accept_review_data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.job.review_set.first().delete()
 
     def test_api_v1_job_reject_review(self):
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer,
-            self.reject_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self._fetch_job_from_db()
         self.assertEqual(self.job.status, 'annotation')
@@ -491,10 +480,7 @@ class JobReview(APITestCase):
 
     def test_api_v1_job_review_further(self):
         self._set_validation_status()
-        response = self._post_request(
-            '/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.review_further_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.review_further_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self._fetch_job_from_db()
         self.assertEqual(self.job.status, 'validation')
@@ -502,17 +488,12 @@ class JobReview(APITestCase):
 
     def test_api_v1_job_review_summary(self):
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.accept_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.review_further_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.review_further_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.reject_review_data)
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self._get_request('/api/v1/jobs/{}/reviews/summary'.format(self.job.id), self.reviewer)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -526,9 +507,7 @@ class JobReview(APITestCase):
 
     def test_api_v1_create_review_comment(self):
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.reject_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         issue_id = response.data['issue_set'][0]['id']
         comments = self.create_comment_data[:]
@@ -546,9 +525,7 @@ class JobReview(APITestCase):
 
     def test_api_v1_edit_review_comment(self):
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.reject_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         issue_id = response.data['issue_set'][0]['id']
         comments = self.create_comment_data[:]
@@ -580,9 +557,7 @@ class JobReview(APITestCase):
 
     def test_api_v1_remove_comment(self):
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.reject_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         issue_id = response.data['issue_set'][0]['id']
         comments = self.create_comment_data[:]
@@ -606,9 +581,7 @@ class JobReview(APITestCase):
 
     def test_api_v1_resolve_reopen_issue(self):
         self._set_validation_status()
-        response = self._post_request('/api/v1/jobs/{}/reviews/create'.format(self.job.id),
-            self.reviewer, self.reject_review_data
-        )
+        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
         response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
         issue_id = response.data[0]['id']
 

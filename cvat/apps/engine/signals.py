@@ -30,13 +30,12 @@ def update_task_status(instance, **kwargs):
         db_task.status = status
         db_task.save()
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=User, dispatch_uid="create_a_profile_on_create_a_user")
 def create_profile(instance, **kwargs):
     if not hasattr(instance, 'profile'):
         profile = Profile()
         profile.user = instance
         profile.save()
-
 
 @receiver(post_delete, sender=Task, dispatch_uid="delete_task_files_on_delete_task")
 def delete_task_files_on_delete_task(instance, **kwargs):
