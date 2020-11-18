@@ -13,7 +13,8 @@ function build() {
     const Log = require('./log');
     const ObjectState = require('./object-state');
     const Statistics = require('./statistics');
-    const { Job, Task, Project } = require('./session');
+    const { Job, Task } = require('./session');
+    const { Project } = require('./project');
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
 
@@ -345,6 +346,7 @@ function build() {
              * @property {integer} page Get specific page
              * (default REST API returns 20 tasks per request.
              * In order to get more, it is need to specify next page)
+             * @property {integer} projectId Check if project_id field contains this value
              * @property {string} owner Check if owner user contains this value
              * @property {string} assignee Check if assigneed contains this value
              * @property {string} search Combined search of contains among all fields

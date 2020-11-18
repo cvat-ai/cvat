@@ -325,10 +325,10 @@ class ServerProxy {
 
                 projects: {
                     value: Object.freeze({
-                        getProjects,
-                        saveProject,
-                        createProject,
-                        deleteProject,
+                        get: getProjects,
+                        save: saveProject,
+                        create: createProject,
+                        delete: deleteProject,
                     }),
                     writable: false,
                 },

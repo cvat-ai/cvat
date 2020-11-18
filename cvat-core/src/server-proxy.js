@@ -910,11 +910,11 @@
 
                     projects: {
                         value: Object.freeze({
-                            getProjects,
-                            searchProjectNames,
-                            saveProject,
-                            createProject,
-                            deleteProject,
+                            get: getProjects,
+                            searchNames: searchProjectNames,
+                            save: saveProject,
+                            create: createProject,
+                            delete: deleteProject,
                         }),
                         writable: false,
                     },

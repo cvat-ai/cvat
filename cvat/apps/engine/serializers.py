@@ -399,11 +399,15 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
     tasks = TaskSerializer(many=True, read_only=True)
+    owner = BasicUserSerializer(required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
             'bug_tracker', 'created_date', 'updated_date', 'status')
-        read_only_fields = ('created_date', 'updated_date', 'status')
+        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
         ordering = ['-id']
 
     # pylint: disable=no-self-use
@@ -431,7 +435,8 @@ class ProjectSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
-        instance.owner = validated_data.get('owner', instance.owner)
+        instance.owner_id = validated_data.get('owner_id', instance.owner_id)
+        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         labels = validated_data.get('label_set', [])
         for label in labels:

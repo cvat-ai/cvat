@@ -15,7 +15,8 @@
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
-    const { Task, Project } = require('./session');
+    const { Task } = require('./session');
+    const { Project } = require('./project');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -190,7 +191,10 @@
                 }
             }
 
-            if ('projectId' in filter && Object.keys(filter).length > 1) {
+            if (
+                'projectId' in filter
+                && (('page' in filter && Object.keys(filter).length > 2) || Object.keys(filter).length > 2)
+            ) {
                 throw new ArgumentError('Do not use the filter field "projectId" with other');
             }
 
@@ -233,14 +237,13 @@
             }
 
             const searchParams = new URLSearchParams();
-            // TODO: need to check search fields
             for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }
             }
 
-            const projectsData = await serverProxy.projects.getProjects(searchParams.toString());
+            const projectsData = await serverProxy.projects.get(searchParams.toString());
             // prettier-ignore
             const projects = projectsData.map((project) => new Project(project));
 
@@ -249,7 +252,7 @@
             return projects;
         };
 
-        cvat.projects.searchNames.implementation = async (search, limit) => serverProxy.projects.searchProjectNames(search, limit);
+        cvat.projects.searchNames.implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
 
         return cvat;
     }

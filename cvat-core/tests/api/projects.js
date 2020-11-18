@@ -11,7 +11,8 @@ jest.mock('../../src/server-proxy', () => {
 // Initialize api
 window.cvat = require('../../src/api');
 
-const { Task, Project } = require('../../src/session');
+const { Task } = require('../../src/session');
+const { Project } = require('../../src/project');
 
 describe('Feature: get projects', () => {
     test('get all projects', async () => {
