@@ -236,7 +236,7 @@
         if (typeof this.id !== 'undefined') {
             const projectData = {
                 name: this.name,
-                assignee: this.assignee ? this.assignee.id : null,
+                assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],
             };
