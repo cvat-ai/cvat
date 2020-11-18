@@ -674,7 +674,7 @@
                 task: undefined,
             };
 
-            let dirtyFields = {
+            let updatedFields = {
                 assignee: false,
                 status: false,
             };
@@ -720,7 +720,7 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
-                            dirtyFields.assignee = true;
+                            updatedFields.assignee = true;
                             data.assignee = assignee;
                         },
                     },
@@ -749,7 +749,7 @@
                                 );
                             }
 
-                            dirtyFields.status = true;
+                            updatedFields.status = true;
                             data.status = status;
                         },
                     },
@@ -783,10 +783,10 @@
                     task: {
                         get: () => data.task,
                     },
-                    __dirtyFields: {
-                        get: () => dirtyFields,
+                    __updatedFields: {
+                        get: () => updatedFields,
                         set: (fields) => {
-                            dirtyFields = fields;
+                            updatedFields = fields;
                         },
                     },
                 }),
@@ -892,7 +892,7 @@
                 use_cache: undefined,
             };
 
-            let dirtyFields = {
+            let updatedFields = {
                 name: false,
                 assignee: false,
                 bug_tracker: false,
@@ -968,7 +968,7 @@
                             if (!value.trim().length) {
                                 throw new ArgumentError('Value must not be empty');
                             }
-                            dirtyFields.name = true;
+                            updatedFields.name = true;
                             data.name = value;
                         },
                     },
@@ -1027,7 +1027,7 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
-                            dirtyFields.assignee = true;
+                            updatedFields.assignee = true;
                             data.assignee = assignee;
                         },
                     },
@@ -1061,7 +1061,7 @@
                     bugTracker: {
                         get: () => data.bug_tracker,
                         set: (tracker) => {
-                            dirtyFields.bug_tracker = true;
+                            updatedFields.bug_tracker = true;
                             data.bug_tracker = tracker;
                         },
                     },
@@ -1168,7 +1168,7 @@
                                 }
                             }
 
-                            dirtyFields.labels = true;
+                            updatedFields.labels = true;
                             data.labels = [...labels];
                         },
                     },
@@ -1335,10 +1335,10 @@
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
-                    __dirtyFields: {
-                        get: () => dirtyFields,
+                    __updatedFields: {
+                        get: () => updatedFields,
                         set: (fields) => {
-                            dirtyFields = fields;
+                            updatedFields = fields;
                         },
                     },
                 }),
@@ -1475,8 +1475,8 @@
         if (this.id) {
             const jobData = {};
 
-            for (const [field, isDirty] of Object.entries(this.__dirtyFields)) {
-                if (isDirty) {
+            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
+                if (isUpdated) {
                     switch (field) {
                     case 'status':
                         jobData.status = this.status;
@@ -1492,7 +1492,7 @@
 
             await serverProxy.jobs.saveJob(this.id, jobData);
 
-            this.__dirtyFields = {
+            this.__updatedFields = {
                 status: false,
                 assignee: false,
             };
@@ -1703,8 +1703,8 @@
             // If the task has been already created, we update it
             const taskData = {};
 
-            for (const [field, isDirty] of Object.entries(this.__dirtyFields)) {
-                if (isDirty) {
+            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
+                if (isUpdated) {
                     switch (field) {
                     case 'assignee':
                         taskData.assignee_id = this.assignee ? this.assignee.id : null;
@@ -1726,7 +1726,7 @@
 
             await serverProxy.tasks.saveTask(this.id, taskData);
 
-            this.dirtyFields = {
+            this.updatedFields = {
                 assignee: false,
                 name: false,
                 bugTracker: false,
