@@ -47,8 +47,7 @@ from cvat.apps.engine.serializers import (
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, RqStatusSerializer,
     TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
-    ReviewSummarySerializer, CombinedReviewSerializer, IssueSerializer,
-    CombinedIssueSerializer, CommentSerializer
+    CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -651,11 +650,13 @@ class JobViewSet(viewsets.GenericViewSet,
 
     def get_permissions(self):
         http_method = self.request.method
+        http_path = self.request.path
         permissions = [IsAuthenticated]
 
         if http_method in SAFE_METHODS:
-            permissions.append(auth.JobAccessPermission)
-        elif http_method in ["PATCH", "PUT", "DELETE"]:
+            if not http_path.endswith('/reviews'):
+                permissions.append(auth.JobAccessPermission)
+        elif http_method in ['PATCH', 'PUT', 'DELETE']:
             permissions.append(auth.JobChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)
@@ -718,13 +719,6 @@ class JobViewSet(viewsets.GenericViewSet,
         db_job = self.get_object()
         queryset = db_job.review_set
         serializer = ReviewSerializer(queryset, context={'request': request}, many=True)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(method='get', operation_summary='Get a brief summary about done reviews')
-    @action(detail=True, methods=['GET'], url_path='reviews/summary', serializer_class=ReviewSummarySerializer)
-    def reviews_summary(self, request, pk):
-        db_job = self.get_object()
-        serializer = ReviewSummarySerializer(db_job)
         return Response(serializer.data)
 
     @swagger_auto_schema(method='get', operation_summary='Method returns list of issues for the job',
