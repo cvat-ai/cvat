@@ -45,6 +45,10 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 
     if (!summary) {
         if (error) {
+            if (error.toString().includes('403')) {
+                return <p>You do not have permissions</p>;
+            }
+
             return <p>Could not fetch, check console output</p>;
         }
 
