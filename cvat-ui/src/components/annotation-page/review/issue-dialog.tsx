@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Comment from 'antd/lib/comment';
@@ -27,16 +27,35 @@ interface Props {
 }
 
 export default function IssueDialog(props: Props): JSX.Element {
+    const ref = useRef<HTMLDivElement>();
     const [currentText, setCurrentText] = useState<string>('');
     const {
         comments, id, left, top, resolved, isFetching, collapse, resolve, reopen, comment,
     } = props;
 
     useEffect(() => {
-        const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
-        if (element) {
-            element.style.display = '';
+        const region = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
+        if (region) {
+            region.style.display = '';
         }
+
+        let element: HTMLDivElement | null = null;
+        const eventlistener = (): void => {
+            if (element && element.parentNode) {
+                element.parentNode.appendChild(element);
+            }
+        };
+
+        if (ref.current) {
+            element = ref.current;
+            element.addEventListener('mouseenter', eventlistener);
+        }
+
+        return () => {
+            if (element) {
+                element.removeEventListener('mouseenter', eventlistener);
+            }
+        };
     }, []);
 
     const lines = comments.map(
@@ -70,7 +89,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     return ReactDOM.createPortal(
-        <div style={{ top, left }} className='cvat-issue-dialog'>
+        <div style={{ top, left }} ref={ref} className='cvat-issue-dialog'>
             <Row className='cvat-issue-dialog-header' type='flex' justify='space-between'>
                 <Col>
                     <Title level={4}>{id >= 0 ? `Issue #${id}` : 'New Issue'}</Title>
