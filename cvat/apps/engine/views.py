@@ -805,7 +805,7 @@ class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.Cr
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates an issue. It is used to resolve/reopen an issue'))
 class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.UpdateModelMixin):
     queryset = Issue.objects.all().order_by('id')
-    http_method_names = ['patch', 'delete', 'options']
+    http_method_names = ['get', 'patch', 'delete', 'options']
 
     def get_serializer_class(self):
         return IssueSerializer
