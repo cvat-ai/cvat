@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 
-from functools import reduce
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group
 
