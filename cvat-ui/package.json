@@ -51,7 +51,7 @@
     "@types/platform": "^1.3.3",
     "@types/react": "^16.9.53",
     "@types/react-color": "^3.0.4",
-    "@types/react-dom": "^16.9.0",
+    "@types/react-dom": "^16.9.9",
     "@types/react-redux": "^7.1.2",
     "@types/react-router": "^5.0.5",
     "@types/react-router-dom": "^5.1.6",
