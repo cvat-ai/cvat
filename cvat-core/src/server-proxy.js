@@ -500,21 +500,6 @@
                 return response.data;
             }
 
-            async function getReviewsSummary(jobID) {
-                const { backendAPI } = config;
-
-                let response = null;
-                try {
-                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews/summary`, {
-                        proxy: config.proxy,
-                    });
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-
-                return response.data;
-            }
-
             async function createReview(data) {
                 const { backendAPI } = config;
 
@@ -945,7 +930,6 @@
                             reviews: {
                                 get: getJobReviews,
                                 create: createReview,
-                                summary: getReviewsSummary,
                             },
                         }),
                         writable: false,

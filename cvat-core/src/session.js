@@ -1555,8 +1555,21 @@
     };
 
     Job.prototype.reviewsSummary.implementation = async function () {
-        const result = await serverProxy.jobs.reviews.summary(this.id);
-        return result;
+        const reviews = await serverProxy.jobs.reviews.get(this.id);
+        const issues = await serverProxy.jobs.issues(this.id);
+
+        const qualities = reviews.map((review) => review.estimated_quality);
+        const reviewers = reviews.filter((review) => review.reviewer).map((review) => review.reviewer.username);
+        const assignees = reviews.filter((review) => review.assignee).map((review) => review.assignee.username);
+
+        return {
+            reviews: reviews.length,
+            average_estimated_quality: qualities.reduce((acc, quality) => acc + quality, 0) / (qualities.length || 1),
+            issues_unsolved: issues.filter((issue) => !issue.resolved_date).length,
+            issues_resolved: issues.filter((issue) => issue.resolved_date).length,
+            assignees: Array.from(new Set(assignees.filter((assignee) => assignee !== null))),
+            reviewers: Array.from(new Set(reviewers.filter((reviewer) => reviewer !== null))),
+        };
     };
 
     Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
