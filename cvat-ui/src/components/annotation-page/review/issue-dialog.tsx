@@ -27,7 +27,7 @@ interface Props {
 }
 
 export default function IssueDialog(props: Props): JSX.Element {
-    const ref = useRef<HTMLDivElement>();
+    const ref = useRef<HTMLDivElement>(null);
     const [currentText, setCurrentText] = useState<string>('');
     const {
         comments, id, left, top, resolved, isFetching, collapse, resolve, reopen, comment,
