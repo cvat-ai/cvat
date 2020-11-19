@@ -13,7 +13,7 @@ const randomString = (isPassword) => {
     return isPassword ? `${result}${Math.floor(Math.random() * 10)}` : result;
 };
 
-context('Check email verification system', { browser: 'firefox' }, () => {
+context('Check email verification system', () => {
     const caseId = 'Email verification system';
     const firstName = `${randomString()}`;
     const lastName = `${randomString()}`;
@@ -31,8 +31,8 @@ context('Check email verification system', { browser: 'firefox' }, () => {
             cy.server().route('POST', '/api/v1/auth/register').as('userRegister');
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             cy.get('.ant-notification-topRight')
-            .contains(`We have sent an email with a confirmation link to ${emailAddr}.`)
-            .should('exist')
+                .contains(`We have sent an email with a confirmation link to ${emailAddr}.`)
+                .should('exist');
             cy.wait('@userRegister').its('status').should('eq', 201);
         });
     });

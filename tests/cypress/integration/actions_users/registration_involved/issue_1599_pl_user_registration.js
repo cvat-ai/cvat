@@ -4,13 +4,12 @@
 
 /// <reference types="cypress" />
 
-context('Issue 1599 (Polish alphabet).', { browser: 'chrome' }, () => {
-
-    const firstName = 'Świętobor'
-    const lastName = 'Сzcić'
-    const userName = 'Testuser_pl'
-    const email = 'Testuser_pl@local.local'
-    const password = 'Qwerty123!'
+context('Issue 1599 (Polish alphabet).', () => {
+    const firstName = 'Świętobor';
+    const lastName = 'Сzcić';
+    const userName = 'Testuser_pl';
+    const email = 'Testuser_pl@local.local';
+    const password = 'Qwerty123!';
 
     before(() => {
         cy.visit('auth/register');
