@@ -18,6 +18,7 @@ import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-a
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
 import SubmitAnnotationsModal from 'components/annotation-page/submit-annotations-modal';
+import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
 
 interface Props {
     job: any | null | undefined;
@@ -99,6 +100,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             )}
             <StatisticsModalContainer />
             <SubmitAnnotationsModal />
+            <SubmitReviewModal />
             <IssueAggregatorComponent />
         </Layout>
     );
