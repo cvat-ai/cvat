@@ -744,6 +744,7 @@
                             if (reviewer !== null && !(reviewer instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
+                            updatedFields.reviewer = true;
                             data.reviewer = reviewer;
                         },
                     },
