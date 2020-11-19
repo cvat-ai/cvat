@@ -1,0 +1,5 @@
+numpy
+opencv-python-headless
+Pillow
+torch==1.4.0
+pyyaml

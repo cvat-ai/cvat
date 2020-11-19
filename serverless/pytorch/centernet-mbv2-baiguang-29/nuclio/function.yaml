@@ -1,0 +1,83 @@
+metadata:
+  name: pytorch-centernet-mobilenetv2-based
+  namespace: cvat
+  annotations:
+    name: Centernet with Mobilenetv2 Backbone Trained on 29 Classes Baiguang Data
+    type: detector
+    spec:
+    framework: pytorch
+    spec: |
+      [
+        {"id": 1, "name": "wire"},
+        {"id": 2, "name": "pet feces"},
+        {"id": 3, "name": "shoe"},
+        {"id": 4, "name": "bar stool a"},
+        {"id": 5, "name": "fan"},
+        {"id": 6, "name": "power strip"},
+        {"id": 7, "name": "dock(ruby)"},
+        {"id": 8, "name": "dock(rubys+tanosv)"},
+        {"id": 9, "name": "bar stool b"},
+        {"id": 10, "name": "scale"},
+        {"id": 11, "name": "clothing item"},
+        {"id": 12, "name": "cleaning robot"},
+        {"id": 13, "name": "fan b"},
+        {"id": 14, "name": "door mark a"},
+        {"id": 15, "name": "door mark b"},
+        {"id": 16, "name": "wheel"},
+        {"id": 17, "name": "door mark c"},
+        {"id": 18, "name": "flat base"},
+        {"id": 19, "name": "whole fan"},
+        {"id": 20, "name": "whole fan b"},
+        {"id": 21, "name": "whole bar stool a"},
+        {"id": 22, "name": "whole bar stool b"},
+        {"id": 23, "name": "fake poop a"},
+        {"id": 24, "name": "dust pan"},
+        {"id": 25, "name": "folding chair"},
+        {"id": 26, "name": "laundry basket"},
+        {"id": 27, "name": "handheld cleaner"},
+        {"id": 28, "name": "sock"},
+        {"id": 29, "name": "fake poop b"}
+      ]
+
+spec:
+  description: Centernet with Mobilenetv2 Backbone Trained on 29 Classes Baiguang Data
+  runtime: 'python:3.6'
+  handler: main:handler
+  eventTimeout: 30s
+  # env:
+  #   - name: PYTHONPATH
+  #     value: /opt/nuclio
+
+  build:
+    image: cvat/centernet-mbv2-baiguang-29
+    # baseImage: centernet-serverless:v0.1
+    baseImage: python:3.6.11
+
+    directives:
+      preCopy:
+        # - kind: RUN
+        #   value: apt install curl
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+      postCopy:
+        - kind: RUN
+          value: apt update && apt install -y libgl1-mesa-glx
+        - kind: RUN
+          value: pip3 install -r requirements.txt
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3

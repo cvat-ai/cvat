@@ -34,7 +34,7 @@ class CLI():
             data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
-        data['image_quality'] = 50
+        data['image_quality'] = 100
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
 

@@ -3,22 +3,12 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml -f components/serverless/docker-compose.serverless.yml up -d
 
 nuctl deploy --project-name cvat \
-    --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
-    --platform local
-
-nuctl deploy --project-name cvat \
-    --path serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
-    --platform local
-
-nuctl deploy --project-name cvat \
     --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio \
     --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
     --platform local
 
-nuctl deploy --project-name cvat \
-    --path serverless/pytorch/foolwood/siammask/nuclio \
+nuctl deploy -v --project-name cvat \
+    --path serverless/pytorch/centernet-mbv2-baiguang-29/nuclio \
     --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
     --platform local
 
@@ -37,7 +27,18 @@ python3 ../utils/cli/cli.py \
 delete 12
 
 
-psql -h 0.0.0.0 -p 15432 -U root -W rockrobo666 -d cvat
+########### create task ############
+python3 ./utils/cli/cli.py \
+--auth admin:rockrobo123 \
+--server-host 192.168.50.153 \
+--server-port 8080 \
+create biaozhuji \
+--labels ./utils/coco.json \
+local /home/jiangrong/dataset/coco/val2017/000000000139.jpg
+
+
+
+psql -h 0.0.0.0 -p 15432 -U root -d cvat \ -W rockrobo666
 
 create view engine_image_v as
 select
