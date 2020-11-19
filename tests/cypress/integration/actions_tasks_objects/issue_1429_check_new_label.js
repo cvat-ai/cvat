@@ -4,15 +4,16 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Check if the new label reflects in the options', () => {
     const issueId = '1429';
-    const newLabelName = `New label ${issueId}`;
+    const labelName = `Issue ${issueId}`;
+    const newLabelName = `New ${labelName}`;
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        switchLabel: false,
         firstX: 250,
         firstY: 350,
         secondX: 350,

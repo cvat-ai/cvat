@@ -4,13 +4,13 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Points track it is still invisible on next frames', () => {
     const issueId = '1368';
     const createPointsTrack = {
         type: 'Track',
-        labelName: labelName,
+        switchLabel: false,
         pointsMap: [{ x: 300, y: 410 }],
         complete: true,
         numberOfPoints: null,

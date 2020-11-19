@@ -16,7 +16,7 @@ context('Lock/hide features.', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        switchLabel: false,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -28,7 +28,7 @@ context('Lock/hide features.', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        switchLabel: false,
         firstX: 260,
         firstY: 200,
         secondX: 360,
@@ -37,7 +37,7 @@ context('Lock/hide features.', () => {
     const createCuboidShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
-        labelName: labelName,
+        switchLabel: false,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -49,6 +49,7 @@ context('Lock/hide features.', () => {
     };
     const createPolylinesShapeSwitchLabel = {
         type: 'Shape',
+        switchLabel: true,
         labelName: newLabelName1,
         pointsMap: [
             { x: 600, y: 200 },
@@ -60,6 +61,7 @@ context('Lock/hide features.', () => {
     };
     const createPointsShapeSwitchLabel = {
         type: 'Shape',
+        switchLabel: true,
         labelName: newLabelName2,
         pointsMap: [
             { x: 700, y: 200 }
@@ -70,6 +72,7 @@ context('Lock/hide features.', () => {
     const createRectangleShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
+        switchLabel: true,
         labelName: newLabelName3,
         firstX: 550,
         firstY: 350,
@@ -83,6 +86,7 @@ context('Lock/hide features.', () => {
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
+        switchLabel: true,
         labelName: newLabelName4,
         pointsMap: [
             { x: 700, y: 350 },
@@ -212,9 +216,8 @@ context('Lock/hide features.', () => {
             cy.get('.cvat-objects-sidebar-labels-list').within(() => {
                 // Hide and lock all object with "Main task" label (#cvat_canvas_shape_1-3).
                 cy.contains(labelName).parents('.cvat-objects-sidebar-label-item').within(() => {
-                    // {force: true} - is being covered by another element "ant-tooltip-inner"
-                    cy.get('.cvat-label-item-button-hidden').click({force: true}).should('have.class', 'cvat-label-item-button-hidden-enabled');
-                    cy.get('.cvat-label-item-button-lock').click({force: true}).should('have.class', 'cvat-label-item-button-lock-enabled');
+                    cy.get('.cvat-label-item-button-hidden').click().should('have.class', 'cvat-label-item-button-hidden-enabled');
+                    cy.get('.cvat-label-item-button-lock').click().should('have.class', 'cvat-label-item-button-lock-enabled');
                 });
             });
             cy.get('.cvat_canvas_shape').then(objectList => {

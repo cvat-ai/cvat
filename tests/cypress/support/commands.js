@@ -119,7 +119,9 @@ Cypress.Commands.add('openTaskJob', (taskName, jobNumber = 0) => {
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     cy.get('.cvat-draw-rectangle-control').click();
-    cy.switchLabel(createRectangleParams.labelName, 'rectangle');
+    if (createRectangleParams.switchLabel) {
+        cy.switchLabel(createRectangleParams.labelName, 'rectangle');
+    }
     cy.contains('Draw new rectangle')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
@@ -144,7 +146,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
     cy.contains(regex).parents('.cvat-draw-shape-popover-content').within(() => {
         cy.get('.ant-select-selection-selected-value').click();
     });
-    cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains(labelName).click();
+    cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains(new RegExp(`^${labelName}$`, 'g')).click();
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
@@ -167,7 +169,9 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
 
 Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.get('.cvat-draw-points-control').click();
-    cy.switchLabel(createPointParams.labelName, 'points');
+    if (createPointParams.switchLabel) {
+        cy.switchLabel(createPointParams.labelName, 'points');
+    }
     cy.contains('Draw new points')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
@@ -209,7 +213,9 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (!createPolygonParams.reDraw) {
         cy.get('.cvat-draw-polygon-control').click();
-        cy.switchLabel(createPolygonParams.labelName, 'polygon');
+        if (createPolygonParams.switchLabel) {
+            cy.switchLabel(createPolygonParams.labelName, 'polygon');
+        }
         cy.contains('Draw new polygon')
             .parents('.cvat-draw-shape-popover-content')
             .within(() => {
@@ -259,14 +265,16 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
             cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
                 cy.get('.ant-select-selection').click();
             });
-            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains(labelName).click();
+            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains(new RegExp(`^${labelName}$`, 'g')).click();
         }
     });
 });
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.get('.cvat-draw-cuboid-control').click();
-    cy.switchLabel(createCuboidParams.labelName, 'cuboid');
+    if (createCuboidParams.switchLabel) {
+        cy.switchLabel(createCuboidParams.labelName, 'cuboid');
+    }
     cy.contains('Draw new cuboid')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
@@ -295,7 +303,9 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 
 Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.get('.cvat-draw-polyline-control').click();
-    cy.switchLabel(createPolylineParams.labelName, 'polyline');
+    if (createPolylineParams.switchLabel) {
+        cy.switchLabel(createPolylineParams.labelName, 'polyline');
+    }
     cy.contains('Draw new polyline')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {

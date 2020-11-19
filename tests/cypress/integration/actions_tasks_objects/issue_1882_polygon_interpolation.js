@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context("The points of the previous polygon mustn't appear while polygon's interpolation.", () => {
     const issueId = '1882';
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        switchLabel: false,
         pointsMap: [
             { x: 309, y: 431 },
             { x: 360, y: 500 },
@@ -23,7 +23,7 @@ context("The points of the previous polygon mustn't appear while polygon's inter
     const reDrawPolygonTrack = {
         reDraw: true,
         type: 'Track',
-        labelName: labelName,
+        switchLabel: false,
         pointsMap: [
             { x: 359, y: 431 },
             { x: 410, y: 500 },

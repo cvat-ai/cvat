@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Dump annotation if cuboid created', () => {
     const issueId = '1568';
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        switchLabel: false,
         firstX: 250,
         firstY: 350,
         secondX: 350,

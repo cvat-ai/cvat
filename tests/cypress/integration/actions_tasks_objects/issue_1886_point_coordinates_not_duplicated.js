@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, advancedConfigurationParams, labelName } from '../../support/const';
+import { taskName, advancedConfigurationParams } from '../../support/const';
 
 context("Point coordinates are not duplicated while polygon's interpolation.", () => {
     const issueId = '1886';
@@ -12,7 +12,7 @@ context("Point coordinates are not duplicated while polygon's interpolation.", (
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        switchLabel: false,
         pointsMap: [
             { x: 300, y: 450 },
             { x: 400, y: 450 },
