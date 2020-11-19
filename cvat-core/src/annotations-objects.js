@@ -1618,6 +1618,9 @@
         interpolatePosition(leftPosition, rightPosition, offset) {
             const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
 
+            // Voxel: Override offset to prevent interpolation
+            offset = 0;
+
             return {
                 points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
                 occluded: leftPosition.occluded,
