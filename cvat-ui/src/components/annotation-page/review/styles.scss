@@ -45,6 +45,7 @@
     background: $background-color-2;
     padding: $grid-unit-size;
     transform-origin: top left;
+    box-shadow: 0 0 $grid-unit-size * 2 -$grid-unit-size rgba(0, 0, 0, 0.75);
 
     .cvat-issue-dialog-chat {
         > div {

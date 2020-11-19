@@ -111,6 +111,12 @@ export default function IssueDialog(props: Props): JSX.Element {
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                             setCurrentText(event.target.value);
                         }}
+                        onPressEnter={() => {
+                            if (currentText) {
+                                comment(currentText);
+                                setCurrentText('');
+                            }
+                        }}
                     />
                 </Col>
             </Row>
