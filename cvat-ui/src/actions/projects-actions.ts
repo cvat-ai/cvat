@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction, Dispatch, ActionCreator } from 'redux';
+import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { ProjectsQuery, CombinedState } from 'reducers/interfaces';
@@ -38,74 +38,31 @@ const projectActions = {
     updateProjectsGettingQuery: (query: Partial<ProjectsQuery>) => (
         createAction(ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY, { query })
     ),
-    createProjects: () => createAction(ProjectsActionTypes.CREATE_PROJECT),
-    createProjectsSuccess: (projectId: number) => (
+    createProject: () => createAction(ProjectsActionTypes.CREATE_PROJECT),
+    createProjectSuccess: (projectId: number) => (
         createAction(ProjectsActionTypes.CREATE_PROJECT_SUCCESS, { projectId })
     ),
-    createProjectsFailed: (error: any) => createAction(ProjectsActionTypes.CREATE_PROJECT_FAILED, { error }),
-    updateProjects: () => createAction(ProjectsActionTypes.UPDATE_PROJECT),
-    updateProjectsSuccess: (project: any) => createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project }),
-    updateProjectsFailed: (project: any, error: any) => (
+    createProjectFailed: (error: any) => createAction(ProjectsActionTypes.CREATE_PROJECT_FAILED, { error }),
+    updateProject: () => createAction(ProjectsActionTypes.UPDATE_PROJECT),
+    updateProjectSuccess: (project: any) => createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project }),
+    updateProjectFailed: (project: any, error: any) => (
         createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { project, error })
     ),
-    deleteProjects: (projectId: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectId }),
-    deleteProjectsSuccess: (projectId: number) => (
+    deleteProject: (projectId: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectId }),
+    deleteProjectSuccess: (projectId: number) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_SUCCESS, { projectId })
     ),
-    deleteProjectsFailed: (projectId: number, error: any) => (
+    deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
     ),
 };
 
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
-function updateProjectsGettingQuery(query: Partial<ProjectsQuery>): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY,
-        payload: {
-            query,
-        },
-    };
-
-    return action;
-}
-
-function getProjects(): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.GET_PROJECTS,
-        payload: {},
-    };
-
-    return action;
-}
-
-function getProjectsSuccess(array: any[], count: number): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.GET_PROJECTS_SUCCESS,
-        payload: {
-            array,
-            count,
-        },
-    };
-
-    return action;
-}
-
-function getProjectsFailed(error: any): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.GET_PROJECTS_FAILED,
-        payload: {
-            error,
-        },
-    };
-
-    return action;
-}
-
 export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(getProjects());
-        dispatch(updateProjectsGettingQuery(query));
+        dispatch(projectActions.getProjects());
+        dispatch(projectActions.updateProjectsGettingQuery(query));
 
         // Clear query object from null fields
         const filteredQuery: Partial<ProjectsQuery> = {
@@ -122,7 +79,7 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
         try {
             result = await cvat.projects.get(filteredQuery);
         } catch (error) {
-            dispatch(getProjectsFailed(error));
+            dispatch(projectActions.getProjectsFailed(error));
             return;
         }
 
@@ -142,7 +99,7 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
 
         const taskPreviews = await Promise.all(taskPreviewPromises);
 
-        dispatch(getProjectsSuccess(array, result.count));
+        dispatch(projectActions.getProjectsSuccess(array, result.count));
 
         const store = getCVATStore();
         const state: CombinedState = store.getState();
@@ -164,90 +121,27 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
     };
 }
 
-function createProject(): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.CREATE_PROJECT,
-        payload: {},
-    };
-
-    return action;
-}
-
-function createProjectSuccess(projectId: number): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.CREATE_PROJECT_SUCCESS,
-        payload: {
-            projectId,
-        },
-    };
-
-    return action;
-}
-
-function createProjectFailed(error: any): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.CREATE_PROJECT_FAILED,
-        payload: {
-            error,
-        },
-    };
-
-    return action;
-}
-
 export function createProjectAsync(data: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const projectInstance = new cvat.classes.Project(data);
 
-        dispatch(createProject());
+        dispatch(projectActions.createProject());
         try {
             const savedProject = await projectInstance.save();
-            dispatch(createProjectSuccess(savedProject.id));
+            dispatch(projectActions.createProjectSuccess(savedProject.id));
         } catch (error) {
-            dispatch(createProjectFailed(error));
+            dispatch(projectActions.createProjectFailed(error));
         }
     };
-}
-
-function updateProject(): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.UPDATE_PROJECT,
-        payload: {},
-    };
-
-    return action;
-}
-
-function updateProjectSuccess(project: any): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.UPDATE_PROJECT_SUCCESS,
-        payload: {
-            project,
-        },
-    };
-
-    return action;
-}
-
-function updateProjectFailed(project: any, error: any): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.UPDATE_PROJECT_FAILED,
-        payload: {
-            error,
-            project,
-        },
-    };
-
-    return action;
 }
 
 export function updateProjectAsync(projectInstance: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            dispatch(updateProject());
+            dispatch(projectActions.updateProject());
             await projectInstance.save();
             const [project] = await cvat.projects.get({ id: projectInstance.id });
-            dispatch(updateProjectSuccess(project));
+            dispatch(projectActions.updateProjectSuccess(project));
             project.tasks.forEach((task: any) => {
                 dispatch(updateTaskSuccess(task));
             });
@@ -256,53 +150,22 @@ export function updateProjectAsync(projectInstance: any): ThunkAction {
             try {
                 [project] = await cvat.projects.get({ id: projectInstance.id });
             } catch (fetchError) {
-                dispatch(updateProjectFailed(projectInstance, error));
+                dispatch(projectActions.updateProjectFailed(projectInstance, error));
                 return;
             }
-            dispatch(updateProjectFailed(project, error));
+            dispatch(projectActions.updateProjectFailed(project, error));
         }
     };
 }
 
-function deleteProject(projectId: number): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.DELETE_PROJECT,
-        payload: {
-            projectId,
-        },
-    };
-    return action;
-}
-
-function deleteProjectSuccess(projectId: number): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.DELETE_PROJECT_SUCCESS,
-        payload: {
-            projectId,
-        },
-    };
-    return action;
-}
-
-function deleteProjectFailed(projectId: number, error: any): AnyAction {
-    const action = {
-        type: ProjectsActionTypes.DELETE_PROJECT_FAILED,
-        payload: {
-            projectId,
-            error,
-        },
-    };
-    return action;
-}
-
 export function deleteProjectAsync(projectInstance: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(deleteProject(projectInstance.id));
+        dispatch(projectActions.deleteProject(projectInstance.id));
         try {
             await projectInstance.delete();
-            dispatch(deleteProjectSuccess(projectInstance.id));
+            dispatch(projectActions.deleteProjectSuccess(projectInstance.id));
         } catch (error) {
-            dispatch(deleteProjectFailed(projectInstance.id, error));
+            dispatch(projectActions.deleteProjectFailed(projectInstance.id, error));
         }
     };
 }

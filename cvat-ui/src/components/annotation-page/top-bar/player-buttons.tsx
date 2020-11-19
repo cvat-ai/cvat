@@ -109,7 +109,7 @@ function PlayerButtons(props: Props): JSX.Element {
             <Popover
                 trigger='contextMenu'
                 placement='bottom'
-                content={
+                content={(
                     <>
                         <Tooltip title={`${prevRegularText}`} mouseLeaveDelay={0}>
                             <Icon
@@ -139,7 +139,7 @@ function PlayerButtons(props: Props): JSX.Element {
                             />
                         </Tooltip>
                     </>
-                }
+                )}
             >
                 <Tooltip
                     placement='top'
@@ -163,7 +163,7 @@ function PlayerButtons(props: Props): JSX.Element {
             <Popover
                 trigger='contextMenu'
                 placement='bottom'
-                content={
+                content={(
                     <>
                         <Tooltip title={`${nextRegularText}`} mouseLeaveDelay={0}>
                             <Icon
@@ -193,7 +193,7 @@ function PlayerButtons(props: Props): JSX.Element {
                             />
                         </Tooltip>
                     </>
-                }
+                )}
             >
                 <Tooltip placement='top' mouseLeaveDelay={0} title={`${nextButtonTooltipMessage} ${nextFrameShortcut}`}>
                     {nextButton}

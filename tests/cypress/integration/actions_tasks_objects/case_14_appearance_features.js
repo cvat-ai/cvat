@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Appearance features', () => {
     const caseId = '14';
@@ -15,7 +15,7 @@ context('Appearance features', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 100,
         firstY: 350,
         secondX: 200,
@@ -24,7 +24,7 @@ context('Appearance features', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 250, y: 350 },
             { x: 300, y: 300 },
@@ -35,7 +35,7 @@ context('Appearance features', () => {
     };
     const createPolylinesShape = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 350, y: 350 },
             { x: 400, y: 300 },
@@ -48,7 +48,7 @@ context('Appearance features', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 450,
         firstY: 350,
         secondX: 550,
@@ -56,7 +56,7 @@ context('Appearance features', () => {
     };
     const createPointsShape = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [{ x: 650, y: 350 }],
         complete: true,
         numberOfPoints: null,

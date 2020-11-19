@@ -119,9 +119,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobNumber = 0) => {
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     cy.get('.cvat-draw-rectangle-control').click();
-    if (createRectangleParams.switchLabel) {
-        cy.switchLabel(createRectangleParams.labelName, 'rectangle');
-    }
+    cy.switchLabel(createRectangleParams.labelName, 'rectangle');
     cy.contains('Draw new rectangle')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
@@ -169,9 +167,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
 
 Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.get('.cvat-draw-points-control').click();
-    if (createPointParams.switchLabel) {
-        cy.switchLabel(createPointParams.labelName, 'points');
-    }
+    cy.switchLabel(createPointParams.labelName, 'points');
     cy.contains('Draw new points')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
@@ -213,9 +209,7 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (!createPolygonParams.reDraw) {
         cy.get('.cvat-draw-polygon-control').click();
-        if (createPolygonParams.switchLabel) {
-            cy.switchLabel(createPolygonParams.labelName, 'polygon');
-        }
+        cy.switchLabel(createPolygonParams.labelName, 'polygon');
         cy.contains('Draw new polygon')
             .parents('.cvat-draw-shape-popover-content')
             .within(() => {
@@ -272,9 +266,7 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.get('.cvat-draw-cuboid-control').click();
-    if (createCuboidParams.switchLabel) {
-        cy.switchLabel(createCuboidParams.labelName, 'cuboid');
-    }
+    cy.switchLabel(createCuboidParams.labelName, 'cuboid');
     cy.contains('Draw new cuboid')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
@@ -303,9 +295,7 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 
 Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.get('.cvat-draw-polyline-control').click();
-    if (createPolylineParams.switchLabel) {
-        cy.switchLabel(createPolylineParams.labelName, 'polyline');
-    }
+    cy.switchLabel(createPolylineParams.labelName, 'polyline');
     cy.contains('Draw new polyline')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {

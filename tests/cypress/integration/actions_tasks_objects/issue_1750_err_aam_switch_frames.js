@@ -11,7 +11,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -20,7 +20,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
