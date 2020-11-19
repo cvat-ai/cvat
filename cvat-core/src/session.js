@@ -1574,7 +1574,7 @@
                 }
             }
 
-            await serverProxy.jobs.saveJob(this.id, jobData);
+            await serverProxy.jobs.save(this.id, jobData);
 
             this.__updatedFields = {
                 status: false,
