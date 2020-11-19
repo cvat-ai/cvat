@@ -112,6 +112,14 @@ task_create_parser.add_argument(
     type=parse_label_arg,
     help='string or file containing JSON labels specification'
 )
+
+task_create_parser.add_argument(
+    '--lambda_setting',
+    default='{}',
+    type=parse_label_arg,
+    help='string or file containing JSON labels specification'
+)
+
 task_create_parser.add_argument(
     '--overlap',
     default=0,
@@ -131,7 +139,7 @@ task_create_parser.add_argument(
     help='bug tracker URL'
 )
 task_create_parser.add_argument(
-    '--assignee',
+    '--assignee_id',
     default=None,
     type=int,
     help='assignee'

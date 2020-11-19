@@ -92,3 +92,14 @@ and i.task_id in (29,33)) as tmp
 
 
 
+python3 ./cli-rockrobo/cli.py \
+--auth admin:rockrobo123 \
+--server-host 192.168.50.153 \
+--server-port 8080 \
+create test \
+--labels ./cli-rockrobo/baiguang-labels.json \
+--overlap 0 \
+--segment_size 200 \
+--assignee_id 6 \
+--lambda_setting ./cli-rockrobo/lambda.json \
+local ./test_data

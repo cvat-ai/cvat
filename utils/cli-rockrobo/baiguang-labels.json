@@ -1,5 +1,10 @@
 [
     {
+      "name": "pick",
+      "color": "#74c274",
+      "attributes": []
+    },
+    {
         "name": "fake poop b",
         "color": "#74c274",
         "attributes": []
@@ -169,4 +174,4 @@
         "color": "#ff6a4d",
         "attributes": []
     }
-]
+  ]
