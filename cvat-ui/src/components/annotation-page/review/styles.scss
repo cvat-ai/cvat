@@ -12,6 +12,7 @@
     background: $background-color-2;
     z-index: 100;
     transform-origin: top left;
+    box-shadow: $box-shadow-base;
 
     button {
         width: $grid-unit-size * 12;
@@ -45,7 +46,7 @@
     background: $background-color-2;
     padding: $grid-unit-size;
     transform-origin: top left;
-    box-shadow: 0 0 $grid-unit-size * 2 -$grid-unit-size rgba(0, 0, 0, 0.75);
+    box-shadow: $box-shadow-base;
 
     .cvat-issue-dialog-chat {
         > div {

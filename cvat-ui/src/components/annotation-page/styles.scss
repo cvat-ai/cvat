@@ -195,7 +195,7 @@
 }
 
 .ant-menu.cvat-annotation-menu {
-    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+    box-shadow: $box-shadow-base;
 
     > li:hover {
         background-color: $hover-menu-color;
