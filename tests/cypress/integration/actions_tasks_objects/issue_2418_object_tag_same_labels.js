@@ -11,11 +11,11 @@ context('Check hide/unhide functionality from label tab for object and tag with 
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 260,
         firstY: 200,
         secondX: 360,
-        secondY: 250
+        secondY: 250,
     };
 
     before(() => {
@@ -34,17 +34,25 @@ context('Check hide/unhide functionality from label tab for object and tag with 
         });
         it('Hide object by label name.', () => {
             cy.get('.cvat-objects-sidebar-labels-list').within(() => {
-                cy.contains(labelName).parents('.cvat-objects-sidebar-label-item').within(() => {
-                    cy.get('.cvat-label-item-button-hidden').click().should('have.class', 'cvat-label-item-button-hidden-enabled');
-                });
+                cy.contains(labelName)
+                    .parents('.cvat-objects-sidebar-label-item')
+                    .within(() => {
+                        cy.get('.cvat-label-item-button-hidden')
+                            .click()
+                            .should('have.class', 'cvat-label-item-button-hidden-enabled');
+                    });
             });
             cy.get('#cvat_canvas_shape_1').should('be.hidden');
         });
         it('Unhide object by label name.', () => {
             cy.get('.cvat-objects-sidebar-labels-list').within(() => {
-                cy.contains(labelName).parents('.cvat-objects-sidebar-label-item').within(() => {
-                    cy.get('.cvat-label-item-button-hidden').click().should('not.have.class', 'cvat-label-item-button-hidden-enabled');
-                });
+                cy.contains(labelName)
+                    .parents('.cvat-objects-sidebar-label-item')
+                    .within(() => {
+                        cy.get('.cvat-label-item-button-hidden')
+                            .click()
+                            .should('not.have.class', 'cvat-label-item-button-hidden-enabled');
+                    });
             });
             cy.get('#cvat_canvas_shape_1').should('be.visible');
         });
