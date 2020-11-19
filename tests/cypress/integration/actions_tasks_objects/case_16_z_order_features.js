@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Actions on polygon', () => {
     const caseId = '16';
@@ -12,7 +12,7 @@ context('Actions on polygon', () => {
     const createPolygonShapeFirst = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 340, y: 200 },
             { x: 590, y: 200 },
@@ -24,7 +24,7 @@ context('Actions on polygon', () => {
     const createPolygonShapeSecond = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 190, y: 210 },
             { x: 440, y: 210 },
