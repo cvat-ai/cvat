@@ -4,14 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName, advancedConfigurationParams } from '../../support/const';
+import { taskName, advancedConfigurationParams, labelName } from '../../support/const';
 
 context('Check propagation work from the latest frame', () => {
     const issueId = '1785';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
