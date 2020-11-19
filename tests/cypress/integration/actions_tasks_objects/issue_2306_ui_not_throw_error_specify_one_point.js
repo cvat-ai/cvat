@@ -11,7 +11,9 @@ context('Draw a point shape, specify one point', () => {
     const createPointsShape = {
         type: 'Shape',
         switchLabel: false,
-        pointsMap: [{ x: 500, y: 200 }],
+        pointsMap: [
+            { x: 500, y: 200 },
+        ],
         numberOfPoints: 1,
     };
 
