@@ -4,16 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Draw a point shape, specify one point', () => {
     const issueId = '2306';
     const createPointsShape = {
         type: 'Shape',
-        switchLabel: false,
-        pointsMap: [
-            { x: 500, y: 200 },
-        ],
+        labelName: labelName,
+        pointsMap: [{ x: 500, y: 200 }],
         numberOfPoints: 1,
     };
 
