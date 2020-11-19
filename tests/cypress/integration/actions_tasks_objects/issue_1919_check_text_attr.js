@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, textDefaultValue, attrName } from '../../support/const';
+import { taskName, textDefaultValue, attrName, labelName } from '../../support/const';
 
 context('Check label attribute changes', () => {
     const issueId = '1919';
@@ -12,7 +12,7 @@ context('Check label attribute changes', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,

@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Actions on polygon', () => {
     const caseId = '10';
@@ -12,7 +12,7 @@ context('Actions on polygon', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -24,7 +24,7 @@ context('Actions on polygon', () => {
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -36,7 +36,7 @@ context('Actions on polygon', () => {
     const createPolygonShapePoints = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
@@ -49,7 +49,7 @@ context('Actions on polygon', () => {
     const createPolygonTrackPoints = {
         reDraw: false,
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 500, y: 200 },
             { x: 550, y: 200 },
@@ -62,7 +62,6 @@ context('Actions on polygon', () => {
     const createPolygonShapeSwitchLabel = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 600, y: 200 },
@@ -75,7 +74,6 @@ context('Actions on polygon', () => {
     const createPolygonTrackSwitchLabel = {
         reDraw: false,
         type: 'Track',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 700, y: 200 },
