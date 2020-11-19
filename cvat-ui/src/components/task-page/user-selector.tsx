@@ -83,13 +83,7 @@ export default function UserSelector(props: Props): JSX.Element {
         if (value && !users.filter((user) => user.id === value.id).length) {
             core.users.get({ id: value.id }).then((result: User[]) => {
                 const [user] = result;
-                setUsers([
-                    ...users,
-                    {
-                        id: user.id,
-                        username: user.username,
-                    },
-                ]);
+                setUsers([...users, user]);
                 setSearchPhrase(user.username);
             });
         }

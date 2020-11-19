@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('When delete a point, the required point is deleted.', () => {
     const issueId = '1391';
@@ -12,7 +12,7 @@ context('When delete a point, the required point is deleted.', () => {
     let pointsСoordinatesAfterDeletePoint = [];
     const createPolylinesShape = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 309, y: 250 },
             { x: 309, y: 350 },

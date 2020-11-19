@@ -231,7 +231,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     private undo = (): void => {
-        const { undo, jobInstance, frameNumber, canvasInstance } = this.props;
+        const {
+            undo, jobInstance, frameNumber, canvasInstance,
+        } = this.props;
 
         if (canvasInstance.isAbleToChangeFrame()) {
             undo(jobInstance, frameNumber);
@@ -239,7 +241,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private redo = (): void => {
-        const { redo, jobInstance, frameNumber, canvasInstance } = this.props;
+        const {
+            redo, jobInstance, frameNumber, canvasInstance,
+        } = this.props;
 
         if (canvasInstance.isAbleToChangeFrame()) {
             redo(jobInstance, frameNumber);
@@ -253,7 +257,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onSwitchPlay = (): void => {
-        const { frameNumber, jobInstance, onSwitchPlay, playing } = this.props;
+        const {
+            frameNumber, jobInstance, onSwitchPlay, playing,
+        } = this.props;
 
         if (playing) {
             onSwitchPlay(false);
@@ -263,7 +269,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onFirstFrame = (): void => {
-        const { frameNumber, jobInstance, playing, onSwitchPlay } = this.props;
+        const {
+            frameNumber, jobInstance, playing, onSwitchPlay,
+        } = this.props;
 
         const newFrame = jobInstance.startFrame;
         if (newFrame !== frameNumber) {
@@ -275,7 +283,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onBackward = (): void => {
-        const { frameNumber, frameStep, jobInstance, playing, onSwitchPlay } = this.props;
+        const {
+            frameNumber, frameStep, jobInstance, playing, onSwitchPlay,
+        } = this.props;
 
         const newFrame = Math.max(jobInstance.startFrame, frameNumber - frameStep);
         if (newFrame !== frameNumber) {
@@ -288,7 +298,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     private onPrevFrame = (): void => {
         const { prevButtonType } = this.state;
-        const { frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame } = this.props;
+        const {
+            frameNumber, jobInstance, playing, onSwitchPlay,
+        } = this.props;
         const { startFrame } = jobInstance;
 
         const newFrame = Math.max(jobInstance.startFrame, frameNumber - 1);
@@ -296,19 +308,22 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             if (playing) {
                 onSwitchPlay(false);
             }
+
             if (prevButtonType === 'regular') {
                 this.changeFrame(newFrame);
             } else if (prevButtonType === 'filtered') {
-                searchAnnotations(jobInstance, frameNumber - 1, startFrame);
+                this.searchAnnotations(frameNumber - 1, startFrame);
             } else {
-                searchEmptyFrame(jobInstance, frameNumber - 1, startFrame);
+                this.searchEmptyFrame(frameNumber - 1, startFrame);
             }
         }
     };
 
     private onNextFrame = (): void => {
         const { nextButtonType } = this.state;
-        const { frameNumber, jobInstance, playing, onSwitchPlay, searchAnnotations, searchEmptyFrame } = this.props;
+        const {
+            frameNumber, jobInstance, playing, onSwitchPlay,
+        } = this.props;
         const { stopFrame } = jobInstance;
 
         const newFrame = Math.min(jobInstance.stopFrame, frameNumber + 1);
@@ -316,18 +331,21 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             if (playing) {
                 onSwitchPlay(false);
             }
+
             if (nextButtonType === 'regular') {
                 this.changeFrame(newFrame);
             } else if (nextButtonType === 'filtered') {
-                searchAnnotations(jobInstance, frameNumber + 1, stopFrame);
+                this.searchAnnotations(frameNumber + 1, stopFrame);
             } else {
-                searchEmptyFrame(jobInstance, frameNumber + 1, stopFrame);
+                this.searchEmptyFrame(frameNumber + 1, stopFrame);
             }
         }
     };
 
     private onForward = (): void => {
-        const { frameNumber, frameStep, jobInstance, playing, onSwitchPlay } = this.props;
+        const {
+            frameNumber, frameStep, jobInstance, playing, onSwitchPlay,
+        } = this.props;
 
         const newFrame = Math.min(jobInstance.stopFrame, frameNumber + frameStep);
         if (newFrame !== frameNumber) {
@@ -339,7 +357,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onLastFrame = (): void => {
-        const { frameNumber, jobInstance, playing, onSwitchPlay } = this.props;
+        const {
+            frameNumber, jobInstance, playing, onSwitchPlay,
+        } = this.props;
 
         const newFrame = jobInstance.stopFrame;
         if (newFrame !== frameNumber) {
@@ -415,6 +435,20 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         const { onChangeFrame, canvasInstance } = this.props;
         if (canvasInstance.isAbleToChangeFrame()) {
             onChangeFrame(frame);
+        }
+    }
+
+    private searchAnnotations(start: number, stop: number): void {
+        const { canvasInstance, jobInstance, searchAnnotations } = this.props;
+        if (canvasInstance.isAbleToChangeFrame()) {
+            searchAnnotations(jobInstance, start, stop);
+        }
+    }
+
+    private searchEmptyFrame(start: number, stop: number): void {
+        const { canvasInstance, jobInstance, searchAnnotations } = this.props;
+        if (canvasInstance.isAbleToChangeFrame()) {
+            searchAnnotations(jobInstance, start, stop);
         }
     }
 
