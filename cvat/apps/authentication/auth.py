@@ -207,7 +207,6 @@ class ProjectGetQuerySetMixin(object):
         else:
             return queryset.filter(Q(owner=user) | Q(assignee=user) |
                 Q(task__owner=user) | Q(task__assignee=user) |
-                Q(task__project__owner=user) | Q(task__project__assignee=user) | \
                 Q(task__segment__job__assignee=user)).distinct()
 
 def filter_task_queryset(queryset, user):
@@ -216,7 +215,6 @@ def filter_task_queryset(queryset, user):
         return queryset
 
     query_filter = Q(owner=user) | Q(assignee=user) | \
-        Q(project__owner=user) | Q(project__assignee=user) | \
         Q(segment__job__assignee=user)
     if not settings.RESTRICTIONS['reduce_task_visibility']:
         query_filter |= Q(assignee=None)
