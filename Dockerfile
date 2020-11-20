@@ -31,15 +31,10 @@ RUN apt-get update && \
         build-essential \
         libapache2-mod-xsendfile \
         supervisor \
-        libavcodec-dev=7:4.2.4-1ubuntu0.1 \
-        libavdevice-dev=7:4.2.4-1ubuntu0.1 \
-        libavfilter-dev=7:4.2.4-1ubuntu0.1 \
-        libavformat-dev=7:4.2.4-1ubuntu0.1 \
-        libavutil-dev=7:4.2.4-1ubuntu0.1 \
-        libswresample-dev=7:4.2.4-1ubuntu0.1 \
-        libswscale-dev=7:4.2.4-1ubuntu0.1 \
         libldap2-dev \
         libsasl2-dev \
+        libgl1-mesa-glx \
+        nasm \
         pkg-config \
         python3-dev \
         python3-pip \
@@ -55,6 +50,15 @@ RUN apt-get update && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
+
+RUN git clone https://github.com/cisco/openh264.git /tmp/openh264
+WORKDIR /tmp/openh264
+RUN make -j5 && make install PREFIX=/usr
+RUN git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg
+WORKDIR /tmp/ffmpeg
+RUN ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-shared --disable-static --prefix=/usr
+RUN make -j5 && make install
+RUN rm -rf /tmp/openh264 /tmp/ffmpeg
 
 # Add a non-root user
 ENV USER=${USER}

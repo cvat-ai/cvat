@@ -343,7 +343,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 w += 1
 
             container = av.open(path, 'w',format=f)
-            video_stream = container.add_stream('libx264', rate=rate)
+            video_stream = container.add_stream('libopenh264', rate=rate)
             video_stream.pix_fmt = "yuv420p"
             video_stream.width = w
             video_stream.height = h
@@ -364,8 +364,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
             h=input_h,
             rate=self._output_fps,
             options={
-                "crf": str(self._image_quality),
-                "preset": "ultrafast",
+                'profile': 'constrained_baseline',
+                'qmin': str(self._image_quality),
+                'qmax': str(self._image_quality),
             },
         )
 
@@ -414,11 +415,9 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             h=output_h,
             rate=self._output_fps,
             options={
-                'profile': 'baseline',
-                'coder': '0',
-                'crf': str(self._image_quality),
-                'wpredp': '0',
-                'flags': '-loop'
+                'profile': 'constrained_baseline',
+                'qmin': str(self._image_quality),
+                'qmax': str(self._image_quality),
             },
         )
 
