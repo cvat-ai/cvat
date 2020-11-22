@@ -430,6 +430,7 @@ LOGGING = {
 }
 
 VOXEL_LABEL_FIRESTORE_COLLECTION = 'labels_dev'
+VOXEL_LABEL_BUCKET_NAME = 'voxel-labels-dev'
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
