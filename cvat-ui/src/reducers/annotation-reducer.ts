@@ -129,10 +129,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
-                user,
             } = action.payload;
 
-            const isReview = job.status === TaskStatus.REVIEW && job.reviewer && job.reviewer.id === user.id;
+            const isReview = job.status === TaskStatus.REVIEW;
 
             return {
                 ...state,

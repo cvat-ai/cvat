@@ -868,7 +868,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const state: CombinedState = getStore().getState();
             const filters = initialFilters;
             const {
-                auth: { user },
                 settings: {
                     workspace: { showAllInterpolationTracks },
                 },
@@ -933,7 +932,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     filters,
                     minZ,
                     maxZ,
-                    user,
                 },
             });
             dispatch(changeFrameAsync(frameNumber, false));

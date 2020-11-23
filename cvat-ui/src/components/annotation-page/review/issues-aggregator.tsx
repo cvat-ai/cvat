@@ -6,7 +6,7 @@ import './styles.scss';
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-import { CombinedState, Workspace } from 'reducers/interfaces';
+import { CombinedState } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas/src/typescript/canvas';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
@@ -32,7 +32,6 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
-    const workspace = useSelector((state: CombinedState): Workspace => state.annotation.workspace);
     const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
@@ -60,11 +59,6 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const { geometry } = canvasInstance;
     for (const issue of frameIssues) {
         const issueResolved = !!issue.resolver;
-        if (issueResolved && workspace !== Workspace.REVIEW_WORKSPACE) {
-            // show only unresolved issues on annotation views
-            // eslint-disable-next-line
-            continue;
-        }
         const offset = 15;
         const translated = issue.position.map((coord: number): number => coord + geometry.offset);
         const maxX = Math.max(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0)) + offset;
