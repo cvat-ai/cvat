@@ -124,7 +124,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                                 message: patterns.validateAttributeName.message,
                             },
                         ],
-                    })(<Input disabled={locked} placeholder='Name' />)}
+                    })(<Input className='cvat-attribute-name-input' disabled={locked} placeholder='Name' />)}
                 </Form.Item>
             </Col>
         );
@@ -142,7 +142,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                         {form.getFieldDecorator(`type[${key}]`, {
                             initialValue: type,
                         })(
-                            <Select disabled={locked}>
+                            <Select className='cvat-attribute-type-input' disabled={locked}>
                                 <Select.Option value={AttributeType.SELECT}>Select</Select.Option>
                                 <Select.Option value={AttributeType.RADIO}>Radio</Select.Option>
                                 <Select.Option value={AttributeType.CHECKBOX}>Checkbox</Select.Option>
@@ -191,7 +191,14 @@ class LabelForm extends React.PureComponent<Props, {}> {
                                 validator,
                             },
                         ],
-                    })(<Select mode='tags' dropdownMenuStyle={{ display: 'none' }} placeholder='Attribute values' />)}
+                    })(
+                        <Select
+                            className='cvat-attribute-values-input'
+                            mode='tags'
+                            dropdownMenuStyle={{ display: 'none' }}
+                            placeholder='Attribute values'
+                        />,
+                    )}
                 </Form.Item>
             </Tooltip>
         );
@@ -207,7 +214,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                     {form.getFieldDecorator(`values[${key}]`, {
                         initialValue: value,
                     })(
-                        <Select>
+                        <Select className='cvat-attribute-values-input'>
                             <Select.Option value='false'> False </Select.Option>
                             <Select.Option value='true'> True </Select.Option>
                         </Select>,
@@ -264,7 +271,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                             validator,
                         },
                     ],
-                })(<Input disabled={locked} placeholder='min;max;step' />)}
+                })(<Input className='cvat-attribute-values-input' disabled={locked} placeholder='min;max;step' />)}
             </Form.Item>
         );
     }
@@ -277,7 +284,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
             <Form.Item>
                 {form.getFieldDecorator(`values[${key}]`, {
                     initialValue: value,
-                })(<Input placeholder='Default value' />)}
+                })(<Input className='cvat-attribute-values-input' placeholder='Default value' />)}
             </Form.Item>
         );
     }
@@ -293,7 +300,13 @@ class LabelForm extends React.PureComponent<Props, {}> {
                     {form.getFieldDecorator(`mutable[${key}]`, {
                         initialValue: value,
                         valuePropName: 'checked',
-                    })(<Checkbox disabled={locked}> Mutable </Checkbox>)}
+                    })(
+                        <Checkbox className='cvat-attribute-mutable-checkbox' disabled={locked}>
+                            {' '}
+                            Mutable
+                            {' '}
+                        </Checkbox>,
+                    )}
                 </Tooltip>
             </Form.Item>
         );
@@ -326,7 +339,13 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
         return (
             <Form.Item key={key}>
-                <Row type='flex' justify='space-between' align='middle'>
+                <Row
+                    type='flex'
+                    justify='space-between'
+                    align='middle'
+                    cvat-attribute-id={key}
+                    className='cvat-attribute-inputs-wrapper'
+                >
                     {this.renderAttributeNameInput(key, attr)}
                     {this.renderAttributeTypeInput(key, attr)}
                     <Col span={6}>
