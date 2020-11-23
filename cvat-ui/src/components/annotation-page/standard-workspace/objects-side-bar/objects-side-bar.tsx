@@ -19,6 +19,7 @@ import {
     updateTabContentHeight as updateTabContentHeightAction,
 } from 'actions/annotation-actions';
 import AppearanceBlock, { computeHeight } from 'components/annotation-page/appearance-block';
+import IssuesListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/issues-list';
 
 interface OwnProps {
     objectsList: JSX.Element;
@@ -126,6 +127,9 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 </Tabs.TabPane>
                 <Tabs.TabPane tab={<Text strong>Labels</Text>} key='labels'>
                     <LabelsListContainer />
+                </Tabs.TabPane>
+                <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
+                    <IssuesListComponent />
                 </Tabs.TabPane>
             </Tabs>
 
