@@ -92,7 +92,7 @@ def is_project_annotator(db_user, db_project):
     return any([is_task_annotator(db_user, db_task) for db_task in db_tasks])
 
 @rules.predicate
-def is_project_reviewer(db_user, db_task):
+def is_project_reviewer(db_user, db_project):
     db_tasks = list(db_project.tasks.prefetch_related('segment_set').all())
     return any([is_task_reviewer(db_user, db_task) for db_task in db_tasks])
 
