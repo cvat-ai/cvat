@@ -92,6 +92,11 @@ def is_project_annotator(db_user, db_project):
     return any([is_task_annotator(db_user, db_task) for db_task in db_tasks])
 
 @rules.predicate
+def is_project_reviewer(db_user, db_task):
+    db_tasks = list(db_project.tasks.prefetch_related('segment_set').all())
+    return any([is_task_reviewer(db_user, db_task) for db_task in db_tasks])
+
+@rules.predicate
 def is_task_owner(db_user, db_task):
     # If owner is None (null) the task can be accessed/changed/deleted
     # only by admin. At the moment each task has an owner.
@@ -100,6 +105,12 @@ def is_task_owner(db_user, db_task):
 @rules.predicate
 def is_task_assignee(db_user, db_task):
     return db_task.assignee == db_user or is_project_assignee(db_user, db_task.project)
+
+@rules.predicate
+def is_task_reviewer(db_user, db_task):
+    db_segments = list(db_task.segment_set.prefetch_related('job_set__assignee').all())
+    return any([is_job_reviewer(db_user, db_job)
+        for db_segment in db_segments for db_job in db_segment.job_set.all()])
 
 @rules.predicate
 def is_task_annotator(db_user, db_task):
@@ -163,7 +174,7 @@ rules.add_perm('engine.project.delete', has_admin_role | is_project_owner)
 
 rules.add_perm('engine.task.create', has_admin_role | has_user_role)
 rules.add_perm('engine.task.access', has_admin_role | has_observer_role |
-    is_task_owner | is_task_annotator)
+    is_task_owner | is_task_annotator | is_task_reviewer)
 rules.add_perm('engine.task.change', has_admin_role | is_task_owner |
     is_task_assignee)
 rules.add_perm('engine.task.delete', has_admin_role | is_task_owner)
@@ -240,7 +251,8 @@ class ProjectGetQuerySetMixin(object):
         else:
             return queryset.filter(Q(owner=user) | Q(assignee=user) |
                 Q(task__owner=user) | Q(task__assignee=user) |
-                Q(task__segment__job__assignee=user)).distinct()
+                Q(task__segment__job__assignee=user) |
+                Q(task__segment__job__reviewer=user)).distinct()
 
 def filter_task_queryset(queryset, user):
     # Don't filter queryset for admin, observer
@@ -248,7 +260,7 @@ def filter_task_queryset(queryset, user):
         return queryset
 
     query_filter = Q(owner=user) | Q(assignee=user) | \
-        Q(segment__job__assignee=user)
+        Q(segment__job__assignee=user) | Q(segment__job__reviewer=user)
     if not settings.RESTRICTIONS['reduce_task_visibility']:
         query_filter |= Q(assignee=None)
 
