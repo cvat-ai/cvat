@@ -116,12 +116,17 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    const pattern = `^(Draw new|Setup) ${objectType}$`
-    const regex =  new RegExp(pattern, 'g');
-    cy.contains(regex).parents('.cvat-draw-shape-popover-content').within(() => {
-        cy.get('.ant-select-selection-selected-value').click();
-    });
-    cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains(new RegExp(`^${labelName}$`, 'g')).click();
+    const pattern = `^(Draw new|Setup) ${objectType}$`;
+    const regex = new RegExp(pattern, 'g');
+    cy.contains(regex)
+        .parents('.cvat-draw-shape-popover-content')
+        .within(() => {
+            cy.get('.ant-select-selection-selected-value').click();
+        });
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .contains(new RegExp(`^${labelName}$`, 'g'))
+        .click();
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
@@ -236,7 +241,10 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
             cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
                 cy.get('.ant-select-selection').click();
             });
-            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains(new RegExp(`^${labelName}$`, 'g')).click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .contains(new RegExp(`^${labelName}$`, 'g'))
+                .click();
         }
     });
 });
@@ -326,6 +334,9 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
         cy.get('#stopFrame').type(advancedConfigurationParams.stopFrame);
         cy.get('#frameStep').type(advancedConfigurationParams.frameStep);
     }
+    if (advancedConfigurationParams.chunkSize) {
+        cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
+    }
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
@@ -360,7 +371,9 @@ Cypress.Commands.add('addNewLabel', (newLabelName) => {
 Cypress.Commands.add('createTag', (labelName) => {
     cy.get('.cvat-setup-tag-control').click();
     cy.switchLabel(labelName, 'tag');
-    cy.contains('Setup tag').parents('.cvat-draw-shape-popover-content').within(() => {
-        cy.get('button').click();
-    });
+    cy.contains('Setup tag')
+        .parents('.cvat-draw-shape-popover-content')
+        .within(() => {
+            cy.get('button').click();
+        });
 });
