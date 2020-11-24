@@ -74,6 +74,12 @@ Cypress.Commands.add('openTask', (taskName) => {
     cy.contains('strong', taskName).parents('.cvat-tasks-list-item').contains('a', 'Open').click({ force: true });
 });
 
+Cypress.Commands.add('saveJob', () => {
+    cy.get('button')
+        .contains('Save')
+        .click({ force: true });
+});
+
 Cypress.Commands.add('openJob', (jobNumber = 0) => {
     let tdText = '';
     cy.get('.ant-table-tbody')
