@@ -12,7 +12,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
