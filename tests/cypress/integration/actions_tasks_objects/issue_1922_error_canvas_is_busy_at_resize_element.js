@@ -23,11 +23,6 @@ context('Check error canvas is busy at resize element', () => {
         cy.openTaskJob(taskName);
     });
 
-    after('Remove annotations and save job', () => {
-        cy.removeAnnotations();
-        cy.saveJob();
-    });
-
     describe(`Testing issue "${issueId}"`, () => {
         it('Create an object in first frame', () => {
             cy.createRectangle(createRectangleShape2Points);
@@ -44,8 +39,8 @@ context('Check error canvas is busy at resize element', () => {
         });
 
         it('Resize element on second frame and go to previous frame at resizing element', () => {
-            let secondX = createRectangleShape2Points['secondX'];
-            let secondY = createRectangleShape2Points['secondY'];
+            const secondX = createRectangleShape2Points.secondX;
+            const secondY = createRectangleShape2Points.secondY;
             cy.get('.cvat-canvas-container')
                 .trigger('mousemove', secondX - 10, secondY - 10) // activate second shape
                 .trigger('mousedown', secondX, secondY, {button: 0})
