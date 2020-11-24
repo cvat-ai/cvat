@@ -96,7 +96,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private stateIsLocked(state: any): boolean {
         const { configuration } = this.controller;
-        return state.f || configuration.forceDisableEditing;
+        return state.lock || configuration.forceDisableEditing;
     }
 
     private translateToCanvas(points: number[]): number[] {
@@ -1678,6 +1678,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const shape = this.svgShapes[clientID];
+        let text = this.svgTexts[clientID];
+        if (!text) {
+            text = this.addText(state);
+            this.svgTexts[state.clientID] = text;
+        }
+        this.updateTextPosition(text, shape);
 
         if (this.stateIsLocked(state)) {
             return;
@@ -1693,12 +1699,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { showProjections } = this.configuration;
         if (state.shapeType === 'cuboid' && showProjections) {
             (shape as any).attr('projections', true);
-        }
-
-        let text = this.svgTexts[clientID];
-        if (!text) {
-            text = this.addText(state);
-            this.svgTexts[state.clientID] = text;
         }
 
         const hideText = (): void => {
@@ -1827,7 +1827,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             });
 
-        this.updateTextPosition(text, shape);
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.activated', {
                 bubbles: false,
