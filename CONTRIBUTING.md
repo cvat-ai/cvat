@@ -46,6 +46,8 @@ patches and features.
   pip install -r cvat/requirements/development.txt
   python manage.py migrate
   python manage.py collectstatic
+  redis-server
+  python manage.py runserver --noreload --insecure localhost:7000
   ```
 
   > Note for Mac users

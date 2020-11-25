@@ -88,6 +88,9 @@ class CLI():
             if task_status == "Finished" and data_id != "unknown":
                 print("Data id of task {} is {}".format(task_id, data_id))
                 pass_flg = 1
+            elif task_status == "Failed":
+                print("Task {} failed".format(task_id))
+                pass_flg = 1
 
         if annotation_path != '':
             url = self.api.tasks_id_status(task_id)

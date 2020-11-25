@@ -30,6 +30,11 @@ module.exports = {
         inline: true,
         port: 3000,
         historyApiFallback: true,
+        host: '0.0.0.0',
+        // hot: true,
+        disableHostCheck: true,
+        https: false,
+        public: 'rongdev'
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],

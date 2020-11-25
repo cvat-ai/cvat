@@ -83,6 +83,11 @@ const webConfig = {
         compress: false,
         inline: true,
         port: 3000,
+        host: '0.0.0.0',
+        // hot: true,
+        disableHostCheck: true,
+        https: false,
+        public: 'rongdev'
     },
     resolve: {
         extensions: ['.ts', '.js', '.json'],
