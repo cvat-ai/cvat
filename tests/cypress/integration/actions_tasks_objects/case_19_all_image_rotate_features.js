@@ -16,6 +16,10 @@ context('Rotate all images feature.', () => {
         } else {
             cy.get('.cvat-rotate-canvas-controls-left').click();
         }
+        checkDegRotate(deg);
+    }
+
+    function checkDegRotate(deg) {
         cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', `rotate(${deg}deg);`);
     }
 
@@ -32,7 +36,7 @@ context('Rotate all images feature.', () => {
 
         it("Go to the next frame. It wasn't rotated.", () => {
             cy.get('.cvat-player-next-button').click();
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(0deg);');
+            checkDegRotate(0);
         });
 
         it('Go to settings, set "Rotate all images" to true.', () => {
@@ -48,9 +52,9 @@ context('Rotate all images feature.', () => {
 
         it('Go to the previous and to the next frame. They are also rotated 180 deg.', () => {
             cy.get('.cvat-player-previous-button').click();
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(180deg);');
+            checkDegRotate(180);
             cy.get('.cvat-player-next-button').click();
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(180deg);');
+            checkDegRotate(180);
         });
     });
 });
