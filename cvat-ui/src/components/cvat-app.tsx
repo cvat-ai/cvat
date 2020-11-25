@@ -14,14 +14,17 @@ import Header from 'components/header/header';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
-import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
-import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
-import LoginPageContainer from 'containers/login-page/login-page';
-import ModelsPageContainer from 'containers/models-page/models-page';
-import RegisterPageContainer from 'containers/register-page/register-page';
-import TaskPageContainer from 'containers/task-page/task-page';
+import ProjectsPageComponent from 'components/projects-page/projects-page';
+import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
+import ProjectPageComponent from 'components/project-page/project-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
+import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
+import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
+import TaskPageContainer from 'containers/task-page/task-page';
+import ModelsPageContainer from 'containers/models-page/models-page';
+import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
+import LoginPageContainer from 'containers/login-page/login-page';
+import RegisterPageContainer from 'containers/register-page/register-page';
 import getCore from 'cvat-core-wrapper';
 import React from 'react';
 import { configure, ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
@@ -297,6 +300,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
+                                        <Route exact path='/projects' component={ProjectsPageComponent} />
+                                        <Route exact path='/projects/create' component={CreateProjectPageComponent} />
+                                        <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />

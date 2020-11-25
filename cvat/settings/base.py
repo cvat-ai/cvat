@@ -346,6 +346,9 @@ os.makedirs(CACHE_ROOT, exist_ok=True)
 TASKS_ROOT = os.path.join(DATA_ROOT, 'tasks')
 os.makedirs(TASKS_ROOT, exist_ok=True)
 
+PROJECTS_ROOT = os.path.join(DATA_ROOT, 'projects')
+os.makedirs(PROJECTS_ROOT, exist_ok=True)
+
 SHARE_ROOT = os.path.join(BASE_DIR, 'share')
 os.makedirs(SHARE_ROOT, exist_ok=True)
 
@@ -426,6 +429,9 @@ RESTRICTIONS = {
 
     # this setting limits the number of tasks for the user
     'task_limit': None,
+
+    # this setting limits the number of projects for the user
+    'project_limit': None,
 
     # this setting reduse task visibility to owner and assignee only
     'reduce_task_visibility': False,

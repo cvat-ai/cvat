@@ -16,6 +16,7 @@
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
+    const { Project } = require('./project');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -100,6 +101,11 @@
             return result;
         };
 
+        cvat.server.installedApps.implementation = async () => {
+            const result = await serverProxy.server.installedApps();
+            return result;
+        };
+
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 id: isInteger,
@@ -163,6 +169,7 @@
         cvat.tasks.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
+                projectId: isInteger,
                 name: isString,
                 id: isInteger,
                 owner: isString,
@@ -184,8 +191,15 @@
                 }
             }
 
+            if (
+                'projectId' in filter
+                && (('page' in filter && Object.keys(filter).length > 2) || Object.keys(filter).length > 2)
+            ) {
+                throw new ArgumentError('Do not use the filter field "projectId" with other');
+            }
+
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page']) {
+            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }
@@ -199,10 +213,46 @@
             return tasks;
         };
 
-        cvat.server.installedApps.implementation = async () => {
-            const result = await serverProxy.server.installedApps();
-            return result;
+        cvat.projects.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                id: isInteger,
+                page: isInteger,
+                name: isString,
+                assignee: isString,
+                owner: isString,
+                search: isString,
+                status: isEnum.bind(TaskStatus),
+            });
+
+            if ('search' in filter && Object.keys(filter).length > 1) {
+                if (!('page' in filter && Object.keys(filter).length === 2)) {
+                    throw new ArgumentError('Do not use the filter field "search" with others');
+                }
+            }
+
+            if ('id' in filter && Object.keys(filter).length > 1) {
+                if (!('page' in filter && Object.keys(filter).length === 2)) {
+                    throw new ArgumentError('Do not use the filter field "id" with others');
+                }
+            }
+
+            const searchParams = new URLSearchParams();
+            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
+                if (Object.prototype.hasOwnProperty.call(filter, field)) {
+                    searchParams.set(field, filter[field]);
+                }
+            }
+
+            const projectsData = await serverProxy.projects.get(searchParams.toString());
+            // prettier-ignore
+            const projects = projectsData.map((project) => new Project(project));
+
+            projects.count = projectsData.count;
+
+            return projects;
         };
+
+        cvat.projects.searchNames.implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
 
         return cvat;
     }
