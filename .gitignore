@@ -15,7 +15,7 @@ node_modules
 /letsencrypt-webroot/
 
 .vscode/
-
+.idea/
 
 # Ignore temporary files
 docker-compose.override.yml
