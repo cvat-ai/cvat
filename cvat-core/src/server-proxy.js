@@ -312,6 +312,82 @@
                 }
             }
 
+            async function searchProjectNames(search, limit) {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(
+                        `${backendAPI}/projects?names_only=true&page=1&page_size=${limit}&search=${search}`,
+                        {
+                            proxy,
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function getProjects(filter = '') {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/projects?page_size=12&${filter}`, {
+                        proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function saveProject(id, projectData) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function deleteProject(id) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/projects/${id}`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function createProject(projectSpec) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/projects`, JSON.stringify(projectSpec), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function getTasks(filter = '') {
                 const { backendAPI } = config;
 
@@ -347,7 +423,12 @@
                 const { backendAPI } = config;
 
                 try {
-                    await Axios.delete(`${backendAPI}/tasks/${id}`);
+                    await Axios.delete(`${backendAPI}/tasks/${id}`, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -823,6 +904,17 @@
                             request: serverRequest,
                             userAgreements,
                             installedApps,
+                        }),
+                        writable: false,
+                    },
+
+                    projects: {
+                        value: Object.freeze({
+                            get: getProjects,
+                            searchNames: searchProjectNames,
+                            save: saveProject,
+                            create: createProject,
+                            delete: deleteProject,
                         }),
                         writable: false,
                     },

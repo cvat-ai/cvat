@@ -93,7 +93,8 @@ class JobAnnotation:
         self.ir_data = AnnotationIR()
 
         self.db_labels = {db_label.id:db_label
-            for db_label in db_segment.task.label_set.all()}
+            for db_label in (db_segment.task.project.label_set.all()
+            if db_segment.task.project_id else db_segment.task.label_set.all())}
 
         self.db_attributes = {}
         for db_label in self.db_labels.values():

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib import admin
-from .models import Task, Segment, Job, Label, AttributeSpec
+from .models import Task, Segment, Job, Label, AttributeSpec, Project
 
 class JobInline(admin.TabularInline):
     model = Job
@@ -54,6 +54,20 @@ class SegmentAdmin(admin.ModelAdmin):
         JobInline
     ]
 
+class ProjectAdmin(admin.ModelAdmin):
+    date_hierarchy = 'updated_date'
+    readonly_fields = ('created_date', 'updated_date', 'status')
+    fields = ('name', 'owner', 'created_date', 'updated_date', 'status')
+    search_fields = ('name', 'owner__username', 'owner__first_name',
+        'owner__last_name', 'owner__email', 'assignee__username', 'assignee__first_name',
+        'assignee__last_name')
+    inlines = [
+        LabelInline
+    ]
+
+    def has_add_permission(self, _request):
+        return False
+
 class TaskAdmin(admin.ModelAdmin):
     date_hierarchy = 'updated_date'
     readonly_fields = ('created_date', 'updated_date', 'overlap')
@@ -74,3 +88,4 @@ class TaskAdmin(admin.ModelAdmin):
 admin.site.register(Task, TaskAdmin)
 admin.site.register(Segment, SegmentAdmin)
 admin.site.register(Label, LabelAdmin)
+admin.site.register(Project, ProjectAdmin)

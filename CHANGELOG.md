@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Added basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
+
 
 ### Changed
 

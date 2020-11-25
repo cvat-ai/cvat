@@ -31,6 +31,8 @@ export default function EmptyListComponent(): JSX.Element {
             <Row type='flex' justify='center' align='middle'>
                 <Col>
                     <Link to='/tasks/create'>create a new task</Link>
+                    <Text type='secondary'> or try to </Text>
+                    <Link to='/projects/create'>create a new project</Link>
                 </Col>
             </Row>
         </div>
