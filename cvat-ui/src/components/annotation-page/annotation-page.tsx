@@ -17,7 +17,7 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
-import SubmitAnnotationsModal from 'components/annotation-page/submit-annotations-modal';
+import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
 import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
 
 interface Props {

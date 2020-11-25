@@ -98,7 +98,7 @@ const defaultState: AnnotationState = {
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
-    submitAnnotationsDialogVisible: false,
+    requestReviewDialogVisible: false,
     submitReviewDialogVisible: false,
     tabContentHeight: 0,
     workspace: Workspace.STANDARD,
@@ -1003,11 +1003,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SWITCH_SUBMIT_ANNOTATIONS_DIALOG: {
+        case AnnotationActionTypes.SWITCH_REQUEST_REVIEW_DIALOG: {
             const { visible } = action.payload;
             return {
                 ...state,
-                submitAnnotationsDialogVisible: visible,
+                requestReviewDialogVisible: visible,
             };
         }
         case AnnotationActionTypes.SWITCH_SUBMIT_REVIEW_DIALOG: {

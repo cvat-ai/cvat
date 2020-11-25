@@ -410,7 +410,7 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
-    submitAnnotationsDialogVisible: boolean;
+    requestReviewDialogVisible: boolean;
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;

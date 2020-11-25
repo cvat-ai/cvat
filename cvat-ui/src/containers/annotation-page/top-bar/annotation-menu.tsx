@@ -14,7 +14,7 @@ import {
     uploadJobAnnotationsAsync,
     removeAnnotationsAsync,
     saveAnnotationsAsync,
-    switchSubmitAnnotationsDialog as switchSubmitAnnotationsDialogAction,
+    switchRequestReviewDialog as switchRequestReviewDialogAction,
     switchSubmitReviewDialog as switchSubmitReviewDialogAction,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
 } from 'actions/annotation-actions';
@@ -33,10 +33,10 @@ interface DispatchToProps {
     dumpAnnotations(task: any, dumper: any): void;
     exportDataset(task: any, exporter: any): void;
     removeAnnotations(sessionInstance: any): void;
-    switchSubmitAnnotationsDialog(visible: boolean): void;
+    switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(jobInstance: any): void;
+    saveAnnotations(jobInstance: any, afterSave?: () => void): void;
     updateJob(jobInstance: any): void;
 }
 
@@ -80,8 +80,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         removeAnnotations(sessionInstance: any): void {
             dispatch(removeAnnotationsAsync(sessionInstance));
         },
-        switchSubmitAnnotationsDialog(visible: boolean): void {
-            dispatch(switchSubmitAnnotationsDialogAction(visible));
+        switchRequestReviewDialog(visible: boolean): void {
+            dispatch(switchRequestReviewDialogAction(visible));
         },
         switchSubmitReviewDialog(visible: boolean): void {
             dispatch(switchSubmitReviewDialogAction(visible));
@@ -89,8 +89,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
         },
-        saveAnnotations(jobInstance: any): void {
-            dispatch(saveAnnotationsAsync(jobInstance));
+        saveAnnotations(jobInstance: any, afterSave?: () => void): void {
+            dispatch(saveAnnotationsAsync(jobInstance, afterSave));
         },
         updateJob(jobInstance: any): void {
             dispatch(updateJobAsync(jobInstance));
@@ -113,7 +113,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         dumpAnnotations,
         exportDataset,
         removeAnnotations,
-        switchSubmitAnnotationsDialog,
+        switchRequestReviewDialog,
         switchSubmitReviewDialog,
         setForceExitAnnotationFlag,
         saveAnnotations,
@@ -146,12 +146,16 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             const [action] = params.keyPath;
             if (action === Actions.REMOVE_ANNO) {
                 removeAnnotations(jobInstance);
-            } else if (action === Actions.SUBMIT_ANNOTATION) {
-                switchSubmitAnnotationsDialog(true);
+            } else if (action === Actions.REQUEST_REVIEW) {
+                switchRequestReviewDialog(true);
             } else if (action === Actions.SUBMIT_REVIEW) {
                 switchSubmitReviewDialog(true);
-            } else if (action === Actions.RESET_JOB_STATUS) {
+            } else if (action === Actions.RENEW_JOB) {
                 jobInstance.status = TaskStatus.ANNOTATION;
+                updateJob(jobInstance);
+                history.push(`/tasks/${jobInstance.task.id}`);
+            } else if (action === Actions.FINISH_JOB) {
+                jobInstance.status = TaskStatus.COMPLETED;
                 updateJob(jobInstance);
                 history.push(`/tasks/${jobInstance.task.id}`);
             } else if (action === Actions.OPEN_TASK) {
@@ -159,12 +163,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             }
         }
     };
-
-    const isAssignee =
-        jobInstance.assignee?.id === user.id ||
-        jobInstance.task.assignee?.id === user.id ||
-        jobInstance.task.assignee === null ||
-        user.isSuperuser;
 
     const isReviewer = jobInstance.reviewer?.id === user.id || user.isSuperuser;
 
@@ -180,7 +178,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}
             saveAnnotations={saveAnnotations}
             jobInstance={jobInstance}
-            isAssignee={isAssignee}
             isReviewer={isReviewer}
         />
     );

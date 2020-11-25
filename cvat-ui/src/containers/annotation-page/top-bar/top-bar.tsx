@@ -170,16 +170,30 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        const { autoSaveInterval, history, jobInstance } = this.props;
+        const {
+            autoSaveInterval, history, jobInstance, setForceExitAnnotationFlag,
+        } = this.props;
         this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this;
         this.unblock = history.block((location: any) => {
+            const { forceExit } = self.props;
             const { task, id: jobID } = jobInstance;
             const { id: taskID } = task;
 
-            if (jobInstance.annotations.hasUnsavedChanges() && location.pathname !== `/tasks/${taskID}/jobs/${jobID}`) {
+            if (
+                jobInstance.annotations.hasUnsavedChanges() &&
+                location.pathname !== `/tasks/${taskID}/jobs/${jobID}` &&
+                !forceExit
+            ) {
                 return 'You have unsaved changes, please confirm leaving this page.';
             }
+
+            if (forceExit) {
+                setForceExitAnnotationFlag(false);
+            }
+
             return undefined;
         });
 

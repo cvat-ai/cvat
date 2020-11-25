@@ -13,17 +13,16 @@ import { Row, Col } from 'antd/lib/grid';
 
 import UserSelector, { User } from 'components/task-page/user-selector';
 import { CombinedState, TaskStatus } from 'reducers/interfaces';
-import { switchSubmitAnnotationsDialog } from 'actions/annotation-actions';
+import { switchRequestReviewDialog } from 'actions/annotation-actions';
 import { updateJobAsync } from 'actions/tasks-actions';
 
-export default function SubmitAnnotationsModal(): JSX.Element | null {
+export default function RequestReviewModal(): JSX.Element | null {
     const dispatch = useDispatch();
     const history = useHistory();
-    const isVisible = useSelector((state: CombinedState): boolean => state.annotation.submitAnnotationsDialogVisible);
-    const fetching = useSelector((state: CombinedState): boolean => state.annotation.annotations.saving.uploading);
+    const isVisible = useSelector((state: CombinedState): boolean => state.annotation.requestReviewDialogVisible);
     const job = useSelector((state: CombinedState): any => state.annotation.job.instance);
     const [reviewer, setReviewer] = useState<User | null>(job.reviewer ? job.reviewer : null);
-    const close = (): AnyAction => dispatch(switchSubmitAnnotationsDialog(false));
+    const close = (): AnyAction => dispatch(switchRequestReviewDialog(false));
     const submitAnnotations = (): void => {
         job.reviewer = reviewer;
         job.status = TaskStatus.REVIEW;
@@ -31,13 +30,13 @@ export default function SubmitAnnotationsModal(): JSX.Element | null {
         history.push(`/tasks/${job.task.id}`);
     };
 
-    if (!isVisible || fetching) {
+    if (!isVisible) {
         return null;
     }
 
     return (
         <Modal
-            className='cvat-submit-annotations-dialog'
+            className='cvat-request-review-dialog'
             visible={isVisible}
             destroyOnClose
             onCancel={close}

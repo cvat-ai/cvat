@@ -185,7 +185,7 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
     SET_AI_TOOLS_REF = 'SET_AI_TOOLS_REF',
-    SWITCH_SUBMIT_ANNOTATIONS_DIALOG = 'SWITCH_SUBMIT_ANNOTATIONS_DIALOG',
+    SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
     SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
 }
@@ -946,7 +946,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
     };
 }
 
-export function saveAnnotationsAsync(sessionInstance: any): ThunkAction {
+export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => void): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
@@ -972,6 +972,9 @@ export function saveAnnotationsAsync(sessionInstance: any): ThunkAction {
 
             const { frame } = receiveAnnotationsParameters();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            if (typeof afterSave === 'function') {
+                afterSave();
+            }
 
             dispatch({
                 type: AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS,
@@ -1466,9 +1469,9 @@ export function redrawShapeAsync(): ThunkAction {
     };
 }
 
-export function switchSubmitAnnotationsDialog(visible: boolean): AnyAction {
+export function switchRequestReviewDialog(visible: boolean): AnyAction {
     return {
-        type: AnnotationActionTypes.SWITCH_SUBMIT_ANNOTATIONS_DIALOG,
+        type: AnnotationActionTypes.SWITCH_REQUEST_REVIEW_DIALOG,
         payload: {
             visible,
         },
