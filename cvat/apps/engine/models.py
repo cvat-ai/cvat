@@ -151,9 +151,24 @@ class Project(models.Model):
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
 
+    def get_project_dirname(self):
+        return os.path.join(settings.PROJECTS_ROOT, str(self.id))
+
+    def get_project_logs_dirname(self):
+        return os.path.join(self.get_project_dirname(), 'logs')
+
+    def get_client_log_path(self):
+        return os.path.join(self.get_project_logs_dirname(), "client.log")
+
+    def get_log_path(self):
+        return os.path.join(self.get_project_logs_dirname(), "project.log")
+
     # Extend default permission model
     class Meta:
         default_permissions = ()
+
+    def __str__(self):
+        return self.name
 
 class Task(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -255,7 +270,8 @@ class Job(models.Model):
         default_permissions = ()
 
 class Label(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
 
@@ -311,7 +327,7 @@ class ShapeType(str, Enum):
     POLYGON = 'polygon'     # (x0, y0, ..., xn, yn)
     POLYLINE = 'polyline'   # (x0, y0, ..., xn, yn)
     POINTS = 'points'       # (x0, y0, ..., xn, yn)
-    CUBOID = 'cuboid'
+    CUBOID = 'cuboid'       # (x0, y0, ..., x7, y7)
 
     @classmethod
     def choices(cls):

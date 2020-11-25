@@ -166,6 +166,19 @@ describe('Feature: save a task', () => {
         const result = await task.save();
         expect(typeof result.id).toBe('number');
     });
+
+    test('save new task in project', async () => {
+        const task = new window.cvat.classes.Task({
+            name: 'New Task',
+            project_id: 2,
+            bug_tracker: 'bug tracker value',
+            image_quality: 50,
+            z_order: true,
+        });
+
+        const result = await task.save();
+        expect(result.projectId).toBe(2);
+    });
 });
 
 describe('Feature: delete a task', () => {
