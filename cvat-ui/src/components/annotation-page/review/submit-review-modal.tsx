@@ -11,6 +11,7 @@ import Modal from 'antd/lib/modal';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import RadioButton from 'antd/lib/radio/radioButton';
 import Description from 'antd/lib/descriptions';
+import Rate from 'antd/lib/rate';
 import { Row, Col } from 'antd/lib/grid';
 
 import UserSelector, { User } from 'components/task-page/user-selector';
@@ -18,7 +19,6 @@ import { CombinedState, ReviewStatus } from 'reducers/interfaces';
 import { switchSubmitReviewDialog } from 'actions/annotation-actions';
 import { submitReviewAsync } from 'actions/review-actions';
 import { clamp } from 'utils/math';
-import InputNumber from 'antd/lib/input-number';
 import { useHistory } from 'react-router';
 
 function computeEstimatedQuality(reviewedStates: number, openedIssues: number): number {
@@ -119,7 +119,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
                                 <RadioButton value={ReviewStatus.REJECTED}>Reject</RadioButton>
                             </Radio.Group>
                             {reviewStatus === ReviewStatus.REVIEW_FURTHER && (
-                                <Row type='flex' justify='start'>
+                                <Row align='middle' type='flex' justify='start'>
                                     <Col>
                                         <Text type='secondary'>Reviewer: </Text>
                                     </Col>
@@ -128,17 +128,10 @@ export default function SubmitReviewModal(): JSX.Element | null {
                                     </Col>
                                 </Row>
                             )}
-                            <Row type='flex' justify='start' align='middle'>
+                            <Row type='flex' justify='center' align='middle'>
                                 <Col>
-                                    <Text type='secondary'>Make an assessment: </Text>
-                                </Col>
-                                <Col offset={1}>
-                                    <InputNumber
-                                        min={0}
-                                        max={5}
-                                        step={0.1}
-                                        size='small'
-                                        value={estimatedQuality}
+                                    <Rate
+                                        value={Math.round(estimatedQuality)}
                                         onChange={(value: number | undefined) => {
                                             if (typeof value !== 'undefined') {
                                                 setEstimatedQuality(value);

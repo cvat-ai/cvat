@@ -48,7 +48,7 @@ export default function RequestReviewModal(): JSX.Element | null {
                     <Title level={4}>Assign a user who is responsible for review</Title>
                 </Col>
             </Row>
-            <Row type='flex' justify='start'>
+            <Row align='middle' type='flex' justify='start'>
                 <Col>
                     <Text type='secondary'>Reviewer: </Text>
                 </Col>

@@ -73,7 +73,7 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
                     <td>
                         <Text strong>Average quality</Text>
                     </td>
-                    <td>{summary.average_estimated_quality}</td>
+                    <td>{Number.parseFloat(summary.average_estimated_quality).toFixed(2)}</td>
                 </tr>
                 <tr>
                     <td>
