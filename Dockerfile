@@ -23,6 +23,7 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 RUN apt-get update && \
     apt-get --no-install-recommends install -yq \
         software-properties-common && \
+    sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
         apache2 \
@@ -51,14 +52,15 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
 
-RUN git clone https://github.com/cisco/openh264.git /tmp/openh264
-WORKDIR /tmp/openh264
-RUN make -j5 && make install PREFIX=/usr
-RUN git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg
-WORKDIR /tmp/ffmpeg
-RUN ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-shared --disable-static --prefix=/usr
-RUN make -j5 && make install
-RUN rm -rf /tmp/openh264 /tmp/ffmpeg
+RUN git clone https://github.com/cisco/openh264.git /home/${USER}/openh264 && \
+    cd /home/${USER}/openh264 && \
+    make -j5 && make install PREFIX=/usr && \
+    git clone https://git.ffmpeg.org/ffmpeg.git /home/${USER}/ffmpeg && \
+    cd /home/${USER}/ffmpeg && \
+    ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-shared --disable-static --prefix=/usr && \
+    make -j5 && \
+    make install && \
+    make clean
 
 # Add a non-root user
 ENV USER=${USER}
@@ -102,6 +104,22 @@ RUN chown -R ${USER}:${USER} .
 
 # RUN all commands below as 'django' user
 USER ${USER}
+
+ARG INSTALL_SOURCES='no'
+RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
+        sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list && \
+        apt-get update && \
+        mkdir ${HOME}/sources && \
+        cd ${HOME}/sources && \
+        dpkg --get-selections | while read line; do  \
+            package=`echo $line | awk '{print $1}'`; \
+            mkdir $package;                          \
+            cd $package;                             \
+            apt-get -q source $package;              \
+            cd ..;                                   \
+            done &&                                  \
+        rm -rf /var/lib/apt/lists/*;                 \
+    fi
 
 RUN mkdir data share media keys logs /tmp/supervisord
 RUN python3 manage.py collectstatic
