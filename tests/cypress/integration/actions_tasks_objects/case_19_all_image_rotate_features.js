@@ -6,16 +6,17 @@
 
 import { taskName } from '../../support/const';
 
-context('Check if the image is rotated', () => {
+context('Rotate all images feature.', () => {
     const caseId = '19';
 
-    function imageRotate(direction = 'anticlockwise') {
+    function imageRotate(direction = 'anticlockwise', deg) {
         cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
         if (direction === 'clockwise') {
             cy.get('.cvat-rotate-canvas-controls-right').click();
         } else {
             cy.get('.cvat-rotate-canvas-controls-left').click();
         }
+        cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', `rotate(${deg}deg);`);
     }
 
     before(() => {
@@ -24,12 +25,9 @@ context('Check if the image is rotated', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Rotate an image (once clockwise, twice anticlockwise)', () => {
-            imageRotate('clockwise');
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(90deg);');
-            imageRotate('anticlockwise');
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(0deg);');
-            imageRotate('anticlockwise');
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(270deg);');
+            imageRotate('clockwise', 90);
+            imageRotate('anticlockwise', 0);
+            imageRotate('anticlockwise', 270);
         });
 
         it("Go to the next frame. It wasn't rotated.", () => {
@@ -44,10 +42,8 @@ context('Check if the image is rotated', () => {
         });
 
         it('Rotate current frame 180 deg.', () => {
-            imageRotate('clockwise');
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(90deg);');
-            imageRotate('clockwise');
-            cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', 'rotate(180deg);');
+            imageRotate('clockwise', 90);
+            imageRotate('clockwise', 180);
         });
 
         it('Go to the previous and to the next frame. They are also rotated 180 deg.', () => {
