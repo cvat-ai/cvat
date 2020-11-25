@@ -28,6 +28,7 @@ context('Create and delete a annotation task', () => {
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.goToTaskList();
     });
 
     describe(`Testing "${labelName}"`, () => {

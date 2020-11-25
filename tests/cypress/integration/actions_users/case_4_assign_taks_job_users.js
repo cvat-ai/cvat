@@ -39,6 +39,7 @@ context('Multiple users. Assign task, job.', () => {
 
     after(() => {
         cy.login();
+        cy.goToTaskList();
         cy.getTaskID(taskName).then(($taskID) => {
             cy.deleteTask(taskName, $taskID);
         });
