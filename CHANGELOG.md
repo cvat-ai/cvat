@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Added basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
+
 
 ### Changed
 
@@ -61,7 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to upload prepared meta information along with a video when creating a task (<https://github.com/openvinotoolkit/cvat/pull/2217>)
 - Optional chaining plugin for cvat-canvas and cvat-ui (<https://github.com/openvinotoolkit/cvat/pull/2249>)
 - MOTS png mask format support (<https://github.com/openvinotoolkit/cvat/pull/2198>)
-- Added basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
 - Ability to correct upload video with a rotation record in the metadata (<https://github.com/openvinotoolkit/cvat/pull/2218>)
 - User search field for assignee fields (<https://github.com/openvinotoolkit/cvat/pull/2370>)
 
