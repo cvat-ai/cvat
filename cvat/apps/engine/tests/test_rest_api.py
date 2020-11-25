@@ -29,7 +29,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, StorageMethodChoice)
+    Segment, StatusChoice, Task, Label, StorageMethodChoice)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 
 def create_db_users(cls):
@@ -754,10 +754,13 @@ class ProjectGetAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], db_project.name)
         owner = db_project.owner.id if db_project.owner else None
-        self.assertEqual(response.data["owner"], owner)
+        response_owner = response.data["owner"]["id"] if response.data["owner"] else None
+        self.assertEqual(response_owner, owner)
         assignee = db_project.assignee.id if db_project.assignee else None
-        self.assertEqual(response.data["assignee"], assignee)
+        response_assignee = response.data["assignee"]["id"] if response.data["assignee"] else None
+        self.assertEqual(response_assignee, assignee)
         self.assertEqual(response.data["status"], db_project.status)
+        self.assertEqual(response.data["bug_tracker"], db_project.bug_tracker)
 
     def _check_api_v1_projects_id(self, user):
         for db_project in self.projects:
@@ -835,10 +838,15 @@ class ProjectCreateAPITestCase(APITestCase):
     def _check_response(self, response, user, data):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], data["name"])
-        self.assertEqual(response.data["owner"], data.get("owner", user.id))
-        self.assertEqual(response.data["assignee"], data.get("assignee"))
+        self.assertEqual(response.data["owner"]["id"], data.get("owner_id", user.id))
+        response_assignee = response.data["assignee"]["id"] if response.data["assignee"] else None
+        self.assertEqual(response_assignee, data.get('assignee_id', None))
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
         self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
+        self.assertListEqual(
+            [label["name"] for label in data.get("labels", [])],
+            [label["name"] for label in response.data["labels"]]
+        )
 
     def _check_api_v1_projects(self, user, data):
         response = self._run_api_v1_projects(user, data)
@@ -857,15 +865,23 @@ class ProjectCreateAPITestCase(APITestCase):
         self._check_api_v1_projects(self.admin, data)
 
         data = {
-            "owner": self.owner.id,
-            "assignee": self.assignee.id,
+            "owner_id": self.owner.id,
+            "assignee_id": self.assignee.id,
             "name": "new name for the project"
         }
         self._check_api_v1_projects(self.admin, data)
 
         data = {
-            "owner": self.admin.id,
+            "owner_id": self.admin.id,
             "name": "2"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+        data = {
+            "name": "Project with labels",
+            "labels": [{
+                "name": "car",
+            }]
         }
         self._check_api_v1_projects(self.admin, data)
 
@@ -878,8 +894,8 @@ class ProjectCreateAPITestCase(APITestCase):
         self._check_api_v1_projects(self.user, data)
 
         data = {
-            "owner": self.owner.id,
-            "assignee": self.assignee.id,
+            "owner_id": self.owner.id,
+            "assignee_id": self.assignee.id,
             "name": "My import project with data"
         }
         self._check_api_v1_projects(self.user, data)
@@ -888,15 +904,15 @@ class ProjectCreateAPITestCase(APITestCase):
     def test_api_v1_projects_observer(self):
         data = {
             "name": "My Project #1",
-            "owner": self.owner.id,
-            "assignee": self.assignee.id
+            "owner_id": self.owner.id,
+            "assignee_id": self.assignee.id
         }
         self._check_api_v1_projects(self.observer, data)
 
     def test_api_v1_projects_no_auth(self):
         data = {
             "name": "My Project #2",
-            "owner": self.admin.id,
+            "owner_id": self.admin.id,
         }
         self._check_api_v1_projects(None, data)
 
@@ -918,15 +934,16 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
 
     def _check_response(self, response, db_project, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        name = data.get("name", db_project.name)
+        name = data.get("name", data.get("name", db_project.name))
         self.assertEqual(response.data["name"], name)
-        owner = db_project.owner.id if db_project.owner else None
-        owner = data.get("owner", owner)
-        self.assertEqual(response.data["owner"], owner)
-        assignee = db_project.assignee.id if db_project.assignee else None
-        assignee = data.get("assignee", assignee)
-        self.assertEqual(response.data["assignee"], assignee)
-        self.assertEqual(response.data["status"], db_project.status)
+        response_owner = response.data["owner"]["id"] if response.data["owner"] else None
+        db_owner = db_project.owner.id if db_project.owner else None
+        self.assertEqual(response_owner, data.get("owner_id", db_owner))
+        response_assignee = response.data["assignee"]["id"] if response.data["assignee"] else None
+        db_assignee = db_project.assignee.id if db_project.assignee else None
+        self.assertEqual(response_assignee, data.get("assignee_id", db_assignee))
+        self.assertEqual(response.data["status"], data.get("status", db_project.status))
+        self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", db_project.bug_tracker))
 
     def _check_api_v1_projects_id(self, user, data):
         for db_project in self.projects:
@@ -941,14 +958,15 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
     def test_api_v1_projects_id_admin(self):
         data = {
             "name": "new name for the project",
-            "owner": self.owner.id,
+            "owner_id": self.owner.id,
+            "bug_tracker": "https://new.bug.tracker",
         }
         self._check_api_v1_projects_id(self.admin, data)
 
     def test_api_v1_projects_id_user(self):
         data = {
             "name": "new name for the project",
-            "owner": self.assignee.id,
+            "owner_id": self.assignee.id,
         }
         self._check_api_v1_projects_id(self.user, data)
 
@@ -1328,6 +1346,16 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
 class TaskCreateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
+        project = {
+            "name": "Project for task creation",
+            "owner": self.user,
+        }
+        self.project = Project.objects.create(**project)
+        label = {
+            "name": "car",
+            "project": self.project
+        }
+        Label.objects.create(**label)
 
     @classmethod
     def setUpTestData(cls):
@@ -1343,6 +1371,7 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], data["name"])
         self.assertEqual(response.data["mode"], "")
+        self.assertEqual(response.data["project_id"], data.get("project_id", None))
         self.assertEqual(response.data["owner"]["id"], data.get("owner_id", user.id))
         assignee = response.data["assignee"]["id"] if response.data["assignee"] else None
         self.assertEqual(assignee, data.get("assignee_id", None))
@@ -1395,6 +1424,17 @@ class TaskCreateAPITestCase(APITestCase):
             }]
         }
         self._check_api_v1_tasks(self.user, data)
+
+    def test_api_vi_tasks_user_project(self):
+        data = {
+            "name": "new name for the task",
+            "project_id": self.project.id,
+        }
+        response = self._run_api_v1_tasks(self.user, data)
+        data["labels"] = [{
+            "name": "car"
+        }]
+        self._check_response(response, self.user, data)
 
     def test_api_v1_tasks_observer(self):
         data = {

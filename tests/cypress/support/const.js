@@ -36,6 +36,7 @@ export const multiAttrParams = {
 it('Prepare to testing', () => {
     cy.visit('/');
     cy.login();
+    cy.goToTaskList();
     cy.get('.cvat-tasks-page').should('exist');
     let listItems = [];
     cy.document().then((doc) => {

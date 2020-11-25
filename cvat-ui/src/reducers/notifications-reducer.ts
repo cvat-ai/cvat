@@ -9,6 +9,7 @@ import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
 import { ShareActionTypes } from 'actions/share-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
+import { ProjectsActionTypes } from 'actions/projects-actions';
 import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
@@ -28,6 +29,12 @@ const defaultState: NotificationsState = {
             requestPasswordReset: null,
             resetPassword: null,
             loadAuthActions: null,
+        },
+        projects: {
+            fetching: null,
+            updating: null,
+            deleting: null,
+            creating: null,
         },
         tasks: {
             fetching: null,
@@ -408,6 +415,72 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.tasks,
                         creating: {
                             message: 'Could not create the task',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.GET_PROJECTS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        fetching: {
+                            message: 'Could not fetch projects',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.CREATE_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        creating: {
+                            message: 'Could not create the project',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { id: projectId } = action.payload.project;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        updating: {
+                            message:
+                                'Could not update ' +
+                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.DELETE_PROJECT_FAILED: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        updating: {
+                            message:
+                                'Could not delete ' +
+                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
