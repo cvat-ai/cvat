@@ -953,6 +953,7 @@
             const data = {
                 id: undefined,
                 name: undefined,
+                project_id: undefined,
                 status: undefined,
                 size: undefined,
                 mode: undefined,
@@ -1054,6 +1055,16 @@
                             updatedFields.name = true;
                             data.name = value;
                         },
+                    },
+                    /**
+                     * @name projectId
+                     * @type {integer|null}
+                     * @memberof module:API.cvat.classes.Task
+                     * @readonly
+                     * @instance
+                     */
+                    projectId: {
+                        get: () => data.project_id,
                     },
                     /**
                      * @name status
@@ -1819,7 +1830,7 @@
         return this;
     };
 
-    Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
+    Task.prototype.save.implementation = async function (onUpdate) {
         // TODO: Add ability to change an owner and an assignee
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
@@ -1871,6 +1882,9 @@
         }
         if (typeof this.overlap !== 'undefined') {
             taskSpec.overlap = this.overlap;
+        }
+        if (typeof this.projectId !== 'undefined') {
+            taskSpec.project_id = this.projectId;
         }
 
         const taskDataSpec = {

@@ -21,6 +21,35 @@ export interface AuthState {
     allowResetPassword: boolean;
 }
 
+export interface ProjectsQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    owner: string | null;
+    name: string | null;
+    status: string | null;
+    [key: string]: string | number | null | undefined;
+}
+
+export type Project = any;
+
+export interface ProjectsState {
+    initialized: boolean;
+    fetching: boolean;
+    count: number;
+    current: Project[];
+    gettingQuery: ProjectsQuery;
+    activities: {
+        creates: {
+            id: null | number;
+            error: string;
+        };
+        deletes: {
+            [projectId: number]: boolean; // deleted (deleting if in dictionary)
+        };
+    };
+}
+
 export interface TasksQuery {
     page: number;
     id: number | null;
@@ -197,6 +226,12 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
+        };
+        projects: {
+            fetching: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
+            creating: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;
@@ -516,6 +551,7 @@ export interface ReviewState {
 
 export interface CombinedState {
     auth: AuthState;
+    projects: ProjectsState;
     tasks: TasksState;
     about: AboutState;
     share: ShareState;
