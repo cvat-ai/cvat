@@ -98,9 +98,7 @@ Cypress.Commands.add('openTask', (taskName) => {
 });
 
 Cypress.Commands.add('saveJob', () => {
-    cy.get('button')
-        .contains('Save')
-        .click({ force: true });
+    cy.get('button').contains('Save').click({ force: true });
 });
 
 Cypress.Commands.add('openJob', (jobNumber = 0) => {
@@ -363,6 +361,9 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
         cy.get('#startFrame').type(advancedConfigurationParams.startFrame);
         cy.get('#stopFrame').type(advancedConfigurationParams.stopFrame);
         cy.get('#frameStep').type(advancedConfigurationParams.frameStep);
+    }
+    if (advancedConfigurationParams.chunkSize) {
+        cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
 });
 
