@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { ReactPortal, useEffect } from 'react';
+import React, { ReactPortal } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
 import Form, { FormComponentProps } from 'antd/lib/form';
@@ -28,23 +28,6 @@ function MessageForm(props: FormProps): JSX.Element {
         submit,
         cancel,
     } = props;
-
-    useEffect(() => {
-        const element = window.document.getElementsByClassName('cvat-create-issue-dialog')[0];
-        const listener = (): void => {
-            if (element && element.parentNode) {
-                element.parentNode.appendChild(element);
-            }
-        };
-
-        if (element) {
-            element.addEventListener('mouseenter', listener);
-        }
-
-        return () => {
-            element.removeEventListener('mouseenter', listener);
-        };
-    }, []);
 
     function handleSubmit(e: React.FormEvent): void {
         e.preventDefault();

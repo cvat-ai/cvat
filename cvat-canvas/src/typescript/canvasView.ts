@@ -68,6 +68,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private controller: CanvasController;
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
+    private issueRegionPattern_1: SVG.Pattern;
+    private issueRegionPattern_2: SVG.Pattern;
     private drawnStates: Record<number, DrawnState>;
     private drawnIssueRegions: Record<number, SVG.Shape>;
     private geometry: Geometry;
@@ -518,11 +520,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Transform all drawn issues region
         for (const issueRegion of Object.values(this.drawnIssueRegions)) {
-            ((issueRegion as any) as SVG.Shape).attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
+            ((issueRegion as any) as SVG.Shape).attr('r', `${(consts.BASE_POINT_SIZE * 3) / this.geometry.scale}`);
             ((issueRegion as any) as SVG.Shape).attr(
                 'stroke-width',
                 `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
             );
+        }
+
+        // Transform patterns
+        for (const pattern of [this.issueRegionPattern_1, this.issueRegionPattern_2]) {
+            pattern.attr({
+                width: consts.BASE_PATTERN_SIZE / this.geometry.scale,
+                height: consts.BASE_PATTERN_SIZE / this.geometry.scale,
+            });
+
+            pattern.children().forEach((element: SVG.Element): void => {
+                element.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+            });
         }
 
         // Transform handlers
@@ -548,18 +562,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private setupIssueRegions(issueRegions: Record<number, number[]>): void {
         for (const issueRegion of Object.keys(this.drawnIssueRegions)) {
-            this.drawnIssueRegions[+issueRegion].remove();
+            if (!(issueRegion in issueRegions)) {
+                this.drawnIssueRegions[+issueRegion].remove();
+                delete this.drawnIssueRegions[+issueRegion];
+            }
         }
 
         for (const issueRegion of Object.keys(issueRegions)) {
+            if (issueRegion in this.drawnIssueRegions) continue;
             const points = this.translateToCanvas(issueRegions[+issueRegion]);
             if (points.length === 2) {
                 this.drawnIssueRegions[+issueRegion] = this.adoptedContent
-                    .circle(consts.BASE_POINT_SIZE)
-                    .move(points[0], points[1])
+                    .circle((consts.BASE_POINT_SIZE * 3 * 2) / this.geometry.scale)
+                    .center(points[0], points[1])
                     .addClass('cvat_canvas_issue_region')
                     .attr({
                         id: `cvat_canvas_issue_region_${issueRegion}`,
+                        fill: 'url(#cvat_issue_region_pattern_1)',
                     });
             } else if (points.length === 4) {
                 const stringified = this.stringifyToCanvas([
@@ -577,6 +596,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .addClass('cvat_canvas_issue_region')
                     .attr({
                         id: `cvat_canvas_issue_region_${issueRegion}`,
+                        fill: 'url(#cvat_issue_region_pattern_1)',
+                        'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
                     });
             } else {
                 const stringified = this.stringifyToCanvas(points);
@@ -585,17 +606,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .addClass('cvat_canvas_issue_region')
                     .attr({
                         id: `cvat_canvas_issue_region_${issueRegion}`,
+                        fill: 'url(#cvat_issue_region_pattern_1)',
+                        'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
                     });
             }
-
-            ((this.drawnIssueRegions[+issueRegion] as any) as SVG.Shape).attr(
-                'r',
-                `${consts.BASE_POINT_SIZE / this.geometry.scale}`,
-            );
-            ((this.drawnIssueRegions[+issueRegion] as any) as SVG.Shape).attr(
-                'stroke-width',
-                `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
-            );
         }
     }
 
@@ -898,6 +912,28 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+
+        // Setup defs
+        const contentDefs = this.adoptedContent.defs();
+        this.issueRegionPattern_1 = contentDefs
+            .pattern(consts.BASE_PATTERN_SIZE, consts.BASE_PATTERN_SIZE, (add): void => {
+                add.line(0, 0, 0, 10).stroke('black');
+            })
+            .attr({
+                id: 'cvat_issue_region_pattern_1',
+                patternTransform: 'rotate(45)',
+                patternUnits: 'userSpaceOnUse',
+            });
+
+        this.issueRegionPattern_2 = contentDefs
+            .pattern(consts.BASE_PATTERN_SIZE, consts.BASE_PATTERN_SIZE, (add): void => {
+                add.line(0, 0, 0, 10).stroke('red');
+            })
+            .attr({
+                id: 'cvat_issue_region_pattern_2',
+                patternTransform: 'rotate(45)',
+                patternUnits: 'userSpaceOnUse',
+            });
 
         // Setup loading animation
         this.loadingAnimation.setAttribute('id', 'cvat_canvas_loading_animation');

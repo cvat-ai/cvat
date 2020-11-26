@@ -68,12 +68,7 @@ polyline.cvat_shape_drawing_opacity {
 
 .cvat_canvas_issue_region {
     display: none;
-    fill: white;
     stroke: black;
-    animation-duration: 1.5s;
-    animation-name: blink;
-    animation-iteration-count: infinite;
-    animation-direction: alternate-reverse;
 }
 
 circle.cvat_canvas_issue_region {
@@ -286,18 +281,7 @@ polyline.cvat_canvas_shape_splitting {
     pointer-events: none;
     width: 100%;
     height: 100%;
-}
-
-@keyframes blink {
-    0% {
-        fill: #09c;
-        opacity: 0.3;
-    }
-
-    100% {
-        fill: #fff;
-        opacity: 0.2;
-    }
+    user-select: none;
 }
 
 @keyframes loadingAnimation {

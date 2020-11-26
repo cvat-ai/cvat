@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Comment from 'antd/lib/comment';
+import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
@@ -24,39 +25,35 @@ interface Props {
     resolve: () => void;
     reopen: () => void;
     comment: (message: string) => void;
+    highlight: () => void;
+    blur: () => void;
 }
 
 export default function IssueDialog(props: Props): JSX.Element {
     const ref = useRef<HTMLDivElement>(null);
     const [currentText, setCurrentText] = useState<string>('');
     const {
-        comments, id, left, top, resolved, isFetching, collapse, resolve, reopen, comment,
+        comments,
+        id,
+        left,
+        top,
+        resolved,
+        isFetching,
+        collapse,
+        resolve,
+        reopen,
+        comment,
+        highlight,
+        blur,
     } = props;
 
     useEffect(() => {
-        const region = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
-        if (region) {
-            region.style.display = '';
+        if (!resolved) {
+            setTimeout(highlight);
+        } else {
+            setTimeout(blur);
         }
-
-        let element: HTMLDivElement | null = null;
-        const eventlistener = (): void => {
-            if (element && element.parentNode) {
-                element.parentNode.appendChild(element);
-            }
-        };
-
-        if (ref.current) {
-            element = ref.current;
-            element.addEventListener('mouseenter', eventlistener);
-        }
-
-        return () => {
-            if (element) {
-                element.removeEventListener('mouseenter', eventlistener);
-            }
-        };
-    }, []);
+    }, [resolved]);
 
     const lines = comments.map(
         (_comment: any): JSX.Element => {
@@ -65,8 +62,9 @@ export default function IssueDialog(props: Props): JSX.Element {
 
             return (
                 <Comment
+                    avatar={null}
                     key={_comment.id}
-                    author={_comment.author ? _comment.author.username : 'Unknown'}
+                    author={<Text strong>{_comment.author ? _comment.author.username : 'Unknown'}</Text>}
                     content={<p>{_comment.message}</p>}
                     datetime={(
                         <Tooltip title={created.format('MMMM Do YYYY')}>
@@ -92,7 +90,7 @@ export default function IssueDialog(props: Props): JSX.Element {
         <div style={{ top, left }} ref={ref} className='cvat-issue-dialog'>
             <Row className='cvat-issue-dialog-header' type='flex' justify='space-between'>
                 <Col>
-                    <Title level={4}>{id >= 0 ? `Issue #${id}` : 'New Issue'}</Title>
+                    <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>
                 </Col>
                 <Col>
                     <Tooltip title='Collapse the chat'>

@@ -68,7 +68,7 @@ export default function LabelsListComponent(): JSX.Element {
                                     `cvat_canvas_issue_region_${frameIssue.id}`,
                                 );
                                 if (element) {
-                                    element.style.display = 'block';
+                                    element.setAttribute('fill', 'url(#cvat_issue_region_pattern_2)');
                                 }
                             }}
                             onMouseLeave={() => {
@@ -76,7 +76,7 @@ export default function LabelsListComponent(): JSX.Element {
                                     `cvat_canvas_issue_region_${frameIssue.id}`,
                                 );
                                 if (element) {
-                                    element.style.display = '';
+                                    element.setAttribute('fill', 'url(#cvat_issue_region_pattern_1)');
                                 }
                             }}
                         >

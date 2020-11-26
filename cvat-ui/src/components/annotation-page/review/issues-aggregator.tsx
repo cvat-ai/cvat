@@ -27,7 +27,7 @@ const scaleHandler = (canvasInstance: Canvas): void => {
 
 export default function IssueAggregatorComponent(): JSX.Element | null {
     const dispatch = useDispatch();
-    const [expandedIssues, setExpandedIssues] = useState<number[]>([]);
+    const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
@@ -39,6 +39,27 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     useEffect(() => {
         scaleHandler(canvasInstance);
     });
+
+    useEffect(() => {
+        const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<number, number[]> => {
+            acc[issue.id] = issue.position;
+            return acc;
+        }, {});
+
+        if (newIssuePosition) {
+            regions[0] = newIssuePosition;
+        }
+
+        canvasInstance.setupIssueRegions(regions);
+
+        if (newIssuePosition) {
+            setExpandedIssue(null);
+            const element = window.document.getElementById('cvat_canvas_issue_region_0');
+            if (element) {
+                element.style.display = 'block';
+            }
+        }
+    }, [newIssuePosition]);
 
     useEffect(() => {
         const listener = (): void => scaleHandler(canvasInstance);
@@ -61,24 +82,43 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         const issueResolved = !!issue.resolver;
         const offset = 15;
         const translated = issue.position.map((coord: number): number => coord + geometry.offset);
-        const maxX = Math.max(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0)) + offset;
+        const minX = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0)) + offset;
         const minY = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 !== 0)) + offset;
-        if (expandedIssues.includes(issue.id)) {
+        const { id } = issue;
+        const highlight = (): void => {
+            const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
+            if (element) {
+                element.style.display = 'block';
+            }
+        };
+
+        const blur = (): void => {
+            if (issueResolved) {
+                const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
+                if (element) {
+                    element.style.display = '';
+                }
+            }
+        };
+
+        if (expandedIssue === id) {
             issueDialogs.push(
                 <IssueDialog
                     key={issue.id}
                     id={issue.id}
                     top={minY}
-                    left={maxX}
+                    left={minX}
                     isFetching={issueFetching !== null}
                     comments={issue.comments}
                     resolved={issueResolved}
+                    highlight={highlight}
+                    blur={blur}
                     collapse={() => {
-                        setExpandedIssues(expandedIssues.filter((issueID: number): boolean => issueID !== issue.id));
+                        setExpandedIssue(null);
                     }}
                     resolve={() => {
                         dispatch(resolveIssueAsync(issue.id));
-                        setExpandedIssues(expandedIssues.filter((issueID: number): boolean => issueID !== issue.id));
+                        setExpandedIssue(null);
                     }}
                     reopen={() => {
                         dispatch(reopenIssueAsync(issue.id));
@@ -94,11 +134,13 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     key={issue.id}
                     id={issue.id}
                     top={minY}
-                    left={maxX}
+                    left={minX}
                     resolved={issueResolved}
                     message={issue.comments[issue.comments.length - 1].message}
+                    highlight={highlight}
+                    blur={blur}
                     onClick={() => {
-                        setExpandedIssues([...expandedIssues, issue.id]);
+                        setExpandedIssue(id);
                     }}
                 />,
             );

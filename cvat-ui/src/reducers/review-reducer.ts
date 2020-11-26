@@ -40,6 +40,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 frameIssues,
             };
         }
+        case AnnotationActionTypes.CHANGE_FRAME: {
+            return {
+                ...state,
+                newIssuePosition: null,
+            };
+        }
         case ReviewActionTypes.SUBMIT_REVIEW: {
             const { reviewId } = action.payload;
             return {

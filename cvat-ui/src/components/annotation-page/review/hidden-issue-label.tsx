@@ -15,28 +15,22 @@ interface Props {
     left: number;
     resolved: boolean;
     onClick: () => void;
+    highlight: () => void;
+    blur: () => void;
 }
 
 export default function HiddenIssueLabel(props: Props): ReactPortal {
     const {
-        id, message, top, left, resolved, onClick,
+        id, message, top, left, resolved, onClick, highlight, blur,
     } = props;
 
-    function highlight(): void {
-        const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
-        if (element) {
-            element.style.display = 'block';
+    useEffect(() => {
+        if (!resolved) {
+            setTimeout(highlight);
+        } else {
+            setTimeout(blur);
         }
-    }
-
-    function blur(): void {
-        const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
-        if (element) {
-            element.style.display = '';
-        }
-    }
-
-    useEffect(() => blur, []); // remove highlighting when unmount the component
+    }, [resolved]);
 
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
