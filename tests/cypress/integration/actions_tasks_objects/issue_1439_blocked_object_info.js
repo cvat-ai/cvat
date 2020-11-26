@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -13,7 +11,7 @@ context('Information about a blocked object disappears if hover the cursor over 
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -22,7 +20,7 @@ context('Information about a blocked object disappears if hover the cursor over 
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,

@@ -1,12 +1,10 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName, textDefaultValue, attrName } from '../../support/const';
+import { taskName, textDefaultValue, attrName, labelName } from '../../support/const';
 
 context(
     "Checks that the cursor doesn't automatically jump to the end of a word when the attribute value changes",
@@ -15,7 +13,7 @@ context(
         const createRectangleShape2Points = {
             points: 'By 2 Points',
             type: 'Shape',
-            switchLabel: false,
+            labelName: labelName,
             firstX: 250,
             firstY: 350,
             secondX: 350,

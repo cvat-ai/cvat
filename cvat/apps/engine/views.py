@@ -37,14 +37,15 @@ from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, StorageMethodChoice, StorageChoice
+    Job, StatusChoice, Task, Project, StorageMethodChoice, StorageChoice
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, RqStatusSerializer,
-    TaskSerializer, UserSerializer, PluginsSerializer,
+    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
+    RqStatusSerializer, TaskSerializer, UserSerializer,
+    PluginsSerializer,
 )
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -194,14 +195,13 @@ class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
     status = filters.CharFilter(field_name="status", lookup_expr="icontains")
-    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
 
     class Meta:
         model = models.Project
-        fields = ("id", "name", "owner", "status", "assignee")
+        fields = ("id", "name", "owner", "status")
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
-    operation_summary='Returns a paginated list of projects according to query parameters (10 projects per page)',
+    operation_summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
     manual_parameters=[
         openapi.Parameter('id', openapi.IN_QUERY, description="A unique number value identifying this project",
             type=openapi.TYPE_NUMBER),
@@ -210,20 +210,23 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('owner', openapi.IN_QUERY, description="Find all project where owner name contains a parameter value",
             type=openapi.TYPE_STRING),
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
-            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
-        openapi.Parameter('assignee', openapi.IN_QUERY, description="Find all projects where assignee name contains a parameter value",
-            type=openapi.TYPE_STRING)]))
+            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice])]))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = models.Project.objects.all().order_by('-id')
-    serializer_class = ProjectSerializer
-    search_fields = ("name", "owner__username", "assignee__username", "status")
+    search_fields = ("name", "owner__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.request.query_params and self.request.query_params.get("names_only") == "true":
+            return ProjectSearchSerializer
+        else:
+            return ProjectSerializer
 
     def get_permissions(self):
         http_method = self.request.method
@@ -243,9 +246,19 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         return [perm() for perm in permissions]
 
     def perform_create(self, serializer):
-        if self.request.data.get('owner', None):
+        def validate_project_limit(owner):
+            admin_perm = auth.AdminRolePermission()
+            is_admin = admin_perm.has_permission(self.request, self)
+            if not is_admin and settings.RESTRICTIONS['project_limit'] is not None and \
+                Project.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['project_limit']:
+                raise serializers.ValidationError('The user has the maximum number of projects')
+
+        owner = self.request.data.get('owner', None)
+        if owner:
+            validate_project_limit(owner)
             serializer.save()
         else:
+            validate_project_limit(self.request.user)
             serializer.save(owner=self.request.user)
 
     @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
@@ -713,7 +726,16 @@ class JobViewSet(viewsets.GenericViewSet,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+class UserFilter(filters.FilterSet):
+    class Meta:
+        model = User
+        fields = ("id",)
+
+
 @method_decorator(name='list', decorator=swagger_auto_schema(
+    manual_parameters=[
+            openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this user",type=openapi.TYPE_NUMBER),
+    ],
     operation_summary='Method provides a paginated list of users registered on the server'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(
     operation_summary='Method provides information of a specific user'))
@@ -725,6 +747,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all().order_by('id')
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    search_fields = ('username', 'first_name', 'last_name')
+    filterset_class = UserFilter
 
     def get_serializer_class(self):
         user = self.request.user

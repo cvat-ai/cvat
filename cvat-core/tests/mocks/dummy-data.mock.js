@@ -143,6 +143,174 @@ const shareDummyData = [
     },
 ];
 
+const projectsDummyData = {
+    count: 2,
+    next: null,
+    previous: null,
+    results: [
+        {
+            url: 'http://192.168.0.139:7000/api/v1/projects/6',
+            id: 6,
+            name: 'Some empty project',
+            labels: [],
+            tasks: [],
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/2',
+                id: 2,
+                username: 'bsekache',
+            },
+            assignee: {
+                url: 'http://localhost:7000/api/v1/users/2',
+                id: 2,
+                username: 'bsekache',
+            },
+            bug_tracker: '',
+            created_date: '2020-10-19T20:41:07.808029Z',
+            updated_date: '2020-10-19T20:41:07.808084Z',
+            status: 'annotation',
+        },
+        {
+            url: 'http://192.168.0.139:7000/api/v1/projects/1',
+            id: 2,
+            name: 'Test project with roads',
+            labels: [
+                {
+                    id: 1,
+                    name: 'car',
+                    color: '#2080c0',
+                    attributes: [
+                        {
+                            id: 199,
+                            name: 'color',
+                            mutable: false,
+                            input_type: 'select',
+                            default_value: 'red',
+                            values: ['red', 'black', 'white', 'yellow', 'pink', 'green', 'blue', 'orange'],
+                        },
+                    ],
+                },
+            ],
+            tasks: [
+                {
+                    url: 'http://192.168.0.139:7000/api/v1/tasks/2',
+                    id: 2,
+                    name: 'road 1',
+                    project_id: 1,
+                    mode: 'interpolation',
+                    owner: {
+                        url: 'http://localhost:7000/api/v1/users/1',
+                        id: 1,
+                        username: 'admin',
+                    },
+                    assignee: null,
+                    bug_tracker: '',
+                    created_date: '2020-10-12T08:59:59.878083Z',
+                    updated_date: '2020-10-18T21:02:20.831294Z',
+                    overlap: 5,
+                    segment_size: 100,
+                    z_order: false,
+                    status: 'completed',
+                    labels: [
+                        {
+                            id: 1,
+                            name: 'car',
+                            color: '#2080c0',
+                            attributes: [
+                                {
+                                    id: 199,
+                                    name: 'color',
+                                    mutable: false,
+                                    input_type: 'select',
+                                    default_value: 'red',
+                                    values: ['red', 'black', 'white', 'yellow', 'pink', 'green', 'blue', 'orange'],
+                                },
+                            ],
+                        },
+                    ],
+                    segments: [
+                        {
+                            start_frame: 0,
+                            stop_frame: 99,
+                            jobs: [
+                                {
+                                    url: 'http://192.168.0.139:7000/api/v1/jobs/1',
+                                    id: 1,
+                                    assignee: null,
+                                    status: 'completed',
+                                },
+                            ],
+                        },
+                        {
+                            start_frame: 95,
+                            stop_frame: 194,
+                            jobs: [
+                                {
+                                    url: 'http://192.168.0.139:7000/api/v1/jobs/2',
+                                    id: 2,
+                                    assignee: null,
+                                    status: 'completed',
+                                },
+                            ],
+                        },
+                        {
+                            start_frame: 190,
+                            stop_frame: 289,
+                            jobs: [
+                                {
+                                    url: 'http://192.168.0.139:7000/api/v1/jobs/3',
+                                    id: 3,
+                                    assignee: null,
+                                    status: 'completed',
+                                },
+                            ],
+                        },
+                        {
+                            start_frame: 285,
+                            stop_frame: 384,
+                            jobs: [
+                                {
+                                    url: 'http://192.168.0.139:7000/api/v1/jobs/4',
+                                    id: 4,
+                                    assignee: null,
+                                    status: 'completed',
+                                },
+                            ],
+                        },
+                        {
+                            start_frame: 380,
+                            stop_frame: 431,
+                            jobs: [
+                                {
+                                    url: 'http://192.168.0.139:7000/api/v1/jobs/5',
+                                    id: 5,
+                                    assignee: null,
+                                    status: 'completed',
+                                },
+                            ],
+                        },
+                    ],
+                    data_chunk_size: 36,
+                    data_compressed_chunk_type: 'imageset',
+                    data_original_chunk_type: 'video',
+                    size: 432,
+                    image_quality: 100,
+                    data: 1,
+                },
+            ],
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'admin',
+            },
+            assignee: null,
+            bug_tracker: '',
+            created_date: '2020-10-12T08:21:56.558898Z',
+            updated_date: '2020-10-12T08:21:56.558982Z',
+            status: 'completed',
+        },
+    ],
+};
+
 const tasksDummyData = {
     count: 5,
     next: null,
@@ -154,7 +322,11 @@ const tasksDummyData = {
             name: 'Test',
             size: 1,
             mode: 'annotation',
-            owner: 1,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'admin',
+            },
             assignee: null,
             bug_tracker: '',
             created_date: '2019-09-05T11:59:22.987942Z',
@@ -194,7 +366,11 @@ const tasksDummyData = {
             name: 'Image Task',
             size: 9,
             mode: 'annotation',
-            owner: 1,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'admin',
+            },
             assignee: null,
             bug_tracker: '',
             created_date: '2019-06-18T13:05:08.941304+03:00',
@@ -239,7 +415,11 @@ const tasksDummyData = {
             name: 'Video Task',
             size: 5002,
             mode: 'interpolation',
-            owner: 1,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'admin',
+            },
             assignee: null,
             bug_tracker: '',
             created_date: '2019-06-21T16:34:49.199691+03:00',
@@ -558,7 +738,11 @@ const tasksDummyData = {
             name: 'Test Task',
             size: 5002,
             mode: 'interpolation',
-            owner: 2,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/2',
+                id: 2,
+                username: 'bsekache',
+            },
             assignee: null,
             bug_tracker: '',
             created_date: '2019-05-16T13:08:00.621747+03:00',
@@ -767,7 +951,11 @@ const tasksDummyData = {
             name: 'Video',
             size: 75,
             mode: 'interpolation',
-            owner: 1,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'admin',
+            },
             assignee: null,
             bug_tracker: '',
             created_date: '2019-05-15T11:40:19.487999+03:00',
@@ -964,7 +1152,11 @@ const tasksDummyData = {
             name: 'Labels Set',
             size: 9,
             mode: 'annotation',
-            owner: 1,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'admin',
+            },
             assignee: null,
             bug_tracker: 'http://bugtracker.com/issue12345',
             created_date: '2019-05-13T15:35:29.871003+03:00',
@@ -2328,6 +2520,7 @@ const frameMetaDummyData = {
 
 module.exports = {
     tasksDummyData,
+    projectsDummyData,
     aboutDummyData,
     shareDummyData,
     usersDummyData,

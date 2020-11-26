@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -14,7 +12,7 @@ context('Actions on rectangle', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -23,7 +21,7 @@ context('Actions on rectangle', () => {
     const createRectangleShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -36,7 +34,7 @@ context('Actions on rectangle', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
@@ -45,7 +43,7 @@ context('Actions on rectangle', () => {
     const createRectangleTrack4Points = {
         points: 'By 4 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape4Points.firstX,
         firstY: createRectangleShape4Points.firstY - 150,
         secondX: createRectangleShape4Points.secondX - 100,
@@ -59,7 +57,6 @@ context('Actions on rectangle', () => {
         labelName: newLabelName,
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: true,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY + 150,
         secondX: createRectangleShape2Points.secondX,
@@ -69,7 +66,6 @@ context('Actions on rectangle', () => {
         labelName: newLabelName,
         points: 'By 4 Points',
         type: 'Shape',
-        switchLabel: true,
         firstX: createRectangleShape4Points.firstX,
         firstY: createRectangleShape4Points.firstY + 150,
         secondX: createRectangleShape4Points.secondX,
@@ -82,17 +78,11 @@ context('Actions on rectangle', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a rectangle shape in two ways (by 2 points, by 4 points)', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.createRectangle(createRectangleShape4Points);

@@ -1,0 +1,56 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-project-details {
+    width: 100%;
+    height: auto;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    padding: $grid-unit-size * 2;
+    margin: $grid-unit-size * 2 0;
+    background: $background-color-1;
+
+    .ant-row-flex:nth-child(1) {
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .ant-row-flex:nth-child(2) .ant-col:nth-child(2) > span {
+        margin-right: $grid-unit-size;
+    }
+
+    .cvat-project-details-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .cvat-issue-tracker {
+        margin-top: $grid-unit-size * 2;
+        margin-bottom: $grid-unit-size * 2;
+    }
+}
+
+.cvat-project-page-tasks-bar {
+    margin: $grid-unit-size * 2 0;
+}
+
+.ant-menu.cvat-project-actions-menu {
+    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-title {
+        margin: 0;
+        width: 13em;
+    }
+}
+
+.cvat-project-top-bar-actions > button {
+    display: flex;
+    align-items: center;
+}

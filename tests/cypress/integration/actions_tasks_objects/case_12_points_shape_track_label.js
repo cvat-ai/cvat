@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -13,7 +11,7 @@ context('Actions on points', () => {
     const newLabelName = `New label for case ${caseId}`;
     const createPointsShape = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -24,7 +22,7 @@ context('Actions on points', () => {
     };
     const createPointsTrack = {
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -35,7 +33,7 @@ context('Actions on points', () => {
     };
     const createPointsShapePoints = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
@@ -47,7 +45,7 @@ context('Actions on points', () => {
     };
     const createPointsTrackPoints = {
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 500, y: 200 },
             { x: 550, y: 200 },
@@ -59,7 +57,6 @@ context('Actions on points', () => {
     };
     const createPointsShapeSwitchLabel = {
         type: 'Shape',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 600, y: 200 },
@@ -71,7 +68,6 @@ context('Actions on points', () => {
     };
     const createPointsTrackSwitchLabel = {
         type: 'Track',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 700, y: 200 },
@@ -84,17 +80,11 @@ context('Actions on points', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a points shape, track', () => {
             cy.createPoint(createPointsShape);
             cy.createPoint(createPointsTrack);

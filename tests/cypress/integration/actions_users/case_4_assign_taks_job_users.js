@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -58,9 +56,7 @@ context('Multiple users. Assign task, job.', () => {
                 secondUser.emailAddr,
                 secondUser.password,
             );
-            cy.url().should('include', '/tasks');
             cy.logout(secondUserName);
-            cy.url().should('include', '/auth/login');
         });
         it('Register third user and logout.', () => {
             cy.get('a[href="/auth/register"]').click();
@@ -72,13 +68,10 @@ context('Multiple users. Assign task, job.', () => {
                 thirdUser.emailAddr,
                 thirdUser.password,
             );
-            cy.url().should('include', '/tasks');
             cy.logout(thirdUserName);
-            cy.url().should('include', '/auth/login');
         });
         it('First user login and create a task', () => {
             cy.login();
-            cy.url().should('include', '/tasks');
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(directoryToArchive, archivePath);
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
@@ -86,41 +79,33 @@ context('Multiple users. Assign task, job.', () => {
         it('Assign the task to the second user and logout', () => {
             cy.openTask(taskName);
             cy.get('.cvat-task-details').within(() => {
-                cy.get('.cvat-user-selector').click({ force: true });
+                cy.get('.cvat-user-search-field').click({ force: true });
             });
             cy.contains(secondUserName).click();
             cy.logout();
         });
         it('Second user login. The task can be opened. Logout', () => {
             cy.login(secondUserName, secondUser.password);
-            cy.url().should('include', '/tasks');
-            cy.get('[value="tasks"]').click();
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
             cy.logout(secondUserName);
         });
         it('Third user login. The task not exist. Logout', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.url().should('include', '/tasks');
-            cy.get('[value="tasks"]').click();
             cy.contains('strong', taskName).should('not.exist');
             cy.logout(thirdUserName);
         });
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
-            cy.url().should('include', '/tasks');
-            cy.get('[value="tasks"]').click();
             cy.openTask(taskName);
             cy.get('.cvat-task-job-list').within(() => {
-                cy.get('.cvat-user-selector').click({ force: true });
+                cy.get('.cvat-user-search-field').click({ force: true });
             });
             cy.contains(thirdUserName).click();
             cy.logout();
         });
         it('Third user login. The task can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.url().should('include', '/tasks');
-            cy.get('[value="tasks"]').click();
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
             cy.logout(thirdUserName);

@@ -1,0 +1,119 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-projects-page {
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size * 5;
+    height: 100%;
+    position: fixed;
+    width: 100%;
+
+    > div:nth-child(1) {
+        padding-bottom: $grid-unit-size;
+
+        div > {
+            span {
+                color: $text-color;
+            }
+        }
+    }
+}
+
+/* empty-projects icon */
+.cvat-empty-projects-list {
+    > div:nth-child(1) {
+        margin-top: $grid-unit-size * 6;
+    }
+
+    > div:nth-child(2) {
+        > div {
+            margin-top: $grid-unit-size * 3;
+
+            /* No projects created yet */
+            > span {
+                font-size: 20px;
+                color: $text-color;
+            }
+        }
+    }
+
+    /* To get started with your annotation project .. */
+    > div:nth-child(3) {
+        margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-projects-top-bar {
+    > div:nth-child(1) {
+        display: flex;
+
+        > span:nth-child(2) {
+            width: $grid-unit-size * 25;
+            margin-left: $grid-unit-size;
+        }
+    }
+
+    > div:nth-child(2) {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+.cvat-create-project-button {
+    padding: 0 $grid-unit-size * 4;
+}
+
+.cvat-projects-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-projects-project-item-title,
+.cvat-projects-project-item-card-preview {
+    cursor: pointer;
+}
+
+.cvat-porjects-project-item-description {
+    display: flex;
+    justify-content: space-between;
+
+    // actions button
+    > div:nth-child(2) {
+        display: flex;
+        align-self: flex-end;
+        justify-content: center;
+
+        > button {
+            color: $text-color;
+            width: inherit;
+        }
+    }
+}
+
+.ant-menu.cvat-project-actions-menu {
+    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-title {
+        margin: 0;
+        width: 13em;
+    }
+}
+
+.cvat-projects-project-item-card {
+    .ant-empty {
+        margin: $grid-unit-size;
+    }
+
+    img {
+        height: 100%;
+        max-height: $grid-unit-size * 18;
+        object-fit: cover;
+    }
+}

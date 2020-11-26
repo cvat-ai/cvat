@@ -1,9 +1,6 @@
-/* eslint-disable no-undef */
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -14,7 +11,7 @@ context('Actions on polylines', () => {
     const newLabelName = `New label for case ${caseId}`;
     const createPolylinesShape = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -25,7 +22,7 @@ context('Actions on polylines', () => {
     };
     const createPolylinesTrack = {
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -36,7 +33,7 @@ context('Actions on polylines', () => {
     };
     const createPolylinesShapePoints = {
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
@@ -48,7 +45,7 @@ context('Actions on polylines', () => {
     };
     const createPolylinesTrackPoints = {
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 500, y: 200 },
             { x: 550, y: 200 },
@@ -60,7 +57,6 @@ context('Actions on polylines', () => {
     };
     const createPolylinesShapeSwitchLabel = {
         type: 'Shape',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 600, y: 200 },
@@ -72,7 +68,6 @@ context('Actions on polylines', () => {
     };
     const createPolylinesTrackSwitchLabel = {
         type: 'Track',
-        switchLabel: true,
         labelName: newLabelName,
         pointsMap: [
             { x: 700, y: 200 },
@@ -85,17 +80,11 @@ context('Actions on polylines', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a polylines shape, track', () => {
             cy.createPolyline(createPolylinesShape);
             cy.createPolyline(createPolylinesTrack);

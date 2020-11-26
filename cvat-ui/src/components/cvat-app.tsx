@@ -14,14 +14,17 @@ import Header from 'components/header/header';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
-import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
-import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
-import LoginPageContainer from 'containers/login-page/login-page';
-import ModelsPageContainer from 'containers/models-page/models-page';
-import RegisterPageContainer from 'containers/register-page/register-page';
-import TaskPageContainer from 'containers/task-page/task-page';
+import ProjectsPageComponent from 'components/projects-page/projects-page';
+import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
+import ProjectPageComponent from 'components/project-page/project-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
+import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
+import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
+import TaskPageContainer from 'containers/task-page/task-page';
+import ModelsPageContainer from 'containers/models-page/models-page';
+import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
+import LoginPageContainer from 'containers/login-page/login-page';
+import RegisterPageContainer from 'containers/register-page/register-page';
 import getCore from 'cvat-core-wrapper';
 import React from 'react';
 import { configure, ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
@@ -34,7 +37,6 @@ import '../styles.scss';
 
 interface CVATAppProps {
     loadFormats: () => void;
-    loadUsers: () => void;
     loadAbout: () => void;
     verifyAuthorized: () => void;
     loadUserAgreements: () => void;
@@ -54,8 +56,6 @@ interface CVATAppProps {
     modelsFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
-    usersInitialized: boolean;
-    usersFetching: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
@@ -92,7 +92,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const {
             verifyAuthorized,
             loadFormats,
-            loadUsers,
             loadAbout,
             loadUserAgreements,
             initPlugins,
@@ -102,8 +101,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userFetching,
             formatsInitialized,
             formatsFetching,
-            usersInitialized,
-            usersFetching,
             aboutInitialized,
             aboutFetching,
             pluginsInitialized,
@@ -141,10 +138,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
-        }
-
-        if (!usersInitialized && !usersFetching) {
-            loadUsers();
         }
 
         if (!aboutInitialized && !aboutFetching) {
@@ -235,7 +228,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public render(): JSX.Element {
         const {
             userInitialized,
-            usersInitialized,
             aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
@@ -248,7 +240,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const readyForRender =
             (userInitialized && (user == null || !user.isVerified)) ||
-            (userInitialized && formatsInitialized && pluginsInitialized && usersInitialized && aboutInitialized);
+            (userInitialized && formatsInitialized && pluginsInitialized && aboutInitialized);
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -270,7 +262,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (showPlatformNotification()) {
             stopNotifications(false);
-            const info = platformInfo();
+            const {
+                name, version, engine, os,
+            } = platformInfo();
+
             Modal.warning({
                 title: 'Unsupported platform detected',
                 content: (
@@ -278,7 +273,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Row>
                             <Col>
                                 <Text>
-                                    {`The browser you are using is ${info.name} ${info.version} based on ${info.engine} .` +
+                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
                                         ' CVAT was tested in the latest versions of Chrome and Firefox.' +
                                         ' We recommend to use Chrome (or another Chromium based browser)'}
                                 </Text>
@@ -286,7 +281,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         </Row>
                         <Row>
                             <Col>
-                                <Text type='secondary'>{`The operating system is ${info.os}`}</Text>
+                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
                             </Col>
                         </Row>
                     </>
@@ -305,6 +300,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
+                                        <Route exact path='/projects' component={ProjectsPageComponent} />
+                                        <Route exact path='/projects/create' component={CreateProjectPageComponent} />
+                                        <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />

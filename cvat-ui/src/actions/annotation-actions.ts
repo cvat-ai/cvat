@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction, Dispatch, ActionCreator, Store } from 'redux';
+import {
+    AnyAction, Dispatch, ActionCreator, Store,
+} from 'redux';
 import { ThunkAction } from 'utils/redux';
 
 import {
@@ -244,7 +246,9 @@ export function switchZLayer(cur: number): AnyAction {
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, frame, showAllInterpolationTracks, jobInstance } = receiveAnnotationsParameters();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
             const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
 
@@ -936,6 +940,10 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
             }
 
+            if (!task.labels.length && task.projectId) {
+                throw new Error(`Project ${task.projectId} does not contain any label`);
+            }
+
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
@@ -1096,7 +1104,9 @@ export function splitTrack(enabled: boolean): AnyAction {
 
 export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const { jobInstance, filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
+        const {
+            jobInstance, filters, frame, showAllInterpolationTracks,
+        } = receiveAnnotationsParameters();
 
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {

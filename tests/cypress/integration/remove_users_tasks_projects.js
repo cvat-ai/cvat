@@ -61,4 +61,24 @@ describe('Delete users and tasks created during the test run.', () => {
             }
         });
     });
+    it('Get a list of projects and delete them all', () => {
+        cy.request({
+            url: '/api/v1/projects?page_size=all',
+            headers: {
+                Authorization: `Token ${authKey}`,
+            },
+        }).then(async (responce) => {
+            const responceResult = await responce['body']['results'];
+            for (let tasks of responceResult) {
+                let taskId = tasks['id'];
+                cy.request({
+                    method: 'DELETE',
+                    url: `/api/v1/projects/${taskId}`,
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                });
+            }
+        });
+    });
 });

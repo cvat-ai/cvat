@@ -4,6 +4,7 @@
 
 const {
     tasksDummyData,
+    projectsDummyData,
     aboutDummyData,
     formatsDummyData,
     shareDummyData,
@@ -12,6 +13,22 @@ const {
     jobAnnotationsDummyData,
     frameMetaDummyData,
 } = require('./dummy-data.mock');
+
+function QueryStringToJSON(query) {
+    const pairs = [...new URLSearchParams(query).entries()];
+
+    const result = {};
+    for (const pair of pairs) {
+        const [key, value] = pair;
+        if (['id'].includes(key)) {
+            result[key] = +value;
+        } else {
+            result[key] = value;
+        }
+    }
+
+    return JSON.parse(JSON.stringify(result));
+}
 
 class ServerProxy {
     constructor() {
@@ -55,23 +72,65 @@ class ServerProxy {
             return null;
         }
 
-        async function getTasks(filter = '') {
-            function QueryStringToJSON(query) {
-                const pairs = [...new URLSearchParams(query).entries()];
-
-                const result = {};
-                for (const pair of pairs) {
-                    const [key, value] = pair;
-                    if (['id'].includes(key)) {
-                        result[key] = +value;
-                    } else {
-                        result[key] = value;
+        async function getProjects(filter = '') {
+            const queries = QueryStringToJSON(filter);
+            const result = projectsDummyData.results.filter((x) => {
+                for (const key in queries) {
+                    if (Object.prototype.hasOwnProperty.call(queries, key)) {
+                        // TODO: Particular match for some fields is not checked
+                        if (queries[key] !== x[key]) {
+                            return false;
+                        }
                     }
                 }
 
-                return JSON.parse(JSON.stringify(result));
-            }
+                return true;
+            });
 
+            return result;
+        }
+
+        async function saveProject(id, projectData) {
+            const object = projectsDummyData.results.filter((project) => project.id === id)[0];
+            for (const prop in projectData) {
+                if (
+                    Object.prototype.hasOwnProperty.call(projectData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
+                    object[prop] = projectData[prop];
+                }
+            }
+        }
+
+        async function createProject(projectData) {
+            const id = Math.max(...projectsDummyData.results.map((el) => el.id)) + 1;
+            projectsDummyData.results.push({
+                id,
+                url: `http://localhost:7000/api/v1/projects/${id}`,
+                name: projectData.name,
+                owner: 1,
+                assignee: null,
+                bug_tracker: projectData.bug_tracker,
+                created_date: '2019-05-16T13:08:00.621747+03:00',
+                updated_date: '2019-05-16T13:08:00.621797+03:00',
+                status: 'annotation',
+                tasks: [],
+                labels: JSON.parse(JSON.stringify(projectData.labels)),
+            });
+
+            const createdProject = await getProjects(`?id=${id}`);
+            return createdProject[0];
+        }
+
+        async function deleteProject(id) {
+            const projects = projectsDummyData.results;
+            const project = projects.filter((el) => el.id === id)[0];
+            if (project) {
+                projects.splice(projects.indexOf(project), 1);
+            }
+        }
+
+        async function getTasks(filter = '') {
             // Emulation of a query filter
             const queries = QueryStringToJSON(filter);
             const result = tasksDummyData.results.filter((x) => {
@@ -94,8 +153,8 @@ class ServerProxy {
             const object = tasksDummyData.results.filter((task) => task.id === id)[0];
             for (const prop in taskData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(taskData, prop) &&
-                    Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(taskData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     object[prop] = taskData[prop];
                 }
@@ -108,9 +167,13 @@ class ServerProxy {
                 id,
                 url: `http://localhost:7000/api/v1/tasks/${id}`,
                 name: taskData.name,
+                project_id: taskData.project_id || null,
                 size: 5000,
                 mode: 'interpolation',
-                owner: 2,
+                owner: {
+                    id: 2,
+                    username: 'bsekache',
+                },
                 assignee: null,
                 bug_tracker: taskData.bug_tracker,
                 created_date: '2019-05-16T13:08:00.621747+03:00',
@@ -175,8 +238,8 @@ class ServerProxy {
 
             for (const prop in jobData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(jobData, prop) &&
-                    Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(jobData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     object[prop] = jobData[prop];
                 }
@@ -256,6 +319,16 @@ class ServerProxy {
                         exception,
                         login,
                         logout,
+                    }),
+                    writable: false,
+                },
+
+                projects: {
+                    value: Object.freeze({
+                        get: getProjects,
+                        save: saveProject,
+                        create: createProject,
+                        delete: deleteProject,
                     }),
                     writable: false,
                 },

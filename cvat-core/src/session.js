@@ -674,6 +674,11 @@
                 task: undefined,
             };
 
+            let updatedFields = {
+                assignee: false,
+                status: false,
+            };
+
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property)) {
                     if (property in initialData) {
@@ -685,6 +690,8 @@
                     }
                 }
             }
+
+            if (data.assignee) data.assignee = new User(data.assignee);
 
             Object.defineProperties(
                 this,
@@ -713,6 +720,7 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
+                            updatedFields.assignee = true;
                             data.assignee = assignee;
                         },
                     },
@@ -741,6 +749,7 @@
                                 );
                             }
 
+                            updatedFields.status = true;
                             data.status = status;
                         },
                     },
@@ -773,6 +782,12 @@
                      */
                     task: {
                         get: () => data.task,
+                    },
+                    __updatedFields: {
+                        get: () => updatedFields,
+                        set: (fields) => {
+                            updatedFields = fields;
+                        },
                     },
                 }),
             );
@@ -856,6 +871,7 @@
             const data = {
                 id: undefined,
                 name: undefined,
+                project_id: undefined,
                 status: undefined,
                 size: undefined,
                 mode: undefined,
@@ -878,11 +894,21 @@
                 copy_data: undefined,
             };
 
+            let updatedFields = {
+                name: false,
+                assignee: false,
+                bug_tracker: false,
+                labels: false,
+            };
+
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
                     data[property] = initialData[property];
                 }
             }
+
+            if (data.assignee) data.assignee = new User(data.assignee);
+            if (data.owner) data.owner = new User(data.owner);
 
             data.labels = [];
             data.jobs = [];
@@ -944,8 +970,19 @@
                             if (!value.trim().length) {
                                 throw new ArgumentError('Value must not be empty');
                             }
+                            updatedFields.name = true;
                             data.name = value;
                         },
+                    },
+                    /**
+                     * @name projectId
+                     * @type {integer|null}
+                     * @memberof module:API.cvat.classes.Task
+                     * @readonly
+                     * @instance
+                     */
+                    projectId: {
+                        get: () => data.project_id,
                     },
                     /**
                      * @name status
@@ -1002,6 +1039,7 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
+                            updatedFields.assignee = true;
                             data.assignee = assignee;
                         },
                     },
@@ -1035,6 +1073,7 @@
                     bugTracker: {
                         get: () => data.bug_tracker,
                         set: (tracker) => {
+                            updatedFields.bug_tracker = true;
                             data.bug_tracker = tracker;
                         },
                     },
@@ -1157,6 +1196,7 @@
                                 }
                             }
 
+                            updatedFields.labels = true;
                             data.labels = [...labels];
                         },
                     },
@@ -1323,6 +1363,12 @@
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
+                    __updatedFields: {
+                        get: () => updatedFields,
+                        set: (fields) => {
+                            updatedFields = fields;
+                        },
+                    },
                 }),
             );
 
@@ -1455,12 +1501,30 @@
     Job.prototype.save.implementation = async function () {
         // TODO: Add ability to change an assignee
         if (this.id) {
-            const jobData = {
-                status: this.status,
-                assignee: this.assignee ? this.assignee.id : null,
-            };
+            const jobData = {};
+
+            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
+                if (isUpdated) {
+                    switch (field) {
+                    case 'status':
+                        jobData.status = this.status;
+                        break;
+                    case 'assignee':
+                        jobData.assignee_id = this.assignee ? this.assignee.id : null;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
 
             await serverProxy.jobs.saveJob(this.id, jobData);
+
+            this.__updatedFields = {
+                status: false,
+                assignee: false,
+            };
+
             return this;
         }
 
@@ -1661,18 +1725,42 @@
         return this;
     };
 
-    Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
+    Task.prototype.save.implementation = async function (onUpdate) {
         // TODO: Add ability to change an owner and an assignee
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
-            const taskData = {
-                assignee: this.assignee ? this.assignee.id : null,
-                name: this.name,
-                bug_tracker: this.bugTracker,
-                labels: [...this.labels.map((el) => el.toJSON())],
-            };
+            const taskData = {};
+
+            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
+                if (isUpdated) {
+                    switch (field) {
+                    case 'assignee':
+                        taskData.assignee_id = this.assignee ? this.assignee.id : null;
+                        break;
+                    case 'name':
+                        taskData.name = this.name;
+                        break;
+                    case 'bug_tracker':
+                        taskData.bug_tracker = this.bugTracker;
+                        break;
+                    case 'labels':
+                        taskData.labels = [...this.labels.map((el) => el.toJSON())];
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
 
             await serverProxy.tasks.saveTask(this.id, taskData);
+
+            this.updatedFields = {
+                assignee: false,
+                name: false,
+                bugTracker: false,
+                labels: false,
+            };
+
             return this;
         }
 
@@ -1689,6 +1777,9 @@
         }
         if (typeof this.overlap !== 'undefined') {
             taskSpec.overlap = this.overlap;
+        }
+        if (typeof this.projectId !== 'undefined') {
+            taskSpec.project_id = this.projectId;
         }
 
         const taskDataSpec = {

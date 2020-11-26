@@ -218,8 +218,6 @@ class TaskExportTest(_DbTestBase):
     def _generate_task(self, images):
         task = {
             "name": "my task #1",
-            "owner": '',
-            "assignee": '',
             "overlap": 0,
             "segment_size": 100,
             "labels": [
@@ -438,8 +436,6 @@ class FrameMatchingTest(_DbTestBase):
     def _generate_task(self, images):
         task = {
             "name": "my task #1",
-            "owner": '',
-            "assignee": '',
             "overlap": 0,
             "segment_size": 100,
             "labels": [

@@ -1,28 +1,22 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Dump annotation if cuboid created', () => {
     const issueId = '1568';
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
         secondY: 450,
     };
-
-    function save() {
-        cy.get('button').contains('Save').click({ force: true });
-    }
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -30,7 +24,7 @@ context('Dump annotation if cuboid created', () => {
 
     after('Go to task list', () => {
         cy.removeAnnotations();
-        save();
+        cy.saveJob();
     });
 
     describe(`Testing issue "${issueId}"`, () => {
@@ -40,7 +34,7 @@ context('Dump annotation if cuboid created', () => {
         });
         it('Dump an annotation', () => {
             cy.get('.cvat-annotation-header-left-group').within(() => {
-                save();
+                cy.saveJob();
                 cy.get('button').contains('Menu').trigger('mouseover', { force: true });
             });
             cy.get('.cvat-annotation-menu').within(() => {

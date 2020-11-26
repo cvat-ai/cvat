@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 require('./commands');
+require('./commands_projects');
 require('@cypress/code-coverage/support');
 
 before(() => {
-    if (Cypress.browser.name === 'firefox') {
+    if (Cypress.browser.family !== 'chromium') {
         cy.visit('/');
         cy.get('.ant-modal-body').within(() => {
             cy.get('.ant-modal-confirm-title').should('contain', 'Unsupported platform detected');

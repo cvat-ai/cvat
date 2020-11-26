@@ -138,13 +138,13 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row type='flex' className='cvat-player-settings-canvas-background'>
                 <Col>
                     <Popover
-                        content={
+                        content={(
                             <CompactPicker
                                 colors={consts.CANVAS_BACKGROUND_COLORS}
                                 color={canvasBackgroundColor}
                                 onChange={(e) => onChangeCanvasBackgroundColor(e.hex)}
                             />
-                        }
+                        )}
                         overlayClassName='canvas-background-color-picker-popover'
                         trigger='click'
                     >
@@ -169,6 +169,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col span={8} className='cvat-player-settings-grid-size'>
                     <Text className='cvat-text-color'> Grid size </Text>
                     <InputNumber
+                        className='cvat-player-settings-grid-size-input'
                         min={minGridSize}
                         max={maxGridSize}
                         value={gridSize}
@@ -183,6 +184,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col span={8} className='cvat-player-settings-grid-color'>
                     <Text className='cvat-text-color'> Grid color </Text>
                     <Select
+                        className='cvat-player-settings-grid-color-input'
                         value={gridColor}
                         disabled={!grid}
                         onChange={(color: GridColor): void => {
@@ -209,6 +211,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col span={8} className='cvat-player-settings-grid-opacity'>
                     <Text className='cvat-text-color'> Grid opacity </Text>
                     <Slider
+                        className='cvat-player-settings-grid-opacity-input'
                         min={0}
                         max={100}
                         value={gridOpacity}

@@ -10,7 +10,9 @@ import Icon from 'antd/lib/icon';
 import Layout from 'antd/lib/layout/layout';
 import Slider, { SliderValue } from 'antd/lib/slider';
 
-import { ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType } from 'reducers/interfaces';
+import {
+    ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
+} from 'reducers/interfaces';
 import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
@@ -218,10 +220,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             this.updateCanvas();
         }
 
-        if (
-            prevProps.frame !== frameData.number &&
-            ((resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION) || workspace === Workspace.TAG_ANNOTATION)
-        ) {
+        if (prevProps.frame !== frameData.number && resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
             canvasInstance.html().addEventListener(
                 'canvas.setup',
                 () => {
@@ -312,7 +311,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     private onCanvasShapeDrawn = (event: any): void => {
-        const { jobInstance, activeLabelID, activeObjectType, frame, onShapeDrawn, onCreateAnnotations } = this.props;
+        const {
+            jobInstance, activeLabelID, activeObjectType, frame, onShapeDrawn, onCreateAnnotations,
+        } = this.props;
 
         if (!event.detail.continue) {
             onShapeDrawn();
@@ -335,7 +336,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasObjectsMerged = (event: any): void => {
-        const { jobInstance, frame, onMergeAnnotations, onMergeObjects } = this.props;
+        const {
+            jobInstance, frame, onMergeAnnotations, onMergeObjects,
+        } = this.props;
 
         onMergeObjects(false);
 
@@ -348,7 +351,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasObjectsGroupped = (event: any): void => {
-        const { jobInstance, frame, onGroupAnnotations, onGroupObjects } = this.props;
+        const {
+            jobInstance, frame, onGroupAnnotations, onGroupObjects,
+        } = this.props;
 
         onGroupObjects(false);
 
@@ -357,7 +362,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasTrackSplitted = (event: any): void => {
-        const { jobInstance, frame, onSplitAnnotations, onSplitTrack } = this.props;
+        const {
+            jobInstance, frame, onSplitAnnotations, onSplitTrack,
+        } = this.props;
 
         onSplitTrack(false);
 
@@ -437,7 +444,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasCursorMoved = async (event: any): Promise<void> => {
-        const { jobInstance, activatedStateID, workspace, onActivateObject } = this.props;
+        const {
+            jobInstance, activatedStateID, workspace, onActivateObject,
+        } = this.props;
 
         if (workspace !== Workspace.STANDARD) {
             return;
@@ -568,7 +577,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     private updateShapesView(): void {
-        const { annotations, opacity, colorBy, outlined, outlineColor } = this.props;
+        const {
+            annotations, opacity, colorBy, outlined, outlineColor,
+        } = this.props;
 
         for (const state of annotations) {
             let shapeColor = '';
@@ -596,7 +607,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     private updateCanvas(): void {
-        const { curZLayer, annotations, frameData, canvasInstance } = this.props;
+        const {
+            curZLayer, annotations, frameData, canvasInstance,
+        } = this.props;
 
         if (frameData !== null) {
             canvasInstance.setup(

@@ -42,7 +42,7 @@ class TaskData:
         self._frame_mapping = {}
         self._frame_step = db_task.data.get_frame_step()
 
-        db_labels = self._db_task.label_set.all().prefetch_related(
+        db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
             'attributespec_set').order_by('pk')
 
         self._label_mapping = OrderedDict(
