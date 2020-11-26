@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 require('./commands');
+require('./commands_projects');
 require('@cypress/code-coverage/support');
 
 before(() => {

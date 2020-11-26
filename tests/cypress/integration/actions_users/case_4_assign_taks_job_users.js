@@ -39,7 +39,6 @@ context('Multiple users. Assign task, job.', () => {
 
     after(() => {
         cy.login();
-        cy.goToTaskList();
         cy.getTaskID(taskName).then(($taskID) => {
             cy.deleteTask(taskName, $taskID);
         });
@@ -57,9 +56,7 @@ context('Multiple users. Assign task, job.', () => {
                 secondUser.emailAddr,
                 secondUser.password,
             );
-            cy.url().should('include', '/tasks');
             cy.logout(secondUserName);
-            cy.url().should('include', '/auth/login');
         });
         it('Register third user and logout.', () => {
             cy.get('a[href="/auth/register"]').click();
@@ -71,14 +68,10 @@ context('Multiple users. Assign task, job.', () => {
                 thirdUser.emailAddr,
                 thirdUser.password,
             );
-            cy.url().should('include', '/tasks');
             cy.logout(thirdUserName);
-            cy.url().should('include', '/auth/login');
         });
         it('First user login and create a task', () => {
             cy.login();
-            cy.url().should('include', '/tasks');
-            cy.goToTaskList();
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(directoryToArchive, archivePath);
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
@@ -93,23 +86,17 @@ context('Multiple users. Assign task, job.', () => {
         });
         it('Second user login. The task can be opened. Logout', () => {
             cy.login(secondUserName, secondUser.password);
-            cy.url().should('include', '/tasks');
-            cy.goToTaskList();
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
             cy.logout(secondUserName);
         });
         it('Third user login. The task not exist. Logout', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.url().should('include', '/tasks');
-            cy.goToTaskList();
             cy.contains('strong', taskName).should('not.exist');
             cy.logout(thirdUserName);
         });
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
-            cy.url().should('include', '/tasks');
-            cy.goToTaskList();
             cy.openTask(taskName);
             cy.get('.cvat-task-job-list').within(() => {
                 cy.get('.cvat-user-search-field').click({ force: true });
@@ -119,8 +106,6 @@ context('Multiple users. Assign task, job.', () => {
         });
         it('Third user login. The task can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.url().should('include', '/tasks');
-            cy.goToTaskList();
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
             cy.logout(thirdUserName);
