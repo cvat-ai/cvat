@@ -422,3 +422,11 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
 });
+
+Cypress.Commands.add('getScaleValue', () => {
+    cy.get('#cvat_canvas_background')
+        .should('have.attr', 'style')
+        .then(($styles) => {
+            return Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
+        });
+});
