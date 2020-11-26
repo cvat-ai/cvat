@@ -461,6 +461,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
             except APIException as e:
                 return Response(data=e.default_detail, status=e.status_code)
+            except FileNotFoundError as ex:
+                msg = f"{ex.strerror} {ex.filename}"
+                slogger.task[pk].error(msg, exc_info=True)
+                return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
                 msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, data_id, data_quality)
                 slogger.task[pk].error(msg, exc_info=True)

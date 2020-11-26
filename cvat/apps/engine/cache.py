@@ -12,7 +12,6 @@ from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.prepare import PrepareInfo
-from .log import slogger
 
 class CacheInteraction:
     def __init__(self):
@@ -47,19 +46,16 @@ class CacheInteraction:
                 StorageChoice.LOCAL: db_data.get_upload_dirname(),
                 StorageChoice.SHARE: settings.SHARE_ROOT
             }[db_data.storage]
-        try:
-            if os.path.exists(db_data.get_meta_path()):
-                source_path = os.path.join(upload_dir, db_data.video.path)
-                meta = PrepareInfo(source_path=source_path, meta_path=db_data.get_meta_path())
-                for frame in meta.decode_needed_frames(chunk_number, db_data):
-                    images.append(frame)
-                writer.save_as_chunk([(image, source_path, None) for image in images], buff)
-            else:
-                with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
-                    images = [os.path.join(upload_dir, line.strip()) for line in dummy_file]
-                writer.save_as_chunk([(image, image, None) for image in images], buff)
-        except FileNotFoundError as ex:
-            slogger.glob.exception(f"{ex.strerror} {ex.filename}")
+        if os.path.exists(db_data.get_meta_path()):
+            source_path = os.path.join(upload_dir, db_data.video.path)
+            meta = PrepareInfo(source_path=source_path, meta_path=db_data.get_meta_path())
+            for frame in meta.decode_needed_frames(chunk_number, db_data):
+                images.append(frame)
+            writer.save_as_chunk([(image, source_path, None) for image in images], buff)
+        else:
+            with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
+                images = [os.path.join(upload_dir, line.strip()) for line in dummy_file]
+            writer.save_as_chunk([(image, image, None) for image in images], buff)
 
         buff.seek(0)
         return buff, mime_type
