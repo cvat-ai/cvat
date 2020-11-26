@@ -34,7 +34,6 @@ context('Check if parameters "startFrame", "stopFrame", "frameStep" works as exp
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.goToTaskList();
     });
 
     after(() => {
