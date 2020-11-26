@@ -75,9 +75,7 @@ Cypress.Commands.add('openTask', (taskName) => {
 });
 
 Cypress.Commands.add('saveJob', () => {
-    cy.get('button')
-        .contains('Save')
-        .click({ force: true });
+    cy.get('button').contains('Save').click({ force: true });
 });
 
 Cypress.Commands.add('openJob', (jobNumber = 0) => {
@@ -382,4 +380,12 @@ Cypress.Commands.add('createTag', (labelName) => {
         .within(() => {
             cy.get('button').click();
         });
+});
+
+Cypress.Commands.add('sidebarItemSortBy', (sortBy) => {
+    cy.get('.cvat-objects-sidebar-ordering-selector').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .contains(new RegExp(`^${sortBy}$`, 'g'))
+        .click();
 });
