@@ -27,6 +27,7 @@ import {
     addZLayer,
     switchZLayer,
     fetchAnnotationsAsync,
+    getDataFailed,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -119,6 +120,7 @@ interface DispatchToProps {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
+    onGetDataFailed(error: any): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -297,6 +299,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
+        },
+        onGetDataFailed(error: any): void {
+            dispatch(getDataFailed(error));
         },
     };
 }

@@ -185,6 +185,7 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
     SET_AI_TOOLS_REF = 'SET_AI_TOOLS_REF',
+    GET_DATA_FAILED = 'GET_DATA_FAILED',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -211,6 +212,15 @@ export function changeWorkspace(workspace: Workspace): AnyAction {
         type: AnnotationActionTypes.CHANGE_WORKSPACE,
         payload: {
             workspace,
+        },
+    };
+}
+
+export function getDataFailed(error: any): AnyAction {
+    return {
+        type: AnnotationActionTypes.GET_DATA_FAILED,
+        payload: {
+            error: error,
         },
     };
 }
@@ -930,7 +940,16 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
             // to load and decode first chunk
-            await frameData.data();
+            try{
+                await frameData.data();
+            } catch(error){
+                dispatch({
+                    type: AnnotationActionTypes.GET_DATA_FAILED,
+                    payload: {
+                        error,
+                    },
+                });
+            }
             const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];

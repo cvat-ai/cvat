@@ -177,6 +177,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.GET_DATA_FAILED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        fetching: false,
+                    },
+                },
+            }
+        }
         case AnnotationActionTypes.CHANGE_FRAME: {
             return {
                 ...state,

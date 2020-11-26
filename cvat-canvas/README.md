@@ -180,6 +180,7 @@ Standard JS events are used.
     - canvas.dragshape => {id: number}
     - canvas.resizeshape => {id: number}
     - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
+    - canvas.error => { exception: Error }
 ```
 
 ### WEB
