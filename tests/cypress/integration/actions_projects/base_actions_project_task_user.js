@@ -16,7 +16,6 @@ const randomString = (isPassword) => {
 };
 
 context('Base actions on the project', () => {
-
     const labelName = `Base label for ${projectName}`;
     const taskName = {
         firstTask: `First task for ${projectName}`,
@@ -39,7 +38,7 @@ context('Base actions on the project', () => {
     const forProject = true;
     const attachToProject = {
         yes: true,
-        no: false
+        no: false,
     };
     const multiAttrParams = false;
     const newLabelName1 = `First label ${projectName}`;
@@ -80,7 +79,7 @@ context('Base actions on the project', () => {
                 projectName,
             );
         });
-        it('Create a second task from task list page and attach to the created project.', () => {
+        it('Create a second task from task list page and attach to the created project. Assign first user.', () => {
             cy.goToTaskList();
             cy.createAnnotationTask(
                 taskName.secondTask,
@@ -94,14 +93,18 @@ context('Base actions on the project', () => {
                 attachToProject.yes,
                 projectName,
             );
+            cy.goToProjectsList();
+            cy.openProject(projectName);
+            cy.openTask(taskName.secondTask);
+            cy.assignTaskToUser(Cypress.env('user'));
         });
         it('The task is successfully opened. No label editor on task page.', () => {
             cy.goToProjectsList();
             cy.openProject(projectName);
-            cy.getProjectID(projectName).then($projectID => {
+            cy.getProjectID(projectName).then(($projectID) => {
                 projectID = $projectID;
             });
-            cy.get('.cvat-tasks-list-item').then(countTasks => {
+            cy.get('.cvat-tasks-list-item').then((countTasks) => {
                 // The number of created tasks is greater than zero
                 expect(countTasks.length).to.be.gt(0);
             });
@@ -118,18 +121,16 @@ context('Base actions on the project', () => {
             cy.login();
             cy.goToProjectsList();
             cy.openProject(projectName);
-            cy.get('.cvat-user-search-field').click();
-            cy.contains(userName).click();
+            cy.assignProjectToUser(userName);
             cy.logout();
         });
-        it('Login second user. The project and tasks available for that user. Logout.', () => {
+        it('Login second user. The project and first tasks available for that user. Logout.', () => {
             cy.login(userName, password);
             cy.goToProjectsList();
             cy.openProject(projectName);
             cy.goToTaskList();
+            cy.contains('strong', taskName.secondTask).should('not.exist');
             cy.openTask(taskName.firstTask);
-            cy.goToTaskList();
-            cy.openTask(taskName.secondTask);
             cy.logout(userName);
         });
         it('Delete the project. Deleted project not exist. Checking the availability of tasks.', () => {
