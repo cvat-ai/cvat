@@ -97,6 +97,12 @@ Cypress.Commands.add('openTask', (taskName) => {
     cy.get('.cvat-task-details').should('exist');
 });
 
+Cypress.Commands.add('saveJob', () => {
+    cy.get('button')
+        .contains('Save')
+        .click({ force: true });
+});
+
 Cypress.Commands.add('openJob', (jobNumber = 0) => {
     let tdText = '';
     cy.get('.ant-table-tbody')
