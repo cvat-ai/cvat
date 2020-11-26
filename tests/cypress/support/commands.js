@@ -33,7 +33,9 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     cy.get('#password1').type(password);
     cy.get('#password2').type(password);
     cy.get('.register-form-button').click();
-    cy.url().should('include', '/tasks');
+    if (Cypress.browser.family === 'chromium') {
+        cy.url().should('include', '/tasks');
+    }
 });
 
 Cypress.Commands.add(
