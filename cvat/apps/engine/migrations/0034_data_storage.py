@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0032_remove_task_z_order'),
+        ('engine', '0033_projects_adjastment'),
     ]
 
     operations = [
