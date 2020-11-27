@@ -29,25 +29,19 @@ context('Objects ordering feature', () => {
         secondY: createRectangleShape2Points.secondY,
     };
 
-    function idAscent(arr) {
-        for (let i = 0; i < arr.length; i++) {
-            if (arr[i] > arr[i + 1]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     function checkSideBarItemOrdering(ordering) {
         let cvatObjectsSidebarStateItemIdList = [];
         cy.get('.cvat-objects-sidebar-state-item').then(($cvatObjectsSidebarStateItemId) => {
             for (let i = 0; i < $cvatObjectsSidebarStateItemId.length; i++) {
                 cvatObjectsSidebarStateItemIdList.push(Number($cvatObjectsSidebarStateItemId[i].id.match(/\d+$/)));
             }
+            const idAscent = cvatObjectsSidebarStateItemIdList.reduce((previousValue, currentValue) => {
+                return previousValue > currentValue ? false : true;
+            });
             if (ordering === 'ascent') {
-                expect(idAscent(cvatObjectsSidebarStateItemIdList)).to.be.true; //expected true to be true (ascent)
+                expect(idAscent).to.be.true; //expected true to be true (ascent)
             } else {
-                expect(idAscent(cvatObjectsSidebarStateItemIdList)).to.be.false; //expected false to be false (descent)
+                expect(idAscent).to.be.false; //expected false to be false (descent)
             }
         });
     }
