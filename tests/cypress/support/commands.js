@@ -462,6 +462,14 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
         .click();
 });
 
+Cypress.Commands.add('getScaleValue', () => {
+    cy.get('#cvat_canvas_background')
+        .should('have.attr', 'style')
+        .then(($styles) => {
+            return Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
+        });
+});
+
 Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
     if (clear) {
         cy.get('.cvat-annotations-filters-input').within(() => {
