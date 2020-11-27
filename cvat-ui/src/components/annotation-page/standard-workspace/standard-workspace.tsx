@@ -13,6 +13,7 @@ import CanvasContextMenuContainer from 'containers/annotation-page/canvas/canvas
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import CanvasPointContextMenuComponent from 'components/annotation-page/canvas/canvas-point-context-menu';
+import IssueAggregatorComponent from 'components/annotation-page/review/issues-aggregator';
 
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
@@ -23,6 +24,7 @@ export default function StandardWorkspaceComponent(): JSX.Element {
             <PropagateConfirmContainer />
             <CanvasContextMenuContainer />
             <CanvasPointContextMenuComponent />
+            <IssueAggregatorComponent />
         </Layout>
     );
 }

@@ -171,7 +171,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         sidebarCollapsed,
         canvasInstance,
         jobInstance,
-        frameIssues: issuesHidden ? null : frameIssues,
+        frameIssues:
+            issuesHidden || ![Workspace.REVIEW_WORKSPACE, Workspace.STANDARD].includes(workspace) ? null : frameIssues,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,

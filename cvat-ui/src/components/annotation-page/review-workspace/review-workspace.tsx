@@ -15,6 +15,7 @@ import ControlsSideBarContainer from 'containers/annotation-page/review-workspac
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import CanvasContextMenuContainer from 'containers/annotation-page/canvas/canvas-context-menu';
+import IssueAggregatorComponent from 'components/annotation-page/review/issues-aggregator';
 
 export default function ReviewWorkspaceComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -43,6 +44,7 @@ export default function ReviewWorkspaceComponent(): JSX.Element {
             <CanvasWrapperContainer />
             <ObjectSideBarComponent objectsList={<ObjectsListContainer readonly />} />
             <CanvasContextMenuContainer readonly />
+            <IssueAggregatorComponent />
         </Layout>
     );
 }
