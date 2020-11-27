@@ -13,6 +13,7 @@ describe('Delete users and tasks created during the test run.', () => {
             url: '/api/v1/auth/login',
             body: {
                 username: Cypress.env('user'),
+                email: Cypress.env('email'),
                 password: Cypress.env('password'),
             },
         }).then(async (responce) => {
