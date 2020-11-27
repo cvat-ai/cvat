@@ -27,15 +27,13 @@ context('Canvas color feature', () => {
                     for (let i = 0; i < colorPicker.length; i++) {
                         cy.get(colorPicker[i])
                             .click()
-                            .should('have.css', 'background')
+                            .should('have.css', 'background-color')
                             .then((colorPickerBgValue) => {
                                 cy.get('.cvat-canvas-container')
                                     .should('have.css', 'background-color')
                                     .then((canvasBgColor) => {
                                         //For each color change, compare the value with the css value background-color of .cvat-canvas-container
-                                        expect(String(colorPickerBgValue.match(/^.*\d+, \d+, \d+\)/))).to.be.equal(
-                                            canvasBgColor,
-                                        );
+                                        expect(colorPickerBgValue).to.be.equal(canvasBgColor);
                                     });
                             });
                     }
