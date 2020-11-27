@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 
@@ -17,9 +18,13 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
     const { statesOrdering, changeStatesOrdering } = props;
 
     return (
-        <div className='cvat-states-ordering-selector'>
+        <Col span={16}>
             <Text strong>Sort by</Text>
-            <Select value={statesOrdering} onChange={changeStatesOrdering}>
+            <Select
+                className='cvat-objects-sidebar-ordering-selector'
+                value={statesOrdering}
+                onChange={changeStatesOrdering}
+            >
                 <Select.Option key={StatesOrdering.ID_DESCENT} value={StatesOrdering.ID_DESCENT}>
                     {StatesOrdering.ID_DESCENT}
                 </Select.Option>
@@ -30,7 +35,7 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
                     {StatesOrdering.UPDATED}
                 </Select.Option>
             </Select>
-        </div>
+        </Col>
     );
 }
 

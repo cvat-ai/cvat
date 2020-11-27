@@ -127,7 +127,7 @@
     }
 
     > div:nth-child(2) {
-        margin-top: 5px;
+        margin-top: $grid-unit-size;
 
         > div {
             text-align: center;
@@ -137,11 +137,11 @@
                 @extend .cvat-object-sidebar-icon;
             }
 
-            &:nth-child(4) {
+            &:last-child {
                 text-align: right;
 
-                > .ant-select {
-                    margin-left: 5px;
+                > .cvat-objects-sidebar-ordering-selector {
+                    margin-left: $grid-unit-size;
                     width: 60%;
                 }
             }
