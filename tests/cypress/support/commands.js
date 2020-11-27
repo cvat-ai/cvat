@@ -33,7 +33,9 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     cy.get('#password1').type(password);
     cy.get('#password2').type(password);
     cy.get('.register-form-button').click();
-    cy.url().should('include', '/tasks');
+    if (Cypress.browser.family === 'chromium') {
+        cy.url().should('include', '/tasks');
+    }
 });
 
 Cypress.Commands.add(
@@ -299,11 +301,43 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
 });
 
 Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
-    cy.contains('button', 'Add an attribute').click();
-    cy.get('[placeholder="Name"]').first().type(multiAttrParams.additionalAttrName);
-    cy.get('div[title="Select"]').first().click();
-    cy.get('.ant-select-dropdown').last().contains(multiAttrParams.typeAttribute).click();
-    cy.get('[placeholder="Default value"]').first().type(multiAttrParams.additionalValue);
+    let cvatAttributeInputsWrapperId = [];
+    cy.get('.cvat-new-attribute-button').click();
+    cy.document().then((doc) => {
+        const cvatAttributeInputsWrapperList = Array.from(doc.querySelectorAll('.cvat-attribute-inputs-wrapper'));
+        for (let i = 0; i < cvatAttributeInputsWrapperList.length; i++) {
+            cvatAttributeInputsWrapperId.push(cvatAttributeInputsWrapperList[i].getAttribute('cvat-attribute-id'));
+        }
+
+        const minId = Math.min(...cvatAttributeInputsWrapperId);
+
+        cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
+            cy.get('.cvat-attribute-name-input').type(multiAttrParams.additionalAttrName);
+            cy.get('.cvat-attribute-type-input').click();
+        });
+        cy.get('.ant-select-dropdown')
+            .not('.ant-select-dropdown-hidden')
+            .contains(new RegExp(`^${multiAttrParams.typeAttribute}$`, 'g'))
+            .click();
+
+        if (multiAttrParams.typeAttribute === 'Text' || multiAttrParams.typeAttribute === 'Number') {
+            cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
+                cy.get('.cvat-attribute-values-input').type(multiAttrParams.additionalValue);
+            });
+        } else if (multiAttrParams.typeAttribute === 'Radio') {
+            cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
+                cy.get('.cvat-attribute-values-input').type(`${multiAttrParams.additionalValue}{Enter}`);
+            });
+        } else if (multiAttrParams.typeAttribute === 'Checkbox') {
+            cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
+                cy.get('.cvat-attribute-values-input').click();
+            });
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .contains(new RegExp(`^.*${multiAttrParams.additionalValue}.*$`, 'g'))
+                .click();
+        }
+    });
 });
 
 Cypress.Commands.add('createPolyline', (createPolylineParams) => {
@@ -382,7 +416,7 @@ Cypress.Commands.add('goToTaskList', () => {
     cy.url().should('include', '/tasks');
 });
 
-Cypress.Commands.add('addNewLabel', (newLabelName) => {
+Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
     let listCvatConstructorViewerItemText = [];
     cy.get('.cvat-constructor-viewer').should('exist');
     cy.document().then((doc) => {
@@ -393,6 +427,11 @@ Cypress.Commands.add('addNewLabel', (newLabelName) => {
         if (listCvatConstructorViewerItemText.indexOf(newLabelName) === -1) {
             cy.contains('button', 'Add label').click();
             cy.get('[placeholder="Label name"]').type(newLabelName);
+            if (additionalAttrs) {
+                for (let i = 0; i < additionalAttrs.length; i++) {
+                    cy.updateAttributes(additionalAttrs[i]);
+                }
+            }
             cy.contains('button', 'Done').click();
         }
     });
@@ -428,5 +467,18 @@ Cypress.Commands.add('getScaleValue', () => {
         .should('have.attr', 'style')
         .then(($styles) => {
             return Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
+        });
+});
+
+Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
+    if (clear) {
+        cy.get('.cvat-annotations-filters-input').within(() => {
+            cy.get('.ant-select-selection__choice__remove').click();
+        });
+    }
+    cy.get('.cvat-annotations-filters-input')
+        .type(`${filterValue}{Enter}`)
+        .within(() => {
+            cy.get('.ant-select-selection__choice__content').should('have.text', filterValue);
         });
 });
