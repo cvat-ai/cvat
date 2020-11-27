@@ -10,6 +10,7 @@ context('Reset zoom in tag annotation', () => {
     const issueId = '2174';
     let scaleFirstFrame = 0;
     let scaleSecondFrame = 0;
+    let scaleDefault = 0;
 
     function scaleFrame() {
         cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: 5 });
@@ -50,6 +51,9 @@ context('Reset zoom in tag annotation', () => {
         });
 
         it('Scale frame', () => {
+            cy.getScaleValue().then((value) => {
+                scaleDefault = value;
+            });
             scaleFrame();
             cy.getScaleValue().then((value) => {
                 scaleFirstFrame = value;
@@ -62,6 +66,7 @@ context('Reset zoom in tag annotation', () => {
             cy.getScaleValue().then((value) => {
                 scaleSecondFrame = value;
                 expect(scaleFirstFrame).to.not.equal(scaleSecondFrame);
+                expect(scaleDefault).to.equal(scaleSecondFrame);
             });
         });
 
