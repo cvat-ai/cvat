@@ -562,7 +562,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private setupIssueRegions(issueRegions: Record<number, number[]>): void {
         for (const issueRegion of Object.keys(this.drawnIssueRegions)) {
-            if (!(issueRegion in issueRegions)) {
+            if (!(issueRegion in issueRegions) || !+issueRegion) {
                 this.drawnIssueRegions[+issueRegion].remove();
                 delete this.drawnIssueRegions[+issueRegion];
             }

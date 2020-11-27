@@ -403,7 +403,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const { workspace, activatedStateID, onActivateObject } = this.props;
 
-        if ((e.target as HTMLElement).tagName === 'svg') {
+        if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
             if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
                 onActivateObject(null);
             }

@@ -321,6 +321,12 @@
     }
 }
 
+.cvat-context-menu-item.ant-menu-item {
+    &:hover {
+        background: $hover-menu-color;
+    }
+}
+
 .cvat-object-item-menu {
     > li {
         padding: 0;

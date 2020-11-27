@@ -8,6 +8,7 @@ import Tooltip from 'antd/lib/tooltip';
 
 import { ActiveControl } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { RectangleIcon } from 'icons';
 
 interface Props {
     canvasInstance: Canvas;
@@ -21,7 +22,7 @@ function ResizeControl(props: Props): JSX.Element {
     return (
         <Tooltip title='Open an issue' placement='right' mouseLeaveDelay={0}>
             <Icon
-                type='message'
+                component={RectangleIcon}
                 className={
                     activeControl === ActiveControl.OPEN_ISSUE ?
                         'cvat-issue-control cvat-active-canvas-control' :

@@ -68,7 +68,7 @@ polyline.cvat_shape_drawing_opacity {
 
 .cvat_canvas_issue_region {
     display: none;
-    stroke: black;
+    stroke-width: 0;
 }
 
 circle.cvat_canvas_issue_region {

@@ -30,6 +30,7 @@ const defaultState: AnnotationState = {
             top: 0,
             type: ContextMenuType.CANVAS_SHAPE,
             pointID: null,
+            clientID: null,
         },
         instance: new Canvas(),
         ready: false,
@@ -878,6 +879,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         top,
                         type,
                         pointID,
+                        clientID: state.annotations.activatedStateID,
                     },
                 },
             };

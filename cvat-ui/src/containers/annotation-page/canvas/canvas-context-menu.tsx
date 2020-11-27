@@ -5,22 +5,31 @@
 import React from 'react';
 
 import { connect } from 'react-redux';
-import { CombinedState, ContextMenuType } from 'reducers/interfaces';
+import { CombinedState, ContextMenuType, Workspace } from 'reducers/interfaces';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
+import { updateCanvasContextMenu } from 'actions/annotation-actions';
+import { reviewActions, finishIssueAsync } from 'actions/review-actions';
+import { ThunkDispatch } from 'utils/redux';
 
 interface OwnProps {
     readonly: boolean;
 }
 
 interface StateToProps {
-    activatedStateID: number | null;
+    contextMenuClientID: number | null;
     objectStates: any[];
     visible: boolean;
     top: number;
     left: number;
     type: ContextMenuType;
     collapsed: boolean | undefined;
+    workspace: Workspace;
+}
+
+interface DispatchToProps {
+    onStartIssue(position: number[]): void;
+    openIssue(position: number[], message: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -29,15 +38,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: { activatedStateID, collapsed, states: objectStates },
             canvas: {
                 contextMenu: {
-                    visible, top, left, type,
+                    visible, top, left, type, clientID,
                 },
                 ready,
             },
+            workspace,
         },
     } = state;
 
     return {
-        activatedStateID,
+        contextMenuClientID: clientID,
         collapsed: activatedStateID !== null ? collapsed[activatedStateID] : undefined,
         objectStates,
         visible:
@@ -48,10 +58,25 @@ function mapStateToProps(state: CombinedState): StateToProps {
         left,
         top,
         type,
+        workspace,
     };
 }
 
-type Props = StateToProps & OwnProps;
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
+    return {
+        onStartIssue(position: number[]): void {
+            dispatch(reviewActions.startIssue(position));
+            dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+        openIssue(position: number[], message: string): void {
+            dispatch(reviewActions.startIssue(position));
+            dispatch(finishIssueAsync(message));
+            dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+    };
+}
+
+type Props = StateToProps & DispatchToProps & OwnProps;
 
 interface State {
     latestLeft: number;
@@ -178,19 +203,29 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     public render(): JSX.Element {
         const { left, top } = this.state;
         const {
-            visible, activatedStateID, objectStates, type, readonly,
+            visible,
+            contextMenuClientID,
+            objectStates,
+            type,
+            readonly,
+            workspace,
+            onStartIssue,
+            openIssue,
         } = this.props;
 
         return (
             <>
                 {type === ContextMenuType.CANVAS_SHAPE && (
                     <CanvasContextMenuComponent
+                        contextMenuClientID={contextMenuClientID}
                         readonly={readonly}
                         left={left}
                         top={top}
                         visible={visible}
                         objectStates={objectStates}
-                        activatedStateID={activatedStateID}
+                        workspace={workspace}
+                        onStartIssue={onStartIssue}
+                        openIssue={openIssue}
                     />
                 )}
             </>
@@ -198,4 +233,4 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     }
 }
 
-export default connect(mapStateToProps)(CanvasContextMenuContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(CanvasContextMenuContainer);
