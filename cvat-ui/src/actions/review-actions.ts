@@ -28,6 +28,7 @@ export enum ReviewActionTypes {
     SUBMIT_REVIEW = 'SUBMIT_REVIEW',
     SUBMIT_REVIEW_SUCCESS = 'SUBMIT_REVIEW_SUCCESS',
     SUBMIT_REVIEW_FAILED = 'SUBMIT_REVIEW_FAILED',
+    SWITCH_ISSUES_HIDDEN_FLAG = 'SWITCH_ISSUES_HIDDEN_FLAG',
 }
 
 export const reviewActions = {
@@ -57,6 +58,7 @@ export const reviewActions = {
             frame,
         }),
     submitReviewFailed: (error: any) => createAction(ReviewActionTypes.SUBMIT_REVIEW_FAILED, { error }),
+    switchIssuesHiddenFlag: (hidden: boolean) => createAction(ReviewActionTypes.SWITCH_ISSUES_HIDDEN_FLAG, { hidden }),
 };
 
 export type ReviewActions = ActionUnion<typeof reviewActions>;

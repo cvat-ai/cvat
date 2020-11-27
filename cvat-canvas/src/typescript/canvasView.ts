@@ -917,7 +917,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const contentDefs = this.adoptedContent.defs();
         this.issueRegionPattern_1 = contentDefs
             .pattern(consts.BASE_PATTERN_SIZE, consts.BASE_PATTERN_SIZE, (add): void => {
-                add.line(0, 0, 0, 10).stroke('black');
+                add.line(0, 0, 0, 10).stroke('red');
             })
             .attr({
                 id: 'cvat_issue_region_pattern_1',
@@ -927,7 +927,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.issueRegionPattern_2 = contentDefs
             .pattern(consts.BASE_PATTERN_SIZE, consts.BASE_PATTERN_SIZE, (add): void => {
-                add.line(0, 0, 0, 10).stroke('red');
+                add.line(0, 0, 0, 10).stroke('yellow');
             })
             .attr({
                 id: 'cvat_issue_region_pattern_2',

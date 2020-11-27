@@ -12,6 +12,7 @@ const defaultState: ReviewState = {
     frameIssues: [], // saved on the server and not saved on the server
     activeReview: null, // not saved on the server
     newIssuePosition: null,
+    issuesHidden: false,
     fetching: {
         reviewId: null,
         issueId: null,
@@ -159,6 +160,13 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     ...state.fetching,
                     issueId: null,
                 },
+            };
+        }
+        case ReviewActionTypes.SWITCH_ISSUES_HIDDEN_FLAG: {
+            const { hidden } = action.payload;
+            return {
+                ...state,
+                issuesHidden: hidden,
             };
         }
         default:

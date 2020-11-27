@@ -543,6 +543,7 @@ export interface ReviewState {
     frameIssues: any[];
     activeReview: any | null;
     newIssuePosition: number[] | null;
+    issuesHidden: boolean;
     fetching: {
         reviewId: number | null;
         issueId: number | null;

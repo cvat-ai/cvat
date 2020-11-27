@@ -6,11 +6,12 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
 import Icon, { IconProps } from 'antd/lib/icon';
-import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 import Alert from 'antd/lib/alert';
+import { Row, Col } from 'antd/lib/grid';
 
 import { changeFrameAsync } from 'actions/annotation-actions';
+import { reviewActions } from 'actions/review-actions';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -19,6 +20,7 @@ export default function LabelsListComponent(): JSX.Element {
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
     const activeReview = useSelector((state: CombinedState): any => state.review.activeReview);
+    const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
     const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
     const frames = combinedIssues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
@@ -45,18 +47,36 @@ export default function LabelsListComponent(): JSX.Element {
             },
         };
 
+    const dinamicShowHideProps: IconProps = issuesHidden ?
+        {
+            onClick: () => dispatch(reviewActions.switchIssuesHiddenFlag(false)),
+            type: 'eye-invisible',
+        } :
+        {
+            onClick: () => dispatch(reviewActions.switchIssuesHiddenFlag(true)),
+            type: 'eye',
+        };
+
     return (
         <div style={{ height: tabContentHeight }}>
             <div className='cvat-objects-sidebar-issues-list-header'>
-                <div>
-                    <Tooltip title='Find the previous frame with issues'>
-                        <Icon type='left' {...dinamicLeftProps} />
-                    </Tooltip>
-                    <Text>{`${frameIssues.length} ${frameIssues.length === 1 ? 'issue' : 'issues'} found`}</Text>
-                    <Tooltip title='Find the next frame with issues'>
-                        <Icon type='right' {...dinamicRightProps} />
-                    </Tooltip>
-                </div>
+                <Row type='flex' justify='start' align='middle'>
+                    <Col>
+                        <Tooltip title='Find the previous frame with issues'>
+                            <Icon type='left' {...dinamicLeftProps} />
+                        </Tooltip>
+                    </Col>
+                    <Col offset={1}>
+                        <Tooltip title='Find the next frame with issues'>
+                            <Icon type='right' {...dinamicRightProps} />
+                        </Tooltip>
+                    </Col>
+                    <Col offset={3}>
+                        <Tooltip title='Show/hide all the issues'>
+                            <Icon {...dinamicShowHideProps} />
+                        </Tooltip>
+                    </Col>
+                </Row>
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
                 {frameIssues.map(

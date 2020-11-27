@@ -58,7 +58,7 @@ interface StateToProps {
     activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
-    frameIssues: any[];
+    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -163,7 +163,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
             },
         },
-        review: { frameIssues },
+        review: { frameIssues, issuesHidden },
         shortcuts: { keyMap },
     } = state;
 
@@ -171,7 +171,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         sidebarCollapsed,
         canvasInstance,
         jobInstance,
-        frameIssues,
+        frameIssues: issuesHidden ? null : frameIssues,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,

@@ -74,13 +74,10 @@
     height: $grid-unit-size * 4;
     box-sizing: border-box;
 
-    > div {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-
+    > div > div {
         > i {
             font-size: 16px;
+            color: $objects-bar-icons-color;
 
             &:hover {
                 transform: scale(1.1);

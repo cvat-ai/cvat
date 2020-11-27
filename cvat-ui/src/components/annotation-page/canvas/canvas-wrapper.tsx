@@ -30,7 +30,7 @@ interface Props {
     activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
-    frameIssues: any[];
+    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -632,11 +632,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateIssueRegions(): void {
         const { canvasInstance, frameIssues } = this.props;
-        const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<number, number[]> => {
-            acc[issue.id] = issue.position;
-            return acc;
-        }, {});
-        canvasInstance.setupIssueRegions(regions);
+        if (frameIssues === null) {
+            canvasInstance.setupIssueRegions({});
+        } else {
+            const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<
+            number,
+            number[]
+            > => {
+                acc[issue.id] = issue.position;
+                return acc;
+            }, {});
+            canvasInstance.setupIssueRegions(regions);
+        }
     }
 
     private updateCanvas(): void {
