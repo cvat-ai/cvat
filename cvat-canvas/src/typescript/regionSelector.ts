@@ -10,20 +10,15 @@ import { Geometry } from './canvasModel';
 
 export interface RegionSelector {
     select(enabled: boolean): void;
-    selectObject(state: any): void;
-    resetSelectedObjects(): void;
     cancel(): void;
     transform(geometry: Geometry): void;
 }
 
 export class RegionSelectorImpl implements RegionSelector {
     private onRegionSelected: (points?: number[]) => void;
-    private onFindObject: (event: MouseEvent) => void;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private selectionRect: SVG.Rect | null;
-    private highlightedShape: SVG.Shape | null;
-    private highlightedState: any | null;
     private startSelectionPoint: {
         x: number;
         y: number;
@@ -54,20 +49,11 @@ export class RegionSelectorImpl implements RegionSelector {
                 width: box.xbr - box.xtl,
                 height: box.ybr - box.ytl,
             });
-        } else {
-            this.blurObject();
-            this.onFindObject(event);
         }
     };
 
     private onMouseDown = (event: MouseEvent): void => {
-        if (this.highlightedState) {
-            this.onRegionSelected([...this.highlightedState.points]);
-            return;
-        }
-
         if (!this.selectionRect && !event.altKey) {
-            this.blurObject();
             const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
             this.startSelectionPoint = {
                 x: point[0],
@@ -114,39 +100,13 @@ export class RegionSelectorImpl implements RegionSelector {
 
     private release(): void {
         this.stopSelection();
-        this.blurObject();
     }
 
-    private highlightObject(): void {
-        const shape = this.canvas.select(`#cvat_canvas_shape_${this.highlightedState.clientID}`).first();
-        if (shape) {
-            this.highlightedShape = shape;
-            this.highlightedShape.addClass('cvat_canvas_shape_region_selection');
-        }
-    }
-
-    private blurObject(): void {
-        if (this.highlightedState && this.highlightedShape !== null) {
-            this.highlightedShape.removeClass('cvat_canvas_shape_region_selection');
-        }
-
-        this.highlightedState = null;
-        this.highlightedShape = null;
-    }
-
-    public constructor(
-        onRegionSelected: (points?: number[]) => void,
-        onFindObject: (event: MouseEvent) => void,
-        canvas: SVG.Container,
-        geometry: Geometry,
-    ) {
+    public constructor(onRegionSelected: (points?: number[]) => void, canvas: SVG.Container, geometry: Geometry) {
         this.onRegionSelected = onRegionSelected;
-        this.onFindObject = onFindObject;
         this.geometry = geometry;
         this.canvas = canvas;
         this.selectionRect = null;
-        this.highlightedShape = null;
-        this.highlightedState = null;
     }
 
     public select(enabled: boolean): void {
@@ -154,15 +114,6 @@ export class RegionSelectorImpl implements RegionSelector {
             this.startSelection();
         } else {
             this.release();
-        }
-    }
-
-    public selectObject(state: any): void {
-        const { clientID } = state;
-        if (!this.highlightedState || clientID !== this.highlightedState.clientID) {
-            this.blurObject();
-            this.highlightedState = state;
-            this.highlightObject();
         }
     }
 
@@ -178,9 +129,5 @@ export class RegionSelectorImpl implements RegionSelector {
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
         }
-    }
-
-    public resetSelectedObjects(): void {
-        this.blurObject();
     }
 }

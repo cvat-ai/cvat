@@ -1015,7 +1015,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
         this.regionSelector = new RegionSelectorImpl(
             this.onRegionSelected.bind(this),
-            this.onFindObject.bind(this),
             this.adoptedContent,
             this.geometry,
         );
@@ -1176,8 +1175,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if ([UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
             if (this.mode === Mode.GROUP) {
                 this.groupHandler.resetSelectedObjects();
-            } else if (this.mode === Mode.SELECT_REGION) {
-                this.regionSelector.resetSelectedObjects();
             }
             this.setupObjects(this.controller.objects);
             if (this.mode === Mode.MERGE) {
@@ -1311,8 +1308,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.splitHandler.select(this.controller.selected);
             } else if (this.mode === Mode.GROUP) {
                 this.groupHandler.select(this.controller.selected);
-            } else if (this.mode === Mode.SELECT_REGION) {
-                this.regionSelector.selectObject(this.controller.selected);
             }
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
