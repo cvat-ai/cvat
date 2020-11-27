@@ -447,6 +447,14 @@ Cypress.Commands.add('createTag', (labelName) => {
         });
 });
 
+Cypress.Commands.add('sidebarItemSortBy', (sortBy) => {
+    cy.get('.cvat-objects-sidebar-ordering-selector').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .contains(new RegExp(`^${sortBy}$`, 'g'))
+        .click();
+});
+
 Cypress.Commands.add('goToRegisterPage', () => {
     cy.get('a[href="/auth/register"]').click();
     cy.url().should('include', '/auth/register');
