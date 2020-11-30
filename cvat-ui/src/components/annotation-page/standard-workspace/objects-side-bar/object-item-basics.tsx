@@ -5,12 +5,12 @@
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from 'antd/lib/icon';
-import Select, { OptionProps } from 'antd/lib/select';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
+import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
 
 interface Props {
@@ -32,7 +32,7 @@ interface Props {
     toForegroundShortcut: string;
     removeShortcut: string;
     changeColor(color: string): void;
-    changeLabel(labelID: string): void;
+    changeLabel(label: any): void;
     copy(): void;
     remove(): void;
     propagate(): void;
@@ -102,28 +102,7 @@ function ItemTopComponent(props: Props): JSX.Element {
             </Col>
             <Col span={12}>
                 <Tooltip title='Change current label' mouseLeaveDelay={0}>
-                    <Select
-                        size='small'
-                        value={`${labelID}`}
-                        onChange={changeLabel}
-                        showSearch
-                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                            const { children } = option.props;
-                            if (typeof children === 'string') {
-                                return children.toLowerCase().includes(input.toLowerCase());
-                            }
-
-                            return false;
-                        }}
-                    >
-                        {labels.map(
-                            (label: any): JSX.Element => (
-                                <Select.Option key={label.id} value={`${label.id}`}>
-                                    {label.name}
-                                </Select.Option>
-                            ),
-                        )}
-                    </Select>
+                    <LabelSelector size='small' labels={labels} value={labelID} onChange={changeLabel} />
                 </Tooltip>
             </Col>
             <Col span={2}>

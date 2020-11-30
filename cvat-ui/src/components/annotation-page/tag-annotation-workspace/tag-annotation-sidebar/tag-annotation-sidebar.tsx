@@ -12,8 +12,8 @@ import Layout, { SiderProps } from 'antd/lib/layout';
 import Button from 'antd/lib/button/button';
 import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
-import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
+import Tag from 'antd/lib/tag';
 
 import {
     createAnnotationsAsync,
@@ -23,7 +23,7 @@ import {
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
-import Tag from 'antd/lib/tag';
+import LabelSelector from 'components/label-selector/label-selector';
 import getCore from 'cvat-core-wrapper';
 import ShortcutsSelect from './shortcuts-select';
 
@@ -111,7 +111,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [frameTags, setFrameTags] = useState([] as any[]);
-    const [selectedLabelID, setSelectedLabelID] = useState(defaultLabelID);
+    const [selectedLabelID, setSelectedLabelID] = useState<number>(defaultLabelID);
     const [skipFrame, setSkipFrame] = useState(false);
 
     useEffect(() => {
@@ -155,8 +155,8 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         collapsed: sidebarCollapsed,
     };
 
-    const onChangeLabel = (value: string): void => {
-        setSelectedLabelID(Number.parseInt(value, 10));
+    const onChangeLabel = (value: any): void => {
+        setSelectedLabelID(value.id);
     };
 
     const onRemoveState = (objectState: any): void => {
@@ -216,13 +216,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 <Row type='flex' justify='start' className='cvat-tag-annotation-sidebar-label-select'>
                     <Col>
                         <Text strong>Tag label</Text>
-                        <Select value={`${selectedLabelID}`} onChange={onChangeLabel} size='default'>
-                            {labels.map((label: any) => (
-                                <Select.Option key={label.id} value={`${label.id}`}>
-                                    {label.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
+                        <LabelSelector labels={labels} value={selectedLabelID} onChange={onChangeLabel} />
                     </Col>
                 </Row>
                 <Row type='flex' justify='space-around' className='cvat-tag-annotation-sidebar-buttons'>
