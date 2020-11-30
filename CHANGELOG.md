@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
+- Tooltips in label selectors (<https://github.com/openvinotoolkit/cvat/pull/2509>)
 
 ### Changed
 
