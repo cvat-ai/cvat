@@ -31,7 +31,13 @@
                     if (e.data.isSuccess) {
                         requests[e.data.id].resolve(e.data.responseData);
                     } else {
-                        requests[e.data.id].reject({ error: e.data.error, response: { status: e.data.status, data: e.data.responseData } });
+                        requests[e.data.id].reject({
+                            error: e.data.error,
+                            response: {
+                                status: e.data.status,
+                                data: e.data.responseData,
+                            },
+                        });
                     }
 
                     delete requests[e.data.id];
@@ -641,9 +647,14 @@
                         },
                     );
                 } catch (errorData) {
-                    errorData.message = "";
-                    errorData.response.data = String.fromCharCode.apply(null, new Uint8Array(errorData.response.data));
-                    throw generateError(errorData);
+                    throw generateError({
+                        ...errorData,
+                        message: '',
+                        response: {
+                            ...errorData.response,
+                            data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
+                        },
+                    });
                 }
 
                 return response;
