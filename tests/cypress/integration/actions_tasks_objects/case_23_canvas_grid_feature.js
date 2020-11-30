@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Canvas color feature', () => {
+context('Canvas grid feature', () => {
     const caseId = '23';
     const settingsGridSize = 50;
     const gridColor = 'Black';
