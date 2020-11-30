@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset zoom option doesn't work in tag annotation mode (<https://github.com/openvinotoolkit/cvat/pull/2443>)
 - Canvas is busy error (<https://github.com/openvinotoolkit/cvat/pull/2437>)
 - Projects view layout fix (<https://github.com/openvinotoolkit/cvat/pull/2503>)
+- Fixed the tasks view (infinite loading) when it is impossible to get a preview of the task (<https://github.com/openvinotoolkit/cvat/pull/2504>)
 
 ### Security
 

@@ -426,15 +426,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             possible_data_type_values = ('chunk', 'frame', 'preview')
             possible_quality_values = ('compressed', 'original')
 
-            if not data_type or data_type not in possible_data_type_values:
-                raise ValidationError(detail='Data type not specified or has wrong value')
-            elif data_type == 'chunk' or data_type == 'frame':
-                if not data_id:
-                    raise ValidationError(detail='Number not specified')
-                elif data_quality not in possible_quality_values:
-                    raise ValidationError(detail='Wrong quality value')
-
             try:
+                if not data_type or data_type not in possible_data_type_values:
+                    raise ValidationError(detail='Data type not specified or has wrong value')
+                elif data_type == 'chunk' or data_type == 'frame':
+                    if not data_id:
+                        raise ValidationError(detail='Number is not specified')
+                    elif data_quality not in possible_quality_values:
+                        raise ValidationError(detail='Wrong quality value')
+
                 db_task = self.get_object()
                 db_data = db_task.data
                 if not db_data:
