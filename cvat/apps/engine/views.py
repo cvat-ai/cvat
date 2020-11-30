@@ -25,7 +25,7 @@ from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -427,16 +427,19 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             possible_quality_values = ('compressed', 'original')
 
             if not data_type or data_type not in possible_data_type_values:
-                return Response(data='data type not specified or has wrong value', status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError(detail='Data type not specified or has wrong value')
             elif data_type == 'chunk' or data_type == 'frame':
                 if not data_id:
-                    return Response(data='number not specified', status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError(detail='Number not specified')
                 elif data_quality not in possible_quality_values:
-                    return Response(data='wrong quality value', status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError(detail='Wrong quality value')
 
             try:
                 db_task = self.get_object()
                 db_data = db_task.data
+                if not db_data:
+                    raise NotFound(detail='Cannot find requested data for the task')
+
                 frame_provider = FrameProvider(db_task.data)
 
                 if data_type == 'chunk':
@@ -468,7 +471,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 else:
                     return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
             except APIException as e:
-                return Response(data=e.default_detail, status=e.status_code)
+                return Response(data=e.get_full_details(), status=e.status_code)
             except Exception as e:
                 msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, data_id, data_quality)
                 slogger.task[pk].error(msg, exc_info=True)
