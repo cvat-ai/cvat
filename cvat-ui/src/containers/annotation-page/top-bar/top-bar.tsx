@@ -446,9 +446,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     private searchEmptyFrame(start: number, stop: number): void {
-        const { canvasInstance, jobInstance, searchAnnotations } = this.props;
+        const { canvasInstance, jobInstance, searchEmptyFrame } = this.props;
         if (canvasInstance.isAbleToChangeFrame()) {
-            searchAnnotations(jobInstance, start, stop);
+            searchEmptyFrame(jobInstance, start, stop);
         }
     }
 
