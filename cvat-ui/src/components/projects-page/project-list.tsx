@@ -15,7 +15,7 @@ export default function ProjectListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const projectsCount = useSelector((state: CombinedState) => state.projects.count);
     const { page } = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const projectInstances = useSelector((state: CombinedState) => state.projects.current);
+    let projectInstances = useSelector((state: CombinedState) => state.projects.current);
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
 
     function changePage(p: number): void {
@@ -27,19 +27,30 @@ export default function ProjectListComponent(): JSX.Element {
         );
     }
 
+    projectInstances = projectInstances.reduce((rows, key, index) => {
+        if (index % 4 === 0) {
+            rows.push([key]);
+        } else {
+            rows[rows.length - 1].push(key);
+        }
+        return rows;
+    }, []);
+
     return (
         <>
             <Row type='flex' justify='center' align='middle'>
                 <Col className='cvat-projects-list' md={22} lg={18} xl={16} xxl={14}>
-                    <Row gutter={[8, 8]}>
-                        {projectInstances.map(
-                            (instance: any): JSX.Element => (
-                                <Col xs={8} sm={8} xl={6} key={instance.id}>
-                                    <ProjectItem projectInstance={instance} />
-                                </Col>
-                            ),
-                        )}
-                    </Row>
+                    {projectInstances.map(
+                        (row: any[]): JSX.Element => (
+                            <Row gutter={[8, 8]}>
+                                {row.map((instance: any) => (
+                                    <Col span={6} key={instance.id}>
+                                        <ProjectItem projectInstance={instance} />
+                                    </Col>
+                                ))}
+                            </Row>
+                        ),
+                    )}
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
