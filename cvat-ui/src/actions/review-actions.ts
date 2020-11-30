@@ -36,7 +36,8 @@ export const reviewActions = {
         createAction(ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS, { reviewInstance, frame }),
     initializeReviewFailed: (error: any) => createAction(ReviewActionTypes.INITIALIZE_REVIEW_FAILED, { error }),
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
-    startIssue: (position: number[]) => createAction(ReviewActionTypes.START_ISSUE, { position }),
+    startIssue: (position: number[]) =>
+        createAction(ReviewActionTypes.START_ISSUE, { position: cvat.classes.Issue.hull(position) }),
     finishIssueSuccess: (frame: number) => createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame }),
     finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),

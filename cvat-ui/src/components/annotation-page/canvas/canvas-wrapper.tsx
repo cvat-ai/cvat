@@ -411,7 +411,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasClicked = (): void => {
-        const { canvasInstance } = this.props;
+        const { canvasInstance, onUpdateContextMenu } = this.props;
+        onUpdateContextMenu(false, 0, 0, ContextMenuType.CANVAS_SHAPE);
         if (!canvasInstance.html().contains(document.activeElement) && document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }

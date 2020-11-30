@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+const quickhull = require('quickhull');
+
 const PluginRegistry = require('./plugins');
 const Comment = require('./comment');
 const User = require('./user');
@@ -163,6 +165,21 @@ class Issue {
                 },
             }),
         );
+    }
+
+    static hull(coordinates) {
+        if (coordinates.length > 4) {
+            const points = coordinates.reduce((acc, coord, index, arr) => {
+                if (index % 2) acc.push({ x: arr[index - 1], y: coord });
+                return acc;
+            }, []);
+
+            return quickhull(points)
+                .map((point) => [point.x, point.y])
+                .flat();
+        }
+
+        return coordinates;
     }
 
     /**
