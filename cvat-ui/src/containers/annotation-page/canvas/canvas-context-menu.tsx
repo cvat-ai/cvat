@@ -35,7 +35,7 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            annotations: { activatedStateID, collapsed, states: objectStates },
+            annotations: { collapsed, states: objectStates },
             canvas: {
                 contextMenu: {
                     visible, top, left, type, clientID,
@@ -48,13 +48,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         contextMenuClientID: clientID,
-        collapsed: activatedStateID !== null ? collapsed[activatedStateID] : undefined,
+        collapsed: clientID !== null ? collapsed[clientID] : undefined,
         objectStates,
         visible:
-            activatedStateID !== null &&
+            clientID !== null &&
             visible &&
             ready &&
-            objectStates.map((_state: any): number => _state.clientID).includes(activatedStateID),
+            objectStates.map((_state: any): number => _state.clientID).includes(clientID),
         left,
         top,
         type,

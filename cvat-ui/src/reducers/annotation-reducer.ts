@@ -667,6 +667,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
+            const contextMenuClientID = state.canvas.contextMenu.clientID;
+            const contextMenuVisible = state.canvas.contextMenu.visible;
 
             return {
                 ...state,
@@ -677,6 +679,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     states: state.annotations.states.filter(
                         (_objectState: any) => _objectState.clientID !== objectState.clientID,
                     ),
+                },
+                canvas: {
+                    ...state.canvas,
+                    contextMenu: {
+                        ...state.canvas.contextMenu,
+                        clientID: objectState.clientID === contextMenuClientID ? null : contextMenuClientID,
+                        visible: objectState.clientID === contextMenuClientID ? false : contextMenuVisible,
+                    },
                 },
             };
         }
