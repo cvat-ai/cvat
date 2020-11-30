@@ -542,6 +542,7 @@ export interface ReviewState {
     reviews: any[];
     issues: any[];
     frameIssues: any[];
+    latestComments: string[];
     activeReview: any | null;
     newIssuePosition: number[] | null;
     issuesHidden: boolean;

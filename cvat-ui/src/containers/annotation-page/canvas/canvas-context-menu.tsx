@@ -25,6 +25,7 @@ interface StateToProps {
     type: ContextMenuType;
     collapsed: boolean | undefined;
     workspace: Workspace;
+    latestComments: string[];
 }
 
 interface DispatchToProps {
@@ -44,6 +45,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             workspace,
         },
+        review: { latestComments },
     } = state;
 
     return {
@@ -59,6 +61,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         top,
         type,
         workspace,
+        latestComments,
     };
 }
 
@@ -209,6 +212,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             type,
             readonly,
             workspace,
+            latestComments,
             onStartIssue,
             openIssue,
         } = this.props;
@@ -224,6 +228,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                         visible={visible}
                         objectStates={objectStates}
                         workspace={workspace}
+                        latestComments={latestComments}
                         onStartIssue={onStartIssue}
                         openIssue={openIssue}
                     />

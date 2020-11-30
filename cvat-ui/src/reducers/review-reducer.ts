@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import consts from 'consts';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { ReviewState } from './interfaces';
@@ -9,6 +10,7 @@ import { ReviewState } from './interfaces';
 const defaultState: ReviewState = {
     reviews: [], // saved on the server
     issues: [], // saved on the server
+    latestComments: [],
     frameIssues: [], // saved on the server and not saved on the server
     activeReview: null, // not saved on the server
     newIssuePosition: null,
@@ -109,11 +111,24 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
-            const { frame } = action.payload;
+            const { frame, issue } = action.payload;
             const frameIssues = computeFrameIssues(state.issues, state.activeReview, frame);
 
             return {
                 ...state,
+                latestComments: state.latestComments.includes(issue.comments[0].message) ?
+                    state.latestComments :
+                    Array.from(
+                        new Set(
+                            [...state.latestComments, issue.comments[0].message].filter(
+                                (message: string): boolean =>
+                                    ![
+                                        consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
+                                        consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
+                                    ].includes(message),
+                            ),
+                        ),
+                    ).slice(-consts.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
                 newIssuePosition: null,
             };

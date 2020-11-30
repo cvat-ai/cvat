@@ -238,6 +238,7 @@ class Review {
      * @method openIssue
      * @memberof module:API.cvat.classes.Review
      * @param {IssueData} data
+     * @returns {module:API.cvat.classes.Issue}
      * @readonly
      * @instance
      * @async
@@ -366,6 +367,7 @@ Review.prototype.openIssue.implementation = async function (data) {
     }
 
     this.__internal.issue_set.push(issue);
+    return issue;
 };
 
 Review.prototype.submit.implementation = async function () {

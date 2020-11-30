@@ -38,7 +38,8 @@ export const reviewActions = {
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
     startIssue: (position: number[]) =>
         createAction(ReviewActionTypes.START_ISSUE, { position: cvat.classes.Issue.hull(position) }),
-    finishIssueSuccess: (frame: number) => createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame }),
+    finishIssueSuccess: (frame: number, issue: any) =>
+        createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue }),
     finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
     commentIssue: (issueId: number) => createAction(ReviewActionTypes.COMMENT_ISSUE, { issueId }),
@@ -104,7 +105,7 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
     } = state;
 
     try {
-        await activeReview.openIssue({
+        const issue = await activeReview.openIssue({
             frame: frameNumber,
             position: newIssuePosition,
             owner: user,
@@ -116,7 +117,7 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
             ],
         });
         await activeReview.toLocalStorage();
-        dispatch(reviewActions.finishIssueSuccess(frameNumber));
+        dispatch(reviewActions.finishIssueSuccess(frameNumber, issue));
     } catch (error) {
         dispatch(reviewActions.finishIssueFailed(error));
     }
