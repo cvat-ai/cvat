@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Projects view layout fix (<https://github.com/openvinotoolkit/cvat/pull/2503>)
 - Fixed the tasks view (infinite loading) when it is impossible to get a preview of the task (<https://github.com/openvinotoolkit/cvat/pull/2504>)
 - Empty frames navigation (<https://github.com/openvinotoolkit/cvat/pull/2505>)
+- Extra shapes are drawn after Esc, or G pressed while drawing a region in grouping (<https://github.com/openvinotoolkit/cvat/pull/2507>)
 
 ### Security
 
