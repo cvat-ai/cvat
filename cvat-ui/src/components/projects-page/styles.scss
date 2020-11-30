@@ -109,11 +109,11 @@
 .cvat-projects-project-item-card {
     .ant-empty {
         margin: $grid-unit-size;
+        height: $grid-unit-size * 16;
     }
 
     img {
-        height: 100%;
-        max-height: $grid-unit-size * 18;
+        height: $grid-unit-size * 18;
         object-fit: cover;
     }
 }
