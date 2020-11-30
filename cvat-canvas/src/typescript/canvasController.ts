@@ -14,6 +14,7 @@ import {
     GroupData,
     Mode,
     InteractionData,
+    Configuration,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -27,6 +28,7 @@ export interface CanvasController {
     readonly splitData: SplitData;
     readonly groupData: GroupData;
     readonly selected: any;
+    readonly configuration: Configuration;
     mode: Mode;
     geometry: Geometry;
 
@@ -149,6 +151,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get selected(): any {
         return this.model.selected;
+    }
+
+    public get configuration(): Configuration {
+        return this.model.configuration;
     }
 
     public set mode(value: Mode) {

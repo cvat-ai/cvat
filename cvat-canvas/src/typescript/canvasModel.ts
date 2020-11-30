@@ -56,6 +56,7 @@ export interface Configuration {
     displayAllText?: boolean;
     undefinedAttrValue?: string;
     showProjections?: boolean;
+    forceDisableEditing?: boolean;
 }
 
 export interface DrawData {
@@ -288,15 +289,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
-            this.data.top +=
-                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.left -=
-                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            const topMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
+            const leftMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
+            this.data.top += mutiplier * topMultiplier * this.data.scale;
+            this.data.left -= mutiplier * leftMultiplier * this.data.scale;
         } else {
-            this.data.left +=
-                mutiplier * ((x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.top +=
-                mutiplier * ((y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1)) * this.data.scale;
+            const leftMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
+            const topMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
+            this.data.left += mutiplier * leftMultiplier * this.data.scale;
+            this.data.top += mutiplier * topMultiplier * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
@@ -599,13 +600,16 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
         }
 
+        if (typeof configuration.forceDisableEditing !== 'undefined') {
+            this.data.configuration.forceDisableEditing = configuration.forceDisableEditing;
+        }
+
         this.notify(UpdateReasons.CONFIG_UPDATED);
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable =
-            [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
-            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
+            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }
