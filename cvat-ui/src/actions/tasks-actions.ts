@@ -93,7 +93,7 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
         }
 
         const array = Array.from(result);
-        const promises = array.map((task): string => (task as any).frames.preview().catch(''));
+        const promises = array.map((task): string => (task as any).frames.preview().catch(() => ''));
 
         dispatch(getInferenceStatusAsync());
 

@@ -7,7 +7,6 @@
 import { taskName, labelName } from '../../support/const';
 
 context('Check error canvas is busy at resize element', () => {
-
     const issueId = '1922';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
@@ -43,9 +42,10 @@ context('Check error canvas is busy at resize element', () => {
             const secondY = createRectangleShape2Points.secondY;
             cy.get('.cvat-canvas-container')
                 .trigger('mousemove', secondX - 10, secondY - 10) // activate second shape
-                .trigger('mousedown', secondX, secondY, {button: 0})
+                .trigger('mousedown', secondX, secondY, { button: 0 })
                 .trigger('mousemove', secondX + 100, secondY + 100)
-                .get('body').type('d') // go to previous frame
+                .get('body')
+                .type('d') // go to previous frame
                 .trigger('mouseup');
         });
 
