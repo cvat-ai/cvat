@@ -43,11 +43,18 @@ context('Canvas grid feature', () => {
                 });
         });
         it('Canvas has grid drawn, it is black, cells are 50x50px and it has 49% opacity.', () => {
-            cy.get('#cvat_canvas_grid_pattern')
-                .should('exist') // expected <pattern#cvat_canvas_grid_pattern> to exist in the DOM
-                .and('have.attr', 'width', settingsGridSize) // expected to have attribute width with the value '50'
-                .and('have.attr', 'height', settingsGridSize) // expected to have attribute height with the value '50'
-                .and('have.attr', 'style', `stroke: ${gridColor.toLowerCase()}; opacity: ${gridOpacity / 100};`); // expected to have attribute style with the value stroke: black; opacity: 0.49;
+            cy.get('#cvat_canvas_grid')
+                .should('be.visible') // expected <svg#cvat_canvas_grid> to be visible
+                .within(() => {
+                    cy.get('#cvat_canvas_grid_pattern')
+                        .and('have.attr', 'width', settingsGridSize) // expected to have attribute width with the value '50'
+                        .and('have.attr', 'height', settingsGridSize) // expected to have attribute height with the value '50'
+                        .and(
+                            'have.attr',
+                            'style',
+                            `stroke: ${gridColor.toLowerCase()}; opacity: ${gridOpacity / 100};`,
+                        ); // expected to have attribute style with the value stroke: black; opacity: 0.49;
+                });
         });
     });
 });
