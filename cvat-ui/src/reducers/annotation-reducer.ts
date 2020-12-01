@@ -9,7 +9,15 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
-import { AnnotationState, ActiveControl, ShapeType, ObjectType, ContextMenuType, Workspace } from './interfaces';
+import {
+    AnnotationState,
+    ActiveControl,
+    ShapeType,
+    ObjectType,
+    ContextMenuType,
+    Workspace,
+    TaskStatus,
+} from './interfaces';
 
 const defaultState: AnnotationState = {
     activities: {
@@ -22,6 +30,7 @@ const defaultState: AnnotationState = {
             top: 0,
             type: ContextMenuType.CANVAS_SHAPE,
             pointID: null,
+            clientID: null,
         },
         instance: new Canvas(),
         ready: false,
@@ -57,6 +66,7 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedAttributeID: null,
         saving: {
+            forceExit: false,
             uploading: false,
             statuses: [],
         },
@@ -89,6 +99,8 @@ const defaultState: AnnotationState = {
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
+    requestReviewDialogVisible: false,
+    submitReviewDialogVisible: false,
     tabContentHeight: 0,
     workspace: Workspace.STANDARD,
 };
@@ -120,6 +132,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 maxZ,
             } = action.payload;
 
+            const isReview = job.status === TaskStatus.REVIEW;
+
             return {
                 ...state,
                 job: {
@@ -128,8 +142,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job,
                     labels: job.task.labels,
                     attributes: job.task.labels.reduce((acc: Record<number, any[]>, label: any): Record<
-                        number,
-                        any[]
+                    number,
+                    any[]
                     > => {
                         acc[label.id] = label.attributes;
                         return acc;
@@ -165,6 +179,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: new Canvas(),
                 },
                 colors,
+                workspace: isReview ? Workspace.REVIEW_WORKSPACE : Workspace.STANDARD,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -194,13 +209,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { number, data, filename, states, minZ, maxZ, curZ, delay, changeTime } = action.payload;
+            const {
+                number, data, filename, states, minZ, maxZ, curZ, delay, changeTime,
+            } = action.payload;
 
             const activatedStateID = states
                 .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID)
-                ? state.annotations.activatedStateID
-                : null;
+                .includes(state.annotations.activatedStateID) ?
+                state.annotations.activatedStateID :
+                null;
 
             return {
                 ...state,
@@ -245,9 +262,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 player: {
                     ...state.player,
-                    frameAngles: state.player.frameAngles.map((_angle: number, idx: number) =>
-                        rotateAll || offset === idx ? angle : _angle,
-                    ),
+                    frameAngles: state.player.frameAngles.map((_angle: number, idx: number) => {
+                        if (rotateAll || offset === idx) {
+                            return angle;
+                        }
+                        return _angle;
+                    }),
                 },
             };
         }
@@ -394,7 +414,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
-            const { shapeType, labelID, objectType, points, activeControl, rectDrawingMethod } = action.payload;
+            const {
+                shapeType, labelID, objectType, points, activeControl, rectDrawingMethod,
+            } = action.payload;
 
             return {
                 ...state,
@@ -418,6 +440,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.REPEAT_DRAW_SHAPE: {
             const { activeControl } = action.payload;
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl,
+                },
+            };
+        }
+        case AnnotationActionTypes.SELECT_ISSUE_POSITION: {
+            const { enabled } = action.payload;
+            const activeControl = enabled ? ActiveControl.OPEN_ISSUE : ActiveControl.CURSOR;
 
             return {
                 ...state,
@@ -489,7 +527,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS: {
-            const { history, states: updatedStates, minZ, maxZ } = action.payload;
+            const {
+                history, states: updatedStates, minZ, maxZ,
+            } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
@@ -627,6 +667,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
+            const contextMenuClientID = state.canvas.contextMenu.clientID;
+            const contextMenuVisible = state.canvas.contextMenu.visible;
 
             return {
                 ...state,
@@ -637,6 +679,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     states: state.annotations.states.filter(
                         (_objectState: any) => _objectState.clientID !== objectState.clientID,
                     ),
+                },
+                canvas: {
+                    ...state.canvas,
+                    contextMenu: {
+                        ...state.canvas.contextMenu,
+                        clientID: objectState.clientID === contextMenuClientID ? null : contextMenuClientID,
+                        visible: objectState.clientID === contextMenuClientID ? false : contextMenuVisible,
+                    },
                 },
             };
         }
@@ -754,33 +804,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS: {
-            return {
-                ...state,
-                job: {
-                    ...state.job,
-                    saving: true,
-                },
-            };
-        }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS: {
-            return {
-                ...state,
-                job: {
-                    ...state.job,
-                    saving: false,
-                },
-            };
-        }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
-            return {
-                ...state,
-                job: {
-                    ...state.job,
-                    saving: false,
-                },
-            };
-        }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS: {
             const { job, loader } = action.payload;
             const { loads } = state.activities;
@@ -851,7 +874,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU: {
-            const { visible, left, top, type, pointID } = action.payload;
+            const {
+                visible, left, top, type, pointID,
+            } = action.payload;
 
             return {
                 ...state,
@@ -864,19 +889,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         top,
                         type,
                         pointID,
+                        clientID: state.annotations.activatedStateID,
                     },
                 },
             };
         }
         case AnnotationActionTypes.REDO_ACTION_SUCCESS:
         case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
-            const { history, states, minZ, maxZ } = action.payload;
+            const {
+                history, states, minZ, maxZ,
+            } = action.payload;
 
             const activatedStateID = states
                 .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID)
-                ? state.annotations.activatedStateID
-                : null;
+                .includes(state.annotations.activatedStateID) ?
+                state.annotations.activatedStateID :
+                null;
 
             return {
                 ...state,
@@ -897,9 +925,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states, minZ, maxZ } = action.payload;
             const activatedStateID = states
                 .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID)
-                ? state.annotations.activatedStateID
-                : null;
+                .includes(state.annotations.activatedStateID) ?
+                state.annotations.activatedStateID :
+                null;
 
             return {
                 ...state,
@@ -984,6 +1012,33 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.AI_TOOLS,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_REQUEST_REVIEW_DIALOG: {
+            const { visible } = action.payload;
+            return {
+                ...state,
+                requestReviewDialogVisible: visible,
+            };
+        }
+        case AnnotationActionTypes.SWITCH_SUBMIT_REVIEW_DIALOG: {
+            const { visible } = action.payload;
+            return {
+                ...state,
+                submitReviewDialogVisible: visible,
+            };
+        }
+        case AnnotationActionTypes.SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG: {
+            const { forceExit } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        forceExit,
+                    },
                 },
             };
         }

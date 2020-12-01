@@ -5,7 +5,7 @@
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
-import CanvasWrapperComponent from 'components/annotation-page/standard-workspace/canvas-wrapper';
+import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper';
 import {
     confirmCanvasReady,
     dragCanvas,
@@ -37,6 +37,7 @@ import {
     changeSaturationLevel,
     switchAutomaticBordering,
 } from 'actions/settings-actions';
+import { reviewActions } from 'actions/review-actions';
 import {
     ColorBy,
     GridColor,
@@ -57,6 +58,7 @@ interface StateToProps {
     activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
+    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -119,6 +121,7 @@ interface DispatchToProps {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
+    onStartIssue(position: number[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -153,9 +156,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 saturationLevel,
                 resetZoom,
             },
-            workspace: { aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering },
-            shapes: { opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections },
+            workspace: {
+                aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering,
+            },
+            shapes: {
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+            },
         },
+        review: { frameIssues, issuesHidden },
         shortcuts: { keyMap },
     } = state;
 
@@ -163,6 +171,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         sidebarCollapsed,
         canvasInstance,
         jobInstance,
+        frameIssues:
+            issuesHidden || ![Workspace.REVIEW_WORKSPACE, Workspace.STANDARD].includes(workspace) ? null : frameIssues,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,
@@ -297,6 +307,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
+        },
+        onStartIssue(position: number[]): void {
+            dispatch(reviewActions.startIssue(position));
         },
     };
 }
