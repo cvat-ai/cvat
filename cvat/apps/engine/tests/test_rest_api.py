@@ -1697,12 +1697,13 @@ def generate_image_files(*args):
 
     return image_sizes, images
 
-def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25):
+def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name='mpeg4'):
     f = BytesIO()
     total_frames = duration * fps
-    container = av.open(f, mode='w', format='mp4')
+    file_ext = os.path.splitext(filename)[1][1:]
+    container = av.open(f, mode='w', format=file_ext)
 
-    stream = container.add_stream('mpeg4', rate=fps)
+    stream = container.add_stream(codec_name=codec_name, rate=fps)
     stream.width = width
     stream.height = height
     stream.pix_fmt = 'yuv420p'
@@ -2338,6 +2339,23 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes['test_rotated_90_video.mp4']
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
+
+        task_spec = {
+            "name": "test mxf format",
+            "use_zip_chunks": False,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ],
+        }
+
+        image_sizes, video = generate_video_file(filename="test_video_1.mxf", width=1280, height=720, codec_name='mpeg2video')
+        task_data = {
+            "client_files[0]": video,
+            "image_quality": 51,
+        }
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)

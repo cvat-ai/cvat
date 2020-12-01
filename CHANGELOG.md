@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MOTS png mask format support (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 - Ability to correct upload video with a rotation record in the metadata (<https://github.com/openvinotoolkit/cvat/pull/2218>)
 - User search field for assignee fields (<https://github.com/openvinotoolkit/cvat/pull/2370>)
+- Support of mxf videos (<https://github.com/openvinotoolkit/cvat/pull/2514>)
 
 ### Changed
 
