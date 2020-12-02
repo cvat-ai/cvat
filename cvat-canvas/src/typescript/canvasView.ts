@@ -125,11 +125,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.serviceFlags.drawHidden[clientID] || false;
     }
 
-    private stateIsLocked(state: any): boolean {
-        const { configuration } = this.controller;
-        return state.lock || configuration.forceDisableEditing;
-    }
-
     private setupServiceHidden(clientID: number, value: boolean): void {
         this.serviceFlags.drawHidden[clientID] = value;
         const shape = this.svgShapes[clientID];
@@ -1347,8 +1342,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             this.mode = Mode.IDLE;
             this.canvas.style.cursor = '';
-        }
-        else if (reason === UpdateReasons.DATA_FAILED) {
+        } else if (reason === UpdateReasons.DATA_FAILED) {
             const event: CustomEvent = new CustomEvent('canvas.error', {
                 detail: {
                     exception: model.exception,
