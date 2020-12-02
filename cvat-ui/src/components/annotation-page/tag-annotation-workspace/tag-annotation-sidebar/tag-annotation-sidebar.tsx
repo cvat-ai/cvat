@@ -245,12 +245,12 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         </Checkbox>
                     </Col>
                 </Row>
-                <Row type='flex' justify='start' className='cvat-tag-anntation-sidebar-frame-tags'>
+                <Row type='flex' justify='start' className='cvat-tag-annotation-sidebar-frame-tags'>
                     <Col>
                         <Text strong>Frame tags:&nbsp;</Text>
                         {frameTags.map((tag: any) => (
                             <Tag
-                                className={'cvat-tag-anntation-sidebar-frame-tag-label'}
+                                className={'cvat-tag-annotation-sidebar-frame-tag-label'}
                                 color={tag.label.color}
                                 onClose={() => {
                                     onRemoveState(tag);

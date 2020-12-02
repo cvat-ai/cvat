@@ -11,15 +11,15 @@ context('Tag annotation mode.', () => {
 
     function checkCountFrameTags(countTags) {
         if (countTags == 0) {
-            cy.get('span.cvat-tag-anntation-sidebar-frame-tag-label').should('not.exist');
+            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('not.exist');
         } else {
-            cy.get('span.cvat-tag-anntation-sidebar-frame-tag-label').should('have.length', countTags);
+            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('have.length', countTags);
         };
     };
 
     function checkPresenceFrameTags(labelName) {
-        cy.get('.cvat-tag-anntation-sidebar-frame-tags').within(() => {
-            cy.get('span.cvat-tag-anntation-sidebar-frame-tag-label').contains(labelName).should('exist');
+        cy.get('.cvat-tag-annotation-sidebar-frame-tags').within(() => {
+            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').contains(labelName).should('exist');
         });
     };
 
