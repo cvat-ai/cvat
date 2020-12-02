@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Projects view layout fix (<https://github.com/openvinotoolkit/cvat/pull/2503>)
 - Fixed the tasks view (infinite loading) when it is impossible to get a preview of the task (<https://github.com/openvinotoolkit/cvat/pull/2504>)
 - Empty frames navigation (<https://github.com/openvinotoolkit/cvat/pull/2505>)
+- TypeError: Cannot read property 'toString' of undefined (<https://github.com/openvinotoolkit/cvat/pull/2517>)
 
 ### Security
 
