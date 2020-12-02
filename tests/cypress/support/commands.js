@@ -497,12 +497,12 @@ Cypress.Commands.add('checkFrameNum', (frameNum) => {
     });
 });
 
-Cypress.Commands.add('goToNextDefaultFrame', (expectedFrameNum) => {
+Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
     cy.get('.cvat-player-next-button').click();
     cy.checkFrameNum(expectedFrameNum);
 });
 
-Cypress.Commands.add('goToPreviousDefaultFrame', (expectedFrameNum) => {
+Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
     cy.get('.cvat-player-previous-button').click();
     cy.checkFrameNum(expectedFrameNum);
 });

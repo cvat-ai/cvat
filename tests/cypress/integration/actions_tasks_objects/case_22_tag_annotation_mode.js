@@ -55,7 +55,7 @@ context('Tag annotation mode.', () => {
             skipFrame();
             cy.checkFrameNum(1);
             checkCountFrameTags(0);
-            cy.goToPreviousDefaultFrame(0);
+            cy.goToPreviousFrame(0);
             checkCountFrameTags(0);
         });
 
@@ -66,13 +66,13 @@ context('Tag annotation mode.', () => {
         });
 
         it('Set "Automatically go to the next frame" to true and add tag', () => {
-            cy.goToNextDefaultFrame(1);
+            cy.goToNextFrame(1);
             checkCountFrameTags(0);
             changeCheckboxAutomaticallyGoToNextFrame("check");
             addTag();
             cy.checkFrameNum(2);
             checkCountFrameTags(0);
-            cy.goToPreviousDefaultFrame(1);
+            cy.goToPreviousFrame(1);
             checkCountFrameTags(1);
             checkPresenceFrameTags(labelName);
         });
