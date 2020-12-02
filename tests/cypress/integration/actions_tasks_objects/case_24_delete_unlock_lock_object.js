@@ -47,6 +47,13 @@ context('Delete unlock/lock object', () => {
         });
     };
 
+    function checkFailDeleteLockObject(shortcut) {
+        deleteObjectViaShortcut(shortcut);
+        cy.get('rect.cvat_canvas_shape').should('exist');
+        cy.get('div.cvat-objects-sidebar-state-item').should('exist');
+        cy.contains('.ant-notification-topRight', 'Error: Could not remove the locked object').should('exist');
+    };
+
     function checkExistObject() {
         cy.get('rect.cvat_canvas_shape').should('not.exist');
         cy.get('div.cvat-objects-sidebar-state-item').should('not.exist');
@@ -72,6 +79,7 @@ context('Delete unlock/lock object', () => {
         it('Create, lock and delete object via "Shift+Delete" shortcuts', () => {
             cy.createRectangle(createRectangleShape2Points);
             lockObject();
+            checkFailDeleteLockObject('{del}');
             deleteObjectViaShortcut('{shift}{del}');
             checkExistObject();
         });
