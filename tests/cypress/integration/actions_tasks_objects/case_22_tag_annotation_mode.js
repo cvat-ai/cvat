@@ -32,7 +32,7 @@ context('Tag annotation mode.', () => {
     };
 
     function changeCheckboxAutomaticallyGoToNextFrame(value) {
-        cy.get('.cvat-tag-anntation-sidebar-checkbox-skip-frame').within(() => {
+        cy.get('.cvat-tag-annotation-sidebar-checkbox-skip-frame').within(() => {
             if (value == "check") {
                 cy.get('[type="checkbox"]').check();
             } else if (value == "uncheck") {

@@ -233,7 +233,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         <Button onClick={onChangeFrame}>Skip frame</Button>
                     </Col>
                 </Row>
-                <Row type='flex' className='cvat-tag-anntation-sidebar-checkbox-skip-frame'>
+                <Row type='flex' className='cvat-tag-annotation-sidebar-checkbox-skip-frame'>
                     <Col>
                         <Checkbox
                             checked={skipFrame}
