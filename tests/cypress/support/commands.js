@@ -497,8 +497,18 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     });
 });
 
-Cypress.Commands.add('checkFrameNumber', (frameNum) => {
+Cypress.Commands.add('checkFrameNum', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
-        cy.get('[role="spinbutton"]').should('have.value', frameNum);
+        cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+});
+
+Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
+    cy.get('.cvat-player-next-button').click();
+    cy.checkFrameNum(expectedFrameNum);
+});
+
+Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
+    cy.get('.cvat-player-previous-button').click();
+    cy.checkFrameNum(expectedFrameNum);
 });
