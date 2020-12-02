@@ -20,6 +20,7 @@ export interface User {
 
 interface Props {
     value: User | null;
+    className?: string;
     onSelect: (user: User | null) => void;
 }
 
@@ -43,7 +44,7 @@ const searchUsers = debounce(
 );
 
 export default function UserSelector(props: Props): JSX.Element {
-    const { value, onSelect } = props;
+    const { value, className, onSelect } = props;
     const [searchPhrase, setSearchPhrase] = useState('');
 
     const [users, setUsers] = useState<User[]>([]);
@@ -89,6 +90,7 @@ export default function UserSelector(props: Props): JSX.Element {
         }
     }, [value]);
 
+    const combinedClassName = className ? `${className} cvat-user-search-field` : 'cvat-user-search-field';
     return (
         <Autocomplete
             ref={autocompleteRef}
@@ -96,7 +98,7 @@ export default function UserSelector(props: Props): JSX.Element {
             placeholder='Select a user'
             onSearch={handleSearch}
             onSelect={handleSelect}
-            className='cvat-user-search-field'
+            className={combinedClassName}
             onDropdownVisibleChange={handleFocus}
             dataSource={users.map((user) => ({
                 value: user.id.toString(),

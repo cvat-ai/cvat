@@ -174,6 +174,12 @@ export interface Model {
     };
 }
 
+export enum TaskStatus {
+    ANNOTATION = 'annotation',
+    REVIEW = 'validation',
+    COMPLETED = 'completed',
+}
+
 export enum RQStatus {
     unknown = 'unknown',
     queued = 'queued',
@@ -284,6 +290,14 @@ export interface NotificationsState {
         userAgreements: {
             fetching: null | ErrorState;
         };
+        review: {
+            initialization: null | ErrorState;
+            finishingIssue: null | ErrorState;
+            resolvingIssue: null | ErrorState;
+            reopeningIssue: null | ErrorState;
+            commentingIssue: null | ErrorState;
+            submittingReview: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -314,6 +328,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
+    OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
 }
 
@@ -361,6 +376,7 @@ export interface AnnotationState {
             left: number;
             type: ContextMenuType;
             pointID: number | null;
+            clientID: number | null;
         };
         instance: Canvas;
         ready: boolean;
@@ -410,6 +426,7 @@ export interface AnnotationState {
             redo: [string, number][];
         };
         saving: {
+            forceExit: boolean;
             uploading: boolean;
             statuses: string[];
         };
@@ -429,6 +446,8 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
+    requestReviewDialogVisible: boolean;
+    submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
@@ -440,6 +459,7 @@ export enum Workspace {
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
     TAG_ANNOTATION = 'Tag annotation',
+    REVIEW_WORKSPACE = 'Review',
 }
 
 export enum GridColor {
@@ -512,12 +532,24 @@ export interface ShortcutsState {
     normalizedKeyMap: Record<string, string>;
 }
 
-export interface MetaState {
-    initialized: boolean;
-    fetching: boolean;
-    showTasksButton: boolean;
-    showAnalyticsButton: boolean;
-    showModelsButton: boolean;
+export enum ReviewStatus {
+    ACCEPTED = 'accepted',
+    REJECTED = 'rejected',
+    REVIEW_FURTHER = 'review_further',
+}
+
+export interface ReviewState {
+    reviews: any[];
+    issues: any[];
+    frameIssues: any[];
+    latestComments: string[];
+    activeReview: any | null;
+    newIssuePosition: number[] | null;
+    issuesHidden: boolean;
+    fetching: {
+        reviewId: number | null;
+        issueId: number | null;
+    };
 }
 
 export interface CombinedState {
@@ -534,5 +566,5 @@ export interface CombinedState {
     annotation: AnnotationState;
     settings: SettingsState;
     shortcuts: ShortcutsState;
-    meta: MetaState;
+    review: ReviewState;
 }

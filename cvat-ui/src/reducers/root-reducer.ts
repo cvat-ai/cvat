@@ -16,6 +16,7 @@ import annotationReducer from './annotation-reducer';
 import settingsReducer from './settings-reducer';
 import shortcutsReducer from './shortcuts-reducer';
 import userAgreementsReducer from './useragreements-reducer';
+import reviewReducer from './review-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -32,5 +33,6 @@ export default function createRootReducer(): Reducer {
         settings: settingsReducer,
         shortcuts: shortcutsReducer,
         userAgreements: userAgreementsReducer,
+        review: reviewReducer,
     });
 }

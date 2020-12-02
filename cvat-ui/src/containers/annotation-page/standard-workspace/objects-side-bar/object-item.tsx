@@ -8,25 +8,25 @@ import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
 import {
-    ActiveControl, CombinedState, ColorBy, ShapeType,
-} from 'reducers/interfaces';
-import {
     collapseObjectItems,
     updateAnnotationsAsync,
     changeFrameAsync,
     removeObjectAsync,
     changeGroupColorAsync,
+    pasteShapeAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
-    pasteShapeAsync,
 } from 'actions/annotation-actions';
-
+import {
+    ActiveControl, CombinedState, ColorBy, ShapeType,
+} from 'reducers/interfaces';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ToolsControlComponent } from 'components/annotation-page/standard-workspace/controls-side-bar/tools-control';
 import { shift } from 'utils/math';
 
 interface OwnProps {
+    readonly: boolean;
     clientID: number;
     objectStates: any[];
     initialCollapsed: boolean;
@@ -136,27 +136,34 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & OwnProps;
 class ObjectItemContainer extends React.PureComponent<Props> {
     private copy = (): void => {
-        const { objectState, copyShape } = this.props;
-        copyShape(objectState);
+        const { objectState, readonly, copyShape } = this.props;
+        if (!readonly) {
+            copyShape(objectState);
+        }
     };
 
     private propagate = (): void => {
-        const { objectState, propagateObject } = this.props;
-        propagateObject(objectState);
+        const { objectState, readonly, propagateObject } = this.props;
+        if (!readonly) {
+            propagateObject(objectState);
+        }
     };
 
     private remove = (): void => {
-        const { objectState, removeObject, jobInstance } = this.props;
+        const {
+            objectState, jobInstance, readonly, removeObject,
+        } = this.props;
 
-        removeObject(jobInstance, objectState);
+        if (!readonly) {
+            removeObject(jobInstance, objectState);
+        }
     };
 
     private createURL = (): void => {
         const { objectState, frameNumber } = this.props;
-
         const { origin, pathname } = window.location;
 
         const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
@@ -165,7 +172,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private switchOrientation = (): void => {
-        const { objectState, updateState } = this.props;
+        const { objectState, readonly, updateState } = this.props;
+        if (readonly) {
+            return;
+        }
+
         if (objectState.shapeType === ShapeType.CUBOID) {
             this.switchCuboidOrientation();
             return;
@@ -192,22 +203,26 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private toBackground = (): void => {
-        const { objectState, minZLayer } = this.props;
+        const { objectState, readonly, minZLayer } = this.props;
 
-        objectState.zOrder = minZLayer - 1;
-        this.commit();
+        if (!readonly) {
+            objectState.zOrder = minZLayer - 1;
+            this.commit();
+        }
     };
 
     private toForeground = (): void => {
-        const { objectState, maxZLayer } = this.props;
+        const { objectState, readonly, maxZLayer } = this.props;
 
-        objectState.zOrder = maxZLayer + 1;
-        this.commit();
+        if (!readonly) {
+            objectState.zOrder = maxZLayer + 1;
+            this.commit();
+        }
     };
 
     private activate = (): void => {
         const {
-            activateObject, objectState, ready, activeControl,
+            objectState, ready, activeControl, activateObject,
         } = this.props;
 
         if (ready && activeControl === ActiveControl.CURSOR) {
@@ -222,8 +237,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private activateTracking = (): void => {
-        const { objectState, aiToolsRef } = this.props;
-        if (aiToolsRef.current && aiToolsRef.current.trackingAvailable()) {
+        const { objectState, readonly, aiToolsRef } = this.props;
+        if (!readonly && aiToolsRef.current && aiToolsRef.current.trackingAvailable()) {
             aiToolsRef.current.trackState(objectState);
         }
     };
@@ -240,24 +255,29 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private changeLabel = (labelID: string): void => {
-        const { objectState, labels } = this.props;
+        const { objectState, readonly, labels } = this.props;
 
-        const [label] = labels.filter((_label: any): boolean => _label.id === +labelID);
-        objectState.label = label;
+        if (!readonly) {
+            const [label] = labels.filter((_label: any): boolean => _label.id === +labelID);
+            objectState.label = label;
+        }
+
         this.commit();
     };
 
     private changeAttribute = (id: number, value: string): void => {
-        const { objectState, jobInstance } = this.props;
-        jobInstance.logger.log(LogType.changeAttribute, {
-            id,
-            value,
-            object_id: objectState.clientID,
-        });
-        const attr: Record<number, string> = {};
-        attr[id] = value;
-        objectState.attributes = attr;
-        this.commit();
+        const { objectState, readonly, jobInstance } = this.props;
+        if (!readonly) {
+            jobInstance.logger.log(LogType.changeAttribute, {
+                id,
+                value,
+                object_id: objectState.clientID,
+            });
+            const attr: Record<number, string> = {};
+            attr[id] = value;
+            objectState.attributes = attr;
+            this.commit();
+        }
     };
 
     private switchCuboidOrientation = (): void => {
@@ -265,56 +285,67 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             return points[12] > points[0];
         }
 
-        const { objectState } = this.props;
+        const { objectState, readonly } = this.props;
 
-        this.resetCuboidPerspective(false);
+        if (!readonly) {
+            this.resetCuboidPerspective(false);
+            objectState.points = shift(objectState.points, cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
 
-        objectState.points = shift(objectState.points, cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
-
-        this.commit();
+            this.commit();
+        }
     };
 
     private resetCuboidPerspective = (commit = true): void => {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
+        const { objectState, readonly } = this.props;
 
-        const { objectState } = this.props;
-        const { points } = objectState;
-        const minD = {
-            x: (points[6] - points[2]) * 0.001,
-            y: (points[3] - points[1]) * 0.001,
-        };
+        if (!readonly) {
+            const { points } = objectState;
+            const minD = {
+                x: (points[6] - points[2]) * 0.001,
+                y: (points[3] - points[1]) * 0.001,
+            };
 
-        if (cuboidOrientationIsLeft(points)) {
-            points[14] = points[10] + points[2] - points[6] + minD.x;
-            points[15] = points[11] + points[3] - points[7];
-            points[8] = points[10] + points[4] - points[6];
-            points[9] = points[11] + points[5] - points[7] + minD.y;
-            points[12] = points[14] + points[0] - points[2];
-            points[13] = points[15] + points[1] - points[3] + minD.y;
-        } else {
-            points[10] = points[14] + points[6] - points[2] - minD.x;
-            points[11] = points[15] + points[7] - points[3];
-            points[12] = points[14] + points[0] - points[2];
-            points[13] = points[15] + points[1] - points[3] + minD.y;
-            points[8] = points[12] + points[4] - points[0] - minD.x;
-            points[9] = points[13] + points[5] - points[1];
+            if (cuboidOrientationIsLeft(points)) {
+                points[14] = points[10] + points[2] - points[6] + minD.x;
+                points[15] = points[11] + points[3] - points[7];
+                points[8] = points[10] + points[4] - points[6];
+                points[9] = points[11] + points[5] - points[7] + minD.y;
+                points[12] = points[14] + points[0] - points[2];
+                points[13] = points[15] + points[1] - points[3] + minD.y;
+            } else {
+                points[10] = points[14] + points[6] - points[2] - minD.x;
+                points[11] = points[15] + points[7] - points[3];
+                points[12] = points[14] + points[0] - points[2];
+                points[13] = points[15] + points[1] - points[3] + minD.y;
+                points[8] = points[12] + points[4] - points[0] - minD.x;
+                points[9] = points[13] + points[5] - points[1];
+            }
+
+            objectState.points = points;
+            if (commit) this.commit();
         }
-
-        objectState.points = points;
-        if (commit) this.commit();
     };
 
     private commit(): void {
-        const { objectState, updateState } = this.props;
-
-        updateState(objectState);
+        const { objectState, readonly, updateState } = this.props;
+        if (!readonly) {
+            updateState(objectState);
+        }
     }
 
     public render(): JSX.Element {
         const {
-            objectState, collapsed, labels, attributes, activated, colorBy, normalizedKeyMap,
+            objectState,
+            collapsed,
+            labels,
+            attributes,
+            activated,
+            colorBy,
+            normalizedKeyMap,
+            readonly,
         } = this.props;
 
         let stateColor = '';
@@ -328,6 +359,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         return (
             <ObjectStateItemComponent
+                readonly={readonly}
                 activated={activated}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}

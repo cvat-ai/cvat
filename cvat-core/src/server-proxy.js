@@ -31,7 +31,13 @@
                     if (e.data.isSuccess) {
                         requests[e.data.id].resolve(e.data.responseData);
                     } else {
-                        requests[e.data.id].reject(e.data.error);
+                        requests[e.data.id].reject({
+                            error: e.data.error,
+                            response: {
+                                status: e.data.status,
+                                data: e.data.responseData,
+                            },
+                        });
                     }
 
                     delete requests[e.data.id];
@@ -287,7 +293,7 @@
 
             async function authorized() {
                 try {
-                    await module.exports.users.getSelf();
+                    await module.exports.users.self();
                 } catch (serverError) {
                     if (serverError.code === 401) {
                         return false;
@@ -566,6 +572,90 @@
                 return response.data;
             }
 
+            async function getJobReviews(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createReview(data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/reviews`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getJobIssues(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createComment(data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function updateIssue(issueID, data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/issues/${issueID}`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             async function saveJob(id, jobData) {
                 const { backendAPI } = config;
 
@@ -641,7 +731,14 @@
                         },
                     );
                 } catch (errorData) {
-                    throw generateError(errorData);
+                    throw generateError({
+                        ...errorData,
+                        message: '',
+                        response: {
+                            ...errorData.response,
+                            data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
+                        },
+                    });
                 }
 
                 return response;
@@ -932,16 +1029,21 @@
 
                     jobs: {
                         value: Object.freeze({
-                            getJob,
-                            saveJob,
+                            get: getJob,
+                            save: saveJob,
+                            issues: getJobIssues,
+                            reviews: {
+                                get: getJobReviews,
+                                create: createReview,
+                            },
                         }),
                         writable: false,
                     },
 
                     users: {
                         value: Object.freeze({
-                            getUsers,
-                            getSelf,
+                            get: getUsers,
+                            self: getSelf,
                         }),
                         writable: false,
                     },
@@ -980,6 +1082,20 @@
                             run: runLambdaRequest,
                             call: callLambdaFunction,
                             cancel: cancelLambdaRequest,
+                        }),
+                        writable: false,
+                    },
+
+                    issues: {
+                        value: Object.freeze({
+                            update: updateIssue,
+                        }),
+                        writable: false,
+                    },
+
+                    comments: {
+                        value: Object.freeze({
+                            create: createComment,
                         }),
                         writable: false,
                     },

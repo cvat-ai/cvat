@@ -68,6 +68,13 @@
         return true;
     }
 
+    function negativeIDGenerator() {
+        const value = negativeIDGenerator.start;
+        negativeIDGenerator.start -= 1;
+        return value;
+    }
+    negativeIDGenerator.start = -1;
+
     module.exports = {
         isBoolean,
         isInteger,
@@ -75,5 +82,6 @@
         isString,
         checkFilter,
         checkObjectType,
+        negativeIDGenerator,
     };
 })();

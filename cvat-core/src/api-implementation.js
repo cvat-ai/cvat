@@ -116,7 +116,7 @@
 
             let users = null;
             if ('self' in filter && filter.self) {
-                users = await serverProxy.users.getSelf();
+                users = await serverProxy.users.self();
                 users = [users];
             } else {
                 const searchParams = {};
@@ -125,7 +125,7 @@
                         searchParams[key] = filter[key];
                     }
                 }
-                users = await serverProxy.users.getUsers(new URLSearchParams(searchParams).toString());
+                users = await serverProxy.users.get(new URLSearchParams(searchParams).toString());
             }
 
             users = users.map((user) => new User(user));
@@ -146,24 +146,23 @@
                 throw new ArgumentError('Job filter must not be empty');
             }
 
-            let tasks = null;
+            let tasks = [];
             if ('taskID' in filter) {
                 tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
             } else {
-                const job = await serverProxy.jobs.getJob(filter.jobID);
+                const job = await serverProxy.jobs.get(filter.jobID);
                 if (typeof job.task_id !== 'undefined') {
                     tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
                 }
             }
 
             // If task was found by its id, then create task instance and get Job instance from it
-            if (tasks !== null && tasks.length) {
+            if (tasks.length) {
                 const task = new Task(tasks[0]);
-
                 return filter.jobID ? task.jobs.filter((job) => job.id === filter.jobID) : task.jobs;
             }
 
-            return [];
+            return tasks;
         };
 
         cvat.tasks.get.implementation = async (filter) => {

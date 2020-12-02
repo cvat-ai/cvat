@@ -7,12 +7,17 @@ import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
 import { ClickParam } from 'antd/lib/menu/index';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, TaskStatus } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
-
-import { dumpAnnotationsAsync, exportDatasetAsync } from 'actions/tasks-actions';
-
-import { uploadJobAnnotationsAsync, removeAnnotationsAsync } from 'actions/annotation-actions';
+import { dumpAnnotationsAsync, exportDatasetAsync, updateJobAsync } from 'actions/tasks-actions';
+import {
+    uploadJobAnnotationsAsync,
+    removeAnnotationsAsync,
+    saveAnnotationsAsync,
+    switchRequestReviewDialog as switchRequestReviewDialogAction,
+    switchSubmitReviewDialog as switchSubmitReviewDialogAction,
+    setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
+} from 'actions/annotation-actions';
 
 interface StateToProps {
     annotationFormats: any;
@@ -20,6 +25,7 @@ interface StateToProps {
     loadActivity: string | null;
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
+    user: any;
 }
 
 interface DispatchToProps {
@@ -27,6 +33,11 @@ interface DispatchToProps {
     dumpAnnotations(task: any, dumper: any): void;
     exportDataset(task: any, exporter: any): void;
     removeAnnotations(sessionInstance: any): void;
+    switchRequestReviewDialog(visible: boolean): void;
+    switchSubmitReviewDialog(visible: boolean): void;
+    setForceExitAnnotationFlag(forceExit: boolean): void;
+    saveAnnotations(jobInstance: any, afterSave?: () => void): void;
+    updateJob(jobInstance: any): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -39,6 +50,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         tasks: {
             activities: { dumps, loads, exports: activeExports },
         },
+        auth: { user },
     } = state;
 
     const taskID = jobInstance.task.id;
@@ -50,6 +62,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         loadActivity: taskID in loads || jobID in jobLoads ? loads[taskID] || jobLoads[jobID] : null,
         jobInstance,
         annotationFormats,
+        user,
     };
 }
 
@@ -67,6 +80,21 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         removeAnnotations(sessionInstance: any): void {
             dispatch(removeAnnotationsAsync(sessionInstance));
         },
+        switchRequestReviewDialog(visible: boolean): void {
+            dispatch(switchRequestReviewDialogAction(visible));
+        },
+        switchSubmitReviewDialog(visible: boolean): void {
+            dispatch(switchSubmitReviewDialogAction(visible));
+        },
+        setForceExitAnnotationFlag(forceExit: boolean): void {
+            dispatch(setForceExitAnnotationFlagAction(forceExit));
+        },
+        saveAnnotations(jobInstance: any, afterSave?: () => void): void {
+            dispatch(saveAnnotationsAsync(jobInstance, afterSave));
+        },
+        updateJob(jobInstance: any): void {
+            dispatch(updateJobAsync(jobInstance));
+        },
     };
 }
 
@@ -75,15 +103,21 @@ type Props = StateToProps & DispatchToProps & RouteComponentProps;
 function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
+        user,
         annotationFormats: { loaders, dumpers },
-        loadAnnotations,
-        dumpAnnotations,
-        exportDataset,
-        removeAnnotations,
         history,
         loadActivity,
         dumpActivities,
         exportActivities,
+        loadAnnotations,
+        dumpAnnotations,
+        exportDataset,
+        removeAnnotations,
+        switchRequestReviewDialog,
+        switchSubmitReviewDialog,
+        setForceExitAnnotationFlag,
+        saveAnnotations,
+        updateJob,
     } = props;
 
     const onClickMenu = (params: ClickParam, file?: File): void => {
@@ -112,11 +146,25 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             const [action] = params.keyPath;
             if (action === Actions.REMOVE_ANNO) {
                 removeAnnotations(jobInstance);
+            } else if (action === Actions.REQUEST_REVIEW) {
+                switchRequestReviewDialog(true);
+            } else if (action === Actions.SUBMIT_REVIEW) {
+                switchSubmitReviewDialog(true);
+            } else if (action === Actions.RENEW_JOB) {
+                jobInstance.status = TaskStatus.ANNOTATION;
+                updateJob(jobInstance);
+                history.push(`/tasks/${jobInstance.task.id}`);
+            } else if (action === Actions.FINISH_JOB) {
+                jobInstance.status = TaskStatus.COMPLETED;
+                updateJob(jobInstance);
+                history.push(`/tasks/${jobInstance.task.id}`);
             } else if (action === Actions.OPEN_TASK) {
                 history.push(`/tasks/${jobInstance.task.id}`);
             }
         }
     };
+
+    const isReviewer = jobInstance.reviewer?.id === user.id || user.isSuperuser;
 
     return (
         <AnnotationMenuComponent
@@ -127,7 +175,10 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             dumpActivities={dumpActivities}
             exportActivities={exportActivities}
             onClickMenu={onClickMenu}
-            taskID={jobInstance.task.id}
+            setForceExitAnnotationFlag={setForceExitAnnotationFlag}
+            saveAnnotations={saveAnnotations}
+            jobInstance={jobInstance}
+            isReviewer={isReviewer}
         />
     );
 }

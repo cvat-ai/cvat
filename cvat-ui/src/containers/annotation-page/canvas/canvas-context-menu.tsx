@@ -5,49 +5,81 @@
 import React from 'react';
 
 import { connect } from 'react-redux';
-import { CombinedState, ContextMenuType } from 'reducers/interfaces';
+import { CombinedState, ContextMenuType, Workspace } from 'reducers/interfaces';
 
-import CanvasContextMenuComponent from 'components/annotation-page/standard-workspace/canvas-context-menu';
+import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
+import { updateCanvasContextMenu } from 'actions/annotation-actions';
+import { reviewActions, finishIssueAsync } from 'actions/review-actions';
+import { ThunkDispatch } from 'utils/redux';
+
+interface OwnProps {
+    readonly: boolean;
+}
 
 interface StateToProps {
-    activatedStateID: number | null;
+    contextMenuClientID: number | null;
     objectStates: any[];
     visible: boolean;
     top: number;
     left: number;
     type: ContextMenuType;
     collapsed: boolean | undefined;
+    workspace: Workspace;
+    latestComments: string[];
+}
+
+interface DispatchToProps {
+    onStartIssue(position: number[]): void;
+    openIssue(position: number[], message: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            annotations: { activatedStateID, collapsed, states: objectStates },
+            annotations: { collapsed, states: objectStates },
             canvas: {
                 contextMenu: {
-                    visible, top, left, type,
+                    visible, top, left, type, clientID,
                 },
                 ready,
             },
+            workspace,
         },
+        review: { latestComments },
     } = state;
 
     return {
-        activatedStateID,
-        collapsed: activatedStateID !== null ? collapsed[activatedStateID] : undefined,
+        contextMenuClientID: clientID,
+        collapsed: clientID !== null ? collapsed[clientID] : undefined,
         objectStates,
         visible:
-            activatedStateID !== null &&
+            clientID !== null &&
             visible &&
             ready &&
-            objectStates.map((_state: any): number => _state.clientID).includes(activatedStateID),
+            objectStates.map((_state: any): number => _state.clientID).includes(clientID),
         left,
         top,
         type,
+        workspace,
+        latestComments,
     };
 }
 
-type Props = StateToProps;
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
+    return {
+        onStartIssue(position: number[]): void {
+            dispatch(reviewActions.startIssue(position));
+            dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+        openIssue(position: number[], message: string): void {
+            dispatch(reviewActions.startIssue(position));
+            dispatch(finishIssueAsync(message));
+            dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+    };
+}
+
+type Props = StateToProps & DispatchToProps & OwnProps;
 
 interface State {
     latestLeft: number;
@@ -57,12 +89,13 @@ interface State {
 }
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
+    static defaultProps = {
+        readonly: false,
+    };
+
     private initialized: HTMLDivElement | null;
-
     private dragging: boolean;
-
     private dragInitPosX: number;
-
     private dragInitPosY: number;
 
     public constructor(props: Props) {
@@ -154,7 +187,6 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
     private updatePositionIfOutOfScreen(): void {
         const { top, left } = this.state;
-
         const { innerWidth, innerHeight } = window;
 
         const [element] = window.document.getElementsByClassName('cvat-canvas-context-menu');
@@ -174,18 +206,31 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     public render(): JSX.Element {
         const { left, top } = this.state;
         const {
-            visible, activatedStateID, objectStates, type,
+            visible,
+            contextMenuClientID,
+            objectStates,
+            type,
+            readonly,
+            workspace,
+            latestComments,
+            onStartIssue,
+            openIssue,
         } = this.props;
 
         return (
             <>
                 {type === ContextMenuType.CANVAS_SHAPE && (
                     <CanvasContextMenuComponent
+                        contextMenuClientID={contextMenuClientID}
+                        readonly={readonly}
                         left={left}
                         top={top}
                         visible={visible}
                         objectStates={objectStates}
-                        activatedStateID={activatedStateID}
+                        workspace={workspace}
+                        latestComments={latestComments}
+                        onStartIssue={onStartIssue}
+                        openIssue={openIssue}
                     />
                 )}
             </>
@@ -193,4 +238,4 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     }
 }
 
-export default connect(mapStateToProps)(CanvasContextMenuContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(CanvasContextMenuContainer);
