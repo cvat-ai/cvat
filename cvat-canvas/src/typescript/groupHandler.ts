@@ -35,11 +35,11 @@ export class GroupHandlerImpl implements GroupHandler {
     private getSelectionBox(
         event: MouseEvent,
     ): {
-        xtl: number;
-        ytl: number;
-        xbr: number;
-        ybr: number;
-    } {
+            xtl: number;
+            ytl: number;
+            xbr: number;
+            ybr: number;
+        } {
         const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         const stopSelectionPoint = {
             x: point[0],
@@ -96,11 +96,11 @@ export class GroupHandlerImpl implements GroupHandler {
                 const bbox = shape.bbox();
                 const clientID = shape.attr('clientID');
                 if (
-                    bbox.x > box.xtl &&
-                    bbox.y > box.ytl &&
-                    bbox.x + bbox.width < box.xbr &&
-                    bbox.y + bbox.height < box.ybr &&
-                    !(clientID in this.highlightedShapes)
+                    bbox.x > box.xtl
+                    && bbox.y > box.ytl
+                    && bbox.x + bbox.width < box.xbr
+                    && bbox.y + bbox.height < box.ybr
+                    && !(clientID in this.highlightedShapes)
                 ) {
                     const objectState = this.getStates().filter(
                         (state: any): boolean => state.clientID === clientID,
@@ -124,7 +124,6 @@ export class GroupHandlerImpl implements GroupHandler {
 
         this.resetSelectedObjects();
         this.initialized = false;
-        this.selectionRect = null;
         this.startSelectionPoint = {
             x: null,
             y: null,
@@ -213,6 +212,10 @@ export class GroupHandlerImpl implements GroupHandler {
         }
         this.statesToBeGroupped = [];
         this.highlightedShapes = {};
+        if (this.selectionRect) {
+            this.selectionRect.remove();
+            this.selectionRect = null;
+        }
     }
 
     public cancel(): void {
