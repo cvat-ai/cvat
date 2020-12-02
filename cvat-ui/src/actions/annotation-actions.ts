@@ -520,13 +520,13 @@ export function removeObjectAsync(sessionInstance: any, objectState: any, force:
                     },
                 });
             } else {
-                throw new Error('Could not remove the object. Is it locked?');
+                throw new Error('Could not remove the locked object');
             }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
                 payload: {
-                    objectState,
+                    error,
                 },
             });
         }

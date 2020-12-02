@@ -1342,8 +1342,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             this.mode = Mode.IDLE;
             this.canvas.style.cursor = '';
-        }
-        else if (reason === UpdateReasons.DATA_FAILED) {
+        } else if (reason === UpdateReasons.DATA_FAILED) {
             const event: CustomEvent = new CustomEvent('canvas.error', {
                 detail: {
                     exception: model.exception,
