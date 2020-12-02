@@ -13,6 +13,7 @@ import { CombinedState } from 'reducers/interfaces';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
 interface OwnProps {
+    readonly: boolean;
     clientID: number;
     outsideDisabled?: boolean;
     hiddenDisabled?: boolean;
@@ -48,7 +49,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const { clientID, outsideDisabled, hiddenDisabled, keyframeDisabled } = own;
+    const {
+        clientID, outsideDisabled, hiddenDisabled, keyframeDisabled,
+    } = own;
     const [objectState] = states.filter((_objectState): boolean => _objectState.clientID === clientID);
 
     return {
@@ -74,7 +77,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     };
 }
 
-class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToProps> {
+class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToProps & OwnProps> {
     private navigateFirstKeyframe = (): void => {
         const { objectState, frameNumber } = this.props;
         const { first } = objectState.keyframes;
@@ -108,83 +111,109 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private lock = (): void => {
-        const { objectState, jobInstance } = this.props;
-        jobInstance.logger.log(LogType.lockObject, { locked: true });
-        objectState.lock = true;
-        this.commit();
+        const { objectState, jobInstance, readonly } = this.props;
+        if (!readonly) {
+            jobInstance.logger.log(LogType.lockObject, { locked: true });
+            objectState.lock = true;
+            this.commit();
+        }
     };
 
     private unlock = (): void => {
-        const { objectState, jobInstance } = this.props;
-        jobInstance.logger.log(LogType.lockObject, { locked: false });
-        objectState.lock = false;
-        this.commit();
+        const { objectState, jobInstance, readonly } = this.props;
+        if (!readonly) {
+            jobInstance.logger.log(LogType.lockObject, { locked: false });
+            objectState.lock = false;
+            this.commit();
+        }
     };
 
     private pin = (): void => {
-        const { objectState } = this.props;
-        objectState.pinned = true;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.pinned = true;
+            this.commit();
+        }
     };
 
     private unpin = (): void => {
-        const { objectState } = this.props;
-        objectState.pinned = false;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.pinned = false;
+            this.commit();
+        }
     };
 
     private show = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = false;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.hidden = false;
+            this.commit();
+        }
     };
 
     private hide = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = true;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.hidden = true;
+            this.commit();
+        }
     };
 
     private setOccluded = (): void => {
-        const { objectState } = this.props;
-        objectState.occluded = true;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.occluded = true;
+            this.commit();
+        }
     };
 
     private unsetOccluded = (): void => {
-        const { objectState } = this.props;
-        objectState.occluded = false;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.occluded = false;
+            this.commit();
+        }
     };
 
     private setOutside = (): void => {
-        const { objectState } = this.props;
-        objectState.outside = true;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.outside = true;
+            this.commit();
+        }
     };
 
     private unsetOutside = (): void => {
-        const { objectState } = this.props;
-        objectState.outside = false;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.outside = false;
+            this.commit();
+        }
     };
 
     private setKeyframe = (): void => {
-        const { objectState } = this.props;
-        objectState.keyframe = true;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.keyframe = true;
+            this.commit();
+        }
     };
 
     private unsetKeyframe = (): void => {
-        const { objectState } = this.props;
-        objectState.keyframe = false;
-        this.commit();
+        const { objectState, readonly } = this.props;
+        if (!readonly) {
+            objectState.keyframe = false;
+            this.commit();
+        }
     };
 
     private commit(): void {
-        const { objectState, updateAnnotations } = this.props;
+        const { objectState, readonly, updateAnnotations } = this.props;
 
-        updateAnnotations([objectState]);
+        if (!readonly) {
+            updateAnnotations([objectState]);
+        }
     }
 
     private changeFrame(frame: number): void {
@@ -197,14 +226,17 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     public render(): JSX.Element {
         const {
             objectState,
-            normalizedKeyMap,
+            readonly,
             frameNumber,
             outsideDisabled,
             hiddenDisabled,
             keyframeDisabled,
+            normalizedKeyMap,
         } = this.props;
 
-        const { first, prev, next, last } = objectState.keyframes || {
+        const {
+            first, prev, next, last,
+        } = objectState.keyframes || {
             first: null, // shapes don't have keyframes, so we use null
             prev: null,
             next: null,
@@ -213,6 +245,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
         return (
             <ItemButtonsComponent
+                readonly={readonly}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
                 occluded={objectState.occluded}

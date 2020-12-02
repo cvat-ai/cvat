@@ -23,6 +23,7 @@ import {
     searchEmptyFrameAsync,
     changeWorkspace as changeWorkspaceAction,
     activateObject,
+    setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 
@@ -48,6 +49,7 @@ interface StateToProps {
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
+    forceExit: boolean;
 }
 
 interface DispatchToProps {
@@ -59,6 +61,7 @@ interface DispatchToProps {
     redo(sessionInstance: any, frameNumber: any): void;
     searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number): void;
     searchEmptyFrame(sessionInstance: any, frameFrom: number, frameTo: number): void;
+    setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
 }
 
@@ -70,7 +73,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: { filename: frameFilename, number: frameNumber, delay: frameDelay },
             },
             annotations: {
-                saving: { uploading: saving, statuses: savingStatuses },
+                saving: { uploading: saving, statuses: savingStatuses, forceExit },
                 history,
             },
             job: { instance: jobInstance },
@@ -103,6 +106,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         canvasInstance,
+        forceExit,
     };
 }
 
@@ -137,6 +141,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(activateObject(null, null));
             dispatch(changeWorkspaceAction(workspace));
         },
+        setForceExitAnnotationFlag(forceExit: boolean): void {
+            dispatch(setForceExitAnnotationFlagAction(forceExit));
+        },
     };
 }
 
@@ -163,16 +170,30 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        const { autoSaveInterval, history, jobInstance } = this.props;
+        const {
+            autoSaveInterval, history, jobInstance, setForceExitAnnotationFlag,
+        } = this.props;
         this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this;
         this.unblock = history.block((location: any) => {
+            const { forceExit } = self.props;
             const { task, id: jobID } = jobInstance;
             const { id: taskID } = task;
 
-            if (jobInstance.annotations.hasUnsavedChanges() && location.pathname !== `/tasks/${taskID}/jobs/${jobID}`) {
+            if (
+                jobInstance.annotations.hasUnsavedChanges() &&
+                location.pathname !== `/tasks/${taskID}/jobs/${jobID}` &&
+                !forceExit
+            ) {
                 return 'You have unsaved changes, please confirm leaving this page.';
             }
+
+            if (forceExit) {
+                setForceExitAnnotationFlag(false);
+            }
+
             return undefined;
         });
 
@@ -413,12 +434,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
-        const { jobInstance } = this.props;
-        if (jobInstance.annotations.hasUnsavedChanges()) {
+        const { jobInstance, forceExit, setForceExitAnnotationFlag } = this.props;
+        if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
             // eslint-disable-next-line no-param-reassign
             event.returnValue = confirmationMessage;
             return confirmationMessage;
+        }
+
+        if (forceExit) {
+            setForceExitAnnotationFlag(false);
         }
         return undefined;
     };

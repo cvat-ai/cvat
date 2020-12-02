@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
-import { showStatistics, changeJobStatusAsync } from 'actions/annotation-actions';
+import { showStatistics } from 'actions/annotation-actions';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 
 interface StateToProps {
@@ -18,7 +18,6 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    changeJobStatus(jobInstance: any, status: string): void;
     closeStatistics(): void;
 }
 
@@ -46,9 +45,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        changeJobStatus(jobInstance: any, status: string): void {
-            dispatch(changeJobStatusAsync(jobInstance, status));
-        },
         closeStatistics(): void {
             dispatch(showStatistics(false));
         },
@@ -58,14 +54,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 
 class StatisticsModalContainer extends React.PureComponent<Props> {
-    private changeJobStatus = (status: string): void => {
-        const { jobInstance, changeJobStatus } = this.props;
-
-        changeJobStatus(jobInstance, status);
-    };
-
     public render(): JSX.Element {
-        const { jobInstance, visible, collecting, data, closeStatistics, jobStatus, savingJobStatus } = this.props;
+        const {
+            jobInstance, visible, collecting, data, closeStatistics, jobStatus, savingJobStatus,
+        } = this.props;
 
         return (
             <StatisticsModalComponent
@@ -74,13 +66,12 @@ class StatisticsModalContainer extends React.PureComponent<Props> {
                 visible={visible}
                 jobStatus={jobStatus}
                 bugTracker={jobInstance.task.bugTracker}
-                zOrder={jobInstance.task.zOrder}
                 startFrame={jobInstance.startFrame}
                 stopFrame={jobInstance.stopFrame}
                 assignee={jobInstance.assignee ? jobInstance.assignee.username : 'Nobody'}
+                reviewer={jobInstance.reviewer ? jobInstance.reviewer.username : 'Nobody'}
                 savingJobStatus={savingJobStatus}
                 closeStatistics={closeStatistics}
-                changeJobStatus={this.changeJobStatus}
             />
         );
     }

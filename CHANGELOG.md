@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Manual review pipeline: issues/comments/workspace (<https://github.com/openvinotoolkit/cvat/pull/2357>)
 - Added basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
+- Added documentation on how to mount cloud starage(AWS S3 bucket, Azure container, Google Drive) as FUSE (<https://github.com/openvinotoolkit/cvat/pull/2377>)
+- Added ability to work with share files without copying inside (<https://github.com/openvinotoolkit/cvat/pull/2377>)
 
 ### Changed
 
@@ -67,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MOTS png mask format support (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 - Ability to correct upload video with a rotation record in the metadata (<https://github.com/openvinotoolkit/cvat/pull/2218>)
 - User search field for assignee fields (<https://github.com/openvinotoolkit/cvat/pull/2370>)
+- Support of mxf videos (<https://github.com/openvinotoolkit/cvat/pull/2514>)
 
 ### Changed
 

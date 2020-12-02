@@ -30,6 +30,7 @@ interface Props {
     activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: any[];
+    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -89,6 +90,8 @@ interface Props {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
+    onGetDataFailed(error: any): void;
+    onStartIssue(position: number[]): void;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
@@ -106,10 +109,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
-            forceDisableEditing: workspace === Workspace.ATTRIBUTE_ANNOTATION,
+            forceDisableEditing: [Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace),
         });
 
         this.initialSetup();
+        this.updateIssueRegions();
         this.updateCanvas();
     }
 
@@ -121,6 +125,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             outlined,
             outlineColor,
             showBitmap,
+            frameIssues,
             frameData,
             frameAngle,
             annotations,
@@ -214,6 +219,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
+        if (prevProps.frameIssues !== frameIssues) {
+            this.updateIssueRegions();
+        }
+
         if (
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
@@ -251,11 +260,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.workspace !== workspace) {
-            if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
                 canvasInstance.configure({
                     forceDisableEditing: true,
                 });
-            } else if (prevProps.workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            } else if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(prevProps.workspace)) {
                 canvasInstance.configure({
                     forceDisableEditing: false,
                 });
@@ -310,12 +319,20 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
 
         window.removeEventListener('resize', this.fitCanvas);
     }
+
+    private onCanvasErrorOccurrence = (event: any): void => {
+        const { exception } = event.detail;
+        const { onGetDataFailed } = this.props;
+        onGetDataFailed(exception);
+    };
 
     private onCanvasShapeDrawn = (event: any): void => {
         const {
@@ -368,6 +385,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         onGroupAnnotations(jobInstance, frame, states);
     };
 
+    private onCanvasPositionSelected = (event: any): void => {
+        const { onResetCanvas, onStartIssue } = this.props;
+        const { points } = event.detail;
+        onStartIssue(points);
+        onResetCanvas();
+    };
+
     private onCanvasTrackSplitted = (event: any): void => {
         const {
             jobInstance, frame, onSplitAnnotations, onSplitTrack,
@@ -387,7 +411,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const { workspace, activatedStateID, onActivateObject } = this.props;
 
-        if ((e.target as HTMLElement).tagName === 'svg') {
+        if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
             if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
                 onActivateObject(null);
             }
@@ -395,7 +419,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasClicked = (): void => {
-        if (document.activeElement instanceof HTMLElement) {
+        const { canvasInstance, onUpdateContextMenu } = this.props;
+        onUpdateContextMenu(false, 0, 0, ContextMenuType.CANVAS_SHAPE);
+        if (!canvasInstance.html().contains(document.activeElement) && document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
     };
@@ -455,7 +481,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance, activatedStateID, workspace, onActivateObject,
         } = this.props;
 
-        if (workspace !== Workspace.STANDARD) {
+        if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
             return;
         }
 
@@ -613,6 +639,22 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     }
 
+    private updateIssueRegions(): void {
+        const { canvasInstance, frameIssues } = this.props;
+        if (frameIssues === null) {
+            canvasInstance.setupIssueRegions({});
+        } else {
+            const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<
+            number,
+            number[]
+            > => {
+                acc[issue.id] = issue.position;
+                return acc;
+            }, {});
+            canvasInstance.setupIssueRegions(regions);
+        }
+    }
+
     private updateCanvas(): void {
         const {
             curZLayer, annotations, frameData, canvasInstance,
@@ -707,9 +749,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
     }
 
     public render(): JSX.Element {

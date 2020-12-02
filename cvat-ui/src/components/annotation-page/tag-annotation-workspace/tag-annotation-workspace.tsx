@@ -6,7 +6,7 @@ import './styles.scss';
 import React from 'react';
 import Layout from 'antd/lib/layout';
 
-import CanvasWrapperContainer from 'containers/annotation-page/standard-workspace/canvas-wrapper';
+import CanvasWrapperContainer from 'containers/annotation-page/canvas/canvas-wrapper';
 import TagAnnotationSidebar from './tag-annotation-sidebar/tag-annotation-sidebar';
 
 export default function TagAnnotationWorkspace(): JSX.Element {

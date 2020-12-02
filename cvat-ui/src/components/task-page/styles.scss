@@ -111,6 +111,26 @@
     }
 }
 
+.cvat-job-item-status {
+    i {
+        margin-left: $grid-unit-size;
+    }
+}
+
+.cvat-review-summary-description {
+    color: white;
+
+    .ant-typography {
+        color: white;
+    }
+
+    tr {
+        > td:nth-child(2) {
+            padding-left: $grid-unit-size;
+        }
+    }
+}
+
 .cvat-job-completed-color {
     color: $completed-progress-color;
 }

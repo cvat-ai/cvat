@@ -114,6 +114,7 @@ export enum UpdateReasons {
     IMAGE_MOVED = 'image_moved',
     GRID_UPDATED = 'grid_updated',
 
+    ISSUE_REGIONS_UPDATED = 'issue_regions_updated',
     OBJECTS_UPDATED = 'objects_updated',
     SHAPE_ACTIVATED = 'shape_activated',
     SHAPE_FOCUSED = 'shape_focused',
@@ -128,9 +129,11 @@ export enum UpdateReasons {
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
+    SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
     CONFIG_UPDATED = 'config_updated',
+    DATA_FAILED = 'data_failed',
 }
 
 export enum Mode {
@@ -143,6 +146,7 @@ export enum Mode {
     SPLIT = 'split',
     GROUP = 'group',
     INTERACT = 'interact',
+    SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
 }
@@ -150,6 +154,7 @@ export enum Mode {
 export interface CanvasModel {
     readonly imageBitmap: boolean;
     readonly image: Image | null;
+    readonly issueRegions: Record<number, number[]>;
     readonly objects: any[];
     readonly zLayer: number | null;
     readonly gridSize: Size;
@@ -164,11 +169,13 @@ export interface CanvasModel {
     readonly selected: any;
     geometry: Geometry;
     mode: Mode;
+    exception: Error | null;
 
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[], zLayer: number): void;
+    setupIssueRegions(issueRegions: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
@@ -184,6 +191,7 @@ export interface CanvasModel {
 
     fitCanvas(width: number, height: number): void;
     bitmap(enabled: boolean): void;
+    selectRegion(enabled: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
@@ -207,6 +215,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         gridSize: Size;
         left: number;
         objects: any[];
+        issueRegions: Record<number, number[]>;
         scale: number;
         top: number;
         zLayer: number | null;
@@ -217,6 +226,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         splitData: SplitData;
         selected: any;
         mode: Mode;
+        exception: Error | null;
     };
 
     public constructor() {
@@ -255,6 +265,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             left: 0,
             objects: [],
+            issueRegions: {},
             scale: 1,
             top: 0,
             zLayer: null,
@@ -276,6 +287,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             selected: null,
             mode: Mode.IDLE,
+            exception: null,
         };
     }
 
@@ -324,6 +336,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public bitmap(enabled: boolean): void {
         this.data.imageBitmap = enabled;
         this.notify(UpdateReasons.BITMAP);
+    }
+
+    public selectRegion(enable: boolean): void {
+        if (enable && this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (!enable && this.data.mode !== Mode.SELECT_REGION) {
+            throw Error(`Canvas is not in the region selecting mode. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = enable ? Mode.SELECT_REGION : Mode.IDLE;
+        this.notify(UpdateReasons.SELECT_REGION);
     }
 
     public dragCanvas(enable: boolean): void {
@@ -390,8 +415,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
             .catch((exception: any): void => {
+                this.data.exception = exception;
+                this.notify(UpdateReasons.DATA_FAILED);
                 throw exception;
             });
+    }
+
+    public setupIssueRegions(issueRegions: Record<number, number[]>): void {
+        this.data.issueRegions = issueRegions;
+        this.notify(UpdateReasons.ISSUE_REGIONS_UPDATED);
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
@@ -662,6 +694,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.image;
     }
 
+    public get issueRegions(): Record<number, number[]> {
+        return { ...this.data.issueRegions };
+    }
+
     public get objects(): any[] {
         if (this.data.zLayer !== null) {
             return this.data.objects.filter((object: any): boolean => object.zOrder <= this.data.zLayer);
@@ -712,5 +748,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get mode(): Mode {
         return this.data.mode;
+    }
+    public get exception(): Error {
+        return this.data.exception;
     }
 }

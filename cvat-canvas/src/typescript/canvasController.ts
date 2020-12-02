@@ -19,6 +19,7 @@ import {
 
 export interface CanvasController {
     readonly objects: any[];
+    readonly issueRegions: Record<number, number[]>;
     readonly zLayer: number | null;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
@@ -38,6 +39,7 @@ export interface CanvasController {
     merge(mergeData: MergeData): void;
     split(splitData: SplitData): void;
     group(groupData: GroupData): void;
+    selectRegion(enabled: boolean): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -105,6 +107,10 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.group(groupData);
     }
 
+    public selectRegion(enable: boolean): void {
+        this.model.selectRegion(enable);
+    }
+
     public get geometry(): Geometry {
         return this.model.geometry;
     }
@@ -115,6 +121,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get zLayer(): number | null {
         return this.model.zLayer;
+    }
+
+    public get issueRegions(): Record<number, number[]> {
+        return this.model.issueRegions;
     }
 
     public get objects(): any[] {

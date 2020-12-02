@@ -14,6 +14,7 @@ import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
 import ItemMenu from './object-item-menu';
 
 interface Props {
+    readonly: boolean;
     clientID: number;
     serverID: number | undefined;
     labelID: number;
@@ -46,6 +47,7 @@ interface Props {
 
 function ItemTopComponent(props: Props): JSX.Element {
     const {
+        readonly,
         clientID,
         serverID,
         labelID,
@@ -101,8 +103,9 @@ function ItemTopComponent(props: Props): JSX.Element {
                 </Text>
             </Col>
             <Col span={12}>
-                <Tooltip title='Change current label' mouseLeaveDelay={0}>
+                <Tooltip title={readonly ? 'Current label' : 'Change current label'} mouseLeaveDelay={0}>
                     <Select
+                        disabled={readonly}
                         size='small'
                         value={`${labelID}`}
                         onChange={changeLabel}
@@ -132,6 +135,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                     onVisibleChange={changeMenuVisible}
                     placement='bottomLeft'
                     overlay={ItemMenu({
+                        readonly,
                         serverID,
                         locked,
                         shapeType,
