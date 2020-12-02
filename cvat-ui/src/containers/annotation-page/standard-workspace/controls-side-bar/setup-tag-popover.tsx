@@ -74,14 +74,16 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         };
     }
 
-    private onChangeLabel = (value: string): void => {
+    private onChangeLabel = (value: any): void => {
         this.setState({
-            selectedLabelID: +value,
+            selectedLabelID: value.id,
         });
     };
 
     private onSetup = (): void => {
-        const { frame, labels, jobInstance, canvasInstance, onAnnotationCreate, onRememberObject } = this.props;
+        const {
+            frame, labels, jobInstance, canvasInstance, onAnnotationCreate, onRememberObject,
+        } = this.props;
 
         const { selectedLabelID } = this.state;
 
@@ -105,7 +107,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         return (
             <SetupTagPopoverComponent
                 labels={labels}
-                selectedLabeID={selectedLabelID}
+                selectedLabelID={selectedLabelID}
                 repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}
                 onSetup={this.onSetup}

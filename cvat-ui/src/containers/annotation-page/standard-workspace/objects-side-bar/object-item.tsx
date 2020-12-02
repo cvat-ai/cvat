@@ -254,15 +254,12 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     };
 
-    private changeLabel = (labelID: string): void => {
-        const { objectState, readonly, labels } = this.props;
-
+    private changeLabel = (label: any): void => {
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            const [label] = labels.filter((_label: any): boolean => _label.id === +labelID);
             objectState.label = label;
+            this.commit();
         }
-
-        this.commit();
     };
 
     private changeAttribute = (id: number, value: string): void => {

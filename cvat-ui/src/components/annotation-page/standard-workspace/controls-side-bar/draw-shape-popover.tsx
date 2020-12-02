@@ -4,7 +4,6 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Select, { OptionProps } from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -14,6 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
+import LabelSelector from 'components/label-selector/label-selector';
 
 interface Props {
     shapeType: ShapeType;
@@ -22,7 +22,7 @@ interface Props {
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
-    selectedLabeID: number;
+    selectedLabelID: number;
     repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
     onChangePoints(value: number | undefined): void;
@@ -37,7 +37,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         labels,
         shapeType,
         minimumPoints,
-        selectedLabeID,
+        selectedLabelID,
         numberOfPoints,
         rectDrawingMethod,
         cuboidDrawingMethod,
@@ -64,25 +64,12 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             </Row>
             <Row type='flex' justify='center'>
                 <Col span={24}>
-                    <Select
-                        showSearch
-                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                            const { children } = option.props;
-                            if (typeof children === 'string') {
-                                return children.toLowerCase().includes(input.toLowerCase());
-                            }
-
-                            return false;
-                        }}
-                        value={`${selectedLabeID}`}
+                    <LabelSelector
+                        style={{ width: '100%' }}
+                        labels={labels}
+                        value={selectedLabelID}
                         onChange={onChangeLabel}
-                    >
-                        {labels.map((label: any) => (
-                            <Select.Option key={label.id} value={`${label.id}`}>
-                                {label.name}
-                            </Select.Option>
-                        ))}
-                    </Select>
+                    />
                 </Col>
             </Row>
             {shapeType === ShapeType.RECTANGLE && (

@@ -6,7 +6,7 @@ import React, { MutableRefObject } from 'react';
 import { connect } from 'react-redux';
 import Icon from 'antd/lib/icon';
 import Popover from 'antd/lib/popover';
-import Select, { OptionProps } from 'antd/lib/select';
+import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
@@ -14,12 +14,15 @@ import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Progress from 'antd/lib/progress';
+import InputNumber from 'antd/lib/input-number';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
-import { CombinedState, ActiveControl, Model, ObjectType, ShapeType } from 'reducers/interfaces';
+import {
+    CombinedState, ActiveControl, Model, ObjectType, ShapeType,
+} from 'reducers/interfaces';
 import {
     interactWithCanvas,
     fetchAnnotationsAsync,
@@ -28,7 +31,7 @@ import {
 } from 'actions/annotation-actions';
 import { InteractionResult } from 'cvat-canvas/src/typescript/canvas';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
-import InputNumber from 'antd/lib/input-number';
+import LabelSelector from 'components/label-selector/label-selector';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -178,7 +181,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private cancelListener = async (): Promise<void> => {
-        const { isActivated, jobInstance, frame, fetchAnnotations } = this.props;
+        const {
+            isActivated, jobInstance, frame, fetchAnnotations,
+        } = this.props;
         const { interactiveStateID, fetching } = this.state;
 
         if (isActivated) {
@@ -313,7 +318,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private onTracking = async (e: Event): Promise<void> => {
-        const { isActivated, jobInstance, frame, curZOrder, fetchAnnotations } = this.props;
+        const {
+            isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
+        } = this.props;
         const { activeLabelID } = this.state;
         const [label] = jobInstance.task.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
@@ -457,28 +464,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 </Row>
                 <Row type='flex' justify='center'>
                     <Col span={24}>
-                        <Select
+                        <LabelSelector
                             style={{ width: '100%' }}
-                            showSearch
-                            filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                                const { children } = option.props;
-                                if (typeof children === 'string') {
-                                    return children.toLowerCase().includes(input.toLowerCase());
-                                }
-
-                                return false;
-                            }}
-                            value={`${activeLabelID}`}
-                            onChange={(value: string) => {
-                                this.setState({ activeLabelID: +value });
-                            }}
-                        >
-                            {labels.map((label: any) => (
-                                <Select.Option key={label.id} value={`${label.id}`}>
-                                    {label.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
+                            labels={labels}
+                            value={activeLabelID}
+                            onChange={(value: any) => this.setState({ activeLabelID: value.id })}
+                        />
                     </Col>
                 </Row>
             </>
@@ -486,8 +477,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderTrackerBlock(): JSX.Element {
-        const { trackers, canvasInstance, jobInstance, frame, onInteractionStart } = this.props;
-        const { activeTracker, activeLabelID, fetching, trackingFrames } = this.state;
+        const {
+            trackers, canvasInstance, jobInstance, frame, onInteractionStart,
+        } = this.props;
+        const {
+            activeTracker, activeLabelID, fetching, trackingFrames,
+        } = this.state;
 
         if (!trackers.length) {
             return (
@@ -516,9 +511,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onChange={this.setActiveTracker}
                         >
                             {trackers.map(
-                                (interactor: Model): JSX.Element => (
-                                    <Select.Option title={interactor.description} key={interactor.id}>
-                                        {interactor.name}
+                                (tracker: Model): JSX.Element => (
+                                    <Select.Option title={tracker.description} key={tracker.id}>
+                                        {tracker.name}
                                     </Select.Option>
                                 ),
                             )}
@@ -650,7 +645,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderDetectorBlock(): JSX.Element {
-        const { jobInstance, detectors, curZOrder, frame, fetchAnnotations } = this.props;
+        const {
+            jobInstance, detectors, curZOrder, frame, fetchAnnotations,
+        } = this.props;
 
         if (!detectors.length) {
             return (
@@ -682,18 +679,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
 
                         const states = result.map(
-                            (data: any): any =>
-                                new core.classes.ObjectState({
-                                    shapeType: data.type,
-                                    label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
-                                    points: data.points,
-                                    objectType: ObjectType.SHAPE,
-                                    frame,
-                                    occluded: false,
-                                    source: 'auto',
-                                    attributes: {},
-                                    zOrder: curZOrder,
-                                }),
+                            (data: any): any => new core.classes.ObjectState({
+                                shapeType: data.type,
+                                label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
+                                points: data.points,
+                                objectType: ObjectType.SHAPE,
+                                frame,
+                                occluded: false,
+                                source: 'auto',
+                                attributes: {},
+                                zOrder: curZOrder,
+                            }),
                         );
 
                         await jobInstance.annotations.put(states);
@@ -739,29 +735,31 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { interactors, detectors, trackers, isActivated, canvasInstance } = this.props;
+        const {
+            interactors, detectors, trackers, isActivated, canvasInstance,
+        } = this.props;
         const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
 
-        const dynamcPopoverPros = isActivated
-            ? {
-                  overlayStyle: {
-                      display: 'none',
-                  },
-              }
-            : {};
+        const dynamcPopoverPros = isActivated ?
+            {
+                overlayStyle: {
+                    display: 'none',
+                },
+            } :
+            {};
 
-        const dynamicIconProps = isActivated
-            ? {
-                  className: 'cvat-active-canvas-control cvat-tools-control',
-                  onClick: (): void => {
-                      canvasInstance.interact({ enabled: false });
-                  },
-              }
-            : {
-                  className: 'cvat-tools-control',
-              };
+        const dynamicIconProps = isActivated ?
+            {
+                className: 'cvat-active-canvas-control cvat-tools-control',
+                onClick: (): void => {
+                    canvasInstance.interact({ enabled: false });
+                },
+            } :
+            {
+                className: 'cvat-tools-control',
+            };
 
         return (
             <>
