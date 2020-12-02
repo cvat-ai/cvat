@@ -31,6 +31,7 @@ interface Props {
     withRemote: boolean;
     treeData: TreeNodeNormal[];
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
+    onChangeActiveKey(key: string): void;
 }
 
 export default class FileManager extends React.PureComponent<Props, State> {
@@ -215,7 +216,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { withRemote } = this.props;
+        const { withRemote, onChangeActiveKey } = this.props;
         const { active } = this.state;
 
         return (
@@ -224,11 +225,12 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     type='card'
                     activeKey={active}
                     tabBarGutter={5}
-                    onChange={(activeKey: string): void =>
+                    onChange={(activeKey: string): void => {
+                        onChangeActiveKey(activeKey);
                         this.setState({
                             active: activeKey as any,
-                        })
-                    }
+                        });
+                    }}
                 >
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}

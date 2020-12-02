@@ -14,7 +14,7 @@ module.exports = {
         sourceType: 'module',
         ecmaVersion: 2018,
     },
-    plugins: ['security', 'jest', 'no-unsafe-innerhtml'],
+    plugins: ['security', 'jest', 'no-unsafe-innerhtml', 'no-unsanitized'],
     extends: ['eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM', 'airbnb-base'],
     rules: {
         'no-await-in-loop': [0],

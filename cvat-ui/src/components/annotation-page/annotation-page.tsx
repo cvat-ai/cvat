@@ -12,9 +12,12 @@ import Result from 'antd/lib/result';
 import { Workspace } from 'reducers/interfaces';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
-import StandardWorkspaceComponent from './standard-workspace/standard-workspace';
-import AttributeAnnotationWorkspace from './attribute-annotation-workspace/attribute-annotation-workspace';
-import TagAnnotationWorkspace from './tag-annotation-workspace/tag-annotation-workspace';
+import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
+import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
+import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
+import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
+import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
+import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
 
 interface Props {
     job: any | null | undefined;
@@ -26,7 +29,9 @@ interface Props {
 }
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
-    const { job, fetching, getJob, closeJob, saveLogs, workspace } = props;
+    const {
+        job, fetching, getJob, closeJob, saveLogs, workspace,
+    } = props;
 
     const history = useHistory();
     useEffect(() => {
@@ -87,7 +92,14 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                     <TagAnnotationWorkspace />
                 </Layout.Content>
             )}
+            {workspace === Workspace.REVIEW_WORKSPACE && (
+                <Layout.Content style={{ height: '100%' }}>
+                    <ReviewAnnotationsWorkspace />
+                </Layout.Content>
+            )}
             <StatisticsModalContainer />
+            <SubmitAnnotationsModal />
+            <SubmitReviewModal />
         </Layout>
     );
 }
