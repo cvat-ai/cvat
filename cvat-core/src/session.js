@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
+    const store = require('store');
     const PluginRegistry = require('./plugins');
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
@@ -13,6 +14,8 @@
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
     const User = require('./user');
+    const Issue = require('./issue');
+    const Review = require('./review');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -667,7 +670,8 @@
             super();
             const data = {
                 id: undefined,
-                assignee: undefined,
+                assignee: null,
+                reviewer: null,
                 status: undefined,
                 start_frame: undefined,
                 stop_frame: undefined,
@@ -676,6 +680,7 @@
 
             let updatedFields = {
                 assignee: false,
+                reviewer: false,
                 status: false,
             };
 
@@ -692,6 +697,7 @@
             }
 
             if (data.assignee) data.assignee = new User(data.assignee);
+            if (data.reviewer) data.reviewer = new User(data.reviewer);
 
             Object.defineProperties(
                 this,
@@ -707,7 +713,7 @@
                         get: () => data.id,
                     },
                     /**
-                     * Instance of a user who is responsible for the job
+                     * Instance of a user who is responsible for the job annotations
                      * @name assignee
                      * @type {module:API.cvat.classes.User}
                      * @memberof module:API.cvat.classes.Job
@@ -722,6 +728,24 @@
                             }
                             updatedFields.assignee = true;
                             data.assignee = assignee;
+                        },
+                    },
+                    /**
+                     * Instance of a user who is responsible for review
+                     * @name reviewer
+                     * @type {module:API.cvat.classes.User}
+                     * @memberof module:API.cvat.classes.Job
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    reviewer: {
+                        get: () => data.reviewer,
+                        set: (reviewer) => {
+                            if (reviewer !== null && !(reviewer instanceof User)) {
+                                throw new ArgumentError('Value must be a user instance');
+                            }
+                            updatedFields.reviewer = true;
+                            data.reviewer = reviewer;
                         },
                     },
                     /**
@@ -847,6 +871,64 @@
             const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save);
             return result;
         }
+
+        /**
+         * Method returns a list of issues for a job
+         * @method issues
+         * @memberof module:API.cvat.classes.Job
+         * @type {module:API.cvat.classes.Issue[]}
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async issues() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.issues);
+            return result;
+        }
+
+        /**
+         * Method returns a list of reviews for a job
+         * @method reviews
+         * @type {module:API.cvat.classes.Review[]}
+         * @memberof module:API.cvat.classes.Job
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async reviews() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviews);
+            return result;
+        }
+
+        /**
+         * /**
+         * @typedef {Object} ReviewSummary
+         * @property {number} reviews Number of done reviews
+         * @property {number} average_estimated_quality
+         * @property {number} issues_unsolved
+         * @property {number} issues_resolved
+         * @property {string[]} assignees
+         * @property {string[]} reviewers
+         */
+        /**
+         * Method returns brief summary of within all reviews
+         * @method reviewsSummary
+         * @type {ReviewSummary}
+         * @memberof module:API.cvat.classes.Job
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async reviewsSummary() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviewsSummary);
+            return result;
+        }
     }
 
     /**
@@ -875,8 +957,8 @@
                 status: undefined,
                 size: undefined,
                 mode: undefined,
-                owner: undefined,
-                assignee: undefined,
+                owner: null,
+                assignee: null,
                 created_date: undefined,
                 updated_date: undefined,
                 bug_tracker: undefined,
@@ -926,6 +1008,7 @@
                                 url: job.url,
                                 id: job.id,
                                 assignee: job.assignee,
+                                reviewer: job.reviewer,
                                 status: job.status,
                                 start_frame: segment.start_frame,
                                 stop_frame: segment.stop_frame,
@@ -1499,7 +1582,6 @@
     buildDublicatedAPI(Task.prototype);
 
     Job.prototype.save.implementation = async function () {
-        // TODO: Add ability to change an assignee
         if (this.id) {
             const jobData = {};
 
@@ -1512,23 +1594,63 @@
                     case 'assignee':
                         jobData.assignee_id = this.assignee ? this.assignee.id : null;
                         break;
+                    case 'reviewer':
+                        jobData.reviewer_id = this.reviewer ? this.reviewer.id : null;
+                        break;
                     default:
                         break;
                     }
                 }
             }
 
-            await serverProxy.jobs.saveJob(this.id, jobData);
+            await serverProxy.jobs.save(this.id, jobData);
 
             this.__updatedFields = {
                 status: false,
                 assignee: false,
+                reviewer: false,
             };
 
             return this;
         }
 
         throw new ArgumentError('Can not save job without and id');
+    };
+
+    Job.prototype.issues.implementation = async function () {
+        const result = await serverProxy.jobs.issues(this.id);
+        return result.map((issue) => new Issue(issue));
+    };
+
+    Job.prototype.reviews.implementation = async function () {
+        const result = await serverProxy.jobs.reviews.get(this.id);
+        const reviews = result.map((review) => new Review(review));
+
+        // try to get not finished review from the local storage
+        const data = store.get(`job-${this.id}-review`);
+        if (data) {
+            reviews.push(new Review(JSON.parse(data)));
+        }
+
+        return reviews;
+    };
+
+    Job.prototype.reviewsSummary.implementation = async function () {
+        const reviews = await serverProxy.jobs.reviews.get(this.id);
+        const issues = await serverProxy.jobs.issues(this.id);
+
+        const qualities = reviews.map((review) => review.estimated_quality);
+        const reviewers = reviews.filter((review) => review.reviewer).map((review) => review.reviewer.username);
+        const assignees = reviews.filter((review) => review.assignee).map((review) => review.assignee.username);
+
+        return {
+            reviews: reviews.length,
+            average_estimated_quality: qualities.reduce((acc, quality) => acc + quality, 0) / (qualities.length || 1),
+            issues_unsolved: issues.filter((issue) => !issue.resolved_date).length,
+            issues_resolved: issues.filter((issue) => issue.resolved_date).length,
+            assignees: Array.from(new Set(assignees.filter((assignee) => assignee !== null))),
+            reviewers: Array.from(new Set(reviewers.filter((reviewer) => reviewer !== null))),
+        };
     };
 
     Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {

@@ -19,7 +19,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 - [Installation guide](cvat/apps/documentation/installation.md)
 - [User's guide](cvat/apps/documentation/user_guide.md)
 - [Django REST API documentation](#rest-api)
-- [Datumaro dataset framework](datumaro/README.md)
+- [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
 - [Command line interface](utils/cli/)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)

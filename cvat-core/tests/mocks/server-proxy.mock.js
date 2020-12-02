@@ -345,16 +345,16 @@ class ServerProxy {
 
                 jobs: {
                     value: Object.freeze({
-                        getJob,
-                        saveJob,
+                        get: getJob,
+                        save: saveJob,
                     }),
                     writable: false,
                 },
 
                 users: {
                     value: Object.freeze({
-                        getUsers,
-                        getSelf,
+                        get: getUsers,
+                        self: getSelf,
                     }),
                     writable: false,
                 },
@@ -373,8 +373,6 @@ class ServerProxy {
                         updateAnnotations,
                         getAnnotations,
                     },
-                    // To implement on of important tests
-                    writable: true,
                 },
             }),
         );

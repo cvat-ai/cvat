@@ -126,19 +126,25 @@ class JobSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    reviewer = BasicUserSerializer(allow_null=True, required=False)
+    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'assignee_id', 'status', 'start_frame',
-            'stop_frame', 'task_id')
+        fields = ('url', 'id', 'assignee', 'assignee_id', 'reviewer',
+            'reviewer_id', 'status', 'start_frame', 'stop_frame', 'task_id')
+        read_only_fields = ('assignee', 'reviewer')
 
 class SimpleJobSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
+    reviewer = BasicUserSerializer(allow_null=True, required=False)
+    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'assignee_id', 'status')
+        fields = ('url', 'id', 'assignee', 'assignee_id', 'reviewer', 'reviewer_id', 'status')
+        read_only_fields = ('assignee', 'reviewer')
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
@@ -330,7 +336,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'status', 'labels', 'segments',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'owner', 'asignee',
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'owner', 'assignee',
             'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         write_once_fields = ('overlap', 'segment_size', 'project_id')
         ordering = ['-id']
@@ -581,3 +587,64 @@ class LogEventSerializer(serializers.Serializer):
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
+
+class ReviewSerializer(serializers.ModelSerializer):
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    reviewer = BasicUserSerializer(allow_null=True, required=False)
+    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
+    class Meta:
+        model = models.Review
+        fields = '__all__'
+        read_only_fields = ('id', 'assignee', 'reviewer', )
+        write_once_fields = ('job', 'reviewer_id', 'assignee_id', 'estimated_quality', 'status', )
+        ordering = ['-id']
+
+class IssueSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer(allow_null=True, required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    resolver = BasicUserSerializer(allow_null=True, required=False)
+    resolver_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
+    position = serializers.ListField(
+        child=serializers.FloatField(),
+        allow_empty=False,
+    )
+
+    class Meta:
+        model = models.Issue
+        fields = '__all__'
+        read_only_fields = ('created_date', 'id', 'owner', 'resolver', )
+        write_once_fields = ('frame', 'position', 'job', 'owner_id', 'review', )
+        ordering = ['-id']
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = BasicUserSerializer(allow_null=True, required=False)
+    author_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
+    class Meta:
+        model = models.Comment
+        fields = '__all__'
+        read_only_fields = ('created_date', 'updated_date', 'id', 'author', )
+        write_once_fields = ('issue', 'author_id', )
+
+class CombinedIssueSerializer(IssueSerializer):
+    comment_set = CommentSerializer(many=True)
+
+class CombinedReviewSerializer(ReviewSerializer):
+    issue_set = CombinedIssueSerializer(many=True)
+
+    def create(self, validated_data):
+        issues_validated_data = validated_data.pop('issue_set')
+        db_review = models.Review.objects.create(**validated_data)
+        for issue in issues_validated_data:
+            issue['review'] = db_review
+
+            comments_validated_data = issue.pop('comment_set')
+            db_issue = models.Issue.objects.create(**issue)
+            for comment in comments_validated_data:
+                comment['issue'] = db_issue
+                models.Comment.objects.create(**comment)
+
+        return db_review

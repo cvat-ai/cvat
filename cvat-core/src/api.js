@@ -13,24 +13,15 @@ function build() {
     const Log = require('./log');
     const ObjectState = require('./object-state');
     const Statistics = require('./statistics');
+    const Comment = require('./comment');
+    const Issue = require('./issue');
+    const Review = require('./review');
     const { Job, Task } = require('./session');
     const { Project } = require('./project');
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
 
-    const {
-        ShareFileType,
-        TaskStatus,
-        TaskMode,
-        AttributeType,
-        ObjectType,
-        ObjectShape,
-        LogType,
-        HistoryActions,
-        RQStatus,
-        colors,
-        Source,
-    } = require('./enums');
+    const enums = require('./enums');
 
     const {
         Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
@@ -741,19 +732,7 @@ function build() {
          * @namespace enums
          * @memberof module:API.cvat
          */
-        enums: {
-            ShareFileType,
-            TaskStatus,
-            TaskMode,
-            AttributeType,
-            ObjectType,
-            ObjectShape,
-            LogType,
-            HistoryActions,
-            RQStatus,
-            colors,
-            Source,
-        },
+        enums,
         /**
          * Namespace is used for access to exceptions
          * @namespace exceptions
@@ -783,6 +762,9 @@ function build() {
             Statistics,
             ObjectState,
             MLModel,
+            Comment,
+            Issue,
+            Review,
         },
     };
 

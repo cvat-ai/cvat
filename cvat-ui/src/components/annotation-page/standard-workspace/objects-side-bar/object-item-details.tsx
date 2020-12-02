@@ -9,6 +9,7 @@ import Collapse from 'antd/lib/collapse';
 import ItemAttribute from './object-item-attribute';
 
 interface Props {
+    readonly: boolean;
     collapsed: boolean;
     attributes: any[];
     values: Record<number, string>;
@@ -28,6 +29,7 @@ export function attrValuesAreEqual(next: Record<number, string>, prev: Record<nu
 
 function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
     return (
+        nextProps.readonly === prevProps.readonly &&
         nextProps.collapsed === prevProps.collapsed &&
         nextProps.attributes === prevProps.attributes &&
         attrValuesAreEqual(nextProps.values, prevProps.values)
@@ -35,7 +37,9 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
 }
 
 function ItemAttributesComponent(props: Props): JSX.Element {
-    const { collapsed, attributes, values, changeAttribute, collapse } = props;
+    const {
+        collapsed, attributes, values, readonly, changeAttribute, collapse,
+    } = props;
 
     const sorted = [...attributes].sort((a: any, b: any): number => a.inputType.localeCompare(b.inputType));
 
@@ -57,6 +61,7 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                                 className='cvat-object-item-attribute-wrapper'
                             >
                                 <ItemAttribute
+                                    readonly={readonly}
                                     attrValue={values[attribute.id]}
                                     attrInputType={attribute.inputType}
                                     attrName={attribute.name}
