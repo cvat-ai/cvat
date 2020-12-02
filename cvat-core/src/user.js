@@ -157,6 +157,27 @@
                 }),
             );
         }
+
+        serialize() {
+            return {
+                id: this.id,
+                username: this.username,
+                email: this.email,
+                first_name: this.firstName,
+                last_name: this.lastName,
+                groups: this.groups,
+                last_login: this.lastLogin,
+                date_joined: this.dateJoined,
+                is_staff: this.isStaff,
+                is_superuser: this.isSuperuser,
+                is_active: this.isActive,
+                email_verification_required: this.isVerified,
+            };
+        }
+
+        toJSON() {
+            return this.serialize();
+        }
     }
 
     module.exports = User;

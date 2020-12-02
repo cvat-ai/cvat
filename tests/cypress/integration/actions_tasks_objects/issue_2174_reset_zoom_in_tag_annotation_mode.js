@@ -14,28 +14,28 @@ context('Reset zoom in tag annotation', () => {
 
     function scaleFrame() {
         cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: 5 });
-    };
+    }
 
     function changeCheckboxResetZoom(value) {
         cy.openSettings();
         cy.get('.ant-modal-content').within(() => {
             cy.contains('Player').click();
             cy.get('.cvat-player-settings-reset-zoom-checkbox').within(() => {
-                if (value == "check") {
+                if (value == 'check') {
                     cy.get('[type="checkbox"]').check();
-                } else if (value == "uncheck") {
+                } else if (value == 'uncheck') {
                     cy.get('[type="checkbox"]').uncheck();
-                };
+                }
             });
         });
         cy.closeSettings();
-    };
+    }
 
     function checkFrameNum(frameNum) {
         cy.get('.cvat-player-frame-selector').within(() => {
             cy.get('input[role="spinbutton"]').should('have.value', frameNum);
         });
-    };
+    }
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -43,7 +43,7 @@ context('Reset zoom in tag annotation', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Set "reset zoom" to true', () => {
-            changeCheckboxResetZoom("check");
+            changeCheckboxResetZoom('check');
         });
 
         it('Go to tag annotation', () => {
@@ -71,7 +71,7 @@ context('Reset zoom in tag annotation', () => {
         });
 
         it('Set "reset zoom" to false', () => {
-            changeCheckboxResetZoom("uncheck");
+            changeCheckboxResetZoom('uncheck');
         });
 
         it('Scale frame', () => {

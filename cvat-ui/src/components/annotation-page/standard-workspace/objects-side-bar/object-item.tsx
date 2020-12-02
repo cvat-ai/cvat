@@ -11,6 +11,7 @@ import ItemBasics from './object-item-basics';
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
+    readonly: boolean;
     activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -45,6 +46,7 @@ interface Props {
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
     return (
         nextProps.activated === prevProps.activated &&
+        nextProps.readonly === prevProps.readonly &&
         nextProps.locked === prevProps.locked &&
         nextProps.labelID === prevProps.labelID &&
         nextProps.color === prevProps.color &&
@@ -64,6 +66,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
 function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
+        readonly,
         objectType,
         shapeType,
         clientID,
@@ -114,6 +117,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 style={{ backgroundColor: `${color}88` }}
             >
                 <ItemBasics
+                    readonly={readonly}
                     serverID={serverID}
                     clientID={clientID}
                     labelID={labelID}
@@ -143,9 +147,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     resetCuboidPerspective={resetCuboidPerspective}
                     activateTracking={activateTracking}
                 />
-                <ObjectButtonsContainer clientID={clientID} />
+                <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (
                     <ItemDetails
+                        readonly={readonly}
                         collapsed={collapsed}
                         attributes={attributes}
                         values={attrValues}

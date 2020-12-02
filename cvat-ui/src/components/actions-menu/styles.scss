@@ -5,7 +5,7 @@
 @import '../../base.scss';
 
 .ant-menu.cvat-actions-menu {
-    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+    box-shadow: $box-shadow-base;
 
     > li:hover {
         background-color: $hover-menu-color;

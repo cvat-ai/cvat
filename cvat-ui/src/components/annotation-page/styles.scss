@@ -161,22 +161,13 @@
 
     > div:nth-child(1) {
         > div {
-            > .ant-select,
-            i {
-                margin-left: 10px;
-            }
-        }
-    }
-
-    > div:nth-child(2) {
-        > div {
             > span {
                 font-size: 20px;
             }
         }
     }
 
-    > div:nth-child(3) {
+    > div:nth-child(2) {
         > div {
             display: grid;
         }
@@ -204,7 +195,7 @@
 }
 
 .ant-menu.cvat-annotation-menu {
-    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+    box-shadow: $box-shadow-base;
 
     > li:hover {
         background-color: $hover-menu-color;
@@ -315,5 +306,30 @@
 
     > svg {
         transform: scale(1.8);
+    }
+}
+
+.cvat-request-review-dialog {
+    > .ant-modal-content > .ant-modal-body {
+        > div:nth-child(2) {
+            margin-top: $grid-unit-size * 2;
+        }
+
+        > div:nth-child(3) {
+            margin-top: $grid-unit-size * 2;
+        }
+    }
+}
+
+.cvat-submit-review-dialog {
+    > .ant-modal-content > .ant-modal-body {
+        > div:nth-child(2) > div:nth-child(2) {
+            .ant-col {
+                > div:nth-child(2) {
+                    margin-top: $grid-unit-size * 2;
+                    margin-bottom: $grid-unit-size * 2;
+                }
+            }
+        }
     }
 }

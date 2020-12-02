@@ -14,6 +14,7 @@ import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
 
 interface Props {
+    readonly: boolean;
     clientID: number;
     serverID: number | undefined;
     labelID: number;
@@ -46,6 +47,7 @@ interface Props {
 
 function ItemTopComponent(props: Props): JSX.Element {
     const {
+        readonly,
         clientID,
         serverID,
         labelID,
@@ -102,7 +104,7 @@ function ItemTopComponent(props: Props): JSX.Element {
             </Col>
             <Col span={12}>
                 <Tooltip title='Change current label' mouseLeaveDelay={0}>
-                    <LabelSelector size='small' labels={labels} value={labelID} onChange={changeLabel} />
+                    <LabelSelector disabled={readonly} size='small' labels={labels} value={labelID} onChange={changeLabel} />
                 </Tooltip>
             </Col>
             <Col span={2}>
@@ -111,6 +113,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                     onVisibleChange={changeMenuVisible}
                     placement='bottomLeft'
                     overlay={ItemMenu({
+                        readonly,
                         serverID,
                         locked,
                         shapeType,

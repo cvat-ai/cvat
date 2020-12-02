@@ -14,10 +14,12 @@ import {
     GroupData,
     Mode,
     InteractionData,
+    Configuration,
 } from './canvasModel';
 
 export interface CanvasController {
     readonly objects: any[];
+    readonly issueRegions: Record<number, number[]>;
     readonly zLayer: number | null;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
@@ -27,6 +29,7 @@ export interface CanvasController {
     readonly splitData: SplitData;
     readonly groupData: GroupData;
     readonly selected: any;
+    readonly configuration: Configuration;
     mode: Mode;
     geometry: Geometry;
 
@@ -36,6 +39,7 @@ export interface CanvasController {
     merge(mergeData: MergeData): void;
     split(splitData: SplitData): void;
     group(groupData: GroupData): void;
+    selectRegion(enabled: boolean): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -103,6 +107,10 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.group(groupData);
     }
 
+    public selectRegion(enable: boolean): void {
+        this.model.selectRegion(enable);
+    }
+
     public get geometry(): Geometry {
         return this.model.geometry;
     }
@@ -113,6 +121,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get zLayer(): number | null {
         return this.model.zLayer;
+    }
+
+    public get issueRegions(): Record<number, number[]> {
+        return this.model.issueRegions;
     }
 
     public get objects(): any[] {
@@ -149,6 +161,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get selected(): any {
         return this.model.selected;
+    }
+
+    public get configuration(): Configuration {
+        return this.model.configuration;
     }
 
     public set mode(value: Mode) {

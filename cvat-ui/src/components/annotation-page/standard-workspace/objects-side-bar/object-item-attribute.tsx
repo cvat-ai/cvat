@@ -15,6 +15,7 @@ import consts from 'consts';
 import { clamp } from 'utils/math';
 
 interface Props {
+    readonly: boolean;
     attrInputType: string;
     attrValues: string[];
     attrValue: string;
@@ -25,6 +26,7 @@ interface Props {
 
 function attrIsTheSame(prevProps: Props, nextProps: Props): boolean {
     return (
+        nextProps.readonly === prevProps.readonly &&
         nextProps.attrID === prevProps.attrID &&
         nextProps.attrValue === prevProps.attrValue &&
         nextProps.attrName === prevProps.attrName &&
@@ -36,7 +38,9 @@ function attrIsTheSame(prevProps: Props, nextProps: Props): boolean {
 }
 
 function ItemAttributeComponent(props: Props): JSX.Element {
-    const { attrInputType, attrValues, attrValue, attrName, attrID, changeAttribute } = props;
+    const {
+        attrInputType, attrValues, attrValue, attrName, attrID, readonly, changeAttribute,
+    } = props;
 
     const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em' };
 
@@ -46,6 +50,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                 <Checkbox
                     className='cvat-object-item-checkbox-attribute'
                     checked={attrValue === 'true'}
+                    disabled={readonly}
                     onChange={(event: CheckboxChangeEvent): void => {
                         const value = event.target.checked ? 'true' : 'false';
                         changeAttribute(attrID, value);
@@ -69,6 +74,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         </Text>
                     </legend>
                     <Radio.Group
+                        disabled={readonly}
                         size='small'
                         value={attrValue}
                         onChange={(event: RadioChangeEvent): void => {
@@ -96,6 +102,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={16}>
                     <Select
+                        disabled={readonly}
                         size='small'
                         onChange={(value: string): void => {
                             changeAttribute(attrID, value);
@@ -125,6 +132,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={16}>
                     <InputNumber
+                        disabled={readonly}
                         size='small'
                         onChange={(value: number | undefined): void => {
                             if (typeof value === 'number') {
@@ -170,6 +178,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                 <Input
                     ref={ref}
                     size='small'
+                    disabled={readonly}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                         if (ref.current && ref.current.input) {
                             setSelection({
