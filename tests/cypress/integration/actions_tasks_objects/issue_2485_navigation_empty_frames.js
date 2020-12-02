@@ -53,7 +53,7 @@ context('Navigation to empty frames', () => {
         it("Press go previous with a filter. CVAT get 2nd frame. Press again. Frame wasn't changed.", () => {
             for (let i = 1; i <= 2; i++) {
                 cy.get('.cvat-player-previous-button-filtered').click({ force: true });
-                cy.checkFrameNumber(2);
+                cy.checkFrameNum(2);
                 cy.get('#cvat_canvas_shape_1').should('exist');
             }
         });
@@ -61,7 +61,7 @@ context('Navigation to empty frames', () => {
         it("Press go next with a filter. CVAT get 4th frame. Press again. Frame wasn't changed.", () => {
             for (let i = 1; i <= 2; i++) {
                 cy.get('.cvat-player-next-button-filtered').click({ force: true });
-                cy.checkFrameNumber(4);
+                cy.checkFrameNum(4);
                 cy.get('#cvat_canvas_shape_2').should('exist');
             }
         });
@@ -75,13 +75,13 @@ context('Navigation to empty frames', () => {
 
         it('Go previous to an empty frame. CVAT get 3rd frame.', () => {
             cy.get('.cvat-player-previous-button-empty').click({ force: true });
-            cy.checkFrameNumber(3);
+            cy.checkFrameNum(3);
             cy.get('.cvat_canvas_shape').should('not.exist');
         });
 
         it('Go next to an empty frame. CVAT get 5th frame.', () => {
             cy.get('.cvat-player-next-button-empty').click({ force: true });
-            cy.checkFrameNumber(5);
+            cy.checkFrameNum(5);
             cy.get('.cvat_canvas_shape').should('not.exist');
         });
     });
