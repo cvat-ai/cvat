@@ -90,6 +90,7 @@ interface Props {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
+    onGetDataFailed(error: any): void;
     onStartIssue(position: number[]): void;
 }
 
@@ -322,9 +323,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
 
         window.removeEventListener('resize', this.fitCanvas);
     }
+
+    private onCanvasErrorOccurrence = (event: any): void => {
+        const { exception } = event.detail;
+        const { onGetDataFailed } = this.props;
+        onGetDataFailed(exception);
+    };
 
     private onCanvasShapeDrawn = (event: any): void => {
         const {
@@ -745,6 +753,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
     }
 
     public render(): JSX.Element {

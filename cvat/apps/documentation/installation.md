@@ -373,6 +373,9 @@ You can change the share device path to your actual share. For user convenience
 we have defined the environment variable \$CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
 
+You can [mount](/cvat/apps/documentation/mounting_cloud_storages.md)
+your cloud storage as a FUSE and use it later as a share.
+
 ### Email verification
 
 You can enable email verification for newly registered users.

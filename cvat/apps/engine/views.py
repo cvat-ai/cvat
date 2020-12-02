@@ -39,7 +39,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
-    Comment, StorageMethodChoice, ReviewStatus
+    Comment, StorageMethodChoice, ReviewStatus, StorageChoice
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
@@ -412,10 +412,13 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             data = {k:v for k, v in serializer.data.items()}
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
+            data['copy_data'] = serializer.validated_data['copy_data']
             if data['use_cache']:
                 db_task.data.storage_method = StorageMethodChoice.CACHE
                 db_task.data.save(update_fields=['storage_method'])
-
+            if data['server_files'] and data.get('copy_data') == False:
+                db_task.data.storage = StorageChoice.SHARE
+                db_task.data.save(update_fields=['storage'])
             # if the value of stop_frame is 0, then inside the function we cannot know
             # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
@@ -476,6 +479,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
             except APIException as e:
                 return Response(data=e.get_full_details(), status=e.status_code)
+            except FileNotFoundError as ex:
+                msg = f"{ex.strerror} {ex.filename}"
+                slogger.task[pk].error(msg, exc_info=True)
+                return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
                 msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, data_id, data_quality)
                 slogger.task[pk].error(msg, exc_info=True)
