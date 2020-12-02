@@ -90,6 +90,7 @@ interface Props {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
+    onGetDataFailed(error: any): void;
     onStartIssue(position: number[]): void;
 }
 
@@ -108,7 +109,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
-            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
+            forceDisableEditing: [Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace),
         });
 
         this.initialSetup();
@@ -259,11 +260,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.workspace !== workspace) {
-            if (workspace === Workspace.REVIEW_WORKSPACE) {
+            if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
                 canvasInstance.configure({
                     forceDisableEditing: true,
                 });
-            } else if (prevProps.workspace === Workspace.REVIEW_WORKSPACE) {
+            } else if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(prevProps.workspace)) {
                 canvasInstance.configure({
                     forceDisableEditing: false,
                 });
@@ -322,9 +323,16 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
 
         window.removeEventListener('resize', this.fitCanvas);
     }
+
+    private onCanvasErrorOccurrence = (event: any): void => {
+        const { exception } = event.detail;
+        const { onGetDataFailed } = this.props;
+        onGetDataFailed(exception);
+    };
 
     private onCanvasShapeDrawn = (event: any): void => {
         const {
@@ -745,6 +753,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+        canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
     }
 
     public render(): JSX.Element {

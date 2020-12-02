@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Manual review pipeline: issues/comments/workspace (<https://github.com/openvinotoolkit/cvat/pull/2357>)
 - Added basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
+- Added documentation on how to mount cloud starage(AWS S3 bucket, Azure container, Google Drive) as FUSE (<https://github.com/openvinotoolkit/cvat/pull/2377>)
+- Added ability to work with share files without copying inside (<https://github.com/openvinotoolkit/cvat/pull/2377>)
 
 ### Changed
 
@@ -37,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Projects view layout fix (<https://github.com/openvinotoolkit/cvat/pull/2503>)
 - Fixed the tasks view (infinite loading) when it is impossible to get a preview of the task (<https://github.com/openvinotoolkit/cvat/pull/2504>)
 - Empty frames navigation (<https://github.com/openvinotoolkit/cvat/pull/2505>)
+- Disabled position editing in AAM (<https://github.com/openvinotoolkit/cvat/pull/2506>)
 - TypeError: Cannot read property 'toString' of undefined (<https://github.com/openvinotoolkit/cvat/pull/2517>)
 
 ### Security

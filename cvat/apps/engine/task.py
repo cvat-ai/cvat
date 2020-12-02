@@ -15,7 +15,7 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.prepare import prepare_meta
 
@@ -232,7 +232,10 @@ def _create_thread(tid, data):
             "File with meta information can be uploaded if 'Use cache' option is also selected"
 
     if data['server_files']:
-        _copy_data_from_share(data['server_files'], upload_dir)
+        if db_data.storage == StorageChoice.LOCAL:
+            _copy_data_from_share(data['server_files'], upload_dir)
+        else:
+            upload_dir = settings.SHARE_ROOT
 
     av_scan_paths(upload_dir)
 
@@ -247,8 +250,11 @@ def _create_thread(tid, data):
         if media_files:
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
+            source_paths=[os.path.join(upload_dir, f) for f in media_files]
+            if media_type in  ('archive', 'zip') and db_data.storage == StorageChoice.SHARE:
+                source_paths.append(db_data.get_upload_dirname())
             extractor = MEDIA_TYPES[media_type]['extractor'](
-                source_path=[os.path.join(upload_dir, f) for f in media_files],
+                source_path=source_paths,
                 step=db_data.get_frame_step(),
                 start=db_data.start_frame,
                 stop=data['stop_frame'],
@@ -303,13 +309,9 @@ def _create_thread(tid, data):
                     if meta_info_file:
                         try:
                             from cvat.apps.engine.prepare import UploadedMeta
-                            if os.path.split(meta_info_file[0])[0]:
-                                os.replace(
-                                    os.path.join(upload_dir, meta_info_file[0]),
-                                    db_data.get_meta_path()
-                                )
                             meta_info = UploadedMeta(source_path=os.path.join(upload_dir, media_files[0]),
-                                                     meta_path=db_data.get_meta_path())
+                                                     meta_path=db_data.get_meta_path(),
+                                                     uploaded_meta=os.path.join(upload_dir, meta_info_file[0]))
                             meta_info.check_seek_key_frames()
                             meta_info.check_frames_numbers()
                             meta_info.save_meta_info()
@@ -322,6 +324,7 @@ def _create_thread(tid, data):
                             meta_info, smooth_decoding = prepare_meta(
                                 media_file=media_files[0],
                                 upload_dir=upload_dir,
+                                meta_dir=os.path.dirname(db_data.get_meta_path()),
                                 chunk_size=db_data.chunk_size
                             )
                             assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
@@ -329,6 +332,7 @@ def _create_thread(tid, data):
                         meta_info, smooth_decoding = prepare_meta(
                             media_file=media_files[0],
                             upload_dir=upload_dir,
+                            meta_dir=os.path.dirname(db_data.get_meta_path()),
                             chunk_size=db_data.chunk_size
                         )
                         assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'

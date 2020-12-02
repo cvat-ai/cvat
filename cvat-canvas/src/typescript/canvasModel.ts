@@ -133,6 +133,7 @@ export enum UpdateReasons {
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
     CONFIG_UPDATED = 'config_updated',
+    DATA_FAILED = 'data_failed',
 }
 
 export enum Mode {
@@ -168,6 +169,7 @@ export interface CanvasModel {
     readonly selected: any;
     geometry: Geometry;
     mode: Mode;
+    exception: Error | null;
 
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
@@ -224,6 +226,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         splitData: SplitData;
         selected: any;
         mode: Mode;
+        exception: Error | null;
     };
 
     public constructor() {
@@ -284,6 +287,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             selected: null,
             mode: Mode.IDLE,
+            exception: null,
         };
     }
 
@@ -411,6 +415,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
             .catch((exception: any): void => {
+                this.data.exception = exception;
+                this.notify(UpdateReasons.DATA_FAILED);
                 throw exception;
             });
     }
@@ -742,5 +748,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get mode(): Mode {
         return this.data.mode;
+    }
+    public get exception(): Error {
+        return this.data.exception;
     }
 }

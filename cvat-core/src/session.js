@@ -973,6 +973,7 @@
                 data_original_chunk_type: undefined,
                 use_zip_chunks: undefined,
                 use_cache: undefined,
+                copy_data: undefined,
             };
 
             let updatedFields = {
@@ -1237,6 +1238,22 @@
                                 throw new ArgumentError('Value must be a boolean');
                             }
                             data.use_cache = useCache;
+                        },
+                    },
+                    /**
+                     * @name copyData
+                     * @type {boolean}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    copyData: {
+                        get: () => data.copy_data,
+                        set: (copyData) => {
+                            if (typeof copyData !== 'boolean') {
+                                throw new ArgumentError('Value must be a boolean');
+                            }
+                            data.copy_data = copyData;
                         },
                     },
                     /**
@@ -1907,6 +1924,9 @@
         }
         if (typeof this.dataChunkSize !== 'undefined') {
             taskDataSpec.chunk_size = this.dataChunkSize;
+        }
+        if (typeof this.copyData !== 'undefined') {
+            taskDataSpec.copy_data = this.copyData;
         }
 
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
