@@ -35,7 +35,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     remove(): void;
-    changeLabel(labelID: string): void;
+    changeLabel(label: any): void;
     changeAttribute(attrID: number, value: string): void;
     changeColor(color: string): void;
     collapse(): void;
