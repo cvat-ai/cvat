@@ -76,18 +76,13 @@ context('Delete unlock/lock object', () => {
 
     function checkFailDeleteLockObject(shortcut) {
         deleteObjectViaShortcut(shortcut, 'lock');
-        checkExistObject();
+        checkExistObject('exist');
         cy.get('.ant-notification-topRight').should('exist');
     };
 
-    function checkExistObject() {
-        cy.get('.cvat_canvas_shape').should('exist');
-        cy.get('.cvat-objects-sidebar-state-item').should('exist');
-    };
-
-    function checkNotExistObject() {
-        cy.get('.cvat_canvas_shape').should('not.exist');
-        cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
+    function checkExistObject(state) {
+        cy.get('.cvat_canvas_shape').should(state);
+        cy.get('.cvat-objects-sidebar-state-item').should(state);
     };
 
     before(() => {
@@ -98,13 +93,13 @@ context('Delete unlock/lock object', () => {
         it('Create and delete object via "Delete" shortcut', () => {
             cy.createRectangle(createRectangleShape2Points);
             deleteObjectViaShortcut('{del}', 'unlock');
-            checkNotExistObject();
+            checkExistObject('not.exist');
         });
 
         it('Create and delete object via GUI from sidebar', () => {
             cy.createRectangle(createRectangleShape2Points);
             deleteObjectViaGUIFromSidebar();
-            checkNotExistObject();
+            checkExistObject('not.exist');
         });
 
         it('Create, lock and delete object via "Shift+Delete" shortcuts', () => {
@@ -112,7 +107,7 @@ context('Delete unlock/lock object', () => {
             lockObject();
             checkFailDeleteLockObject('{del}');
             deleteObjectViaShortcut('{shift}{del}', 'lock');
-            checkNotExistObject();
+            checkExistObject('not.exist');
         });
 
         it('Create, lock and delete object via GUI from sidebar', () => {
@@ -120,7 +115,7 @@ context('Delete unlock/lock object', () => {
             lockObject();
             deleteObjectViaGUIFromSidebar();
             actionOnConfirmWindow('OK');
-            checkNotExistObject();
+            checkExistObject('not.exist');
         });
 
         it('Create, lock and cancel delete object via GUI from object', () => {
@@ -128,7 +123,7 @@ context('Delete unlock/lock object', () => {
             lockObject();
             deleteObjectViaGUIFromObject();
             actionOnConfirmWindow('Cancel');
-            checkExistObject();
+            checkExistObject('exist');
         });
     });
 });
