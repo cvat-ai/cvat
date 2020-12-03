@@ -4,13 +4,13 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import Icon, { CloseCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Select from 'antd/lib/select';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
 import Badge from 'antd/lib/badge';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
@@ -326,7 +326,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                             this.removeAttribute(key);
                         }}
                     >
-                        <Icon type='close-circle' />
+                        <CloseCircleOutlined />
                     </Button>
                 </Tooltip>
             </Form.Item>
@@ -411,7 +411,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
                 <Form.Item>
                     <Button type='ghost' onClick={this.addAttribute} className='cvat-new-attribute-button'>
                         Add an attribute
-                        <Icon type='plus' />
+                        <PlusOutlined />
                     </Button>
                 </Form.Item>
             </Col>

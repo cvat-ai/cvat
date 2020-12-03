@@ -4,12 +4,16 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import {
+    LockOutlined, UnlockOutlined, EyeInvisibleOutlined,
+    EyeOutlined, CaretDownOutlined, CaretUpFilled,
+} from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
 import { StatesOrdering } from 'reducers/interfaces';
+
 
 interface Props {
     readonly: boolean;
@@ -36,9 +40,9 @@ function LockAllSwitcher(props: Props): JSX.Element {
         <Col span={2}>
             <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`} mouseLeaveDelay={0}>
                 {statesLocked ? (
-                    <Icon type='lock' onClick={unlockAllStates} theme='filled' />
+                    <LockOutlined type='lock' onClick={unlockAllStates} />
                 ) : (
-                    <Icon type='unlock' onClick={lockAllStates} />
+                    <UnlockOutlined type='unlock' onClick={lockAllStates} />
                 )}
             </Tooltip>
         </Col>
@@ -53,9 +57,9 @@ function HideAllSwitcher(props: Props): JSX.Element {
         <Col span={2}>
             <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`} mouseLeaveDelay={0}>
                 {statesHidden ? (
-                    <Icon type='eye-invisible' onClick={showAllStates} />
+                    <EyeInvisibleOutlined onClick={showAllStates} />
                 ) : (
-                    <Icon type='eye' onClick={hideAllStates} />
+                    <EyeOutlined onClick={hideAllStates} />
                 )}
             </Tooltip>
         </Col>
@@ -68,9 +72,9 @@ function CollapseAllSwitcher(props: Props): JSX.Element {
         <Col span={2}>
             <Tooltip title='Expand/collapse all' mouseLeaveDelay={0}>
                 {statesCollapsed ? (
-                    <Icon type='caret-down' onClick={expandAllStates} />
+                    <CaretDownOutlined onClick={expandAllStates} />
                 ) : (
-                    <Icon type='caret-up' onClick={collapseAllStates} />
+                    <CaretUpFilled onClick={collapseAllStates} />
                 )}
             </Tooltip>
         </Col>

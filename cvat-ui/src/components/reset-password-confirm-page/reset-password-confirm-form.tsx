@@ -4,12 +4,13 @@
 
 import React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
+import { LockOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 
 import patterns from 'utils/validation-patterns';
+
 
 export interface ResetPasswordConfirmData {
     newPassword1: string;
@@ -96,7 +97,7 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
                 })(
                     <Input.Password
                         autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='New password'
                     />,
                 )}
@@ -122,7 +123,7 @@ class ResetPasswordConfirmFormComponent extends React.PureComponent<ResetPasswor
                 })(
                     <Input.Password
                         autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Confirm new password'
                     />,
                 )}

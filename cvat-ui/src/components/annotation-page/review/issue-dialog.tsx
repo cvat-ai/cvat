@@ -5,13 +5,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
+import { CloseOutlined } from '@ant-design/icons';
 import Comment from 'antd/lib/comment';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
-import Icon from 'antd/lib/icon';
 import moment from 'moment';
 
 interface Props {
@@ -94,7 +94,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                 </Col>
                 <Col>
                     <Tooltip title='Collapse the chat'>
-                        <Icon type='close' onClick={collapse} />
+                        <CloseOutlined onClick={collapse} />
                     </Tooltip>
                 </Col>
             </Row>

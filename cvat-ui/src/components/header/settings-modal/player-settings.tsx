@@ -11,7 +11,7 @@ import Slider from 'antd/lib/slider';
 import Select from 'antd/lib/select';
 import Popover from 'antd/lib/popover';
 import InputNumber from 'antd/lib/input-number';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import { CompactPicker } from 'react-color';
 

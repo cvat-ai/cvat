@@ -7,7 +7,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 
 import { Label, Attribute, validateParsedLabel, idGenerator } from './common';
 

@@ -4,9 +4,11 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
+import {
+    LockOutlined, UnlockOutlined, EyeInvisibleOutlined, EyeOutlined,
+} from '@ant-design/icons';
 
 interface Props {
     labelName: string;
@@ -62,16 +64,16 @@ function LabelItemComponent(props: Props): JSX.Element {
             </Col>
             <Col span={3}>
                 {statesLocked ? (
-                    <Icon {...classes.lock.enabled} type='lock' onClick={unlockStates} />
+                    <LockOutlined {...classes.lock.enabled} onClick={unlockStates} />
                 ) : (
-                    <Icon {...classes.lock.disabled} type='unlock' onClick={lockStates} />
+                    <UnlockOutlined {...classes.lock.disabled} onClick={lockStates} />
                 )}
             </Col>
             <Col span={3}>
                 {statesHidden ? (
-                    <Icon {...classes.hidden.enabled} type='eye-invisible' onClick={showStates} />
+                    <EyeInvisibleOutlined {...classes.hidden.enabled} onClick={showStates} />
                 ) : (
-                    <Icon {...classes.hidden.disabled} type='eye' onClick={hideStates} />
+                    <EyeOutlined {...classes.hidden.disabled} onClick={hideStates} />
                 )}
             </Col>
         </Row>

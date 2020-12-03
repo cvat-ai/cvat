@@ -4,7 +4,7 @@
 
 import React, { MutableRefObject } from 'react';
 import { connect } from 'react-redux';
-import Icon from 'antd/lib/icon';
+import Icon, { LoadingOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
@@ -771,7 +771,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     footer={[]}
                 >
                     <Text>Waiting for a server response..</Text>
-                    <Icon style={{ marginLeft: '10px' }} type='loading' />
+                    <LoadingOutlined style={{ marginLeft: '10px' }} />
                     {trackingProgress !== null && (
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}

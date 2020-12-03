@@ -5,9 +5,11 @@
 import './styles.scss';
 import React from 'react';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
 import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
+import {
+    StarOutlined, LikeOutlined, CloseCircleOutlined, MessageOutlined,
+} from '@ant-design/icons';
 import {
     FacebookShareButton,
     LinkedinShareButton,
@@ -34,7 +36,7 @@ function renderContent(): JSX.Element {
 
     return (
         <>
-            <Icon type='star' />
+            <StarOutlined />
             <Text style={{ marginLeft: '10px' }}>
                 Star us on
                 <a target='_blank' rel='noopener noreferrer' href={GITHUB_URL}>
@@ -43,7 +45,7 @@ function renderContent(): JSX.Element {
                 </a>
             </Text>
             <br />
-            <Icon type='like' />
+            <LikeOutlined />
             <Text style={{ marginLeft: '10px' }}>
                 Leave a
                 <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}>
@@ -114,7 +116,7 @@ export default function Feedback(): JSX.Element {
                         setVisible(!visible);
                     }}
                 >
-                    {visible ? <Icon type='close-circle' theme='filled' /> : <Icon type='message' theme='twoTone' />}
+                    {visible ? <CloseCircleOutlined /> : <MessageOutlined />}
                 </Button>
             </Popover>
         </>

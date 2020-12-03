@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
+import { LockOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
 
 import patterns from 'utils/validation-patterns';
@@ -86,7 +86,7 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
                 })(
                     <Input.Password
                         autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Current password'
                     />,
                 )}
@@ -112,7 +112,7 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
                 })(
                     <Input.Password
                         autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='New password'
                     />,
                 )}
@@ -138,7 +138,7 @@ class ChangePasswordFormComponent extends React.PureComponent<ChangePasswordForm
                 })(
                     <Input.Password
                         autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Confirm new password'
                     />,
                 )}

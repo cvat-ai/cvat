@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 
 export interface LoginData {
     username: string;
@@ -46,7 +46,7 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
                 })(
                     <Input
                         autoComplete='username'
-                        prefix={<Icon type='user' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                        prefix={<UserOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Username'
                     />,
                 )}
@@ -70,7 +70,7 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
                 })(
                     <Input
                         autoComplete='current-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Password'
                         type='password'
                     />,

@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 
 interface Props {
     currentLabel: string;
@@ -26,7 +26,7 @@ function ObjectSwitcher(props: Props): JSX.Element {
         <div className='attribute-annotation-sidebar-object-switcher'>
             <Tooltip title={`Previous object ${normalizedKeyMap.PREVIOUS_OBJECT}`} mouseLeaveDelay={0}>
                 <Button disabled={objectsCount <= 1} onClick={() => nextObject(-1)}>
-                    <Icon type='left' />
+                    <LeftOutlined />
                 </Button>
             </Tooltip>
             <Tooltip title={title} mouseLeaveDelay={0}>
@@ -36,7 +36,7 @@ function ObjectSwitcher(props: Props): JSX.Element {
             </Tooltip>
             <Tooltip title={`Next object ${normalizedKeyMap.NEXT_OBJECT}`} mouseLeaveDelay={0}>
                 <Button disabled={objectsCount <= 1} onClick={() => nextObject(1)}>
-                    <Icon type='right' />
+                    <RightOutlined />
                 </Button>
             </Tooltip>
         </div>

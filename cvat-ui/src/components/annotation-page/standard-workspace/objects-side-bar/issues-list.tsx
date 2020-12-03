@@ -5,7 +5,10 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
-import Icon, { IconProps } from 'antd/lib/icon';
+import {
+    LeftOutlined, RightOutlined, EyeInvisibleOutlined, EyeOutlined,
+} from '@ant-design/icons';
+import { IconBaseProps } from '@ant-design/icons/lib/components/Icon';
 import Tooltip from 'antd/lib/tooltip';
 import Alert from 'antd/lib/alert';
 import { Row, Col } from 'antd/lib/grid';
@@ -24,7 +27,7 @@ export default function LabelsListComponent(): JSX.Element {
     const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
     const frames = combinedIssues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
-    const dinamicLeftProps: IconProps = Number.isInteger(nearestLeft) ?
+    const dinamicLeftProps: IconBaseProps = Number.isInteger(nearestLeft) ?
         {
             onClick: () => dispatch(changeFrameAsync(nearestLeft)),
         } :
@@ -36,7 +39,7 @@ export default function LabelsListComponent(): JSX.Element {
         };
 
     const nearestRight = frames.filter((_frame: number): boolean => _frame > frame)[0];
-    const dinamicRightProps: IconProps = Number.isInteger(nearestRight) ?
+    const dinamicRightProps: IconBaseProps = Number.isInteger(nearestRight) ?
         {
             onClick: () => dispatch(changeFrameAsync(nearestRight)),
         } :
@@ -47,33 +50,29 @@ export default function LabelsListComponent(): JSX.Element {
             },
         };
 
-    const dinamicShowHideProps: IconProps = issuesHidden ?
-        {
-            onClick: () => dispatch(reviewActions.switchIssuesHiddenFlag(false)),
-            type: 'eye-invisible',
-        } :
-        {
-            onClick: () => dispatch(reviewActions.switchIssuesHiddenFlag(true)),
-            type: 'eye',
-        };
-
     return (
         <div style={{ height: tabContentHeight }}>
             <div className='cvat-objects-sidebar-issues-list-header'>
                 <Row type='flex' justify='start' align='middle'>
                     <Col>
                         <Tooltip title='Find the previous frame with issues'>
-                            <Icon type='left' {...dinamicLeftProps} />
+                            <LeftOutlined {...dinamicLeftProps} />
                         </Tooltip>
                     </Col>
                     <Col offset={1}>
                         <Tooltip title='Find the next frame with issues'>
-                            <Icon type='right' {...dinamicRightProps} />
+                            <RightOutlined {...dinamicRightProps} />
                         </Tooltip>
                     </Col>
                     <Col offset={3}>
                         <Tooltip title='Show/hide all the issues'>
-                            <Icon {...dinamicShowHideProps} />
+                            { issuesHidden ? (
+                                <EyeInvisibleOutlined
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(false))}
+                                />
+                            ) : (
+                                <EyeOutlined onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))} />
+                            )}
                         </Tooltip>
                     </Col>
                 </Row>

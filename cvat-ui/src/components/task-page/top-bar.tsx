@@ -5,9 +5,9 @@
 import React from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
+import Icon, { LeftOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
@@ -31,12 +31,12 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         type='link'
                         size='large'
                     >
-                        <Icon type='left' />
+                        <LeftOutlined />
                         Back to project
                     </Button>
                 ) : (
                     <Button onClick={() => history.push('/tasks')} type='link' size='large'>
-                        <Icon type='left' />
+                        <LeftOutlined />
                         Back to tasks
                     </Button>
                 )}

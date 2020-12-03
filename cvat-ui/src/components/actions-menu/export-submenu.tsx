@@ -4,8 +4,8 @@
 
 import React from 'react';
 import Menu from 'antd/lib/menu';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
+import { ExportOutlined, LoadingOutlined } from '@ant-design/icons';
 
 interface Props {
     menuKey: string;
@@ -30,9 +30,9 @@ export default function ExportSubmenu(props: Props): JSX.Element {
                                 disabled={disabled}
                                 className='cvat-menu-export-submenu-item'
                             >
-                                <Icon type='export' />
+                                <ExportOutlined />
                                 <Text disabled={disabled}>{exporter.name}</Text>
-                                {pending && <Icon style={{ marginLeft: 10 }} type='loading' />}
+                                {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
                             </Menu.Item>
                         );
                     },

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import { ObjectType, ShapeType } from 'reducers/interfaces';

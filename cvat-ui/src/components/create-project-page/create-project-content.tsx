@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import Form, { FormComponentProps, WrappedFormUtils } from 'antd/lib/form/Form';
+import Form, { FormComponentProps, WrappedFormUtils } from '@ant-design/compatible/lib/form/Form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';

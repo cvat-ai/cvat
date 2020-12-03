@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
+import { MailOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 
 export interface ResetPasswordData {
@@ -48,7 +48,7 @@ class ResetPasswordFormComponent extends React.PureComponent<ResetPasswordFormPr
                 })(
                     <Input
                         autoComplete='email'
-                        prefix={<Icon type='mail' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<MailOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Email address'
                     />,
                 )}

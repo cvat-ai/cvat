@@ -4,11 +4,11 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import { PercentageOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Checkbox from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
 
 import patterns from 'utils/validation-patterns';
@@ -153,7 +153,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                                 validator: isIntegerRange.bind(null, 5, 100),
                             },
                         ],
-                    })(<Input size='large' type='number' suffix={<Icon type='percentage' />} />)}
+                    })(<Input size='large' type='number' suffix={<PercentageOutlined />} />)}
                 </Tooltip>
             </Form.Item>
         );
@@ -377,7 +377,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item label={<span>Chunk size</span>}>
                 <Tooltip
-                    title={
+                    title={(
                         <>
                             Defines a number of frames to be packed in a chunk when send from client to server. Server
                             defines automatically if empty.
@@ -392,7 +392,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             <br />
                             More: 1 - 4
                         </>
-                    }
+                    )}
                     mouseLeaveDelay={0}
                 >
                     {form.getFieldDecorator('dataChunkSize', {

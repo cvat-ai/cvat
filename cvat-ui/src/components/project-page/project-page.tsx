@@ -18,6 +18,7 @@ import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
+import { PlusOutlined } from '@ant-design/icons';
 
 interface ParamType {
     id: string;
@@ -78,7 +79,7 @@ export default function ProjectPageComponent(): JSX.Element {
                         <Button
                             size='large'
                             type='primary'
-                            icon='plus'
+                            icon={<PlusOutlined />}
                             id='cvat-create-task-button'
                             onClick={() => history.push(`/tasks/create?projectId=${id}`)}
                         >

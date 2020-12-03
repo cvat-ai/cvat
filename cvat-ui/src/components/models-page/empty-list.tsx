@@ -5,7 +5,7 @@
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 
 import consts from 'consts';
 import { EmptyTasksIcon as EmptyModelsIcon } from 'icons';

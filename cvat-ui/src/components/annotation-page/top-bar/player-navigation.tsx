@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import { LinkOutlined } from '@ant-design/icons';
 import Slider, { SliderValue } from 'antd/lib/slider';
 import Tooltip from 'antd/lib/tooltip';
 import InputNumber from 'antd/lib/input-number';
@@ -68,7 +68,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                     </Col>
                     <Col offset={1}>
                         <Tooltip title='Create frame URL' mouseLeaveDelay={0}>
-                            <Icon className='cvat-player-frame-url-icon' type='link' onClick={onURLIconClick} />
+                            <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </Tooltip>
                     </Col>
                 </Row>

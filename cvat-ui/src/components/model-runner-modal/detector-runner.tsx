@@ -5,7 +5,7 @@
 import './styles.scss';
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import { CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Select, { OptionProps } from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
@@ -27,7 +27,9 @@ interface Props {
 }
 
 function DetectorRunner(props: Props): JSX.Element {
-    const { task, models, withCleanup, runInference } = props;
+    const {
+        task, models, withCleanup, runInference,
+    } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
     const [mapping, setMapping] = useState<StringObject>({});
@@ -157,9 +159,8 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Col>
                             <Col offset={1}>
                                 <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
-                                    <Icon
+                                    <CloseCircleOutlined
                                         className='cvat-danger-circle-icon'
-                                        type='close-circle'
                                         onClick={(): void => {
                                             const newmapping = { ...mapping };
                                             delete newmapping[modelLabel];
@@ -189,7 +190,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                 title='Specify a label mapping between model labels and task labels'
                                 mouseLeaveDelay={0}
                             >
-                                <Icon className='cvat-info-circle-icon' type='question-circle' />
+                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
                             </Tooltip>
                         </Col>
                     </Row>

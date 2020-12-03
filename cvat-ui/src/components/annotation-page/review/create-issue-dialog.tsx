@@ -5,7 +5,7 @@
 import React, { ReactPortal } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
-import Form, { FormComponentProps } from 'antd/lib/form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';

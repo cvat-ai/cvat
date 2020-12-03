@@ -5,13 +5,13 @@
 import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
-import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
+import { InboxOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
 
@@ -106,7 +106,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     }}
                 >
                     <p className='ant-upload-drag-icon'>
-                        <Icon type='inbox' />
+                        <InboxOutlined />
                     </p>
                     <p className='ant-upload-text'>Click or drag files to this area</p>
                     <p className='ant-upload-hint'>Support for a bulk images or a single video</p>

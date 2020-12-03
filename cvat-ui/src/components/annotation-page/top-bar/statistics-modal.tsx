@@ -4,11 +4,11 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {
@@ -78,7 +78,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
             <Text strong style={{ marginRight: 5 }}>
                 {title}
             </Text>
-            <Icon className='cvat-info-circle-icon' type='question-circle' />
+            <QuestionCircleOutlined className='cvat-info-circle-icon' />
         </Tooltip>
     );
 

@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
@@ -141,7 +141,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         activateTracking,
                     })}
                 >
-                    <Icon type='more' />
+                    <MoreOutlined />
                 </Dropdown>
             </Col>
         </Row>

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import { ZoomIcon } from 'icons';
@@ -23,9 +23,9 @@ function ResizeControl(props: Props): JSX.Element {
             <Icon
                 component={ZoomIcon}
                 className={
-                    activeControl === ActiveControl.ZOOM_CANVAS
-                        ? 'cvat-resize-control cvat-active-canvas-control'
-                        : 'cvat-resize-control'
+                    activeControl === ActiveControl.ZOOM_CANVAS ?
+                        'cvat-resize-control cvat-active-canvas-control' :
+                        'cvat-resize-control'
                 }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.ZOOM_CANVAS) {

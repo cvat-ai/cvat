@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
+import { UserAddOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
 import Checkbox from 'antd/lib/checkbox';
 
@@ -135,7 +135,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     ],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='First name'
                     />,
                 )}
@@ -158,7 +158,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     ],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Last name'
                     />,
                 )}
@@ -183,7 +183,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     ],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Username'
                     />,
                 )}
@@ -210,7 +210,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                 })(
                     <Input
                         autoComplete='email'
-                        prefix={<Icon type='mail' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<MailOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Email address'
                     />,
                 )}
@@ -236,7 +236,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                 })(
                     <Input.Password
                         autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Password'
                     />,
                 )}
@@ -262,7 +262,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                 })(
                     <Input.Password
                         autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                         placeholder='Confirm password'
                     />,
                 )}

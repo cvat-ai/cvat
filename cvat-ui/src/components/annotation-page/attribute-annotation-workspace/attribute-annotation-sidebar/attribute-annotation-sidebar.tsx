@@ -9,7 +9,7 @@ import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import Icon from 'antd/lib/icon';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -292,9 +292,9 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     onClick={collapse}
                 >
                     {sidebarCollapsed ? (
-                        <Icon type='menu-fold' title='Show' />
+                        <MenuFoldOutlined title='Show' />
                     ) : (
-                        <Icon type='menu-unfold' title='Hide' />
+                        <MenuUnfoldOutlined title='Hide' />
                     )}
                 </span>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
@@ -374,7 +374,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     ant-layout-sider-zero-width-trigger-left`}
                 onClick={collapse}
             >
-                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' /> : <Icon type='menu-unfold' title='Hide' />}
+                {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
             <Row className='cvat-objects-sidebar-filter-input'>
                 <Col>

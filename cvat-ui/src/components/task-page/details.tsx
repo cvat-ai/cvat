@@ -5,7 +5,7 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
-import Icon from 'antd/lib/icon';
+import { CheckCircleOutlined, LoadingOutlined, WarningOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -19,6 +19,7 @@ import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotat
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
+
 
 const core = getCore();
 
@@ -235,19 +236,19 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         </a>
                         {repositoryStatus === 'sync' && (
                             <Tag color='blue'>
-                                <Icon type='check-circle' />
+                                <CheckCircleOutlined />
                                 Synchronized
                             </Tag>
                         )}
                         {repositoryStatus === 'merged' && (
                             <Tag color='green'>
-                                <Icon type='check-circle' />
+                                <CheckCircleOutlined />
                                 Merged
                             </Tag>
                         )}
                         {repositoryStatus === 'syncing' && (
                             <Tag color='purple'>
-                                <Icon type='loading' />
+                                <LoadingOutlined />
                                 Syncing
                             </Tag>
                         )}
@@ -282,7 +283,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                         });
                                 }}
                             >
-                                <Icon type='warning' />
+                                <WarningOutlined />
                                 Synchronize
                             </Tag>
                         )}

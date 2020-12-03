@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Input from 'antd/lib/input';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
 
 export interface BaseConfiguration {
     name: string;
