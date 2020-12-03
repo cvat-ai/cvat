@@ -35,4 +35,4 @@ DATABASES = {
 }
 
 VOXEL_LABEL_FIRESTORE_COLLECTION = 'labels'
-VOXEL_LABEL_BUCKET_NAME = 'voxel-labels'
+VOXEL_LABEL_BUCKET_NAME = 'voxel-raw-labels'
