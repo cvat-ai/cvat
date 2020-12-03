@@ -129,9 +129,9 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Col>
                     <Col span={10}>
                         <InputNumber
-                            onChange={(value: number | undefined) => {
-                                if (typeof value === 'number') {
-                                    onChangePoints(Math.floor(clamp(value, minimumPoints, Number.MAX_SAFE_INTEGER)));
+                            onChange={(value: number | undefined | string) => {
+                                if (typeof value !== 'undefined') {
+                                    onChangePoints(Math.floor(clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER)));
                                 } else if (!value) {
                                     onChangePoints(undefined);
                                 }

@@ -531,10 +531,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             min={1}
                             precision={0}
                             max={jobInstance.stopFrame - frame}
-                            onChange={(value: number | undefined): void => {
+                            onChange={(value: number | undefined | string): void => {
                                 if (typeof value !== 'undefined') {
                                     this.setState({
-                                        trackingFrames: value,
+                                        trackingFrames: +value,
                                     });
                                 }
                             }}

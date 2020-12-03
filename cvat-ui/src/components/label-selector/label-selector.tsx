@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Select, { OptionProps, SelectProps } from 'antd/lib/select';
+import Select, { SelectProps } from 'antd/lib/select';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
-interface Props extends SelectProps {
+interface Props extends SelectProps<string> {
     labels: any[];
     value: any | number | null;
     onChange: (label: any) => void;
@@ -26,10 +28,12 @@ export default function LabelSelector(props: Props): JSX.Element {
             {...rest}
             {...dinamicProps}
             showSearch
-            filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                const { children } = option.props;
-                if (typeof children === 'string') {
-                    return children.toLowerCase().includes(input.toLowerCase());
+            filterOption={(input: string, option?: OptionData | OptionGroupData) => {
+                if (option) {
+                    const { children } = option.props;
+                    if (typeof children === 'string') {
+                        return children.toLowerCase().includes(input.toLowerCase());
+                    }
                 }
 
                 return false;

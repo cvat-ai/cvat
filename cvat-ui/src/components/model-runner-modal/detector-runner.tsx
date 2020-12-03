@@ -6,7 +6,7 @@ import './styles.scss';
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import Select, { OptionProps } from 'antd/lib/select';
+import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Tag from 'antd/lib/tag';
@@ -14,9 +14,12 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
 import { Model, StringObject } from 'reducers/interfaces';
 
+import { clamp } from 'utils/math';
 import consts from 'consts';
 
 interface Props {
@@ -95,10 +98,12 @@ function DetectorRunner(props: Props): JSX.Element {
                     onChange={onChange}
                     style={{ width: '100%' }}
                     showSearch
-                    filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                        const { children } = option.props;
-                        if (typeof children === 'string') {
-                            return children.toLowerCase().includes(input.toLowerCase());
+                    filterOption={(input: string, option?: OptionData | OptionGroupData) => {
+                        if (option) {
+                            const { children } = option.props;
+                            if (typeof children === 'string') {
+                                return children.toLowerCase().includes(input.toLowerCase());
+                            }
                         }
 
                         return false;
@@ -106,7 +111,7 @@ function DetectorRunner(props: Props): JSX.Element {
                 >
                     {labels.map(
                         (label: string): JSX.Element => (
-                            <Select.Option key={label}>{label}</Select.Option>
+                            <Select.Option value={label} key={label}>{label}</Select.Option>
                         ),
                     )}
                 </Select>
@@ -138,7 +143,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     >
                         {models.map(
                             (_model: Model): JSX.Element => (
-                                <Select.Option key={_model.id}>{_model.name}</Select.Option>
+                                <Select.Option value={_model.id} key={_model.id}>{_model.name}</Select.Option>
                             ),
                         )}
                     </Select>
@@ -176,13 +181,19 @@ function DetectorRunner(props: Props): JSX.Element {
                 <>
                     <Row type='flex' justify='start' align='middle'>
                         <Col span={10}>
-                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) =>
-                                updateMatch(modelLabel, null),
+                            {renderSelector(
+                                match.model || '',
+                                'Model labels',
+                                modelLabels,
+                                (modelLabel: string) => updateMatch(modelLabel, null),
                             )}
                         </Col>
                         <Col span={10} offset={1}>
-                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) =>
-                                updateMatch(null, taskLabel),
+                            {renderSelector(
+                                match.task || '',
+                                'Task labels',
+                                taskLabels,
+                                (taskLabel: string) => updateMatch(null, taskLabel),
                             )}
                         </Col>
                         <Col span={1} offset={1}>
@@ -219,9 +230,9 @@ function DetectorRunner(props: Props): JSX.Element {
                                     step={0.01}
                                     max={1}
                                     value={threshold}
-                                    onChange={(value: number | undefined) => {
-                                        if (typeof value === 'number') {
-                                            setThreshold(value);
+                                    onChange={(value: number | undefined | string) => {
+                                        if (typeof value !== 'undefined') {
+                                            setThreshold(clamp(+value, 0.01, 1));
                                         }
                                     }}
                                 />
@@ -238,9 +249,9 @@ function DetectorRunner(props: Props): JSX.Element {
                                     placeholder='Threshold'
                                     min={1}
                                     value={distance}
-                                    onChange={(value: number | undefined) => {
-                                        if (typeof value === 'number') {
-                                            setDistance(value);
+                                    onChange={(value: number | undefined | string) => {
+                                        if (typeof value !== 'undefined') {
+                                            setDistance(+value);
                                         }
                                     }}
                                 />
@@ -258,12 +269,10 @@ function DetectorRunner(props: Props): JSX.Element {
                             runInference(
                                 task,
                                 model,
-                                model.type === 'detector'
-                                    ? { mapping, cleanup }
-                                    : {
-                                          threshold,
-                                          max_distance: distance,
-                                      },
+                                model.type === 'detector' ? { mapping, cleanup } : {
+                                    threshold,
+                                    max_distance: distance,
+                                },
                             );
                         }}
                     >

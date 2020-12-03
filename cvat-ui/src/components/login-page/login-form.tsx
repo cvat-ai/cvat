@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
+import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
@@ -13,93 +13,63 @@ export interface LoginData {
     password: string;
 }
 
-type LoginFormProps = {
+interface Props {
     fetching: boolean;
     onSubmit(loginData: LoginData): void;
-} & FormComponentProps;
-
-class LoginFormComponent extends React.PureComponent<LoginFormProps> {
-    private handleSubmit = (e: React.FormEvent): void => {
-        e.preventDefault();
-        const { form, onSubmit } = this.props;
-
-        form.validateFields((error, values): void => {
-            if (!error) {
-                onSubmit(values);
-            }
-        });
-    };
-
-    private renderUsernameField(): JSX.Element {
-        const { form } = this.props;
-        const { getFieldDecorator } = form;
-
-        return (
-            <Form.Item hasFeedback>
-                {getFieldDecorator('username', {
-                    rules: [
-                        {
-                            required: true,
-                            message: 'Please specify a username',
-                        },
-                    ],
-                })(
-                    <Input
-                        autoComplete='username'
-                        prefix={<UserOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                        placeholder='Username'
-                    />,
-                )}
-            </Form.Item>
-        );
-    }
-
-    private renderPasswordField(): JSX.Element {
-        const { form } = this.props;
-        const { getFieldDecorator } = form;
-
-        return (
-            <Form.Item hasFeedback>
-                {getFieldDecorator('password', {
-                    rules: [
-                        {
-                            required: true,
-                            message: 'Please specify a password',
-                        },
-                    ],
-                })(
-                    <Input
-                        autoComplete='current-password'
-                        prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                        placeholder='Password'
-                        type='password'
-                    />,
-                )}
-            </Form.Item>
-        );
-    }
-
-    public render(): JSX.Element {
-        const { fetching } = this.props;
-        return (
-            <Form onSubmit={this.handleSubmit} className='login-form'>
-                {this.renderUsernameField()}
-                {this.renderPasswordField()}
-
-                <Form.Item>
-                    <Button
-                        type='primary'
-                        loading={fetching}
-                        disabled={fetching}
-                        htmlType='submit'
-                        className='login-form-button'
-                    >
-                        Sign in
-                    </Button>
-                </Form.Item>
-            </Form>
-        );
-    }
 }
 
-export default Form.create<LoginFormProps>()(LoginFormComponent);
+function LoginFormComponent(props: Props): JSX.Element {
+    const { fetching, onSubmit } = props;
+    return (
+        <Form onFinish={onSubmit} className='login-form'>
+            <Form.Item
+                hasFeedback
+                name='username'
+                rules={[
+                    {
+                        required: true,
+                        message: 'Please specify a username',
+                    },
+                ]}
+            >
+                <Input
+                    autoComplete='username'
+                    prefix={<UserOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    placeholder='Username'
+                />
+            </Form.Item>
+
+            <Form.Item
+                hasFeedback
+                name='password'
+                rules={[
+                    {
+                        required: true,
+                        message: 'Please specify a password',
+                    },
+                ]}
+            >
+                <Input
+                    autoComplete='current-password'
+                    prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    placeholder='Password'
+                    type='password'
+                />
+            </Form.Item>
+
+            <Form.Item>
+                <Button
+                    type='primary'
+                    loading={fetching}
+                    disabled={fetching}
+                    htmlType='submit'
+                    className='login-form-button'
+                >
+                    Sign in
+                </Button>
+            </Form.Item>
+        </Form>
+    );
+}
+
+export default React.memo(LoginFormComponent);

@@ -149,6 +149,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         className='cvat-share-tree'
                         checkable
                         showLine
+                        height={256}
                         checkStrictly={false}
                         expandedKeys={expandedKeys}
                         checkedKeys={files.share}

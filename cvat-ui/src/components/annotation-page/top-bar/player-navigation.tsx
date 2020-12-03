@@ -6,9 +6,10 @@ import React, { useState, useEffect } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import { LinkOutlined } from '@ant-design/icons';
-import Slider, { SliderValue } from 'antd/lib/slider';
+import Slider from 'antd/lib/slider';
 import Tooltip from 'antd/lib/tooltip';
 import InputNumber from 'antd/lib/input-number';
+import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 
 import { clamp } from 'utils/math';
@@ -19,8 +20,8 @@ interface Props {
     frameNumber: number;
     frameFilename: string;
     focusFrameInputShortcut: string;
-    inputFrameRef: React.RefObject<InputNumber>;
-    onSliderChange(value: SliderValue): void;
+    inputFrameRef: React.RefObject<Input>;
+    onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
 }
@@ -76,12 +77,13 @@ function PlayerNavigation(props: Props): JSX.Element {
             <Col>
                 <Tooltip title={`Press ${focusFrameInputShortcut} to focus here`} mouseLeaveDelay={0}>
                     <InputNumber
+                        ref={inputFrameRef}
                         className='cvat-player-frame-selector'
                         type='number'
                         value={frameInputValue}
-                        onChange={(value: number | undefined) => {
-                            if (typeof value === 'number') {
-                                setFrameInputValue(Math.floor(clamp(value, startFrame, stopFrame)));
+                        onChange={(value: number | undefined | string) => {
+                            if (typeof (value) !== 'undefined') {
+                                setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));
                             }
                         }}
                         onBlur={() => {
@@ -90,7 +92,6 @@ function PlayerNavigation(props: Props): JSX.Element {
                         onPressEnter={() => {
                             onInputChange(frameInputValue);
                         }}
-                        ref={inputFrameRef}
                     />
                 </Tooltip>
             </Col>

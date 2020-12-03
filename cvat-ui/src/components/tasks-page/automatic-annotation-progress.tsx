@@ -47,7 +47,9 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                                 Modal.confirm({
                                     title: 'You are going to cancel automatic annotation?',
                                     content: 'Reached progress will be lost. Continue?',
-                                    okType: 'danger',
+                                    okButtonProps: {
+                                        danger: true,
+                                    },
                                     onOk() {
                                         cancelAutoAnnotation();
                                     },

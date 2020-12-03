@@ -26,7 +26,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 dispatch(deleteProjectAsync(projectInstance));
             },
             okButtonProps: {
-                type: 'danger',
+                danger: true,
             },
             okText: 'Delete',
         });

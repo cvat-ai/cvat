@@ -467,8 +467,8 @@ class LabelForm extends React.PureComponent<Props, {}> {
             <Col offset={1}>
                 <Tooltip title='Do not save the label and return' mouseLeaveDelay={0}>
                     <Button
+                        danger
                         style={{ width: '150px' }}
-                        type='danger'
                         onClick={(): void => {
                             onSubmit(null);
                         }}

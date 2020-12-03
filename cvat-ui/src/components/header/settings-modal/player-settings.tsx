@@ -89,9 +89,9 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         min={minFrameStep}
                         max={maxFrameStep}
                         value={frameStep}
-                        onChange={(value: number | undefined): void => {
-                            if (typeof value === 'number') {
-                                onChangeFrameStep(Math.floor(clamp(value, minFrameStep, maxFrameStep)));
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                onChangeFrameStep(Math.floor(clamp(+value, minFrameStep, maxFrameStep)));
                             }
                         }}
                     />
@@ -174,9 +174,9 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         max={maxGridSize}
                         value={gridSize}
                         disabled={!grid}
-                        onChange={(value: number | undefined): void => {
-                            if (typeof value === 'number') {
-                                onChangeGridSize(Math.floor(clamp(value, minGridSize, maxGridSize)));
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                onChangeGridSize(Math.floor(clamp(+value, minGridSize, maxGridSize)));
                             }
                         }}
                     />

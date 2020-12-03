@@ -7,7 +7,7 @@ import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
 import Text from 'antd/lib/typography/Text';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
-import Slider, { SliderValue } from 'antd/lib/slider';
+import Slider from 'antd/lib/slider';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
 
@@ -42,8 +42,8 @@ interface StateToProps {
 interface DispatchToProps {
     collapseAppearance(): void;
     changeShapesColorBy(event: RadioChangeEvent): void;
-    changeShapesOpacity(event: SliderValue): void;
-    changeSelectedShapesOpacity(event: SliderValue): void;
+    changeShapesOpacity(value: number): void;
+    changeSelectedShapesOpacity(value: number): void;
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
@@ -107,11 +107,11 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShapesColorBy(event: RadioChangeEvent): void {
             dispatch(changeShapesColorByAction(event.target.value));
         },
-        changeShapesOpacity(value: SliderValue): void {
-            dispatch(changeShapesOpacityAction(value as number));
+        changeShapesOpacity(value: number): void {
+            dispatch(changeShapesOpacityAction(value));
         },
-        changeSelectedShapesOpacity(value: SliderValue): void {
-            dispatch(changeSelectedShapesOpacityAction(value as number));
+        changeSelectedShapesOpacity(value: number): void {
+            dispatch(changeSelectedShapesOpacityAction(value));
         },
         changeShapesOutlinedBorders(outlined: boolean, color: string): void {
             dispatch(changeShapesOutlinedBordersAction(outlined, color));
