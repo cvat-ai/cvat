@@ -19,26 +19,18 @@ from .annotation import AnnotationManager, TrackManager
 
 
 class TaskData:
-    Attribute = namedtuple('Attribute', 'name, value')
+        Attribute = namedtuple('Attribute', 'name, value')
     LabeledShape = namedtuple(
         'LabeledShape', 'type, frame, label, points, occluded, attributes, source, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
     TrackedShape = namedtuple(
-<< << << < HEAD
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, source, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, source, shapes')
+    Track.__new__.__defaults__ = (None, None, None, None)
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
-
-
-== == == =
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, group, z_order, label, track_id')
-    TrackedShape.__new__.__defaults__=(0, 0, None, 0)
-    Track=namedtuple('Track', 'track_id, label, group, shapes')
-    Tag=namedtuple('Tag', 'frame, label, attributes, group')
->> >>>> > b0574f8d... Use track 'serverID' value in exported XML and include on UI
-    Tag.__new__.__defaults__=(0, )
-    Frame=namedtuple(
+    Tag.__new__.__defaults__ = (0, )
+    Frame = namedtuple(
         'Frame', 'idx, frame, name, width, height, labeled_shapes, tags')
 
     def __init__(self, annotation_ir, db_task, host = '', create_callback = None):
