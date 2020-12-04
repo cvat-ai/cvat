@@ -8,12 +8,10 @@ import { taskName } from '../../support/const';
 
 context('Canvas brightness/contrast/saturation feature', () => {
     const caseId = '26';
-
     const countActionMoveSlider = 10;
     const defaultValueInSidebar = 100;
     const expectedResultInSetting = defaultValueInSidebar + countActionMoveSlider;
-
-    let classNameSliders = [
+    const classNameSliders = [
         '.cvat-player-settings-brightness',
         '.cvat-player-settings-contrast',
         '.cvat-player-settings-saturation',
