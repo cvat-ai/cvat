@@ -19,8 +19,6 @@
     "eslint-plugin-header": "^3.1.0",
     "eslint-plugin-jest": "^24.1.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "husky": "^4.3.0",
-    "lint-staged": "^10.4.2",
     "micromatch": "^4.0.2",
     "nyc": "^15.1.0",
     "prettier": "2.1.2",
@@ -65,5 +63,9 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
+  },
+  "lint-staged": {
+    "*.js": "eslint --cache --fix",
+    "*.css": "stylelint --fix"
   }
 }

@@ -31,6 +31,8 @@ services:
       default:
         aliases:
           - redis
+    ports:
+      - '16379:6379'
     restart: always
 
   cvat:

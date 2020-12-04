@@ -33,7 +33,7 @@
                 "runserver",
                 "--noreload",
                 "--insecure",
-                "127.0.0.1:7000"
+                "localhost:7000"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
