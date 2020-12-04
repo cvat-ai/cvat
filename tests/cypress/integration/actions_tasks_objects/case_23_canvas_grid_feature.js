@@ -10,7 +10,7 @@ context('Canvas grid feature', () => {
     const caseId = '23';
     const settingsGridSize = 50;
     const gridColor = 'Black';
-    const gridOpacity = 49;
+    const gridOpacity = 80;
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -35,14 +35,15 @@ context('Canvas grid feature', () => {
                 .contains(new RegExp(`^${gridColor}$`, 'g'))
                 .click();
         });
-        it('Set "Grid opacity" to 49%.', () => {
-            cy.get('.cvat-player-settings-grid-opacity-input')
-                .click()
-                .within(() => {
-                    cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', gridOpacity);
-                });
+        it('Set "Grid opacity" to 80%.', () => {
+            cy.get('.cvat-player-settings-grid-opacity-input').within(() => {
+                for (let i = 0; i < 20; i++) {
+                    cy.get('[role="slider"]').type('{leftarrow}'); // Moving the slider to the left up to 80.
+                }
+                cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', gridOpacity);
+            });
         });
-        it('Canvas has grid drawn, it is black, cells are 50x50px and it has 49% opacity.', () => {
+        it('Canvas has grid drawn, it is black, cells are 50x50px and it has 80% opacity.', () => {
             cy.get('#cvat_canvas_grid')
                 .should('be.visible') // expected <svg#cvat_canvas_grid> to be visible
                 .within(() => {
@@ -53,7 +54,7 @@ context('Canvas grid feature', () => {
                             'have.attr',
                             'style',
                             `stroke: ${gridColor.toLowerCase()}; opacity: ${gridOpacity / 100};`,
-                        ); // expected to have attribute style with the value stroke: black; opacity: 0.49;
+                        ); // expected to have attribute style with the value stroke: black; opacity: 0.8;
                 });
         });
     });
