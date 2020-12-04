@@ -298,7 +298,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
         return (
             <Row>
-                <Col>
+                <Col span={24}>
                     <LabelsEditorComponent
                         labels={taskInstance.labels.map((label: any): string => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
