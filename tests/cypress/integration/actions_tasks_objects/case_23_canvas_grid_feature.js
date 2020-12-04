@@ -12,6 +12,14 @@ context('Canvas grid feature', () => {
     const gridColor = 'Black';
     const gridOpacity = 80;
 
+    function generateString(countPointsToMove) {
+        let action = '';
+        for (let i = 0; i < countPointsToMove; i++) {
+            action += '{leftarrow}';
+        }
+        return action;
+    }
+
     before(() => {
         cy.openTaskJob(taskName);
     });
@@ -37,9 +45,7 @@ context('Canvas grid feature', () => {
         });
         it('Set "Grid opacity" to 80%.', () => {
             cy.get('.cvat-player-settings-grid-opacity-input').within(() => {
-                for (let i = 0; i < 20; i++) {
-                    cy.get('[role="slider"]').type('{leftarrow}'); // Moving the slider to the left up to 80.
-                }
+                cy.get('[role="slider"]').type(generateString(20)); // Moving the slider to the left up to 80.
                 cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', gridOpacity);
             });
         });
