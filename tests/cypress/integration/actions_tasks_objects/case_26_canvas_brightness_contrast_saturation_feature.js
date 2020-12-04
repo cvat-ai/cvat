@@ -9,9 +9,9 @@ import { taskName } from '../../support/const';
 context('Canvas brightness/contrast/saturation feature', () => {
     const caseId = '26';
 
-    let countActionMoveSlider = 10;
-    let defaultValueInSidebar = 100;
-    let expectedResultInSetting = defaultValueInSidebar + countActionMoveSlider;
+    const countActionMoveSlider = 10;
+    const defaultValueInSidebar = 100;
+    const expectedResultInSetting = defaultValueInSidebar + countActionMoveSlider;
 
     let classNameSliders = [
         '.cvat-player-settings-brightness',
@@ -51,13 +51,13 @@ context('Canvas brightness/contrast/saturation feature', () => {
                     });
                 });
             });
-            let expectedResultInBackground = (defaultValueInSidebar + countActionMoveSlider) / 100;
+            const expectedResultInBackground = (defaultValueInSidebar + countActionMoveSlider) / 100;
             checkStateValuesInBackground(expectedResultInBackground);
         });
 
         it('Check reset of settings', () => {
             cy.get('.cvat-player-reset-color-settings').click();
-            let expectedResultInBackground = defaultValueInSidebar / 100;
+            const expectedResultInBackground = defaultValueInSidebar / 100;
             checkStateValuesInBackground(expectedResultInBackground);
         });
     });
