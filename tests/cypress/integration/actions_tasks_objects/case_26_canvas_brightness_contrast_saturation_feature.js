@@ -26,7 +26,7 @@ context('Canvas brightness/contrast/saturation feature', () => {
     };
 
     function checkStateValuesInBackground(expectedValue) {
-        cy.get('canvas#cvat_canvas_background')
+        cy.get('#cvat_canvas_background')
             .should('have.attr', 'style')
             .and('contain', `filter: brightness(${expectedValue}) contrast(${expectedValue}) saturate(${expectedValue})`);
     };
