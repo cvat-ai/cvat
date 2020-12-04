@@ -103,8 +103,7 @@ Cypress.Commands.add('saveJob', () => {
     cy.get('button').contains('Save').click({ force: true });
 });
 
-Cypress.Commands.add('openJob', (jobNumber = 0) => {
-    let tdText = '';
+Cypress.Commands.add('getJobNum', (jobNumber) => {
     cy.get('.ant-table-tbody')
         .contains(/^0-/)
         .parent()
@@ -112,9 +111,14 @@ Cypress.Commands.add('openJob', (jobNumber = 0) => {
         .eq(0)
         .invoke('text')
         .then(($tdText) => {
-            tdText = Number($tdText.match(/\d+/g)) + jobNumber;
-            cy.get('.ant-table-tbody').contains('a', `Job #${tdText}`).click();
+            return Number($tdText.match(/\d+/g)) + jobNumber;
         });
+});
+
+Cypress.Commands.add('openJob', (jobNumber = 0) => {
+    cy.getJobNum(jobNumber).then(($job) => {
+        cy.get('.ant-table-tbody').contains('a', `Job #${$job}`).click();
+    });
     cy.url().should('include', '/jobs');
     cy.get('.cvat-canvas-container').should('exist');
 });
@@ -468,6 +472,30 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
+});
+
+Cypress.Commands.add('assignJobToUser', (jobNumber, user) => {
+    cy.getJobNum(jobNumber).then(($job) => {
+        cy.get('.ant-table-tbody')
+            .contains('a', `Job #${$job}`)
+            .parents('.ant-table-row')
+            .find('.cvat-job-assignee-selector')
+            .click();
+    });
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .contains(new RegExp(`^${user}$`, 'g'))
+        .click();
+});
+
+Cypress.Commands.add('checkJobStatus', (jobNumber, status) => {
+    cy.getJobNum(jobNumber).then(($job) => {
+        cy.get('.ant-table-tbody')
+            .contains('a', `Job #${$job}`)
+            .parents('.ant-table-row')
+            .find('.cvat-job-item-status')
+            .should('have.text', status);
+    });
 });
 
 Cypress.Commands.add('getScaleValue', () => {
