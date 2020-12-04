@@ -2,62 +2,64 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
-import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
+import Form, { FormInstance, RuleObject } from 'antd/lib/form';
+import { Store } from 'antd/lib/form/interface';
 
 import { Label, Attribute, validateParsedLabel, idGenerator } from './common';
 
-type Props = FormComponentProps & {
-    labels: Label[];
-    onSubmit: (labels: Label[]) => void;
-};
-
-class RawViewer extends React.PureComponent<Props> {
-    private validateLabels = (_: any, value: string, callback: any): void => {
-        try {
-            const parsed = JSON.parse(value);
-            if (!Array.isArray(parsed)) {
-                callback('Field is expected to be a JSON array');
-            }
-            const labelNames = parsed.map((label: Label) => label.name);
-            if (new Set(labelNames).size !== labelNames.length) {
-                callback('Label names must be unique for the task');
-            }
-
-            for (const label of parsed) {
-                try {
-                    validateParsedLabel(label);
-                } catch (error) {
-                    callback(error.toString());
-                }
-            }
-        } catch (error) {
-            callback(error.toString());
+function validateLabels(_: RuleObject, value: string): Promise<void> {
+    try {
+        const parsed = JSON.parse(value);
+        if (!Array.isArray(parsed)) {
+            return Promise.reject(new Error('Field is expected to be a JSON array'));
+        }
+        const labelNames = parsed.map((label: Label) => label.name);
+        if (new Set(labelNames).size !== labelNames.length) {
+            return Promise.reject(new Error('Label names must be unique for the task'));
         }
 
-        callback();
-    };
-
-    private handleSubmit = (e: React.FormEvent): void => {
-        const { form, onSubmit } = this.props;
-
-        e.preventDefault();
-        form.validateFields((error, values): void => {
-            if (!error) {
-                const parsed = JSON.parse(values.labels);
-                for (const label of parsed) {
-                    label.id = label.id || idGenerator();
-                    for (const attr of label.attributes) {
-                        attr.id = attr.id || idGenerator();
-                    }
-                }
-                onSubmit(parsed);
+        for (const label of parsed) {
+            try {
+                validateParsedLabel(label);
+            } catch (error) {
+                return Promise.reject(error);
             }
-        });
+        }
+    } catch (error) {
+        return Promise.reject(error);
+    }
+
+    return Promise.resolve();
+}
+
+interface Props {
+    labels: Label[];
+    onSubmit: (labels: Label[]) => void;
+}
+
+export default class RawViewer extends React.PureComponent<Props> {
+    private formRef: RefObject<FormInstance>;
+
+    public constructor(props: Props) {
+        super(props);
+        this.formRef = React.createRef<FormInstance>();
+    }
+
+    private handleSubmit = (values: Store): void => {
+        const { onSubmit } = this.props;
+        const parsed = JSON.parse(values.labels);
+        for (const label of parsed) {
+            label.id = label.id || idGenerator();
+            for (const attr of label.attributes) {
+                attr.id = attr.id || idGenerator();
+            }
+        }
+        onSubmit(parsed);
     };
 
     public render(): JSX.Element {
@@ -76,19 +78,14 @@ class RawViewer extends React.PureComponent<Props> {
         );
 
         const textLabels = JSON.stringify(convertedLabels, null, 2);
-        const { form } = this.props;
-
         return (
-            <Form onSubmit={this.handleSubmit}>
-                <Form.Item>
-                    {form.getFieldDecorator('labels', {
-                        initialValue: textLabels,
-                        rules: [
-                            {
-                                validator: this.validateLabels,
-                            },
-                        ],
-                    })(<Input.TextArea rows={5} className='cvat-raw-labels-viewer' />)}
+            <Form layout='vertical' onFinish={this.handleSubmit} ref={this.formRef}>
+                <Form.Item
+                    name='labels'
+                    initialValue={textLabels}
+                    rules={[{ validator: validateLabels }]}
+                >
+                    <Input.TextArea rows={5} className='cvat-raw-labels-viewer' />
                 </Form.Item>
                 <Row type='flex' justify='start' align='middle'>
                     <Col>
@@ -104,7 +101,9 @@ class RawViewer extends React.PureComponent<Props> {
                                 danger
                                 style={{ width: '150px' }}
                                 onClick={(): void => {
-                                    form.resetFields();
+                                    if (this.formRef.current) {
+                                        this.formRef.current.resetFields();
+                                    }
                                 }}
                             >
                                 Reset
@@ -116,5 +115,3 @@ class RawViewer extends React.PureComponent<Props> {
         );
     }
 }
-
-export default Form.create<Props>()(RawViewer);
