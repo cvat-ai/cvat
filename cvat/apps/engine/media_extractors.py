@@ -8,12 +8,15 @@ import shutil
 import zipfile
 import io
 import itertools
+import struct
+import re
 from abc import ABC, abstractmethod
 
 import av
 import numpy as np
 from pyunpack import Archive
 from PIL import Image, ImageFile
+import open3d as o3d
 from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
@@ -28,6 +31,18 @@ def get_mime(name):
             return type_name
 
     return 'unknown'
+
+def get_pcd_properties(file):
+        kv = {}
+        for line_no, line in enumerate(file):
+            line = line.decode("utf-8")
+            if line.startswith("#"):
+                continue
+            k, v = line.split(" ", maxsplit=1)
+            kv[k] = v.strip()
+            if "DATA" in line:
+                break
+        return kv
 
 def create_tmp_dir():
     return tempfile.mkdtemp(prefix='cvat-', suffix='.data')
@@ -48,7 +63,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self):
+    def get_preview(self, dimension="2d"):
         pass
 
     @abstractmethod
@@ -67,7 +82,7 @@ class IMediaReader(ABC):
         return preview.convert('RGB')
 
     @abstractmethod
-    def get_image_size(self, i):
+    def get_image_size(self, i, dimension="2d"):
         pass
 
     def __len__(self):
@@ -109,11 +124,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self):
+    def get_preview(self, dimension="2d"):
         fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
-    def get_image_size(self, i):
+    def get_image_size(self, i, dimension="2d"):
         img = Image.open(self._source_path[i])
         return img.width, img.height
 
@@ -179,7 +194,7 @@ class PdfReader(ImageListReader):
 
 class ZipReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
-        self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
+        self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
         file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
         super().__init__(file_list, step, start, stop)
@@ -187,16 +202,39 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-    def get_preview(self):
+    def get_preview(self, dimension="2d"):
+        if dimension == "3d":
+            fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
+            return self._get_preview(fp)
         io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
         return self._get_preview(io_image)
 
-    def get_image_size(self, i):
+    def get_image_size(self, i, dimension="2d"):
+        if dimension == "3d":
+            with self._zip_source.open(self._source_path[i], "r") as file:
+                properties = get_pcd_properties(file)
+                return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
         return img.width, img.height
 
     def get_image(self, i):
         return io.BytesIO(self._zip_source.read(self._source_path[i]))
+
+    def add_files(self, source_path):
+        root_path = os.path.split(self._zip_source.filename)[0]
+        for path in source_path:
+            self._zip_source.write(path, path.replace(root_path, ""))
+
+    def get_zip_filename(self):
+        return self._zip_source.filename
+
+    def initialize_for_3d(self, source_path, step=1, start=0, stop=None):
+        super().__init__(
+            source_path=source_path,
+            step=step,
+            start=start,
+            stop=stop
+        )
 
     def get_path(self, i):
         if  self._zip_source.filename:
@@ -264,7 +302,7 @@ class VideoReader(IMediaReader):
             self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
 
-    def get_preview(self):
+    def get_preview(self, dimension="2d"):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
@@ -278,13 +316,14 @@ class VideoReader(IMediaReader):
             ).to_image()
         )
 
-    def get_image_size(self, i):
+    def get_image_size(self, i, dimension="2d"):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
 class IChunkWriter(ABC):
-    def __init__(self, quality):
+    def __init__(self, quality, dimension="2d"):
         self._image_quality = quality
+        self._dimension = dimension
 
     @staticmethod
     def _compress_image(image_path, quality):
@@ -326,17 +365,21 @@ class ZipCompressedChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
-            for idx, (image, _ , _) in enumerate(images):
-                w, h, image_buf = self._compress_image(image, self._image_quality)
+            for idx, (image, _, _) in enumerate(images):
+                if self._dimension == "2d":
+                    [w, h, image_buf], extension = self._compress_image(image, self._image_quality), "jpeg"
+                else:
+                    properties = get_pcd_properties(image)
+                    w, h, image_buf, extension  = int(properties["WIDTH"]), int(properties["HEIGHT"]), image, "pcd"
                 image_sizes.append((w, h))
-                arcname = '{:06d}.jpeg'.format(idx)
+                arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
 
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _):
-        super().__init__(17)
+    def __init__(self, _, dimension="2d"):
+        super().__init__(17, dimension)
         self._output_fps = 25
 
     @staticmethod
@@ -393,7 +436,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             container.mux(packet)
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality):
+    def __init__(self, quality, dimension="2d"):
         # translate inversed range [1:100] to [0:51]
         self._image_quality = round(51 * (100 - quality) / 99)
         self._output_fps = 25
@@ -510,3 +553,190 @@ MEDIA_TYPES = {
         'unique': True,
     }
 }
+
+
+class ValidateDimension:
+
+    def __init__(self, path=None):
+        self.dimension = "2d"
+        self.path = path
+        self.related_files = {}
+        self.image_files = {}
+        self.converted_files = []
+
+    @staticmethod
+    def validate_pcd(path):
+        """
+            Validate the point cloud file along with version check
+            On failure it is considered as PhotoCD format
+        """
+
+        pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1", ".7", ".6", ".5", ".4", ".3", ".2", ".1"]
+        with open(path, "rb") as file_read:
+            data = file_read.read(70)
+            for ver in pcd_version:
+                version = f"VERSION {ver}".encode()
+                if version in data:
+                    return True
+        return False
+
+    @staticmethod
+    def convert_bin_to_pcd(path, delete_source=True):
+        list_pcd = []
+        with open(path, "rb") as f:
+            size_float = 4
+            byte = f.read(size_float * 4)
+            while byte:
+                x, y, z, intensity = struct.unpack("ffff", byte)
+                list_pcd.append([x, y, z])
+                byte = f.read(size_float * 4)
+        np_pcd = np.asarray(list_pcd)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(np_pcd)
+        pcd_filename = path.replace(".bin", ".pcd")
+        o3d.io.write_point_cloud(pcd_filename, pcd)
+        if delete_source:
+            os.remove(path)
+        return pcd_filename
+
+    def set_path(self, path):
+        self.path = path
+
+    def bin_operation(self, file_path, actual_path):
+        pcd_path = ValidateDimension.convert_bin_to_pcd(file_path)
+        self.converted_files.append(pcd_path)
+        return pcd_path.split(actual_path)[-1][1:]
+
+    def pcd_operation(self, file_path, actual_path):
+        if self.validate_pcd(file_path):
+            return file_path.split(actual_path)[-1][1:]
+        else:
+            return file_path
+
+    def validate(self):
+        """
+            Validate the directory structure for kitty and point cloud format.
+        """
+        if not self.path:
+            return
+        actual_path = self.path
+        for root, dirs, files in os.walk(actual_path):
+            if root.endswith("data"):
+                if os.path.split(os.path.split(root)[0])[1] == "velodyne_points":
+                    pcd_files = {}
+
+                    for file in files:
+
+                        file_name, file_extension = file.rsplit('.', maxsplit=1)
+                        file_path = os.path.abspath(os.path.join(root, file))
+
+                        if file_extension == "bin":
+                            path = self.bin_operation(file_path, actual_path)
+                            pcd_files[file_name] = path
+                            self.related_files[path] = []
+
+                        elif file_extension == "pcd":
+                            path = self.pcd_operation(file_path, actual_path)
+                            if path == file_path:
+                                self.image_files[file_name] = file_path
+                            else:
+                                pcd_files[file_name] = path
+                                self.related_files[path] = []
+                        else:
+                            self.image_files[file_name] = file_path
+
+                    related_path = os.path.split(os.path.split(root)[0])[0]
+
+                    path_list = [re.search(r'image_\d.*', path, re.IGNORECASE) for path in os.listdir(related_path) if
+                                 os.path.isdir(os.path.join(related_path, path))]
+
+                    for path_ in path_list:
+                        if path_:
+                            path = os.path.join(path_.group(), "data")
+
+                            path = os.path.abspath(os.path.join(related_path, path))
+
+                            files = [file for file in os.listdir(path) if
+                                     os.path.isfile(os.path.abspath(os.path.join(path, file)))]
+                            for file in files:
+
+                                f_name = file.split(".")[0]
+                                if pcd_files.get(f_name, None):
+                                    self.related_files[pcd_files[f_name]].append(
+                                        os.path.abspath(os.path.join(path, file)))
+
+            elif os.path.split(root)[-1] == "pointcloud":
+                pcd_files = {}
+
+                for file in files:
+                    file_name, file_extension = file.rsplit('.', maxsplit=1)
+                    file_path = os.path.abspath(os.path.join(root, file))
+
+                    if file_extension == "bin":
+                        path = self.bin_operation(file_path, actual_path)
+                        pcd_files[file_name] = path
+                        self.related_files[path] = []
+
+                    elif file_extension == "pcd":
+                        path = self.pcd_operation(file_path, actual_path)
+                        if path == file_path:
+                            self.image_files[file_name] = file_path
+                        else:
+                            pcd_files[file_name] = path
+                            self.related_files[path] = []
+                    else:
+                        self.image_files[file_name] = file_path
+
+                related_path = root.split("pointcloud")[0]
+                related_images_path = os.path.join(related_path, "related_images")
+                if os.path.isdir(related_images_path):
+                    paths = [path for path in os.listdir(related_images_path) if
+                             os.path.isdir(os.path.abspath(os.path.join(related_images_path, path)))]
+
+                    for k in pcd_files:
+                        for path in paths:
+
+                            if k == path.split("_")[0]:
+                                file_path = os.path.abspath(os.path.join(related_images_path, path))
+                                files = [file for file in os.listdir(file_path) if
+                                         os.path.isfile(os.path.join(file_path, file))]
+                                for related_image in files:
+                                    self.related_files[pcd_files[k]].append(os.path.join(file_path, related_image))
+            else:
+                pcd_files = {}
+                pcd_name = ""
+
+                for file in files:
+                    file_name, file_extension = file.rsplit('.', maxsplit=1)
+                    file_path = os.path.abspath(os.path.join(root, file))
+
+                    if file_extension == "bin":
+                        pcd_name = file
+                        path = self.bin_operation(file_path, actual_path)
+                        pcd_files[file_name] = path
+                        self.related_files[path] = []
+
+                    elif file_extension == "pcd":
+                        path = self.pcd_operation(file_path, actual_path)
+                        if path == file_path:
+                            self.image_files[file_name] = file_path
+                        else:
+                            pcd_files[file_name] = path
+                            self.related_files[path] = []
+                    else:
+                        self.image_files[file_name] = file_path
+
+                for image in self.image_files.keys():
+                    if pcd_files.get(image, None):
+                        self.related_files[pcd_files[image]].append(self.image_files[image])
+
+                current_directory = os.path.split(root)
+                pcd_name = pcd_name.split(".")[0]
+
+                if len(pcd_files.keys()) == 1 and current_directory[1] == pcd_name:
+                    for related_image in self.image_files.values():
+                        if root == os.path.split(related_image)[0]:
+                            self.related_files[pcd_files[pcd_name]].append(related_image)
+
+        if len(self.related_files.keys()):
+            self.dimension = "3d"

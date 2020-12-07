@@ -14,8 +14,8 @@ from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice
+from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter, ValidateDimension
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.prepare import prepare_meta
 
@@ -259,8 +259,22 @@ def _create_thread(tid, data):
                 start=db_data.start_frame,
                 stop=data['stop_frame'],
             )
+
+    validate_dimension = ValidateDimension()
     if extractor.__class__ == MEDIA_TYPES['zip']['extractor']:
         extractor.extract()
+        validate_dimension.set_path(os.path.split(extractor.get_zip_filename())[0])
+        validate_dimension.validate()
+        if validate_dimension.dimension == "3d":
+            db_task.dimension = "3d"
+            extractor.initialize_for_3d(
+                source_path=list(validate_dimension.related_files.keys()),
+                step=db_data.get_frame_step(),
+                start=db_data.start_frame,
+                stop=data['stop_frame']
+            )
+            extractor.add_files(validate_dimension.converted_files)
+
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
@@ -282,13 +296,14 @@ def _create_thread(tid, data):
     compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter
     original_chunk_writer_class = Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter
 
-    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality)
-    original_chunk_writer = original_chunk_writer_class(100)
+    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality,
+                                                            dimension=validate_dimension.dimension)
+    original_chunk_writer = original_chunk_writer_class(100, dimension=validate_dimension.dimension)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            w, h = extractor.get_image_size(0)
+            w, h = extractor.get_image_size(0, dimension=validate_dimension.dimension)
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
@@ -359,7 +374,7 @@ def _create_thread(tid, data):
                     with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
                         for path, frame_id in chunk_paths:
                             dummy_chunk.write(os.path.relpath(path, upload_dir) + '\n')
-                            img_sizes.append(extractor.get_image_size(frame_id))
+                            img_sizes.append(extractor.get_image_size(frame_id, dimension=validate_dimension.dimension))
 
                     db_images.extend([
                         models.Image(data=db_data,
@@ -399,7 +414,14 @@ def _create_thread(tid, data):
             update_progress(progress)
 
     if db_task.mode == 'annotation':
-        models.Image.objects.bulk_create(db_images)
+        result = models.Image.objects.bulk_create(db_images)
+        if validate_dimension.dimension == "3d":
+            for img in result:
+                image_data = models.Image.objects.get(id=img.id)
+                if validate_dimension.related_files.get(image_data.path, None):
+                    for related_image_file in validate_dimension.related_files[image_data.path]:
+                        related_file = RelatedFile(data=db_data, primary_image_id=img.id, path=related_image_file)
+                        related_file.save()
         db_images = []
     else:
         models.Video.objects.create(
@@ -410,7 +432,7 @@ def _create_thread(tid, data):
     if db_data.stop_frame == 0:
         db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
 
-    preview = extractor.get_preview()
+    preview = extractor.get_preview(dimension=validate_dimension.dimension)
     preview.save(db_data.get_preview_path())
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
