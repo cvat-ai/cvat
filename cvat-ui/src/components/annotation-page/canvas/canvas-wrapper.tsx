@@ -6,7 +6,7 @@ import React from 'react';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import Tooltip from 'antd/lib/tooltip';
-import Layout from 'antd/lib/layout/layout';
+import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
 
 import {

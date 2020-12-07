@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useRef } from 'react';
+import { SelectValue, RefSelectProps } from 'antd/lib/select';
 import Autocomplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
+import debounce from 'lodash/debounce';
 
 import getCore from 'cvat-core-wrapper';
-import { SelectValue } from 'antd/lib/select';
-
-import debounce from 'lodash/debounce';
 
 const core = getCore();
 
@@ -48,7 +47,7 @@ export default function UserSelector(props: Props): JSX.Element {
     const [searchPhrase, setSearchPhrase] = useState('');
 
     const [users, setUsers] = useState<User[]>([]);
-    const autocompleteRef = useRef<Autocomplete | null>(null);
+    const autocompleteRef = useRef<RefSelectProps | null>(null);
 
     const handleSearch = (searchValue: string): void => {
         if (searchValue) {
@@ -102,7 +101,7 @@ export default function UserSelector(props: Props): JSX.Element {
             onDropdownVisibleChange={handleFocus}
             options={users.map((user) => ({
                 value: user.id.toString(),
-                text: user.username,
+                label: user.username,
             }))}
         >
             <Input onPressEnter={() => autocompleteRef.current?.blur()} />
