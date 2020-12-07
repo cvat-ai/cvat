@@ -491,6 +491,12 @@ Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
         });
 });
 
+Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
+    cy.get('.cvat-player-frame-selector').within(() => {
+        cy.get('input[role="spinbutton"]').clear().type(`${frameNum}{Enter}`).should('have.value', frameNum);
+    });
+});
+
 Cypress.Commands.add('checkFrameNum', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
