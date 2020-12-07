@@ -10,6 +10,7 @@ const defaultState: AuthState = {
     initialized: false,
     fetching: false,
     user: null,
+    next: null,
     authActionsFetching: false,
     authActionsInitialized: false,
     allowChangePassword: false,
@@ -40,6 +41,7 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 fetching: false,
                 user: action.payload.user,
+                next: action.payload.next,
             };
         case AuthActionTypes.LOGIN_FAILED:
             return {
@@ -94,9 +96,9 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             return {
                 ...state,
                 showChangePasswordDialog:
-                    typeof action.payload.showChangePasswordDialog === 'undefined'
-                        ? !state.showChangePasswordDialog
-                        : action.payload.showChangePasswordDialog,
+                    typeof action.payload.showChangePasswordDialog === 'undefined' ?
+                        !state.showChangePasswordDialog :
+                        action.payload.showChangePasswordDialog,
             };
         case AuthActionTypes.REQUEST_PASSWORD_RESET:
             return {

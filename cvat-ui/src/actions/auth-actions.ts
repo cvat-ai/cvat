@@ -40,7 +40,7 @@ export const authActions = {
     authorizeSuccess: (user: any) => createAction(AuthActionTypes.AUTHORIZED_SUCCESS, { user }),
     authorizeFailed: (error: any) => createAction(AuthActionTypes.AUTHORIZED_FAILED, { error }),
     login: () => createAction(AuthActionTypes.LOGIN),
-    loginSuccess: (user: any) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user }),
+    loginSuccess: (user: any, next: string | null) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user, next }),
     loginFailed: (error: any) => createAction(AuthActionTypes.LOGIN_FAILED, { error }),
     register: () => createAction(AuthActionTypes.REGISTER),
     registerSuccess: (user: any) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
@@ -98,14 +98,16 @@ export const registerAsync = (
     }
 };
 
-export const loginAsync = (username: string, password: string): ThunkAction => async (dispatch) => {
+export const loginAsync = (username: string, password: string, next: string | null): ThunkAction => async (
+    dispatch,
+) => {
     dispatch(authActions.login());
 
     try {
         await cvat.server.login(username, password);
         const users = await cvat.users.get({ self: true });
 
-        dispatch(authActions.loginSuccess(users[0]));
+        dispatch(authActions.loginSuccess(users[0], next));
     } catch (error) {
         dispatch(authActions.loginFailed(error));
     }
