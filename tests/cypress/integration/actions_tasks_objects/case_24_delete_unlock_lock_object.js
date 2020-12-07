@@ -38,8 +38,7 @@ context('Delete unlock/lock object', () => {
     };
 
     function clickRemoveOnDropdownMenu() {
-        cy.get('.ant-dropdown')
-            .not('.ant-dropdown-hidden')
+        cy.get('.cvat-object-item-menu')
             .contains(new RegExp('^Remove$', 'g'))
             .click({ force: true });
     };
@@ -68,7 +67,7 @@ context('Delete unlock/lock object', () => {
     };
 
     function actionOnConfirmWindow(textBuntton) {
-        cy.get('.ant-modal-confirm').within(() => {
+        cy.get('.cvat-modal-confirm').within(() => {
             cy.contains(new RegExp(`^${textBuntton}$`, 'g'))
                 .click();
         });
@@ -77,7 +76,7 @@ context('Delete unlock/lock object', () => {
     function checkFailDeleteLockObject(shortcut) {
         deleteObjectViaShortcut(shortcut, 'lock');
         checkExistObject('exist');
-        cy.get('.ant-notification-topRight').should('exist');
+        cy.get('.cvat-notification-notice-remove-object-failed').should('exist');
     };
 
     function checkExistObject(state) {
