@@ -82,7 +82,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-player-settings'>
-            <Row type='flex' align='bottom' className='cvat-player-settings-step'>
+            <Row align='bottom' className='cvat-player-settings-step'>
                 <Col>
                     <Text className='cvat-text-color'> Player step </Text>
                     <InputNumber
@@ -105,7 +105,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Row type='flex' align='middle' className='cvat-player-settings-speed'>
+            <Row align='middle' className='cvat-player-settings-speed'>
                 <Col>
                     <Text className='cvat-text-color'> Player speed </Text>
                     <Select
@@ -135,7 +135,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            <Row type='flex' className='cvat-player-settings-canvas-background'>
+            <Row className='cvat-player-settings-canvas-background'>
                 <Col>
                     <Popover
                         content={(
@@ -152,7 +152,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Popover>
                 </Col>
             </Row>
-            <Row type='flex'>
+            <Row>
                 <Col>
                     <Checkbox
                         className='cvat-text-color cvat-player-settings-grid'
@@ -165,7 +165,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Checkbox>
                 </Col>
             </Row>
-            <Row type='flex' justify='space-between'>
+            <Row justify='space-between'>
                 <Col span={8} className='cvat-player-settings-grid-size'>
                     <Text className='cvat-text-color'> Grid size </Text>
                     <InputNumber
@@ -223,10 +223,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color'>{`${gridOpacity} %`}</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='start'>
-                <Col>
+            <Row justify='start'>
+                <Col span={7}>
                     <Row className='cvat-player-settings-reset-zoom'>
-                        <Col className='cvat-player-settings-reset-zoom-checkbox'>
+                        <Col span={24} className='cvat-player-settings-reset-zoom-checkbox'>
                             <Checkbox
                                 className='cvat-text-color'
                                 checked={resetZoom}
@@ -237,14 +237,14 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                                 Reset zoom
                             </Checkbox>
                         </Col>
-                        <Col>
+                        <Col span={24}>
                             <Text type='secondary'> Fit image after changing frame </Text>
                         </Col>
                     </Row>
                 </Col>
-                <Col offset={5}>
+                <Col span={7} offset={5}>
                     <Row className='cvat-player-settings-rotate-all'>
-                        <Col className='cvat-player-settings-rotate-all-checkbox'>
+                        <Col span={24} className='cvat-player-settings-rotate-all-checkbox'>
                             <Checkbox
                                 className='cvat-text-color'
                                 checked={rotateAll}
@@ -255,7 +255,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                                 Rotate all images
                             </Checkbox>
                         </Col>
-                        <Col>
+                        <Col span={24}>
                             <Text type='secondary'> Rotate all images simultaneously </Text>
                         </Col>
                     </Row>
@@ -264,8 +264,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row>
                 <Col span={12}>
                     <Row className='cvat-player-settings-brightness'>
-                        <Col className='cvat-text-color'>Brightness</Col>
-                        <Col>
+                        <Col span={24} className='cvat-text-color'>
+                            Brightness
+                        </Col>
+                        <Col span={24}>
                             <Slider
                                 min={50}
                                 max={200}
@@ -277,8 +279,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     <Row className='cvat-player-settings-contrast'>
-                        <Col className='cvat-text-color'>Contrast</Col>
-                        <Col>
+                        <Col span={24} className='cvat-text-color'>
+                            Contrast
+                        </Col>
+                        <Col span={24}>
                             <Slider
                                 min={50}
                                 max={200}
@@ -290,8 +294,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     <Row className='cvat-player-settings-saturation'>
-                        <Col className='cvat-text-color'>Saturation</Col>
-                        <Col>
+                        <Col span={24} className='cvat-text-color'>
+                            Saturation
+                        </Col>
+                        <Col span={24}>
                             <Slider
                                 min={0}
                                 max={300}

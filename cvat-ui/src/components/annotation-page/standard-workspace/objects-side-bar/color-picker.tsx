@@ -103,7 +103,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                 </>
             )}
             title={(
-                <Row type='flex' justify='space-between' align='middle'>
+                <Row justify='space-between' align='middle'>
                     <Col span={12}>
                         <Text strong>Select color</Text>
                     </Col>

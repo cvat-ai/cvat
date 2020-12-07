@@ -8,7 +8,6 @@ import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
 import ExportSubmenu from './export-submenu';

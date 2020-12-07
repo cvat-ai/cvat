@@ -207,19 +207,15 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         ant-layout-sider-zero-width-trigger-left`}
                     onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 >
-                    {sidebarCollapsed ? (
-                        <MenuFoldOutlined title='Show' />
-                    ) : (
-                        <MenuUnfoldOutlined title='Hide' />
-                    )}
+                    {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
-                <Row type='flex' justify='start' className='cvat-tag-annotation-sidebar-label-select'>
+                <Row justify='start' className='cvat-tag-annotation-sidebar-label-select'>
                     <Col>
                         <Text strong>Tag label</Text>
                         <LabelSelector labels={labels} value={selectedLabelID} onChange={onChangeLabel} />
                     </Col>
                 </Row>
-                <Row type='flex' justify='space-around' className='cvat-tag-annotation-sidebar-buttons'>
+                <Row justify='space-around' className='cvat-tag-annotation-sidebar-buttons'>
                     <Col span={8}>
                         <Button onClick={() => onAddTag(selectedLabelID)}>Add tag</Button>
                     </Col>
@@ -227,7 +223,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         <Button onClick={onChangeFrame}>Skip frame</Button>
                     </Col>
                 </Row>
-                <Row type='flex' className='cvat-tag-annotation-sidebar-checkbox-skip-frame'>
+                <Row className='cvat-tag-annotation-sidebar-checkbox-skip-frame'>
                     <Col>
                         <Checkbox
                             checked={skipFrame}
@@ -239,7 +235,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         </Checkbox>
                     </Col>
                 </Row>
-                <Row type='flex' justify='start' className='cvat-tag-annotation-sidebar-frame-tags'>
+                <Row justify='start' className='cvat-tag-annotation-sidebar-frame-tags'>
                     <Col>
                         <Text strong>Frame tags:&nbsp;</Text>
                         {frameTags.map((tag: any) => (
@@ -262,7 +258,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         <ShortcutsSelect onAddTag={onAddTag} />
                     </Col>
                 </Row>
-                <Row type='flex' justify='center' className='cvat-tag-annotation-sidebar-shortcut-help'>
+                <Row justify='center' className='cvat-tag-annotation-sidebar-shortcut-help'>
                     <Col>
                         <Text>
                             Use&nbsp;

@@ -5,7 +5,7 @@
 import React from 'react';
 
 import { Col } from 'antd/lib/grid';
-import Icon from '@ant-design/icons'
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
 

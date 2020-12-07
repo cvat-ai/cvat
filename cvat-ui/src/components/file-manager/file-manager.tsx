@@ -3,14 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { ReactText } from 'react';
 import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
-import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
+import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
@@ -124,17 +126,18 @@ export default class FileManager extends React.PureComponent<Props, State> {
     private renderShareSelector(): JSX.Element {
         function renderTreeNodes(data: TreeNodeNormal[]): JSX.Element[] {
             // sort alphabetically
-            data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number => a.key.localeCompare(b.key));
+            data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number =>
+                a.key.toLocaleString().localeCompare(b.key.toLocaleString()));
             return data.map((item: TreeNodeNormal) => {
                 if (item.children) {
                     return (
-                        <Tree.TreeNode title={item.title} key={item.key} dataRef={item} isLeaf={item.isLeaf}>
+                        <Tree.TreeNode title={item.title} key={item.key} data={item} isLeaf={item.isLeaf}>
                             {renderTreeNodes(item.children)}
                         </Tree.TreeNode>
                     );
                 }
 
-                return <Tree.TreeNode key={item.key} {...item} dataRef={item} />;
+                return <Tree.TreeNode {...item} key={item.key} data={item} />;
             });
         }
 
@@ -153,21 +156,22 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         checkStrictly={false}
                         expandedKeys={expandedKeys}
                         checkedKeys={files.share}
-                        loadData={(node: AntTreeNode): Promise<void> => this.loadData(node.props.dataRef.key)}
-                        onExpand={(newExpandedKeys: string[]): void => {
+                        loadData={(event: EventDataNode): Promise<void> => this.loadData(event.key.toLocaleString())}
+                        onExpand={(newExpandedKeys: ReactText[]): void => {
                             this.setState({
-                                expandedKeys: newExpandedKeys,
+                                expandedKeys: newExpandedKeys.map((text: ReactText): string => text.toLocaleString()),
                             });
                         }}
                         onCheck={(
                             checkedKeys:
-                                | string[]
-                                | {
-                                      checked: string[];
-                                      halfChecked: string[];
-                                  },
+                            | ReactText[]
+                            | {
+                                checked: ReactText[];
+                                halfChecked: ReactText[];
+                            },
                         ): void => {
-                            const keys = checkedKeys as string[];
+                            const keys = (checkedKeys as ReactText[]).map((text: ReactText): string =>
+                                text.toLocaleString());
                             this.setState({
                                 files: {
                                     ...files,

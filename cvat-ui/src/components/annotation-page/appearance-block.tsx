@@ -52,7 +52,7 @@ interface DispatchToProps {
 export function computeHeight(): number {
     const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
     const [appearance] = window.document.getElementsByClassName('cvat-objects-appearance-collapse');
-    const [tabs] = Array.from(window.document.querySelectorAll('.cvat-objects-sidebar-tabs > .ant-tabs-card-bar'));
+    const [tabs] = Array.from(window.document.querySelectorAll('.cvat-objects-sidebar-tabs > .ant-tabs-nav'));
 
     if (sidebar && appearance && tabs) {
         const maxHeight = sidebar ? sidebar.clientHeight : 0;

@@ -133,12 +133,12 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     return (
         <Modal {...baseProps}>
             <div className='cvat-job-info-modal-window'>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text'>Overview</Text>
                     </Col>
                 </Row>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col span={4}>
                         <Text strong className='cvat-text'>
                             Assignee
@@ -171,7 +171,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                     </Col>
                 </Row>
                 {!!bugTracker && (
-                    <Row type='flex' justify='start' className='cvat-job-info-bug-tracker'>
+                    <Row justify='start' className='cvat-job-info-bug-tracker'>
                         <Col>
                             <Text strong className='cvat-text'>
                                 Bug tracker
@@ -180,7 +180,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                 )}
-                <Row type='flex' justify='space-around' className='cvat-job-info-statistics'>
+                <Row justify='space-around' className='cvat-job-info-statistics'>
                     <Col span={24}>
                         <Text className='cvat-text'>Annotations statistics</Text>
                         <Table scroll={{ y: 400 }} bordered pagination={false} columns={columns} dataSource={rows} />

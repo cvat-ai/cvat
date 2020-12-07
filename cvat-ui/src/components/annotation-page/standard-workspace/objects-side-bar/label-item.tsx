@@ -7,7 +7,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import {
-    LockOutlined, UnlockOutlined, EyeInvisibleOutlined, EyeOutlined,
+    LockFilled, UnlockOutlined, EyeInvisibleFilled, EyeOutlined,
 } from '@ant-design/icons';
 
 interface Props {
@@ -48,14 +48,15 @@ function LabelItemComponent(props: Props): JSX.Element {
 
     return (
         <Row
-            type='flex'
             align='middle'
             justify='space-around'
             className='cvat-objects-sidebar-label-item'
             style={{ display: visible ? 'flex' : 'none' }}
         >
             <Col span={4}>
-                <Button style={{ background: labelColor }} className='cvat-label-item-color-button' />
+                <Button style={{ background: labelColor }} className='cvat-label-item-color-button'>
+                    {' '}
+                </Button>
             </Col>
             <Col span={14}>
                 <Text strong className='cvat-text'>
@@ -64,14 +65,14 @@ function LabelItemComponent(props: Props): JSX.Element {
             </Col>
             <Col span={3}>
                 {statesLocked ? (
-                    <LockOutlined {...classes.lock.enabled} onClick={unlockStates} />
+                    <LockFilled {...classes.lock.enabled} onClick={unlockStates} />
                 ) : (
                     <UnlockOutlined {...classes.lock.disabled} onClick={lockStates} />
                 )}
             </Col>
             <Col span={3}>
                 {statesHidden ? (
-                    <EyeInvisibleOutlined {...classes.hidden.enabled} onClick={showStates} />
+                    <EyeInvisibleFilled {...classes.hidden.enabled} onClick={showStates} />
                 ) : (
                     <EyeOutlined {...classes.hidden.disabled} onClick={hideStates} />
                 )}

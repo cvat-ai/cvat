@@ -27,7 +27,7 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                     <Text strong>Automatic annotation</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='space-between'>
+            <Row justify='space-between'>
                 <Col span={22}>
                     <Progress
                         percent={Math.floor(activeInference.progress)}

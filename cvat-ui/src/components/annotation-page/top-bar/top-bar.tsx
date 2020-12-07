@@ -99,7 +99,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Row type='flex' justify='space-between'>
+        <Row justify='space-between'>
             <LeftGroup
                 saving={saving}
                 savingStatuses={savingStatuses}
@@ -113,7 +113,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 onRedoClick={onRedoClick}
             />
             <Col className='cvat-annotation-header-player-group'>
-                <Row type='flex' align='middle'>
+                <Row align='middle'>
                     <PlayerButtons
                         playing={playing}
                         playPauseShortcut={playPauseShortcut}

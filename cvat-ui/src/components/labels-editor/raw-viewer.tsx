@@ -10,7 +10,9 @@ import Tooltip from 'antd/lib/tooltip';
 import Form, { FormInstance, RuleObject } from 'antd/lib/form';
 import { Store } from 'antd/lib/form/interface';
 
-import { Label, Attribute, validateParsedLabel, idGenerator } from './common';
+import {
+    Label, Attribute, validateParsedLabel, idGenerator,
+} from './common';
 
 function validateLabels(_: RuleObject, value: string): Promise<void> {
     try {
@@ -80,14 +82,10 @@ export default class RawViewer extends React.PureComponent<Props> {
         const textLabels = JSON.stringify(convertedLabels, null, 2);
         return (
             <Form layout='vertical' onFinish={this.handleSubmit} ref={this.formRef}>
-                <Form.Item
-                    name='labels'
-                    initialValue={textLabels}
-                    rules={[{ validator: validateLabels }]}
-                >
+                <Form.Item name='labels' initialValue={textLabels} rules={[{ validator: validateLabels }]}>
                     <Input.TextArea rows={5} className='cvat-raw-labels-viewer' />
                 </Form.Item>
-                <Row type='flex' justify='start' align='middle'>
+                <Row justify='start' align='middle'>
                     <Col>
                         <Tooltip title='Save labels and return' mouseLeaveDelay={0}>
                             <Button style={{ width: '150px' }} type='primary' htmlType='submit'>

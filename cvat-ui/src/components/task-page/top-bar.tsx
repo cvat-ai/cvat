@@ -23,7 +23,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const history = useHistory();
 
     return (
-        <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
+        <Row className='cvat-task-top-bar' justify='space-between' align='middle'>
             <Col>
                 {taskInstance.projectId ? (
                     <Button

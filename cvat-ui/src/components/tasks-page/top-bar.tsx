@@ -22,7 +22,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col md={11} lg={9} xl={8} xxl={7}>
                     <Text className='cvat-title'>Tasks</Text>
                     <Input.Search defaultValue={searchValue} onSearch={onSearch} size='large' placeholder='Search' />

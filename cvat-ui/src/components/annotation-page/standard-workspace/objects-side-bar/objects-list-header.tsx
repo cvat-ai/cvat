@@ -5,15 +5,18 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import {
-    LockOutlined, UnlockOutlined, EyeInvisibleOutlined,
-    EyeOutlined, CaretDownOutlined, CaretUpFilled,
+    LockFilled,
+    UnlockOutlined,
+    EyeInvisibleFilled,
+    EyeOutlined,
+    CaretDownOutlined,
+    CaretUpFilled,
 } from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
 import { StatesOrdering } from 'reducers/interfaces';
-
 
 interface Props {
     readonly: boolean;
@@ -39,11 +42,7 @@ function LockAllSwitcher(props: Props): JSX.Element {
     return (
         <Col span={2}>
             <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`} mouseLeaveDelay={0}>
-                {statesLocked ? (
-                    <LockOutlined type='lock' onClick={unlockAllStates} />
-                ) : (
-                    <UnlockOutlined type='unlock' onClick={lockAllStates} />
-                )}
+                {statesLocked ? <LockFilled onClick={unlockAllStates} /> : <UnlockOutlined onClick={lockAllStates} />}
             </Tooltip>
         </Col>
     );
@@ -57,7 +56,7 @@ function HideAllSwitcher(props: Props): JSX.Element {
         <Col span={2}>
             <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`} mouseLeaveDelay={0}>
                 {statesHidden ? (
-                    <EyeInvisibleOutlined onClick={showAllStates} />
+                    <EyeInvisibleFilled onClick={showAllStates} />
                 ) : (
                     <EyeOutlined onClick={hideAllStates} />
                 )}
@@ -87,11 +86,11 @@ function ObjectListHeader(props: Props): JSX.Element {
     return (
         <div className='cvat-objects-sidebar-states-header'>
             <Row>
-                <Col>
+                <Col span={24}>
                     <AnnotationsFiltersInput />
                 </Col>
             </Row>
-            <Row type='flex' justify='space-between' align='middle'>
+            <Row justify='space-between' align='middle'>
                 {!readonly && (
                     <>
                         <LockAllSwitcher {...props} />

@@ -5,47 +5,36 @@
 import React, { ReactPortal } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
-import Form, { FormComponentProps } from '@ant-design/compatible/lib/form/Form';
+import Form from 'antd/lib/form';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
 
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
+import { Store } from 'antd/lib/form/interface';
 
-type FormProps = {
+interface FormProps {
     top: number;
     left: number;
     submit(message: string): void;
     cancel(): void;
-} & FormComponentProps;
+}
 
 function MessageForm(props: FormProps): JSX.Element {
     const {
-        form: { getFieldDecorator },
-        form,
-        top,
-        left,
-        submit,
-        cancel,
+        top, left, submit, cancel,
     } = props;
 
-    function handleSubmit(e: React.FormEvent): void {
-        e.preventDefault();
-        form.validateFields((error, values): void => {
-            if (!error) {
-                submit(values.issue_description);
-            }
-        });
+    function handleSubmit(values: Store): void {
+        submit(values.issue_description);
     }
 
     return (
-        <Form className='cvat-create-issue-dialog' style={{ top, left }} onSubmit={handleSubmit}>
-            <Form.Item>
-                {getFieldDecorator('issue_description', {
-                    rules: [{ required: true, message: 'Please, fill out the field' }],
-                })(<Input autoComplete='off' placeholder='Please, describe the issue' />)}
+        <Form className='cvat-create-issue-dialog' style={{ top, left }} onFinish={handleSubmit}>
+            <Form.Item name='issue_description' rules={[{ required: true, message: 'Please, fill out the field' }]}>
+                <Input autoComplete='off' placeholder='Please, describe the issue' />
             </Form.Item>
-            <Row type='flex' justify='space-between'>
+            <Row justify='space-between'>
                 <Col>
                     <Button onClick={cancel} type='ghost'>
                         Cancel
@@ -61,8 +50,6 @@ function MessageForm(props: FormProps): JSX.Element {
     );
 }
 
-const WrappedMessageForm = Form.create<FormProps>()(MessageForm);
-
 interface Props {
     top: number;
     left: number;
@@ -73,7 +60,7 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
     const { top, left } = props;
 
     return ReactDOM.createPortal(
-        <WrappedMessageForm
+        <MessageForm
             top={top}
             left={left}
             submit={(message: string) => {

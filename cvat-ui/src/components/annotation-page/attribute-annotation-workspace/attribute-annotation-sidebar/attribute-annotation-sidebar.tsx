@@ -291,15 +291,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                         ant-layout-sider-zero-width-trigger-left`}
                     onClick={collapse}
                 >
-                    {sidebarCollapsed ? (
-                        <MenuFoldOutlined title='Show' />
-                    ) : (
-                        <MenuUnfoldOutlined title='Hide' />
-                    )}
+                    {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
-                <Row className='cvat-objects-sidebar-filter-input'>
-                    <Col>
+                <Row>
+                    <Col span={24}>
                         <AnnotationsFiltersInput />
                     </Col>
                 </Row>
@@ -323,6 +319,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     }}
                 />
                 <ObjectButtonsContainer
+                    readonly={false}
                     clientID={activeObjectState.clientID}
                     outsideDisabled
                     hiddenDisabled
@@ -376,8 +373,8 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <Row className='cvat-objects-sidebar-filter-input'>
-                <Col>
+            <Row>
+                <Col span={24}>
                     <AnnotationsFiltersInput />
                 </Col>
             </Row>

@@ -50,7 +50,7 @@ function PlayerNavigation(props: Props): JSX.Element {
     return (
         <>
             <Col className='cvat-player-controls'>
-                <Row type='flex'>
+                <Row align='bottom'>
                     <Col>
                         <Slider
                             className='cvat-player-slider'
@@ -61,7 +61,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         />
                     </Col>
                 </Row>
-                <Row type='flex' justify='center'>
+                <Row justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
                         <Tooltip title={frameFilename} mouseLeaveDelay={0}>
                             <Text type='secondary'>{frameFilename}</Text>
@@ -82,7 +82,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         type='number'
                         value={frameInputValue}
                         onChange={(value: number | undefined | string) => {
-                            if (typeof (value) !== 'undefined') {
+                            if (typeof value !== 'undefined') {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));
                             }
                         }}

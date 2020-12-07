@@ -375,17 +375,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
-    private setActiveInteractor = (key: string): void => {
+    private setActiveInteractor = (value: string): void => {
         const { interactors } = this.props;
         this.setState({
-            activeInteractor: interactors.filter((interactor: Model) => interactor.id === key)[0],
+            activeInteractor: interactors.filter((interactor: Model) => interactor.id === value)[0],
         });
     };
 
-    private setActiveTracker = (key: string): void => {
+    private setActiveTracker = (value: string): void => {
         const { trackers } = this.props;
         this.setState({
-            activeTracker: trackers.filter((tracker: Model) => tracker.id === key)[0],
+            activeTracker: trackers.filter((tracker: Model) => tracker.id === value)[0],
         });
     };
 
@@ -457,12 +457,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeLabelID } = this.state;
         return (
             <>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color'>Label</Text>
                     </Col>
                 </Row>
-                <Row type='flex' justify='center'>
+                <Row justify='center'>
                     <Col span={24}>
                         <LabelSelector
                             style={{ width: '100%' }}
@@ -486,7 +486,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (!trackers.length) {
             return (
-                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
                             No available trackers found
@@ -498,12 +498,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color'>Tracker</Text>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='center'>
+                <Row align='middle' justify='center'>
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
@@ -512,7 +512,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         >
                             {trackers.map(
                                 (tracker: Model): JSX.Element => (
-                                    <Select.Option title={tracker.description} key={tracker.id}>
+                                    <Select.Option value={tracker.id} title={tracker.description} key={tracker.id}>
                                         {tracker.name}
                                     </Select.Option>
                                 ),
@@ -520,7 +520,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='start' style={{ marginTop: '5px' }}>
+                <Row align='middle' justify='start' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text>Tracking frames</Text>
                     </Col>
@@ -541,7 +541,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         />
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='end'>
+                <Row align='middle' justify='end'>
                     <Col>
                         <Button
                             type='primary'
@@ -578,7 +578,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (!interactors.length) {
             return (
-                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
                             No available interactors found
@@ -590,12 +590,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color'>Interactor</Text>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='center'>
+                <Row align='middle' justify='center'>
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
@@ -604,7 +604,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         >
                             {interactors.map(
                                 (interactor: Model): JSX.Element => (
-                                    <Select.Option title={interactor.description} key={interactor.id}>
+                                    <Select.Option
+                                        value={interactor.id}
+                                        title={interactor.description}
+                                        key={interactor.id}
+                                    >
                                         {interactor.name}
                                     </Select.Option>
                                 ),
@@ -612,7 +616,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='end'>
+                <Row align='middle' justify='end'>
                     <Col>
                         <Button
                             type='primary'
@@ -651,7 +655,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (!detectors.length) {
             return (
-                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
                             No available detectors found
@@ -679,17 +683,18 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
 
                         const states = result.map(
-                            (data: any): any => new core.classes.ObjectState({
-                                shapeType: data.type,
-                                label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
-                                points: data.points,
-                                objectType: ObjectType.SHAPE,
-                                frame,
-                                occluded: false,
-                                source: 'auto',
-                                attributes: {},
-                                zOrder: curZOrder,
-                            }),
+                            (data: any): any =>
+                                new core.classes.ObjectState({
+                                    shapeType: data.type,
+                                    label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
+                                    points: data.points,
+                                    objectType: ObjectType.SHAPE,
+                                    frame,
+                                    occluded: false,
+                                    source: 'auto',
+                                    attributes: {},
+                                    zOrder: curZOrder,
+                                }),
                         );
 
                         await jobInstance.annotations.put(states);
@@ -710,7 +715,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private renderPopoverContent(): JSX.Element {
         return (
             <div className='cvat-tools-control-popover-content'>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color' strong>
                             AI Tools

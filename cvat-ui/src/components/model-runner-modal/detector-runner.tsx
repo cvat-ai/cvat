@@ -111,7 +111,9 @@ function DetectorRunner(props: Props): JSX.Element {
                 >
                     {labels.map(
                         (label: string): JSX.Element => (
-                            <Select.Option value={label} key={label}>{label}</Select.Option>
+                            <Select.Option value={label} key={label}>
+                                {label}
+                            </Select.Option>
                         ),
                     )}
                 </Select>
@@ -121,7 +123,7 @@ function DetectorRunner(props: Props): JSX.Element {
 
     return (
         <div className='cvat-run-model-content'>
-            <Row type='flex' align='middle'>
+            <Row align='middle'>
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
@@ -143,7 +145,9 @@ function DetectorRunner(props: Props): JSX.Element {
                     >
                         {models.map(
                             (_model: Model): JSX.Element => (
-                                <Select.Option value={_model.id} key={_model.id}>{_model.name}</Select.Option>
+                                <Select.Option value={_model.id} key={_model.id}>
+                                    {_model.name}
+                                </Select.Option>
                             ),
                         )}
                     </Select>
@@ -155,7 +159,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     const label = task.labels.filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
                     const color = label ? label.color : consts.NEW_LABEL_COLOR;
                     return (
-                        <Row key={modelLabel} type='flex' justify='start' align='middle'>
+                        <Row key={modelLabel} justify='start' align='middle'>
                             <Col span={10}>
                                 <Tag color={color}>{modelLabel}</Tag>
                             </Col>
@@ -179,22 +183,14 @@ function DetectorRunner(props: Props): JSX.Element {
                 })}
             {isDetector && !!taskLabels.length && !!modelLabels.length && (
                 <>
-                    <Row type='flex' justify='start' align='middle'>
+                    <Row justify='start' align='middle'>
                         <Col span={10}>
-                            {renderSelector(
-                                match.model || '',
-                                'Model labels',
-                                modelLabels,
-                                (modelLabel: string) => updateMatch(modelLabel, null),
-                            )}
+                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) =>
+                                updateMatch(modelLabel, null))}
                         </Col>
                         <Col span={10} offset={1}>
-                            {renderSelector(
-                                match.task || '',
-                                'Task labels',
-                                taskLabels,
-                                (taskLabel: string) => updateMatch(null, taskLabel),
-                            )}
+                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) =>
+                                updateMatch(null, taskLabel))}
                         </Col>
                         <Col span={1} offset={1}>
                             <Tooltip
@@ -219,7 +215,7 @@ function DetectorRunner(props: Props): JSX.Element {
             )}
             {isReId && (
                 <div>
-                    <Row type='flex' align='middle' justify='start'>
+                    <Row align='middle' justify='start'>
                         <Col>
                             <Text>Threshold</Text>
                         </Col>
@@ -239,7 +235,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Tooltip>
                         </Col>
                     </Row>
-                    <Row type='flex' align='middle' justify='start'>
+                    <Row align='middle' justify='start'>
                         <Col>
                             <Text>Maximum distance</Text>
                         </Col>
@@ -260,7 +256,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Row>
                 </div>
             )}
-            <Row type='flex' align='middle' justify='end'>
+            <Row align='middle' justify='end'>
                 <Col>
                     <Button
                         disabled={!buttonEnabled}
@@ -269,10 +265,12 @@ function DetectorRunner(props: Props): JSX.Element {
                             runInference(
                                 task,
                                 model,
-                                model.type === 'detector' ? { mapping, cleanup } : {
-                                    threshold,
-                                    max_distance: distance,
-                                },
+                                model.type === 'detector' ?
+                                    { mapping, cleanup } :
+                                    {
+                                        threshold,
+                                        max_distance: distance,
+                                    },
                             );
                         }}
                     >

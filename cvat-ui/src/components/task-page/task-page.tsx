@@ -37,7 +37,9 @@ class TaskPageComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { task, fetching, updating, getTask } = this.props;
+        const {
+            task, fetching, updating, getTask,
+        } = this.props;
 
         if (task === null || updating) {
             if (task === null && !fetching) {
@@ -60,7 +62,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
 
         return (
             <>
-                <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
+                <Row justify='center' align='top' className='cvat-task-details-wrapper'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
                         <TopBarComponent taskInstance={(task as Task).instance} />
                         <DetailsContainer task={task as Task} />

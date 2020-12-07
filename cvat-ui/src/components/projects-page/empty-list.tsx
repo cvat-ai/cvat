@@ -18,30 +18,30 @@ export default function EmptyListComponent(props: Props): JSX.Element {
     const { notFound } = props;
     return (
         <div className='cvat-empty-projects-list'>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col>
                     <Icon className='cvat-empty-projects-icon' component={EmptyTasksIcon} />
                 </Col>
             </Row>
             {notFound ? (
-                <Row type='flex' justify='center' align='middle'>
+                <Row justify='center' align='middle'>
                     <Col>
                         <Text strong>No results matched your search...</Text>
                     </Col>
                 </Row>
             ) : (
                 <>
-                    <Row type='flex' justify='center' align='middle'>
+                    <Row justify='center' align='middle'>
                         <Col>
                             <Text strong>No projects created yet ...</Text>
                         </Col>
                     </Row>
-                    <Row type='flex' justify='center' align='middle'>
+                    <Row justify='center' align='middle'>
                         <Col>
                             <Text type='secondary'>To get started with your annotation project</Text>
                         </Col>
                     </Row>
-                    <Row type='flex' justify='center' align='middle'>
+                    <Row justify='center' align='middle'>
                         <Col>
                             <Link to='/projects/create'>create a new one</Link>
                         </Col>

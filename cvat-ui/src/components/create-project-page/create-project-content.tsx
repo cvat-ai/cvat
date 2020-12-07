@@ -116,7 +116,7 @@ export default function CreateProjectContent(): JSX.Element {
     };
 
     return (
-        <Row type='flex' justify='start' align='middle' className='cvat-create-project-content'>
+        <Row justify='start' align='middle' className='cvat-create-project-content'>
             <Col span={24}>
                 <NameConfigurationForm formRef={nameFormRef} />
             </Col>

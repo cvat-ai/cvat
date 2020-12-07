@@ -8,9 +8,15 @@ import { connect } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Icon, {
-    ContactsOutlined, SettingOutlined, InfoCircleOutlined, EditOutlined,
-    LoadingOutlined, LogoutOutlined, GithubOutlined,
-    QuestionCircleOutlined, CaretDownOutlined,
+    SettingOutlined,
+    InfoCircleOutlined,
+    EditOutlined,
+    LoadingOutlined,
+    LogoutOutlined,
+    GithubOutlined,
+    QuestionCircleOutlined,
+    CaretDownOutlined,
+    ControlOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -169,7 +175,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         <Text strong>UI version:</Text>
                         <Text type='secondary'>{` ${tool.ui.version}`}</Text>
                     </p>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
                                 What&apos;s new?
@@ -212,7 +218,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         window.open(`${tool.server.host}/admin`, '_blank');
                     }}
                 >
-                    <ContactsOutlined />
+                    <ControlOutlined />
                     Admin page
                 </Menu.Item>
             )}

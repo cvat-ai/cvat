@@ -24,7 +24,7 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
     const history = useHistory();
 
     return (
-        <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
+        <Row className='cvat-task-top-bar' justify='space-between' align='middle'>
             <Col>
                 <Button onClick={() => history.push('/projects')} type='link' size='large'>
                     <LeftOutlined />

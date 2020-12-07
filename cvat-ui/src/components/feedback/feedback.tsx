@@ -109,7 +109,7 @@ export default function Feedback(): JSX.Element {
                 visible={visible}
             >
                 <Button
-                    style={{ color: '#ff4d4f' }}
+                    style={visible ? { color: '#ff4d4f' } : {}}
                     className='cvat-feedback-button'
                     type='link'
                     onClick={(): void => {

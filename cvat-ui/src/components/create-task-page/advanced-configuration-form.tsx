@@ -69,8 +69,9 @@ function validateRepository(_: RuleObject, value: string): Promise<[void, void]>
     return Promise.resolve();
 }
 
-const isInteger = ({ min, max }: { min?: number, max?: number }) => (
-    _: RuleObject, value?: number | string,
+const isInteger = ({ min, max }: { min?: number; max?: number }) => (
+    _: RuleObject,
+    value?: number | string,
 ): Promise<void> => {
     if (typeof value === 'undefined' || value === '') {
         return Promise.resolve();
@@ -134,17 +135,20 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { onSubmit } = this.props;
         if (this.formRef.current) {
             this.formRef.current.resetFields();
-            return this.formRef.current.validateFields().then((values: Store): Promise<void> => {
-                const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
-                const entries = Object.entries(values)
-                    .filter((entry: [string, unknown]): boolean => entry[0] !== frameFilter);
+            return this.formRef.current.validateFields().then(
+                (values: Store): Promise<void> => {
+                    const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
+                    const entries = Object.entries(values).filter(
+                        (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
+                    );
 
-                onSubmit({
-                    ...Object.fromEntries(entries) as any as AdvancedConfiguration,
-                    frameFilter,
-                });
-                return Promise.resolve();
-            });
+                    onSubmit({
+                        ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
+                        frameFilter,
+                    });
+                    return Promise.resolve();
+                },
+            );
         }
 
         return Promise.reject(new Error('Form ref is empty'));
@@ -185,13 +189,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         { validator: isInteger({ min: 5, max: 100 }) },
                     ]}
                 >
-                    <Input
-                        size='large'
-                        type='number'
-                        min={5}
-                        max={100}
-                        suffix={<PercentageOutlined />}
-                    />
+                    <Input size='large' type='number' min={5} max={100} suffix={<PercentageOutlined />} />
                 </Form.Item>
             </Tooltip>
         );
@@ -215,11 +213,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderSegmentSize(): JSX.Element {
         return (
             <Tooltip title='Defines a number of frames in a segment' mouseLeaveDelay={0}>
-                <Form.Item
-                    label='Segment size'
-                    name='segmentSize'
-                    rules={[{ validator: isInteger({ min: 1 }) }]}
-                >
+                <Form.Item label='Segment size' name='segmentSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
                     <Input size='large' type='number' min={1} />
                 </Form.Item>
             </Tooltip>
@@ -228,11 +222,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderStartFrame(): JSX.Element {
         return (
-            <Form.Item
-                label='Start frame'
-                name='startFrame'
-                rules={[{ validator: isInteger({ min: 0 }) }]}
-            >
+            <Form.Item label='Start frame' name='startFrame' rules={[{ validator: isInteger({ min: 0 }) }]}>
                 <Input size='large' type='number' min={0} step={1} />
             </Form.Item>
         );
@@ -253,11 +243,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderFrameStep(): JSX.Element {
         return (
-            <Form.Item
-                label='Frame step'
-                name='frameStep'
-                rules={[{ validator: isInteger({ min: 1 }) }]}
-            >
+            <Form.Item label='Frame step' name='frameStep' rules={[{ validator: isInteger({ min: 1 }) }]}>
                 <Input size='large' type='number' min={1} step={1} />
             </Form.Item>
         );
@@ -286,10 +272,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 extra='Attach a repository to store annotations there'
                 rules={[{ validator: validateRepository }]}
             >
-                <Input
-                    size='large'
-                    placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]'
-                />
+                <Input size='large' placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]' />
             </Form.Item>
         );
     }
@@ -337,11 +320,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderCreateTaskMethod(): JSX.Element {
         return (
-            <Form.Item
-                help='Using cache to store data.'
-                name='useCache'
-                valuePropName='checked'
-            >
+            <Form.Item help='Using cache to store data.' name='useCache' valuePropName='checked'>
                 <Checkbox>
                     <Text className='cvat-text-color'>Use cache</Text>
                 </Checkbox>
@@ -370,11 +349,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 )}
                 mouseLeaveDelay={0}
             >
-                <Form.Item
-                    label='Chunk size'
-                    name='dataChunkSize'
-                    rules={[{ validator: isInteger({ min: 1 }) }]}
-                >
+                <Form.Item label='Chunk size' name='dataChunkSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
                     <Input size='large' type='number' />
                 </Form.Item>
             </Tooltip>
@@ -387,9 +362,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
                 {activeFileManagerTab === 'share' ? (
                     <Row>
-                        <Col>
-                            { this.renderCopyDataChechbox() }
-                        </Col>
+                        <Col>{this.renderCopyDataChechbox()}</Col>
                     </Row>
                 ) : null}
                 <Row>
@@ -398,7 +371,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row>
                     <Col>{this.renderCreateTaskMethod()}</Col>
                 </Row>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col span={7}>{this.renderImageQuality()}</Col>
                     <Col span={7} offset={1}>
                         {this.renderOverlap()}
@@ -408,7 +381,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     </Col>
                 </Row>
 
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col span={7}>{this.renderStartFrame()}</Col>
                     <Col span={7} offset={1}>
                         {this.renderStopFrame()}
@@ -418,7 +391,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     </Col>
                 </Row>
 
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
                 </Row>
 

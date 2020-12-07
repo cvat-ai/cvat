@@ -88,7 +88,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     return ReactDOM.createPortal(
         <div style={{ top, left }} ref={ref} className='cvat-issue-dialog'>
-            <Row className='cvat-issue-dialog-header' type='flex' justify='space-between'>
+            <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
                     <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>
                 </Col>
@@ -98,10 +98,10 @@ export default function IssueDialog(props: Props): JSX.Element {
                     </Tooltip>
                 </Col>
             </Row>
-            <Row className='cvat-issue-dialog-chat' type='flex' justify='start'>
+            <Row className='cvat-issue-dialog-chat' justify='start'>
                 <Col style={{ display: 'block' }}>{lines}</Col>
             </Row>
-            <Row className='cvat-issue-dialog-input' type='flex' justify='start'>
+            <Row className='cvat-issue-dialog-input' justify='start'>
                 <Col span={24}>
                     <Input
                         placeholder='Print a comment here..'
@@ -118,7 +118,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row className='cvat-issue-dialog-footer' type='flex' justify='end'>
+            <Row className='cvat-issue-dialog-footer' justify='end'>
                 <Col>
                     {currentText.length ? (
                         <Button

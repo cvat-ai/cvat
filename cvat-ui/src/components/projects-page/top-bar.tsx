@@ -15,7 +15,7 @@ export default function TopBarComponent(): JSX.Element {
     const history = useHistory();
 
     return (
-        <Row type='flex' justify='center' align='middle' className='cvat-projects-top-bar'>
+        <Row justify='center' align='middle' className='cvat-projects-top-bar'>
             <Col md={11} lg={9} xl={8} xxl={7}>
                 <Text className='cvat-title'>Projects</Text>
                 <SearchField />

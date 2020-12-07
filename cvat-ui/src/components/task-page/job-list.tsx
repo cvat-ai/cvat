@@ -17,7 +17,6 @@ import copy from 'copy-to-clipboard';
 import getCore from 'cvat-core-wrapper';
 import UserSelector, { User } from './user-selector';
 
-
 const core = getCore();
 
 const baseURL = core.config.backendAPI.slice(0, -7);
@@ -223,7 +222,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
     return (
         <div className='cvat-task-job-list'>
-            <Row type='flex' justify='space-between' align='middle'>
+            <Row justify='space-between' align='middle'>
                 <Col>
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
                     <Tooltip trigger='click' title='Copied to clipboard!' mouseLeaveDelay={0}>

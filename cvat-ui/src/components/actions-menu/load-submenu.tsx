@@ -17,7 +17,9 @@ interface Props {
 }
 
 export default function LoadSubmenu(props: Props): JSX.Element {
-    const { menuKey, loaders, loadActivity, onFileUpload } = props;
+    const {
+        menuKey, loaders, loadActivity, onFileUpload,
+    } = props;
 
     return (
         <Menu.SubMenu key={menuKey} title='Upload annotations'>
