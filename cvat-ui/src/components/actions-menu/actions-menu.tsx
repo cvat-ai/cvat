@@ -68,6 +68,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                             onClickMenu(copyParams, file);
                         },
                         okButtonProps: {
+                            type: 'primary',
                             danger: true,
                         },
                         okText: 'Update',
@@ -84,6 +85,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     onClickMenu(copyParams);
                 },
                 okButtonProps: {
+                    type: 'primary',
                     danger: true,
                 },
                 okText: 'Delete',

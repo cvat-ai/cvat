@@ -48,6 +48,7 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                                     title: 'You are going to cancel automatic annotation?',
                                     content: 'Reached progress will be lost. Continue?',
                                     okButtonProps: {
+                                        type: 'primary',
                                         danger: true,
                                     },
                                     onOk() {

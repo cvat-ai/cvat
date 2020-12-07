@@ -102,6 +102,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                             onClickMenu(copyParams, file);
                         },
                         okButtonProps: {
+                            type: 'primary',
                             danger: true,
                         },
                         okText: 'Update',
@@ -120,6 +121,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     onClickMenu(copyParams);
                 },
                 okButtonProps: {
+                    type: 'primary',
                     danger: true,
                 },
                 okText: 'Delete',

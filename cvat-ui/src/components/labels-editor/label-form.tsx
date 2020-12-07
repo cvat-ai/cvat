@@ -279,8 +279,15 @@ export default class LabelForm extends React.Component<Props> {
 
         return (
             <Tooltip title='Can this attribute be changed frame to frame?' mouseLeaveDelay={0}>
-                <Form.Item name={[key, 'mutable']} fieldKey={[fieldInstance.fieldKey, 'mutable']} initialValue={value} valuePropName='checked'>
-                    <Checkbox className='cvat-attribute-mutable-checkbox' disabled={locked}>Mutable</Checkbox>
+                <Form.Item
+                    name={[key, 'mutable']}
+                    fieldKey={[fieldInstance.fieldKey, 'mutable']}
+                    initialValue={value}
+                    valuePropName='checked'
+                >
+                    <Checkbox className='cvat-attribute-mutable-checkbox' disabled={locked}>
+                        Mutable
+                    </Checkbox>
                 </Form.Item>
             </Tooltip>
         );
@@ -315,12 +322,8 @@ export default class LabelForm extends React.Component<Props> {
         const attr = label ? label.attributes.filter((_attr: any): boolean => _attr.id === fieldValue.id)[0] : null;
 
         return (
-            <Form.Item
-                noStyle
-                key={key}
-                shouldUpdate
-            >
-                {() => ((
+            <Form.Item noStyle key={key} shouldUpdate>
+                {() => (
                     <Row
                         justify='space-between'
                         align='middle'
@@ -350,7 +353,7 @@ export default class LabelForm extends React.Component<Props> {
                         <Col span={5}>{this.renderMutableAttributeInput(fieldInstance, attr)}</Col>
                         <Col span={2}>{this.renderDeleteAttributeButton(fieldInstance, attr)}</Col>
                     </Row>
-                ))}
+                )}
             </Form.Item>
         );
     };
@@ -365,25 +368,23 @@ export default class LabelForm extends React.Component<Props> {
                 hasFeedback
                 name='labelName'
                 initialValue={value}
-                rules={
-                    [
-                        {
-                            required: true,
-                            message: 'Please specify a name',
+                rules={[
+                    {
+                        required: true,
+                        message: 'Please specify a name',
+                    },
+                    {
+                        pattern: patterns.validateAttributeName.pattern,
+                        message: patterns.validateAttributeName.message,
+                    },
+                    {
+                        validator: async (_rule: any, labelName: string, callback: Function) => {
+                            if (labelNames && labelNames.includes(labelName)) {
+                                callback('Label name must be unique for the task');
+                            }
                         },
-                        {
-                            pattern: patterns.validateAttributeName.pattern,
-                            message: patterns.validateAttributeName.message,
-                        },
-                        {
-                            validator: async (_rule: any, labelName: string, callback: Function) => {
-                                if (labelNames && labelNames.includes(labelName)) {
-                                    callback('Label name must be unique for the task');
-                                }
-                            },
-                        },
-                    ]
-                }
+                    },
+                ]}
             >
                 <Input disabled={locked} placeholder='Label name' />
             </Form.Item>
@@ -444,6 +445,7 @@ export default class LabelForm extends React.Component<Props> {
         return (
             <Tooltip title='Do not save the label and return' mouseLeaveDelay={0}>
                 <Button
+                    type='primary'
                     danger
                     style={{ width: '150px' }}
                     onClick={(): void => {
@@ -485,11 +487,14 @@ export default class LabelForm extends React.Component<Props> {
         const { label } = this.props;
         if (this.formRef.current) {
             this.formRef.current.setFieldsValue({
-                attributes: label ? label.attributes
-                    .map((attribute: Attribute): Store => ({
-                        ...attribute,
-                        type: attribute.input_type,
-                    })) : [],
+                attributes: label ?
+                    label.attributes.map(
+                        (attribute: Attribute): Store => ({
+                            ...attribute,
+                            type: attribute.input_type,
+                        }),
+                    ) :
+                    [],
             });
         }
     }
@@ -498,35 +503,21 @@ export default class LabelForm extends React.Component<Props> {
         return (
             <Form onFinish={this.handleSubmit} layout='vertical' ref={this.formRef}>
                 <Row justify='start' align='middle'>
-                    <Col span={10}>
-                        {this.renderLabelNameInput()}
-                    </Col>
+                    <Col span={10}>{this.renderLabelNameInput()}</Col>
                     <Col span={1} />
-                    <Col span={3}>
-                        {this.renderChangeColorButton()}
-                    </Col>
+                    <Col span={3}>{this.renderChangeColorButton()}</Col>
                     <Col span={1} />
-                    <Col span={6}>
-                        {this.renderNewAttributeButton()}
-                    </Col>
+                    <Col span={6}>{this.renderNewAttributeButton()}</Col>
                 </Row>
                 <Row justify='start' align='middle'>
                     <Col span={24}>
-                        <Form.List name='attributes'>
-                            { this.renderAttributes() }
-                        </Form.List>
+                        <Form.List name='attributes'>{this.renderAttributes()}</Form.List>
                     </Col>
                 </Row>
                 <Row justify='start' align='middle'>
-                    <Col>
-                        {this.renderDoneButton()}
-                    </Col>
-                    <Col offset={1}>
-                        {this.renderContinueButton()}
-                    </Col>
-                    <Col offset={1}>
-                        {this.renderCancelButton()}
-                    </Col>
+                    <Col>{this.renderDoneButton()}</Col>
+                    <Col offset={1}>{this.renderContinueButton()}</Col>
+                    <Col offset={1}>{this.renderCancelButton()}</Col>
                 </Row>
             </Form>
         );

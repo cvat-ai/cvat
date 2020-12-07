@@ -100,7 +100,7 @@ export default function UserSelector(props: Props): JSX.Element {
             onSelect={handleSelect}
             className={combinedClassName}
             onDropdownVisibleChange={handleFocus}
-            dataSource={users.map((user) => ({
+            options={users.map((user) => ({
                 value: user.id.toString(),
                 text: user.username,
             }))}
