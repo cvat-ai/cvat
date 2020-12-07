@@ -244,7 +244,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const readyForRender =
             (userInitialized && (user == null || !user.isVerified)) ||
-            (userInitialized && formatsInitialized && pluginsInitialized && aboutInitialized && modelsInitialized);
+            (userInitialized &&
+                formatsInitialized &&
+                pluginsInitialized &&
+                aboutInitialized &&
+                (!isModelPluginActive || modelsInitialized));
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
