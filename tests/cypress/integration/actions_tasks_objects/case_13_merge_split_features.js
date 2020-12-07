@@ -35,15 +35,9 @@ context('Merge/split features', () => {
         cy.openTaskJob(taskName);
     });
 
-    function goCheckFrameNumber(frameNum) {
-        cy.get('.cvat-player-frame-selector').within(() => {
-            cy.get('input[role="spinbutton"]').clear().type(`${frameNum}{Enter}`).should('have.value', frameNum);
-        });
-    }
-
     describe(`Testing case "${caseId}"`, () => {
         it('Create rectangle shape on first frame', () => {
-            goCheckFrameNumber(frameNum);
+            cy.goCheckFrameNumber(frameNum);
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat_canvas_shape_1')
                 .should('have.attr', 'x')
@@ -52,7 +46,7 @@ context('Merge/split features', () => {
                 });
         });
         it('Create rectangle shape on third frame with another position', () => {
-            goCheckFrameNumber(frameNum + 2);
+            cy.goCheckFrameNumber(frameNum + 2);
             cy.createRectangle(createRectangleShape2PointsSecond);
             cy.get('#cvat_canvas_shape_2')
                 .should('have.attr', 'x')
@@ -63,7 +57,7 @@ context('Merge/split features', () => {
         it('Merge the objects with "Merge button"', () => {
             cy.get('.cvat-merge-control').click();
             cy.get('#cvat_canvas_shape_2').click();
-            goCheckFrameNumber(frameNum);
+            cy.goCheckFrameNumber(frameNum);
             cy.get('#cvat_canvas_shape_1').click();
             cy.get('.cvat-merge-control').click();
         });
@@ -75,7 +69,7 @@ context('Merge/split features', () => {
                 .within(() => {
                     cy.get('.cvat-object-item-button-keyframe-enabled').should('exist');
                 });
-            goCheckFrameNumber(frameNum + 2);
+            cy.goCheckFrameNumber(frameNum + 2);
             cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
             cy.get('#cvat-objects-sidebar-state-item-3')
                 .should('contain', '3')
@@ -85,13 +79,13 @@ context('Merge/split features', () => {
                 });
         });
         it('On the second frame and on the fourth frame the track is invisible', () => {
-            goCheckFrameNumber(frameNum + 1);
+            cy.goCheckFrameNumber(frameNum + 1);
             cy.get('#cvat_canvas_shape_3').should('exist').and('be.hidden');
-            goCheckFrameNumber(frameNum + 3);
+            cy.goCheckFrameNumber(frameNum + 3);
             cy.get('#cvat_canvas_shape_3').should('exist').and('be.hidden');
         });
         it('Go to the second frame and remove "outside" flag from the track. The track now visible.', () => {
-            goCheckFrameNumber(frameNum + 1);
+            cy.goCheckFrameNumber(frameNum + 1);
             cy.get('#cvat-objects-sidebar-state-item-3')
                 .should('contain', '3')
                 .and('contain', 'RECTANGLE TRACK')
@@ -120,7 +114,7 @@ context('Merge/split features', () => {
                 });
         });
         it('On the fourth frame remove "keyframe" flag from the track. The track now visible and "outside" flag is disabled.', () => {
-            goCheckFrameNumber(frameNum + 3);
+            cy.goCheckFrameNumber(frameNum + 3);
             cy.get('#cvat-objects-sidebar-state-item-3')
                 .should('contain', '3')
                 .and('contain', 'RECTANGLE TRACK')
