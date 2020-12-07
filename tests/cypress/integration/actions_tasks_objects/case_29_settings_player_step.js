@@ -39,13 +39,23 @@ context('Settings "Player step"', () => {
             });
         });
 
-        it('Jump to forward frame', () => {
+        it('Jump to forward frame via GUI', () => {
             cy.get('.cvat-player-forward-button').click();
             cy.checkFrameNum(startStep + countJumpStep);
         });
 
-        it('Jump to backward frame', () => {
+        it('Jump to backward frame via GUI', () => {
             cy.get('.cvat-player-backward-button').click();
+            cy.checkFrameNum(startStep);
+        });
+
+        it('Jump to forward frame via shortcuts', () => {
+            cy.get('body').type('{v}');
+            cy.checkFrameNum(startStep + countJumpStep);
+        });
+
+        it('Jump to backward frame via shortcuts', () => {
+            cy.get('body').type('{c}');
             cy.checkFrameNum(startStep);
         });
     });
