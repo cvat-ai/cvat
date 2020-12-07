@@ -214,6 +214,7 @@ export interface ModelsState {
 export interface ErrorState {
     message: string;
     reason: string;
+    className?: string;
 }
 
 export interface NotificationsState {

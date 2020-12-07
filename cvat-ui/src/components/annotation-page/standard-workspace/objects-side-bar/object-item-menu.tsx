@@ -200,6 +200,7 @@ function RemoveItem(props: ItemProps): JSX.Element {
                     onClick={(): void => {
                         if (locked) {
                             Modal.confirm({
+								className: 'cvat-modal-confirm',
                                 title: 'Object is locked',
                                 content: 'Are you sure you want to remove it?',
                                 onOk() {
