@@ -11,15 +11,17 @@ interface Props {
     menuKey: string;
     exporters: any[];
     exportActivities: string[] | null;
+    taskDimension: string;
 }
 
 export default function ExportSubmenu(props: Props): JSX.Element {
-    const { menuKey, exporters, exportActivities } = props;
+    const { menuKey, exporters, exportActivities, taskDimension } = props;
 
     return (
         <Menu.SubMenu key={menuKey} title='Export as a dataset'>
             {exporters
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                .filter((exporter: any): JSX.Element => exporter.dimension === taskDimension)
                 .map(
                     (exporter: any): JSX.Element => {
                         const pending = (exportActivities || []).includes(exporter.name);

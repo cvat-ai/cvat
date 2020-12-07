@@ -14,15 +14,17 @@ interface Props {
     loaders: any[];
     loadActivity: string | null;
     onFileUpload(file: File): void;
+    taskDimension: string;
 }
 
 export default function LoadSubmenu(props: Props): JSX.Element {
-    const { menuKey, loaders, loadActivity, onFileUpload } = props;
+    const { menuKey, loaders, loadActivity, onFileUpload, taskDimension } = props;
 
     return (
         <Menu.SubMenu key={menuKey} title='Upload annotations'>
             {loaders
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                .filter((loader: any): JSX.Element => loader.dimension === taskDimension)
                 .map(
                     (loader: any): JSX.Element => {
                         const accept = loader.format

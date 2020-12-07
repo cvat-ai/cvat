@@ -118,7 +118,8 @@ function DetectorRunner(props: Props): JSX.Element {
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
-                        placeholder='Select a model'
+                        placeholder={task.dimension ==='2d'?'Select a model' : "No model available"}
+                        disabled = {task.dimension !== '2d'}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
                             const newmodel = models.filter((_model): boolean => _model.id === _modelID)[0];

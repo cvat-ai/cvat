@@ -176,6 +176,7 @@
                 search: isString,
                 status: isEnum.bind(TaskStatus),
                 mode: isEnum.bind(TaskMode),
+                dimension: isString
             });
 
             if ('search' in filter && Object.keys(filter).length > 1) {
@@ -198,7 +199,7 @@
             }
 
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId']) {
+            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId', 'dimension']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }

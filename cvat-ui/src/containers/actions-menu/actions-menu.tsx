@@ -136,6 +136,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             exportActivities={exportActivities}
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
+            taskDimension={taskInstance.dimension}
         />
     );
 }
