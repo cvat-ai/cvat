@@ -15,7 +15,7 @@ import CookieDrawer from './cookie-policy-drawer';
 interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
-    onLogin: (username: string, password: string, next: string | null) => void;
+    onLogin: (username: string, password: string) => void;
 }
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
