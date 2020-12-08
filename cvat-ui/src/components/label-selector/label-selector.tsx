@@ -25,12 +25,13 @@ export default function LabelSelector(props: Props): JSX.Element {
 
     return (
         <Select
+            virtual={false}
             {...rest}
             {...dinamicProps}
             showSearch
             filterOption={(input: string, option?: OptionData | OptionGroupData) => {
                 if (option) {
-                    const { children } = option.props;
+                    const { children } = option;
                     if (typeof children === 'string') {
                         return children.toLowerCase().includes(input.toLowerCase());
                     }

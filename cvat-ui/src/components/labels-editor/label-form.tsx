@@ -327,7 +327,7 @@ export default class LabelForm extends React.Component<Props> {
                     <Row
                         justify='space-between'
                         align='middle'
-                        cvat-attribute-id={key}
+                        cvat-attribute-id={fieldValue.id}
                         className='cvat-attribute-inputs-wrapper'
                     >
                         <Col span={5}>{this.renderAttributeNameInput(fieldInstance, attr)}</Col>

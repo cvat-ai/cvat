@@ -134,7 +134,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     public submit(): Promise<void> {
         const { onSubmit } = this.props;
         if (this.formRef.current) {
-            this.formRef.current.resetFields();
             return this.formRef.current.validateFields().then(
                 (values: Store): Promise<void> => {
                     const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;

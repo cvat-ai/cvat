@@ -20,8 +20,9 @@ context('Value must be a user instance.', () => {
             });
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
-                .contains(new RegExp(`^${Cypress.env('user')}$`, 'g'))
-                .click();
+                .within(() => {
+                    cy.get(`.ant-select-item-option[title="${Cypress.env('user')}"]`).click();
+                });
             cy.get('.cvat-spinner').should('exist');
         });
         it('Assign the task to the same user again', () => {
@@ -30,8 +31,9 @@ context('Value must be a user instance.', () => {
             });
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
-                .contains(new RegExp(`^${Cypress.env('user')}$`, 'g'))
-                .click();
+                .within(() => {
+                    cy.get(`.ant-select-item-option[title="${Cypress.env('user')}"]`).click();
+                });
             // Before fix:
             // The following error originated from your application code, not from Cypress.
             // > Value must be a user instance

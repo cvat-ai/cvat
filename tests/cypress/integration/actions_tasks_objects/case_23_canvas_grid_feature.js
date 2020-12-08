@@ -32,8 +32,9 @@ context('Canvas grid feature', () => {
             cy.get('.cvat-player-settings-grid-color-input').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
-                .contains(new RegExp(`^${gridColor}$`, 'g'))
-                .click();
+                .within(() => {
+                    cy.get(`.ant-select-item-option[title="${gridColor}"]`).click();
+                });
         });
         it('Set "Grid opacity" to 49%.', () => {
             cy.get('.cvat-player-settings-grid-opacity-input')
