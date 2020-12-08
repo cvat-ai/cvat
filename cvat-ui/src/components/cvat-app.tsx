@@ -187,9 +187,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showErrors(): void {
-        function showError(title: string, _error: any): void {
+        function showError(title: string, _error: any, className?: string): void {
             const error = _error.toString();
+            const dynamicProps = typeof className === 'undefined' ? {} : { className };
             notification.error({
+                ...dynamicProps,
                 message: (
                     <div
                         // eslint-disable-next-line
@@ -214,7 +216,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 const error = (notifications as any).errors[where][what];
                 shown = shown || !!error;
                 if (error) {
-                    showError(error.message, error.reason);
+                    showError(error.message, error.reason, error.className);
                 }
             }
         }
