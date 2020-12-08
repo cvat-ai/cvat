@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - PATCH requests from cvat-core submit only changed fields (<https://github.com/openvinotoolkit/cvat/pull/2445>)
+- Migrated to Antd 4.9 (<https://github.com/openvinotoolkit/cvat/pull/2536>)
 
 ### Deprecated
 
