@@ -50,22 +50,24 @@ export default class LabelForm extends React.Component<Props> {
         const { label, onSubmit } = this.props;
 
         onSubmit({
-            name: values.labelName,
+            name: values.name,
             id: label ? label.id : idGenerator(),
-            color: values.labelColor,
+            color: values.color,
             attributes: values.attributes.map((attribute: Store) => {
-                let attrValues: any = attribute.values;
-                if (attribute.input_type === AttributeType.NUMBER) {
-                    attrValues = attrValues.split(';');
-                } else {
-                    attrValues = [attrValues];
+                let attrValues: string | string[] = attribute.values;
+                if (!Array.isArray(attrValues)) {
+                    if (attribute.type === AttributeType.NUMBER) {
+                        attrValues = attrValues.split(';');
+                    } else {
+                        attrValues = [attrValues];
+                    }
                 }
                 attrValues = attrValues.map((value: string) => value.trim());
 
                 return {
                     ...attribute,
                     values: attrValues,
-                    input_type: attribute.type,
+                    input_type: attribute.type.toLowerCase(),
                 };
             }),
         });
@@ -366,7 +368,7 @@ export default class LabelForm extends React.Component<Props> {
         return (
             <Form.Item
                 hasFeedback
-                name='labelName'
+                name='name'
                 initialValue={value}
                 rules={[
                     {
@@ -462,18 +464,22 @@ export default class LabelForm extends React.Component<Props> {
         const { label } = this.props;
 
         return (
-            <Form.Item name='labelColor' initialValue={label && label.color ? label.color : undefined}>
-                <ColorPicker placement='bottom'>
-                    <Tooltip title='Change color of the label'>
-                        <Button type='default' className='cvat-change-task-label-color-button'>
-                            <Badge
-                                className='cvat-change-task-label-color-badge'
-                                color={this.formRef.current?.getFieldValue('labelColor') || consts.NEW_LABEL_COLOR}
-                                text={<Icon component={ColorizeIcon} />}
-                            />
-                        </Button>
-                    </Tooltip>
-                </ColorPicker>
+            <Form.Item noStyle shouldUpdate>
+                {() => (
+                    <Form.Item name='color' initialValue={label ? label?.color : undefined}>
+                        <ColorPicker placement='bottom'>
+                            <Tooltip title='Change color of the label'>
+                                <Button type='default' className='cvat-change-task-label-color-button'>
+                                    <Badge
+                                        className='cvat-change-task-label-color-badge'
+                                        color={this.formRef.current?.getFieldValue('color') || consts.NEW_LABEL_COLOR}
+                                        text={<Icon component={ColorizeIcon} />}
+                                    />
+                                </Button>
+                            </Tooltip>
+                        </ColorPicker>
+                    </Form.Item>
+                )}
             </Form.Item>
         );
     }
@@ -486,16 +492,20 @@ export default class LabelForm extends React.Component<Props> {
     public componentDidMount(): void {
         const { label } = this.props;
         if (this.formRef.current) {
-            this.formRef.current.setFieldsValue({
-                attributes: label ?
-                    label.attributes.map(
-                        (attribute: Attribute): Store => ({
-                            ...attribute,
-                            type: attribute.input_type,
-                        }),
-                    ) :
-                    [],
-            });
+            const convertedAttributes = label ?
+                label.attributes.map(
+                    (attribute: Attribute): Store => ({
+                        ...attribute,
+                        type: attribute.input_type.toUpperCase(),
+                    }),
+                ) :
+                [];
+
+            for (const attr of convertedAttributes) {
+                delete attr.input_type;
+            }
+
+            this.formRef.current.setFieldsValue({ attributes: convertedAttributes });
         }
     }
 
@@ -504,10 +514,12 @@ export default class LabelForm extends React.Component<Props> {
             <Form onFinish={this.handleSubmit} layout='vertical' ref={this.formRef}>
                 <Row justify='start' align='middle'>
                     <Col span={10}>{this.renderLabelNameInput()}</Col>
-                    <Col span={1} />
-                    <Col span={3}>{this.renderChangeColorButton()}</Col>
-                    <Col span={1} />
-                    <Col span={6}>{this.renderNewAttributeButton()}</Col>
+                    <Col span={3} offset={1}>
+                        {this.renderChangeColorButton()}
+                    </Col>
+                    <Col span={6} offset={1}>
+                        {this.renderNewAttributeButton()}
+                    </Col>
                 </Row>
                 <Row justify='start' align='middle'>
                     <Col span={24}>
