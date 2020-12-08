@@ -507,3 +507,10 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
     cy.get('.cvat-player-previous-button').click();
     cy.checkFrameNum(expectedFrameNum);
 });
+
+Cypress.Commands.add('interactMenu', (choice) => {
+    cy.contains('.cvat-annotation-header-button', 'Menu').click();
+    cy.get('.cvat-annotation-menu').within(() => {
+        cy.contains(new RegExp(`^${choice}$`, 'g')).click();
+    });
+});
