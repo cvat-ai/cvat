@@ -8,7 +8,12 @@ import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Tooltip from 'antd/lib/tooltip';
 import Icon, {
-    LinkOutlined, CopyOutlined, BlockOutlined, GatewayOutlined, RetweetOutlined, DeleteOutlined,
+    LinkOutlined,
+    CopyOutlined,
+    BlockOutlined,
+    GatewayOutlined,
+    RetweetOutlined,
+    DeleteOutlined,
 } from '@ant-design/icons';
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
@@ -200,7 +205,7 @@ function RemoveItem(props: ItemProps): JSX.Element {
                     onClick={(): void => {
                         if (locked) {
                             Modal.confirm({
-								className: 'cvat-modal-confirm',
+                                className: 'cvat-modal-confirm',
                                 title: 'Object is locked',
                                 content: 'Are you sure you want to remove it?',
                                 onOk() {
