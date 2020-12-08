@@ -16,3 +16,12 @@
         margin-top: 10px;
     }
 }
+
+.cvat-picked-tasks {
+    margin-left: 15px;
+    margin-top: 10px;
+    height: fit-content;
+    min-height: 10em;
+    max-height: 20em;
+    overflow: auto;
+}

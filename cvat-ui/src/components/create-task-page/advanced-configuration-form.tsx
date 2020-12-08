@@ -121,7 +121,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <Form.Item label={<span>Image quality</span>}>
                 <Tooltip title='Defines image quality level' mouseLeaveDelay={0}>
                     {form.getFieldDecorator('imageQuality', {
-                        initialValue: 70,
+                        initialValue: 100,
                         rules: [
                             {
                                 required: true,

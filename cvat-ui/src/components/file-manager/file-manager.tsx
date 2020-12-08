@@ -12,6 +12,7 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
+import PickedTaskListContainer from 'containers/file-manager/picked-tasks';
 
 import consts from 'consts';
 
@@ -214,6 +215,14 @@ export default class FileManager extends React.PureComponent<Props, State> {
         );
     }
 
+    private renderTasksSelector(): JSX.Element {
+        return (
+            <Tabs.TabPane key='tasks' tab='Completed tasks'>
+                <PickedTaskListContainer />
+            </Tabs.TabPane>
+        );
+    }
+
     public render(): JSX.Element {
         const { withRemote } = this.props;
         const { active } = this.state;
@@ -233,6 +242,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {withRemote && this.renderRemoteSelector()}
+                    {this.renderTasksSelector()}
                 </Tabs>
             </>
         );
