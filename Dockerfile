@@ -4,7 +4,6 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 ARG socks_proxy
-ENV TERM=xterm
 ARG DJANGO_CONFIGURATION
 
 RUN apt-get update && \
@@ -46,6 +45,8 @@ ENV PATH="/opt/venv/bin:${PATH}"
 RUN python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools==49.6.0 wheel==0.35.1
 COPY cvat/requirements/ /tmp/requirements/
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+# FIXME
+RUN python3 -m pip uninstall -y opencv-python opencv-python-headless && python3 -m pip install opencv-python-headless==4.4.0.42
 
 
 FROM ubuntu:20.04
@@ -139,13 +140,9 @@ COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.b
 
 # Install and initialize CVAT, copy all necessary files
 COPY components /tmp/components
-COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY ssh ${HOME}/.ssh
-COPY utils ${HOME}/utils
+COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY cvat/ ${HOME}/cvat
-COPY cvat-core/ ${HOME}/cvat-core
-COPY cvat-data/ ${HOME}/cvat-data
-COPY tests ${HOME}/tests
 
 RUN chown -R ${USER}:${USER} .
 
