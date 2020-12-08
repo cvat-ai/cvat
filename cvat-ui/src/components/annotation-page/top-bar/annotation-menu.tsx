@@ -67,6 +67,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 Modal.confirm({
                     title: 'The job has unsaved annotations',
                     content: 'Would you like to save changes before continue?',
+                    className: 'cvat-modal-content-save-job',
                     okButtonProps: {
                         children: 'Save',
                     },
