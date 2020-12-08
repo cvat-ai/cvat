@@ -66,7 +66,8 @@ Cypress.Commands.add('deleteProject', (projectName, projectID) => {
 
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.get('.cvat-project-details').within(() => {
-        cy.get('.cvat-user-search-field').click();
+        cy.get('.cvat-user-search-field').click().type(user);
+        cy.wait(300);
     });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')

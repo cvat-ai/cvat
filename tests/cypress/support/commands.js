@@ -21,7 +21,7 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('.cvat-right-header').within(() => {
         cy.get('.cvat-header-menu-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
     });
-    cy.get('.anticon-logout').click();
+    cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
 });
 
@@ -77,7 +77,7 @@ Cypress.Commands.add(
                     });
             }
             cy.get('.cvat-project-search-field').within(() => {
-                cy.get('[type="text"]').should('have.value', projectName);
+                cy.get('[type="search"]').should('have.value', projectName);
             });
             cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
         }
@@ -469,7 +469,8 @@ Cypress.Commands.add('goToRegisterPage', () => {
 
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
-        cy.get('.cvat-user-search-field').click();
+        cy.get('.cvat-user-search-field').click().type(user);
+        cy.wait(300);
     });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')

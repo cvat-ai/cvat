@@ -85,7 +85,7 @@ export default function ProjectSearchField(props: Props): JSX.Element {
             onDropdownVisibleChange={handleFocus}
             options={projects.map((proj) => ({
                 value: proj.id.toString(),
-                text: proj.name,
+                label: proj.name,
             }))}
         />
     );
