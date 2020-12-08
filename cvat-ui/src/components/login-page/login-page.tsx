@@ -15,7 +15,6 @@ import CookieDrawer from './cookie-policy-drawer';
 interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
-    next: string;
     onLogin: (username: string, password: string, next: string | null) => void;
 }
 
@@ -28,11 +27,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
         xl: { span: 4 },
     };
 
-    const {
-        fetching, onLogin, renderResetPassword, location,
-    } = props;
-
-    const search = new URLSearchParams(location.search);
+    const { fetching, onLogin, renderResetPassword } = props;
 
     return (
         <>
@@ -42,7 +37,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                     <LoginForm
                         fetching={fetching}
                         onSubmit={(loginData: LoginData): void => {
-                            onLogin(loginData.username, loginData.password, search.get('next'));
+                            onLogin(loginData.username, loginData.password);
                         }}
                     />
                     <Row type='flex' justify='start' align='top'>

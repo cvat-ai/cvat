@@ -10,7 +10,6 @@ const defaultState: AuthState = {
     initialized: false,
     fetching: false,
     user: null,
-    next: null,
     authActionsFetching: false,
     authActionsInitialized: false,
     allowChangePassword: false,
@@ -41,7 +40,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 fetching: false,
                 user: action.payload.user,
-                next: action.payload.next,
             };
         case AuthActionTypes.LOGIN_FAILED:
             return {

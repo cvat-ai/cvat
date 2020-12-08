@@ -26,7 +26,7 @@ export default function LoginWithTokenComponent(): JSX.Element {
     );
 
     if (cookies.sessionid && cookies.csrftoken) {
-        return <Redirect to={search.has('next') ? (search.get('next') as string) : '/tasks'} />;
+        return <Redirect to={search.get('next') || '/tasks'} />;
     }
     return <></>;
 }

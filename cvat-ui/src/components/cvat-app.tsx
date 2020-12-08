@@ -64,7 +64,6 @@ interface CVATAppProps {
     authActionsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
-    next: string | null;
     isModelPluginActive: boolean;
 }
 
@@ -238,7 +237,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             switchShortcutsDialog,
             switchSettingsDialog,
             user,
-            next,
             keyMap,
             location,
             isModelPluginActive,
@@ -320,7 +318,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         {isModelPluginActive && (
                                             <Route exact path='/models' component={ModelsPageContainer} />
                                         )}
-                                        <Redirect push to={next || '/tasks'} />
+                                        <Redirect
+                                            push
+                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                        />
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
