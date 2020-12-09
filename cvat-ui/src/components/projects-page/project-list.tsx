@@ -42,7 +42,7 @@ export default function ProjectListComponent(): JSX.Element {
                 <Col className='cvat-projects-list' md={22} lg={18} xl={16} xxl={14}>
                     {projectInstances.map(
                         (row: any[]): JSX.Element => (
-                            <Row gutter={[8, 8]}>
+                            <Row key={row[0].id} gutter={[8, 8]}>
                                 {row.map((instance: any) => (
                                     <Col span={6} key={instance.id}>
                                         <ProjectItem projectInstance={instance} />
