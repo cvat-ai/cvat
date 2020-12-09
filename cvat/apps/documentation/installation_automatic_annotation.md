@@ -1,7 +1,7 @@
 
 ### Semi-automatic and automatic annotation
 
-- To bring up cvat with auto annotation tool, **do not use** `docker-compose up`.If you did first make sure all containers are stopped `docker-compose down`
+- To bring up cvat with auto annotation tool, **do not use** `docker-compose up`.If you did, first make sure all containers are stopped `docker-compose down`
 
 
   From cvat root directory, you need to run:
@@ -21,7 +21,7 @@
   functions. Download [version 1.5.8](https://github.com/nuclio/nuclio/releases).
   It is important that the version you download matches the version in
   [docker-compose.serverless.yml](/components/serverless/docker-compose.serverless.yml)
-  when you downloaded the nuclio give them proper permission and do a softlin
+  After downloading the nuclio, give it a proper permission and do a softlink
   ```
   sudo chmod +x nuctl-<version>-linux-amd64
   sudo ln -sf $(pwd)/nuctl-<version>-linux-amd64 /usr/local/bin/nuctl
