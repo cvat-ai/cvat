@@ -74,6 +74,7 @@ export default class LabelForm extends React.Component<Props> {
 
         if (this.formRef.current) {
             this.formRef.current.resetFields();
+            this.formRef.current.setFieldsValue({ attributes: [] });
         }
 
         if (!this.continueAfterSubmit) {
