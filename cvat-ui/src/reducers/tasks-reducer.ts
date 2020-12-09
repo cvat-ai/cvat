@@ -84,9 +84,9 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             const { dumps } = state.activities;
 
             dumps[task.id] =
-                task.id in dumps && !dumps[task.id].includes(dumper.name)
-                    ? [...dumps[task.id], dumper.name]
-                    : dumps[task.id] || [dumper.name];
+                task.id in dumps && !dumps[task.id].includes(dumper.name) ?
+                    [...dumps[task.id], dumper.name] :
+                    dumps[task.id] || [dumper.name];
 
             return {
                 ...state,
@@ -122,9 +122,9 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             const { exports: activeExports } = state.activities;
 
             activeExports[task.id] =
-                task.id in activeExports && !activeExports[task.id].includes(exporter.name)
-                    ? [...activeExports[task.id], exporter.name]
-                    : activeExports[task.id] || [exporter.name];
+                task.id in activeExports && !activeExports[task.id].includes(exporter.name) ?
+                    [...activeExports[task.id], exporter.name] :
+                    activeExports[task.id] || [exporter.name];
 
             return {
                 ...state,
@@ -299,15 +299,26 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             };
         }
         case TasksActionTypes.UPDATE_TASK_SUCCESS: {
+            // a task will be undefined after updating when a user doesn't have access to the task anymore
+            const { task, taskID } = action.payload;
+
+            if (typeof task === 'undefined') {
+                return {
+                    ...state,
+                    updating: false,
+                    current: state.current.filter((_task: Task): boolean => _task.instance.id !== taskID),
+                };
+            }
+
             return {
                 ...state,
                 updating: false,
                 current: state.current.map(
-                    (task): Task => {
-                        if (task.instance.id === action.payload.task.id) {
+                    (_task): Task => {
+                        if (_task.instance.id === task.id) {
                             return {
-                                ...task,
-                                instance: action.payload.task,
+                                ..._task,
+                                instance: task,
                             };
                         }
 

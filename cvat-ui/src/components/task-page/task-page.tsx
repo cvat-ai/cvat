@@ -29,7 +29,13 @@ type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
     public componentDidUpdate(): void {
-        const { deleteActivity, history } = this.props;
+        const {
+            deleteActivity, history, task, fetching, getTask,
+        } = this.props;
+
+        if (task === null && !fetching) {
+            getTask();
+        }
 
         if (deleteActivity) {
             history.replace('/tasks');
@@ -37,13 +43,9 @@ class TaskPageComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { task, fetching, updating, getTask } = this.props;
+        const { task, updating } = this.props;
 
         if (task === null || updating) {
-            if (task === null && !fetching) {
-                getTask();
-            }
-
             return <Spin size='large' className='cvat-spinner' />;
         }
 
