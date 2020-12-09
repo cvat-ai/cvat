@@ -204,7 +204,6 @@ context('Review pipeline feature', () => {
         //             cy.get('.cvat-user-search-field').click();
         //         });
         //     cy.get('.ant-select-dropdown')
-        //         .not('.ant-select-dropdown-hidden')
         //         .within(() => {
         //             cy.contains(new RegExp(`^${thirdUserName}`, 'g')).click();
         //         });
@@ -227,11 +226,11 @@ context('Review pipeline feature', () => {
         //         .within(() => {
         //             cy.get('[data-icon="close"]').click(); // Close the notice.
         //         });
+        //     cy.goToTaskList();
         //     cy.logout(secondUserName);
         // });
 
         // it('The third user opens the job. Review mode is opened automatically.', () => {
-        //     // cy.visit('/')
         //     cy.login(thirdUserName, thirdUser.password);
         //     cy.openTaskJob(taskName);
         //     cy.get('.cvat-workspace-selector').should('have.text', 'Review');
@@ -239,7 +238,7 @@ context('Review pipeline feature', () => {
 
         // it('Use quick issues "Incorrect position". Issue will be created immediately.', () => {
         //     cy.createIssueFromObject('#cvat_canvas_shape_1', 'Quick issue: incorrect position');
-        //     cy.checkIssue('Wrong position');
+        //     cy.checkIssueLabel('Wrong position');
         // });
 
         // it('Item submenu: "Quick issue ..." does not appear.', () => {
@@ -251,7 +250,7 @@ context('Review pipeline feature', () => {
 
         // it('Create different issues with a custom text.', () => {
         //     cy.createIssueFromObject('#cvat_canvas_shape_2', 'Open an issue ...', customeIssueDescription);
-        //     cy.checkIssue(customeIssueDescription);
+        //     cy.checkIssueLabel(customeIssueDescription);
         // });
 
         // it('Now item submenu: "Quick issue ..." appears and it contains several latest options.', () => {
@@ -269,16 +268,18 @@ context('Review pipeline feature', () => {
         //         });
         // });
 
-        // it('Use one of items to create quick issue on another object. Issue has been created.', () => {
-        //     cy.createIssueFromObject('#cvat_canvas_shape_2', 'Quick issue ...', customeIssueDescription);
-        //     cy.checkIssue(customeIssueDescription);
+        // it('Use one of items to create quick issue on another object on another frame. Issue has been created.', () => {
+        //     cy.goCheckFrameNumber(2);
+        //     cy.createIssueFromObject('#cvat_canvas_shape_4', 'Quick issue: incorrect attribute');
+        //     cy.checkIssueLabel('Wrong attribute');
+        //     cy.goCheckFrameNumber(0); // Back to first frame
         // });
 
         // it('Reload page. All the issue still exists.', () => {
         //     cy.reload();
         //     cy.get('.cvat-canvas-container').should('exist');
-        //     cy.checkIssue(customeIssueDescription);
-        //     cy.checkIssue('Wrong position');
+        //     cy.checkIssueLabel(customeIssueDescription);
+        //     cy.checkIssueLabel('Wrong position');
         // });
 
         // it('Use button on the left panel to create a couple of issues (in the first case draw a rectangle, in the second draw a point).', () => {
@@ -311,29 +312,111 @@ context('Review pipeline feature', () => {
         //         .within(() => {
         //             cy.get('[data-icon="close"]').click(); // Close the notice.
         //         });
+        //     cy.goToTaskList();
         //     cy.logout(thirdUserName);
         // });
 
-        it('The second user login. Opens the job again. All issues are visible.', () => {
-            cy.visit('/');
-            cy.login(secondUserName, secondUser.password);
-            cy.openTaskJob(taskName);
-            cy.get('.cvat-workspace-selector').should('have.text', 'Standard');
-            for (const j of [
-                customeIssueDescription,
-                'Wrong position',
-                createIssueRectangle.description,
-                createIssuePoint.description,
-            ]) {
-                cy.checkIssue(j);
-            }
-        });
+        // it('The second user login. Opens the job again. All issues are visible.', () => {
+        //     cy.login(secondUserName, secondUser.password);
+        //     cy.openTaskJob(taskName);
+        //     cy.get('.cvat-workspace-selector').should('have.text', 'Standard');
+        //     for (const j of [
+        //         customeIssueDescription,
+        //         'Wrong position',
+        //         createIssueRectangle.description,
+        //         createIssuePoint.description,
+        //     ]) {
+        //         cy.checkIssueLabel(j);
+        //     }
+        //     cy.goCheckFrameNumber(2);
+        //     cy.checkIssueLabel('Wrong attribute');
+        //     cy.goCheckFrameNumber(0);
+        // });
 
-        it('Go to "Issues" tab at right sidebar and select an issue.', () => {
-            cy.get('.cvat-objects-sidebar').within(() => {
-                cy.contains('Issues').click();
-            });
-            cy.log(cy.get('.cvat-objects-sidebar-issues-list').lenght);
+        // it('Go to "Issues" tab at right sidebar and select an issue.', () => {
+        //     cy.get('.cvat-objects-sidebar').within(() => {
+        //         cy.contains('Issues').click();
+        //     });
+        //     cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
+        //         cy.get('.cvat-hidden-issue-label').then((issueLabels) => {
+        //             expect(sidebarIssueItems.length).to.be.equal(issueLabels.length);
+        //         });
+        //     });
+        // });
+
+        // it('Select an issue on sidebar. Issue indication has changed the color for highlighted issue', () => {
+        //     let index = 0;
+        //     cy.collectIssueRegionId().then(($issueRegionList) => {
+        //         cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
+        //             for (let i = 0; i < sidebarIssueItems.length; i++) {
+        //                 cy.get(sidebarIssueItems[i])
+        //                     .trigger('mousemove')
+        //                     .trigger('mouseover')
+        //                 cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`)
+        //                     .should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_2)')
+        //                 cy.get(sidebarIssueItems[i]).trigger('mouseout');
+        //                 cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`)
+        //                     .should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_1)')
+        //                 index++;
+        //             }
+        //         });
+        //     });
+        // });
+
+        // it('Issue navigation. Navigation works and go only to frames with issues.', () => {
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-left')
+        //         .should('have.attr', 'style')
+        //         .and('contain', 'opacity: 0.5;') // Element is`t active
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-right')
+        //         .click();
+        //     cy.checkFrameNum(2); // Frame changed to 2
+        //     cy.get('.cvat-objects-sidebar-issues-list-header')
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-right')
+        //         .should('have.attr', 'style')
+        //         .and('contain', 'opacity: 0.5;') // Element is`t active
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-left')
+        //         .click();
+        //     cy.checkFrameNum(0); // Frame changed to 0
+        // });
+
+        // it('Hide all issues. All issues are hidden on all frames.', () => {
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-show-hide').click();
+        //     cy.get('.cvat-hidden-issue-label').should('not.exist');
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-right').click();
+        //     cy.get('.cvat-hidden-issue-label').should('not.exist');
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-left').click();
+        // });
+
+        // it('Display all the issues again. Comment a couple of issues and resolve all them.', () => {
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-show-hide').click();
+        //     cy.get('.cvat-hidden-issue-label')
+        //         .should('exist')
+        //         .and('have.length', 4);
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-right').click();
+        //     cy.get('.cvat-hidden-issue-label')
+        //         .should('exist')
+        //         .and('have.length', 1);;
+        //     cy.get('.cvat-objects-sidebar-issues-list-header-left').click();
+        // });
+
+        // it('Request a review again. Assign the third user again. The second user logout.', () => {
+        //     cy.interactMenu('Request a review');
+        //     cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {
+        //         cy.get('.cvat-user-search-field')
+        //             .within(() => {
+        //                 cy.get('input[type="text"]').should('have.value', thirdUserName);
+        //             });
+        //         cy.contains('[type="button"]', 'Submit').click();
+        //     });
+        //     cy.logout(secondUserName);
+        // });
+
+        it('The third user login, opens the job, goes to menu, "Submit review" => "Review next" => Assign the first user => Submit.', () => {
+            cy.visit('/');
+            cy.login(thirdUserName, thirdUser.password);
+            cy.openTaskJob(taskName);
+            cy.interactMenu('Submit the review');
+            cy.submitReview('Review next', Cypress.env('user'));
         });
     });
 });

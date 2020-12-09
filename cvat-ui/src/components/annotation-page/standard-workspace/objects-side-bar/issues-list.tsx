@@ -63,17 +63,28 @@ export default function LabelsListComponent(): JSX.Element {
                 <Row type='flex' justify='start' align='middle'>
                     <Col>
                         <Tooltip title='Find the previous frame with issues'>
-                            <Icon type='left' {...dinamicLeftProps} />
+                            <Icon
+                                className='cvat-objects-sidebar-issues-list-header-left'
+                                type='left'
+                                {...dinamicLeftProps}
+                            />
                         </Tooltip>
                     </Col>
                     <Col offset={1}>
                         <Tooltip title='Find the next frame with issues'>
-                            <Icon type='right' {...dinamicRightProps} />
+                            <Icon
+                                className='cvat-objects-sidebar-issues-list-header-right'
+                                type='right'
+                                {...dinamicRightProps}
+                            />
                         </Tooltip>
                     </Col>
                     <Col offset={3}>
                         <Tooltip title='Show/hide all the issues'>
-                            <Icon {...dinamicShowHideProps} />
+                            <Icon
+                                className='cvat-objects-sidebar-issues-list-header-show-hide'
+                                {...dinamicShowHideProps}
+                            />
                         </Tooltip>
                     </Col>
                 </Row>
