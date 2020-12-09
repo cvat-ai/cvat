@@ -18,7 +18,7 @@ context('Collapse sidebar/apperance', () => {
                 currnetValueLeftBackground = Number(valueLeft.match(/\d+/));
                 expect(currnetValueLeftBackground).to.be.eq(defaultValueLeftInBackground);
             });
-    };
+    }
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -44,7 +44,7 @@ context('Collapse sidebar/apperance', () => {
                     expect(currnetValueLeftBackground).to.be.greaterThan(defaultValueLeftInBackground);
                 });
 
-            // wait when background will move to full window
+            // wait when background fitted
             cy.wait(1000);
 
             // unhide
@@ -55,16 +55,12 @@ context('Collapse sidebar/apperance', () => {
 
         it('Collapse apperance', () => {
             // hide
-            cy.get('.cvat-objects-appearance-collapse').within(() => {
-                cy.contains('Appearance').click();
-            });
+            cy.get('.cvat-objects-appearance-collapse-header').click();
             cy.get('.cvat-objects-appearance-content').should('not.be.visible');
             checkEqualBackground();
 
             // unhide
-            cy.get('.cvat-objects-appearance-collapse').within(() => {
-                cy.contains('Appearance').click();
-            });
+            cy.get('.cvat-objects-appearance-collapse-header').click();
             cy.get('.cvat-objects-appearance-content').should('be.visible');
             checkEqualBackground();
         });
