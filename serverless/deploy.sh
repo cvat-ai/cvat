@@ -47,6 +47,10 @@ nuctl deploy --project-name cvat \
     --platform local
 
 nuctl deploy --project-name cvat \
+    --path "$SCRIPT_DIR/tensorflow/faster_rcnn_inception_v2_coco_gpu/nuclio" \
+    --platform local
+
+nuctl deploy --project-name cvat \
     --path "$SCRIPT_DIR/pytorch/foolwood/siammask/nuclio" \
     --platform local
 
