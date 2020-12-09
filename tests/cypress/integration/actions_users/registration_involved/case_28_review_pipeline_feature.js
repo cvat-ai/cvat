@@ -211,10 +211,9 @@ context('Review pipeline feature', () => {
                 .within(() => {
                     cy.get('.cvat-user-search-field').click();
                 });
-            cy.get('.ant-select-dropdown')
-                .within(() => {
-                    cy.contains(new RegExp(`^${thirdUserName}`, 'g')).click();
-                });
+            cy.get('.ant-select-dropdown').within(() => {
+                cy.contains(new RegExp(`^${thirdUserName}`, 'g')).click();
+            });
             cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {
                 cy.contains('[type="button"]', 'Submit').click();
             });
@@ -250,10 +249,11 @@ context('Review pipeline feature', () => {
         });
 
         it('Item submenu: "Quick issue ..." does not appear.', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove', {force: true}).rightclick({force: true});
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove').rightclick();
             cy.get('.cvat-canvas-context-menu')
                 .contains('.cvat-context-menu-item', 'Quick issue ...')
                 .should('not.exist');
+            cy.get('.cvat-canvas-container').click(); // Close the context menu
         });
 
         it('Create different issues with a custom text.', () => {
@@ -262,18 +262,17 @@ context('Review pipeline feature', () => {
         });
 
         it('Now item submenu: "Quick issue ..." appears and it contains several latest options.', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove', {force: true}).rightclick({force: true});
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true }).rightclick({ force: true });
             cy.get('.cvat-canvas-context-menu')
                 .contains('.cvat-context-menu-item', 'Quick issue ...')
                 .should('exist')
                 .trigger('mousemove')
                 .trigger('mouseover');
-            cy.get('[id="quick_issue_from_latest$Menu"]')
-                .within(() => {
-                    cy.contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
-                        .should('exist')
-                        .and('have.text', customeIssueDescription);
-                });
+            cy.get('[id="quick_issue_from_latest$Menu"]').within(() => {
+                cy.contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
+                    .should('exist')
+                    .and('have.text', customeIssueDescription);
+            });
         });
 
         it('Use one of items to create quick issue on another object on another frame. Issue has been created.', () => {
@@ -310,7 +309,7 @@ context('Review pipeline feature', () => {
             cy.checkJobStatus(0, 'annotation', secondUserName, thirdUserName);
         });
 
-        it('Reopen the job. Change something there. Save work. That saving wasn\'t successful. The third user logout.', () => {
+        it("Reopen the job. Change something there. Save work. That saving wasn't successful. The third user logout.", () => {
             cy.openJob();
             cy.createPoint(createPointsShapeSecond);
             cy.saveJob();
@@ -356,14 +355,18 @@ context('Review pipeline feature', () => {
             cy.collectIssueRegionId().then(($issueRegionList) => {
                 cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
                     for (let i = 0; i < sidebarIssueItems.length; i++) {
-                        cy.get(sidebarIssueItems[i])
-                            .trigger('mousemove')
-                            .trigger('mouseover')
-                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`)
-                            .should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_2)')
+                        cy.get(sidebarIssueItems[i]).trigger('mousemove').trigger('mouseover');
+                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`).should(
+                            'have.attr',
+                            'fill',
+                            'url(#cvat_issue_region_pattern_2)',
+                        );
                         cy.get(sidebarIssueItems[i]).trigger('mouseout');
-                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`)
-                            .should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_1)')
+                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`).should(
+                            'have.attr',
+                            'fill',
+                            'url(#cvat_issue_region_pattern_1)',
+                        );
                         index++;
                     }
                 });
@@ -373,15 +376,13 @@ context('Review pipeline feature', () => {
         it('Issue navigation. Navigation works and go only to frames with issues.', () => {
             cy.get('.cvat-objects-sidebar-issues-list-header-left')
                 .should('have.attr', 'style')
-                .and('contain', 'opacity: 0.5;') // The element is not active
-            cy.get('.cvat-objects-sidebar-issues-list-header-right')
-                .click();
+                .and('contain', 'opacity: 0.5;'); // The element is not active
+            cy.get('.cvat-objects-sidebar-issues-list-header-right').click();
             cy.checkFrameNum(2); // Frame changed to 2
             cy.get('.cvat-objects-sidebar-issues-list-header-right')
                 .should('have.attr', 'style')
-                .and('contain', 'opacity: 0.5;') // The element is not active
-            cy.get('.cvat-objects-sidebar-issues-list-header-left')
-                .click();
+                .and('contain', 'opacity: 0.5;'); // The element is not active
+            cy.get('.cvat-objects-sidebar-issues-list-header-left').click();
             cy.checkFrameNum(0); // Frame changed to 0
         });
 
@@ -397,19 +398,15 @@ context('Review pipeline feature', () => {
             function resolveIssue() {
                 cy.collectIssueLabel().then((issueLabelList) => {
                     for (let label = 0; label < issueLabelList.length; label++) {
-                        cy.resolveIssue(issueLabelList[label], 'Done')
+                        cy.resolveIssue(issueLabelList[label], 'Done');
                     }
                 });
             }
 
             cy.get('.cvat-objects-sidebar-issues-list-header-hidden').click();
-            cy.get('.cvat-hidden-issue-label')
-                .should('exist')
-                .and('have.length', 4);
+            cy.get('.cvat-hidden-issue-label').should('exist').and('have.length', 4);
             cy.get('.cvat-objects-sidebar-issues-list-header-right').click();
-            cy.get('.cvat-hidden-issue-label')
-                .should('exist')
-                .and('have.length', 1);;
+            cy.get('.cvat-hidden-issue-label').should('exist').and('have.length', 1);
             cy.get('.cvat-objects-sidebar-issues-list-header-left').click();
 
             resolveIssue();
@@ -423,10 +420,9 @@ context('Review pipeline feature', () => {
         it('Request a review again. Assign the third user again. The second user logout.', () => {
             cy.interactMenu('Request a review');
             cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {
-                cy.get('.cvat-user-search-field')
-                    .within(() => {
-                        cy.get('input[type="search"]').should('have.value', thirdUserName);
-                    });
+                cy.get('.cvat-user-search-field').within(() => {
+                    cy.get('input[type="search"]').should('have.value', thirdUserName);
+                });
                 cy.contains('[type="button"]', 'Submit').click();
             });
             cy.logout(secondUserName);
@@ -450,7 +446,7 @@ context('Review pipeline feature', () => {
             cy.checkJobStatus(0, 'completed', secondUserName, Cypress.env('user'));
         });
 
-        it('The first user can change annotations. The second users can\'t change annotations. For the third user the task is not visible.', () => {
+        it("The first user can change annotations. The second users can't change annotations. For the third user the task is not visible.", () => {
             cy.openJob();
             cy.createPoint(createPointsShapeThird);
             cy.saveJob();
@@ -473,10 +469,9 @@ context('Review pipeline feature', () => {
             cy.login();
             cy.openTaskJob(taskName);
             cy.interactMenu('Renew the job');
-            cy.get('.cvat-modal-content-renew-job')
-                .within(() => {
-                    cy.contains('button', 'Continue').click();
-                });
+            cy.get('.cvat-modal-content-renew-job').within(() => {
+                cy.contains('button', 'Continue').click();
+            });
             cy.url().should('include', '/tasks');
             cy.contains('.cvat-task-details', taskName).should('exist');
             cy.checkJobStatus(0, 'annotation', secondUserName, Cypress.env('user'));
@@ -485,32 +480,29 @@ context('Review pipeline feature', () => {
         it('The first user opens the job and presses "Finish the job".', () => {
             cy.openJob();
             cy.interactMenu('Finish the job');
-            cy.get('.cvat-modal-content-finish-job')
-                .within(() => {
-                    cy.contains('button', 'Continue').click();
-                });
+            cy.get('.cvat-modal-content-finish-job').within(() => {
+                cy.contains('button', 'Continue').click();
+            });
             cy.url().should('include', '/tasks');
             cy.contains('.cvat-task-details', taskName).should('exist');
             cy.checkJobStatus(0, 'completed', secondUserName, Cypress.env('user'));
         });
 
         it('In column "status" the job has question circle. The first user hover it, short statistics about reviews shown.', () => {
-            cy.get('.cvat-job-completed-color')
-                .within(() => {
-                    cy.get('[aria-label="question-circle"]').trigger('mouseover');
-                });
+            cy.get('.cvat-job-completed-color').within(() => {
+                cy.get('[aria-label="question-circle"]').trigger('mouseover');
+            });
             let summary = [];
-            cy.get('.cvat-review-summary-description')
-                .within(() => {
-                    cy.get('td').then(($td) => {
-                        for (let i = 0; i < $td.length; i++) {
-                            summary.push($td[i].outerText)
-                        }
-                        expect(Number(summary[1])).to.be.equal(3); // Reviews 3
-                        expect(Number(summary[5])).to.be.equal(0); // Unsolved issues 0
-                        expect(Number(summary[7])).to.be.equal(5); // Resolved issues 5
-                    });
+            cy.get('.cvat-review-summary-description').within(() => {
+                cy.get('td').then(($td) => {
+                    for (let i = 0; i < $td.length; i++) {
+                        summary.push($td[i].outerText);
+                    }
+                    expect(Number(summary[1])).to.be.equal(3); // Reviews 3
+                    expect(Number(summary[5])).to.be.equal(0); // Unsolved issues 0
+                    expect(Number(summary[7])).to.be.equal(5); // Resolved issues 5
                 });
+            });
         });
     });
 });

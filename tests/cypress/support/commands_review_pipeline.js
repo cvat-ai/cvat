@@ -94,7 +94,7 @@ Cypress.Commands.add('checkIssueRegion', (afterSave = false) => {
 });
 
 Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDescription) => {
-    cy.get(object).trigger('mousemove', { force: true }).rightclick({ force: true });
+    cy.get(object).trigger('mousemove').rightclick();
     cy.get('.cvat-canvas-context-menu').within(() => {
         cy.contains('.cvat-context-menu-item', new RegExp(`^${issueType}$`, 'g')).click();
     });
@@ -132,11 +132,10 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
 Cypress.Commands.add('resolveIssue', (issueLabel, resolveText) => {
     cy.get(issueLabel).click();
     cy.get('.cvat-issue-dialog-input').type(resolveText);
-    cy.get('.cvat-issue-dialog-footer')
-        .within(() => {
-            cy.contains('button', 'Comment').click();
-            cy.contains('button', 'Resolve').click();
-        });
+    cy.get('.cvat-issue-dialog-footer').within(() => {
+        cy.contains('button', 'Comment').click();
+        cy.contains('button', 'Resolve').click();
+    });
 });
 
 Cypress.Commands.add('submitReview', (decision, user) => {
