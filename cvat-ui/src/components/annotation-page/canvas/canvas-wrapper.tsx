@@ -109,7 +109,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
-            forceDisableEditing: [Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace),
+            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
         });
 
         this.initialSetup();
@@ -260,11 +260,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.workspace !== workspace) {
-            if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
+            if (workspace === Workspace.REVIEW_WORKSPACE) {
                 canvasInstance.configure({
                     forceDisableEditing: true,
                 });
-            } else if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(prevProps.workspace)) {
+            } else if (prevProps.workspace === Workspace.REVIEW_WORKSPACE) {
                 canvasInstance.configure({
                     forceDisableEditing: false,
                 });

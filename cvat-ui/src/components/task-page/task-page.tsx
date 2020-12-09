@@ -28,6 +28,14 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
+    public componentDidMount(): void {
+        const { task, fetching, getTask } = this.props;
+
+        if (task === null && !fetching) {
+            getTask();
+        }
+    }
+
     public componentDidUpdate(): void {
         const { deleteActivity, history } = this.props;
 
@@ -37,13 +45,9 @@ class TaskPageComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { task, fetching, updating, getTask } = this.props;
+        const { task, updating } = this.props;
 
         if (task === null || updating) {
-            if (task === null && !fetching) {
-                getTask();
-            }
-
             return <Spin size='large' className='cvat-spinner' />;
         }
 
