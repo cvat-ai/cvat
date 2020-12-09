@@ -21,18 +21,24 @@ interface Props {
 function DrawPolygonControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing ?
+        {
+            overlayStyle: {
+                display: 'none',
+            },
+        } :
+        {};
 
-    const dynamicIconProps = isDrawing ? {
-        className: 'cvat-active-canvas-control',
-        onClick: (): void => {
-            canvasInstance.draw({ enabled: false });
-        },
-    } : {};
+    const dynamicIconProps = isDrawing ?
+        {
+            className: 'cvat-draw-cuboid-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-draw-cuboid-control',
+        };
 
     return (
         <Popover
@@ -41,7 +47,7 @@ function DrawPolygonControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.CUBOID} />}
         >
-            <Icon className='cvat-draw-cuboid-control' {...dynamicIconProps} component={CubeIcon} />
+            <Icon {...dynamicIconProps} component={CubeIcon} />
         </Popover>
     );
 }

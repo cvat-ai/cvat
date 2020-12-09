@@ -20,18 +20,24 @@ interface Props {
 function DrawPolylineControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing ?
+        {
+            overlayStyle: {
+                display: 'none',
+            },
+        } :
+        {};
 
-    const dynamicIconProps = isDrawing ? {
-        className: 'cvat-active-canvas-control',
-        onClick: (): void => {
-            canvasInstance.draw({ enabled: false });
-        },
-    } : {};
+    const dynamicIconProps = isDrawing ?
+        {
+            className: 'cvat-draw-polyline-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-draw-polyline-control',
+        };
 
     return (
         <Popover
@@ -40,7 +46,7 @@ function DrawPolylineControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POLYLINE} />}
         >
-            <Icon className='cvat-draw-polyline-control' {...dynamicIconProps} component={PolylineIcon} />
+            <Icon {...dynamicIconProps} component={PolylineIcon} />
         </Popover>
     );
 }

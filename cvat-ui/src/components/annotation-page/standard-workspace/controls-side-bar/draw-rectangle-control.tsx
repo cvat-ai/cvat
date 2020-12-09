@@ -20,18 +20,24 @@ interface Props {
 function DrawRectangleControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing ?
+        {
+            overlayStyle: {
+                display: 'none',
+            },
+        } :
+        {};
 
-    const dynamicIconProps = isDrawing ? {
-        className: 'cvat-active-canvas-control',
-        onClick: (): void => {
-            canvasInstance.draw({ enabled: false });
-        },
-    } : {};
+    const dynamicIconProps = isDrawing ?
+        {
+            className: 'cvat-draw-rectangle-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-draw-rectangle-control',
+        };
 
     return (
         <Popover
@@ -40,7 +46,7 @@ function DrawRectangleControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.RECTANGLE} />}
         >
-            <Icon className='cvat-draw-rectangle-control' {...dynamicIconProps} component={RectangleIcon} />
+            <Icon {...dynamicIconProps} component={RectangleIcon} />
         </Popover>
     );
 }
