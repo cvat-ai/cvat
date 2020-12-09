@@ -95,10 +95,7 @@ context('Multiple users. Assign task, job.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
-            cy.get('.cvat-task-job-list').within(() => {
-                cy.get('.cvat-job-assignee-selector').click();
-            });
-            cy.contains(thirdUserName).click();
+            cy.assignJobToUser(thirdUserName);
             cy.logout();
         });
         it('Third user login. The task can be opened.', () => {
