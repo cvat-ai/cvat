@@ -201,8 +201,8 @@ export default class LabelForm extends React.Component<Props> {
             <Tooltip title='Specify a default value' mouseLeaveDelay={0}>
                 <Form.Item name={[key, 'values']} fieldKey={[fieldInstance.fieldKey, 'values']} initialValue={value}>
                     <Select className='cvat-attribute-values-input'>
-                        <Select.Option value='false'> False </Select.Option>
-                        <Select.Option value='true'> True </Select.Option>
+                        <Select.Option value='false'>False</Select.Option>
+                        <Select.Option value='true'>True</Select.Option>
                     </Select>
                 </Form.Item>
             </Tooltip>
