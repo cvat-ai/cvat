@@ -36,10 +36,10 @@ Cypress.Commands.add('checkJobStatus', (jobNumber, status, assignee, reviewer) =
             .within(() => {
                 cy.get('.cvat-job-item-status').should('have.text', status);
                 cy.get('.cvat-job-assignee-selector').within(() => {
-                    cy.get('input[type="text"]').should('have.value', assignee);
+                    cy.get('input[type="search"]').should('have.value', assignee);
                 });
                 cy.get('.cvat-job-reviewer-selector').within(() => {
-                    cy.get('input[type="text"]').should('have.value', reviewer);
+                    cy.get('input[type="search"]').should('have.value', reviewer);
                 });
             });
     });
@@ -129,15 +129,25 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
     cy.checkIssueRegion();
 });
 
+Cypress.Commands.add('resolveIssue', (issueLabel, resolveText) => {
+    cy.get(issueLabel).click();
+    cy.get('.cvat-issue-dialog-input').type(resolveText);
+    cy.get('.cvat-issue-dialog-footer')
+        .within(() => {
+            cy.contains('button', 'Comment').click();
+            cy.contains('button', 'Resolve').click();
+        });
+});
+
 Cypress.Commands.add('submitReview', (decision, user) => {
     cy.get('.cvat-submit-review-dialog').within(() => {
         cy.contains(new RegExp(`^${decision}$`, 'g')).click();
         if (decision === 'Review next') {
             cy.server().route('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {
-                cy.get('input[type="text"]').clear().type(`${user}`);
+                cy.get('input[type="search"]').clear().type(`${user}`);
                 cy.wait('@searchUsers').its('status').should('equal', 200);
-                cy.get('input[type="text"]').type('{Enter}');
+                cy.get('input[type="search"]').type('{Enter}');
             });
         }
         cy.contains('button', 'Submit').click();

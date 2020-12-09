@@ -55,22 +55,25 @@ export default function LabelsListComponent(): JSX.Element {
                 <Row justify='start' align='middle'>
                     <Col>
                         <Tooltip title='Find the previous frame with issues'>
-                            <LeftOutlined {...dinamicLeftProps} />
+                            <LeftOutlined className='cvat-objects-sidebar-issues-list-header-left' {...dinamicLeftProps} />
                         </Tooltip>
                     </Col>
                     <Col offset={1}>
                         <Tooltip title='Find the next frame with issues'>
-                            <RightOutlined {...dinamicRightProps} />
+                            <RightOutlined className='cvat-objects-sidebar-issues-list-header-right' {...dinamicRightProps} />
                         </Tooltip>
                     </Col>
                     <Col offset={3}>
                         <Tooltip title='Show/hide all the issues'>
                             {issuesHidden ? (
                                 <EyeInvisibleFilled
+                                    className='cvat-objects-sidebar-issues-list-header-hidden'
                                     onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(false))}
                                 />
                             ) : (
-                                <EyeOutlined onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))} />
+                                <EyeOutlined
+                                    className='cvat-objects-sidebar-issues-list-header-shown'
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))} />
                             )}
                         </Tooltip>
                     </Col>
