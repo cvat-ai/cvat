@@ -322,7 +322,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                             };
                         }
 
-                        return task;
+                        return _task;
                     },
                 ),
             };
