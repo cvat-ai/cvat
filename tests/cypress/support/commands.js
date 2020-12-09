@@ -480,6 +480,18 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
         });
 });
 
+Cypress.Commands.add('assignJobToUser', (user) => {
+    cy.get('.cvat-task-job-list').within(() => {
+        cy.get('.cvat-job-assignee-selector').click().type(user);
+        cy.wait(300);
+    });
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .within(() => {
+            cy.get(`.ant-select-item-option[title="${user}"]`).click();
+        });
+});
+
 Cypress.Commands.add('getScaleValue', () => {
     cy.get('#cvat_canvas_background')
         .should('have.attr', 'style')
