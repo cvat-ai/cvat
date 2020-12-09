@@ -3,12 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Tooltip from 'antd/lib/tooltip';
-
+import Icon, {
+    LinkOutlined,
+    CopyOutlined,
+    BlockOutlined,
+    GatewayOutlined,
+    RetweetOutlined,
+    DeleteOutlined,
+} from '@ant-design/icons';
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
 } from 'icons';
@@ -53,7 +59,7 @@ function CreateURLItem(props: ItemProps): JSX.Element {
     const { serverID, createURL } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Button disabled={serverID === undefined} type='link' icon='link' onClick={createURL}>
+            <Button disabled={serverID === undefined} type='link' icon={<LinkOutlined />} onClick={createURL}>
                 Create object URL
             </Button>
         </Menu.Item>
@@ -66,7 +72,7 @@ function MakeCopyItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <Tooltip title={`${copyShortcut} and ${pasteShortcut}`} mouseLeaveDelay={0}>
-                <Button type='link' icon='copy' onClick={copy}>
+                <Button type='link' icon={<CopyOutlined />} onClick={copy}>
                     Make a copy
                 </Button>
             </Tooltip>
@@ -80,7 +86,7 @@ function PropagateItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <Tooltip title={`${propagateShortcut}`} mouseLeaveDelay={0}>
-                <Button type='link' icon='block' onClick={propagate}>
+                <Button type='link' icon={<BlockOutlined />} onClick={propagate}>
                     Propagate
                 </Button>
             </Tooltip>
@@ -94,8 +100,7 @@ function TrackingItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <Tooltip title='Run tracking with the active tracker' mouseLeaveDelay={0}>
-                <Button type='link' onClick={activateTracking}>
-                    <Icon type='gateway' />
+                <Button type='link' icon={<GatewayOutlined />} onClick={activateTracking}>
                     Track
                 </Button>
             </Tooltip>
@@ -108,7 +113,7 @@ function SwitchOrientationItem(props: ItemProps): JSX.Element {
     const { switchOrientation } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Button type='link' icon='retweet' onClick={switchOrientation}>
+            <Button type='link' icon={<RetweetOutlined />} onClick={switchOrientation}>
                 Switch orientation
             </Button>
         </Menu.Item>
@@ -196,11 +201,11 @@ function RemoveItem(props: ItemProps): JSX.Element {
             <Tooltip title={`${removeShortcut}`} mouseLeaveDelay={0}>
                 <Button
                     type='link'
-                    icon='delete'
+                    icon={<DeleteOutlined />}
                     onClick={(): void => {
                         if (locked) {
                             Modal.confirm({
-								className: 'cvat-modal-confirm',
+                                className: 'cvat-modal-confirm',
                                 title: 'Object is locked',
                                 content: 'Are you sure you want to remove it?',
                                 onOk() {

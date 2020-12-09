@@ -5,8 +5,8 @@
 import React, { ReactPortal, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import Icon from 'antd/lib/icon';
 import Tooltip from 'antd/lib/tooltip';
+import { CheckOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
 interface Props {
     id: number;
@@ -44,9 +44,9 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 className='cvat-hidden-issue-label'
             >
                 {resolved ? (
-                    <Icon className='cvat-hidden-issue-resolved-indicator' type='check' />
+                    <CheckOutlined className='cvat-hidden-issue-resolved-indicator' />
                 ) : (
-                    <Icon className='cvat-hidden-issue-unsolved-indicator' type='close-circle' />
+                    <CloseCircleOutlined className='cvat-hidden-issue-unsolved-indicator' />
                 )}
                 {message}
             </Tag>

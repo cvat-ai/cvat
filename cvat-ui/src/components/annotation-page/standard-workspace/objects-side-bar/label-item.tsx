@@ -4,9 +4,11 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
+import {
+    LockFilled, UnlockOutlined, EyeInvisibleFilled, EyeOutlined,
+} from '@ant-design/icons';
 
 interface Props {
     labelName: string;
@@ -46,14 +48,15 @@ function LabelItemComponent(props: Props): JSX.Element {
 
     return (
         <Row
-            type='flex'
             align='middle'
             justify='space-around'
             className='cvat-objects-sidebar-label-item'
             style={{ display: visible ? 'flex' : 'none' }}
         >
             <Col span={4}>
-                <Button style={{ background: labelColor }} className='cvat-label-item-color-button' />
+                <Button style={{ background: labelColor }} className='cvat-label-item-color-button'>
+                    {' '}
+                </Button>
             </Col>
             <Col span={14}>
                 <Text strong className='cvat-text'>
@@ -62,16 +65,16 @@ function LabelItemComponent(props: Props): JSX.Element {
             </Col>
             <Col span={3}>
                 {statesLocked ? (
-                    <Icon {...classes.lock.enabled} type='lock' onClick={unlockStates} />
+                    <LockFilled {...classes.lock.enabled} onClick={unlockStates} />
                 ) : (
-                    <Icon {...classes.lock.disabled} type='unlock' onClick={lockStates} />
+                    <UnlockOutlined {...classes.lock.disabled} onClick={lockStates} />
                 )}
             </Col>
             <Col span={3}>
                 {statesHidden ? (
-                    <Icon {...classes.hidden.enabled} type='eye-invisible' onClick={showStates} />
+                    <EyeInvisibleFilled {...classes.hidden.enabled} onClick={showStates} />
                 ) : (
-                    <Icon {...classes.hidden.disabled} type='eye' onClick={hideStates} />
+                    <EyeOutlined {...classes.hidden.disabled} onClick={hideStates} />
                 )}
             </Col>
         </Row>

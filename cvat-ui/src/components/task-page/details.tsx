@@ -5,7 +5,7 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
-import Icon from 'antd/lib/icon';
+import { CheckCircleOutlined, LoadingOutlined, WarningOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -16,6 +16,7 @@ import getCore from 'cvat-core-wrapper';
 import { getReposData, syncRepos } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import Descriptions from 'antd/lib/descriptions';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
@@ -158,33 +159,11 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         const { overlap, segmentSize, imageQuality } = taskInstance;
 
         return (
-            <>
-                <Row type='flex' justify='start' align='middle'>
-                    <Col span={12}>
-                        <Text strong className='cvat-text-color'>
-                            Overlap size
-                        </Text>
-                        <br />
-                        <Text className='cvat-text-color'>{overlap}</Text>
-                    </Col>
-                    <Col span={12}>
-                        <Text strong className='cvat-text-color'>
-                            Segment size
-                        </Text>
-                        <br />
-                        <Text className='cvat-text-color'>{segmentSize}</Text>
-                    </Col>
-                </Row>
-                <Row type='flex' justify='space-between' align='middle'>
-                    <Col span={12}>
-                        <Text strong className='cvat-text-color'>
-                            Image quality
-                        </Text>
-                        <br />
-                        <Text className='cvat-text-color'>{imageQuality}</Text>
-                    </Col>
-                </Row>
-            </>
+            <Descriptions className='cvat-task-parameters' bordered layout='vertical' size='small'>
+                <Descriptions.Item label='Overlap size'>{overlap}</Descriptions.Item>
+                <Descriptions.Item label='Segment size'>{segmentSize}</Descriptions.Item>
+                <Descriptions.Item label='Image quality'>{imageQuality}</Descriptions.Item>
+            </Descriptions>
         );
     }
 
@@ -204,7 +183,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
 
         return (
-            <Row className='cvat-task-details-user-block' type='flex' justify='space-between' align='middle'>
+            <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
                 <Col span={12}>
                     {owner && (
                         <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
@@ -235,19 +214,19 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         </a>
                         {repositoryStatus === 'sync' && (
                             <Tag color='blue'>
-                                <Icon type='check-circle' />
+                                <CheckCircleOutlined />
                                 Synchronized
                             </Tag>
                         )}
                         {repositoryStatus === 'merged' && (
                             <Tag color='green'>
-                                <Icon type='check-circle' />
+                                <CheckCircleOutlined />
                                 Merged
                             </Tag>
                         )}
                         {repositoryStatus === 'syncing' && (
                             <Tag color='purple'>
-                                <Icon type='loading' />
+                                <LoadingOutlined />
                                 Syncing
                             </Tag>
                         )}
@@ -282,7 +261,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                         });
                                 }}
                             >
-                                <Icon type='warning' />
+                                <WarningOutlined />
                                 Synchronize
                             </Tag>
                         )}
@@ -297,7 +276,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
         return (
             <Row>
-                <Col>
+                <Col span={24}>
                     <LabelsEditorComponent
                         labels={taskInstance.labels.map((label: any): string => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
@@ -317,21 +296,21 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
         return (
             <div className='cvat-task-details'>
-                <Row type='flex' justify='start' align='middle'>
+                <Row justify='start' align='middle'>
                     <Col>{this.renderTaskName()}</Col>
                 </Row>
-                <Row type='flex' justify='space-between' align='top'>
+                <Row justify='space-between' align='top'>
                     <Col md={8} lg={7} xl={7} xxl={6}>
-                        <Row type='flex' justify='start' align='middle'>
+                        <Row justify='start' align='middle'>
                             <Col span={24}>{this.renderPreview()}</Col>
                         </Row>
                         <Row>
-                            <Col>{this.renderParameters()}</Col>
+                            <Col span={24}>{this.renderParameters()}</Col>
                         </Row>
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
-                        <Row type='flex' justify='space-between' align='middle'>
+                        <Row justify='space-between' align='middle'>
                             <Col span={12}>
                                 <BugTrackerEditor
                                     instance={taskInstance}

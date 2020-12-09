@@ -5,7 +5,8 @@
 import React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
-import { ClickParam } from 'antd/lib/menu/index';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import { CombinedState, TaskStatus } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
@@ -120,7 +121,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         updateJob,
     } = props;
 
-    const onClickMenu = (params: ClickParam, file?: File): void => {
+    const onClickMenu = (params: MenuInfo, file?: File): void => {
         if (params.keyPath.length > 1) {
             const [additionalKey, action] = params.keyPath;
             if (action === Actions.DUMP_TASK_ANNO) {
