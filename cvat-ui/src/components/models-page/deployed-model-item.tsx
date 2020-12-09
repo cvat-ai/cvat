@@ -17,7 +17,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
     const { model } = props;
 
     return (
-        <Row className='cvat-models-list-item' type='flex'>
+        <Row className='cvat-models-list-item'>
             <Col span={3}>
                 <Tag color='purple'>{model.framework}</Tag>
             </Col>
@@ -34,7 +34,9 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                 <Select showSearch placeholder='Supported labels' style={{ width: '90%' }} value='Supported labels'>
                     {model.labels.map(
                         (label): JSX.Element => (
-                            <Select.Option key={label}>{label}</Select.Option>
+                            <Select.Option value={label} key={label}>
+                                {label}
+                            </Select.Option>
                         ),
                     )}
                 </Select>

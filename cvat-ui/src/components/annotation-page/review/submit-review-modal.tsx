@@ -86,12 +86,12 @@ export default function SubmitReviewModal(): JSX.Element | null {
             okText='Submit'
             width={650}
         >
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col>
                     <Title level={4}>Submitting your review</Title>
                 </Col>
             </Row>
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col span={12}>
                     <Description title='Review summary' layout='horizontal' column={1} size='small' bordered>
                         <Description.Item label='Estimated quality: '>{estimatedQuality}</Description.Item>
@@ -119,16 +119,16 @@ export default function SubmitReviewModal(): JSX.Element | null {
                                 <RadioButton value={ReviewStatus.REJECTED}>Reject</RadioButton>
                             </Radio.Group>
                             {reviewStatus === ReviewStatus.REVIEW_FURTHER && (
-                                <Row align='middle' type='flex' justify='start'>
-                                    <Col>
+                                <Row align='middle' justify='start'>
+                                    <Col span={7}>
                                         <Text type='secondary'>Reviewer: </Text>
                                     </Col>
-                                    <Col offset={1}>
+                                    <Col span={16} offset={1}>
                                         <UserSelector value={reviewer} onSelect={setReviewer} />
                                     </Col>
                                 </Row>
                             )}
-                            <Row type='flex' justify='center' align='middle'>
+                            <Row justify='center' align='middle'>
                                 <Col>
                                     <Rate
                                         value={Math.round(estimatedQuality)}

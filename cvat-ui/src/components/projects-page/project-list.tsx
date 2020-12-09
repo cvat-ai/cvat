@@ -38,7 +38,7 @@ export default function ProjectListComponent(): JSX.Element {
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col className='cvat-projects-list' md={22} lg={18} xl={16} xxl={14}>
                     {projectInstances.map(
                         (row: any[]): JSX.Element => (
@@ -53,7 +53,7 @@ export default function ProjectListComponent(): JSX.Element {
                     )}
                 </Col>
             </Row>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-projects-pagination'

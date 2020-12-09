@@ -22,7 +22,7 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('.cvat-right-header').within(() => {
         cy.get('.cvat-header-menu-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
     });
-    cy.get('.anticon-logout').click();
+    cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
     cy.visit('/auth/login'); // clear query parameter "next"
 });
@@ -62,8 +62,8 @@ Cypress.Commands.add(
             cy.get('[placeholder="Label name"]').type(labelName);
             cy.get('.cvat-new-attribute-button').click();
             cy.get('[placeholder="Name"]').type(attrName);
-            cy.get('div[title="Select"]').click();
-            cy.get('li').contains('Text').click();
+            cy.get('.cvat-attribute-type-input').click();
+            cy.get('.ant-select-item-option').contains('Text').click();
             cy.get('[placeholder="Default value"]').type(textDefaultValue);
             if (multiAttrParams) {
                 cy.updateAttributes(multiAttrParams);
@@ -74,11 +74,12 @@ Cypress.Commands.add(
                 cy.get('.cvat-project-search-field').click();
                 cy.get('.ant-select-dropdown')
                     .not('.ant-select-dropdown-hidden')
-                    .contains(new RegExp(`^${projectName}$`, 'g'))
-                    .click();
+                    .within(() => {
+                        cy.get(`.ant-select-item-option[title="${projectName}"]`).click();
+                    });
             }
             cy.get('.cvat-project-search-field').within(() => {
-                cy.get('[type="text"]').should('have.value', projectName);
+                cy.get('[type="search"]').should('have.value', projectName);
             });
             cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
         }
@@ -136,7 +137,7 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     cy.contains('Draw new rectangle')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
-            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+            cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
@@ -157,12 +158,13 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
     cy.contains(regex)
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
-            cy.get('.ant-select-selection-selected-value').click();
+            cy.get('.ant-select-selection-item').click();
         });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
-        .contains(new RegExp(`^${labelName}$`, 'g'))
-        .click();
+        .within(() => {
+            cy.get(`.ant-select-item-option[title="${labelName}"]`).click();
+        });
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
@@ -178,7 +180,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
             .within(() => {
-                cy.get('.ant-select-selection-selected-value').should('have.text', selectedValueGlobal);
+                cy.get('.ant-select-selection-item').should('have.text', selectedValueGlobal);
             });
     });
 });
@@ -189,7 +191,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.contains('Draw new points')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
-            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+            cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             if (createPointParams.numberOfPoints) {
@@ -231,7 +233,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
         cy.contains('Draw new polygon')
             .parents('.cvat-draw-shape-popover-content')
             .within(() => {
-                cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+                cy.get('.ant-select-selection-item').then(($labelValue) => {
                     selectedValueGlobal = $labelValue.text();
                 });
                 if (createPolygonParams.numberOfPoints) {
@@ -265,7 +267,10 @@ Cypress.Commands.add('closeSettings', () => {
 
 Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
     cy.get('.cvat-workspace-selector').click();
-    cy.get('.ant-select-dropdown-menu-item').contains(mode).click();
+    cy.get('.cvat-workspace-selector-dropdown').within(() => {
+        cy.get(`.ant-select-item-option[title="${mode}"]`).click();
+    });
+
     cy.get('.cvat-workspace-selector').should('contain.text', mode);
     cy.changeLabelAAM(labelName);
 });
@@ -275,12 +280,13 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
         const cvatWorkspaceSelectorValue = value.text();
         if (cvatWorkspaceSelectorValue === 'Attribute annotation') {
             cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
-                cy.get('.ant-select-selection').click();
+                cy.get('.ant-select-selector').click();
             });
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
-                .contains(new RegExp(`^${labelName}$`, 'g'))
-                .click();
+                .within(() => {
+                    cy.get(`.ant-select-item-option[title="${labelName}"]`).click();
+                });
         }
     });
 });
@@ -291,7 +297,7 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.contains('Draw new cuboid')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
-            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+            cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             cy.contains(createCuboidParams.points).click();
@@ -323,8 +329,9 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
         });
         cy.get('.ant-select-dropdown')
             .not('.ant-select-dropdown-hidden')
-            .contains(new RegExp(`^${multiAttrParams.typeAttribute}$`, 'g'))
-            .click();
+            .within(() => {
+                cy.get(`.ant-select-item-option[title="${multiAttrParams.typeAttribute}"]`).click();
+            });
 
         if (multiAttrParams.typeAttribute === 'Text' || multiAttrParams.typeAttribute === 'Number') {
             cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
@@ -340,8 +347,9 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
             });
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
-                .contains(new RegExp(`^.*${multiAttrParams.additionalValue}.*$`, 'g'))
-                .click();
+                .within(() => {
+                    cy.get(`.ant-select-item-option[title="${multiAttrParams.additionalValue}"]`).click();
+                });
         }
     });
 });
@@ -352,7 +360,7 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.contains('Draw new polyline')
         .parents('.cvat-draw-shape-popover-content')
         .within(() => {
-            cy.get('.ant-select-selection-selected-value').then(($labelValue) => {
+            cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             if (createPolylineParams.numberOfPoints) {
@@ -413,7 +421,7 @@ Cypress.Commands.add('removeAnnotations', () => {
         cy.contains('Remove annotations').click();
     });
     cy.get('.ant-modal-content').within(() => {
-        cy.get('.ant-btn-danger').click();
+        cy.get('.ant-btn-dangerous').click();
     });
 });
 
@@ -455,10 +463,9 @@ Cypress.Commands.add('createTag', (labelName) => {
 
 Cypress.Commands.add('sidebarItemSortBy', (sortBy) => {
     cy.get('.cvat-objects-sidebar-ordering-selector').click();
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .contains(new RegExp(`^${sortBy}$`, 'g'))
-        .click();
+    cy.get('.cvat-objects-sidebar-ordering-dropdown').within(() => {
+        cy.get(`.ant-select-item-option[title="${sortBy}"]`).click();
+    });
 });
 
 Cypress.Commands.add('goToRegisterPage', () => {
@@ -477,13 +484,13 @@ Cypress.Commands.add('getScaleValue', () => {
 Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
     if (clear) {
         cy.get('.cvat-annotations-filters-input').within(() => {
-            cy.get('.ant-select-selection__choice__remove').click();
+            cy.get('.ant-select-selection-item-remove').click();
         });
     }
     cy.get('.cvat-annotations-filters-input')
         .type(`${filterValue}{Enter}`)
         .within(() => {
-            cy.get('.ant-select-selection__choice__content').should('have.text', filterValue);
+            cy.get('.ant-select-selection-item-content').should('have.text', filterValue);
         });
 });
 
