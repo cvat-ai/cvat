@@ -45,47 +45,55 @@ const searchUsers = debounce(
 export default function UserSelector(props: Props): JSX.Element {
     const { value, className, onSelect } = props;
     const [searchPhrase, setSearchPhrase] = useState('');
-
+    const [initialUsers, setInitialUsers] = useState<User[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const autocompleteRef = useRef<RefSelectProps | null>(null);
+
+    useEffect(() => {
+        core.users.get({ limit: 10 }).then((result: User[]) => {
+            if (result) {
+                setInitialUsers(result);
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        setUsers(initialUsers);
+    }, [initialUsers]);
 
     const handleSearch = (searchValue: string): void => {
         if (searchValue) {
             searchUsers(searchValue, setUsers);
         } else {
-            setUsers([]);
+            setUsers(initialUsers);
         }
         setSearchPhrase(searchValue);
     };
 
-    const handleFocus = (open: boolean): void => {
-        if (!users.length && open) {
-            core.users.get({ limit: 10 }).then((result: User[]) => {
-                if (result) {
-                    setUsers(result);
-                }
-            });
-        }
-        if (!open && searchPhrase !== value?.username) {
-            setSearchPhrase('');
-            if (value) {
-                onSelect(null);
-            }
+    const onBlur = (): void => {
+        if (!searchPhrase && value) {
+            onSelect(null);
         }
     };
 
     const handleSelect = (_value: SelectValue): void => {
         setSearchPhrase(users.filter((user) => user.id === +_value)[0].username);
-        onSelect(_value ? users.filter((user) => user.id === +_value)[0] : null);
+        const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
+        if ((user?.id || null) !== (value?.id || null)) {
+            onSelect(user);
+        }
     };
 
     useEffect(() => {
-        if (value && !users.filter((user) => user.id === value.id).length) {
-            core.users.get({ id: value.id }).then((result: User[]) => {
-                const [user] = result;
-                setUsers([...users, user]);
-                setSearchPhrase(user.username);
-            });
+        if (value) {
+            if (!users.filter((user) => user.id === value.id).length) {
+                core.users.get({ id: value.id }).then((result: User[]) => {
+                    const [user] = result;
+                    setUsers([...users, user]);
+                });
+            }
+
+            setSearchPhrase(value.username);
         }
     }, [value]);
 
@@ -97,8 +105,8 @@ export default function UserSelector(props: Props): JSX.Element {
             placeholder='Select a user'
             onSearch={handleSearch}
             onSelect={handleSelect}
+            onBlur={onBlur}
             className={combinedClassName}
-            onDropdownVisibleChange={handleFocus}
             options={users.map((user) => ({
                 value: user.id.toString(),
                 label: user.username,

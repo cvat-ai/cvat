@@ -37,7 +37,13 @@ class TaskPageComponent extends React.PureComponent<Props> {
     }
 
     public componentDidUpdate(): void {
-        const { deleteActivity, history } = this.props;
+        const {
+            deleteActivity, history, task, fetching, getTask,
+        } = this.props;
+
+        if (task === null && !fetching) {
+            getTask();
+        }
 
         if (deleteActivity) {
             history.replace('/tasks');

@@ -120,10 +120,10 @@ export default function SubmitReviewModal(): JSX.Element | null {
                             </Radio.Group>
                             {reviewStatus === ReviewStatus.REVIEW_FURTHER && (
                                 <Row align='middle' justify='start'>
-                                    <Col>
+                                    <Col span={7}>
                                         <Text type='secondary'>Reviewer: </Text>
                                     </Col>
-                                    <Col offset={1}>
+                                    <Col span={16} offset={1}>
                                         <UserSelector value={reviewer} onSelect={setReviewer} />
                                     </Col>
                                 </Row>

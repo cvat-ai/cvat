@@ -117,7 +117,9 @@
 }
 
 .cvat-job-item-status {
-    .cvat-job-annotation-color {
+    .cvat-job-annotation-color,
+    .cvat-job-validation-color,
+    .cvat-job-completed-color {
         span {
             margin-left: $grid-unit-size;
         }
