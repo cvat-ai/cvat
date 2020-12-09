@@ -61,17 +61,8 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.SUBMIT_REVIEW_SUCCESS: {
-            const {
-                activeReview, reviews, issues, frame,
-            } = action.payload;
-            const frameIssues = computeFrameIssues(issues, activeReview, frame);
-
             return {
                 ...state,
-                activeReview,
-                reviews,
-                issues,
-                frameIssues,
                 fetching: {
                     ...state.fetching,
                     reviewId: null,

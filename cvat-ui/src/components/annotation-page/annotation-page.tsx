@@ -53,11 +53,13 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         };
     }, []);
 
-    if (job === null) {
-        if (!fetching) {
+    useEffect(() => {
+        if (job === null && !fetching) {
             getJob();
         }
+    }, [job, fetching]);
 
+    if (job === null) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
