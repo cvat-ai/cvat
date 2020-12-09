@@ -28,14 +28,16 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
-    public componentDidUpdate(): void {
-        const {
-            deleteActivity, history, task, fetching, getTask,
-        } = this.props;
+    public componentDidMount(): void {
+        const { task, fetching, getTask } = this.props;
 
         if (task === null && !fetching) {
             getTask();
         }
+    }
+
+    public componentDidUpdate(): void {
+        const { deleteActivity, history } = this.props;
 
         if (deleteActivity) {
             history.replace('/tasks');
