@@ -61,18 +61,29 @@ export default function UserSelector(props: Props): JSX.Element {
         setUsers(initialUsers);
     }, [initialUsers]);
 
-    const handleSearch = (searchValue: string): void => {
-        if (searchValue) {
-            searchUsers(searchValue, setUsers);
+    useEffect(() => {
+        if (searchPhrase) {
+            searchUsers(searchPhrase, setUsers);
         } else {
             setUsers(initialUsers);
         }
+    }, [searchPhrase]);
+
+    const handleSearch = (searchValue: string): void => {
         setSearchPhrase(searchValue);
     };
 
     const onBlur = (): void => {
         if (!searchPhrase && value) {
             onSelect(null);
+        } else if (searchPhrase) {
+            const potentialUsers = users.filter((_user) => _user.username.includes(searchPhrase));
+            if (potentialUsers.length === 1) {
+                setSearchPhrase(potentialUsers[0].username);
+                onSelect(potentialUsers[0]);
+            } else {
+                setSearchPhrase(value?.username || '');
+            }
         }
     };
 

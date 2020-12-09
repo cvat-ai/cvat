@@ -37,10 +37,10 @@ context('Value must be a user instance.', () => {
             // Before fix:
             // The following error originated from your application code, not from Cypress.
             // > Value must be a user instance
-            cy.get('.cvat-spinner').should('exist');
+            cy.get('.cvat-spinner', { timeout: 500 }).should('not.exist');
             // Remove the user's assignment for next tests.
             cy.get('.cvat-task-details-user-block').within(() => {
-                cy.get('[type="text"]').click().clear().type('{Enter}');
+                cy.get('[type="search"]').click().clear().type('{Enter}');
             });
         });
     });
