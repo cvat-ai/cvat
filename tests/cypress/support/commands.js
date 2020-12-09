@@ -23,6 +23,7 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
+    cy.visit('/auth/login'); // clear query parameter "next"
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {

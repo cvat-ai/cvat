@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added documentation on how to mount cloud starage(AWS S3 bucket, Azure container, Google Drive) as FUSE (<https://github.com/openvinotoolkit/cvat/pull/2377>)
 - Added ability to work with share files without copying inside (<https://github.com/openvinotoolkit/cvat/pull/2377>)
 - Tooltips in label selectors (<https://github.com/openvinotoolkit/cvat/pull/2509>)
+- Page redirect after login using `next` query parameter (<https://github.com/openvinotoolkit/cvat/pull/2527>)
 
 ### Changed
 
@@ -41,10 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Projects view layout fix (<https://github.com/openvinotoolkit/cvat/pull/2503>)
 - Fixed the tasks view (infinite loading) when it is impossible to get a preview of the task (<https://github.com/openvinotoolkit/cvat/pull/2504>)
 - Empty frames navigation (<https://github.com/openvinotoolkit/cvat/pull/2505>)
-- Disabled position editing in AAM (<https://github.com/openvinotoolkit/cvat/pull/2506>)
 - TypeError: Cannot read property 'toString' of undefined (<https://github.com/openvinotoolkit/cvat/pull/2517>)
 - Extra shapes are drawn after Esc, or G pressed while drawing a region in grouping (<https://github.com/openvinotoolkit/cvat/pull/2507>)
 - Reset state (reviews, issues) after logout or changing a job (<https://github.com/openvinotoolkit/cvat/pull/2525>)
+- TypeError: Cannot read property 'id' of undefined when updating a task (<https://github.com/openvinotoolkit/cvat/pull/2544>)
 
 ### Security
 
