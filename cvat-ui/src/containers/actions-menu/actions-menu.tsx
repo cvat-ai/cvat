@@ -10,7 +10,8 @@ import { CombinedState } from 'reducers/interfaces';
 
 import { modelsActions } from 'actions/models-actions';
 import { dumpAnnotationsAsync, loadAnnotationsAsync, exportDatasetAsync, deleteTaskAsync } from 'actions/tasks-actions';
-import { ClickParam } from 'antd/lib/menu';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 interface OwnProps {
     taskInstance: any;
@@ -89,7 +90,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         openRunModelWindow,
     } = props;
 
-    function onClickMenu(params: ClickParam, file?: File): void {
+    function onClickMenu(params: MenuInfo, file?: File): void {
         if (params.keyPath.length > 1) {
             const [additionalKey, action] = params.keyPath;
             if (action === Actions.DUMP_TASK_ANNO) {

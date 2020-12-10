@@ -23,66 +23,58 @@ context('Delete unlock/lock object', () => {
         cy.get('.cvat-objects-sidebar-state-item').within(() => {
             cy.get('.cvat-object-item-button-lock').click();
         });
-    };
+    }
 
     function deleteObjectViaShortcut(shortcut, stateLockObject) {
         if (stateLockObject == 'unlock') {
             cy.get('.cvat-canvas-container').within(() => {
-                cy.get('.cvat_canvas_shape')
-                    .trigger('mousemove')
-                    .should('have.class', 'cvat_canvas_shape_activated');
+                cy.get('.cvat_canvas_shape').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
             });
-        };
-        cy.get('body')
-            .type(shortcut);
-    };
+        }
+        cy.get('body').type(shortcut);
+    }
 
     function clickRemoveOnDropdownMenu() {
-        cy.get('.cvat-object-item-menu')
-            .contains(new RegExp('^Remove$', 'g'))
-            .click({ force: true });
-    };
+        cy.get('.cvat-object-item-menu').contains(new RegExp('^Remove$', 'g')).click({ force: true });
+    }
 
     function deleteObjectViaGUIFromSidebar() {
         cy.get('.cvat-objects-sidebar-states-list').within(() => {
             cy.get('.cvat-objects-sidebar-state-item').within(() => {
-                cy.get('[aria-label="icon: more"]').click();
+                cy.get('span[aria-label="more"]').click();
             });
         });
         clickRemoveOnDropdownMenu();
-    };
+    }
 
     function deleteObjectViaGUIFromObject() {
         cy.get('.cvat-canvas-container').within(() => {
-            cy.get('.cvat_canvas_shape')
-                .trigger('mousemove')
-                .rightclick();
+            cy.get('.cvat_canvas_shape').trigger('mousemove').rightclick();
         });
         cy.get('.cvat-canvas-context-menu').within(() => {
             cy.get('.cvat-objects-sidebar-state-item').within(() => {
-                cy.get('[aria-label="icon: more"]').click();
+                cy.get('span[aria-label="more"]').click();
             });
         });
         clickRemoveOnDropdownMenu();
-    };
+    }
 
     function actionOnConfirmWindow(textBuntton) {
         cy.get('.cvat-modal-confirm').within(() => {
-            cy.contains(new RegExp(`^${textBuntton}$`, 'g'))
-                .click();
+            cy.contains(new RegExp(`^${textBuntton}$`, 'g')).click();
         });
-    };
+    }
 
     function checkFailDeleteLockObject(shortcut) {
         deleteObjectViaShortcut(shortcut, 'lock');
         checkExistObject('exist');
         cy.get('.cvat-notification-notice-remove-object-failed').should('exist');
-    };
+    }
 
     function checkExistObject(state) {
         cy.get('.cvat_canvas_shape').should(state);
         cy.get('.cvat-objects-sidebar-state-item').should(state);
-    };
+    }
 
     before(() => {
         cy.openTaskJob(taskName);

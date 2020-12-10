@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Menu from 'antd/lib/menu';
-import Icon from 'antd/lib/icon';
+import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 
 function isDefaultFormat(dumperName: string, taskMode: string): boolean {
@@ -35,11 +35,11 @@ export default function DumpSubmenu(props: Props): JSX.Element {
                         const isDefault = isDefaultFormat(dumper.name, taskMode);
                         return (
                             <Menu.Item key={dumper.name} disabled={disabled} className='cvat-menu-dump-submenu-item'>
-                                <Icon type='download' />
+                                <DownloadOutlined />
                                 <Text strong={isDefault} disabled={disabled}>
                                     {dumper.name}
                                 </Text>
-                                {pending && <Icon style={{ marginLeft: 10 }} type='loading' />}
+                                {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
                             </Menu.Item>
                         );
                     },
