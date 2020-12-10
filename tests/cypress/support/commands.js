@@ -253,8 +253,7 @@ Cypress.Commands.add('openSettings', () => {
 });
 
 Cypress.Commands.add('closeSettings', () => {
-    cy.get('.ant-modal-content')
-        .should('contain', 'Settings')
+    cy.get('.cvat-settings-modal')
         .within(() => {
             cy.contains('button', 'Close').click();
         });

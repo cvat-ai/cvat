@@ -9,18 +9,7 @@ import { taskName } from '../../support/const';
 context('Settings "Player step"', () => {
     const caseId = '29';
     const countJumpStep = 3;
-    let startStep;
-
-    function changePlayerStep() {
-        cy.openSettings();
-        cy.get('.cvat-settings-modal').within(() => {
-            cy.contains('Player').click();
-            cy.get('.cvat-player-settings-step').within(() => {
-                cy.get('[role="spinbutton"]').clear().type(countJumpStep);
-            });
-        });
-        cy.closeSettings();
-    };
+    let startFrame;
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -28,35 +17,43 @@ context('Settings "Player step"', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Change player step ', () => {
-            changePlayerStep();
-            // get and save current step
+            cy.openSettings();
+            cy.get('.cvat-settings-modal').within(() => {
+                cy.contains('Player').click();
+                cy.get('.cvat-player-settings-step').within(() => {
+                    cy.get('[role="spinbutton"]').clear().type(countJumpStep);
+                });
+            });
+            cy.closeSettings();
+
+            // get and save start frame
             cy.get('.cvat-player-frame-selector').within(() => {
                 cy.get('[role="spinbutton"]')
                     .should('have.attr', 'aria-valuenow')
-                    .then((valueStepNow) => {
-                        startStep = Number(valueStepNow);
+                    .then((valueFrameNow) => {
+                        startFrame = Number(valueFrameNow);
                     });
             });
         });
 
         it('Jump to forward frame via GUI', () => {
             cy.get('.cvat-player-forward-button').click();
-            cy.checkFrameNum(startStep + countJumpStep);
+            cy.checkFrameNum(startFrame + countJumpStep);
         });
 
         it('Jump to backward frame via GUI', () => {
             cy.get('.cvat-player-backward-button').click();
-            cy.checkFrameNum(startStep);
+            cy.checkFrameNum(startFrame);
         });
 
         it('Jump to forward frame via shortcuts', () => {
             cy.get('body').type('{v}');
-            cy.checkFrameNum(startStep + countJumpStep);
+            cy.checkFrameNum(startFrame + countJumpStep);
         });
 
         it('Jump to backward frame via shortcuts', () => {
             cy.get('body').type('{c}');
-            cy.checkFrameNum(startStep);
+            cy.checkFrameNum(startFrame);
         });
     });
 });
