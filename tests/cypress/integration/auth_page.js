@@ -27,6 +27,6 @@ describe('Check server availability', () => {
 
     it('Click to "Sign in" button', () => {
         cy.get('[type="submit"]').click();
-        cy.wait(10000);
+        cy.wait(1000);
     });
 });

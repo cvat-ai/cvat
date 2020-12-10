@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import { ActiveControl } from 'reducers/interfaces';

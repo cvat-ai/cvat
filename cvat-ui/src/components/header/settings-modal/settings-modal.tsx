@@ -5,9 +5,9 @@
 import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal/Modal';
+import { PlayCircleOutlined, LaptopOutlined } from '@ant-design/icons';
 
 import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspace-settings';
 import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
@@ -28,32 +28,32 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             onCancel={onClose}
             width={800}
             className='cvat-settings-modal'
-            footer={
+            footer={(
                 <Button type='primary' onClick={onClose}>
                     Close
                 </Button>
-            }
+            )}
         >
             <div className='cvat-settings-tabs'>
                 <Tabs type='card' tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}>
                     <Tabs.TabPane
-                        tab={
+                        tab={(
                             <span>
-                                <Icon type='play-circle' />
+                                <PlayCircleOutlined />
                                 <Text>Player</Text>
                             </span>
-                        }
+                        )}
                         key='player'
                     >
                         <PlayerSettingsContainer />
                     </Tabs.TabPane>
                     <Tabs.TabPane
-                        tab={
+                        tab={(
                             <span>
-                                <Icon type='laptop' />
+                                <LaptopOutlined />
                                 <Text>Workspace</Text>
                             </span>
-                        }
+                        )}
                         key='workspace'
                     >
                         <WorkspaceSettingsContainer />

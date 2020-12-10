@@ -20,7 +20,7 @@
 .cvat-menu-load-submenu-item,
 .cvat-menu-dump-submenu-item,
 .cvat-menu-export-submenu-item {
-    > i {
+    > span[role='img'] {
         color: $info-icon-color;
     }
 

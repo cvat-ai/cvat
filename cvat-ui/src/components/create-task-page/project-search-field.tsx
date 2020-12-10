@@ -62,10 +62,13 @@ export default function ProjectSearchField(props: Props): JSX.Element {
         if (value && !projects.filter((project) => project.id === value).length) {
             core.projects.get({ id: value }).then((result: Project[]) => {
                 const [project] = result;
-                setProjects([...projects, {
-                    id: project.id,
-                    name: project.name,
-                }]);
+                setProjects([
+                    ...projects,
+                    {
+                        id: project.id,
+                        name: project.name,
+                    },
+                ]);
                 setSearchPhrase(project.name);
                 onSelect(project.id);
             });
@@ -80,12 +83,10 @@ export default function ProjectSearchField(props: Props): JSX.Element {
             onSelect={handleSelect}
             className='cvat-project-search-field'
             onDropdownVisibleChange={handleFocus}
-            dataSource={
-                projects.map((proj) => ({
-                    value: proj.id.toString(),
-                    text: proj.name,
-                }))
-            }
+            options={projects.map((proj) => ({
+                value: proj.id.toString(),
+                label: proj.name,
+            }))}
         />
     );
 }

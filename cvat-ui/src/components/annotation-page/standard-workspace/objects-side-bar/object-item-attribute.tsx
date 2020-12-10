@@ -134,9 +134,9 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                     <InputNumber
                         disabled={readonly}
                         size='small'
-                        onChange={(value: number | undefined): void => {
-                            if (typeof value === 'number') {
-                                changeAttribute(attrID, `${clamp(value, min, max)}`);
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                changeAttribute(attrID, `${clamp(+value, min, max)}`);
                             }
                         }}
                         value={+attrValue}

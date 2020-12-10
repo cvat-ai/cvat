@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Popover from 'antd/lib/popover';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { PointIcon } from 'icons';
@@ -20,22 +20,24 @@ interface Props {
 function DrawPointsControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
 
-    const dynamcPopoverPros = isDrawing
-        ? {
-              overlayStyle: {
-                  display: 'none',
-              },
-          }
-        : {};
+    const dynamcPopoverPros = isDrawing ?
+        {
+            overlayStyle: {
+                display: 'none',
+            },
+        } :
+        {};
 
-    const dynamicIconProps = isDrawing
-        ? {
-              className: 'cvat-active-canvas-control',
-              onClick: (): void => {
-                  canvasInstance.draw({ enabled: false });
-              },
-          }
-        : {};
+    const dynamicIconProps = isDrawing ?
+        {
+            className: 'cvat-draw-points-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-draw-points-control',
+        };
 
     return (
         <Popover
@@ -44,7 +46,7 @@ function DrawPointsControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POINTS} />}
         >
-            <Icon className='cvat-draw-points-control' {...dynamicIconProps} component={PointIcon} />
+            <Icon {...dynamicIconProps} component={PointIcon} />
         </Popover>
     );
 }

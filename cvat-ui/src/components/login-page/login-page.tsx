@@ -31,7 +31,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col {...sizes}>
                     <Title level={2}> Login </Title>
                     <LoginForm
@@ -40,7 +40,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                             onLogin(loginData.username, loginData.password);
                         }}
                     />
-                    <Row type='flex' justify='start' align='top'>
+                    <Row justify='start' align='top'>
                         <Col>
                             <Text strong>
                                 New to CVAT? Create
@@ -49,7 +49,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                         </Col>
                     </Row>
                     {renderResetPassword && (
-                        <Row type='flex' justify='start' align='top'>
+                        <Row justify='start' align='top'>
                             <Col>
                                 <Text strong>
                                     <Link to='/auth/password/reset'>Forgot your password?</Link>
