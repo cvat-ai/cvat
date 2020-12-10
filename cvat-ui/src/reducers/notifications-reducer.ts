@@ -776,6 +776,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         removing: {
                             message: 'Could not remove the object',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-object-failed',
                         },
                     },
                 },

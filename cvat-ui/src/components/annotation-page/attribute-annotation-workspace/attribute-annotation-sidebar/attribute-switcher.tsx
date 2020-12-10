@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 
 interface Props {
     currentAttribute: string;
@@ -17,14 +17,16 @@ interface Props {
 }
 
 function AttributeSwitcher(props: Props): JSX.Element {
-    const { currentAttribute, currentIndex, attributesCount, nextAttribute, normalizedKeyMap } = props;
+    const {
+        currentAttribute, currentIndex, attributesCount, nextAttribute, normalizedKeyMap,
+    } = props;
 
     const title = `${currentAttribute} [${currentIndex + 1}/${attributesCount}]`;
     return (
         <div className='attribute-annotation-sidebar-attribute-switcher'>
             <Tooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`} mouseLeaveDelay={0}>
                 <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(-1)}>
-                    <Icon type='left' />
+                    <LeftOutlined />
                 </Button>
             </Tooltip>
             <Tooltip title={title} mouseLeaveDelay={0}>
@@ -33,7 +35,7 @@ function AttributeSwitcher(props: Props): JSX.Element {
             </Tooltip>
             <Tooltip title={`Next attribute ${normalizedKeyMap.NEXT_ATTRIBUTE}`} mouseLeaveDelay={0}>
                 <Button disabled={attributesCount <= 1} onClick={() => nextAttribute(1)}>
-                    <Icon type='right' />
+                    <RightOutlined />
                 </Button>
             </Tooltip>
         </div>

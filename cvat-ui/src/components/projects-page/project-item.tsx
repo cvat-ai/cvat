@@ -12,6 +12,7 @@ import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
+import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState, Project } from 'reducers/interfaces';
 import ProjectActionsMenuComponent from './actions-menu';
@@ -88,7 +89,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                         </div>
                         <div>
                             <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={projectInstance} />}>
-                                <Button type='link' size='large' icon='more' />
+                                <Button type='link' size='large' icon={<MoreOutlined />} />
                             </Dropdown>
                         </div>
                     </div>

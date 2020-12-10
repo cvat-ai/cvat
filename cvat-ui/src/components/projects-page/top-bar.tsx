@@ -7,6 +7,7 @@ import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
+import { PlusOutlined } from '@ant-design/icons';
 
 import SearchField from './search-field';
 
@@ -14,7 +15,7 @@ export default function TopBarComponent(): JSX.Element {
     const history = useHistory();
 
     return (
-        <Row type='flex' justify='center' align='middle' className='cvat-projects-top-bar'>
+        <Row justify='center' align='middle' className='cvat-projects-top-bar'>
             <Col md={11} lg={9} xl={8} xxl={7}>
                 <Text className='cvat-title'>Projects</Text>
                 <SearchField />
@@ -26,7 +27,7 @@ export default function TopBarComponent(): JSX.Element {
                     className='cvat-create-project-button'
                     type='primary'
                     onClick={(): void => history.push('/projects/create')}
-                    icon='plus'
+                    icon={<PlusOutlined />}
                 >
                     Create new project
                 </Button>

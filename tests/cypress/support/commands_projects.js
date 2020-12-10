@@ -16,8 +16,8 @@ Cypress.Commands.add('createProjects', (projectName, labelName, attrName, textDe
     cy.get('[placeholder="Label name"]').type(labelName);
     cy.get('.cvat-new-attribute-button').click();
     cy.get('[placeholder="Name"]').type(attrName);
-    cy.get('div[title="Select"]').click();
-    cy.get('li').contains('Text').click();
+    cy.get('.cvat-attribute-type-input').click();
+    cy.get('.ant-select-item-option').contains('Text').click();
     cy.get('[placeholder="Default value"]').type(textDefaultValue);
     if (multiAttrParams) {
         cy.updateAttributes(multiAttrParams);
@@ -66,10 +66,12 @@ Cypress.Commands.add('deleteProject', (projectName, projectID) => {
 
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.get('.cvat-project-details').within(() => {
-        cy.get('.cvat-user-search-field').click();
+        cy.get('.cvat-user-search-field').click().type(user);
+        cy.wait(300);
     });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
-        .contains(new RegExp(`^${user}$`, 'g'))
-        .click();
+        .within(() => {
+            cy.get(`.ant-select-item-option[title="${user}"]`).click();
+        });
 });

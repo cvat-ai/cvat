@@ -19,6 +19,10 @@
             background: $header-color;
             border-radius: 0;
             height: 25px;
+
+            .ant-collapse-arrow {
+                top: $grid-unit-size;
+            }
         }
 
         > .ant-collapse-content {
@@ -48,7 +52,11 @@
     box-sizing: border-box;
     border: none;
 
-    .ant-tabs-card-bar {
+    .ant-tabs-nav {
+        &::before {
+            content: none;
+        }
+
         border: none;
         margin-bottom: 0;
         padding-top: 25px;
@@ -75,7 +83,7 @@
     box-sizing: border-box;
 
     > div > div {
-        > i {
+        > span[role='img'] {
             font-size: 16px;
             color: $objects-bar-icons-color;
 
@@ -133,7 +141,7 @@
             text-align: center;
             margin: 0 2px;
 
-            > i {
+            > span[role='img'] {
                 @extend .cvat-object-sidebar-icon;
             }
 
@@ -182,7 +190,7 @@
             line-height: 12px;
         }
 
-        > div:nth-child(3) > i {
+        > div:nth-child(3) > span {
             @extend .cvat-object-sidebar-icon;
 
             font-size: 25px;
@@ -198,7 +206,7 @@
             margin-top: 5px;
         }
 
-        i {
+        span[role='img'] {
             @extend .cvat-object-sidebar-icon;
         }
     }
@@ -216,6 +224,10 @@
             background: inherit;
             padding-top: 2px;
             padding-bottom: 2px;
+
+            .ant-collapse-arrow {
+                top: $grid-unit-size;
+            }
         }
 
         > .ant-collapse-content {
@@ -281,10 +293,10 @@
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
-    border-bottom: 1px solid $border-color-2;
+    border-bottom: 1px solid $border-color-1;
     padding: 5px;
 
-    i {
+    span {
         @extend .cvat-object-sidebar-icon;
     }
 

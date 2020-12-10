@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import { LoadingOutlined, QuestionCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
@@ -55,7 +55,7 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
         return (
             <>
                 <p>Loading.. </p>
-                <Icon type='loading' />
+                <LoadingOutlined />
             </>
         );
     }
@@ -146,7 +146,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     <Text strong className={progressColor}>
                         {status}
                         <Tooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
-                            <Icon type='question-circle' />
+                            <QuestionCircleOutlined />
                         </Tooltip>
                     </Text>
                 );
@@ -222,7 +222,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
     return (
         <div className='cvat-task-job-list'>
-            <Row type='flex' justify='space-between' align='middle'>
+            <Row justify='space-between' align='middle'>
                 <Col>
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
                     <Tooltip trigger='click' title='Copied to clipboard!' mouseLeaveDelay={0}>
@@ -250,7 +250,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                                 copy(serialized);
                             }}
                         >
-                            <Icon type='copy' theme='twoTone' />
+                            <CopyOutlined />
                             Copy
                         </Button>
                     </Tooltip>
