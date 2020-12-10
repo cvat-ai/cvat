@@ -39,7 +39,7 @@ context('Canvas brightness/contrast/saturation feature', () => {
         it('Check apply of settings', () => {
             let stringAction = generateStringCountAction(countActionMoveSlider);
             cy.openSettings();
-            cy.get('.ant-modal-content').within(() => {
+            cy.get('.cvat-settings-modal').within(() => {
                 cy.contains('Player').click();
                 cy.wrap(classNameSliders).each(($el) => {
                     cy.wrap($el).get($el).within(() => {
