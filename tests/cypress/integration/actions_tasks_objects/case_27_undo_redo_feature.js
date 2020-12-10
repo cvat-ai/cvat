@@ -36,7 +36,7 @@ context('Undo/redo feature', () => {
         secondY: 250,
     };
 
-    function checkExistObject(stateFirstObject, stateSecondObject, stateThirdObject){
+    function checkExistObject(stateFirstObject, stateSecondObject, stateThirdObject) {
         // check objects on background
         cy.get('#cvat_canvas_shape_1').should(stateFirstObject);
         cy.get('#cvat_canvas_shape_2').should(stateSecondObject);
@@ -49,15 +49,14 @@ context('Undo/redo feature', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
+
+        // create objects
+        cy.createRectangle(firstRectangleShape2Points);
+        cy.createRectangle(secondRectangleShape2Points);
+        cy.createRectangle(thirdRectangleShape2Points);
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Create objects', () => {
-            cy.createRectangle(firstRectangleShape2Points);
-            cy.createRectangle(secondRectangleShape2Points);
-            cy.createRectangle(thirdRectangleShape2Points);
-        });
-
         it('Undo objects', () => {
             cy.contains('.cvat-annotation-header-button', 'Undo').click();
             checkExistObject('exist', 'exist', 'not.exist');
