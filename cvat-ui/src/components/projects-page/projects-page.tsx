@@ -47,20 +47,13 @@ export default function ProjectsPageComponent(): JSX.Element {
     }, [gettingQuery]);
 
     if (projectFetching) {
-        return (
-            <Spin size='large' className='cvat-spinner' />
-        );
+        return <Spin size='large' className='cvat-spinner' />;
     }
 
     return (
         <div className='cvat-projects-page'>
             <TopBarComponent />
-            { projectsCount
-                ? (
-                    <ProjectListComponent />
-                ) : (
-                    <EmptyListComponent notFound={anySearchQuery} />
-                )}
+            {projectsCount ? <ProjectListComponent /> : <EmptyListComponent notFound={anySearchQuery} />}
             <FeedbackComponent />
         </div>
     );

@@ -8,7 +8,7 @@ import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import moment from 'moment';
@@ -104,7 +104,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={6}>
-                <Row type='flex' justify='space-between' align='top'>
+                <Row justify='space-between' align='top'>
                     <Col>
                         <svg height='8' width='8' className={progressColor}>
                             <circle cx='4' cy='4' r='4' strokeWidth='0' />
@@ -141,7 +141,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={4}>
-                <Row type='flex' justify='end'>
+                <Row justify='end'>
                     <Col>
                         <Button
                             className='cvat-item-open-task-button'
@@ -158,7 +158,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         </Button>
                     </Col>
                 </Row>
-                <Row type='flex' justify='end'>
+                <Row justify='end'>
                     <Col className='cvat-item-open-task-actions'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
@@ -183,7 +183,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         }
 
         return (
-            <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top' style={{ ...style }}>
+            <Row className='cvat-tasks-list-item' justify='center' align='top' style={{ ...style }}>
                 {this.renderPreview()}
                 {this.renderDescription()}
                 {this.renderProgress()}

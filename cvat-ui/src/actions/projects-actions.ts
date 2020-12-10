@@ -141,9 +141,11 @@ export function updateProjectAsync(projectInstance: any): ThunkAction {
             dispatch(projectActions.updateProject());
             await projectInstance.save();
             const [project] = await cvat.projects.get({ id: projectInstance.id });
+            // TODO: Check case when a project is not available anymore after update
+            // (assignee changes assignee and project is not public)
             dispatch(projectActions.updateProjectSuccess(project));
             project.tasks.forEach((task: any) => {
-                dispatch(updateTaskSuccess(task));
+                dispatch(updateTaskSuccess(task, task.id));
             });
         } catch (error) {
             let project = null;

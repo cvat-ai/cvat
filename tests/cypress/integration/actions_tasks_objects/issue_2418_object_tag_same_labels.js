@@ -37,9 +37,7 @@ context('Check hide/unhide functionality from label tab for object and tag with 
                 cy.contains(labelName)
                     .parents('.cvat-objects-sidebar-label-item')
                     .within(() => {
-                        cy.get('.cvat-label-item-button-hidden')
-                            .click()
-                            .should('have.class', 'cvat-label-item-button-hidden-enabled');
+                        cy.get('.cvat-label-item-button-hidden').click();
                     });
             });
             cy.get('#cvat_canvas_shape_1').should('be.hidden');
@@ -49,9 +47,7 @@ context('Check hide/unhide functionality from label tab for object and tag with 
                 cy.contains(labelName)
                     .parents('.cvat-objects-sidebar-label-item')
                     .within(() => {
-                        cy.get('.cvat-label-item-button-hidden')
-                            .click()
-                            .should('not.have.class', 'cvat-label-item-button-hidden-enabled');
+                        cy.get('.cvat-label-item-button-hidden').click();
                     });
             });
             cy.get('#cvat_canvas_shape_1').should('be.visible');

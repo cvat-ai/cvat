@@ -5,8 +5,7 @@
 import React from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import InputNumber from 'antd/lib/input-number';
-import { SliderValue } from 'antd/lib/slider';
+import Input from 'antd/lib/input';
 
 import { Workspace } from 'reducers/interfaces';
 import LeftGroup from './left-group';
@@ -20,7 +19,7 @@ interface Props {
     savingStatuses: string[];
     frameNumber: number;
     frameFilename: string;
-    inputFrameRef: React.RefObject<InputNumber>;
+    inputFrameRef: React.RefObject<Input>;
     startFrame: number;
     stopFrame: number;
     undoAction?: string;
@@ -49,7 +48,7 @@ interface Props {
     onLastFrame(): void;
     setPrevButtonType(type: 'regular' | 'filtered' | 'empty'): void;
     setNextButtonType(type: 'regular' | 'filtered' | 'empty'): void;
-    onSliderChange(value: SliderValue): void;
+    onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
     onUndoClick(): void;
@@ -100,7 +99,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Row type='flex' justify='space-between'>
+        <Row justify='space-between'>
             <LeftGroup
                 saving={saving}
                 savingStatuses={savingStatuses}
@@ -114,7 +113,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 onRedoClick={onRedoClick}
             />
             <Col className='cvat-annotation-header-player-group'>
-                <Row type='flex' align='middle'>
+                <Row align='middle'>
                     <PlayerButtons
                         playing={playing}
                         playPauseShortcut={playPauseShortcut}

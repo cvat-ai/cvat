@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Menu, { ClickParam } from 'antd/lib/menu';
+import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import DumpSubmenu from 'components/actions-menu/dump-submenu';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
@@ -19,7 +21,7 @@ interface Props {
     exportActivities: string[] | null;
     isReviewer: boolean;
     jobInstance: any;
-    onClickMenu(params: ClickParam, file?: File): void;
+    onClickMenu(params: MenuInfo, file?: File): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
 }
@@ -54,15 +56,15 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     const jobStatus = jobInstance.status;
     const taskID = jobInstance.task.id;
 
-    let latestParams: ClickParam | null = null;
-    function onClickMenuWrapper(params: ClickParam | null, file?: File): void {
+    let latestParams: MenuInfo | null = null;
+    function onClickMenuWrapper(params: MenuInfo | null, file?: File): void {
         const copyParams = params || latestParams;
         if (!copyParams) {
             return;
         }
         latestParams = params;
 
-        function checkUnsavedChanges(_copyParams: ClickParam): void {
+        function checkUnsavedChanges(_copyParams: MenuInfo): void {
             if (jobInstance.annotations.hasUnsavedChanges()) {
                 Modal.confirm({
                     title: 'The job has unsaved annotations',
@@ -100,7 +102,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                             onClickMenu(copyParams, file);
                         },
                         okButtonProps: {
-                            type: 'danger',
+                            type: 'primary',
+                            danger: true,
                         },
                         okText: 'Update',
                     });
@@ -118,7 +121,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     onClickMenu(copyParams);
                 },
                 okButtonProps: {
-                    type: 'danger',
+                    type: 'primary',
+                    danger: true,
                 },
                 okText: 'Delete',
             });

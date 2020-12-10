@@ -6,9 +6,8 @@ import React from 'react';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import Tooltip from 'antd/lib/tooltip';
-import Icon from 'antd/lib/icon';
-import Layout from 'antd/lib/layout/layout';
-import Slider, { SliderValue } from 'antd/lib/slider';
+import Layout from 'antd/lib/layout';
+import Slider from 'antd/lib/slider';
 
 import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
@@ -17,6 +16,7 @@ import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
+import { PlusCircleOutlined } from '@ant-design/icons';
 
 const cvat = getCore();
 
@@ -109,7 +109,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
-            forceDisableEditing: [Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace),
+            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
         });
 
         this.initialSetup();
@@ -260,11 +260,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.workspace !== workspace) {
-            if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
+            if (workspace === Workspace.REVIEW_WORKSPACE) {
                 canvasInstance.configure({
                     forceDisableEditing: true,
                 });
-            } else if ([Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(prevProps.workspace)) {
+            } else if (prevProps.workspace === Workspace.REVIEW_WORKSPACE) {
                 canvasInstance.configure({
                     forceDisableEditing: false,
                 });
@@ -906,10 +906,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         vertical
                         reverse
                         defaultValue={0}
-                        onChange={(value: SliderValue): void => onSwitchZLayer(value as number)}
+                        onChange={(value: number): void => onSwitchZLayer(value as number)}
                     />
                     <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`} mouseLeaveDelay={0}>
-                        <Icon type='plus-circle' onClick={onAddZLayer} />
+                        <PlusCircleOutlined onClick={onAddZLayer} />
                     </Tooltip>
                 </div>
             </Layout.Content>

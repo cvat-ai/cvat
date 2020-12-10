@@ -27,7 +27,7 @@
         overflow: hidden;
     }
 
-    > button > i {
+    > button > span[role='img'] {
         color: $objects-bar-icons-color;
     }
 }

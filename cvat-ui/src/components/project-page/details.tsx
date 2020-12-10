@@ -47,7 +47,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                     </Title>
                 </Col>
             </Row>
-            <Row type='flex' justify='space-between'>
+            <Row justify='space-between'>
                 <Col>
                     <Text type='secondary'>
                         {`Project #${project.id} created`}
