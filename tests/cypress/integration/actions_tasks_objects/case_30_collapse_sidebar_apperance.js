@@ -22,17 +22,16 @@ context('Collapse sidebar/apperance', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
+
+        // get default left value from background
+        cy.get('#cvat_canvas_background')
+            .should('have.css', 'left')
+            .then((valueLeft) => {
+                defaultValueLeftInBackground = Number(valueLeft.match(/\d+/));
+            });
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Get default value left in background', () => {
-            cy.get('#cvat_canvas_background')
-                .should('have.css', 'left')
-                .then((valueLeft) => {
-                    defaultValueLeftInBackground = Number(valueLeft.match(/\d+/));
-                });
-        });
-
         it('Collapse sidebar', () => {
             // hide
             cy.get('.cvat-objects-sidebar-sider').click();
