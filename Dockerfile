@@ -44,9 +44,7 @@ RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 RUN python3 -m pip install --no-cache-dir -U pip==20.0.1 setuptools==49.6.0 wheel==0.35.1
 COPY cvat/requirements/ /tmp/requirements/
-RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
-# FIXME
-RUN python3 -m pip uninstall -y opencv-python opencv-python-headless && python3 -m pip install opencv-python-headless==4.4.0.42
+RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 
 
 FROM ubuntu:20.04
