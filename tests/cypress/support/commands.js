@@ -250,14 +250,15 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 Cypress.Commands.add('openSettings', () => {
     cy.get('.cvat-right-header').find('.cvat-header-menu-dropdown').trigger('mouseover', { which: 1 });
     cy.get('.anticon-setting').click();
+    cy.get('.cvat-settings-modal').should('be.visible');
 });
 
 Cypress.Commands.add('closeSettings', () => {
-    cy.get('.ant-modal-content')
-        .should('contain', 'Settings')
+    cy.get('.cvat-settings-modal')
         .within(() => {
             cy.contains('button', 'Close').click();
         });
+    cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
 Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
