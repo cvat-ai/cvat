@@ -125,14 +125,16 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     const collapse = (): void => {
         const [collapser] = window.document.getElementsByClassName('attribute-annotation-sidebar');
 
+        const listener = (event: TransitionEvent): void => {
+            if (event.target && event.propertyName === 'width' && event.target === collapser) {
+                canvasInstance.fitCanvas();
+                canvasInstance.fit();
+                (collapser as HTMLElement).removeEventListener('transitionend', listener as any);
+            }
+        };
+
         if (collapser) {
-            collapser.addEventListener(
-                'transitionend',
-                () => {
-                    canvasInstance.fitCanvas();
-                },
-                { once: true },
-            );
+            (collapser as HTMLElement).addEventListener('transitionend', listener as any);
         }
 
         setSidebarCollapsed(!sidebarCollapsed);
