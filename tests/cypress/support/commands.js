@@ -425,7 +425,14 @@ Cypress.Commands.add('goToTaskList', () => {
     cy.url().should('include', '/tasks');
 });
 
-Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
+Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
+    cy.get('.cvat-label-color-picker').within(() => {
+        cy.contains('hex').prev().clear().type(labelColor);
+        cy.contains('button', 'Ok').click();
+    });
+});
+
+Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
     let listCvatConstructorViewerItemText = [];
     cy.get('.cvat-constructor-viewer').should('exist');
     cy.document().then((doc) => {
@@ -436,6 +443,10 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
         if (listCvatConstructorViewerItemText.indexOf(newLabelName) === -1) {
             cy.contains('button', 'Add label').click();
             cy.get('[placeholder="Label name"]').type(newLabelName);
+            if (labelColor) {
+                cy.get('.cvat-change-task-label-color-badge').click();
+                cy.changeColorViaBadge(labelColor);
+            }
             if (additionalAttrs) {
                 for (let i = 0; i < additionalAttrs.length; i++) {
                     cy.updateAttributes(additionalAttrs[i]);
