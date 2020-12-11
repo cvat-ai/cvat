@@ -129,12 +129,12 @@ RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
             done &&                                  \
         rm -rf /var/lib/apt/lists/*;                 \
     fi
+COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.bz2 ${HOME}/sources/
 
-# Copy python dependencies and sources from build-image
+# Copy python virtual enviroment and FFmpeg binaries from build-image
 COPY --from=build-image /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 COPY --from=build-image /opt/ffmpeg /usr
-COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.bz2 ${HOME}/sources/
 
 # Install and initialize CVAT, copy all necessary files
 COPY components /tmp/components
