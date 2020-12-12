@@ -415,8 +415,8 @@ Cypress.Commands.add('removeAnnotations', () => {
     cy.get('.cvat-annotation-menu').within(() => {
         cy.contains('Remove annotations').click();
     });
-    cy.get('.ant-modal-content').within(() => {
-        cy.get('.ant-btn-dangerous').click();
+    cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
+        cy.contains('button','Delete').click();
     });
 });
 
@@ -547,15 +547,16 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
 });
 
 Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
-    cy.get('.cvat-objects-sidebar-state-item').then((objectSidebar) => {
-        for (let j = 0; j < objectSidebar.length; j++) {
-            return cy.get(objectSidebar[j]).within(() => {
-                cy.get('.cvat-draw-shape-popover-content-label-selector').then((labelSelector) => {
-                    if (labelSelector.text() === labelName) {
-                        return Number(objectSidebar[j].id.match(/\d+$/));
-                    }
-                });
-            });
+    cy.document().then((doc) => {
+        const stateItemLabelSelectorList = Array.from(doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'));
+        for (let i = 0; i < stateItemLabelSelectorList.length; i++) {
+            if (stateItemLabelSelectorList[i].textContent === labelName) {
+                cy.get(stateItemLabelSelectorList[i])
+                    .parents('.cvat-objects-sidebar-state-item')
+                    .should('have.attr', 'id').then((id) => {
+                        return Number(id.match(/\d+$/));
+                    });
+            }
         }
     });
 });

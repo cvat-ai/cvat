@@ -117,6 +117,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 content:
                     'You are going to remove all the annotations from the client. ' +
                     'It will stay on the server till you save the job. Continue?',
+                className: 'cvat-modal-confirm-remove-annotation',
                 onOk: () => {
                     onClickMenu(copyParams);
                 },
