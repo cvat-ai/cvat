@@ -254,10 +254,9 @@ Cypress.Commands.add('openSettings', () => {
 });
 
 Cypress.Commands.add('closeSettings', () => {
-    cy.get('.cvat-settings-modal')
-        .within(() => {
-            cy.contains('button', 'Close').click();
-        });
+    cy.get('.cvat-settings-modal').within(() => {
+        cy.contains('button', 'Close').click();
+    });
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
@@ -545,4 +544,18 @@ Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
 Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
     cy.get('.cvat-player-previous-button').click();
     cy.checkFrameNum(expectedFrameNum);
+});
+
+Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
+    cy.get('.cvat-objects-sidebar-state-item').then((objectSidebar) => {
+        for (let j = 0; j < objectSidebar.length; j++) {
+            return cy.get(objectSidebar[j]).within(() => {
+                cy.get('.cvat-draw-shape-popover-content-label-selector').then((labelSelector) => {
+                    if (labelSelector.text() === labelName) {
+                        return Number(objectSidebar[j].id.match(/\d+$/));
+                    }
+                });
+            });
+        }
+    });
 });

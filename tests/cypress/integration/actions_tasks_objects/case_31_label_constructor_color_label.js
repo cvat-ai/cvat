@@ -72,11 +72,11 @@ context('Label constructor. Color label.', () => {
             cy.get('.cvat-constructor-viewer-item').then((label) => {
                 for (let i = 0; i < label.length; i++) {
                     if (label[i].textContent === colorRed) {
-                        cy.get(label[i]).should('have.attr', 'style', `background: rgb(${labelColor.redRgb});`);
+                        cy.get(label[i]).should('have.attr', 'style').and('contain', labelColor.redRgb);
                     } else if (label[i].textContent === colorGreen) {
-                        cy.get(label[i]).should('have.attr', 'style', `background: rgb(${labelColor.greenRgb});`);
+                        cy.get(label[i]).should('have.attr', 'style').and('contain', labelColor.greenRgb);
                     } else if (label[i].textContent === colorBlue) {
-                        cy.get(label[i]).should('have.attr', 'style', `background: rgb(${labelColor.blueRgb});`);
+                        cy.get(label[i]).should('have.attr', 'style').and('contain', labelColor.blueRgb);
                     }
                 }
             });
@@ -118,10 +118,12 @@ context('Label constructor. Color label.', () => {
 
         it('Open the job. Existing objects with this label have changed their color.', () => {
             cy.openJob();
-            cy.get('#cvat_canvas_shape_1').should('have.attr', 'stroke', `#${labelColor.yellowHex}`);
-            cy.get('#cvat-objects-sidebar-state-item-1')
-                .should('have.attr', 'style')
-                .and('contain', `background-color: rgba(${labelColor.yellowRgb}`);
+            cy.getObjectIdNumberByLabelName(colorRed).then((objectId) => {
+                cy.get(`#cvat_canvas_shape_${objectId}`).should('have.attr', 'stroke', `#${labelColor.yellowHex}`);
+                cy.get(`#cvat-objects-sidebar-state-item-${objectId}`)
+                    .should('have.attr', 'style')
+                    .and('contain', `background-color: rgba(${labelColor.yellowRgb}`);
+            });
         });
     });
 });
