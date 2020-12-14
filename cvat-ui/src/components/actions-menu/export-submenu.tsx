@@ -21,7 +21,7 @@ export default function ExportSubmenu(props: Props): JSX.Element {
         <Menu.SubMenu key={menuKey} title='Export as a dataset'>
             {exporters
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                .filter((exporter: any): JSX.Element => exporter.dimension === taskDimension)
+                .filter((exporter: any): boolean => exporter.dimension === taskDimension)
                 .map(
                     (exporter: any): JSX.Element => {
                         const pending = (exportActivities || []).includes(exporter.name);

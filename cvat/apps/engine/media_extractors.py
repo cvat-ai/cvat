@@ -18,6 +18,7 @@ from pyunpack import Archive
 from PIL import Image, ImageFile
 import open3d as o3d
 from cvat.apps.engine.utils import rotate_image
+from cvat.apps.engine.models import DimensionType
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -31,18 +32,6 @@ def get_mime(name):
             return type_name
 
     return 'unknown'
-
-def get_pcd_properties(file):
-        kv = {}
-        for line_no, line in enumerate(file):
-            line = line.decode("utf-8")
-            if line.startswith("#"):
-                continue
-            k, v = line.split(" ", maxsplit=1)
-            kv[k] = v.strip()
-            if "DATA" in line:
-                break
-        return kv
 
 def create_tmp_dir():
     return tempfile.mkdtemp(prefix='cvat-', suffix='.data')
@@ -63,7 +52,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self, dimension="2d"):
+    def get_preview(self, dimension=DimensionType.TWOD):
         pass
 
     @abstractmethod
@@ -82,7 +71,7 @@ class IMediaReader(ABC):
         return preview.convert('RGB')
 
     @abstractmethod
-    def get_image_size(self, i, dimension="2d"):
+    def get_image_size(self, i, dimension=DimensionType.TWOD):
         pass
 
     def __len__(self):
@@ -124,11 +113,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self, dimension="2d"):
+    def get_preview(self, dimension=DimensionType.TWOD):
         fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
-    def get_image_size(self, i, dimension="2d"):
+    def get_image_size(self, i, dimension=DimensionType.TWOD):
         img = Image.open(self._source_path[i])
         return img.width, img.height
 
@@ -202,17 +191,17 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-    def get_preview(self, dimension="2d"):
-        if dimension == "3d":
+    def get_preview(self, dimension=DimensionType.TWOD):
+        if dimension == DimensionType.THREED:
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
             return self._get_preview(fp)
         io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
         return self._get_preview(io_image)
 
-    def get_image_size(self, i, dimension="2d"):
-        if dimension == "3d":
+    def get_image_size(self, i, dimension=DimensionType.TWOD):
+        if dimension == DimensionType.THREED:
             with self._zip_source.open(self._source_path[i], "r") as file:
-                properties = get_pcd_properties(file)
+                properties = ValidateDimension.get_pcd_properties(file)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
         return img.width, img.height
@@ -302,7 +291,7 @@ class VideoReader(IMediaReader):
             self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
 
-    def get_preview(self, dimension="2d"):
+    def get_preview(self, dimension=DimensionType.TWOD):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
@@ -316,12 +305,12 @@ class VideoReader(IMediaReader):
             ).to_image()
         )
 
-    def get_image_size(self, i, dimension="2d"):
+    def get_image_size(self, i, dimension=DimensionType.TWOD):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
 class IChunkWriter(ABC):
-    def __init__(self, quality, dimension="2d"):
+    def __init__(self, quality, dimension=DimensionType.TWOD):
         self._image_quality = quality
         self._dimension = dimension
 
@@ -366,20 +355,24 @@ class ZipCompressedChunkWriter(IChunkWriter):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
-                if self._dimension == "2d":
-                    [w, h, image_buf], extension = self._compress_image(image, self._image_quality), "jpeg"
+                if self._dimension == DimensionType.TWOD:
+                    w, h, image_buf = self._compress_image(image, self._image_quality)
+                    extension = "jpeg"
                 else:
-                    properties = get_pcd_properties(image)
-                    w, h, image_buf, extension  = int(properties["WIDTH"]), int(properties["HEIGHT"]), image, "pcd"
+                    image_buf = open(image, "rb") if isinstance(image, str) else image
+                    properties = ValidateDimension.get_pcd_properties(image_buf)
+                    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
+                    extension = "pcd"
+                    image_buf.seek(0, 0)
+                    image_buf = io.BytesIO(image_buf.read())
                 image_sizes.append((w, h))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
-
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _, dimension="2d"):
-        super().__init__(17, dimension)
+    def __init__(self, _, dimension=DimensionType.TWOD):
+        super().__init__(17, dimension=dimension)
         self._output_fps = 25
 
     @staticmethod
@@ -436,7 +429,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             container.mux(packet)
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality, dimension="2d"):
+    def __init__(self, quality, dimension=DimensionType.TWOD):
         # translate inversed range [1:100] to [0:51]
         self._image_quality = round(51 * (100 - quality) / 99)
         self._output_fps = 25
@@ -558,27 +551,33 @@ MEDIA_TYPES = {
 class ValidateDimension:
 
     def __init__(self, path=None):
-        self.dimension = "2d"
+        self.dimension = DimensionType.TWOD
         self.path = path
         self.related_files = {}
         self.image_files = {}
         self.converted_files = []
 
     @staticmethod
-    def validate_pcd(path):
-        """
-            Validate the point cloud file along with version check
-            On failure it is considered as PhotoCD format
-        """
-
-        pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1", ".7", ".6", ".5", ".4", ".3", ".2", ".1"]
-        with open(path, "rb") as file_read:
-            data = file_read.read(70)
-            for ver in pcd_version:
-                version = f"VERSION {ver}".encode()
-                if version in data:
+    def get_pcd_properties(fp, verify_version=False):
+        kv = {}
+        pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1",
+                       ".7", ".6", ".5", ".4", ".3", ".2", ".1"]
+        try:
+            for line in fp:
+                line = line.decode("utf-8")
+                if line.startswith("#"):
+                    continue
+                k, v = line.split(" ", maxsplit=1)
+                kv[k] = v.strip()
+                if "DATA" in line:
+                    break
+            if verify_version:
+                if "VERSION" in kv and kv["VERSION"] in pcd_version:
                     return True
-        return False
+                return None
+            return kv
+        except AttributeError:
+            return None
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
@@ -587,7 +586,7 @@ class ValidateDimension:
             size_float = 4
             byte = f.read(size_float * 4)
             while byte:
-                x, y, z, intensity = struct.unpack("ffff", byte)
+                x, y, z, _ = struct.unpack("ffff", byte)
                 list_pcd.append([x, y, z])
                 byte = f.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
@@ -607,11 +606,94 @@ class ValidateDimension:
         self.converted_files.append(pcd_path)
         return pcd_path.split(actual_path)[-1][1:]
 
-    def pcd_operation(self, file_path, actual_path):
-        if self.validate_pcd(file_path):
-            return file_path.split(actual_path)[-1][1:]
-        else:
-            return file_path
+    @staticmethod
+    def pcd_operation(file_path, actual_path):
+        with open(file_path, "rb") as file:
+            is_pcd = ValidateDimension.get_pcd_properties(file, verify_version=True)
+        return file_path.split(actual_path)[-1][1:] if is_pcd else file_path
+
+    def process_files(self, root, actual_path, files):
+        pcd_files = {}
+
+        for file in files:
+            file_name, file_extension = file.rsplit('.', maxsplit=1)
+            file_path = os.path.abspath(os.path.join(root, file))
+
+            if file_extension == "bin":
+                path = self.bin_operation(file_path, actual_path)
+                pcd_files[file_name] = path
+                self.related_files[path] = []
+
+            elif file_extension == "pcd":
+                path = ValidateDimension.pcd_operation(file_path, actual_path)
+                if path == file_path:
+                    self.image_files[file_name] = file_path
+                else:
+                    pcd_files[file_name] = path
+                    self.related_files[path] = []
+            else:
+                self.image_files[file_name] = file_path
+        return pcd_files
+
+    def validate_velodyne_points(self, *args):
+        root, actual_path, files = args
+        velodyne_files = self.process_files(root, actual_path, files)
+        related_path = os.path.split(os.path.split(root)[0])[0]
+
+        path_list = [re.search(r'image_\d.*', path, re.IGNORECASE) for path in os.listdir(related_path) if
+                     os.path.isdir(os.path.join(related_path, path))]
+
+        for path_ in path_list:
+            if path_:
+                path = os.path.join(path_.group(), "data")
+                path = os.path.abspath(os.path.join(related_path, path))
+
+                files = [file for file in os.listdir(path) if
+                         os.path.isfile(os.path.abspath(os.path.join(path, file)))]
+                for file in files:
+
+                    f_name = file.split(".")[0]
+                    if velodyne_files.get(f_name, None):
+                        self.related_files[velodyne_files[f_name]].append(
+                            os.path.abspath(os.path.join(path, file)))
+
+    def validate_pointcloud(self, *args):
+        root, actual_path, files = args
+        pointcloud_files = self.process_files(root, actual_path, files)
+        related_path = root.split("pointcloud")[0]
+        related_images_path = os.path.join(related_path, "related_images")
+
+        if os.path.isdir(related_images_path):
+            paths = [path for path in os.listdir(related_images_path) if
+                     os.path.isdir(os.path.abspath(os.path.join(related_images_path, path)))]
+
+            for k in pointcloud_files:
+                for path in paths:
+
+                    if k == path.split("_")[0]:
+                        file_path = os.path.abspath(os.path.join(related_images_path, path))
+                        files = [file for file in os.listdir(file_path) if
+                                 os.path.isfile(os.path.join(file_path, file))]
+                        for related_image in files:
+                            self.related_files[pointcloud_files[k]].append(os.path.join(file_path, related_image))
+
+    def validate_default(self, *args):
+        root, actual_path, files = args
+        pcd_files = self.process_files(root, actual_path, files)
+        if len(list(pcd_files.keys())):
+
+            for image in self.image_files.keys():
+                if pcd_files.get(image, None):
+                    self.related_files[pcd_files[image]].append(self.image_files[image])
+
+            current_directory_name = os.path.split(root)
+
+            if len(pcd_files.keys()) == 1:
+                pcd_name = list(pcd_files.keys())[0].split(".")[0]
+                if current_directory_name[1] == pcd_name:
+                    for related_image in self.image_files.values():
+                        if root == os.path.split(related_image)[0]:
+                            self.related_files[pcd_files[pcd_name]].append(related_image)
 
     def validate(self):
         """
@@ -620,123 +702,17 @@ class ValidateDimension:
         if not self.path:
             return
         actual_path = self.path
-        for root, dirs, files in os.walk(actual_path):
+        for root, _, files in os.walk(actual_path):
+
             if root.endswith("data"):
                 if os.path.split(os.path.split(root)[0])[1] == "velodyne_points":
-                    pcd_files = {}
-
-                    for file in files:
-
-                        file_name, file_extension = file.rsplit('.', maxsplit=1)
-                        file_path = os.path.abspath(os.path.join(root, file))
-
-                        if file_extension == "bin":
-                            path = self.bin_operation(file_path, actual_path)
-                            pcd_files[file_name] = path
-                            self.related_files[path] = []
-
-                        elif file_extension == "pcd":
-                            path = self.pcd_operation(file_path, actual_path)
-                            if path == file_path:
-                                self.image_files[file_name] = file_path
-                            else:
-                                pcd_files[file_name] = path
-                                self.related_files[path] = []
-                        else:
-                            self.image_files[file_name] = file_path
-
-                    related_path = os.path.split(os.path.split(root)[0])[0]
-
-                    path_list = [re.search(r'image_\d.*', path, re.IGNORECASE) for path in os.listdir(related_path) if
-                                 os.path.isdir(os.path.join(related_path, path))]
-
-                    for path_ in path_list:
-                        if path_:
-                            path = os.path.join(path_.group(), "data")
-
-                            path = os.path.abspath(os.path.join(related_path, path))
-
-                            files = [file for file in os.listdir(path) if
-                                     os.path.isfile(os.path.abspath(os.path.join(path, file)))]
-                            for file in files:
-
-                                f_name = file.split(".")[0]
-                                if pcd_files.get(f_name, None):
-                                    self.related_files[pcd_files[f_name]].append(
-                                        os.path.abspath(os.path.join(path, file)))
+                    self.validate_velodyne_points(root, actual_path, files)
 
             elif os.path.split(root)[-1] == "pointcloud":
-                pcd_files = {}
+                self.validate_pointcloud(root, actual_path, files)
 
-                for file in files:
-                    file_name, file_extension = file.rsplit('.', maxsplit=1)
-                    file_path = os.path.abspath(os.path.join(root, file))
-
-                    if file_extension == "bin":
-                        path = self.bin_operation(file_path, actual_path)
-                        pcd_files[file_name] = path
-                        self.related_files[path] = []
-
-                    elif file_extension == "pcd":
-                        path = self.pcd_operation(file_path, actual_path)
-                        if path == file_path:
-                            self.image_files[file_name] = file_path
-                        else:
-                            pcd_files[file_name] = path
-                            self.related_files[path] = []
-                    else:
-                        self.image_files[file_name] = file_path
-
-                related_path = root.split("pointcloud")[0]
-                related_images_path = os.path.join(related_path, "related_images")
-                if os.path.isdir(related_images_path):
-                    paths = [path for path in os.listdir(related_images_path) if
-                             os.path.isdir(os.path.abspath(os.path.join(related_images_path, path)))]
-
-                    for k in pcd_files:
-                        for path in paths:
-
-                            if k == path.split("_")[0]:
-                                file_path = os.path.abspath(os.path.join(related_images_path, path))
-                                files = [file for file in os.listdir(file_path) if
-                                         os.path.isfile(os.path.join(file_path, file))]
-                                for related_image in files:
-                                    self.related_files[pcd_files[k]].append(os.path.join(file_path, related_image))
             else:
-                pcd_files = {}
-                pcd_name = ""
-
-                for file in files:
-                    file_name, file_extension = file.rsplit('.', maxsplit=1)
-                    file_path = os.path.abspath(os.path.join(root, file))
-
-                    if file_extension == "bin":
-                        pcd_name = file
-                        path = self.bin_operation(file_path, actual_path)
-                        pcd_files[file_name] = path
-                        self.related_files[path] = []
-
-                    elif file_extension == "pcd":
-                        path = self.pcd_operation(file_path, actual_path)
-                        if path == file_path:
-                            self.image_files[file_name] = file_path
-                        else:
-                            pcd_files[file_name] = path
-                            self.related_files[path] = []
-                    else:
-                        self.image_files[file_name] = file_path
-
-                for image in self.image_files.keys():
-                    if pcd_files.get(image, None):
-                        self.related_files[pcd_files[image]].append(self.image_files[image])
-
-                current_directory = os.path.split(root)
-                pcd_name = pcd_name.split(".")[0]
-
-                if len(pcd_files.keys()) == 1 and current_directory[1] == pcd_name:
-                    for related_image in self.image_files.values():
-                        if root == os.path.split(related_image)[0]:
-                            self.related_files[pcd_files[pcd_name]].append(related_image)
+                self.validate_default(root, actual_path, files)
 
         if len(self.related_files.keys()):
-            self.dimension = "3d"
+            self.dimension = DimensionType.THREED

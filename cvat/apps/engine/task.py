@@ -18,6 +18,7 @@ from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkW
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.prepare import prepare_meta
+from cvat.apps.engine.models import DimensionType
 
 import django_rq
 from django.conf import settings
@@ -265,8 +266,8 @@ def _create_thread(tid, data):
         extractor.extract()
         validate_dimension.set_path(os.path.split(extractor.get_zip_filename())[0])
         validate_dimension.validate()
-        if validate_dimension.dimension == "3d":
-            db_task.dimension = "3d"
+        if validate_dimension.dimension == DimensionType.THREED:
+            db_task.dimension = DimensionType.THREED
             extractor.initialize_for_3d(
                 source_path=list(validate_dimension.related_files.keys()),
                 step=db_data.get_frame_step(),
@@ -414,14 +415,27 @@ def _create_thread(tid, data):
             update_progress(progress)
 
     if db_task.mode == 'annotation':
-        result = models.Image.objects.bulk_create(db_images)
-        if validate_dimension.dimension == "3d":
-            for img in result:
-                image_data = models.Image.objects.get(id=img.id)
+        if validate_dimension.dimension == DimensionType.TWOD:
+            models.Image.objects.bulk_create(db_images)
+        else:
+            related_file = []
+            for image_data in db_images:
+                image_model = models.Image(
+                    data=image_data.data,
+                    path=image_data.path,
+                    frame=image_data.frame,
+                    width=image_data.width,
+                    height=image_data.height
+                )
+
+                image_model.save()
+                image_data = models.Image.objects.get(id=image_model.id)
+
                 if validate_dimension.related_files.get(image_data.path, None):
                     for related_image_file in validate_dimension.related_files[image_data.path]:
-                        related_file = RelatedFile(data=db_data, primary_image_id=img.id, path=related_image_file)
-                        related_file.save()
+                        related_file.append(
+                            RelatedFile(data=db_data, primary_image_id=image_data.id, path=related_image_file))
+            RelatedFile.objects.bulk_create(related_file)
         db_images = []
     else:
         models.Video.objects.create(

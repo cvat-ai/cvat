@@ -107,7 +107,8 @@ image/jp2	jp2
 image/x-portable-bitmap	pbm
 image/x-eps	epsf
 image/x-photo-cd	pcd
-image/bin	bin
+image/x.point-cloud-data pcd
+image/x.kitti-velodyne bin
 image/jpeg	jpe
 image/jp2	jpf
 image/jpeg	jpg

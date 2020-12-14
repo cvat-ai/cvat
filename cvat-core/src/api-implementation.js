@@ -10,7 +10,7 @@
         isBoolean, isInteger, isEnum, isString, checkFilter,
     } = require('./common');
 
-    const { TaskStatus, TaskMode } = require('./enums');
+    const { TaskStatus, TaskMode, TaskDimension } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
@@ -176,7 +176,7 @@
                 search: isString,
                 status: isEnum.bind(TaskStatus),
                 mode: isEnum.bind(TaskMode),
-                dimension: isString
+                dimension: isEnum.bind(TaskDimension),
             });
 
             if ('search' in filter && Object.keys(filter).length > 1) {

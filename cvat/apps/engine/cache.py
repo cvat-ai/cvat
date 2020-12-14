@@ -12,10 +12,12 @@ from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.prepare import PrepareInfo
+from cvat.apps.engine.models import DimensionType
 
 class CacheInteraction:
-    def __init__(self):
+    def __init__(self, dimension=DimensionType.TWOD):
         self._cache = Cache(settings.CACHE_ROOT)
+        self._dimension = dimension
 
     def __del__(self):
         self._cache.close()
@@ -38,7 +40,7 @@ class CacheInteraction:
         image_quality = 100 if writer_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter] else db_data.image_quality
         mime_type = 'video/mp4' if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter] else 'application/zip'
 
-        writer = writer_classes[quality](image_quality)
+        writer = writer_classes[quality](image_quality, dimension=self._dimension)
 
         images = []
         buff = BytesIO()

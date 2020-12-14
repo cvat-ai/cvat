@@ -24,7 +24,7 @@ export default function LoadSubmenu(props: Props): JSX.Element {
         <Menu.SubMenu key={menuKey} title='Upload annotations'>
             {loaders
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                .filter((loader: any): JSX.Element => loader.dimension === taskDimension)
+                .filter((loader: any): boolean => loader.dimension === taskDimension)
                 .map(
                     (loader: any): JSX.Element => {
                         const accept = loader.format

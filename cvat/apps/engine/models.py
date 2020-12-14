@@ -19,6 +19,17 @@ class SafeCharField(models.CharField):
             return value[:self.max_length]
         return value
 
+class DimensionType(str, Enum):
+    THREED = '3d'
+    TWOD = '2d'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class StatusChoice(str, Enum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
@@ -202,7 +213,7 @@ class Task(models.Model):
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
-    dimension = models.CharField(max_length=2, default="2d")
+    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.TWOD)
 
     # Extend default permission model
     class Meta:

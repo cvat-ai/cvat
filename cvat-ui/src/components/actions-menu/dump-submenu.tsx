@@ -29,7 +29,7 @@ export default function DumpSubmenu(props: Props): JSX.Element {
         <Menu.SubMenu key={menuKey} title='Dump annotations'>
             {dumpers
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                .filter((dumper: any): JSX.Element => dumper.dimension === taskDimension)
+                .filter((dumper: any): boolean => dumper.dimension === taskDimension)
                 .map(
                     (dumper: any): JSX.Element => {
                         const pending = (dumpActivities || []).includes(dumper.name);
