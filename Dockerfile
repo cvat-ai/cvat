@@ -106,7 +106,6 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
-WORKDIR ${HOME}
 RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
     if [ -z ${socks_proxy} ]; then \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
@@ -115,19 +114,19 @@ RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
     fi
 
 ARG INSTALL_SOURCES='no'
+WORKDIR ${HOME}/sources
 RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
         sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list && \
         apt-get update && \
-        mkdir ${HOME}/sources && \
-        cd ${HOME}/sources && \
-        dpkg --get-selections | while read line; do  \
-            package=`echo $line | awk '{print $1}'`; \
-            mkdir $package;                          \
-            cd $package;                             \
-            apt-get -q source $package;              \
-            cd ..;                                   \
-            done &&                                  \
-        rm -rf /var/lib/apt/lists/*;                 \
+        dpkg --get-selections | while read -r line; do        \
+            package=$(echo "$line" | awk '{print $1}');       \
+            mkdir "$package";                                 \
+            (                                                 \
+                cd "$package";                                \
+                apt-get -q --download-only source "$package"; \
+            )                                                 \
+            done &&                                           \
+        rm -rf /var/lib/apt/lists/*;                          \
     fi
 COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.bz2 ${HOME}/sources/
 
@@ -137,16 +136,15 @@ ENV PATH="/opt/venv/bin:${PATH}"
 COPY --from=build-image /opt/ffmpeg /usr
 
 # Install and initialize CVAT, copy all necessary files
-COPY components /tmp/components
-COPY ssh ${HOME}/.ssh
-COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
-COPY cvat/ ${HOME}/cvat
-COPY utils/ ${HOME}/utils
-
-RUN chown -R ${USER}:${USER} .
+COPY --chown=${USER} components /tmp/components
+COPY --chown=${USER} ssh ${HOME}/.ssh
+COPY --chown=${USER} supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
+COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} utils/ ${HOME}/utils
 
 # RUN all commands below as 'django' user
 USER ${USER}
+WORKDIR ${HOME}
 
 RUN mkdir data share media keys logs /tmp/supervisord
 RUN python3 manage.py collectstatic

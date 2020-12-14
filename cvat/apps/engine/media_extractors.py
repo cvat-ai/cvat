@@ -372,7 +372,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 'profile': 'constrained_baseline',
                 'qmin': str(self._image_quality),
                 'qmax': str(self._image_quality),
-                'rc_mode': 'off',
+                'rc_mode': 'buffer',
             },
         )
 
@@ -424,7 +424,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 'profile': 'constrained_baseline',
                 'qmin': str(self._image_quality),
                 'qmax': str(self._image_quality),
-                'rc_mode': 'off',
+                'rc_mode': 'buffer',
             },
         )
 
