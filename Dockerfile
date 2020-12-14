@@ -141,6 +141,7 @@ COPY components /tmp/components
 COPY ssh ${HOME}/.ssh
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY cvat/ ${HOME}/cvat
+COPY utils/ ${HOME}/utils
 
 RUN chown -R ${USER}:${USER} .
 
