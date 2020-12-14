@@ -1,7 +1,4 @@
-language: python
-
-python:
-  - '3.5'
+language: generic
 
 cache:
   npm: true
@@ -14,6 +11,7 @@ addons:
   apt:
     packages:
       - libgconf-2-4
+      - docker-ce
 
 services:
   - docker
