@@ -272,9 +272,10 @@ Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
+
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
-        if (cvatWorkspaceSelectorValue === 'Attribute annotation') {
+        if (cvatWorkspaceSelectorValue.includes('Attribute annotation')) {
             cy.get('.cvat-attribute-annotation-sidebar-basics-editor').within(() => {
                 cy.get('.ant-select-selector').click();
             });
