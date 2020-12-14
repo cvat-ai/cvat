@@ -13,23 +13,15 @@ function build() {
     const Log = require('./log');
     const ObjectState = require('./object-state');
     const Statistics = require('./statistics');
+    const Comment = require('./comment');
+    const Issue = require('./issue');
+    const Review = require('./review');
     const { Job, Task } = require('./session');
+    const { Project } = require('./project');
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
 
-    const {
-        ShareFileType,
-        TaskStatus,
-        TaskMode,
-        AttributeType,
-        ObjectType,
-        ObjectShape,
-        LogType,
-        HistoryActions,
-        RQStatus,
-        colors,
-        Source,
-    } = require('./enums');
+    const enums = require('./enums');
 
     const {
         Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
@@ -275,6 +267,60 @@ function build() {
             },
         },
         /**
+         * Namespace is used for getting projects
+         * @namespace projects
+         * @memberof module:API.cvat
+         */
+        projects: {
+            /**
+             * @typedef {Object} ProjectFilter
+             * @property {string} name Check if name contains this value
+             * @property {module:API.cvat.enums.ProjectStatus} status
+             * Check if status contains this value
+             * @property {integer} id Check if id equals this value
+             * @property {integer} page Get specific page
+             * (default REST API returns 20 projects per request.
+             * In order to get more, it is need to specify next page)
+             * @property {string} owner Check if owner user contains this value
+             * @property {string} search Combined search of contains among all fields
+             * @global
+             */
+
+            /**
+             * Method returns list of projects corresponding to a filter
+             * @method get
+             * @async
+             * @memberof module:API.cvat.projects
+             * @param {ProjectFilter} [filter={}] project filter
+             * @returns {module:API.cvat.classes.Project[]}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.projects.get, filter);
+                return result;
+            },
+
+            /**
+             * Method returns list of project names with project ids
+             * corresponding to a search phrase
+             * used for autocomplete field
+             * @method searchNames
+             * @async
+             * @memberof module:API.cvat.projects
+             * @param {string} [search = ''] search phrase
+             * @param {number} [limit = 10] number of returning project names
+             * @returns {module:API.cvat.classes.Project[]}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             *
+             */
+            async searchNames(search = '', limit = 10) {
+                const result = await PluginRegistry.apiWrapper(cvat.projects.searchNames, search, limit);
+                return result;
+            },
+        },
+        /**
          * Namespace is used for getting tasks
          * @namespace tasks
          * @memberof module:API.cvat
@@ -291,6 +337,7 @@ function build() {
              * @property {integer} page Get specific page
              * (default REST API returns 20 tasks per request.
              * In order to get more, it is need to specify next page)
+             * @property {integer} projectId Check if project_id field contains this value
              * @property {string} owner Check if owner user contains this value
              * @property {string} assignee Check if assigneed contains this value
              * @property {string} search Combined search of contains among all fields
@@ -685,19 +732,7 @@ function build() {
          * @namespace enums
          * @memberof module:API.cvat
          */
-        enums: {
-            ShareFileType,
-            TaskStatus,
-            TaskMode,
-            AttributeType,
-            ObjectType,
-            ObjectShape,
-            LogType,
-            HistoryActions,
-            RQStatus,
-            colors,
-            Source,
-        },
+        enums,
         /**
          * Namespace is used for access to exceptions
          * @namespace exceptions
@@ -717,8 +752,9 @@ function build() {
          * @memberof module:API.cvat
          */
         classes: {
-            Task,
             User,
+            Project,
+            Task,
             Job,
             Log,
             Attribute,
@@ -726,10 +762,14 @@ function build() {
             Statistics,
             ObjectState,
             MLModel,
+            Comment,
+            Issue,
+            Review,
         },
     };
 
     cvat.server = Object.freeze(cvat.server);
+    cvat.projects = Object.freeze(cvat.projects);
     cvat.tasks = Object.freeze(cvat.tasks);
     cvat.jobs = Object.freeze(cvat.jobs);
     cvat.users = Object.freeze(cvat.users);

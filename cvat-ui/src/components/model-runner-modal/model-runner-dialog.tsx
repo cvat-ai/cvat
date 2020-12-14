@@ -48,7 +48,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 }
 
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
-    const { reid, detectors, task, visible, runInference, closeDialog } = props;
+    const {
+        reid, detectors, task, visible, runInference, closeDialog,
+    } = props;
 
     const models = [...reid, ...detectors];
 

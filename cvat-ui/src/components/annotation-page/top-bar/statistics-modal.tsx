@@ -4,12 +4,11 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
-import Select from 'antd/lib/select';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {
@@ -17,28 +16,18 @@ interface Props {
     data: any;
     visible: boolean;
     assignee: string;
+    reviewer: string;
     startFrame: number;
     stopFrame: number;
     bugTracker: string;
     jobStatus: string;
     savingJobStatus: boolean;
     closeStatistics(): void;
-    changeJobStatus(status: string): void;
 }
 
 export default function StatisticsModalComponent(props: Props): JSX.Element {
     const {
-        collecting,
-        data,
-        visible,
-        jobStatus,
-        assignee,
-        startFrame,
-        stopFrame,
-        bugTracker,
-        closeStatistics,
-        changeJobStatus,
-        savingJobStatus,
+        collecting, data, visible, assignee, reviewer, startFrame, stopFrame, bugTracker, closeStatistics,
     } = props;
 
     const baseProps = {
@@ -89,7 +78,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
             <Text strong style={{ marginRight: 5 }}>
                 {title}
             </Text>
-            <Icon className='cvat-info-circle-icon' type='question-circle' />
+            <QuestionCircleOutlined className='cvat-info-circle-icon' />
         </Tooltip>
     );
 
@@ -144,50 +133,37 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     return (
         <Modal {...baseProps}>
             <div className='cvat-job-info-modal-window'>
-                <Row type='flex' justify='start'>
-                    <Col>
-                        <Text strong className='cvat-text'>
-                            Job status
-                        </Text>
-                        <Select value={jobStatus} onChange={changeJobStatus}>
-                            <Select.Option key='1' value='annotation'>
-                                annotation
-                            </Select.Option>
-                            <Select.Option key='2' value='validation'>
-                                validation
-                            </Select.Option>
-                            <Select.Option key='3' value='completed'>
-                                completed
-                            </Select.Option>
-                        </Select>
-                        {savingJobStatus && <Icon type='loading' />}
-                    </Col>
-                </Row>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text'>Overview</Text>
                     </Col>
                 </Row>
-                <Row type='flex' justify='start'>
-                    <Col span={5}>
+                <Row justify='start'>
+                    <Col span={4}>
                         <Text strong className='cvat-text'>
                             Assignee
                         </Text>
                         <Text className='cvat-text'>{assignee}</Text>
                     </Col>
-                    <Col span={5}>
+                    <Col span={4}>
+                        <Text strong className='cvat-text'>
+                            Reviewer
+                        </Text>
+                        <Text className='cvat-text'>{reviewer}</Text>
+                    </Col>
+                    <Col span={4}>
                         <Text strong className='cvat-text'>
                             Start frame
                         </Text>
                         <Text className='cvat-text'>{startFrame}</Text>
                     </Col>
-                    <Col span={5}>
+                    <Col span={4}>
                         <Text strong className='cvat-text'>
                             Stop frame
                         </Text>
                         <Text className='cvat-text'>{stopFrame}</Text>
                     </Col>
-                    <Col span={5}>
+                    <Col span={4}>
                         <Text strong className='cvat-text'>
                             Frames
                         </Text>
@@ -195,7 +171,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                     </Col>
                 </Row>
                 {!!bugTracker && (
-                    <Row type='flex' justify='start' className='cvat-job-info-bug-tracker'>
+                    <Row justify='start' className='cvat-job-info-bug-tracker'>
                         <Col>
                             <Text strong className='cvat-text'>
                                 Bug tracker
@@ -204,7 +180,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                 )}
-                <Row type='flex' justify='space-around' className='cvat-job-info-statistics'>
+                <Row justify='space-around' className='cvat-job-info-statistics'>
                     <Col span={24}>
                         <Text className='cvat-text'>Annotations statistics</Text>
                         <Table scroll={{ y: 400 }} bordered pagination={false} columns={columns} dataSource={rows} />

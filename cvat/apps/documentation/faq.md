@@ -11,6 +11,9 @@
 - [How to install CVAT on Windows 10 Home](#how-to-install-cvat-on-windows-10-home)
 - [I do not have the Analytics tab on the header section. How can I add analytics](#i-do-not-have-the-analytics-tab-on-the-header-section-how-can-i-add-analytics)
 - [How to upload annotations to an entire task from UI when there are multiple jobs in the task](#how-to-upload-annotations-to-an-entire-task-from-ui-when-there-are-multiple-jobs-in-the-task)
+- [How to specify multiple hostnames for CVAT_HOST](#how-to-specify-multiple-hostnames-for-cvat_host)
+- [How to create a task with multiple jobs](#how-to-create-a-task-with-multiple-jobs)
+
 
 ## How to update CVAT
 
@@ -53,7 +56,7 @@ You should free up disk space or change the threshold, to do so check: [Elastics
 
 The best way to do that is to create docker-compose.override.yml and override the host and port settings here.
 
-version: "2.3"
+version: "3.3"
 
 ```yaml
 services:
@@ -77,7 +80,7 @@ Follow the Docker manual and configure the directory that you want to use as a s
 After that, it should be possible to use this directory as a CVAT share:
 
 ```yaml
-version: '2.3'
+version: '3.3'
 
 services:
   cvat:
@@ -132,3 +135,17 @@ You should build CVAT images with ['Analytics' component](../../../components/an
 
 You can upload annotation for a multi-job task from the Dasboard view or the Task view.
 Uploading of annotation from the Annotation view only affects the current job.
+
+## How to specify multiple hostnames for CVAT_HOST
+
+```yaml
+services:
+  cvat_proxy:
+    environment:
+      CVAT_HOST: example1.com example2.com
+```
+
+## How to create a task with multiple jobs
+
+Set the segment size when you create a new task, this option is available in the
+[Advanced configuration](user_guide.md#advanced-configuration) section.

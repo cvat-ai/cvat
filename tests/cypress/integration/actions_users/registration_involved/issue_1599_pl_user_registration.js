@@ -4,35 +4,41 @@
 
 /// <reference types="cypress" />
 
-context('Issue 1599 (Chinese alphabet).', () => {
+context('Issue 1599 (Polish alphabet).', () => {
+    const firstName = 'Świętobor';
+    const lastName = 'Сzcić';
+    const userName = 'Testuser_pl';
+    const email = 'Testuser_pl@local.local';
+    const password = 'Qwerty123!';
+
     before(() => {
         cy.visit('auth/register');
         cy.url().should('include', '/auth/register');
     });
 
-    describe('User registration using the Chinese alphabet.', () => {
+    describe('User registration using the Polish alphabet.', () => {
         it('Filling in the placeholder "First name"', () => {
-            cy.get('[placeholder="First name"]').type('测试者').should('not.have.class', 'has-error');
+            cy.get('[placeholder="First name"]').type(firstName).should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Last name"', () => {
-            cy.get('[placeholder="Last name"]').type('测试').should('not.have.class', 'has-error');
+            cy.get('[placeholder="Last name"]').type(lastName).should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Username"', () => {
-            cy.get('[placeholder="Username"]').type('Testuser_ch');
+            cy.get('[placeholder="Username"]').type(userName);
         });
 
         it('Filling in the placeholder "Email address"', () => {
-            cy.get('[placeholder="Email address"]').type('Testuser_ch@local.local');
+            cy.get('[placeholder="Email address"]').type(email);
         });
 
         it('Filling in the placeholder "Password"', () => {
-            cy.get('[placeholder="Password"]').type('Qwerty123!');
+            cy.get('[placeholder="Password"]').type(password);
         });
 
         it('Filling in the placeholder "Confirm password"', () => {
-            cy.get('[placeholder="Confirm password"]').type('Qwerty123!');
+            cy.get('[placeholder="Confirm password"]').type(password);
         });
 
         it('Click to "Submit" button', () => {

@@ -10,7 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Tooltip from 'antd/lib/tooltip';
 import Modal from 'antd/lib/modal';
-import Icon from 'antd/lib/icon';
+import { FilterOutlined } from '@ant-design/icons';
 
 import {
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
@@ -133,8 +133,7 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
                 underCursor ? (
                     <>
                         <Tooltip title='Click to open help' mouseLeaveDelay={0}>
-                            <Icon
-                                type='filter'
+                            <FilterOutlined
                                 onClick={(e: React.MouseEvent) => {
                                     e.stopPropagation();
                                     Modal.info({
@@ -148,7 +147,7 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
                     </>
                 ) : (
                     <>
-                        <Icon style={{ transform: 'scale(0.9)' }} type='filter' />
+                        <FilterOutlined style={{ transform: 'scale(0.9)' }} />
                         <span style={{ marginLeft: 5 }}>Annotations filters</span>
                     </>
                 )

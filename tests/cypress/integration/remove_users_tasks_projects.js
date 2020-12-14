@@ -13,6 +13,7 @@ describe('Delete users and tasks created during the test run.', () => {
             url: '/api/v1/auth/login',
             body: {
                 username: Cypress.env('user'),
+                email: Cypress.env('email'),
                 password: Cypress.env('password'),
             },
         }).then(async (responce) => {
@@ -54,6 +55,26 @@ describe('Delete users and tasks created during the test run.', () => {
                 cy.request({
                     method: 'DELETE',
                     url: `/api/v1/tasks/${taskId}`,
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                });
+            }
+        });
+    });
+    it('Get a list of projects and delete them all', () => {
+        cy.request({
+            url: '/api/v1/projects?page_size=all',
+            headers: {
+                Authorization: `Token ${authKey}`,
+            },
+        }).then(async (responce) => {
+            const responceResult = await responce['body']['results'];
+            for (let tasks of responceResult) {
+                let taskId = tasks['id'];
+                cy.request({
+                    method: 'DELETE',
+                    url: `/api/v1/projects/${taskId}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },

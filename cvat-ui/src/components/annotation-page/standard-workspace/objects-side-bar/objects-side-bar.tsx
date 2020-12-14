@@ -3,23 +3,27 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { Dispatch, useEffect } from 'react';
+import React, { Dispatch, useEffect, TransitionEvent } from 'react';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
-import Icon from 'antd/lib/icon';
 import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState } from 'reducers/interfaces';
-import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import {
     collapseSidebar as collapseSidebarAction,
     updateTabContentHeight as updateTabContentHeightAction,
 } from 'actions/annotation-actions';
 import AppearanceBlock, { computeHeight } from 'components/annotation-page/appearance-block';
+import IssuesListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/issues-list';
+
+interface OwnProps {
+    objectsList: JSX.Element;
+}
 
 interface StateToProps {
     sidebarCollapsed: boolean;
@@ -57,8 +61,10 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
     };
 }
 
-function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
-    const { sidebarCollapsed, canvasInstance, collapseSidebar, updateTabContentHeight } = props;
+function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
+    const {
+        sidebarCollapsed, canvasInstance, collapseSidebar, updateTabContentHeight, objectsList,
+    } = props;
 
     useEffect(() => {
         const alignTabHeight = (): void => {
@@ -75,24 +81,22 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
         };
     }, []);
 
-    useEffect(() => {
-        const listener = (event: Event): void => {
-            if (
-                (event as TransitionEvent).propertyName === 'width' &&
-                ((event.target as any).classList as DOMTokenList).contains('ant-tabs-tab-prev')
-            ) {
+    const collapse = (): void => {
+        const [collapser] = window.document.getElementsByClassName('cvat-objects-sidebar');
+        const listener = (event: TransitionEvent): void => {
+            if (event.target && event.propertyName === 'width' && event.target === collapser) {
+                canvasInstance.fitCanvas();
                 canvasInstance.fit();
+                (collapser as HTMLElement).removeEventListener('transitionend', listener as any);
             }
         };
 
-        const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
+        if (collapser) {
+            (collapser as HTMLElement).addEventListener('transitionend', listener as any);
+        }
 
-        sidebar.addEventListener('transitionstart', listener);
-
-        return () => {
-            sidebar.removeEventListener('transitionstart', listener);
-        };
-    }, []);
+        collapseSidebar();
+    };
 
     return (
         <Layout.Sider
@@ -110,17 +114,20 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps): JSX.Element {
                 className={`cvat-objects-sidebar-sider
                     ant-layout-sider-zero-width-trigger
                     ant-layout-sider-zero-width-trigger-left`}
-                onClick={collapseSidebar}
+                onClick={collapse}
             >
-                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' /> : <Icon type='menu-unfold' title='Hide' />}
+                {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
 
             <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
                 <Tabs.TabPane tab={<Text strong>Objects</Text>} key='objects'>
-                    <ObjectsListContainer />
+                    {objectsList}
                 </Tabs.TabPane>
                 <Tabs.TabPane tab={<Text strong>Labels</Text>} key='labels'>
                     <LabelsListContainer />
+                </Tabs.TabPane>
+                <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
+                    <IssuesListComponent />
                 </Tabs.TabPane>
             </Tabs>
 

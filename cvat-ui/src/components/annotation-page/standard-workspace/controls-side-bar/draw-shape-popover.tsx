@@ -4,7 +4,6 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Select, { OptionProps } from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -14,6 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
+import LabelSelector from 'components/label-selector/label-selector';
 
 interface Props {
     shapeType: ShapeType;
@@ -22,7 +22,7 @@ interface Props {
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
-    selectedLabeID: number;
+    selectedLabelID: number;
     repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
     onChangePoints(value: number | undefined): void;
@@ -37,7 +37,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         labels,
         shapeType,
         minimumPoints,
-        selectedLabeID,
+        selectedLabelID,
         numberOfPoints,
         rectDrawingMethod,
         cuboidDrawingMethod,
@@ -52,37 +52,24 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-draw-shape-popover-content'>
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color' strong>{`Draw new ${shapeType}`}</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color'>Label</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='center'>
+            <Row justify='center'>
                 <Col span={24}>
-                    <Select
-                        showSearch
-                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                            const { children } = option.props;
-                            if (typeof children === 'string') {
-                                return children.toLowerCase().includes(input.toLowerCase());
-                            }
-
-                            return false;
-                        }}
-                        value={`${selectedLabeID}`}
+                    <LabelSelector
+                        style={{ width: '100%' }}
+                        labels={labels}
+                        value={selectedLabelID}
                         onChange={onChangeLabel}
-                    >
-                        {labels.map((label: any) => (
-                            <Select.Option key={label.id} value={`${label.id}`}>
-                                {label.name}
-                            </Select.Option>
-                        ))}
-                    </Select>
+                    />
                 </Col>
             </Row>
             {shapeType === ShapeType.RECTANGLE && (
@@ -92,7 +79,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             <Text className='cvat-text-color'> Drawing method </Text>
                         </Col>
                     </Row>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <Radio.Group
                                 style={{ display: 'flex' }}
@@ -117,7 +104,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             <Text className='cvat-text-color'> Drawing method </Text>
                         </Col>
                     </Row>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <Radio.Group
                                 style={{ display: 'flex' }}
@@ -136,15 +123,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 </>
             )}
             {shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
-                <Row type='flex' justify='space-around' align='middle'>
+                <Row justify='space-around' align='middle'>
                     <Col span={14}>
                         <Text className='cvat-text-color'> Number of points: </Text>
                     </Col>
                     <Col span={10}>
                         <InputNumber
-                            onChange={(value: number | undefined) => {
-                                if (typeof value === 'number') {
-                                    onChangePoints(Math.floor(clamp(value, minimumPoints, Number.MAX_SAFE_INTEGER)));
+                            onChange={(value: number | undefined | string) => {
+                                if (typeof value !== 'undefined') {
+                                    onChangePoints(Math.floor(clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER)));
                                 } else if (!value) {
                                     onChangePoints(undefined);
                                 }
@@ -157,7 +144,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Col>
                 </Row>
             )}
-            <Row type='flex' justify='space-around'>
+            <Row justify='space-around'>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`} mouseLeaveDelay={0}>
                         <Button onClick={onDrawShape}>Shape</Button>

@@ -9,7 +9,7 @@ import Layout, { SiderProps } from 'antd/lib/layout';
 import { SelectValue } from 'antd/lib/select';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import Icon from 'antd/lib/icon';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -125,14 +125,16 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     const collapse = (): void => {
         const [collapser] = window.document.getElementsByClassName('attribute-annotation-sidebar');
 
+        const listener = (event: TransitionEvent): void => {
+            if (event.target && event.propertyName === 'width' && event.target === collapser) {
+                canvasInstance.fitCanvas();
+                canvasInstance.fit();
+                (collapser as HTMLElement).removeEventListener('transitionend', listener as any);
+            }
+        };
+
         if (collapser) {
-            collapser.addEventListener(
-                'transitionend',
-                () => {
-                    canvasInstance.fitCanvas();
-                },
-                { once: true },
-            );
+            (collapser as HTMLElement).addEventListener('transitionend', listener as any);
         }
 
         setSidebarCollapsed(!sidebarCollapsed);
@@ -291,15 +293,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                         ant-layout-sider-zero-width-trigger-left`}
                     onClick={collapse}
                 >
-                    {sidebarCollapsed ? (
-                        <Icon type='menu-fold' title='Show' />
-                    ) : (
-                        <Icon type='menu-unfold' title='Hide' />
-                    )}
+                    {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
-                <Row className='cvat-objects-sidebar-filter-input'>
-                    <Col>
+                <Row>
+                    <Col span={24}>
                         <AnnotationsFiltersInput />
                     </Col>
                 </Row>
@@ -323,6 +321,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     }}
                 />
                 <ObjectButtonsContainer
+                    readonly={false}
                     clientID={activeObjectState.clientID}
                     outsideDisabled
                     hiddenDisabled
@@ -374,10 +373,10 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     ant-layout-sider-zero-width-trigger-left`}
                 onClick={collapse}
             >
-                {sidebarCollapsed ? <Icon type='menu-fold' title='Show' /> : <Icon type='menu-unfold' title='Hide' />}
+                {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <Row className='cvat-objects-sidebar-filter-input'>
-                <Col>
+            <Row>
+                <Col span={24}>
                     <AnnotationsFiltersInput />
                 </Col>
             </Row>
