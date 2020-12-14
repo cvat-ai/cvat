@@ -1,4 +1,5 @@
 language: generic
+dist: focal
 
 cache:
   npm: true
@@ -11,7 +12,6 @@ addons:
   apt:
     packages:
       - libgconf-2-4
-      - docker-ce
 
 services:
   - docker
