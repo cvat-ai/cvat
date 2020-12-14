@@ -8,8 +8,6 @@ import { taskName, labelName } from '../../support/const';
 
 context('Attribute annotation mode (AAM) zoom margin feature', () => {
     const caseId = '32';
-    let scaleDefaultInAAM;
-    let scaleDefaultInTA;
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -20,7 +18,7 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
         secondY: 150,
     };
 
-    function changeSettingZoomMargin(valueZoomMargin) {
+    function changeSettingsZoomMargin(valueZoomMargin) {
         cy.openSettings();
         cy.get('.cvat-settings-modal').within(() => {
             cy.contains('Workspace').click();
@@ -38,33 +36,29 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
         cy.createRectangle(rectangleShape2Points);
         cy.createTag(labelName);
 
-        // go to AAM workspace and get scale default value
+        // go to AAM workspace
         cy.changeWorkspace('Attribute annotation');
-        cy.getScaleValue().then((value) => {
-            scaleDefaultInAAM = value;
-        });
-
-        // go to TA workspace and get scale default value
-        cy.changeWorkspace('Tag annotation');
-        cy.getScaleValue().then((value) => {
-            scaleDefaultInTA = value;
-        });
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Change AAM zoom margin on "Attribute annotation" workspace', () => {
-            cy.changeWorkspace('Attribute annotation');
-            changeSettingZoomMargin(150);
-            cy.getScaleValue().then((value) => {
-                expect(scaleDefaultInAAM).to.be.greaterThan(value);
+        it('Change AAM zoom margin on workspace with rectangle', () => {
+            cy.get('.cvat-attribute-annotation-sidebar-object-switcher').should('contain', `${labelName} 1 [1/2]`);
+            cy.getScaleValue().then((scaleBeforeChangeZoomMargin) => {
+                changeSettingsZoomMargin(150);
+                cy.getScaleValue().then((scaleAfterChangeZoomMargin) => {
+                    expect(scaleBeforeChangeZoomMargin).to.be.greaterThan(scaleAfterChangeZoomMargin);
+                });
             });
         });
 
-        it('Change AAM zoom margin on "Tag annotation" workspace', () => {
-            cy.changeWorkspace('Tag annotation');
-            changeSettingZoomMargin(200);
-            cy.getScaleValue().then((value) => {
-                expect(scaleDefaultInTA).to.be.eq(value);
+        it('Change AAM zoom margin on workspace with tag', () => {
+            cy.get('.cvat-attribute-annotation-sidebar-object-switcher-right').click();
+            cy.get('.cvat-attribute-annotation-sidebar-object-switcher').should('contain', `${labelName} 2 [2/2]`);
+            cy.getScaleValue().then((scaleBeforeChangeZoomMargin) => {
+                changeSettingsZoomMargin(200);
+                cy.getScaleValue().then((scaleAfterChangeZoomMargin) => {
+                    expect(scaleBeforeChangeZoomMargin).to.be.eq(scaleAfterChangeZoomMargin);
+                });
             });
         });
     });
