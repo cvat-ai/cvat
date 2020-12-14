@@ -9,14 +9,13 @@ import { taskName } from '../../support/const';
 context('Collapse sidebar/apperance', () => {
     const caseId = '30';
     let defaultValueLeftInBackground;
-    let currnetValueLeftBackground;
 
     function checkEqualBackground() {
         cy.get('#cvat_canvas_background')
             .should('have.css', 'left')
-            .and((valueLeft) => {
-                currnetValueLeftBackground = Number(valueLeft.match(/\d+/));
-                expect(currnetValueLeftBackground).to.be.eq(defaultValueLeftInBackground);
+            .and((currentValueLeftBackground) => {
+                currentValueLeftBackground = Number(currentValueLeftBackground.match(/\d+/));
+                expect(currentValueLeftBackground).to.be.eq(defaultValueLeftInBackground);
             });
     }
 
@@ -26,8 +25,8 @@ context('Collapse sidebar/apperance', () => {
         // get default left value from background
         cy.get('#cvat_canvas_background')
             .should('have.css', 'left')
-            .then((valueLeft) => {
-                defaultValueLeftInBackground = Number(valueLeft.match(/\d+/));
+            .then((currentValueLeftBackground) => {
+                defaultValueLeftInBackground = Number(currentValueLeftBackground.match(/\d+/));
             });
     });
 
@@ -38,13 +37,10 @@ context('Collapse sidebar/apperance', () => {
             cy.get('.cvat-objects-sidebar').should('not.be.visible');
             cy.get('#cvat_canvas_background')
                 .should('have.css', 'left')
-                .and((valueLeft) => {
-                    currnetValueLeftBackground = Number(valueLeft.match(/\d+/));
-                    expect(currnetValueLeftBackground).to.be.greaterThan(defaultValueLeftInBackground);
+                .and((currentValueLeftBackground) => {
+                    currentValueLeftBackground = Number(currentValueLeftBackground.match(/\d+/));
+                    expect(currentValueLeftBackground).to.be.greaterThan(defaultValueLeftInBackground);
                 });
-
-            // wait when background fitted
-            cy.wait(1000);
 
             // unhide
             cy.get('.cvat-objects-sidebar-sider').click();
