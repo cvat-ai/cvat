@@ -275,7 +275,7 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
         if (cvatWorkspaceSelectorValue === 'Attribute annotation') {
-            cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
+            cy.get('.cvat-attribute-annotation-sidebar-basics-editor').within(() => {
                 cy.get('.ant-select-selector').click();
             });
             cy.get('.ant-select-dropdown')
