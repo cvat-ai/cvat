@@ -8,14 +8,14 @@ import { taskName } from '../../support/const';
 
 context('Collapse sidebar/apperance', () => {
     const caseId = '30';
-    let defaultValueLeftInBackground;
+    let defaultValueLeftBackground;
 
     function checkEqualBackground() {
         cy.get('#cvat_canvas_background')
             .should('have.css', 'left')
             .and((currentValueLeftBackground) => {
                 currentValueLeftBackground = Number(currentValueLeftBackground.match(/\d+/));
-                expect(currentValueLeftBackground).to.be.eq(defaultValueLeftInBackground);
+                expect(currentValueLeftBackground).to.be.eq(defaultValueLeftBackground);
             });
     }
 
@@ -26,7 +26,7 @@ context('Collapse sidebar/apperance', () => {
         cy.get('#cvat_canvas_background')
             .should('have.css', 'left')
             .then((currentValueLeftBackground) => {
-                defaultValueLeftInBackground = Number(currentValueLeftBackground.match(/\d+/));
+                defaultValueLeftBackground = Number(currentValueLeftBackground.match(/\d+/));
             });
     });
 
@@ -39,8 +39,11 @@ context('Collapse sidebar/apperance', () => {
                 .should('have.css', 'left')
                 .and((currentValueLeftBackground) => {
                     currentValueLeftBackground = Number(currentValueLeftBackground.match(/\d+/));
-                    expect(currentValueLeftBackground).to.be.greaterThan(defaultValueLeftInBackground);
+                    expect(currentValueLeftBackground).to.be.greaterThan(defaultValueLeftBackground);
                 });
+
+            // wait when background fitted
+            cy.wait(500);
 
             // unhide
             cy.get('.cvat-objects-sidebar-sider').click();
