@@ -40,11 +40,13 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 ## Supported annotation formats
 
-Format selection is possible after clicking on the Upload annotation
-and Dump annotation buttons.
-[Datumaro](https://github.com/openvinotoolkit/datumaro) dataset
-framework allows additional dataset transformations
-via its command line tool and Python library.
+Format selection is possible after clicking on the Upload annotation and Dump
+annotation buttons. [Datumaro](https://github.com/openvinotoolkit/datumaro)
+dataset framework allows additional dataset transformations via its command
+line tool and Python library.
+
+For more information about supported formats look at the
+[documentation](cvat/apps/dataset_manager/formats/README.md#formats).
 
 | Annotation format                                                             | Import | Export |
 | ----------------------------------------------------------------------------- | ------ | ------ |
@@ -58,6 +60,8 @@ via its command line tool and Python library.
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)         | X      | X      |
 | [MOT](https://motchallenge.net/)                                              | X      | X      |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
+| [ImageNet](http://www.image-net.org)                                          | X      | X      |
+| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
 
 ## Deep learning models for automatic labeling
 
