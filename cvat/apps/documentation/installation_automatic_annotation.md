@@ -16,7 +16,6 @@
   docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
   ```
 
-
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions. Download [version 1.5.8](https://github.com/nuclio/nuclio/releases).
   It is important that the version you download matches the version in
@@ -48,6 +47,7 @@
   ```
   **Note:**
   - See [deploy_cpu.sh](/serverless/deploy_cpu.sh) for more examples.
+
   #### GPU Support
   You will need to install Nvidia Container Toolkit and make sure your docker supports GPU. Follow [Nvidia docker instructions](https://www.tensorflow.org/install/docker#gpu_support).
   Also you will need to add `--resource-limit nvidia.com/gpu=1` to the nuclio deployment command.
@@ -62,8 +62,6 @@
     --resource-limit nvidia.com/gpu=1
   ```
 
-
-
   **Note:**
     - Since the model is loaded during deployment, the number of GPU functions you can deploy will be limited to your GPU memory.
 
@@ -72,7 +70,6 @@
 ####Debugging Nuclio Functions:
 
 - You can open nuclio dashboard at [localhost:8070](http://localhost:8070). Make sure status of your functions are up and running without any error.
-
 
 - To check for internal server errors, run `docker ps -a` to see the list of containers. Find the container that you are interested, e.g. `nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu`. Then check its logs by
 
@@ -85,13 +82,10 @@
   docker logs nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu
   ```
 
-
 - If you would like to debug a code inside a container, you can use vscode to directly attach to a container [instructions](https://code.visualstudio.com/docs/remote/attach-container). To apply your changes, make sure to restart the container.
   ```bash
   docker restart <name_of_the_container>
   ```
-
-
 
   > **⚠ WARNING:**
   >  Do not use nuclio dashboard to stop the container because with any modifications, it rebuilds the container and you will lose your changes.
