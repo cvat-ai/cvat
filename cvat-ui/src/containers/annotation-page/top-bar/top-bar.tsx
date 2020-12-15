@@ -8,8 +8,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
-import InputNumber from 'antd/lib/input-number';
-import { SliderValue } from 'antd/lib/slider';
+import Input from 'antd/lib/input';
 
 import {
     changeFrameAsync,
@@ -154,15 +153,13 @@ interface State {
 
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
-    private inputFrameRef: React.RefObject<InputNumber>;
-
+    private inputFrameRef: React.RefObject<Input>;
     private autoSaveInterval: number | undefined;
-
     private unblock: any;
 
     constructor(props: Props) {
         super(props);
-        this.inputFrameRef = React.createRef<InputNumber>();
+        this.inputFrameRef = React.createRef<Input>();
         this.state = {
             prevButtonType: 'regular',
             nextButtonType: 'regular',
@@ -408,7 +405,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         onSaveAnnotation(jobInstance);
     };
 
-    private onChangePlayerSliderValue = (value: SliderValue): void => {
+    private onChangePlayerSliderValue = (value: number): void => {
         const { playing, onSwitchPlay } = this.props;
         if (playing) {
             onSwitchPlay(false);

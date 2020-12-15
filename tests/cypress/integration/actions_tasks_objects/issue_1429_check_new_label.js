@@ -38,8 +38,8 @@ context('Check if the new label reflects in the options', () => {
             cy.createRectangle(createRectangleShape2Points);
         });
         it('Checking for the new label', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1').find('.ant-select-selection').click();
-            cy.get('.ant-select-dropdown-menu-item').should('contain', newLabelName);
+            cy.get('#cvat-objects-sidebar-state-item-1').find('.ant-select-selector').click();
+            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').should('contain', newLabelName);
         });
     });
 });

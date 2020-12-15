@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
@@ -94,7 +94,7 @@ function ItemTopComponent(props: Props): JSX.Element {
     };
 
     return (
-        <Row type='flex' align='middle'>
+        <Row align='middle'>
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
@@ -104,7 +104,13 @@ function ItemTopComponent(props: Props): JSX.Element {
             </Col>
             <Col span={12}>
                 <Tooltip title='Change current label' mouseLeaveDelay={0}>
-                    <LabelSelector disabled={readonly} size='small' labels={labels} value={labelID} onChange={changeLabel} />
+                    <LabelSelector
+                        disabled={readonly}
+                        size='small'
+                        labels={labels}
+                        value={labelID}
+                        onChange={changeLabel}
+                    />
                 </Tooltip>
             </Col>
             <Col span={2}>
@@ -141,7 +147,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         activateTracking,
                     })}
                 >
-                    <Icon type='more' />
+                    <MoreOutlined />
                 </Dropdown>
             </Col>
         </Row>

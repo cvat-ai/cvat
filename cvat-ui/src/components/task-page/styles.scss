@@ -58,7 +58,7 @@
         }
     }
 
-    > .ant-tag > i {
+    > .ant-tag > span[role='img'] {
         margin-right: 5px;
     }
 }
@@ -84,12 +84,17 @@
 .cvat-task-preview-wrapper {
     overflow: hidden;
     margin-bottom: 20px;
-    width: 252px;
-    height: 144px;
+    width: $grid-unit-size * 32;
+    height: $grid-unit-size * 18;
     display: table-cell;
     text-align: center;
     vertical-align: middle;
     background-color: $background-color-2;
+}
+
+.cvat-task-parameters {
+    margin-top: $grid-unit-size * 2;
+    width: $grid-unit-size * 32;
 }
 
 .cvat-open-bug-tracker-button {
@@ -112,8 +117,12 @@
 }
 
 .cvat-job-item-status {
-    i {
-        margin-left: $grid-unit-size;
+    .cvat-job-annotation-color,
+    .cvat-job-validation-color,
+    .cvat-job-completed-color {
+        span {
+            margin-left: $grid-unit-size;
+        }
     }
 }
 
