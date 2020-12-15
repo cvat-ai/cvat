@@ -1,10 +1,10 @@
 
-### Semi-automatic and automatic annotation
-
-- To bring up cvat with auto annotation tool, **do not use** `docker-compose up`.If you did, first make sure all containers are stopped `docker-compose down`
+### Semi-automatic and Automatic Annotation
 
 
-  From cvat root directory, you need to run:
+> **⚠ WARNING: Do not use `docker-compose up`**
+>  If you did, make sure all containers are stopped by `docker-compose down`.
+- To bring up cvat with auto annotation tool, from cvat root directory, you need to run:
   ```bash
   docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
   ```
@@ -27,10 +27,7 @@
   sudo ln -sf $(pwd)/nuctl-<version>-linux-amd64 /usr/local/bin/nuctl
   ```
 
-- Create `cvat` project inside nuclio dashboard where you will deploy new
-  serverless functions and deploy a couple of DL models. Commands below should
-  be run only after CVAT has been installed using docker-compose because it
-  runs nuclio dashboard which manages all serverless functions.
+- Create `cvat` project inside nuclio dashboard where you will deploy new serverless functions and deploy a couple of DL models. Commands below should be run only after CVAT has been installed using `docker-compose` because it runs nuclio dashboard which manages all serverless functions.
 
   ```bash
   nuctl create project cvat
@@ -49,14 +46,30 @@
     --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
     --platform local
   ```
+  **Note:**
+  - See [deploy_cpu.sh](/serverless/deploy_cpu.sh) for more examples.
+  #### GPU Support
+  You will need to install Nvidia Container Toolkit and make sure your docker supports GPU. Follow [Nvidia docker instructions](https://www.tensorflow.org/install/docker#gpu_support).
+  Also you will need to add `--resource-limit nvidia.com/gpu=1` to the nuclio deployment command.
+  As an example, below will run on the GPU:
+
+  ```bash
+  nuctl deploy tf-faster-rcnn-inception-v2-coco-gpu \
+    --project-name cvat --path "serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio" --platform local \
+    --base-image tensorflow/tensorflow:2.1.1-gpu \
+    --desc "Faster RCNN from Tensorflow Object Detection GPU API" \
+    --image cvat/tf.faster_rcnn_inception_v2_coco_gpu \
+    --resource-limit nvidia.com/gpu=1
+  ```
 
 
-  If your function is running on GPU, you should add `--resource-limit nvidia.com/gpu=1` to the above command or, alternatively, add gpu resources dircetly into the function.yaml see [tensorflow-fast-rcnn-gpu](../../../serverless/tensorflow/
-  faster_rcnn_inception_v2_coco_gpu/nuclio/function.yaml)
 
-    - Note: see [deploy.sh](/serverless/deploy.sh) script for more examples.
+  **Note:**
+    - Since the model is loaded during deployment, the number of GPU functions you can deploy will be limited to your GPU memory.
 
-####Debugging:
+  -  See [deploy_gpu.sh](/serverless/deploy_gpu.sh) script for more examples.
+
+####Debugging Nuclio Functions:
 
 - You can open nuclio dashboard at [localhost:8070](http://localhost:8070). Make sure status of your functions are up and running without any error.
 
@@ -73,12 +86,12 @@
   ```
 
 
-- If you would like to debug a code inside a container, you can use vscode to directly attach to a container [instructions](https://code.visualstudio.com/docs/remote/attach-container). To apply changes, makse sure to restart the container.
+- If you would like to debug a code inside a container, you can use vscode to directly attach to a container [instructions](https://code.visualstudio.com/docs/remote/attach-container). To apply your changes, make sure to restart the container.
   ```bash
-  docker stop <name of the container>
+  docker restart <name_of_the_container>
   ```
-  and then
-  ```bash
-  docker start <name of the container>
-  ```
-  Do not use nuclio dashboard to stop the container since with any change, it rebuilds the container and you'll lose your changes.
+
+
+
+  > **⚠ WARNING:**
+  >  Do not use nuclio dashboard to stop the container because with any modifications, it rebuilds the container and you will lose your changes.

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Sample commands to deploy nuclio functions on GPU
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -47,15 +48,15 @@ nuctl deploy --project-name cvat \
     --platform local
 
 nuctl deploy --project-name cvat \
-    --path "$SCRIPT_DIR/tensorflow/faster_rcnn_inception_v2_coco_gpu/nuclio" \
-    --platform local
-
-nuctl deploy --project-name cvat \
     --path "$SCRIPT_DIR/pytorch/foolwood/siammask/nuclio" \
     --platform local
 
 nuctl deploy --project-name cvat \
     --path "$SCRIPT_DIR/pytorch/saic-vul/fbrs/nuclio" \
+    --platform local
+
+nuctl deploy --project-name cvat \
+    --path "$SCRIPT_DIR/tensorflow/faster_rcnn_inception_v2_coco/nuclio" \
     --platform local
 
 nuctl get function
