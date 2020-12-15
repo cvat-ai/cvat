@@ -24,19 +24,19 @@ function SetupTagPopover(props: Props): JSX.Element {
 
     return (
         <div className='cvat-draw-shape-popover-content'>
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color' strong>
                         Setup tag
                     </Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color'>Label</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='center'>
+            <Row justify='center'>
                 <Col span={24}>
                     <LabelSelector
                         style={{ width: '100%' }}
@@ -46,7 +46,7 @@ function SetupTagPopover(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row type='flex' justify='space-around'>
+            <Row justify='space-around'>
                 <Col span={24}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to add a tag again`} mouseLeaveDelay={0}>
                         <Button onClick={() => onSetup(selectedLabelID)}>Tag</Button>

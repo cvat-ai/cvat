@@ -233,16 +233,22 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
+            modelsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
             user,
             keyMap,
+            location,
             isModelPluginActive,
         } = this.props;
 
         const readyForRender =
             (userInitialized && (user == null || !user.isVerified)) ||
-            (userInitialized && formatsInitialized && pluginsInitialized && aboutInitialized);
+            (userInitialized &&
+                formatsInitialized &&
+                pluginsInitialized &&
+                aboutInitialized &&
+                (!isModelPluginActive || modelsInitialized));
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -312,7 +318,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         {isModelPluginActive && (
                                             <Route exact path='/models' component={ModelsPageContainer} />
                                         )}
-                                        <Redirect push to='/tasks' />
+                                        <Redirect
+                                            push
+                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                        />
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
@@ -339,7 +348,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             path='/auth/password/reset/confirm'
                             component={ResetPasswordPageConfirmComponent}
                         />
-                        <Redirect to='/auth/login' />
+                        <Redirect
+                            to={location.pathname.length > 1 ? `/auth/login/?next=${location.pathname}` : '/auth/login'}
+                        />
                     </Switch>
                 </GlobalErrorBoundary>
             );

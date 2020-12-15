@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+
+import { CloseOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
@@ -102,7 +103,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                 </>
             )}
             title={(
-                <Row type='flex' justify='space-between' align='middle'>
+                <Row justify='space-between' align='middle'>
                     <Col span={12}>
                         <Text strong>Select color</Text>
                     </Col>
@@ -114,7 +115,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                                     changeVisible(false);
                                 }}
                             >
-                                <Icon type='close' />
+                                <CloseOutlined />
                             </Button>
                         </Tooltip>
                     </Col>

@@ -4,7 +4,9 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Menu, { ClickParam } from 'antd/lib/menu';
+import Menu from 'antd/lib/menu';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { Workspace } from 'reducers/interfaces';
@@ -27,7 +29,7 @@ interface ReviewContextMenuProps {
     top: number;
     left: number;
     latestComments: string[];
-    onClick: (param: ClickParam) => void;
+    onClick: (param: MenuInfo) => void;
 }
 
 enum ReviewContextMenuKeys {
@@ -95,7 +97,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 top={top}
                 left={left}
                 latestComments={latestComments}
-                onClick={(param: ClickParam) => {
+                onClick={(param: MenuInfo) => {
                     const [state] = objectStates.filter(
                         (_state: any): boolean => _state.clientID === contextMenuClientID,
                     );

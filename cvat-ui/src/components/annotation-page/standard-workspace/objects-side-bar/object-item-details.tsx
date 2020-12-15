@@ -55,7 +55,6 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                         (attribute: any): JSX.Element => (
                             <Row
                                 key={attribute.id}
-                                type='flex'
                                 align='middle'
                                 justify='start'
                                 className='cvat-object-item-attribute-wrapper'
