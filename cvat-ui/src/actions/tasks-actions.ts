@@ -46,7 +46,7 @@ function getTasks(): AnyAction {
     return action;
 }
 
-function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
+export function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
@@ -93,25 +93,11 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
         }
 
         const array = Array.from(result);
-        const previews = [];
-        const promises = array.map((task): string => (task as any).frames.preview());
+        const promises = array.map((task): string => (task as any).frames.preview().catch(() => ''));
 
         dispatch(getInferenceStatusAsync());
 
-        for (const promise of promises) {
-            try {
-                // a tricky moment
-                // await is okay in loop in this case, there aren't any performance bottleneck
-                // because all server requests have been already sent in parallel
-
-                // eslint-disable-next-line no-await-in-loop
-                previews.push(await promise);
-            } catch (error) {
-                previews.push('');
-            }
-        }
-
-        dispatch(getTasksSuccess(array, previews, result.count, query));
+        dispatch(getTasksSuccess(array, await Promise.all(promises), result.count, query));
     };
 }
 
@@ -381,6 +367,9 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             use_cache: data.advanced.useCache,
         };
 
+        if (data.projectId) {
+            description.project_id = data.projectId;
+        }
         if (data.advanced.bugTracker) {
             description.bug_tracker = data.advanced.bugTracker;
         }
@@ -404,6 +393,9 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
         }
         if (data.advanced.dataChunkSize) {
             description.data_chunk_size = data.advanced.dataChunkSize;
+        }
+        if (data.advanced.copyData) {
+            description.copy_data = data.advanced.copyData;
         }
 
         const taskInstance = new cvat.classes.Task(description);
@@ -445,10 +437,10 @@ function updateTask(): AnyAction {
     return action;
 }
 
-function updateTaskSuccess(task: any): AnyAction {
+export function updateTaskSuccess(task: any, taskID: number): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_SUCCESS,
-        payload: { task },
+        payload: { task, taskID },
     };
 
     return action;
@@ -473,7 +465,7 @@ export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, C
             const userFetching = getState().auth.fetching;
             if (!userFetching && nextUser && currentUser.username === nextUser.username) {
                 const [task] = await cvat.tasks.get({ id: taskInstance.id });
-                dispatch(updateTaskSuccess(task));
+                dispatch(updateTaskSuccess(task, taskInstance.id));
             }
         } catch (error) {
             // try abort all changes
@@ -498,7 +490,7 @@ export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {},
             dispatch(updateTask());
             await jobInstance.save();
             const [task] = await cvat.tasks.get({ id: jobInstance.task.id });
-            dispatch(updateTaskSuccess(task));
+            dispatch(updateTaskSuccess(task, jobInstance.task.id));
         } catch (error) {
             // try abort all changes
             let task = null;

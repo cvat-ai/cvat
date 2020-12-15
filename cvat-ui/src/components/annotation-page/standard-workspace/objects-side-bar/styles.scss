@@ -19,6 +19,10 @@
             background: $header-color;
             border-radius: 0;
             height: 25px;
+
+            .ant-collapse-arrow {
+                top: $grid-unit-size;
+            }
         }
 
         > .ant-collapse-content {
@@ -48,7 +52,11 @@
     box-sizing: border-box;
     border: none;
 
-    .ant-tabs-card-bar {
+    .ant-tabs-nav {
+        &::before {
+            content: none;
+        }
+
         border: none;
         margin-bottom: 0;
         padding-top: 25px;
@@ -68,6 +76,55 @@
     }
 }
 
+.cvat-objects-sidebar-issues-list-header {
+    background: $objects-bar-tabs-color;
+    padding: $grid-unit-size;
+    height: $grid-unit-size * 4;
+    box-sizing: border-box;
+
+    > div > div {
+        > span[role='img'] {
+            font-size: 16px;
+            color: $objects-bar-icons-color;
+
+            &:hover {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+
+            &:active {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+        }
+    }
+}
+
+.cvat-objects-sidebar-issues-list {
+    background-color: $background-color-2;
+    height: calc(100% - 32px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.cvat-objects-sidebar-issue-item {
+    width: 100%;
+    margin: 1px;
+    padding: 2px;
+
+    &:hover {
+        padding: 0;
+
+        > .ant-alert {
+            border-width: 3px;
+        }
+    }
+
+    > .ant-alert.ant-alert-with-description {
+        padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 8;
+    }
+}
+
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
     padding: 5px;
@@ -78,21 +135,21 @@
     }
 
     > div:nth-child(2) {
-        margin-top: 5px;
+        margin-top: $grid-unit-size;
 
         > div {
             text-align: center;
             margin: 0 2px;
 
-            > i {
+            > span[role='img'] {
                 @extend .cvat-object-sidebar-icon;
             }
 
-            &:nth-child(4) {
+            &:last-child {
                 text-align: right;
 
-                > .ant-select {
-                    margin-left: 5px;
+                > .cvat-objects-sidebar-ordering-selector {
+                    margin-left: $grid-unit-size;
                     width: 60%;
                 }
             }
@@ -133,7 +190,7 @@
             line-height: 12px;
         }
 
-        > div:nth-child(3) > i {
+        > div:nth-child(3) > span {
             @extend .cvat-object-sidebar-icon;
 
             font-size: 25px;
@@ -149,7 +206,7 @@
             margin-top: 5px;
         }
 
-        i {
+        span[role='img'] {
             @extend .cvat-object-sidebar-icon;
         }
     }
@@ -167,6 +224,10 @@
             background: inherit;
             padding-top: 2px;
             padding-bottom: 2px;
+
+            .ant-collapse-arrow {
+                top: $grid-unit-size;
+            }
         }
 
         > .ant-collapse-content {
@@ -232,10 +293,10 @@
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
-    border-bottom: 1px solid $border-color-2;
+    border-bottom: 1px solid $border-color-1;
     padding: 5px;
 
-    i {
+    span {
         @extend .cvat-object-sidebar-icon;
     }
 
@@ -272,6 +333,12 @@
     }
 }
 
+.cvat-context-menu-item.ant-menu-item {
+    &:hover {
+        background: $hover-menu-color;
+    }
+}
+
 .cvat-object-item-menu {
     > li {
         padding: 0;
@@ -288,4 +355,10 @@
 
 .cvat-label-color-picker .sketch-picker {
     box-shadow: unset !important;
+}
+
+.cvat-states-ordering-selector {
+    :first-child {
+        margin-right: $grid-unit-size;
+    }
 }

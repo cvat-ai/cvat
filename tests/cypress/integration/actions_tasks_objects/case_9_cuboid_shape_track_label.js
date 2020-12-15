@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -14,7 +12,7 @@ context('Actions on Cuboid', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -23,7 +21,7 @@ context('Actions on Cuboid', () => {
     const createCuboidShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -36,7 +34,7 @@ context('Actions on Cuboid', () => {
     const createCuboidTrack2Points = {
         points: 'From rectangle',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createCuboidShape2Points.firstX,
         firstY: createCuboidShape2Points.firstY - 150,
         secondX: createCuboidShape2Points.secondX,
@@ -45,7 +43,7 @@ context('Actions on Cuboid', () => {
     const createCuboidTrack4Points = {
         points: 'By 4 Points',
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createCuboidShape4Points.firstX,
         firstY: createCuboidShape4Points.firstY - 150,
         secondX: createCuboidShape4Points.secondX - 100,
@@ -59,7 +57,6 @@ context('Actions on Cuboid', () => {
         labelName: newLabelName,
         points: 'From rectangle',
         type: 'Shape',
-        switchLabel: true,
         firstX: createCuboidShape2Points.firstX,
         firstY: createCuboidShape2Points.firstY + 150,
         secondX: createCuboidShape2Points.secondX,
@@ -69,7 +66,6 @@ context('Actions on Cuboid', () => {
         labelName: newLabelName,
         points: 'By 4 Points',
         type: 'Shape',
-        switchLabel: true,
         firstX: createCuboidShape4Points.firstX,
         firstY: createCuboidShape4Points.firstY + 150,
         secondX: createCuboidShape4Points.secondX,
@@ -82,17 +78,11 @@ context('Actions on Cuboid', () => {
 
     before(() => {
         cy.openTask(taskName);
+        cy.addNewLabel(newLabelName);
+        cy.openJob();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Add new label', () => {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            cy.contains('button', 'Done').click();
-        });
-        it('Open a job', () => {
-            cy.openJob();
-        });
         it('Draw a Cuboid shape in two ways (From rectangle, by 4 points)', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.createCuboid(createCuboidShape4Points);

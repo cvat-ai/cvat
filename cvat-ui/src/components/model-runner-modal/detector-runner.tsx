@@ -5,8 +5,8 @@
 import './styles.scss';
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
-import Select, { OptionProps } from 'antd/lib/select';
+import { CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tooltip from 'antd/lib/tooltip';
 import Tag from 'antd/lib/tag';
@@ -14,9 +14,12 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
 import { Model, StringObject } from 'reducers/interfaces';
 
+import { clamp } from 'utils/math';
 import consts from 'consts';
 
 interface Props {
@@ -27,7 +30,9 @@ interface Props {
 }
 
 function DetectorRunner(props: Props): JSX.Element {
-    const { task, models, withCleanup, runInference } = props;
+    const {
+        task, models, withCleanup, runInference,
+    } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
     const [mapping, setMapping] = useState<StringObject>({});
@@ -93,10 +98,12 @@ function DetectorRunner(props: Props): JSX.Element {
                     onChange={onChange}
                     style={{ width: '100%' }}
                     showSearch
-                    filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                        const { children } = option.props;
-                        if (typeof children === 'string') {
-                            return children.toLowerCase().includes(input.toLowerCase());
+                    filterOption={(input: string, option?: OptionData | OptionGroupData) => {
+                        if (option) {
+                            const { children } = option.props;
+                            if (typeof children === 'string') {
+                                return children.toLowerCase().includes(input.toLowerCase());
+                            }
                         }
 
                         return false;
@@ -104,7 +111,9 @@ function DetectorRunner(props: Props): JSX.Element {
                 >
                     {labels.map(
                         (label: string): JSX.Element => (
-                            <Select.Option key={label}>{label}</Select.Option>
+                            <Select.Option value={label} key={label}>
+                                {label}
+                            </Select.Option>
                         ),
                     )}
                 </Select>
@@ -114,7 +123,7 @@ function DetectorRunner(props: Props): JSX.Element {
 
     return (
         <div className='cvat-run-model-content'>
-            <Row type='flex' align='middle'>
+            <Row align='middle'>
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
@@ -136,7 +145,9 @@ function DetectorRunner(props: Props): JSX.Element {
                     >
                         {models.map(
                             (_model: Model): JSX.Element => (
-                                <Select.Option key={_model.id}>{_model.name}</Select.Option>
+                                <Select.Option value={_model.id} key={_model.id}>
+                                    {_model.name}
+                                </Select.Option>
                             ),
                         )}
                     </Select>
@@ -148,7 +159,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     const label = task.labels.filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
                     const color = label ? label.color : consts.NEW_LABEL_COLOR;
                     return (
-                        <Row key={modelLabel} type='flex' justify='start' align='middle'>
+                        <Row key={modelLabel} justify='start' align='middle'>
                             <Col span={10}>
                                 <Tag color={color}>{modelLabel}</Tag>
                             </Col>
@@ -157,9 +168,8 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Col>
                             <Col offset={1}>
                                 <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
-                                    <Icon
+                                    <CloseCircleOutlined
                                         className='cvat-danger-circle-icon'
-                                        type='close-circle'
                                         onClick={(): void => {
                                             const newmapping = { ...mapping };
                                             delete newmapping[modelLabel];
@@ -173,23 +183,21 @@ function DetectorRunner(props: Props): JSX.Element {
                 })}
             {isDetector && !!taskLabels.length && !!modelLabels.length && (
                 <>
-                    <Row type='flex' justify='start' align='middle'>
+                    <Row justify='start' align='middle'>
                         <Col span={10}>
                             {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) =>
-                                updateMatch(modelLabel, null),
-                            )}
+                                updateMatch(modelLabel, null))}
                         </Col>
                         <Col span={10} offset={1}>
                             {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) =>
-                                updateMatch(null, taskLabel),
-                            )}
+                                updateMatch(null, taskLabel))}
                         </Col>
                         <Col span={1} offset={1}>
                             <Tooltip
                                 title='Specify a label mapping between model labels and task labels'
                                 mouseLeaveDelay={0}
                             >
-                                <Icon className='cvat-info-circle-icon' type='question-circle' />
+                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
                             </Tooltip>
                         </Col>
                     </Row>
@@ -207,7 +215,7 @@ function DetectorRunner(props: Props): JSX.Element {
             )}
             {isReId && (
                 <div>
-                    <Row type='flex' align='middle' justify='start'>
+                    <Row align='middle' justify='start'>
                         <Col>
                             <Text>Threshold</Text>
                         </Col>
@@ -218,16 +226,16 @@ function DetectorRunner(props: Props): JSX.Element {
                                     step={0.01}
                                     max={1}
                                     value={threshold}
-                                    onChange={(value: number | undefined) => {
-                                        if (typeof value === 'number') {
-                                            setThreshold(value);
+                                    onChange={(value: number | undefined | string) => {
+                                        if (typeof value !== 'undefined') {
+                                            setThreshold(clamp(+value, 0.01, 1));
                                         }
                                     }}
                                 />
                             </Tooltip>
                         </Col>
                     </Row>
-                    <Row type='flex' align='middle' justify='start'>
+                    <Row align='middle' justify='start'>
                         <Col>
                             <Text>Maximum distance</Text>
                         </Col>
@@ -237,9 +245,9 @@ function DetectorRunner(props: Props): JSX.Element {
                                     placeholder='Threshold'
                                     min={1}
                                     value={distance}
-                                    onChange={(value: number | undefined) => {
-                                        if (typeof value === 'number') {
-                                            setDistance(value);
+                                    onChange={(value: number | undefined | string) => {
+                                        if (typeof value !== 'undefined') {
+                                            setDistance(+value);
                                         }
                                     }}
                                 />
@@ -248,7 +256,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Row>
                 </div>
             )}
-            <Row type='flex' align='middle' justify='end'>
+            <Row align='middle' justify='end'>
                 <Col>
                     <Button
                         disabled={!buttonEnabled}
@@ -257,12 +265,12 @@ function DetectorRunner(props: Props): JSX.Element {
                             runInference(
                                 task,
                                 model,
-                                model.type === 'detector'
-                                    ? { mapping, cleanup }
-                                    : {
-                                          threshold,
-                                          max_distance: distance,
-                                      },
+                                model.type === 'detector' ?
+                                    { mapping, cleanup } :
+                                    {
+                                        threshold,
+                                        max_distance: distance,
+                                    },
                             );
                         }}
                     >

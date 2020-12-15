@@ -20,7 +20,9 @@ onmessage = (e) => {
         .catch((error) => {
             postMessage({
                 id: e.data.id,
-                error,
+                error: error,
+                status: error.response.status,
+                responseData: error.response.data,
                 isSuccess: false,
             });
         });

@@ -1,5 +1,5 @@
 metadata:
-  name: openvino.omz.public.yolo-v3-tf
+  name: openvino-omz-public-yolo-v3-tf
   namespace: cvat
   annotations:
     name: YOLO v3

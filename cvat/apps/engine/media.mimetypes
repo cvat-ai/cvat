@@ -61,6 +61,7 @@ video/mp2t	m2t
 video/mp2t	bdmv
 video/vnd.mpegurl	m4u
 video/mp4	m4v
+video/mxf	mxf
 
 # possible image formats
 image/x-minolta-mrw	mrw

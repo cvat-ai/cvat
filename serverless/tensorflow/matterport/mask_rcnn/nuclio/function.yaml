@@ -1,5 +1,5 @@
 metadata:
-  name: tf.matterport.mask_rcnn
+  name: tf-matterport-mask-rcnn
   namespace: cvat
   annotations:
     name: Mask RCNN via Tensorflow

@@ -214,6 +214,12 @@ const defaultKeyMap = ({
         sequences: ['shift+n', 'n'],
         action: 'keydown',
     },
+    OPEN_REVIEW_ISSUE: {
+        name: 'Open an issue',
+        description: 'Create a new issues in the review workspace',
+        sequences: ['n'],
+        action: 'keydown',
+    },
     SWITCH_MERGE_MODE: {
         name: 'Merge mode',
         description: 'Activate or deactivate mode to merging shapes',

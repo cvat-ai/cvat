@@ -291,32 +291,7 @@ docker-compose -f docker-compose.yml \
 
 ### Semi-automatic and automatic annotation
 
--   You have to install `nuctl` command line tool to build and deploy serverless
-    functions. Download [1.5.x release](https://github.com/nuclio/nuclio/releases).
-    It wil be used to install prepared serverless functions which can run DL models
-    to automatically annotate images on the server.
-
--   Be sure that nuclio dashboard is up and running. It manages all serverless
-    functions for automatic and semi-automatic annotation. To do that you should
-    specify docker-compose.serverless.yml in command line. See an example below:
-
-    ```bash
-    # Build and run containers with the serverless component support:
-    docker-compose -f docker-compose.yml \
-      -f components/serverless/docker-compose.serverless.yml up -d --build
-    ```
-
--   Deploy built-in serverless functions from [serverless directory](/serverless)
-    or deploy your own custom serverless functions. Use [deploy.sh](/serverless/deploy.sh)
-    script which is a wrapper for `nuctl` command. Basically you need to provide to
-    the script a directory with one or more serverless functions and all of them
-    will be deployed. Commands below install DEXTR for semi-automatic
-    segmentation and YOLOv3 to detect objects automatically.
-
-    ```bash
-    deploy.sh serverless/openvino/dextr
-    deploy.sh serverless/openvino/omz/public/yolo-v3-tf
-    ```
+Please follow [instructions](/cvat/apps/documentation/installation_automatic_annotation.md)
 
 ### Stop all containers
 
@@ -373,6 +348,9 @@ volumes:
 You can change the share device path to your actual share. For user convenience
 we have defined the environment variable \$CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
+
+You can [mount](/cvat/apps/documentation/mounting_cloud_storages.md)
+your cloud storage as a FUSE and use it later as a share.
 
 ### Email verification
 

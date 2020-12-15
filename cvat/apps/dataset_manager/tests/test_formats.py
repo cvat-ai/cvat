@@ -218,8 +218,6 @@ class TaskExportTest(_DbTestBase):
     def _generate_task(self, images):
         task = {
             "name": "my task #1",
-            "owner": '',
-            "assignee": '',
             "overlap": 0,
             "segment_size": 100,
             "labels": [
@@ -272,6 +270,7 @@ class TaskExportTest(_DbTestBase):
             'TFRecord 1.0',
             'YOLO 1.1',
             'ImageNet 1.0',
+            'CamVid 1.0',
         })
 
     def test_import_formats_query(self):
@@ -289,6 +288,7 @@ class TaskExportTest(_DbTestBase):
             'TFRecord 1.0',
             'YOLO 1.1',
             'ImageNet 1.0',
+            'CamVid 1.0',
         })
 
     def test_exports(self):
@@ -325,6 +325,7 @@ class TaskExportTest(_DbTestBase):
             ('TFRecord 1.0', 'tf_detection_api'),
             ('YOLO 1.1', 'yolo'),
             ('ImageNet 1.0', 'imagenet_txt'),
+            ('CamVid 1.0', 'camvid'),
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
@@ -438,8 +439,6 @@ class FrameMatchingTest(_DbTestBase):
     def _generate_task(self, images):
         task = {
             "name": "my task #1",
-            "owner": '',
-            "assignee": '',
             "overlap": 0,
             "segment_size": 100,
             "labels": [

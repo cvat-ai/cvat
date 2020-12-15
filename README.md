@@ -19,7 +19,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 - [Installation guide](cvat/apps/documentation/installation.md)
 - [User's guide](cvat/apps/documentation/user_guide.md)
 - [Django REST API documentation](#rest-api)
-- [Datumaro dataset framework](datumaro/README.md)
+- [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
 - [Command line interface](utils/cli/)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
@@ -40,11 +40,13 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 ## Supported annotation formats
 
-Format selection is possible after clicking on the Upload annotation
-and Dump annotation buttons.
-[Datumaro](https://github.com/openvinotoolkit/datumaro) dataset
-framework allows additional dataset transformations
-via its command line tool and Python library.
+Format selection is possible after clicking on the Upload annotation and Dump
+annotation buttons. [Datumaro](https://github.com/openvinotoolkit/datumaro)
+dataset framework allows additional dataset transformations via its command
+line tool and Python library.
+
+For more information about supported formats look at the
+[documentation](cvat/apps/dataset_manager/formats/README.md#formats).
 
 | Annotation format                                                             | Import | Export |
 | ----------------------------------------------------------------------------- | ------ | ------ |
@@ -58,23 +60,25 @@ via its command line tool and Python library.
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)         | X      | X      |
 | [MOT](https://motchallenge.net/)                                              | X      | X      |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
+| [ImageNet](http://www.image-net.org)                                          | X      | X      |
+| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
 
 ## Deep learning serverless functions for automatic labeling
 
-| Name                                                                                                    | Type       | Framework  |
-| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- |
-| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   |
-| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   |
-| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   |
-| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   |
-| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   |
-| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   |
-| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   |
-| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    |
-| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    |
-| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    |
-| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow |
-| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow |
+| Name                                                                                                    | Type       | Framework  | CPU | GPU |
+| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
+| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |     |
+| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | X   |     |
+| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |     |
+| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |     |
+| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |     |
+| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |     |
+| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |     |
+| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | X   |     |
+| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    | X   |     |
+| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | X   |     |
+| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
+| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   |     |
 
 ## Online demo: [cvat.org](https://cvat.org)
 
@@ -128,4 +132,5 @@ Other ways to ask questions and get our support:
 - [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
 
 ## Projects using CVAT
+
 - [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source vision AI platform that fully integrates CVAT with scalable data processing and parallelized training pipelines.

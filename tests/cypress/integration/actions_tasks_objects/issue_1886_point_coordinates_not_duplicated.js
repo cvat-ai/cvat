@@ -1,12 +1,10 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName, advancedConfigurationParams } from '../../support/const';
+import { taskName, advancedConfigurationParams, labelName } from '../../support/const';
 
 context("Point coordinates are not duplicated while polygon's interpolation.", () => {
     const issueId = '1886';
@@ -14,7 +12,7 @@ context("Point coordinates are not duplicated while polygon's interpolation.", (
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 300, y: 450 },
             { x: 400, y: 450 },

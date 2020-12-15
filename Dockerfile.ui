@@ -15,13 +15,13 @@ ENV TERM=xterm \
     LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
 
+RUN apk add python3 g++ make
+
 # Install dependencies
 COPY cvat-core/package*.json /tmp/cvat-core/
 COPY cvat-canvas/package*.json /tmp/cvat-canvas/
 COPY cvat-ui/package*.json /tmp/cvat-ui/
 COPY cvat-data/package*.json /tmp/cvat-data/
-
-RUN npm config set loglevel info
 
 # Install cvat-data dependencies
 WORKDIR /tmp/cvat-data/

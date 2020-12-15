@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+
+import { CloseOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
@@ -22,23 +23,24 @@ interface Props {
     onChange?: (value: string) => void;
     onVisibleChange?: (visible: boolean) => void;
     placement?:
-        | 'left'
-        | 'top'
-        | 'right'
-        | 'bottom'
-        | 'topLeft'
-        | 'topRight'
-        | 'bottomLeft'
-        | 'bottomRight'
-        | 'leftTop'
-        | 'leftBottom'
-        | 'rightTop'
-        | 'rightBottom'
-        | undefined;
+    | 'left'
+    | 'top'
+    | 'right'
+    | 'bottom'
+    | 'topLeft'
+    | 'topRight'
+    | 'bottomLeft'
+    | 'bottomRight'
+    | 'leftTop'
+    | 'leftBottom'
+    | 'rightTop'
+    | 'rightBottom';
 }
 
 function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
-    const { children, value, visible, resetVisible, onChange, onVisibleChange, placement } = props;
+    const {
+        children, value, visible, resetVisible, onChange, onVisibleChange, placement,
+    } = props;
 
     const [colorState, setColorState] = useState(value);
     const [pickerVisible, setPickerVisible] = useState(false);
@@ -55,7 +57,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
 
     return (
         <Popover
-            content={
+            content={(
                 <>
                     <SketchPicker
                         color={colorState}
@@ -99,9 +101,9 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                         </Col>
                     </Row>
                 </>
-            }
-            title={
-                <Row type='flex' justify='space-between' align='middle'>
+            )}
+            title={(
+                <Row justify='space-between' align='middle'>
                     <Col span={12}>
                         <Text strong>Select color</Text>
                     </Col>
@@ -113,12 +115,12 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                                     changeVisible(false);
                                 }}
                             >
-                                <Icon type='close' />
+                                <CloseOutlined />
                             </Button>
                         </Tooltip>
                     </Col>
                 </Row>
-            }
+            )}
             placement={placement || 'left'}
             overlayClassName='cvat-label-color-picker'
             trigger='click'

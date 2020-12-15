@@ -5,20 +5,20 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
-import Icon from 'antd/lib/icon';
+import { CheckCircleOutlined, LoadingOutlined, WarningOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
-import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
 import getCore from 'cvat-core-wrapper';
-import patterns from 'utils/validation-patterns';
 import { getReposData, syncRepos } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
-import UserSelector from './user-selector';
+import Descriptions from 'antd/lib/descriptions';
+import UserSelector, { User } from './user-selector';
+import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 
 const core = getCore();
@@ -27,7 +27,6 @@ interface Props {
     previewImage: string;
     taskInstance: any;
     installedGit: boolean; // change to git repos url
-    registeredUsers: any[];
     activeInference: ActiveInference | null;
     cancelAutoAnnotation(): void;
     onTaskUpdate: (taskInstance: any) => void;
@@ -35,8 +34,6 @@ interface Props {
 
 interface State {
     name: string;
-    bugTracker: string;
-    bugTrackerEditing: boolean;
     repository: string;
     repositoryStatus: string;
 }
@@ -58,8 +55,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.previewWrapperRef = React.createRef<HTMLDivElement>();
         this.state = {
             name: taskInstance.name,
-            bugTracker: taskInstance.bugTracker,
-            bugTrackerEditing: false,
             repository: '',
             repositoryStatus: '',
         };
@@ -120,7 +115,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         if (prevProps !== this.props) {
             this.setState({
                 name: taskInstance.name,
-                bugTracker: taskInstance.bugTracker,
             });
         }
     }
@@ -165,66 +159,39 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         const { overlap, segmentSize, imageQuality } = taskInstance;
 
         return (
-            <>
-                <Row type='flex' justify='start' align='middle'>
-                    <Col span={12}>
-                        <Text strong className='cvat-text-color'>
-                            Overlap size
-                        </Text>
-                        <br />
-                        <Text className='cvat-text-color'>{overlap}</Text>
-                    </Col>
-                    <Col span={12}>
-                        <Text strong className='cvat-text-color'>
-                            Segment size
-                        </Text>
-                        <br />
-                        <Text className='cvat-text-color'>{segmentSize}</Text>
-                    </Col>
-                </Row>
-                <Row type='flex' justify='space-between' align='middle'>
-                    <Col span={12}>
-                        <Text strong className='cvat-text-color'>
-                            Image quality
-                        </Text>
-                        <br />
-                        <Text className='cvat-text-color'>{imageQuality}</Text>
-                    </Col>
-                </Row>
-            </>
+            <Descriptions className='cvat-task-parameters' bordered layout='vertical' size='small'>
+                <Descriptions.Item label='Overlap size'>{overlap}</Descriptions.Item>
+                <Descriptions.Item label='Segment size'>{segmentSize}</Descriptions.Item>
+                <Descriptions.Item label='Image quality'>{imageQuality}</Descriptions.Item>
+            </Descriptions>
         );
     }
 
-    private renderUsers(): JSX.Element {
-        const { taskInstance, registeredUsers, onTaskUpdate } = this.props;
+    private renderDescription(): JSX.Element {
+        const { taskInstance, onTaskUpdate } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
-        const assignee = taskInstance.assignee ? taskInstance.assignee.username : null;
+        const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
         const assigneeSelect = (
             <UserSelector
-                users={registeredUsers}
                 value={assignee}
-                onChange={(value: string): void => {
-                    let [userInstance] = registeredUsers.filter((user: any) => user.username === value);
-
-                    if (userInstance === undefined) {
-                        userInstance = null;
-                    }
-
-                    taskInstance.assignee = userInstance;
+                onSelect={(value: User | null): void => {
+                    taskInstance.assignee = value;
                     onTaskUpdate(taskInstance);
                 }}
             />
         );
 
         return (
-            <Row type='flex' justify='space-between' align='middle'>
-                <Col span={12}>{owner && <Text type='secondary'>{`Created by ${owner} on ${created}`}</Text>}</Col>
+            <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
+                <Col span={12}>
+                    {owner && (
+                        <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
+                    )}
+                </Col>
                 <Col span={10}>
-                    <Text type='secondary'>
-                        Assigned to
-                        {assigneeSelect}
-                    </Text>
+                    <Text type='secondary'>Assigned to</Text>
+                    {assigneeSelect}
                 </Col>
             </Row>
         );
@@ -247,19 +214,19 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         </a>
                         {repositoryStatus === 'sync' && (
                             <Tag color='blue'>
-                                <Icon type='check-circle' />
+                                <CheckCircleOutlined />
                                 Synchronized
                             </Tag>
                         )}
                         {repositoryStatus === 'merged' && (
                             <Tag color='green'>
-                                <Icon type='check-circle' />
+                                <CheckCircleOutlined />
                                 Merged
                             </Tag>
                         )}
                         {repositoryStatus === 'syncing' && (
                             <Tag color='purple'>
-                                <Icon type='loading' />
+                                <LoadingOutlined />
                                 Syncing
                             </Tag>
                         )}
@@ -294,7 +261,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                         });
                                 }}
                             >
-                                <Icon type='warning' />
+                                <WarningOutlined />
                                 Synchronize
                             </Tag>
                         )}
@@ -304,92 +271,12 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
-    private renderBugTracker(): JSX.Element {
-        const { taskInstance, onTaskUpdate } = this.props;
-        const { bugTracker, bugTrackerEditing } = this.state;
-
-        let shown = false;
-        const onStart = (): void => {
-            this.setState({
-                bugTrackerEditing: true,
-            });
-        };
-        const onChangeValue = (value: string): void => {
-            if (value && !patterns.validateURL.pattern.test(value)) {
-                if (!shown) {
-                    Modal.error({
-                        title: `Could not update the task ${taskInstance.id}`,
-                        content: 'Issue tracker is expected to be URL',
-                        onOk: () => {
-                            shown = false;
-                        },
-                    });
-                    shown = true;
-                }
-            } else {
-                this.setState({
-                    bugTracker: value,
-                    bugTrackerEditing: false,
-                });
-
-                taskInstance.bugTracker = value;
-                onTaskUpdate(taskInstance);
-            }
-        };
-
-        if (bugTracker) {
-            return (
-                <Row>
-                    <Col>
-                        <Text strong className='cvat-text-color'>
-                            Issue Tracker
-                        </Text>
-                        <br />
-                        <Text editable={{ onChange: onChangeValue }}>{bugTracker}</Text>
-                        <Button
-                            type='ghost'
-                            size='small'
-                            onClick={(): void => {
-                                // false positive
-                                // eslint-disable-next-line
-                                window.open(bugTracker, '_blank');
-                            }}
-                            className='cvat-open-bug-tracker-button'
-                        >
-                            Open the issue
-                        </Button>
-                    </Col>
-                </Row>
-            );
-        }
-
-        return (
-            <Row>
-                <Col>
-                    <Text strong className='cvat-text-color'>
-                        Issue Tracker
-                    </Text>
-                    <br />
-                    <Text
-                        editable={{
-                            editing: bugTrackerEditing,
-                            onStart,
-                            onChange: onChangeValue,
-                        }}
-                    >
-                        {bugTrackerEditing ? '' : 'Not specified'}
-                    </Text>
-                </Col>
-            </Row>
-        );
-    }
-
     private renderLabelsEditor(): JSX.Element {
         const { taskInstance, onTaskUpdate } = this.props;
 
         return (
             <Row>
-                <Col>
+                <Col span={24}>
                     <LabelsEditorComponent
                         labels={taskInstance.labels.map((label: any): string => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
@@ -403,25 +290,36 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     public render(): JSX.Element {
-        const { activeInference, cancelAutoAnnotation } = this.props;
+        const {
+            activeInference, cancelAutoAnnotation, taskInstance, onTaskUpdate,
+        } = this.props;
+
         return (
             <div className='cvat-task-details'>
-                <Row type='flex' justify='start' align='middle'>
+                <Row justify='start' align='middle'>
                     <Col>{this.renderTaskName()}</Col>
                 </Row>
-                <Row type='flex' justify='space-between' align='top'>
+                <Row justify='space-between' align='top'>
                     <Col md={8} lg={7} xl={7} xxl={6}>
-                        <Row type='flex' justify='start' align='middle'>
+                        <Row justify='start' align='middle'>
                             <Col span={24}>{this.renderPreview()}</Col>
                         </Row>
                         <Row>
-                            <Col>{this.renderParameters()}</Col>
+                            <Col span={24}>{this.renderParameters()}</Col>
                         </Row>
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
-                        {this.renderUsers()}
-                        <Row type='flex' justify='space-between' align='middle'>
-                            <Col span={12}>{this.renderBugTracker()}</Col>
+                        {this.renderDescription()}
+                        <Row justify='space-between' align='middle'>
+                            <Col span={12}>
+                                <BugTrackerEditor
+                                    instance={taskInstance}
+                                    onChange={(bugTracker) => {
+                                        taskInstance.bugTracker = bugTracker;
+                                        onTaskUpdate(taskInstance);
+                                    }}
+                                />
+                            </Col>
                             <Col span={10}>
                                 <AutomaticAnnotationProgress
                                     activeInference={activeInference}
@@ -430,7 +328,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                             </Col>
                         </Row>
                         {this.renderDatasetRepository()}
-                        {this.renderLabelsEditor()}
+                        {!taskInstance.projectId && this.renderLabelsEditor()}
                     </Col>
                 </Row>
             </div>

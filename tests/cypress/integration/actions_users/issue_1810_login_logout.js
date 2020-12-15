@@ -14,11 +14,9 @@ context('When clicking on the Logout button, get the user session closed.', () =
     describe(`Testing issue "${issueId}"`, () => {
         it('Login', () => {
             cy.login();
-            cy.url().should('include', '/tasks');
         });
         it('Logout', () => {
             cy.logout();
-            cy.url().should('include', '/auth/login');
         });
     });
 });

@@ -1,19 +1,17 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context("The points of the previous polygon mustn't appear while polygon's interpolation.", () => {
     const issueId = '1882';
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 309, y: 431 },
             { x: 360, y: 500 },
@@ -25,7 +23,7 @@ context("The points of the previous polygon mustn't appear while polygon's inter
     const reDrawPolygonTrack = {
         reDraw: true,
         type: 'Track',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 359, y: 431 },
             { x: 410, y: 500 },

@@ -98,7 +98,6 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
                                 onChange={(value: string) => {
                                     onChangeShortcutLabel(value, Number.parseInt(id, 10));
                                 }}
-                                size='default'
                                 style={{ width: 200 }}
                                 className='cvat-tag-annotation-label-select'
                             >

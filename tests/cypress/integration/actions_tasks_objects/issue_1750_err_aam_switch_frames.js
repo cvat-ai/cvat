@@ -11,7 +11,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -20,7 +20,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
@@ -58,7 +58,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
                 .click({ force: true });
         });
         it('Page with the error is missing', () => {
-            cy.contains('Oops, something went wrong').should('not.exist');
+            cy.contains('Oops, something went wrong', { timeout: 1000 }).should('not.exist');
             cy.changeLabelAAM(labelName);
             cy.get('.attribute-annotation-sidebar-object-switcher').should('contain', `${labelName} 2 [2/2]`);
         });

@@ -1,12 +1,10 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+ import { taskName, labelName } from '../../support/const';
 
 context(
     "Hidden objects mustn't consider when we want to group visible objects only and use an grouping area for it.",
@@ -15,21 +13,21 @@ context(
         let bgcolor = '';
         const createFirstPointsShape = {
             type: 'Shape',
-            switchLabel: false,
+            labelName: labelName,
             pointsMap: [{ x: 300, y: 410 }],
             complete: true,
             numberOfPoints: null,
         };
         const createSecondPointsShape = {
             type: 'Shape',
-            switchLabel: false,
+            labelName: labelName,
             pointsMap: [{ x: 350, y: 410 }],
             complete: true,
             numberOfPoints: null,
         };
         const createThridPointsShape = {
             type: 'Shape',
-            switchLabel: false,
+            labelName: labelName,
             pointsMap: [{ x: 400, y: 410 }],
             complete: true,
             numberOfPoints: null,

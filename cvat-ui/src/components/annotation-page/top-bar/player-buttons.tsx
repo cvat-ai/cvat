@@ -5,7 +5,7 @@
 import React from 'react';
 
 import { Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
 
@@ -76,12 +76,16 @@ function PlayerButtons(props: Props): JSX.Element {
     let prevButtonTooltipMessage = prevRegularText;
     if (prevButtonType === 'filtered') {
         prevButton = (
-            <Icon className='cvat-player-previous-button' component={PreviousFilteredIcon} onClick={onPrevFrame} />
+            <Icon
+                className='cvat-player-previous-button-filtered'
+                component={PreviousFilteredIcon}
+                onClick={onPrevFrame}
+            />
         );
         prevButtonTooltipMessage = prevFilteredText;
     } else if (prevButtonType === 'empty') {
         prevButton = (
-            <Icon className='cvat-player-previous-button' component={PreviousEmptyIcon} onClick={onPrevFrame} />
+            <Icon className='cvat-player-previous-button-empty' component={PreviousEmptyIcon} onClick={onPrevFrame} />
         );
         prevButtonTooltipMessage = prevEmptyText;
     }
@@ -90,11 +94,11 @@ function PlayerButtons(props: Props): JSX.Element {
     let nextButtonTooltipMessage = nextRegularText;
     if (nextButtonType === 'filtered') {
         nextButton = (
-            <Icon className='cvat-player-previous-button' component={NextFilteredIcon} onClick={onNextFrame} />
+            <Icon className='cvat-player-next-button-filtered' component={NextFilteredIcon} onClick={onNextFrame} />
         );
         nextButtonTooltipMessage = nextFilteredText;
     } else if (nextButtonType === 'empty') {
-        nextButton = <Icon className='cvat-player-previous-button' component={NextEmptyIcon} onClick={onNextFrame} />;
+        nextButton = <Icon className='cvat-player-next-button-empty' component={NextEmptyIcon} onClick={onNextFrame} />;
         nextButtonTooltipMessage = nextEmptyText;
     }
 
@@ -109,7 +113,7 @@ function PlayerButtons(props: Props): JSX.Element {
             <Popover
                 trigger='contextMenu'
                 placement='bottom'
-                content={
+                content={(
                     <>
                         <Tooltip title={`${prevRegularText}`} mouseLeaveDelay={0}>
                             <Icon
@@ -139,7 +143,7 @@ function PlayerButtons(props: Props): JSX.Element {
                             />
                         </Tooltip>
                     </>
-                }
+                )}
             >
                 <Tooltip
                     placement='top'
@@ -163,7 +167,7 @@ function PlayerButtons(props: Props): JSX.Element {
             <Popover
                 trigger='contextMenu'
                 placement='bottom'
-                content={
+                content={(
                     <>
                         <Tooltip title={`${nextRegularText}`} mouseLeaveDelay={0}>
                             <Icon
@@ -193,7 +197,7 @@ function PlayerButtons(props: Props): JSX.Element {
                             />
                         </Tooltip>
                     </>
-                }
+                )}
             >
                 <Tooltip placement='top' mouseLeaveDelay={0} title={`${nextButtonTooltipMessage} ${nextFrameShortcut}`}>
                     {nextButton}

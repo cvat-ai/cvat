@@ -31,7 +31,13 @@
                     if (e.data.isSuccess) {
                         requests[e.data.id].resolve(e.data.responseData);
                     } else {
-                        requests[e.data.id].reject(e.data.error);
+                        requests[e.data.id].reject({
+                            error: e.data.error,
+                            response: {
+                                status: e.data.status,
+                                data: e.data.responseData,
+                            },
+                        });
                     }
 
                     delete requests[e.data.id];
@@ -287,7 +293,7 @@
 
             async function authorized() {
                 try {
-                    await module.exports.users.getSelf();
+                    await module.exports.users.self();
                 } catch (serverError) {
                     if (serverError.code === 401) {
                         return false;
@@ -307,6 +313,82 @@
                             ...data,
                         })
                     ).data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function searchProjectNames(search, limit) {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(
+                        `${backendAPI}/projects?names_only=true&page=1&page_size=${limit}&search=${search}`,
+                        {
+                            proxy,
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function getProjects(filter = '') {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/projects?page_size=12&${filter}`, {
+                        proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function saveProject(id, projectData) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function deleteProject(id) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/projects/${id}`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function createProject(projectSpec) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/projects`, JSON.stringify(projectSpec), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    return response.data;
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -347,7 +429,12 @@
                 const { backendAPI } = config;
 
                 try {
-                    await Axios.delete(`${backendAPI}/tasks/${id}`);
+                    await Axios.delete(`${backendAPI}/tasks/${id}`, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -485,6 +572,90 @@
                 return response.data;
             }
 
+            async function getJobReviews(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createReview(data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/reviews`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getJobIssues(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createComment(data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function updateIssue(issueID, data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/issues/${issueID}`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             async function saveJob(id, jobData) {
                 const { backendAPI } = config;
 
@@ -500,20 +671,14 @@
                 }
             }
 
-            async function getUsers(id = null) {
+            async function getUsers(filter = 'page_size=all') {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    if (id === null) {
-                        response = await Axios.get(`${backendAPI}/users?page_size=all`, {
-                            proxy: config.proxy,
-                        });
-                    } else {
-                        response = await Axios.get(`${backendAPI}/users/${id}`, {
-                            proxy: config.proxy,
-                        });
-                    }
+                    response = await Axios.get(`${backendAPI}/users?${filter}`, {
+                        proxy: config.proxy,
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -566,7 +731,14 @@
                         },
                     );
                 } catch (errorData) {
-                    throw generateError(errorData);
+                    throw generateError({
+                        ...errorData,
+                        message: '',
+                        response: {
+                            ...errorData.response,
+                            data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
+                        },
+                    });
                 }
 
                 return response;
@@ -833,6 +1005,17 @@
                         writable: false,
                     },
 
+                    projects: {
+                        value: Object.freeze({
+                            get: getProjects,
+                            searchNames: searchProjectNames,
+                            save: saveProject,
+                            create: createProject,
+                            delete: deleteProject,
+                        }),
+                        writable: false,
+                    },
+
                     tasks: {
                         value: Object.freeze({
                             getTasks,
@@ -846,16 +1029,21 @@
 
                     jobs: {
                         value: Object.freeze({
-                            getJob,
-                            saveJob,
+                            get: getJob,
+                            save: saveJob,
+                            issues: getJobIssues,
+                            reviews: {
+                                get: getJobReviews,
+                                create: createReview,
+                            },
                         }),
                         writable: false,
                     },
 
                     users: {
                         value: Object.freeze({
-                            getUsers,
-                            getSelf,
+                            get: getUsers,
+                            self: getSelf,
                         }),
                         writable: false,
                     },
@@ -894,6 +1082,20 @@
                             run: runLambdaRequest,
                             call: callLambdaFunction,
                             cancel: cancelLambdaRequest,
+                        }),
+                        writable: false,
+                    },
+
+                    issues: {
+                        value: Object.freeze({
+                            update: updateIssue,
+                        }),
+                        writable: false,
+                    },
+
+                    comments: {
+                        value: Object.freeze({
+                            create: createComment,
                         }),
                         writable: false,
                     },

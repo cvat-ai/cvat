@@ -7,7 +7,7 @@ import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
 import Text from 'antd/lib/typography/Text';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
-import Slider, { SliderValue } from 'antd/lib/slider';
+import Slider from 'antd/lib/slider';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
 
@@ -42,8 +42,8 @@ interface StateToProps {
 interface DispatchToProps {
     collapseAppearance(): void;
     changeShapesColorBy(event: RadioChangeEvent): void;
-    changeShapesOpacity(event: SliderValue): void;
-    changeSelectedShapesOpacity(event: SliderValue): void;
+    changeShapesOpacity(value: number): void;
+    changeSelectedShapesOpacity(value: number): void;
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
@@ -52,7 +52,7 @@ interface DispatchToProps {
 export function computeHeight(): number {
     const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
     const [appearance] = window.document.getElementsByClassName('cvat-objects-appearance-collapse');
-    const [tabs] = Array.from(window.document.querySelectorAll('.cvat-objects-sidebar-tabs > .ant-tabs-card-bar'));
+    const [tabs] = Array.from(window.document.querySelectorAll('.cvat-objects-sidebar-tabs > .ant-tabs-nav'));
 
     if (sidebar && appearance && tabs) {
         const maxHeight = sidebar ? sidebar.clientHeight : 0;
@@ -68,7 +68,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: { appearanceCollapsed },
         settings: {
-            shapes: { colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections },
+            shapes: {
+                colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+            },
         },
     } = state;
 
@@ -105,11 +107,11 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShapesColorBy(event: RadioChangeEvent): void {
             dispatch(changeShapesColorByAction(event.target.value));
         },
-        changeShapesOpacity(value: SliderValue): void {
-            dispatch(changeShapesOpacityAction(value as number));
+        changeShapesOpacity(value: number): void {
+            dispatch(changeShapesOpacityAction(value));
         },
-        changeSelectedShapesOpacity(value: SliderValue): void {
-            dispatch(changeSelectedShapesOpacityAction(value as number));
+        changeSelectedShapesOpacity(value: number): void {
+            dispatch(changeSelectedShapesOpacityAction(value));
         },
         changeShapesOutlinedBorders(outlined: boolean, color: string): void {
             dispatch(changeShapesOutlinedBordersAction(outlined, color));
@@ -153,16 +155,33 @@ function AppearanceBlock(props: Props): JSX.Element {
             <Collapse.Panel header={<Text strong>Appearance</Text>} key='appearance'>
                 <div className='cvat-objects-appearance-content'>
                     <Text type='secondary'>Color by</Text>
-                    <Radio.Group value={colorBy} onChange={changeShapesColorBy}>
+                    <Radio.Group
+                        className='cvat-appearance-color-by-radio-group'
+                        value={colorBy}
+                        onChange={changeShapesColorBy}
+                    >
                         <Radio.Button value={ColorBy.LABEL}>{ColorBy.LABEL}</Radio.Button>
                         <Radio.Button value={ColorBy.INSTANCE}>{ColorBy.INSTANCE}</Radio.Button>
                         <Radio.Button value={ColorBy.GROUP}>{ColorBy.GROUP}</Radio.Button>
                     </Radio.Group>
                     <Text type='secondary'>Opacity</Text>
-                    <Slider onChange={changeShapesOpacity} value={opacity} min={0} max={100} />
+                    <Slider
+                        className='cvat-appearance-opacity-slider'
+                        onChange={changeShapesOpacity}
+                        value={opacity}
+                        min={0}
+                        max={100}
+                    />
                     <Text type='secondary'>Selected opacity</Text>
-                    <Slider onChange={changeSelectedShapesOpacity} value={selectedOpacity} min={0} max={100} />
+                    <Slider
+                        className='cvat-appearance-selected-opacity-slider'
+                        onChange={changeSelectedShapesOpacity}
+                        value={selectedOpacity}
+                        min={0}
+                        max={100}
+                    />
                     <Checkbox
+                        className='cvat-appearance-outlinded-borders-checkbox'
                         onChange={(event: CheckboxChangeEvent) => {
                             changeShapesOutlinedBorders(event.target.checked, outlineColor);
                         }}
@@ -175,15 +194,23 @@ function AppearanceBlock(props: Props): JSX.Element {
                             placement='top'
                             resetVisible={false}
                         >
-                            <Button type='link' shape='circle'>
+                            <Button className='cvat-appearance-outlined-borders-button' type='link' shape='circle'>
                                 <ColorizeIcon />
                             </Button>
                         </ColorPicker>
                     </Checkbox>
-                    <Checkbox onChange={changeShowBitmap} checked={showBitmap}>
+                    <Checkbox
+                        className='cvat-appearance-bitmap-checkbox'
+                        onChange={changeShowBitmap}
+                        checked={showBitmap}
+                    >
                         Show bitmap
                     </Checkbox>
-                    <Checkbox onChange={changeShowProjections} checked={showProjections}>
+                    <Checkbox
+                        className='cvat-appearance-cuboid-projections-checkbox'
+                        onChange={changeShowProjections}
+                        checked={showProjections}
+                    >
                         Show projections
                     </Checkbox>
                 </div>

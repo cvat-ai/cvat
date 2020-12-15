@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- *
- * SPDX-License-Identifier: MIT
- */
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
@@ -11,7 +9,7 @@ export const taskName = `New annotation task for ${labelName}`;
 export const attrName = `Attr for ${labelName}`;
 export const textDefaultValue = 'Some default value for type Text';
 export const imagesCount = 50;
-export const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
+export const imageFileName = `image_${labelName.replace(/\s+/g, '_').toLowerCase()}`;
 export const width = 800;
 export const height = 800;
 export const posX = 10;
