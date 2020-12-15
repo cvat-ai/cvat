@@ -2,7 +2,7 @@ version: '3.3'
 services:
   serverless:
     container_name: nuclio
-    image: quay.io/nuclio/dashboard:1.4.8-amd64
+    image: quay.io/nuclio/dashboard:1.5.8-amd64
     restart: always
     networks:
       default:
