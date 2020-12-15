@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sample commands to deploy nuclio functions on GPU
+# Sample commands to deploy nuclio functions on CPU
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
