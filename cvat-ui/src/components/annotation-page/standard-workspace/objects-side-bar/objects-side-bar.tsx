@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { Dispatch, useEffect } from 'react';
+import React, { Dispatch, useEffect, TransitionEvent } from 'react';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
@@ -81,24 +81,22 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         };
     }, []);
 
-    useEffect(() => {
-        const listener = (event: Event): void => {
-            if (
-                (event as TransitionEvent).propertyName === 'width' &&
-                ((event.target as any).classList as DOMTokenList).contains('ant-tabs-tab-prev')
-            ) {
+    const collapse = (): void => {
+        const [collapser] = window.document.getElementsByClassName('cvat-objects-sidebar');
+        const listener = (event: TransitionEvent): void => {
+            if (event.target && event.propertyName === 'width' && event.target === collapser) {
+                canvasInstance.fitCanvas();
                 canvasInstance.fit();
+                (collapser as HTMLElement).removeEventListener('transitionend', listener as any);
             }
         };
 
-        const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
+        if (collapser) {
+            (collapser as HTMLElement).addEventListener('transitionend', listener as any);
+        }
 
-        sidebar.addEventListener('transitionstart', listener);
-
-        return () => {
-            sidebar.removeEventListener('transitionstart', listener);
-        };
-    }, []);
+        collapseSidebar();
+    };
 
     return (
         <Layout.Sider
@@ -116,7 +114,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 className={`cvat-objects-sidebar-sider
                     ant-layout-sider-zero-width-trigger
                     ant-layout-sider-zero-width-trigger-left`}
-                onClick={collapseSidebar}
+                onClick={collapse}
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>

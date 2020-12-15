@@ -34,6 +34,7 @@ export default function TaskListComponent(props: ContentListProps): JSX.Element 
                     <Pagination
                         className='cvat-tasks-pagination'
                         onChange={onSwitchPage}
+                        showSizeChanger={false}
                         total={numberOfTasks}
                         pageSize={10}
                         current={currentPage}

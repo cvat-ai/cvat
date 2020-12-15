@@ -58,6 +58,7 @@ export default function ProjectListComponent(): JSX.Element {
                     <Pagination
                         className='cvat-projects-pagination'
                         onChange={changePage}
+                        showSizeChanger={false}
                         total={projectsCount}
                         pageSize={12}
                         current={page}

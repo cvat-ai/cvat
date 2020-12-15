@@ -116,7 +116,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </Col>
                 </Row>
                 <Row>
-                    <Col>
+                    <Col span={24}>
                         <Progress
                             className={`${progressColor} cvat-task-progress`}
                             percent={jobsProgress * 100}
