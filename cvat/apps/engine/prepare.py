@@ -31,17 +31,17 @@ class WorkWithVideo:
     @staticmethod
     def _get_frame_size(container):
         video_stream = WorkWithVideo._get_video_stream(container)
-        packet = next(iter(container.demux(video_stream)))
-        frame = next(iter(packet.decode()))
-        if video_stream.metadata.get('rotate'):
-            frame = av.VideoFrame().from_ndarray(
-                rotate_image(
-                    frame.to_ndarray(format='bgr24'),
-                    360 - int(container.streams.video[0].metadata.get('rotate')),
-                ),
-                format ='bgr24',
-            )
-        return frame.width, frame.height
+        for packet in container.demux(video_stream):
+            for frame in packet.decode():
+                if video_stream.metadata.get('rotate'):
+                    frame = av.VideoFrame().from_ndarray(
+                        rotate_image(
+                            frame.to_ndarray(format='bgr24'),
+                            360 - int(container.streams.video[0].metadata.get('rotate')),
+                        ),
+                        format ='bgr24',
+                    )
+                return frame.width, frame.height
 
 class AnalyzeVideo(WorkWithVideo):
     def check_type_first_frame(self):
