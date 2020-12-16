@@ -94,7 +94,4 @@ import cvat.apps.dataset_manager.formats.pascal_voc
 import cvat.apps.dataset_manager.formats.tfrecord
 import cvat.apps.dataset_manager.formats.yolo
 import cvat.apps.dataset_manager.formats.imagenet
-<<<<<<< HEAD
-=======
 import cvat.apps.dataset_manager.formats.camvid
->>>>>>> 6dd8130475e7c017077c72f0e3c13d5ba5d5295f

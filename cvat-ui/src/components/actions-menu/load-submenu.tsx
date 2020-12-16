@@ -7,11 +7,8 @@ import Menu from 'antd/lib/menu';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-<<<<<<< HEAD
 import {TaskDimension} from "../../reducers/interfaces";
-=======
 import { UploadOutlined, LoadingOutlined } from '@ant-design/icons';
->>>>>>> 6dd8130475e7c017077c72f0e3c13d5ba5d5295f
 
 interface Props {
     menuKey: string;
@@ -22,13 +19,7 @@ interface Props {
 }
 
 export default function LoadSubmenu(props: Props): JSX.Element {
-<<<<<<< HEAD
     const { menuKey, loaders, loadActivity, onFileUpload, taskDimension } = props;
-=======
-    const {
-        menuKey, loaders, loadActivity, onFileUpload,
-    } = props;
->>>>>>> 6dd8130475e7c017077c72f0e3c13d5ba5d5295f
 
     return (
         <Menu.SubMenu key={menuKey} title='Upload annotations'>

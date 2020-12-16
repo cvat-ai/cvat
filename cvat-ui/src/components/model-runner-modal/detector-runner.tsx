@@ -14,12 +14,9 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
-<<<<<<< HEAD
 import {TaskDimension} from '../../reducers/interfaces'
-=======
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
->>>>>>> 6dd8130475e7c017077c72f0e3c13d5ba5d5295f
 
 import { Model, StringObject } from 'reducers/interfaces';
 
