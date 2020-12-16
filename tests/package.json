@@ -6,7 +6,8 @@
   "devDependencies": {
     "@cypress/code-coverage": "^3.8.1",
     "cypress": "^5.0.0",
-    "cypress-file-upload": "^4.1.1"
+    "cypress-file-upload": "^4.1.1",
+    "cypress-plugin-tab": "^1.0.5"
   },
   "dependencies": {
     "archiver": "^5.0.0",
