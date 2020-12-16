@@ -33,6 +33,18 @@ def get_mime(name):
 
     return 'unknown'
 
+def get_pcd_properties(file):
+        kv = {}
+        for line_no, line in enumerate(file):
+            line = line.decode("utf-8")
+            if line.startswith("#"):
+                continue
+            k, v = line.split(" ", maxsplit=1)
+            kv[k] = v.strip()
+            if "DATA" in line:
+                break
+        return kv
+
 def create_tmp_dir():
     return tempfile.mkdtemp(prefix='cvat-', suffix='.data')
 
@@ -52,7 +64,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self, dimension=DimensionType.TWOD):
+    def get_preview(self, dimension="2d"):
         pass
 
     @abstractmethod
@@ -71,7 +83,7 @@ class IMediaReader(ABC):
         return preview.convert('RGB')
 
     @abstractmethod
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
+    def get_image_size(self, i, dimension="2d"):
         pass
 
     def __len__(self):
@@ -113,11 +125,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self, dimension=DimensionType.TWOD):
+    def get_preview(self, dimension="2d"):
         fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
+    def get_image_size(self, i, dimension="2d"):
         img = Image.open(self._source_path[i])
         return img.width, img.height
 
@@ -183,10 +195,7 @@ class PdfReader(ImageListReader):
 
 class ZipReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
-<<<<<<< HEAD
         self._dimension = DimensionType.DIM_2D
-=======
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
         self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
         file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
@@ -195,41 +204,17 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def get_preview(self):
         if self._dimension == DimensionType.DIM_3D:
-=======
-    def get_preview(self, dimension="2d"):
-        if dimension == "3d":
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-    def get_preview(self, dimension=DimensionType.TWOD):
-        if dimension == DimensionType.THREED:
->>>>>>> Modified code as per review comments
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
             return self._get_preview(fp)
         io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
         return self._get_preview(io_image)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
             with self._zip_source.open(self._source_path[i], "r") as file:
                 properties = ValidateDimension.get_pcd_properties(file)
-=======
-    def get_image_size(self, i, dimension="2d"):
-        if dimension == "3d":
-            with self._zip_source.open(self._source_path[i], "r") as file:
-                properties = get_pcd_properties(file)
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
-        if dimension == DimensionType.THREED:
-            with self._zip_source.open(self._source_path[i], "r") as file:
-                properties = ValidateDimension.get_pcd_properties(file)
->>>>>>> Modified code as per review comments
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
         return img.width, img.height
@@ -245,16 +230,10 @@ class ZipReader(ImageListReader):
     def get_zip_filename(self):
         return self._zip_source.filename
 
-<<<<<<< HEAD
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         self._dimension = dimension
         super().__init__(
             source_path=source_files,
-=======
-    def initialize_for_3d(self, source_path, step=1, start=0, stop=None):
-        super().__init__(
-            source_path=source_path,
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
             step=step,
             start=start,
             stop=stop
@@ -326,7 +305,7 @@ class VideoReader(IMediaReader):
             self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
 
-    def get_preview(self, dimension=DimensionType.TWOD):
+    def get_preview(self, dimension="2d"):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
@@ -340,20 +319,12 @@ class VideoReader(IMediaReader):
             ).to_image()
         )
 
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
+    def get_image_size(self, i, dimension="2d"):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
 class IChunkWriter(ABC):
-<<<<<<< HEAD
-<<<<<<< HEAD
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
-=======
-    def __init__(self, quality, dimension="2d"):
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-    def __init__(self, quality, dimension=DimensionType.TWOD):
->>>>>>> Modified code as per review comments
         self._image_quality = quality
         self._dimension = dimension
 
@@ -398,8 +369,6 @@ class ZipCompressedChunkWriter(IChunkWriter):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
-<<<<<<< HEAD
-<<<<<<< HEAD
                 if self._dimension == DimensionType.DIM_2D:
                     w, h, image_buf = self._compress_image(image, self._image_quality)
                     extension = "jpeg"
@@ -410,33 +379,14 @@ class ZipCompressedChunkWriter(IChunkWriter):
                     extension = "pcd"
                     image_buf.seek(0, 0)
                     image_buf = io.BytesIO(image_buf.read())
-=======
-                if self._dimension == "2d":
-                    [w, h, image_buf], extension = self._compress_image(image, self._image_quality), "jpeg"
-                else:
-                    properties = get_pcd_properties(image)
-                    w, h, image_buf, extension  = int(properties["WIDTH"]), int(properties["HEIGHT"]), image, "pcd"
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-                if self._dimension == DimensionType.TWOD:
-                    w, h, image_buf = self._compress_image(image, self._image_quality)
-                    extension = "jpeg"
-                else:
-                    image_buf = open(image, "rb") if isinstance(image, str) else image
-                    properties = ValidateDimension.get_pcd_properties(image_buf)
-                    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
-                    extension = "pcd"
-                    image_buf.seek(0, 0)
-                    image_buf = io.BytesIO(image_buf.read())
->>>>>>> Modified code as per review comments
                 image_sizes.append((w, h))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _, dimension=DimensionType.TWOD):
-        super().__init__(17, dimension=dimension)
+    def __init__(self, _, dimension="2d"):
+        super().__init__(17, dimension)
         self._output_fps = 25
 
     @staticmethod
@@ -495,7 +445,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             container.mux(packet)
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality, dimension=DimensionType.TWOD):
+    def __init__(self, quality, dimension="2d"):
         # translate inversed range [1:100] to [0:51]
         self._image_quality = round(51 * (100 - quality) / 99)
         self._output_fps = 25
@@ -616,25 +566,13 @@ MEDIA_TYPES = {
 class ValidateDimension:
 
     def __init__(self, path=None):
-<<<<<<< HEAD
-<<<<<<< HEAD
         self.dimension = DimensionType.DIM_2D
-=======
-        self.dimension = "2d"
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-        self.dimension = DimensionType.TWOD
->>>>>>> Modified code as per review comments
         self.path = path
         self.related_files = {}
         self.image_files = {}
         self.converted_files = []
 
     @staticmethod
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Modified code as per review comments
     def get_pcd_properties(fp, verify_version=False):
         kv = {}
         pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1",
@@ -650,35 +588,11 @@ class ValidateDimension:
                     break
             if verify_version:
                 if "VERSION" in kv and kv["VERSION"] in pcd_version:
-<<<<<<< HEAD
                     return True
                 return None
             return kv
         except AttributeError:
             return None
-=======
-    def validate_pcd(path):
-        """
-            Validate the point cloud file along with version check
-            On failure it is considered as PhotoCD format
-        """
-
-        pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1", ".7", ".6", ".5", ".4", ".3", ".2", ".1"]
-        with open(path, "rb") as file_read:
-            data = file_read.read(70)
-            for ver in pcd_version:
-                version = f"VERSION {ver}".encode()
-                if version in data:
-                    return True
-        return False
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-                    return True
-                return None
-            return kv
-        except AttributeError:
-            return None
->>>>>>> Modified code as per review comments
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
@@ -687,15 +601,7 @@ class ValidateDimension:
             size_float = 4
             byte = f.read(size_float * 4)
             while byte:
-<<<<<<< HEAD
-<<<<<<< HEAD
                 x, y, z, _ = struct.unpack("ffff", byte)
-=======
-                x, y, z, intensity = struct.unpack("ffff", byte)
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-                x, y, z, _ = struct.unpack("ffff", byte)
->>>>>>> Modified code as per review comments
                 list_pcd.append([x, y, z])
                 byte = f.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
@@ -715,10 +621,6 @@ class ValidateDimension:
         self.converted_files.append(pcd_path)
         return pcd_path.split(actual_path)[-1][1:]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Modified code as per review comments
     @staticmethod
     def pcd_operation(file_path, actual_path):
         with open(file_path, "rb") as file:
@@ -807,16 +709,6 @@ class ValidateDimension:
                     for related_image in self.image_files.values():
                         if root == os.path.split(related_image)[0]:
                             self.related_files[pcd_files[pcd_name]].append(related_image)
-<<<<<<< HEAD
-=======
-    def pcd_operation(self, file_path, actual_path):
-        if self.validate_pcd(file_path):
-            return file_path.split(actual_path)[-1][1:]
-        else:
-            return file_path
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
->>>>>>> Modified code as per review comments
 
     def validate(self):
         """
@@ -825,8 +717,6 @@ class ValidateDimension:
         if not self.path:
             return
         actual_path = self.path
-<<<<<<< HEAD
-<<<<<<< HEAD
         for root, _, files in os.walk(actual_path):
 
             if root.endswith("data"):
@@ -841,26 +731,3 @@ class ValidateDimension:
 
         if len(self.related_files.keys()):
             self.dimension = DimensionType.DIM_3D
-=======
-        for root, dirs, files in os.walk(actual_path):
-=======
-        for root, _, files in os.walk(actual_path):
-
->>>>>>> Modified code as per review comments
-            if root.endswith("data"):
-                if os.path.split(os.path.split(root)[0])[1] == "velodyne_points":
-                    self.validate_velodyne_points(root, actual_path, files)
-
-            elif os.path.split(root)[-1] == "pointcloud":
-                self.validate_pointcloud(root, actual_path, files)
-
-            else:
-                self.validate_default(root, actual_path, files)
-
-        if len(self.related_files.keys()):
-<<<<<<< HEAD
-            self.dimension = "3d"
->>>>>>> Added Support for 3D file Upload in BIN and PCD.
-=======
-            self.dimension = DimensionType.THREED
->>>>>>> Modified code as per review comments
