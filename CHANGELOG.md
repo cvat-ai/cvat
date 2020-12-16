@@ -5,19 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0-beta] - Unreleased
+## [1.2.0] - Unreleased
 
 ### Added
 
-- Manual review pipeline: issues/comments/workspace (<https://github.com/openvinotoolkit/cvat/pull/2357>)
-- Added basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
-- Added documentation on how to mount cloud starage(AWS S3 bucket, Azure container, Google Drive) as FUSE (<https://github.com/openvinotoolkit/cvat/pull/2377>)
-- Added ability to work with share files without copying inside (<https://github.com/openvinotoolkit/cvat/pull/2377>)
-- Tooltips in label selectors (<https://github.com/openvinotoolkit/cvat/pull/2509>)
+-
 
 ### Changed
 
-- PATCH requests from cvat-core submit only changed fields (<https://github.com/openvinotoolkit/cvat/pull/2445>)
+-
 
 ### Deprecated
 
@@ -26,6 +22,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 -
+
+### Fixed
+
+-
+
+### Security
+
+-
+
+## [1.2.0-beta] - 2020-12-15
+
+### Added
+
+- Manual review pipeline: issues/comments/workspace (<https://github.com/openvinotoolkit/cvat/pull/2357>)
+- Basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
+- Documentation on how to mount cloud starage(AWS S3 bucket, Azure container, Google Drive) as FUSE (<https://github.com/openvinotoolkit/cvat/pull/2377>)
+- Ability to work with share files without copying inside (<https://github.com/openvinotoolkit/cvat/pull/2377>)
+- Tooltips in label selectors (<https://github.com/openvinotoolkit/cvat/pull/2509>)
+- Page redirect after login using `next` query parameter (<https://github.com/openvinotoolkit/cvat/pull/2527>)
+- [ImageNet](http://www.image-net.org) format support (<https://github.com/openvinotoolkit/cvat/pull/2376>)
+- [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/) format support (<https://github.com/openvinotoolkit/cvat/pull/2559>)
+
+### Changed
+
+- PATCH requests from cvat-core submit only changed fields (<https://github.com/openvinotoolkit/cvat/pull/2445>)
+- Migrated to Antd 4.9 (<https://github.com/openvinotoolkit/cvat/pull/2536>)
 
 ### Fixed
 
@@ -40,14 +62,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Projects view layout fix (<https://github.com/openvinotoolkit/cvat/pull/2503>)
 - Fixed the tasks view (infinite loading) when it is impossible to get a preview of the task (<https://github.com/openvinotoolkit/cvat/pull/2504>)
 - Empty frames navigation (<https://github.com/openvinotoolkit/cvat/pull/2505>)
-- Disabled position editing in AAM (<https://github.com/openvinotoolkit/cvat/pull/2506>)
 - TypeError: Cannot read property 'toString' of undefined (<https://github.com/openvinotoolkit/cvat/pull/2517>)
 - Extra shapes are drawn after Esc, or G pressed while drawing a region in grouping (<https://github.com/openvinotoolkit/cvat/pull/2507>)
 - Reset state (reviews, issues) after logout or changing a job (<https://github.com/openvinotoolkit/cvat/pull/2525>)
-
-### Security
-
--
+- TypeError: Cannot read property 'id' of undefined when updating a task (<https://github.com/openvinotoolkit/cvat/pull/2544>)
 
 ## [1.2.0-alpha] - 2020-11-09
 

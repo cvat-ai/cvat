@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
+import { DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { connect } from 'react-redux';
 
 import { CombinedState, ContextMenuType } from 'reducers/interfaces';
@@ -103,12 +104,12 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
         ReactDOM.createPortal(
             <div className='cvat-canvas-point-context-menu' style={{ top, left }}>
                 <Tooltip title='Delete point [Alt + dblclick]' mouseLeaveDelay={0}>
-                    <Button type='link' icon='delete' onClick={onPointDelete}>
+                    <Button type='link' icon={<DeleteOutlined />} onClick={onPointDelete}>
                         Delete point
                     </Button>
                 </Tooltip>
                 {contextMenuFor && contextMenuFor.shapeType === 'polygon' && (
-                    <Button type='link' icon='environment' onClick={onSetStartPoint}>
+                    <Button type='link' icon={<EnvironmentOutlined />} onClick={onSetStartPoint}>
                         Set start point
                     </Button>
                 )}

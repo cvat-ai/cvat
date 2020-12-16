@@ -25,7 +25,7 @@ context("Object can't be draggable/resizable in AAM", () => {
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Create, acttivate a object', () => {
+        it.skip('Create, acttivate a object', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat_canvas_shape_1')
                 .should('not.have.class', 'cvat_canvas_shape_activated')
@@ -33,7 +33,7 @@ context("Object can't be draggable/resizable in AAM", () => {
                 .should('have.class', 'cvat_canvas_shape_activated');
         });
 
-        it('Go to AAM', () => {
+        it.skip('Go to AAM', () => {
             cy.changeWorkspace('Attribute annotation', labelName);
             cy.get('#cvat_canvas_shape_1')
                 .then((shape) => {
@@ -50,7 +50,7 @@ context("Object can't be draggable/resizable in AAM", () => {
             });
         });
 
-        it('Try to move/resize the object', () => {
+        it.skip('Try to move/resize the object', () => {
             cy.get('.cvat-canvas-container')
                 .trigger('mousedown', { button: 0 })
                 .trigger('mousemove', 550, 251)

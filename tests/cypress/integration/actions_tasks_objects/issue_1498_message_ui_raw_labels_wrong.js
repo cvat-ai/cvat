@@ -37,7 +37,7 @@ context('Message in UI when raw labels are wrong.', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('"Raw" field is empty.', () => {
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -49,7 +49,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawNameNumber[0].name = 1;
             let jsonNameNumber = JSON.stringify(taskRawNameNumber);
             cy.get('#labels').type(jsonNameNumber, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -61,7 +61,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawLabelString[0].id = '1';
             let jsonLabelString = JSON.stringify(taskRawLabelString);
             cy.get('#labels').type(jsonLabelString, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -73,7 +73,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawAttrNumber[0].attributes = 1;
             let jsonAttrNumber = JSON.stringify(taskRawAttrNumber);
             cy.get('#labels').type(jsonAttrNumber, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -85,7 +85,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawColorNumber[0].color = 1;
             let jsonColorNumber = JSON.stringify(taskRawColorNumber);
             cy.get('#labels').type(jsonColorNumber, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -97,7 +97,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawAttrIdString[0].attributes[0].id = '1';
             let jsonAttrIdString = JSON.stringify(taskRawAttrIdString);
             cy.get('#labels').type(jsonAttrIdString, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -111,7 +111,7 @@ context('Message in UI when raw labels are wrong.', () => {
                 taskRawAttrTypeNumber[0].attributes[0].input_type = type;
                 let jsonAttrTypeNumber = JSON.stringify(taskRawAttrTypeNumber);
                 cy.get('#labels').type(jsonAttrTypeNumber, { parseSpecialCharSequences: false });
-                cy.get('.ant-form-explain')
+                cy.get('.ant-form-item-explain')
                     .should('exist')
                     .invoke('text')
                     .then(($explainText) => {
@@ -125,7 +125,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawAttrMutableNumber[0].attributes[0].mutable = 1;
             let jsonAttrMutableNumber = JSON.stringify(taskRawAttrMutableNumber);
             cy.get('#labels').type(jsonAttrMutableNumber, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -137,7 +137,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawAttrValuesNumber[0].attributes[0].values = 1;
             let jsonAttrValueNumber = JSON.stringify(taskRawAttrValuesNumber);
             cy.get('#labels').type(jsonAttrValueNumber, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -149,7 +149,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawAttrValuesNumberArr[0].attributes[0].values = [1];
             let jsonAttrValuesNumberArr = JSON.stringify(taskRawAttrValuesNumberArr);
             cy.get('#labels').type(jsonAttrValuesNumberArr, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -161,7 +161,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawAttrNameNumber[0].attributes[0].name = 1;
             let jsonAttrNameNumber = JSON.stringify(taskRawAttrNameNumber);
             cy.get('#labels').type(jsonAttrNameNumber, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {
@@ -173,7 +173,7 @@ context('Message in UI when raw labels are wrong.', () => {
             taskRawAttrValuesEmptyArr[0].attributes[0].values = [];
             let jsonAttrValuesEmptyArr = JSON.stringify(taskRawAttrValuesEmptyArr);
             cy.get('#labels').type(jsonAttrValuesEmptyArr, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-explain')
+            cy.get('.ant-form-item-explain')
                 .should('exist')
                 .invoke('text')
                 .then(($explainText) => {

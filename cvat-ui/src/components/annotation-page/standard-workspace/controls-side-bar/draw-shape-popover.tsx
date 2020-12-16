@@ -52,17 +52,17 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-draw-shape-popover-content'>
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color' strong>{`Draw new ${shapeType}`}</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='start'>
+            <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color'>Label</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='center'>
+            <Row justify='center'>
                 <Col span={24}>
                     <LabelSelector
                         style={{ width: '100%' }}
@@ -79,7 +79,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             <Text className='cvat-text-color'> Drawing method </Text>
                         </Col>
                     </Row>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <Radio.Group
                                 style={{ display: 'flex' }}
@@ -104,7 +104,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             <Text className='cvat-text-color'> Drawing method </Text>
                         </Col>
                     </Row>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <Radio.Group
                                 style={{ display: 'flex' }}
@@ -123,15 +123,15 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 </>
             )}
             {shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
-                <Row type='flex' justify='space-around' align='middle'>
+                <Row justify='space-around' align='middle'>
                     <Col span={14}>
                         <Text className='cvat-text-color'> Number of points: </Text>
                     </Col>
                     <Col span={10}>
                         <InputNumber
-                            onChange={(value: number | undefined) => {
-                                if (typeof value === 'number') {
-                                    onChangePoints(Math.floor(clamp(value, minimumPoints, Number.MAX_SAFE_INTEGER)));
+                            onChange={(value: number | undefined | string) => {
+                                if (typeof value !== 'undefined') {
+                                    onChangePoints(Math.floor(clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER)));
                                 } else if (!value) {
                                     onChangePoints(undefined);
                                 }
@@ -144,7 +144,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Col>
                 </Row>
             )}
-            <Row type='flex' justify='space-around'>
+            <Row justify='space-around'>
                 <Col span={12}>
                     <Tooltip title={`Press ${repeatShapeShortcut} to draw again`} mouseLeaveDelay={0}>
                         <Button onClick={onDrawShape}>Shape</Button>

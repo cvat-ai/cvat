@@ -11,6 +11,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
 import Title from 'antd/lib/typography/Title';
+import { PlusOutlined } from '@ant-design/icons';
 
 import { CombinedState, Task } from 'reducers/interfaces';
 import { getProjectsAsync } from 'actions/projects-actions';
@@ -66,11 +67,11 @@ export default function ProjectPageComponent(): JSX.Element {
     }
 
     return (
-        <Row type='flex' justify='center' align='top' className='cvat-project-page'>
+        <Row justify='center' align='top' className='cvat-project-page'>
             <Col md={22} lg={18} xl={16} xxl={14}>
                 <ProjectTopBar projectInstance={project} />
                 <DetailsComponent project={project} />
-                <Row type='flex' justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>
+                <Row justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>
                     <Col>
                         <Title level={4}>Tasks</Title>
                     </Col>
@@ -78,7 +79,7 @@ export default function ProjectPageComponent(): JSX.Element {
                         <Button
                             size='large'
                             type='primary'
-                            icon='plus'
+                            icon={<PlusOutlined />}
                             id='cvat-create-task-button'
                             onClick={() => history.push(`/tasks/create?projectId=${id}`)}
                         >

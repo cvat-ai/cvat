@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { RefObject } from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
@@ -58,15 +58,15 @@ const defaultState = {
 };
 
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
-    private basicConfigurationComponent: any;
-
-    private advancedConfigurationComponent: any;
-
+    private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
+    private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
     private fileManagerContainer: any;
 
     public constructor(props: Props & RouteComponentProps) {
         super(props);
         this.state = { ...defaultState };
+        this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
+        this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
     }
 
     public componentDidMount(): void {
@@ -88,9 +88,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 btn,
             });
 
-            this.basicConfigurationComponent.resetFields();
-            if (this.advancedConfigurationComponent) {
-                this.advancedConfigurationComponent.resetFields();
+            if (this.basicConfigurationComponent.current) {
+                this.basicConfigurationComponent.current.resetFields();
+            }
+            if (this.advancedConfigurationComponent.current) {
+                this.advancedConfigurationComponent.current.resetFields();
             }
 
             this.fileManagerContainer.reset();
@@ -138,7 +140,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const values = this.state;
         this.setState({
             ...values,
-            activeFileManagerTab: key
+            activeFileManagerTab: key,
         });
     };
 
@@ -159,36 +161,34 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             return;
         }
 
-        this.basicConfigurationComponent
-            .submit()
-            .then(() => {
-                if (this.advancedConfigurationComponent) {
-                    return this.advancedConfigurationComponent.submit();
-                }
+        if (this.basicConfigurationComponent.current) {
+            this.basicConfigurationComponent.current.submit()
+                .then(() => {
+                    if (this.advancedConfigurationComponent.current) {
+                        return this.advancedConfigurationComponent.current.submit();
+                    }
 
-                return new Promise((resolve): void => {
-                    resolve();
+                    return new Promise((resolve): void => {
+                        resolve();
+                    });
+                }).then((): void => {
+                    const { onCreate } = this.props;
+                    onCreate(this.state);
+                })
+                .catch((error: Error): void => {
+                    notification.error({
+                        message: 'Could not create a task',
+                        description: error.toString(),
+                    });
                 });
-            })
-            .then((): void => {
-                const { onCreate } = this.props;
-                onCreate(this.state);
-            })
-            .catch((error: Error): void => {
-                notification.error({
-                    message: 'Could not create a task',
-                    description: error.toString(),
-                });
-            });
+        }
     };
 
     private renderBasicBlock(): JSX.Element {
         return (
             <Col span={24}>
                 <BasicConfigurationForm
-                    wrappedComponentRef={(component: any): void => {
-                        this.basicConfigurationComponent = component;
-                    }}
+                    ref={this.basicConfigurationComponent}
                     onSubmit={this.handleSubmitBasicConfiguration}
                 />
             </Col>
@@ -260,16 +260,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderAdvancedBlock(): JSX.Element {
         const { installedGit } = this.props;
+        const { activeFileManagerTab } = this.state;
         return (
             <Col span={24}>
                 <Collapse>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
                             installedGit={installedGit}
-                            activeFileManagerTab={this.state.activeFileManagerTab}
-                            wrappedComponentRef={(component: any): void => {
-                                this.advancedConfigurationComponent = component;
-                            }}
+                            activeFileManagerTab={activeFileManagerTab}
+                            ref={this.advancedConfigurationComponent}
                             onSubmit={this.handleSubmitAdvancedConfiguration}
                         />
                     </Collapse.Panel>
@@ -283,7 +282,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const loading = !!status && status !== 'CREATED' && status !== 'FAILED';
 
         return (
-            <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>
+            <Row justify='start' align='middle' className='cvat-create-task-content'>
                 <Col span={24}>
                     <Text className='cvat-title'>Basic configuration</Text>
                 </Col>

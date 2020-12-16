@@ -47,7 +47,7 @@ function ResetPasswordPagePageComponent(props: ResetPasswordConfirmPageComponent
     const { fetching, onResetPasswordConfirm } = props;
 
     return (
-        <Row type='flex' justify='center' align='middle'>
+        <Row justify='center' align='middle'>
             <Col {...sizes}>
                 <Title level={2}> Change password </Title>
                 <ResetPasswordConfirmForm

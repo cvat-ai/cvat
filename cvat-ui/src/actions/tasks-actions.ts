@@ -437,10 +437,10 @@ function updateTask(): AnyAction {
     return action;
 }
 
-export function updateTaskSuccess(task: any): AnyAction {
+export function updateTaskSuccess(task: any, taskID: number): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_SUCCESS,
-        payload: { task },
+        payload: { task, taskID },
     };
 
     return action;
@@ -465,7 +465,7 @@ export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, C
             const userFetching = getState().auth.fetching;
             if (!userFetching && nextUser && currentUser.username === nextUser.username) {
                 const [task] = await cvat.tasks.get({ id: taskInstance.id });
-                dispatch(updateTaskSuccess(task));
+                dispatch(updateTaskSuccess(task, taskInstance.id));
             }
         } catch (error) {
             // try abort all changes
@@ -490,7 +490,7 @@ export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {},
             dispatch(updateTask());
             await jobInstance.save();
             const [task] = await cvat.tasks.get({ id: jobInstance.task.id });
-            dispatch(updateTaskSuccess(task));
+            dispatch(updateTaskSuccess(task, jobInstance.task.id));
         } catch (error) {
             // try abort all changes
             let task = null;

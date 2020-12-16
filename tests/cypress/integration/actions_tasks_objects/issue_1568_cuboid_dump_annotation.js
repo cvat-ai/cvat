@@ -44,7 +44,7 @@ context('Dump annotation if cuboid created', () => {
                 cy.contains('Datumaro').click();
             });
         });
-        it('Error notification is ot exists', () => {
+        it('Error notification is not exists', () => {
             cy.wait(5000);
             cy.get('.ant-notification-notice').should('not.exist');
         });

@@ -4,7 +4,19 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import Icon, {
+    UnlockOutlined,
+    LockFilled,
+    TeamOutlined,
+    UserOutlined,
+    PushpinFilled,
+    PushpinOutlined,
+    EyeInvisibleFilled,
+    StarFilled,
+    SelectOutlined,
+    StarOutlined,
+    EyeOutlined,
+} from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import { ObjectType, ShapeType } from 'reducers/interfaces';
@@ -130,9 +142,9 @@ function SwitchLock(props: Props): JSX.Element {
     return (
         <Tooltip title={`Switch lock property ${switchLockShortcut}`} mouseLeaveDelay={0}>
             {locked ? (
-                <Icon {...classes.lock.enabled} type='lock' theme='filled' onClick={unlock} />
+                <LockFilled {...classes.lock.enabled} onClick={unlock} />
             ) : (
-                <Icon {...classes.lock.disabled} type='unlock' onClick={lock} />
+                <UnlockOutlined {...classes.lock.disabled} onClick={lock} />
             )}
         </Tooltip>
     );
@@ -145,9 +157,9 @@ function SwitchOccluded(props: Props): JSX.Element {
     return (
         <Tooltip title={`Switch occluded property ${switchOccludedShortcut}`} mouseLeaveDelay={0}>
             {occluded ? (
-                <Icon {...classes.occluded.enabled} type='team' onClick={unsetOccluded} />
+                <TeamOutlined {...classes.occluded.enabled} onClick={unsetOccluded} />
             ) : (
-                <Icon {...classes.occluded.disabled} type='user' onClick={setOccluded} />
+                <UserOutlined {...classes.occluded.disabled} onClick={setOccluded} />
             )}
         </Tooltip>
     );
@@ -158,9 +170,9 @@ function SwitchPinned(props: Props): JSX.Element {
     return (
         <Tooltip title='Switch pinned property' mouseLeaveDelay={0}>
             {pinned ? (
-                <Icon {...classes.pinned.enabled} type='pushpin' theme='filled' onClick={unpin} />
+                <PushpinFilled {...classes.pinned.enabled} onClick={unpin} />
             ) : (
-                <Icon {...classes.pinned.disabled} type='pushpin' onClick={pin} />
+                <PushpinOutlined {...classes.pinned.disabled} onClick={pin} />
             )}
         </Tooltip>
     );
@@ -174,15 +186,9 @@ function SwitchHidden(props: Props): JSX.Element {
     return (
         <Tooltip title={`Switch hidden property ${switchHiddenShortcut}`} mouseLeaveDelay={0}>
             {hidden ? (
-                <Icon
-                    {...classes.hidden.enabled}
-                    type='eye-invisible'
-                    theme='filled'
-                    onClick={show}
-                    style={hiddenStyle}
-                />
+                <EyeInvisibleFilled {...classes.hidden.enabled} onClick={show} style={hiddenStyle} />
             ) : (
-                <Icon {...classes.hidden.disabled} type='eye' onClick={hide} style={hiddenStyle} />
+                <EyeOutlined {...classes.hidden.disabled} onClick={hide} style={hiddenStyle} />
             )}
         </Tooltip>
     );
@@ -203,7 +209,7 @@ function SwitchOutside(props: Props): JSX.Element {
                     style={outsideStyle}
                 />
             ) : (
-                <Icon {...classes.outside.disabled} type='select' onClick={setOutside} style={outsideStyle} />
+                <SelectOutlined {...classes.outside.disabled} onClick={setOutside} style={outsideStyle} />
             )}
         </Tooltip>
     );
@@ -217,15 +223,9 @@ function SwitchKeyframe(props: Props): JSX.Element {
     return (
         <Tooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`} mouseLeaveDelay={0}>
             {keyframe ? (
-                <Icon
-                    {...classes.keyframe.enabled}
-                    type='star'
-                    theme='filled'
-                    onClick={unsetKeyframe}
-                    style={keyframeStyle}
-                />
+                <StarFilled {...classes.keyframe.enabled} onClick={unsetKeyframe} style={keyframeStyle} />
             ) : (
-                <Icon {...classes.keyframe.disabled} type='star' onClick={setKeyframe} style={keyframeStyle} />
+                <StarOutlined {...classes.keyframe.disabled} onClick={setKeyframe} style={keyframeStyle} />
             )}
         </Tooltip>
     );
@@ -236,9 +236,9 @@ function ItemButtonsComponent(props: Props): JSX.Element {
 
     if (objectType === ObjectType.TRACK) {
         return (
-            <Row type='flex' align='middle' justify='space-around'>
+            <Row align='middle' justify='space-around'>
                 <Col span={20} style={{ textAlign: 'center' }}>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <NavigateFirstKeyframe {...props} />
                         </Col>
@@ -253,7 +253,7 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     {!readonly && (
-                        <Row type='flex' justify='space-around'>
+                        <Row justify='space-around'>
                             <Col>
                                 <SwitchOutside {...props} />
                             </Col>
@@ -287,9 +287,9 @@ function ItemButtonsComponent(props: Props): JSX.Element {
 
     if (objectType === ObjectType.TAG) {
         return (
-            <Row type='flex' align='middle' justify='space-around'>
+            <Row align='middle' justify='space-around'>
                 <Col span={20} style={{ textAlign: 'center' }}>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <SwitchLock {...props} />
                         </Col>
@@ -300,9 +300,9 @@ function ItemButtonsComponent(props: Props): JSX.Element {
     }
 
     return (
-        <Row type='flex' align='middle' justify='space-around'>
+        <Row align='middle' justify='space-around'>
             <Col span={20} style={{ textAlign: 'center' }}>
-                <Row type='flex' justify='space-around'>
+                <Row justify='space-around'>
                     <Col>
                         <SwitchLock {...props} />
                     </Col>

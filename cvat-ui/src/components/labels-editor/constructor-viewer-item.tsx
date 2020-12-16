@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import { EditOutlined, CloseOutlined } from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
@@ -18,7 +18,9 @@ interface ConstructorViewerItemProps {
 }
 
 export default function ConstructorViewerItem(props: ConstructorViewerItemProps): JSX.Element {
-    const { color, label, onUpdate, onDelete } = props;
+    const {
+        color, label, onUpdate, onDelete,
+    } = props;
 
     return (
         <div style={{ background: color || consts.NEW_LABEL_COLOR }} className='cvat-constructor-viewer-item'>
@@ -30,7 +32,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     onClick={(): void => onUpdate(label)}
                     onKeyPress={(): boolean => false}
                 >
-                    <Icon theme='filled' type='edit' />
+                    <EditOutlined />
                 </span>
             </Tooltip>
             {label.id < 0 && (
@@ -41,7 +43,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                         onClick={(): void => onDelete(label)}
                         onKeyPress={(): boolean => false}
                     >
-                        <Icon type='close' />
+                        <CloseOutlined />
                     </span>
                 </Tooltip>
             )}

@@ -78,10 +78,7 @@ context('Multiple users. Assign task, job.', () => {
         });
         it('Assign the task to the second user and logout', () => {
             cy.openTask(taskName);
-            cy.get('.cvat-task-details').within(() => {
-                cy.get('.cvat-user-search-field').click({ force: true });
-            });
-            cy.contains(secondUserName).click();
+            cy.assignTaskToUser(secondUserName);
             cy.logout();
         });
         it('Second user login. The task can be opened. Logout', () => {
@@ -98,10 +95,7 @@ context('Multiple users. Assign task, job.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
-            cy.get('.cvat-task-job-list').within(() => {
-                cy.get('.cvat-job-assignee-selector').click({ force: true });
-            });
-            cy.contains(thirdUserName).click();
+            cy.assignJobToUser(thirdUserName);
             cy.logout();
         });
         it('Third user login. The task can be opened.', () => {

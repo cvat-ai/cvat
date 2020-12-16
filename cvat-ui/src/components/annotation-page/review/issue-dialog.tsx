@@ -5,13 +5,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
+import { CloseOutlined } from '@ant-design/icons';
 import Comment from 'antd/lib/comment';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
-import Icon from 'antd/lib/icon';
 import moment from 'moment';
 
 interface Props {
@@ -88,20 +88,20 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     return ReactDOM.createPortal(
         <div style={{ top, left }} ref={ref} className='cvat-issue-dialog'>
-            <Row className='cvat-issue-dialog-header' type='flex' justify='space-between'>
+            <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
                     <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>
                 </Col>
                 <Col>
                     <Tooltip title='Collapse the chat'>
-                        <Icon type='close' onClick={collapse} />
+                        <CloseOutlined onClick={collapse} />
                     </Tooltip>
                 </Col>
             </Row>
-            <Row className='cvat-issue-dialog-chat' type='flex' justify='start'>
+            <Row className='cvat-issue-dialog-chat' justify='start'>
                 <Col style={{ display: 'block' }}>{lines}</Col>
             </Row>
-            <Row className='cvat-issue-dialog-input' type='flex' justify='start'>
+            <Row className='cvat-issue-dialog-input' justify='start'>
                 <Col span={24}>
                     <Input
                         placeholder='Print a comment here..'
@@ -118,7 +118,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row className='cvat-issue-dialog-footer' type='flex' justify='end'>
+            <Row className='cvat-issue-dialog-footer' justify='end'>
                 <Col>
                     {currentText.length ? (
                         <Button

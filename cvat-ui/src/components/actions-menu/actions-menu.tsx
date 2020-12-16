@@ -4,9 +4,10 @@
 
 import './styles.scss';
 import React from 'react';
-import Menu, { ClickParam } from 'antd/lib/menu';
+import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
-
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
 import ExportSubmenu from './export-submenu';
@@ -23,7 +24,7 @@ interface Props {
     exportActivities: string[] | null;
     inferenceIsActive: boolean;
     taskDimension: TaskDimension.DIM_3D | TaskDimension.DIM_2D;
-    onClickMenu: (params: ClickParam, file?: File) => void;
+    onClickMenu: (params: MenuInfo, file?: File) => void;
 }
 
 export enum Actions {
@@ -50,8 +51,8 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         taskDimension,
     } = props;
 
-    let latestParams: ClickParam | null = null;
-    function onClickMenuWrapper(params: ClickParam | null, file?: File): void {
+    let latestParams: MenuInfo | null = null;
+    function onClickMenuWrapper(params: MenuInfo | null, file?: File): void {
         const copyParams = params || latestParams;
         if (!copyParams) {
             return;
@@ -69,7 +70,8 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                             onClickMenu(copyParams, file);
                         },
                         okButtonProps: {
-                            type: 'danger',
+                            type: 'primary',
+                            danger: true,
                         },
                         okText: 'Update',
                     });
@@ -85,7 +87,8 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     onClickMenu(copyParams);
                 },
                 okButtonProps: {
-                    type: 'danger',
+                    type: 'primary',
+                    danger: true,
                 },
                 okText: 'Delete',
             });

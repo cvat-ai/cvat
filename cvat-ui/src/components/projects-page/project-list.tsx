@@ -38,11 +38,11 @@ export default function ProjectListComponent(): JSX.Element {
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col className='cvat-projects-list' md={22} lg={18} xl={16} xxl={14}>
                     {projectInstances.map(
                         (row: any[]): JSX.Element => (
-                            <Row gutter={[8, 8]}>
+                            <Row key={row[0].id} gutter={[8, 8]}>
                                 {row.map((instance: any) => (
                                     <Col span={6} key={instance.id}>
                                         <ProjectItem projectInstance={instance} />
@@ -53,11 +53,12 @@ export default function ProjectListComponent(): JSX.Element {
                     )}
                 </Col>
             </Row>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-projects-pagination'
                         onChange={changePage}
+                        showSizeChanger={false}
                         total={projectsCount}
                         pageSize={12}
                         current={page}

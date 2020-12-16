@@ -202,7 +202,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         fetching: false,
                     },
                 },
-            }
+            };
         }
         case AnnotationActionTypes.CHANGE_FRAME: {
             return {
