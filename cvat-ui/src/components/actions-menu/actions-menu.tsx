@@ -10,6 +10,7 @@ import Modal from 'antd/lib/modal';
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
 import ExportSubmenu from './export-submenu';
+import {TaskDimension} from "../../reducers/interfaces";
 
 interface Props {
     taskID: number;
@@ -21,7 +22,7 @@ interface Props {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     inferenceIsActive: boolean;
-    taskDimension: string;
+    taskDimension: TaskDimension.DIM_3D | TaskDimension.DIM_2D;
     onClickMenu: (params: ClickParam, file?: File) => void;
 }
 

@@ -6,6 +6,7 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
+import {TaskDimension} from '../../reducers/interfaces'
 
 function isDefaultFormat(dumperName: string, taskMode: string): boolean {
     return (
@@ -19,7 +20,7 @@ interface Props {
     menuKey: string;
     dumpers: any[];
     dumpActivities: string[] | null;
-    taskDimension: string;
+    taskDimension: TaskDimension.DIM_3D | TaskDimension.DIM_2D;
 }
 
 export default function DumpSubmenu(props: Props): JSX.Element {

@@ -14,6 +14,7 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
+import {TaskDimension} from '../../reducers/interfaces'
 
 import { Model, StringObject } from 'reducers/interfaces';
 
@@ -118,8 +119,8 @@ function DetectorRunner(props: Props): JSX.Element {
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
-                        placeholder={task.dimension === '2d' ? 'Select a model' : 'No models available'}
-                        disabled={task.dimension !== '2d'}
+                        placeholder={task.dimension === TaskDimension.DIM_2D ? 'Select a model' : 'No models available'}
+                        disabled={task.dimension !== TaskDimension.DIM_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
                             const newmodel = models.filter((_model): boolean => _model.id === _modelID)[0];

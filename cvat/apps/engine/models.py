@@ -20,8 +20,8 @@ class SafeCharField(models.CharField):
         return value
 
 class DimensionType(str, Enum):
-    THREED = '3d'
-    TWOD = '2d'
+    DIM_3D = '3d'
+    DIM_2D = '2d'
 
     @classmethod
     def choices(cls):
@@ -213,7 +213,7 @@ class Task(models.Model):
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
-    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.TWOD)
+    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
 
     # Extend default permission model
     class Meta:

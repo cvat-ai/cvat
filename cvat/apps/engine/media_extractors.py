@@ -52,7 +52,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self, dimension=DimensionType.TWOD):
+    def get_preview(self, dimension=DimensionType.DIM_2D):
         pass
 
     @abstractmethod
@@ -71,7 +71,7 @@ class IMediaReader(ABC):
         return preview.convert('RGB')
 
     @abstractmethod
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
+    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
         pass
 
     def __len__(self):
@@ -113,11 +113,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self, dimension=DimensionType.TWOD):
+    def get_preview(self, dimension=DimensionType.DIM_2D):
         fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
+    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
         img = Image.open(self._source_path[i])
         return img.width, img.height
 
@@ -191,15 +191,15 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-    def get_preview(self, dimension=DimensionType.TWOD):
-        if dimension == DimensionType.THREED:
+    def get_preview(self, dimension=DimensionType.DIM_2D):
+        if dimension == DimensionType.DIM_3D:
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
             return self._get_preview(fp)
         io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
         return self._get_preview(io_image)
 
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
-        if dimension == DimensionType.THREED:
+    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
+        if dimension == DimensionType.DIM_3D:
             with self._zip_source.open(self._source_path[i], "r") as file:
                 properties = ValidateDimension.get_pcd_properties(file)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
@@ -291,7 +291,7 @@ class VideoReader(IMediaReader):
             self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
 
-    def get_preview(self, dimension=DimensionType.TWOD):
+    def get_preview(self, dimension=DimensionType.DIM_2D):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
@@ -305,12 +305,12 @@ class VideoReader(IMediaReader):
             ).to_image()
         )
 
-    def get_image_size(self, i, dimension=DimensionType.TWOD):
+    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
 class IChunkWriter(ABC):
-    def __init__(self, quality, dimension=DimensionType.TWOD):
+    def __init__(self, quality, dimension=DimensionType.DIM_2D):
         self._image_quality = quality
         self._dimension = dimension
 
@@ -355,7 +355,7 @@ class ZipCompressedChunkWriter(IChunkWriter):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
-                if self._dimension == DimensionType.TWOD:
+                if self._dimension == DimensionType.DIM_2D:
                     w, h, image_buf = self._compress_image(image, self._image_quality)
                     extension = "jpeg"
                 else:
@@ -371,7 +371,7 @@ class ZipCompressedChunkWriter(IChunkWriter):
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _, dimension=DimensionType.TWOD):
+    def __init__(self, _, dimension=DimensionType.DIM_2D):
         super().__init__(17, dimension=dimension)
         self._output_fps = 25
 
@@ -429,7 +429,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             container.mux(packet)
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality, dimension=DimensionType.TWOD):
+    def __init__(self, quality, dimension=DimensionType.DIM_2D):
         # translate inversed range [1:100] to [0:51]
         self._image_quality = round(51 * (100 - quality) / 99)
         self._output_fps = 25
@@ -551,7 +551,7 @@ MEDIA_TYPES = {
 class ValidateDimension:
 
     def __init__(self, path=None):
-        self.dimension = DimensionType.TWOD
+        self.dimension = DimensionType.DIM_2D
         self.path = path
         self.related_files = {}
         self.image_files = {}
@@ -715,4 +715,4 @@ class ValidateDimension:
                 self.validate_default(root, actual_path, files)
 
         if len(self.related_files.keys()):
-            self.dimension = DimensionType.THREED
+            self.dimension = DimensionType.DIM_3D

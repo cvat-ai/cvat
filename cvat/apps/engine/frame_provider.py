@@ -83,7 +83,7 @@ class FrameProvider:
                     self.reader_class([self.get_chunk_path(chunk_id, self.quality, self.db_data)[0]]))
             return self.chunk_reader
 
-    def __init__(self, db_data, dimension=DimensionType.TWOD):
+    def __init__(self, db_data, dimension=DimensionType.DIM_2D):
         self._db_data = db_data
         self._loaders = {}
 

@@ -1950,9 +1950,9 @@ class TaskDataAPITestCase(APITestCase):
         return self._run_api_v1_task_id_data_get(tid, user, "frame", "original", number)
 
     @staticmethod
-    def _extract_zip_chunk(chunk_buffer, dimension=DimensionType.TWOD):
+    def _extract_zip_chunk(chunk_buffer, dimension=DimensionType.DIM_2D):
         chunk = zipfile.ZipFile(chunk_buffer, mode='r')
-        if dimension == DimensionType.THREED:
+        if dimension == DimensionType.DIM_3D:
             return [BytesIO(chunk.read(f)) for f in sorted(chunk.namelist()) if f.rsplit(".", maxsplit=1)[-1] == "pcd"]
         return [Image.open(BytesIO(chunk.read(f))) for f in sorted(chunk.namelist())]
 
@@ -1964,7 +1964,7 @@ class TaskDataAPITestCase(APITestCase):
 
     def _test_api_v1_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
-                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.TWOD):
+                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.DIM_2D):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -2019,7 +2019,7 @@ class TaskDataAPITestCase(APITestCase):
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
             for image_idx, image in enumerate(images):
-                if dimension == DimensionType.THREED:
+                if dimension == DimensionType.DIM_3D:
                     properties = ValidateDimension.get_pcd_properties(image)
                     self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), image_sizes[image_idx])
                 else:
@@ -2064,7 +2064,7 @@ class TaskDataAPITestCase(APITestCase):
                         source_images.append(Image.open(f))
 
                 for img_idx, image in enumerate(images):
-                    if dimension == DimensionType.THREED:
+                    if dimension == DimensionType.DIM_3D:
                         server_image = np.array(image.getbuffer())
                         source_image = np.array(source_images[img_idx].getbuffer())
                         self.assertTrue(np.array_equal(source_image, server_image))
@@ -2488,7 +2488,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes["test_pointcloud_pcd.zip"]
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                                              self.ChunkType.IMAGESET,
-                                             image_sizes, dimension=DimensionType.THREED)
+                                             image_sizes, dimension=DimensionType.DIM_3D)
 
         task_spec = {
             "name": "my archive task #25",
@@ -2508,7 +2508,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes["test_velodyne_points.zip"]
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                                              self.ChunkType.IMAGESET,
-                                             image_sizes, dimension=DimensionType.THREED)
+                                             image_sizes, dimension=DimensionType.DIM_3D)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)

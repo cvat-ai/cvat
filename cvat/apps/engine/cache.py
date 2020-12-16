@@ -15,7 +15,7 @@ from cvat.apps.engine.prepare import PrepareInfo
 from cvat.apps.engine.models import DimensionType
 
 class CacheInteraction:
-    def __init__(self, dimension=DimensionType.TWOD):
+    def __init__(self, dimension=DimensionType.DIM_2D):
         self._cache = Cache(settings.CACHE_ROOT)
         self._dimension = dimension
 

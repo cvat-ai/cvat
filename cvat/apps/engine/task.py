@@ -266,8 +266,8 @@ def _create_thread(tid, data):
         extractor.extract()
         validate_dimension.set_path(os.path.split(extractor.get_zip_filename())[0])
         validate_dimension.validate()
-        if validate_dimension.dimension == DimensionType.THREED:
-            db_task.dimension = DimensionType.THREED
+        if validate_dimension.dimension == DimensionType.DIM_3D:
+            db_task.dimension = DimensionType.DIM_3D
             extractor.initialize_for_3d(
                 source_path=list(validate_dimension.related_files.keys()),
                 step=db_data.get_frame_step(),
@@ -415,7 +415,7 @@ def _create_thread(tid, data):
             update_progress(progress)
 
     if db_task.mode == 'annotation':
-        if validate_dimension.dimension == DimensionType.TWOD:
+        if validate_dimension.dimension == DimensionType.DIM_2D:
             models.Image.objects.bulk_create(db_images)
         else:
             related_file = []

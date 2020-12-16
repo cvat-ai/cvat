@@ -6,12 +6,13 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
+import {TaskDimension} from '../../reducers/interfaces'
 
 interface Props {
     menuKey: string;
     exporters: any[];
     exportActivities: string[] | null;
-    taskDimension: string;
+    taskDimension: TaskDimension.DIM_3D | TaskDimension.DIM_2D;
 }
 
 export default function ExportSubmenu(props: Props): JSX.Element {
