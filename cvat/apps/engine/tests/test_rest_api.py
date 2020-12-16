@@ -2039,7 +2039,11 @@ class TaskDataAPITestCase(APITestCase):
                 images = self._extract_video_chunk(original_chunk)
 
             for image_idx, image in enumerate(images):
-                self.assertEqual(image.size, image_sizes[image_idx])
+                if dimension == DimensionType.DIM_3D:
+                    properties = ValidateDimension.get_pcd_properties(image)
+                    self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), image_sizes[image_idx])
+                else:
+                    self.assertEqual(image.size, image_sizes[image_idx])
 
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
