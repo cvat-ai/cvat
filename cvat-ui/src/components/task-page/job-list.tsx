@@ -243,8 +243,13 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                                     );
 
                                     if (job.assignee) {
-                                        serialized += `\t assigned to: ${job.assignee.username}`;
+                                        serialized += `\t assigned to "${job.assignee.username}"`;
                                     }
+
+                                    if (job.reviewer) {
+                                        serialized += `\t reviewed by "${job.reviewer.username}"`;
+                                    }
+
                                     serialized += '\n';
                                 }
                                 copy(serialized);
