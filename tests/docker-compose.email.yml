@@ -2,9 +2,5 @@ version: '3.3'
 
 services:
   cvat:
-    build:
-      context: .
-      dockerfile: Dockerfile.ci
     environment:
-      DJANGO_SETTINGS_MODULE: tests.email_settings
-    command: tail -f /dev/null
+      DJANGO_SETTINGS_MODULE: email_settings

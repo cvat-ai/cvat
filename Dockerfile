@@ -138,7 +138,7 @@ COPY --from=build-image /opt/ffmpeg /usr
 # Install and initialize CVAT, copy all necessary files
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
+COPY --chown=${USER} supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ./tests/email_settings.py ${HOME}/
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} utils/ ${HOME}/utils
 
