@@ -5,14 +5,14 @@
 import React from 'react';
 import Menu from 'antd/lib/menu';
 import Text from 'antd/lib/typography/Text';
-import {TaskDimension} from '../../reducers/interfaces'
+import {DimensionType} from '../../reducers/interfaces'
 import { ExportOutlined, LoadingOutlined } from '@ant-design/icons';
 
 interface Props {
     menuKey: string;
     exporters: any[];
     exportActivities: string[] | null;
-    taskDimension: TaskDimension.DIM_3D | TaskDimension.DIM_2D;
+    taskDimension: DimensionType.DIM_3D | DimensionType.DIM_2D;
 }
 
 export default function ExportSubmenu(props: Props): JSX.Element {

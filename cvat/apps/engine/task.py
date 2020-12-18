@@ -268,11 +268,14 @@ def _create_thread(tid, data):
         validate_dimension.validate()
         if validate_dimension.dimension == DimensionType.DIM_3D:
             db_task.dimension = DimensionType.DIM_3D
-            extractor.initialize_for_3d(
-                source_path=list(validate_dimension.related_files.keys()),
+
+            extractor.reconcile(
+                source_files=list(validate_dimension.related_files.keys()),
                 step=db_data.get_frame_step(),
                 start=db_data.start_frame,
-                stop=data['stop_frame']
+                stop=data['stop_frame'],
+                dimension=DimensionType.DIM_3D,
+
             )
             extractor.add_files(validate_dimension.converted_files)
 
@@ -297,14 +300,16 @@ def _create_thread(tid, data):
     compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter
     original_chunk_writer_class = Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter
 
-    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality,
-                                                            dimension=validate_dimension.dimension)
-    original_chunk_writer = original_chunk_writer_class(100, dimension=validate_dimension.dimension)
+    kwargs = {}
+    if validate_dimension.dimension == DimensionType.DIM_3D:
+        kwargs["dimension"] = validate_dimension.dimension
+    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
+    original_chunk_writer = original_chunk_writer_class(100)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            w, h = extractor.get_image_size(0, dimension=validate_dimension.dimension)
+            w, h = extractor.get_image_size(0)
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
@@ -375,7 +380,7 @@ def _create_thread(tid, data):
                     with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
                         for path, frame_id in chunk_paths:
                             dummy_chunk.write(os.path.relpath(path, upload_dir) + '\n')
-                            img_sizes.append(extractor.get_image_size(frame_id, dimension=validate_dimension.dimension))
+                            img_sizes.append(extractor.get_image_size(frame_id))
 
                     db_images.extend([
                         models.Image(data=db_data,
@@ -446,7 +451,7 @@ def _create_thread(tid, data):
     if db_data.stop_frame == 0:
         db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
 
-    preview = extractor.get_preview(dimension=validate_dimension.dimension)
+    preview = extractor.get_preview()
     preview.save(db_data.get_preview_path())
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))

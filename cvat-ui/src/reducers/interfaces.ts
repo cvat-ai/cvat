@@ -570,7 +570,7 @@ export interface CombinedState {
     review: ReviewState;
 }
 
-export enum TaskDimension {
+export enum DimensionType {
     DIM_3D = '3d',
     DIM_2D = '2d',
 }

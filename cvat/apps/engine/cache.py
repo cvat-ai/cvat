@@ -40,7 +40,10 @@ class CacheInteraction:
         image_quality = 100 if writer_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter] else db_data.image_quality
         mime_type = 'video/mp4' if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter] else 'application/zip'
 
-        writer = writer_classes[quality](image_quality, dimension=self._dimension)
+        kwargs = {}
+        if self._dimension == DimensionType.DIM_3D:
+            kwargs["dimension"] = DimensionType.DIM_3D
+        writer = writer_classes[quality](image_quality, **kwargs)
 
         images = []
         buff = BytesIO()

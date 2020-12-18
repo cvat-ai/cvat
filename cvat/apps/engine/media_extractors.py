@@ -52,7 +52,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self, dimension=DimensionType.DIM_2D):
+    def get_preview(self):
         pass
 
     @abstractmethod
@@ -71,7 +71,7 @@ class IMediaReader(ABC):
         return preview.convert('RGB')
 
     @abstractmethod
-    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
+    def get_image_size(self, i):
         pass
 
     def __len__(self):
@@ -113,11 +113,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self, dimension=DimensionType.DIM_2D):
+    def get_preview(self):
         fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
-    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
+    def get_image_size(self, i):
         img = Image.open(self._source_path[i])
         return img.width, img.height
 
@@ -183,6 +183,7 @@ class PdfReader(ImageListReader):
 
 class ZipReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
+        self._dimension = DimensionType.DIM_2D
         self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
         file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
@@ -191,15 +192,15 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-    def get_preview(self, dimension=DimensionType.DIM_2D):
-        if dimension == DimensionType.DIM_3D:
+    def get_preview(self):
+        if self._dimension == DimensionType.DIM_3D:
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
             return self._get_preview(fp)
         io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
         return self._get_preview(io_image)
 
-    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
-        if dimension == DimensionType.DIM_3D:
+    def get_image_size(self, i):
+        if self._dimension == DimensionType.DIM_3D:
             with self._zip_source.open(self._source_path[i], "r") as file:
                 properties = ValidateDimension.get_pcd_properties(file)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
@@ -217,16 +218,17 @@ class ZipReader(ImageListReader):
     def get_zip_filename(self):
         return self._zip_source.filename
 
-    def initialize_for_3d(self, source_path, step=1, start=0, stop=None):
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+        self._dimension = dimension
         super().__init__(
-            source_path=source_path,
+            source_path=source_files,
             step=step,
             start=start,
             stop=stop
         )
 
     def get_path(self, i):
-        if  self._zip_source.filename:
+        if self._zip_source.filename:
             return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i]) \
                 if not self.extract_dir else os.path.join(self.extract_dir, self._source_path[i])
         else: # necessary for mime_type definition
@@ -291,7 +293,7 @@ class VideoReader(IMediaReader):
             self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
 
-    def get_preview(self, dimension=DimensionType.DIM_2D):
+    def get_preview(self):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
@@ -305,7 +307,7 @@ class VideoReader(IMediaReader):
             ).to_image()
         )
 
-    def get_image_size(self, i, dimension=DimensionType.DIM_2D):
+    def get_image_size(self, i):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
@@ -371,8 +373,8 @@ class ZipCompressedChunkWriter(IChunkWriter):
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _, dimension=DimensionType.DIM_2D):
-        super().__init__(17, dimension=dimension)
+    def __init__(self, _):
+        super().__init__(17)
         self._output_fps = 25
 
     @staticmethod
@@ -431,7 +433,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             container.mux(packet)
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality, dimension=DimensionType.DIM_2D):
+    def __init__(self, quality):
         # translate inversed range [1:100] to [0:51]
         self._image_quality = round(51 * (100 - quality) / 99)
         self._output_fps = 25

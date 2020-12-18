@@ -7,7 +7,7 @@ import Menu from 'antd/lib/menu';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-import {TaskDimension} from "../../reducers/interfaces";
+import {DimensionType} from "../../reducers/interfaces";
 import { UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
     loaders: any[];
     loadActivity: string | null;
     onFileUpload(file: File): void;
-    taskDimension: TaskDimension.DIM_3D | TaskDimension.DIM_2D;
+    taskDimension: DimensionType.DIM_3D | DimensionType.DIM_2D;
 }
 
 export default function LoadSubmenu(props: Props): JSX.Element {

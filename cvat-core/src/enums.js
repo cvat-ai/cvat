@@ -42,7 +42,7 @@
      * @property {string} DIMENSION_3D '3d'
      * @readonly
      */
-    const TaskDimension = Object.freeze({
+    const DimensionType = Object.freeze({
         DIMENSION_2D: '2d',
         DIMENSION_3D: '3d',
     });
@@ -347,6 +347,6 @@
         RQStatus,
         colors,
         Source,
-        TaskDimension,
+        DimensionType,
     };
 })();
