@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Check if the image is scaled and then fitted', () => {
+context('Search task feature.', () => {
     const caseId = '35';
 
     describe(`Testing case "${caseId}"`, () => {
