@@ -127,19 +127,18 @@
 
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
-    padding: 5px;
-    height: 80px;
+    padding: $grid-unit-size;
+
+    > div:not(:first-of-type) {
+        margin-top: $grid-unit-size;
+    }
 
     > div:nth-child(1) > div:nth-child(1) {
-        height: 32px;
     }
 
     > div:nth-child(2) {
-        margin-top: $grid-unit-size;
-
         > div {
             text-align: center;
-            margin: 0 2px;
 
             > span[role='img'] {
                 @extend .cvat-object-sidebar-icon;

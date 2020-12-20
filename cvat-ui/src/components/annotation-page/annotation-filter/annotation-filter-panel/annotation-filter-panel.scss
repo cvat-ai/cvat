@@ -1,0 +1,202 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../../../base.scss';
+
+$panel-width: 300px;
+$panel-padding: $grid-unit-size * 2;
+
+$panel-top-offset: 110px;
+$panel-right-offset: $panel-width;
+
+$label-width: $grid-unit-size * 9;
+$label-concatenator-width: $grid-unit-size * 23;
+
+$option-popup-width: $panel-width - $label-width - ($panel-padding * 2);
+$option-popup-concatenator-width: $panel-width - $label-concatenator-width - ($panel-padding * 2);
+
+$option-operator-width: $grid-unit-size * 7;
+$option-value-width: $panel-width - $label-concatenator-width - ($panel-padding * 2);
+
+$options-quantity-limit: 10;
+
+.annotation-filters-panel {
+    position: absolute;
+    top: $panel-top-offset;
+    right: $panel-right-offset;
+    user-select: none;
+
+    .ant-modal-content {
+        background-color: $background-color-2;
+        outline: 1px solid $border-color-1;
+        border-radius: 0;
+
+        .ant-modal-help {
+            position: absolute;
+            top: $grid-unit-size * 2;
+            right: $grid-unit-size * 5;
+            font-size: $grid-unit-size * 2;
+            color: #848484;
+            cursor: pointer;
+        }
+
+        .ant-modal-close {
+            top: $grid-unit-size * 2;
+            right: $grid-unit-size * 2;
+
+            .ant-modal-close-x {
+                width: $grid-unit-size * 2;
+                height: $grid-unit-size * 2;
+                line-height: 1;
+            }
+        }
+
+        .ant-modal-body {
+            padding: $panel-padding;
+            line-height: 1;
+
+            .filter-option-wrapper {
+                margin: ($grid-unit-size * 2) 0;
+
+                .filter-option {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-between;
+
+                    &:not(:first-of-type) {
+                        margin-top: $grid-unit-size;
+                    }
+
+                    .filter-option-label {
+                        width: $label-width;
+
+                        &.concatenator {
+                            width: $label-concatenator-width;
+                        }
+                    }
+
+                    .filter-option-value-wrapper {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        flex: 1;
+
+                        .filter-option-value {
+                            flex: 1;
+
+                            & > * {
+                                width: 100%;
+                            }
+
+                            &.operator {
+                                flex: none;
+                                width: $option-operator-width;
+                            }
+
+                            .ant-radio-group {
+                                display: flex;
+                                flex-direction: row;
+                                justify-content: flex-end;
+
+                                .ant-radio-wrapper:last-of-type {
+                                    margin-right: 0;
+
+                                    span.ant-radio + * {
+                                        padding-right: 0;
+                                    }
+                                }
+                            }
+
+                            .numeric-autocomplete {
+                                .ant-input {
+                                    text-align: right;
+                                }
+                            }
+                        }
+
+                        & > :not(:last-child) {
+                            margin-right: $grid-unit-size;
+                        }
+                    }
+                }
+            }
+
+            .filter-action-wrapper {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+
+                & > *:not(:last-of-type) {
+                    margin-right: $grid-unit-size * 2;
+                }
+            }
+        }
+    }
+}
+
+.cascader-popup {
+    $cascader-popup-item-height: $grid-unit-size * 4;
+
+    width: $option-popup-width;
+
+    @for $i from 1 through $options-quantity-limit {
+        &.options-#{$i} {
+            ul {
+                height: $grid-unit-size + ($cascader-popup-item-height * $i);
+            }
+        }
+    }
+
+    ul {
+        min-width: unset;
+        max-width: unset;
+        width: $option-popup-width;
+
+        li {
+            height: $cascader-popup-item-height;
+        }
+    }
+
+    &.concatenator {
+        width: $option-popup-concatenator-width;
+
+        ul {
+            width: $option-popup-concatenator-width;
+        }
+    }
+
+    &.operator {
+        width: $option-operator-width;
+
+        ul {
+            width: $option-operator-width;
+        }
+    }
+
+    &.value {
+        $value-width: ($panel-width - $label-width - ($panel-padding * 2) - $option-operator-width - $grid-unit-size);
+
+        width: $value-width;
+
+        ul {
+            width: $value-width;
+        }
+    }
+
+    &.value-label-postfix {
+        width: $grid-unit-size * 19.5;
+
+        ul {
+            width: $grid-unit-size * 19.5;
+        }
+    }
+}
+
+.ant-select-dropdown {
+    ul {
+        max-height: $grid-unit-size * 40;
+    }
+}
