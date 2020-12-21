@@ -12,6 +12,7 @@ from django.contrib.auth.models import User, Group
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.dataset_manager.formats.utils import get_label_color
+from cvat.apps.engine.cloud_provider import Credentials, get_cloud_storage_instance
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
@@ -255,12 +256,13 @@ class DataSerializer(serializers.ModelSerializer):
     remote_files = RemoteFileSerializer(many=True, default=[])
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
+    cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'use_cache', 'copy_data')
+            'use_cache', 'copy_data', 'cloud_storage_id',)
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -648,3 +650,77 @@ class CombinedReviewSerializer(ReviewSerializer):
                 models.Comment.objects.create(**comment)
 
         return db_review
+
+class CloudStorageSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer(required=False)
+    session_token = serializers.CharField(max_length=50, allow_blank=True, required=False)
+    key = serializers.CharField(max_length=30, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=50, allow_blank=True, required=False)
+
+    class Meta:
+        model = models.CloudStorage
+        fields = (
+            'provider_type', 'resource_name', 'session_token', 'owner',
+            'key', 'secret_key', 'credentials_type', 'created_date', 'updated_date',
+        )
+        read_only_fields = ('provider_type', 'created_date', 'updated_date', 'owner')
+
+    def validate(self, attrs):
+        credentials = Credentials(
+            key = attrs.get('key'),
+            secret_key = attrs.get('secret_key'),
+            session_token = attrs.get('session_token'),
+        )
+        if any(credentials.values()):
+            if attrs.get('provider_type') in (str(models.CloudProviderChoice.AZURE_CONTAINER)) and not credentials.key:
+                raise serializers.NotAuthenticated()
+        else:
+            # no access rights granted
+            raise serializers.NotAuthenticated()
+        return attrs
+
+    def create(self, validated_data):
+        provider_type = validated_data.get('provider_type')
+        should_be_created = validated_data.pop('should_be_created')
+        credentials = Credentials(
+            key = validated_data.pop('key'),
+            secret_key = validated_data.pop('secret_key'),
+            session_token = validated_data.pop('session_token'),
+            credentials_type = validated_data.get('credentials_type')
+        )
+        if should_be_created:
+            details = {
+                'resource_name': validated_data.get('resource_name'),
+                'session_token': credentials.session_token,
+                'key': credentials.key,
+                'secret_key': credentials.secret_key,
+            }
+            cloud_storage_instance = get_cloud_storage_instance(cloud_provider=provider_type, **details)
+
+            try:
+                cloud_storage_instance.create()
+            except Exception:
+                pass
+
+        db_storage = models.CloudStorage.objects.create(
+            credentials=credentials.convert_to_db(),
+            **validated_data
+        )
+        db_storage.save()
+        return db_storage
+
+    # pylint: disable=no-self-use
+    def update(self, instance, validated_data):
+        credentials = Credentials()
+        credentials.convert_from_db({
+            'type': instance.credentials_type,
+            'value': instance.credentials,
+        })
+        tmp = {k:v for k,v in validated_data.items() if k in ('key', 'secret_key', 'session_token', 'credentials_type')}
+        credentials.mapping_with_new_values(tmp)
+        instance.credentials = credentials.convert_to_db()
+        instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
+        instance.resource_name = validated_data.get('resource_name', instance.resource_name)
+
+        instance.save()
+        return instance

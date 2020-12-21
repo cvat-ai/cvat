@@ -222,7 +222,8 @@ def _create_thread(tid, data):
     upload_dir = db_data.get_upload_dirname()
 
     if data['remote_files']:
-        data['remote_files'] = _download_data(data['remote_files'], upload_dir)
+        if db_data.storage != StorageChoice.CLOUD_STORAGE:
+            data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     meta_info_file = []
     media = _count_files(data, meta_info_file)
@@ -367,6 +368,35 @@ def _create_thread(tid, data):
                             frame=frame, width=w, height=h)
                         for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
                     ])
+
+    # def processing_files_on_cloud_storage():
+    #     from .cloud_provider import Credentials, get_cloud_storage_instance
+    #     from cvat.apps.engine.models import CloudProviderChoice
+
+    #     #TODO: only on first iteration of implementation
+    #     if media_type != 'images':
+    #         raise NotImplementedError()
+
+    #     if not meta_info_file:
+    #         raise Exception('A meta information was not found')
+
+    #     db_cloud_storage = db_data.cloud_storage
+    #     credentials = Credentials()
+    #     credentials.convert_from_db({
+    #         'type': db_cloud_storage.credentials_type,
+    #         'value': db_cloud_storage.value,
+    #     })
+
+    #     details = {
+    #         'resource_name': db_cloud_storage.resource_name,
+    #         'session_token': credentials.session_token,
+    #         'key': credentials.key,
+    #         'secret_key': credentials.secret_key,
+    #     }
+    #     cloud_storage_instance = get_cloud_storage_instance(cloud_provider=provider_type, **details)
+    #     meta = cloud_storage_instance.download_file(meta_info_file[0])
+    #     #TODO
+
 
     if db_data.storage_method == StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
         counter = itertools.count()

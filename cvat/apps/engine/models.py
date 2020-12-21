@@ -55,7 +55,7 @@ class StorageMethodChoice(str, Enum):
         return self.value
 
 class StorageChoice(str, Enum):
-    #AWS_S3 = 'aws_s3_bucket'
+    CLOUD_STORAGE = 'cloud_storage'
     LOCAL = 'local'
     SHARE = 'share'
 
@@ -79,6 +79,7 @@ class Data(models.Model):
         default=DataChoice.IMAGESET)
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
     storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
+    cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
 
     class Meta:
         default_permissions = ()
@@ -257,7 +258,7 @@ class ServerFile(models.Model):
     class Meta:
         default_permissions = ()
 
-# For URLs
+# For URLs and files on remote cloud storages
 class RemoteFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='remote_files')
     file = models.CharField(max_length=1024)
@@ -481,3 +482,69 @@ class Comment(models.Model):
     message = models.TextField(default='')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+
+class CloudProviderChoice(str, Enum):
+    AWS_S3 = 'AWS_S3_BUCKET'
+    AZURE_CONTAINER = 'AZURE_CONTAINER'
+    GOOGLE_DRIVE = 'GOOGLE_DRIVE'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
+
+    def __str__(self):
+        return self.value
+
+class CredentialsTypeChoice(str, Enum):
+    TOKEN = 'TOKEN'
+    KEY_TOKEN_PAIR = 'KEY_TOKEN_PAIR'
+    KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
+
+    def __str__(self):
+        return self.value
+
+class CloudStorage(models.Model):
+    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices())
+    resource_name = models.CharField(max_length=50)
+    owner = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="cloud_storages")
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    credentials = models.CharField(max_length=100, unique=True)
+    credentials_type = models.CharField(max_length=20, choices=CredentialsTypeChoice.choices())#auth_type
+
+    class Meta:
+        default_permissions = ()
+        unique_together = (('provider_type', 'resource_name', 'credentials'),)
+
+    # def __str__(self):
+    #     template = "{} {} {}".format(self.provider_type, self.resource_name, self.id)
+    #     return template
+
+    # def get_url_resource(self):
+    #     urls_templates = {
+    #         CLOUD_PROVIDERS.AWS_S3 : '{resource}.s3.{region}.amazoneaws.com',
+    #         CLOUD_PROVIDERS.AZURE_CONTAINER : '',
+    #     }
+    #     return urls_templates[self.provider_type].format(resource=self.resource_name)
+
+    def get_storage_dirname(self):
+        return os.path.join(settings.CLOUD_STORAGE_ROOT, str(self.id))
+
+    def get_storage_logs_dirname(self):
+        return os.path.join(self.get_storage_dirname(), 'logs')
+
+    def get_log_path(self):
+        return os.path.join(self.get_storage_dirname(), "storage.log")
