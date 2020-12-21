@@ -34,7 +34,7 @@ script:
   - if [[ $TRAVIS_EVENT_TYPE == "cron" || $TRAVIS_BRANCH == "dkru/use-wait-for-it-sh" ]];
     then
     docker-compose -f docker-compose.yml -f ./tests/docker-compose.email.yml up -d --build;
-    ./wait-for-it.sh localhost:8080/auth/login -t 0 -- docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell";
+    ./wait-for-it.sh localhost:8080/api/v1/server/about -t 0 -- docker exec -it cvat bash -ic "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell";
     cd ./tests && npm install && npm run cypress:run:firefox; exit $?;
     fi;
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
