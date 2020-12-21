@@ -32,7 +32,7 @@ before_script:
   - chmod a+rwx ${HOST_COVERAGE_DATA_DIR}
 
 script:
-  - if [[ $TRAVIS_EVENT_TYPE == "cron" || $TRAVIS_BRANCH == "dkru/use-wait-for-it-sh" ]];
+  - if [[ $TRAVIS_EVENT_TYPE == "cron" && $TRAVIS_BRANCH == "develop" ]];
     then
     docker-compose -f docker-compose.yml -f ./tests/docker-compose.email.yml up -d --build;
     bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done';
