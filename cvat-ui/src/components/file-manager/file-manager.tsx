@@ -255,7 +255,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
         return (
             <Tabs.TabPane key='tasks' tab='Completed tasks'>
                 <div className='cvat-picked-tasks'>
-                    <Divider>Choose tasks via ID</Divider>
+                    <Divider>Choose tasks ID</Divider>
                     <CheckboxGroup options={this.state.exist_tasks} value={this.state.files.tasks} onChange={onChange} />
                 </div>
             </Tabs.TabPane>
