@@ -9,7 +9,8 @@ import { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 
 import { loadShareDataAsync } from 'actions/share-actions';
-import { ShareItem, CombinedState } from 'reducers/interfaces';
+import { ShareItem, CombinedState, TasksQuery, Task } from 'reducers/interfaces';
+import { getTasksAsync } from 'actions/tasks-actions';
 
 interface OwnProps {
     ref: any;
@@ -18,10 +19,16 @@ interface OwnProps {
 
 interface StateToProps {
     treeData: TreeNodeNormal[];
+    // for "getTasks"
+    tasks: Task[];
+    fetching: boolean;
+    updating: boolean;
+    currentTasksIndexes: number[];
 }
 
 interface DispatchToProps {
     getTreeData(key: string, success: () => void, failure: () => void): void;
+    getTasks: (query: TasksQuery) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -41,8 +48,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
     }
 
     const { root } = state.share;
+
+    const { fetching, updating, current } = state.tasks;
+
     return {
         treeData: convert([root], ''),
+
+        tasks: current,
+        fetching,
+        updating,
+        currentTasksIndexes: current.map((task): number => task.instance.id),
     };
 }
 
@@ -50,6 +65,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         getTreeData: (key: string, success: () => void, failure: () => void): void => {
             dispatch(loadShareDataAsync(key, success, failure));
+        },
+        getTasks: (query: TasksQuery): void => {
+            dispatch(getTasksAsync(query));
         },
     };
 }
@@ -68,7 +86,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { treeData, getTreeData, withRemote } = this.props;
+        const { treeData, getTreeData, withRemote, tasks, fetching, updating, getTasks, currentTasksIndexes } = this.props;
 
         return (
             <FileManagerComponent
@@ -78,6 +96,12 @@ export class FileManagerContainer extends React.PureComponent<Props> {
                 ref={(component): void => {
                     this.managerComponentRef = component;
                 }}
+
+                tasks={tasks}
+                fetching={fetching}
+                updating={updating}
+                getTasks={getTasks}
+                currentTasksIndexes={currentTasksIndexes}
             />
         );
     }

@@ -32,7 +32,7 @@ export default function PickedTaskListComponent(props: ContentListProps): JSX.El
     return <Spin size='large' className='cvat-spinner' />;
   }
   const plainOptions = currentTasksIndexes.map((taskId): string => "#"+taskId.toString());
-  const defaultCheckedList = plainOptions.slice(0,1);
+  const defaultCheckedList = plainOptions.slice(0,0);
   const [checkedList, setCheckedList] = React.useState(defaultCheckedList);
   const [indeterminate, setIndeterminate] = React.useState(true);
   const [checkAll, setCheckAll] = React.useState(false);

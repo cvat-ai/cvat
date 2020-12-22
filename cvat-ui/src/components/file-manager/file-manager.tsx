@@ -12,7 +12,15 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
-import PickedTaskListContainer from 'containers/file-manager/picked-tasks';
+// import PickedTaskListContainer from 'containers/file-manager/picked-tasks';
+
+import { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import { Checkbox, Divider } from 'antd';
+const CheckboxGroup = Checkbox.Group;
+import {CheckboxValueType} from 'antd/lib/checkbox/Group';
+
+import { Task, TasksQuery } from 'reducers/interfaces';
+import Spin from 'antd/lib/spin';
 
 import consts from 'consts';
 
@@ -20,18 +28,28 @@ export interface Files {
     local: File[];
     share: string[];
     remote: string[];
+    tasks: string[];
 }
 
 interface State {
     files: Files;
     expandedKeys: string[];
-    active: 'local' | 'share' | 'remote';
+    active: 'local' | 'share' | 'remote' | 'tasks';
+    exist_tasks: string[];
+    first_time_switch_tasktab: boolean;
 }
 
 interface Props {
     withRemote: boolean;
     treeData: TreeNodeNormal[];
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
+
+    tasks: Task[];
+    fetching: boolean;
+    updating: boolean;
+    getTasks: (query: TasksQuery) => void;
+    currentTasksIndexes: number[];
+
 }
 
 export default class FileManager extends React.PureComponent<Props, State> {
@@ -43,9 +61,12 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 local: [],
                 share: [],
                 remote: [],
+                tasks: [],
             },
             expandedKeys: [],
             active: 'local',
+            exist_tasks: [],
+            first_time_switch_tasktab: true,
         };
 
         this.loadData('/');
@@ -57,6 +78,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
             local: active === 'local' ? files.local : [],
             share: active === 'share' ? files.share : [],
             remote: active === 'remote' ? files.remote : [],
+            tasks: active === 'tasks' ? files.tasks : [],
         };
     }
 
@@ -77,7 +99,9 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 local: [],
                 share: [],
                 remote: [],
+                tasks: [],
             },
+            first_time_switch_tasktab: true,
         });
     }
 
@@ -216,15 +240,30 @@ export default class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderTasksSelector(): JSX.Element {
+        const { files } = this.state;
+
+        const onChange = (rawList:CheckboxValueType[]) => {
+          let list = (rawList as string[]);
+          this.setState({
+            files: {
+                ...files,
+                tasks: list,
+                },
+            });
+        };
+
         return (
             <Tabs.TabPane key='tasks' tab='Completed tasks'>
-                <PickedTaskListContainer />
+                <div className='cvat-picked-tasks'>
+                    <Divider>Choose tasks via ID</Divider>
+                    <CheckboxGroup options={this.state.exist_tasks} value={this.state.files.tasks} onChange={onChange} />
+                </div>
             </Tabs.TabPane>
         );
     }
 
     public render(): JSX.Element {
-        const { withRemote } = this.props;
+        const { withRemote, getTasks, currentTasksIndexes, tasks, updating, fetching } = this.props;
         const { active } = this.state;
 
         return (
@@ -233,10 +272,30 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     type='card'
                     activeKey={active}
                     tabBarGutter={5}
-                    onChange={(activeKey: string): void =>
-                        this.setState({
-                            active: activeKey as any,
-                        })
+                    onChange={(activeKey: string): void => {
+                            this.setState({
+                                active: activeKey as any,
+                            });
+                            if (activeKey === "tasks" && this.state.first_time_switch_tasktab) {
+                                console.log("first time swith to tasks tab");
+                                if (!fetching) {
+                                    getTasks({
+                                    page: 1, // TODO: resolve page restrction
+                                    id: null,
+                                    search: null,
+                                    owner: null,
+                                    assignee: null,
+                                    name: null,
+                                    status: null,
+                                    mode: null,
+                                    });
+                                };
+                                this.setState({
+                                    exist_tasks: currentTasksIndexes.map((taskId): string => taskId.toString()),
+                                    first_time_switch_tasktab: false,
+                                })
+                            }
+                        }
                     }
                 >
                     {this.renderLocalSelector()}

@@ -237,6 +237,14 @@ class RemoteFile(models.Model):
     class Meta:
         default_permissions = ()
 
+# For tasks id
+class TaskToMerge(models.Model):
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='tasks_to_merge')
+    file = models.CharField(max_length=20)
+
+    class Meta:
+        default_permissions = ()
+
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     start_frame = models.IntegerField()
