@@ -1730,7 +1730,6 @@
         if (typeof this.dataChunkSize !== 'undefined') {
             taskDataSpec.chunk_size = this.dataChunkSize;
         }
-        debugger;
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
         return new Task(task);
     };

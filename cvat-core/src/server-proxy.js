@@ -317,7 +317,8 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks?page_size=10&${filter}`, {
+                    // response = await Axios.get(`${backendAPI}/tasks?page_size=10&${filter}`, {
+                    response = await Axios.get(`${backendAPI}/tasks?${filter}`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {

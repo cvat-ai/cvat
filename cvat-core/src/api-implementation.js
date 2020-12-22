@@ -7,7 +7,7 @@
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
     const {
-        isBoolean, isInteger, isEnum, isString, checkFilter,
+        isBoolean, isInteger, isEnum, isString, checkFilter
     } = require('./common');
 
     const { TaskStatus, TaskMode } = require('./enums');
@@ -187,6 +187,9 @@
             const searchParams = new URLSearchParams();
             for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
+                    if (field === 'page') {
+                        searchParams.set('page_size', 10);
+                    }
                     searchParams.set(field, filter[field]);
                 }
             }

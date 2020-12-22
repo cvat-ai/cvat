@@ -31,7 +31,7 @@ from .log import slogger
 
 def create(tid, data):
     """Schedule the task"""
-    q = django_rq.get_queue('default',is_async=False) # TODO: is_async=True
+    q = django_rq.get_queue('default',is_async=True) # TODO
     q.enqueue_call(func=_create_thread, args=(tid, data),
         job_id="/api/v1/tasks/{}".format(tid))
 

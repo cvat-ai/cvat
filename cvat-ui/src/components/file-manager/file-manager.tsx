@@ -12,7 +12,6 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { AntTreeNode, TreeNodeNormal } from 'antd/lib/tree/Tree';
-// import PickedTaskListContainer from 'containers/file-manager/picked-tasks';
 
 import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import { Checkbox, Divider } from 'antd';
@@ -277,10 +276,9 @@ export default class FileManager extends React.PureComponent<Props, State> {
                                 active: activeKey as any,
                             });
                             if (activeKey === "tasks" && this.state.first_time_switch_tasktab) {
-                                console.log("first time swith to tasks tab");
                                 if (!fetching) {
                                     getTasks({
-                                    page: 1, // TODO: resolve page restrction
+                                    page: null,
                                     id: null,
                                     search: null,
                                     owner: null,

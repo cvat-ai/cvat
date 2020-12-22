@@ -66,7 +66,7 @@ nohup redis-server > assets/redis.log 2>&1 &
 nohup python manage.py rqworker default --worker-class cvat.simpleworker.SimpleWorker > assets/rqworker_default.log 2>&1 &
 nohup python manage.py rqworker low --worker-class cvat.simpleworker.SimpleWorker > assets/rqworker_low.log 2>&1 &
 nohup python manage.py rqscheduler > assets/rqscheduler.log 2>&1 &
-nohup python manage.py runserver --noreload --insecure 0.0.0.0:7000 > assets/runserver.log 2>&1 &
+nohup python manage.py runserver --insecure 0.0.0.0:7000 > assets/runserver.log 2>&1 &
 cd cvat-ui; nohup npm start > ../assets/cvat-ui.log 2>&1 &
 
 npm ci && \
