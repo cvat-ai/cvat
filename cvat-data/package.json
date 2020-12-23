@@ -1,6 +1,6 @@
 {
   "name": "cvat-data",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "src/js/cvat-data.js",
   "devDependencies": {
@@ -21,7 +21,7 @@
     "worker-loader": "^2.0.0"
   },
   "dependencies": {
-    "async-mutex": "^0.2.4",
+    "async-mutex": "^0.2.6",
     "jszip": "3.5.0"
   },
   "scripts": {
