@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Memory consumption for the task creation process (<https://github.com/openvinotoolkit/cvat/pull/2582>)
+- Frame preloading (<https://github.com/openvinotoolkit/cvat/pull/2608>)
 
 ### Security
 
