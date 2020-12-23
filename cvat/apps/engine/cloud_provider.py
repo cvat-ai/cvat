@@ -15,6 +15,13 @@ from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
 
 class CloudStorage(ABC):
 
+    def __init__(self):
+        self._files = []
+
+    @abstractproperty
+    def name(self):
+        pass
+
     @abstractmethod
     def create(self):
         pass
@@ -31,10 +38,6 @@ class CloudStorage(ABC):
     # def supported_files(self):
     #    pass
 
-    @abstractproperty
-    def content(self):
-        pass
-
     @abstractmethod
     def initialize_content(self):
         pass
@@ -46,6 +49,16 @@ class CloudStorage(ABC):
     @abstractmethod
     def upload_file(self, file_obj, file_name):
         pass
+
+    def __contains__(self, file_name):
+        return file_name in (item['name'] for item in self._files.values())
+
+    def __len__(self):
+        return len(self._files)
+
+    @property
+    def content(self):
+        return map(lambda x: x['name'] , self._files)
 
 def get_cloud_storage_instance(cloud_provider, **details):
     instance = None
@@ -67,6 +80,7 @@ def get_cloud_storage_instance(cloud_provider, **details):
 
 class AWS_S3(CloudStorage):
     def __init__(self, **kwargs):
+        super().__init__()
         assert (bucket_name := kwargs.get('bucket')), 'Bucket name was not found'
         self._bucket_name = bucket_name
 
@@ -84,19 +98,14 @@ class AWS_S3(CloudStorage):
 
         self._s3 = boto3.resource('s3')
         self._bucket = self._s3.Bucket(bucket_name)
-        self._files = []
 
     @property
     def bucket(self):
         return self._bucket
 
     @property
-    def bucket_name(self):
+    def name(self):
         return self._bucket_name
-
-    @property
-    def content(self):
-        return map(lambda x: x.key ,self._files)
 
     # def is_object_exist(self, verifiable='bucket_exist', config=None):
     #     waiter = self._client_s3.get_waiter(verifiable)
@@ -129,13 +138,6 @@ class AWS_S3(CloudStorage):
         except WaiterError:
             raise Exception('A file {} unavailable'.format(key_object))
 
-
-    def __len__(self):
-        return len(self._files)
-
-    def __contains__(self, file_name):
-        return file_name in (item.key for item in self._files.values())
-
     def head(self):
         pass
 
@@ -151,8 +153,10 @@ class AWS_S3(CloudStorage):
         )
 
     def initialize_content(self):
-        #TODO: оставить только нужную информацию :D
-        self._files = list(self._bucket.objects.all())
+        files = self._bucket.objects.all()
+        self._files = [{
+            'name': item.key,
+        } for item in files]
 
     def download_file(self, key):
         buf = BytesIO()
@@ -181,6 +185,7 @@ class AWS_S3(CloudStorage):
 class AzureBlobContainer(CloudStorage):
 
     def __init__(self, **kwargs):
+        super().__init__()
         assert (container_name := kwargs.get('container_name')), 'Container name was not found'
         assert (account_name := kwargs.get('account_name')), 'Account name was not found'
         assert (credentials := kwargs.get('sas_token') if kwargs.get('sas_token') else kwargs.get('account_access_key')), 'Credentials were not granted'
@@ -189,11 +194,14 @@ class AzureBlobContainer(CloudStorage):
         self._container_client = self._blob_service_client.get_container_client(container_name)
 
         self._account_name = account_name
-        self._files = []
 
     @property
     def container(self):
-        return self._container
+        return self._container_client
+
+    @property
+    def name(self):
+        return self._container_client.container_name
 
     @property
     def account_url(self):
@@ -239,11 +247,10 @@ class AzureBlobContainer(CloudStorage):
     #     pass
 
     def initialize_content(self):
-        self._files = self._container_client.list_blobs()
-
-    @property
-    def content(self):
-        return self._files
+        files = self._container_client.list_blobs()
+        self._files = [{
+            'name': item.name
+        } for item in files]
 
     def download_file(self, key):
         MAX_CONCURRENCY = 3
@@ -262,9 +269,9 @@ class Credentials:
     __slots__ = ('key', 'secret_key', 'session_token', 'credentials_type')
 
     def __init__(self, **credentials):
-        self.key = credentials.get('key', None)
-        self.secret_key = credentials.get('secret_key', None)
-        self.session_token = credentials.get('session_token', None)
+        self.key = credentials.get('key', '')
+        self.secret_key = credentials.get('secret_key', '')
+        self.session_token = credentials.get('session_token', '')
         self.credentials_type = credentials.get('credentials_type', None)
 
     def convert_to_db(self):
@@ -286,21 +293,10 @@ class Credentials:
             else: self.secret_key = second
 
     def mapping_with_new_values(self, credentials):
-        # credentials = {
-        #     'type' : string, optional
-        #     'key' : string, optional
-        #     'secret_key': string, optional
-        #     'session_token': string, optional
-        # }
-
-        if hasattr(credentials, 'type'):
-            self.credentials_type = credentials.get('type')
-        if hasattr(credentials, 'key'):
-            self.key = credentials.get('key')
-        elif hasattr(credentials, 'secret_key'):
-            self.secret_key = credentials.get('secret_key')
-        elif hasattr(credentials, 'session_token'):
-            self.session_token = credentials.get('session_token')
+        self.credentials_type = credentials.get('credentials_type', self.credentials_type)
+        self.key = credentials.get('key', self.key)
+        self.secret_key = credentials.get('secret_key', self.secret_key)
+        self.session_token = credentials.get('session_token', self.session_token)
 
     def values(self):
         return [self.key, self.secret_key, self.session_token]
