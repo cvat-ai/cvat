@@ -21,6 +21,7 @@ class FrameProvider {
         this._blocksRanges = [];
         this._blocks = {};
         this._running = false;
+        this._blockSize = blockSize;
         this._blockType = blockType;
         this._currFrame = -1;
         this._requestedBlockDecode = null;

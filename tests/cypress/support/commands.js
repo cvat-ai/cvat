@@ -7,6 +7,7 @@
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
+require('cypress-localstorage-commands');
 
 let selectedValueGlobal = '';
 
@@ -102,7 +103,9 @@ Cypress.Commands.add('openTask', (taskName) => {
 });
 
 Cypress.Commands.add('saveJob', () => {
+    cy.server().route('POST', '/api/v1/server/logs').as('sendLogs');
     cy.get('button').contains('Save').click({ force: true });
+    cy.wait('@sendLogs').its('status').should('equal', 201);
 });
 
 Cypress.Commands.add('openJob', (jobNumber = 0) => {
@@ -254,10 +257,9 @@ Cypress.Commands.add('openSettings', () => {
 });
 
 Cypress.Commands.add('closeSettings', () => {
-    cy.get('.cvat-settings-modal')
-        .within(() => {
-            cy.contains('button', 'Close').click();
-        });
+    cy.get('.cvat-settings-modal').within(() => {
+        cy.contains('button', 'Close').click();
+    });
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
@@ -272,10 +274,11 @@ Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
+
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
-        if (cvatWorkspaceSelectorValue === 'Attribute annotation') {
-            cy.get('.attribute-annotation-sidebar-basics-editor').within(() => {
+        if (cvatWorkspaceSelectorValue.includes('Attribute annotation')) {
+            cy.get('.cvat-attribute-annotation-sidebar-basics-editor').within(() => {
                 cy.get('.ant-select-selector').click();
             });
             cy.get('.ant-select-dropdown')
@@ -424,6 +427,15 @@ Cypress.Commands.add('removeAnnotations', () => {
 Cypress.Commands.add('goToTaskList', () => {
     cy.get('a[value="tasks"]').click();
     cy.url().should('include', '/tasks');
+});
+
+Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
+    cy.get('.cvat-label-color-picker')
+        .not('.ant-popover-hidden')
+        .within(() => {
+            cy.contains('hex').prev().clear().type(labelColor);
+            cy.contains('button', 'Ok').click();
+        });
 });
 
 Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
