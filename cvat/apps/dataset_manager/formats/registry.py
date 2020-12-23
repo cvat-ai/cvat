@@ -92,3 +92,4 @@ import cvat.apps.dataset_manager.formats.pascal_voc
 import cvat.apps.dataset_manager.formats.tfrecord
 import cvat.apps.dataset_manager.formats.yolo
 import cvat.apps.dataset_manager.formats.imagenet
+import cvat.apps.dataset_manager.formats.camvid

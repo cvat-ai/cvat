@@ -6,6 +6,7 @@ USER root
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
         gpg-agent \
+        gnupg2 \
         apt-utils \
         build-essential \
         python3-dev \
@@ -20,9 +21,16 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*;
 
-RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt && \
+COPY cvat/requirements/ /tmp/requirements/
+
+RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt && \
     python3 -m pip install --no-cache-dir coveralls
 RUN gem install coveralls-lcov
+
+COPY utils ${HOME}/utils
+COPY cvat-core ${HOME}/cvat-core
+COPY cvat-data ${HOME}/cvat-data
+COPY tests ${HOME}/tests
 
 COPY .coveragerc .
 
