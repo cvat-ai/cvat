@@ -274,7 +274,6 @@ Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
-
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
         if (cvatWorkspaceSelectorValue.includes('Attribute annotation')) {
@@ -527,6 +526,7 @@ Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
 });
 
 Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
+    let filterValues = [];
     if (clear) {
         cy.get('.cvat-annotations-filters-input').within(() => {
             cy.get('.ant-select-selection-item-remove').click();
@@ -537,7 +537,13 @@ Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
     cy.contains('.cvat-annotations-filters-input-history-element', filterValue).scrollIntoView().click();
     cy.get('body').click();
     cy.get('.cvat-annotations-filters-input').within(() => {
-        cy.get('.ant-select-selection-item-content').should('have.text', filterValue);
+        cy.get('.ant-select-selection-item-content')
+            .each(($el) => {
+                filterValues.push($el.text());
+            })
+            .then(() => {
+                expect(filterValues).to.includes(filterValue);
+            });
     });
 });
 
