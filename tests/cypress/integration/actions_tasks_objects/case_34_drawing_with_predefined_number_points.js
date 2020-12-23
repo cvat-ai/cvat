@@ -43,8 +43,8 @@ context('Drawing with predefined number of points.', () => {
         cy.openTaskJob(taskName);
     });
 
-    function tryDrawObjectPredefinedNumberPoints(objest, pointsCount) {
-        cy.get(`.cvat-draw-${objest}-control`).click().wait(500);
+    function tryDrawObjectPredefinedNumberPoints(object, pointsCount) {
+        cy.get(`.cvat-draw-${object}-control`).click().wait(500);
         cy.get('.cvat-draw-shape-popover')
             .not('.ant-popover-hidden')
             .within(() => {
