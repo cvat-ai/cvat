@@ -281,10 +281,10 @@
 }
 
 .cvat-annotations-filters-input.ant-select > div {
-    height: 32px;
+    min-height: 32px;
 
     > div {
-        height: 32px;
+        min-height: 32px;
 
         ul {
             display: flex;
