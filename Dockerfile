@@ -141,6 +141,7 @@ COPY --chown=${USER} ssh ${HOME}/.ssh
 COPY --chown=${USER} supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} utils/ ${HOME}/utils
+COPY --chown=${USER} tests/ ${HOME}/tests
 
 # RUN all commands below as 'django' user
 USER ${USER}
