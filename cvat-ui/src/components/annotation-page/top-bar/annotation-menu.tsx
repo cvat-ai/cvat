@@ -160,6 +160,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 dumpers,
                 dumpActivities,
                 menuKey: Actions.DUMP_TASK_ANNO,
+                taskDimension:jobInstance.task.dimension
             })}
             {LoadSubmenu({
                 loaders,
@@ -168,11 +169,13 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     onClickMenuWrapper(null, file);
                 },
                 menuKey: Actions.LOAD_JOB_ANNO,
+                taskDimension:jobInstance.task.dimension
             })}
             {ExportSubmenu({
                 exporters: dumpers,
                 exportActivities,
                 menuKey: Actions.EXPORT_TASK_DATASET,
+                taskDimension:jobInstance.task.dimension
             })}
 
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
