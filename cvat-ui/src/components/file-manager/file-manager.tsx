@@ -254,7 +254,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
         } else {
             return (
                 <div className='cvat-picked-tasks'>
-                    <Divider>Choose task ID</Divider>
+                    <Divider>选择已经完成的Task来合并</Divider>
                     <CheckboxGroup options={this.props.currentTasksIndexes.map((taskId): string => taskId.toString())} value={this.state.files.tasks} onChange={onChange} />
                 </div>
             );
@@ -263,7 +263,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { withRemote, getTasks, currentTasksIndexes, fetching } = this.props;
+        const { withRemote, getTasks, fetching } = this.props;
         const { active } = this.state;
 
         return (
@@ -285,7 +285,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                                     owner: null,
                                     assignee: null,
                                     name: null,
-                                    status: null,
+                                    status: 'completed',
                                     mode: null,
                                 });
                                 this.setState({
