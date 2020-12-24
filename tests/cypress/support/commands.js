@@ -548,6 +548,6 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
 });
 
 Cypress.Commands.add('closeNotification', (className) => {
-    cy.get('span[aria-label="close"]').click();
+    cy.get(className).find('span[aria-label="close"]').click();
     cy.get(className).should('not.exist');
 });
