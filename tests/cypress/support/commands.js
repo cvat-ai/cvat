@@ -274,7 +274,6 @@ Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
-
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
         if (cvatWorkspaceSelectorValue.includes('Attribute annotation')) {
@@ -546,4 +545,9 @@ Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
 Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
     cy.get('.cvat-player-previous-button').click();
     cy.checkFrameNum(expectedFrameNum);
+});
+
+Cypress.Commands.add('closeNotification', (className) => {
+    cy.get('span[aria-label="close"]').click();
+    cy.get(className).should('not.exist');
 });
