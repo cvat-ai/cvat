@@ -43,6 +43,7 @@ function SetupTagPopover(props: Props): JSX.Element {
                         labels={labels}
                         value={selectedLabelID}
                         onChange={onChangeLabel}
+                        className='cvat-draw-shape-popover-content-label-selector-tag'
                     />
                 </Col>
             </Row>

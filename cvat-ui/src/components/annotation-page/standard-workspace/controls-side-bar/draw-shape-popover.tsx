@@ -69,6 +69,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         labels={labels}
                         value={selectedLabelID}
                         onChange={onChangeLabel}
+                        className={`cvat-draw-shape-popover-content-label-selector cvat-draw-shape-popover-content-label-selector-${shapeType}`}
                     />
                 </Col>
             </Row>
@@ -136,7 +137,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                     onChangePoints(undefined);
                                 }
                             }}
-                            className='cvat-draw-shape-popover-points-selector'
+                            className={`cvat-draw-shape-popover-points-selector-${shapeType}`}
                             min={minimumPoints}
                             value={numberOfPoints}
                             step={1}

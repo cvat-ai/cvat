@@ -29,7 +29,7 @@ function SetupTagControl(props: Props): JSX.Element {
         <Popover
             {...dynamcPopoverPros}
             placement='right'
-            overlayClassName='cvat-draw-shape-popover'
+            overlayClassName='cvat-draw-shape-popover cvat-draw-shape-popover-tag'
             content={<SetupTagPopoverContainer />}
         >
             <Icon className='cvat-setup-tag-control' component={TagIcon} />

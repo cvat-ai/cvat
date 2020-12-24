@@ -42,7 +42,7 @@ function DrawRectangleControl(props: Props): JSX.Element {
     return (
         <Popover
             {...dynamcPopoverPros}
-            overlayClassName='cvat-draw-shape-popover'
+            overlayClassName='cvat-draw-shape-popover cvat-draw-shape-popover-rectangle'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.RECTANGLE} />}
         >

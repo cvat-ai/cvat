@@ -42,7 +42,7 @@ function DrawPolylineControl(props: Props): JSX.Element {
     return (
         <Popover
             {...dynamcPopoverPros}
-            overlayClassName='cvat-draw-shape-popover'
+            overlayClassName='cvat-draw-shape-popover cvat-draw-shape-popover-polyline'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POLYLINE} />}
         >
