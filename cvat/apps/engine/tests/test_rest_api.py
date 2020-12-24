@@ -2000,8 +2000,9 @@ class TaskDataAPITestCase(APITestCase):
         response = self._get_preview(task_id, user)
         self.assertEqual(response.status_code, expected_status_code)
         if expected_status_code == status.HTTP_200_OK:
-            preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
-            self.assertLessEqual(preview.size, image_sizes[0])
+            if dimension == DimensionType.DIM_2D:
+                preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
+                self.assertLessEqual(preview.size, image_sizes[0])
 
         # check compressed chunk
         response = self._get_compressed_chunk(task_id, user, 0)

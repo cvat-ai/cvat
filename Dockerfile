@@ -74,7 +74,7 @@ RUN apt-get update && \
         apache2 \
         libapache2-mod-xsendfile \
         libgomp1 \
-        libgl1-mesa-glx \
+        libgl1 \
         supervisor \
         libldap-2.4-2 \
         libsasl2-2 \
