@@ -130,16 +130,17 @@ Cypress.Commands.add('openTaskJob', (taskName, jobNumber = 0) => {
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
-    cy.get('.cvat-draw-rectangle-control').click();
+    cy.get('.cvat-draw-rectangle-control').trigger('mouseover');
     cy.switchLabel(createRectangleParams.labelName, 'rectangle');
-    cy.contains('Draw new rectangle')
-        .parents('.cvat-draw-shape-popover-content')
+    cy.get('.cvat-draw-shape-popover-rectangle')
+        .not('.ant-popover-hidden')
+        .invoke('css', 'pointer-events', 'auto')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
-            cy.get('button').contains(createRectangleParams.type).click({ force: true });
+            cy.get('button').contains(createRectangleParams.type).click();
         });
     cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
     cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
@@ -151,12 +152,10 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    const pattern = `^(Draw new|Setup) ${objectType}$`;
-    const regex = new RegExp(pattern, 'g');
-    cy.contains(regex)
-        .parents('.cvat-draw-shape-popover-content')
+    cy.get(`.cvat-draw-shape-popover-${objectType}`)
+        .not('.ant-popover-hidden')
         .within(() => {
-            cy.get('.ant-select-selection-item').click();
+            cy.get(`.cvat-draw-shape-popover-content-label-selector-${objectType}`).click();
         });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
@@ -183,20 +182,25 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
     });
 });
 
+Cypress.Commands.add('setCountObjectPoint', (objectType, countPoints) => {
+    cy.get(`.cvat-draw-shape-popover-points-selector-${objectType}`).find('input').clear().type(countPoints);
+});
+
 Cypress.Commands.add('createPoint', (createPointParams) => {
-    cy.get('.cvat-draw-points-control').click();
+    cy.get('.cvat-draw-points-control').trigger('mouseover');
     cy.switchLabel(createPointParams.labelName, 'points');
-    cy.contains('Draw new points')
-        .parents('.cvat-draw-shape-popover-content')
+    cy.get('.cvat-draw-shape-popover-points')
+        .not('.ant-popover-hidden')
+        .invoke('css', 'pointer-events', 'auto')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             if (createPointParams.numberOfPoints) {
                 createPointParams.complete = false;
-                cy.get('.ant-input-number-input').clear().type(createPointParams.numberOfPoints);
+                cy.setCountObjectPoint('points', createPointParams.numberOfPoints);
             }
-            cy.get('button').contains(createPointParams.type).click({ force: true });
+            cy.get('button').contains(createPointParams.type).click();
         });
     createPointParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
@@ -226,19 +230,20 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
 
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (!createPolygonParams.reDraw) {
-        cy.get('.cvat-draw-polygon-control').click();
+        cy.get('.cvat-draw-polygon-control').trigger('mouseover');
         cy.switchLabel(createPolygonParams.labelName, 'polygon');
-        cy.contains('Draw new polygon')
-            .parents('.cvat-draw-shape-popover-content')
+        cy.get('.cvat-draw-shape-popover-polygon')
+            .not('.ant-popover-hidden')
+            .invoke('css', 'pointer-events', 'auto')
             .within(() => {
                 cy.get('.ant-select-selection-item').then(($labelValue) => {
                     selectedValueGlobal = $labelValue.text();
                 });
                 if (createPolygonParams.numberOfPoints) {
                     createPolygonParams.complete = false;
-                    cy.get('.ant-input-number-input').clear().type(createPolygonParams.numberOfPoints);
+                    cy.setCountObjectPoint('polygon', createPolygonParams.numberOfPoints);
                 }
-                cy.get('button').contains(createPolygonParams.type).click({ force: true });
+                cy.get('button').contains(createPolygonParams.type).click();
             });
     }
     createPolygonParams.pointsMap.forEach((element) => {
@@ -274,7 +279,6 @@ Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
-
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
         if (cvatWorkspaceSelectorValue.includes('Attribute annotation')) {
@@ -291,16 +295,17 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
 });
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {
-    cy.get('.cvat-draw-cuboid-control').click();
+    cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
     cy.switchLabel(createCuboidParams.labelName, 'cuboid');
-    cy.contains('Draw new cuboid')
-        .parents('.cvat-draw-shape-popover-content')
+    cy.get('.cvat-draw-shape-popover-cuboid')
+        .not('.ant-popover-hidden')
+        .invoke('css', 'pointer-events', 'auto')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             cy.contains(createCuboidParams.points).click();
-            cy.get('button').contains(createCuboidParams.type).click({ force: true });
+            cy.get('button').contains(createCuboidParams.type).click();
         });
     cy.get('.cvat-canvas-container').click(createCuboidParams.firstX, createCuboidParams.firstY);
     cy.get('.cvat-canvas-container').click(createCuboidParams.secondX, createCuboidParams.secondY);
@@ -354,19 +359,20 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 });
 
 Cypress.Commands.add('createPolyline', (createPolylineParams) => {
-    cy.get('.cvat-draw-polyline-control').click();
+    cy.get('.cvat-draw-polyline-control').trigger('mouseover');
     cy.switchLabel(createPolylineParams.labelName, 'polyline');
-    cy.contains('Draw new polyline')
-        .parents('.cvat-draw-shape-popover-content')
+    cy.get('.cvat-draw-shape-popover-polyline')
+        .not('.ant-popover-hidden')
+        .invoke('css', 'pointer-events', 'auto')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
             if (createPolylineParams.numberOfPoints) {
                 createPolylineParams.complete = false;
-                cy.get('.ant-input-number-input').clear().type(createPolylineParams.numberOfPoints);
+                cy.setCountObjectPoint('polyline', createPolylineParams.numberOfPoints);
             }
-            cy.get('button').contains(createPolylineParams.type).click({ force: true });
+            cy.get('button').contains(createPolylineParams.type).click();
         });
     createPolylineParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
@@ -460,10 +466,11 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
 });
 
 Cypress.Commands.add('createTag', (labelName) => {
-    cy.get('.cvat-setup-tag-control').click();
+    cy.get('.cvat-setup-tag-control').trigger('mouseover');
     cy.switchLabel(labelName, 'tag');
-    cy.contains('Setup tag')
-        .parents('.cvat-draw-shape-popover-content')
+    cy.get('.cvat-draw-shape-popover-tag')
+        .not('.ant-popover-hidden')
+        .invoke('css', 'pointer-events', 'auto')
         .within(() => {
             cy.get('button').click();
         });
