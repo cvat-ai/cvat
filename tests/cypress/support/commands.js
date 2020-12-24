@@ -8,6 +8,7 @@ require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
+require('cypress-wait-until');
 
 let selectedValueGlobal = '';
 
@@ -129,12 +130,31 @@ Cypress.Commands.add('openTaskJob', (taskName, jobNumber = 0) => {
     cy.openJob(jobNumber);
 });
 
+Cypress.Commands.add('interactDrawObjectControlButton', (objectType) => {
+    let getControlButton = '';
+    if (objectType !== 'tag') {
+        getControlButton = `.cvat-draw-${objectType}-control`;
+    } else {
+        getControlButton = `.cvat-setup-${objectType}-control`;
+    }
+    cy.get(getControlButton).trigger('mouseover').should('have.class', 'ant-popover-open');
+    cy.waitUntil(
+        () => cy.get(`.cvat-draw-shape-popover-${objectType}`).should('not.have.css', 'pointer-events', 'none'),
+        {
+            errorMsg: 'popover still matters: pointer-events: none',
+            timeout: 7000,
+            interval: 300,
+        },
+    );
+});
+
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
-    cy.get('.cvat-draw-rectangle-control').trigger('mouseover');
+    cy.interactDrawObjectControlButton('rectangle');
     cy.switchLabel(createRectangleParams.labelName, 'rectangle');
     cy.get('.cvat-draw-shape-popover-rectangle')
-        .not('.ant-popover-hidden')
-        .invoke('css', 'pointer-events', 'auto')
+        .should('not.have.class', 'ant-popover-hidden')
+        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
@@ -153,7 +173,9 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
     cy.get(`.cvat-draw-shape-popover-${objectType}`)
-        .not('.ant-popover-hidden')
+        .should('not.have.class', 'ant-popover-hidden')
+        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get(`.cvat-draw-shape-popover-content-label-selector-${objectType}`).click();
         });
@@ -187,11 +209,12 @@ Cypress.Commands.add('setCountObjectPoint', (objectType, countPoints) => {
 });
 
 Cypress.Commands.add('createPoint', (createPointParams) => {
-    cy.get('.cvat-draw-points-control').trigger('mouseover');
+    cy.interactDrawObjectControlButton('points');
     cy.switchLabel(createPointParams.labelName, 'points');
     cy.get('.cvat-draw-shape-popover-points')
-        .not('.ant-popover-hidden')
-        .invoke('css', 'pointer-events', 'auto')
+        .should('not.have.class', 'ant-popover-hidden')
+        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
@@ -230,11 +253,12 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
 
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (!createPolygonParams.reDraw) {
-        cy.get('.cvat-draw-polygon-control').trigger('mouseover');
+        cy.interactDrawObjectControlButton('polygon');
         cy.switchLabel(createPolygonParams.labelName, 'polygon');
         cy.get('.cvat-draw-shape-popover-polygon')
-            .not('.ant-popover-hidden')
-            .invoke('css', 'pointer-events', 'auto')
+            .should('not.have.class', 'ant-popover-hidden')
+            .and('not.have.class', 'zoom-big-enter')
+            .and('not.have.css', 'pointer-events', 'none')
             .within(() => {
                 cy.get('.ant-select-selection-item').then(($labelValue) => {
                     selectedValueGlobal = $labelValue.text();
@@ -295,11 +319,12 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
 });
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {
-    cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
+    cy.interactDrawObjectControlButton('cuboid');
     cy.switchLabel(createCuboidParams.labelName, 'cuboid');
     cy.get('.cvat-draw-shape-popover-cuboid')
-        .not('.ant-popover-hidden')
-        .invoke('css', 'pointer-events', 'auto')
+        .should('not.have.class', 'ant-popover-hidden')
+        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
@@ -359,11 +384,12 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 });
 
 Cypress.Commands.add('createPolyline', (createPolylineParams) => {
-    cy.get('.cvat-draw-polyline-control').trigger('mouseover');
+    cy.interactDrawObjectControlButton('polyline');
     cy.switchLabel(createPolylineParams.labelName, 'polyline');
     cy.get('.cvat-draw-shape-popover-polyline')
-        .not('.ant-popover-hidden')
-        .invoke('css', 'pointer-events', 'auto')
+        .should('not.have.class', 'ant-popover-hidden')
+        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
@@ -466,11 +492,12 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
 });
 
 Cypress.Commands.add('createTag', (labelName) => {
-    cy.get('.cvat-setup-tag-control').trigger('mouseover');
+    cy.interactDrawObjectControlButton('tag');
     cy.switchLabel(labelName, 'tag');
     cy.get('.cvat-draw-shape-popover-tag')
-        .not('.ant-popover-hidden')
-        .invoke('css', 'pointer-events', 'auto')
+        .should('not.have.class', 'ant-popover-hidden')
+        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('button').click();
         });
