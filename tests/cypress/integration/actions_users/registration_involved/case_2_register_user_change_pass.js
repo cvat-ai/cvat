@@ -53,7 +53,7 @@ context('Register user, change password, login with new password', () => {
         it('Login with the new password', () => {
             cy.login(userName, newPassword);
         });
-        it('Change password with incorrect password', () => {
+        it('Change password with incorrect current password', () => {
             changePassword(userName, `${randomString(true)}`, newPassword);
             cy.get('.cvat-notification-notice-change-password-failed').should('exist');
         });
