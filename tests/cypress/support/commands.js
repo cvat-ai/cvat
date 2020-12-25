@@ -415,7 +415,7 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
-    cy.get('.cvat-annotation-header-button').eq(0).click();
+    cy.contains('.cvat-annotation-header-button', 'Menu').click();
     cy.get('.cvat-annotation-menu').within(() => {
         cy.contains('Remove annotations').click();
     });

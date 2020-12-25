@@ -701,6 +701,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         updating: {
                             message: 'Could not update annotations',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-annotations-failed',
                         },
                     },
                 },
