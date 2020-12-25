@@ -180,13 +180,7 @@ context('Filters functionality.', () => {
             const textSecondFilter = 'clientID == 4'; // #cvat_canvas_shape_7, #cvat-objects-sidebar-state-item-4
             cy.selectFilterValue(true, textFirstFilter);
             cy.selectFilterValue(false, textSecondFilter);
-            cy.contains(textFirstFilter).then(($el) => {
-                const sizeToTopWindowFirstFilter = $el[0].getBoundingClientRect().top;
-                cy.contains(textSecondFilter).then(($el) => {
-                    const sizeToTopWindowSecondFilter = $el[0].getBoundingClientRect().top;
-                    expect(sizeToTopWindowFirstFilter).to.equal(sizeToTopWindowSecondFilter);
-                });
-            });
+            checkingFilterApplication([2, 4]);
         });
     });
 });
