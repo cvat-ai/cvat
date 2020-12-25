@@ -4,6 +4,7 @@
 
 import av
 from collections import OrderedDict
+from io import BytesIO
 import hashlib
 import os
 from cvat.apps.engine.utils import rotate_image
@@ -57,7 +58,10 @@ class AnalyzeVideo(WorkWithVideo):
         self._close_video_container(container)
 
 def md5_hash(frame):
-    return hashlib.md5(frame.to_image().tobytes()).hexdigest()
+    if isinstance(frame, av.VideoFrame):
+        return hashlib.md5(frame.to_image().tobytes()).hexdigest()
+    elif isinstance(frame, BytesIO):
+        return hashlib.md5(frame.getvalue()).hexdigest()
 
 class PrepareInfo(WorkWithVideo):
 
@@ -238,6 +242,13 @@ class UploadedMeta(PrepareInfo):
             assert video_stream.frames == self.frames, "Uploaded meta information does not match the video"
             return
         self._close_video_container(container)
+
+class ParsingMeta:
+    def __init__(self, **kwargs):
+        pass
+
+    def parsing(self, start, step, stop, chunk_size, chunk_number):
+        raise NotImplementedError()
 
 def prepare_meta(media_file, upload_dir=None, meta_dir=None, chunk_size=None):
     paths = {
