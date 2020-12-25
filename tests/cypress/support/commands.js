@@ -63,7 +63,7 @@ Cypress.Commands.add(
             cy.get('.cvat-new-attribute-button').click();
             cy.get('[placeholder="Name"]').type(attrName);
             cy.get('.cvat-attribute-type-input').click();
-            cy.get('.ant-select-item-option').contains('Text').click();
+            cy.get('.cvat-attribute-type-input-text').click();
             cy.get('[placeholder="Default value"]').type(textDefaultValue);
             if (multiAttrParams) {
                 cy.updateAttributes(multiAttrParams);
@@ -274,7 +274,6 @@ Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
-
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
         if (cvatWorkspaceSelectorValue.includes('Attribute annotation')) {
@@ -420,7 +419,7 @@ Cypress.Commands.add('removeAnnotations', () => {
         cy.contains('Remove annotations').click();
     });
     cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
-        cy.contains('button','Delete').click();
+        cy.contains('button', 'Delete').click();
     });
 });
 
@@ -552,14 +551,22 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
     cy.checkFrameNum(expectedFrameNum);
 });
 
+Cypress.Commands.add('closeNotification', (className) => {
+    cy.get(className).find('span[aria-label="close"]').click();
+    cy.get(className).should('not.exist');
+});
+
 Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
     cy.document().then((doc) => {
-        const stateItemLabelSelectorList = Array.from(doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'));
+        const stateItemLabelSelectorList = Array.from(
+            doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'),
+        );
         for (let i = 0; i < stateItemLabelSelectorList.length; i++) {
             if (stateItemLabelSelectorList[i].textContent === labelName) {
                 cy.get(stateItemLabelSelectorList[i])
                     .parents('.cvat-objects-sidebar-state-item')
-                    .should('have.attr', 'id').then((id) => {
+                    .should('have.attr', 'id')
+                    .then((id) => {
                         return Number(id.match(/\d+$/));
                     });
             }

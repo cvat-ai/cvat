@@ -46,7 +46,7 @@ context('Multiple users. Assign task, job.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         // First user is "admin".
-        it('Register second user and logout.', () => {
+        it('Register second user, tries to create task and logout.', () => {
             cy.visit('auth/register');
             cy.url().should('include', '/auth/register');
             cy.userRegistration(
@@ -56,6 +56,22 @@ context('Multiple users. Assign task, job.', () => {
                 secondUser.emailAddr,
                 secondUser.password,
             );
+            cy.get('#cvat-create-task-button').click({ force: true });
+            cy.url().should('include', '/tasks/create');
+            cy.get('[id="name"]').type(taskName);
+            cy.get('.cvat-constructor-viewer-new-item').click();
+            cy.get('[placeholder="Label name"]').type(labelName);
+            cy.get('.cvat-new-attribute-button').click();
+            cy.get('[placeholder="Name"]').type(attrName);
+            cy.get('.cvat-attribute-type-input').click();
+            cy.get('.cvat-attribute-type-input-text').click();
+            cy.get('[placeholder="Default value"]').type(textDefaultValue);
+            cy.contains('button', 'Done').click();
+            cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
+            cy.contains('button', 'Submit').click();
+            cy.get('.cvat-notification-notice-create-task-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-create-task-failed');
+            cy.contains('.cvat-item-task-name', `${taskName}`).should('not.exist');
             cy.logout(secondUserName);
         });
         it('Register third user and logout.', () => {
@@ -70,13 +86,24 @@ context('Multiple users. Assign task, job.', () => {
             );
             cy.logout(thirdUserName);
         });
-        it('First user login and create a task', () => {
+        it('First user login, create a task and logout', () => {
             cy.login();
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(directoryToArchive, archivePath);
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
+            cy.logout();
+        });
+        it('Second user login, tries to add label and logout', () => {
+            cy.login(secondUserName, secondUser.password);
+            cy.openTask(taskName);
+            cy.addNewLabel('failAddLabel');
+            cy.get('.cvat-notification-notice-update-task-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-update-task-failed');
+            cy.contains('.cvat-constructor-viewer-item', 'failAddLabel').should('not.exist');
+            cy.logout(secondUserName);
         });
         it('Assign the task to the second user and logout', () => {
+            cy.login();
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
             cy.logout();
@@ -98,9 +125,17 @@ context('Multiple users. Assign task, job.', () => {
             cy.assignJobToUser(thirdUserName);
             cy.logout();
         });
-        it('Third user login. The task can be opened.', () => {
+        it('Third user login. Tries to delete task. The task can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('exist');
+            cy.getTaskID(taskName).then(($taskID) => {
+                cy.deleteTask(taskName, $taskID);
+            });
+            cy.get('.cvat-notification-notice-delete-task-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-delete-task-failed');
+            cy.contains('.cvat-item-task-name', taskName)
+                .parents('.cvat-tasks-list-item')
+                .should('not.have.attr', 'style');
             cy.openTask(taskName);
             cy.logout(thirdUserName);
         });
