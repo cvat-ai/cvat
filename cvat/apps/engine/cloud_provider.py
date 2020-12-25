@@ -43,8 +43,14 @@ class CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def download_file(self, key):
+    def download_fileobj(self, key):
         pass
+
+    def download_file(self, key, path):
+        file_obj = self.download_fileobj(key)
+        if isinstance(file_obj, BytesIO):
+            with open(path, 'wb') as f:
+                f.write(file_obj.getvalue())
 
     @abstractmethod
     def upload_file(self, file_obj, file_name):
@@ -62,14 +68,14 @@ class CloudStorage(ABC):
 
 def get_cloud_storage_instance(cloud_provider, **details):
     instance = None
-    if cloud_provider == str(CloudProviderChoice.AWS_S3):
+    if cloud_provider == CloudProviderChoice.AWS_S3:
         instance = AWS_S3(
             bucket=details.get('resource_name'),
             session_token=details.get('session_token'),
             key_id=details.get('key'),
             secret_key=details.get('secret_key')
         )
-    elif cloud_provider == str(CloudProviderChoice.AZURE_CONTAINER):
+    elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
         instance = AzureBlobContainer(
             container_name=details.get('resource_name'),
             sas_token=details.get('session_token'),
@@ -117,8 +123,8 @@ class AWS_S3(CloudStorage):
             waiter.wait(
                 Bucket=self._bucket_name,
                 WaiterConfig={
-                    'Delay': 10, # The amount of time in seconds to wait between attempts. Default: 5
-                    'MaxAttempts': 10 # The maximum number of attempts to be made. Default: 20
+                    'Delay': 5, # The amount of time in seconds to wait between attempts. Default: 5
+                    'MaxAttempts': 3 # The maximum number of attempts to be made. Default: 20
                 }
             )
         except WaiterError:
@@ -131,8 +137,8 @@ class AWS_S3(CloudStorage):
                 Bucket=self._bucket,
                 Key=key_object,
                 WaiterConfig={
-                    'Delay': 10,
-                    'MaxAttempts': 10,
+                    'Delay': 5,
+                    'MaxAttempts': 3,
                 },
             )
         except WaiterError:
@@ -158,14 +164,14 @@ class AWS_S3(CloudStorage):
             'name': item.key,
         } for item in files]
 
-    def download_file(self, key):
+    def download_fileobj(self, key):
         buf = BytesIO()
-        with open(buf,'wb') as file_buf:
-            self.bucket.download_fileobj(
-                Key=key,
-                Fileobj=file_buf,
-                Config=TransferConfig(max_io_queue=10)
-            )# https://boto3.amazonaws.com/v1/documentation/api/latest/reference/customizations/s3.html#boto3.s3.transfer.TransferConfig
+        self.bucket.download_fileobj(
+            Key=key,
+            Fileobj=buf,
+            Config=TransferConfig(max_io_queue=10)
+        )
+        buf.seek(0)
         return buf
 
     def create(self):
@@ -252,15 +258,17 @@ class AzureBlobContainer(CloudStorage):
             'name': item.name
         } for item in files]
 
-    def download_file(self, key):
+    def download_fileobj(self, key):
         MAX_CONCURRENCY = 3
+        buf = BytesIO()
         storage_stream_downloader = self._container_client.download_blob(
             blob=key,
             offset=None,
             length=None,
         )
-        return storage_stream_downloader.content_as_bytes(max_concurrency=MAX_CONCURRENCY)
-
+        storage_stream_downloader.download_to_stream(buf, max_concurrency=MAX_CONCURRENCY)
+        buf.seek(0)
+        return buf
 
 class GOOGLE_DRIVE(CloudStorage):
     pass
