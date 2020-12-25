@@ -40,11 +40,13 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 ## Supported annotation formats
 
-Format selection is possible after clicking on the Upload annotation
-and Dump annotation buttons.
-[Datumaro](https://github.com/openvinotoolkit/datumaro) dataset
-framework allows additional dataset transformations
-via its command line tool and Python library.
+Format selection is possible after clicking on the Upload annotation and Dump
+annotation buttons. [Datumaro](https://github.com/openvinotoolkit/datumaro)
+dataset framework allows additional dataset transformations via its command
+line tool and Python library.
+
+For more information about supported formats look at the
+[documentation](cvat/apps/dataset_manager/formats/README.md#formats).
 
 | Annotation format                                                             | Import | Export |
 | ----------------------------------------------------------------------------- | ------ | ------ |
@@ -58,19 +60,21 @@ via its command line tool and Python library.
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)         | X      | X      |
 | [MOT](https://motchallenge.net/)                                              | X      | X      |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
+| [ImageNet](http://www.image-net.org)                                          | X      | X      |
+| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
 
 ## Deep learning models for automatic labeling
 
-| Name                                                                                                    | Type       | Framework  |
-| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- |
-| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   |
-| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow |
-| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   |
-| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   |
-| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   |
-| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   |
-| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow |
-| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   |
+| Name                                                                                                    | Type       | Framework  | CPU | GPU |
+| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
+| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |
+| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
+| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |
+| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |
+| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |
+| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |
+| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   |
+| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |
 
 ## Online demo: [cvat.org](https://cvat.org)
 

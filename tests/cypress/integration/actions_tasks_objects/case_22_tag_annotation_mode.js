@@ -14,32 +14,32 @@ context('Tag annotation mode.', () => {
             cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('not.exist');
         } else {
             cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('have.length', countTags);
-        };
-    };
+        }
+    }
 
-    function checkPresenceFrameTags(labelName) {
+    function checkPresenceFrameTags() {
         cy.get('.cvat-tag-annotation-sidebar-frame-tags').within(() => {
-            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').contains(labelName).should('exist');
+            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('exist');
         });
-    };
+    }
 
     function addTag() {
         cy.get('.cvat-tag-annotation-sidebar-buttons').contains('Add tag').click();
-    };
+    }
 
     function skipFrame() {
         cy.get('.cvat-tag-annotation-sidebar-buttons').contains('Skip frame').click();
-    };
+    }
 
     function changeCheckboxAutomaticallyGoToNextFrame(value) {
         cy.get('.cvat-tag-annotation-sidebar-checkbox-skip-frame').within(() => {
-            if (value == "check") {
+            if (value == 'check') {
                 cy.get('[type="checkbox"]').check();
-            } else if (value == "uncheck") {
+            } else if (value == 'uncheck') {
                 cy.get('[type="checkbox"]').uncheck();
-            };
+            }
         });
-    };
+    }
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -62,19 +62,19 @@ context('Tag annotation mode.', () => {
         it('Add tag', () => {
             addTag();
             checkCountFrameTags(1);
-            checkPresenceFrameTags(labelName);
+            checkPresenceFrameTags();
         });
 
         it('Set "Automatically go to the next frame" to true and add tag', () => {
             cy.goToNextFrame(1);
             checkCountFrameTags(0);
-            changeCheckboxAutomaticallyGoToNextFrame("check");
+            changeCheckboxAutomaticallyGoToNextFrame('check');
             addTag();
             cy.checkFrameNum(2);
             checkCountFrameTags(0);
             cy.goToPreviousFrame(1);
             checkCountFrameTags(1);
-            checkPresenceFrameTags(labelName);
+            checkPresenceFrameTags();
         });
     });
 });
