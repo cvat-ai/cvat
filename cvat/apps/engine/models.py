@@ -529,16 +529,8 @@ class CloudStorage(models.Model):
         default_permissions = ()
         unique_together = (('provider_type', 'resource_name', 'credentials'),)
 
-    # def __str__(self):
-    #     template = "{} {} {}".format(self.provider_type, self.resource_name, self.id)
-    #     return template
-
-    # def get_url_resource(self):
-    #     urls_templates = {
-    #         CLOUD_PROVIDERS.AWS_S3 : '{resource}.s3.{region}.amazoneaws.com',
-    #         CLOUD_PROVIDERS.AZURE_CONTAINER : '',
-    #     }
-    #     return urls_templates[self.provider_type].format(resource=self.resource_name)
+    def __str__(self):
+        return "{} {} {}".format(self.provider_type, self.resource_name, self.id)
 
     def get_storage_dirname(self):
         return os.path.join(settings.CLOUD_STORAGE_ROOT, str(self.id))

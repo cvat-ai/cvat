@@ -196,9 +196,6 @@ rules.add_perm('engine.comment.change', has_admin_role | is_comment_author)
 
 rules.add_perm('engine.cloudstorage.create', has_admin_role | has_user_role)
 rules.add_perm('engine.cloudstorage.change', has_admin_role | is_cloud_storage_owner)
-# dry
-rules.add_perm('engine.cloudstorage.access', has_admin_role | is_cloud_storage_owner)
-rules.add_perm('engine.cloudstorage.delete', has_admin_role | is_cloud_storage_owner)
 
 class AdminRolePermission(BasePermission):
     # pylint: disable=no-self-use
@@ -339,22 +336,12 @@ class CommentChangePermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm('engine.comment.change', obj)
 
-class CloudStorageCreatePermission(BasePermission):
-    # pylint: disable=no-self-use
-    def has_permission(self, request, view):
-        return request.user.has_perm("engine.cloudstorage.create")
-
 class CloudStorageAccessPermission(BasePermission):
     # pylint: disable=no-self-use
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.cloudstorage.change", obj)
 
 class CloudStorageChangePermission(BasePermission):
-    # pylint: disable=no-self-use
-    def has_object_permission(self, request, view, obj):
-        return request.user.has_perm("engine.cloudstorage.change", obj)
-
-class CloudStorageDeletePermission(BasePermission):
     # pylint: disable=no-self-use
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.cloudstorage.change", obj)

@@ -49,7 +49,7 @@ from cvat.apps.engine.serializers import (
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, RqStatusSerializer,
     TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer,
-    CloudStorageSerializer
+    CloudStorageSerializer, BaseCloudStorageSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
 
@@ -963,10 +963,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             openapi.Parameter('provider_type', openapi.IN_QUERY, description="A supported provider of cloud storages",
                                type=openapi.TYPE_STRING, enum=CloudProviderChoice.list()),
             openapi.Parameter('resource_name', openapi.IN_QUERY, description="A name of buket or container", type=openapi.TYPE_STRING),
-            #openapi.Parameter('key', openapi.IN_QUERY, description="Access key id for AWS S3 or Account Name for Azure container", type=openapi.TYPE_STRING),
-            #openapi.Parameter('secret_key', openapi.IN_QUERY, description="Secret key", type=openapi.TYPE_STRING),
-            #openapi.Parameter('token', openapi.IN_QUERY, description="A session token for s3 or sas token for azure", type=openapi.TYPE_STRING),
-            openapi.Parameter('owner', openapi.IN_QUERY, description="A resource owner ", type=openapi.TYPE_STRING),
+            openapi.Parameter('owner', openapi.IN_QUERY, description="A resource owner", type=openapi.TYPE_STRING),
             openapi.Parameter('credentials_type', openapi.IN_QUERY, description="A type of a granting access", type=openapi.TYPE_STRING, enum=CredentialsTypeChoice.list()),
         ],
     responses={'200': CloudStorageSerializer(many=True)}
@@ -981,27 +978,37 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific cloud storage'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a cloud storage instance'))
 class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewSet):
-    http_method_names = ['get', 'post', 'patch', 'delete'] #'head'
+    http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = CloudStorage.objects.all().prefetch_related('data').order_by('-id')
-    serializer_class = CloudStorageSerializer
     search_fields = ("provider_type", "resource_name", "owner__username")
+    filterset_fields = ['provider_type', 'resource_name', 'credentials_type']
 
     def get_permissions(self):
         http_method = self.request.method
         permissions = [IsAuthenticated]
 
-        if http_method in SAFE_METHODS: # GET, HEAD, OPTIONS
+        if http_method in SAFE_METHODS:
             permissions.append(auth.CloudStorageAccessPermission)
-        elif http_method in ("POST"):
-            permissions.append(auth.CloudStorageCreatePermission)
-        elif http_method in ("PATCH"):
+        elif http_method in ("POST", "PATCH", "DELETE"):
             permissions.append(auth.CloudStorageChangePermission)
-        elif http_method in ("DELETE"):
-            permissions.append(auth.CloudStorageDeletePermission)
         else:
             permissions.append(auth.AdminRolePermission)
-
         return [perm() for perm in permissions]
+
+    def get_serializer_class(self):
+        if self.request.method in ("POST", "PATCH"):
+            return CloudStorageSerializer
+        else:
+            return BaseCloudStorageSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if (provider_type := self.request.query_params.get('provider_type', None)):
+            if provider_type in CloudProviderChoice.list():
+                queryset = queryset.filter(provider_type=provider_type)
+            else:
+                raise ValidationError('Unsupported type of cloud provider')
+        return queryset
 
     def perform_create(self, serializer):
         # check that instance of cloud storage exists
@@ -1013,7 +1020,6 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             'secret_key': serializer.validated_data.get('secret_key'),
         }
         cloud_storage_instance = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-
         try:
             cloud_storage_instance.is_exist()
         except Exception as ex:
@@ -1032,41 +1038,6 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
         super().perform_destroy(instance)
         shutil.rmtree(cloud_storage_dirname, ignore_errors=True)
 
-    # def list(self, request):
-    #     provider_type =  request.query_params.get('provider_type')
-    #     if provider_type:
-    #         try:
-    #             assert provider_type in CloudProviderChoice.list(), (msg:='Unsupported type of a cloud storage provider')
-    #         except AssertionError:
-    #             return Response(data=msg, status=HTTP_400_BAD_REQUEST)
-    #     queryset = self.get_queryset()
-    #     if provider_type:
-    #         queryset = queryset.filter(provider_type=provider_type)
-    #     serializer = CloudStorageSerializer(queryset, many=True)
-    #     return Response(serializer.data)
-
-    def retrieve(self, request, pk):
-        from django.forms.models import model_to_dict
-        try:
-            db_storage = CloudStorage.objects.get(pk=pk)
-            credentials = Credentials()
-            credentials.convert_from_db({
-                'type': db_storage.credentials_type,
-                'value': db_storage.credentials,
-            })
-            serializer = self.get_serializer(model_to_dict(db_storage), context={
-                'key': credentials.key,
-                'secret_key': credentials.secret_key,
-                'session_token': credentials.session_token
-            })
-            return Response(serializer.data)
-        except CloudStorage.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
-        except Exception:
-            pass
-
     @method_decorator(
         name='retrieve',
         decorator=swagger_auto_schema(
@@ -1078,7 +1049,6 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     def content(self, request, pk):
         try:
             db_storage = CloudStorage.objects.get(pk=pk)
-
             credentials = Credentials()
             credentials.convert_from_db({
                 'type': db_storage.credentials_type,
@@ -1091,8 +1061,6 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 'secret_key': credentials.secret_key,
             }
             cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-
-
             cloud_storage_instance.initialize_content()
             return Response(data=cloud_storage_instance.content, content_type="text/plain")
 

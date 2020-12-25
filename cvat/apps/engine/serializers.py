@@ -651,6 +651,11 @@ class CombinedReviewSerializer(ReviewSerializer):
 
         return db_review
 
+class BaseCloudStorageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CloudStorage
+        fields = '__all__'
+
 class CloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=50, allow_blank=True, required=False)
@@ -663,7 +668,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'provider_type', 'resource_name', 'session_token', 'owner',
             'key', 'secret_key', 'credentials_type', 'created_date', 'updated_date',
         )
-        read_only_fields = ('provider_type', 'created_date', 'updated_date', 'owner')
+        read_only_fields = ('created_date', 'updated_date', 'owner')
 
     def validate(self, attrs):
         credentials = Credentials(
@@ -672,20 +677,20 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             session_token = attrs.get('session_token'),
         )
         if any(credentials.values()):
-            if attrs.get('provider_type') in (str(models.CloudProviderChoice.AZURE_CONTAINER)) and not credentials.key:
-                raise serializers.NotAuthenticated()
+            if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER and not credentials.key:
+                raise serializers.ValidationError('A credentials were not found')
         else:
             # no access rights granted
-            raise serializers.NotAuthenticated()
+            raise serializers.ValidationError('A credentials were not found')
         return attrs
 
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
-        should_be_created = validated_data.pop('should_be_created')
+        should_be_created = validated_data.pop('should_be_created', None)
         credentials = Credentials(
-            key = validated_data.pop('key'),
-            secret_key = validated_data.pop('secret_key'),
-            session_token = validated_data.pop('session_token'),
+            key = validated_data.pop('key', ''),
+            secret_key = validated_data.pop('secret_key', ''),
+            session_token = validated_data.pop('session_token', ''),
             credentials_type = validated_data.get('credentials_type')
         )
         if should_be_created:
