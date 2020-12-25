@@ -176,11 +176,11 @@ context('Filters functionality.', () => {
         });
         it('Select two filters', () => {
             const textFirstFilter =
-                '(label=="shape 3 points" & attr["polylines"]==true) | (label=="track 4 points" & width > 60)'; // #cvat_canvas_shape_1,3, #cvat-objects-sidebar-state-item-1,3
-            const textSecondFilter = 'clientID == 4'; // #cvat_canvas_shape_7, #cvat-objects-sidebar-state-item-4
+                '(label=="shape 3 points" & attr["polylines"]==true) | (label=="track 4 points" & width > 60)'; // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            const textSecondFilter = 'shape=="polygon"'; // #cvat_canvas_shape_1,4, #cvat-objects-sidebar-state-item-1,4
             cy.selectFilterValue(true, textFirstFilter);
             cy.selectFilterValue(false, textSecondFilter);
-            checkingFilterApplication([2, 4]);
+            checkingFilterApplication([1, 2, 4]);
         });
     });
 });
