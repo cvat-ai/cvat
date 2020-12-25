@@ -1845,7 +1845,7 @@ class TaskDataAPITestCase(APITestCase):
         cls._image_sizes[filename] = img_sizes
 
         filename = "test_pointcloud_pcd.zip"
-        path = os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip')
+        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
         image_sizes = []
         # container = av.open(path, 'r')
         zip_file = zipfile.ZipFile(path)
@@ -1857,7 +1857,7 @@ class TaskDataAPITestCase(APITestCase):
         cls._image_sizes[filename] = image_sizes
 
         filename = "test_velodyne_points.zip"
-        path = os.path.join(os.path.dirname(__file__), 'assets', 'test_velodyne_points.zip')
+        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
         image_sizes = []
         # create zip instance
 
@@ -1867,7 +1867,7 @@ class TaskDataAPITestCase(APITestCase):
         root_path = os.path.abspath(os.path.split(path)[0])
 
         for info in zip_file.namelist():
-            if info.rsplit(".", maxsplit=1)[-1] == "bin":
+            if os.path.splitext(info)[1][1:] == "bin":
                 zip_file.extract(info, root_path)
                 bin_path = os.path.abspath(os.path.join(root_path, info))
                 source_path.append(ValidateDimension.convert_bin_to_pcd(bin_path))
@@ -1876,7 +1876,7 @@ class TaskDataAPITestCase(APITestCase):
             zip_file.write(path, os.path.abspath(path.replace(root_path, "")))
 
         for info in zip_file.namelist():
-            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
+            if os.path.splitext(info)[1][1:] == "pcd":
                 with zip_file.open(info, "r") as file:
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
