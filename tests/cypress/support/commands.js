@@ -414,12 +414,12 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
-    cy.get('.cvat-annotation-header-button').eq(0).click();
+    cy.contains('.cvat-annotation-header-button', 'Menu').click();
     cy.get('.cvat-annotation-menu').within(() => {
         cy.contains('Remove annotations').click();
     });
-    cy.get('.ant-modal-content').within(() => {
-        cy.get('.ant-btn-dangerous').click();
+    cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
+        cy.contains('button', 'Delete').click();
     });
 });
 
@@ -437,7 +437,7 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
         });
 });
 
-Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
+Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
     let listCvatConstructorViewerItemText = [];
     cy.get('.cvat-constructor-viewer').should('exist');
     cy.document().then((doc) => {
@@ -448,6 +448,10 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs) => {
         if (listCvatConstructorViewerItemText.indexOf(newLabelName) === -1) {
             cy.contains('button', 'Add label').click();
             cy.get('[placeholder="Label name"]').type(newLabelName);
+            if (labelColor) {
+                cy.get('.cvat-change-task-label-color-badge').click();
+                cy.changeColorViaBadge(labelColor);
+            }
             if (additionalAttrs) {
                 for (let i = 0; i < additionalAttrs.length; i++) {
                     cy.updateAttributes(additionalAttrs[i]);
@@ -550,4 +554,19 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
 Cypress.Commands.add('closeNotification', (className) => {
     cy.get(className).find('span[aria-label="close"]').click();
     cy.get(className).should('not.exist');
+});
+
+Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
+    cy.document().then((doc) => {
+        const stateItemLabelSelectorList = Array.from(doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'));
+        for (let i = 0; i < stateItemLabelSelectorList.length; i++) {
+            if (stateItemLabelSelectorList[i].textContent === labelName) {
+                cy.get(stateItemLabelSelectorList[i])
+                    .parents('.cvat-objects-sidebar-state-item')
+                    .should('have.attr', 'id').then((id) => {
+                        return Number(id.match(/\d+$/));
+                    });
+            }
+        }
+    });
 });
