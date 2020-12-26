@@ -8,7 +8,6 @@ require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
-require('cypress-wait-until');
 
 let selectedValueGlobal = '';
 
@@ -137,15 +136,11 @@ Cypress.Commands.add('interactDrawObjectControlButton', (objectType) => {
     } else {
         getControlButton = `.cvat-setup-${objectType}-control`;
     }
-    cy.get(getControlButton).trigger('mouseover').should('have.class', 'ant-popover-open');
-    cy.waitUntil(
-        () => cy.get(`.cvat-draw-shape-popover-${objectType}`).should('not.have.css', 'pointer-events', 'none'),
-        {
-            errorMsg: 'popover still matters: pointer-events: none',
-            timeout: 7000,
-            interval: 300,
-        },
-    );
+    if (Cypress.browser.family !== 'chromium') {
+        cy.get(getControlButton).trigger('mouseover').should('have.class', 'ant-popover-open').wait(1000);
+    } else {
+        cy.get(getControlButton).trigger('mouseover').should('have.class', 'ant-popover-open');
+    }
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
@@ -153,7 +148,7 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     cy.switchLabel(createRectangleParams.labelName, 'rectangle');
     cy.get('.cvat-draw-shape-popover-rectangle')
         .should('not.have.class', 'ant-popover-hidden')
-        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.class', 'zoom-big')
         .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
@@ -173,17 +168,13 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
     cy.get(`.cvat-draw-shape-popover-${objectType}`)
-        .should('not.have.class', 'ant-popover-hidden')
-        .and('not.have.class', 'zoom-big-enter')
-        .and('not.have.css', 'pointer-events', 'none')
-        .within(() => {
-            cy.get(`.cvat-draw-shape-popover-content-label-selector-${objectType}`).click();
-        });
+        .not('.ant-popover-hidden')
+        .find(`.cvat-draw-shape-popover-content-label-selector-${objectType}`)
+        .click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
-        .within(() => {
-            cy.get(`.ant-select-item-option[title="${labelName}"]`).click();
-        });
+        .find(`.ant-select-item-option[title="${labelName}"]`)
+        .click();
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
@@ -213,7 +204,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.switchLabel(createPointParams.labelName, 'points');
     cy.get('.cvat-draw-shape-popover-points')
         .should('not.have.class', 'ant-popover-hidden')
-        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.class', 'zoom-big')
         .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
@@ -257,7 +248,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
         cy.switchLabel(createPolygonParams.labelName, 'polygon');
         cy.get('.cvat-draw-shape-popover-polygon')
             .should('not.have.class', 'ant-popover-hidden')
-            .and('not.have.class', 'zoom-big-enter')
+            .and('not.have.class', 'zoom-big')
             .and('not.have.css', 'pointer-events', 'none')
             .within(() => {
                 cy.get('.ant-select-selection-item').then(($labelValue) => {
@@ -323,7 +314,7 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.switchLabel(createCuboidParams.labelName, 'cuboid');
     cy.get('.cvat-draw-shape-popover-cuboid')
         .should('not.have.class', 'ant-popover-hidden')
-        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.class', 'zoom-big')
         .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
@@ -388,7 +379,7 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.switchLabel(createPolylineParams.labelName, 'polyline');
     cy.get('.cvat-draw-shape-popover-polyline')
         .should('not.have.class', 'ant-popover-hidden')
-        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.class', 'zoom-big')
         .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
@@ -452,7 +443,7 @@ Cypress.Commands.add('removeAnnotations', () => {
         cy.contains('Remove annotations').click();
     });
     cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
-        cy.contains('button','Delete').click();
+        cy.contains('button', 'Delete').click();
     });
 });
 
@@ -500,7 +491,7 @@ Cypress.Commands.add('createTag', (labelName) => {
     cy.switchLabel(labelName, 'tag');
     cy.get('.cvat-draw-shape-popover-tag')
         .should('not.have.class', 'ant-popover-hidden')
-        .and('not.have.class', 'zoom-big-enter')
+        .and('not.have.class', 'zoom-big')
         .and('not.have.css', 'pointer-events', 'none')
         .within(() => {
             cy.get('button').click();
@@ -588,12 +579,15 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
 
 Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
     cy.document().then((doc) => {
-        const stateItemLabelSelectorList = Array.from(doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'));
+        const stateItemLabelSelectorList = Array.from(
+            doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'),
+        );
         for (let i = 0; i < stateItemLabelSelectorList.length; i++) {
             if (stateItemLabelSelectorList[i].textContent === labelName) {
                 cy.get(stateItemLabelSelectorList[i])
                     .parents('.cvat-objects-sidebar-state-item')
-                    .should('have.attr', 'id').then((id) => {
+                    .should('have.attr', 'id')
+                    .then((id) => {
                         return Number(id.match(/\d+$/));
                     });
             }
