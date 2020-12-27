@@ -87,6 +87,11 @@ context('Multiple users. Assign task, job.', () => {
             cy.logout(thirdUserName);
         });
         it('First user login, create a task and logout', () => {
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
             cy.login();
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(directoryToArchive, archivePath);
@@ -101,29 +106,54 @@ context('Multiple users. Assign task, job.', () => {
             cy.closeNotification('.cvat-notification-notice-update-task-failed');
             cy.contains('.cvat-constructor-viewer-item', 'failAddLabel').should('not.exist');
             cy.logout(secondUserName);
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
         it('Assign the task to the second user and logout', () => {
             cy.login();
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
             cy.logout();
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
         it('Second user login. The task can be opened. Logout', () => {
             cy.login(secondUserName, secondUser.password);
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
             cy.logout(secondUserName);
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
         it('Third user login. The task not exist. Logout', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('not.exist');
             cy.logout(thirdUserName);
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
             cy.assignJobToUser(thirdUserName);
             cy.logout();
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
         it('Third user login. Tries to delete task. The task can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
@@ -138,6 +168,11 @@ context('Multiple users. Assign task, job.', () => {
                 .should('not.have.attr', 'style');
             cy.openTask(taskName);
             cy.logout(thirdUserName);
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
     });
 });
