@@ -56,7 +56,7 @@ Cypress.Commands.add('deleteProject', (projectName, projectID) => {
             });
         });
     cy.get('.cvat-project-actions-menu').contains('Delete').click();
-    cy.get('.ant-modal-content')
+    cy.get('.cvat-modal-confirm-delete-project')
         .should('contain', `The project ${projectID} will be deleted`)
         .within(() => {
             cy.contains('button', 'Delete').click();
