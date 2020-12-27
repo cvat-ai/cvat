@@ -113,6 +113,11 @@ context('Base actions on the project', () => {
         });
         it('Logout first user, register second user, tries to create project and logout.', () => {
             cy.logout();
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
             cy.goToRegisterPage();
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             // tries to create project
@@ -147,6 +152,11 @@ context('Base actions on the project', () => {
             cy.openProject(projectName);
             cy.assignProjectToUser(userName);
             cy.logout();
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
         it('Login second user. The project and first tasks available for that user. Tries to delete project. Logout.', () => {
             cy.login(userName, password);
@@ -175,6 +185,11 @@ context('Base actions on the project', () => {
             cy.contains('strong', taskName.secondTask).should('not.exist');
             cy.openTask(taskName.firstTask);
             cy.logout(userName);
+            if (Cypress.browser.family !== 'chromium') {
+                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+                    cy.contains('button', 'OK').click();
+                });
+            }
         });
         it('Delete the project. Deleted project not exist. Checking the availability of tasks.', () => {
             cy.login();
