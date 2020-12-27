@@ -391,7 +391,7 @@ Cypress.Commands.add('getTaskID', (taskName) => {
 Cypress.Commands.add('deleteTask', (taskName, taskID) => {
     cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').trigger('mouseover');
     cy.get('.cvat-actions-menu').contains('Delete').click();
-    cy.get('.ant-modal-content')
+    cy.get('.cvat-modal-confirm-delete-task')
         .should('contain', `The task ${taskID} will be deleted`)
         .within(() => {
             cy.contains('button', 'Delete').click();
