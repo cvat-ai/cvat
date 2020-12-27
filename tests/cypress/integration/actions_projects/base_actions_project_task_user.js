@@ -111,10 +111,34 @@ context('Base actions on the project', () => {
             cy.openTask(taskName.firstTask);
             cy.get('.cvat-constructor-viewer').should('not.exist');
         });
-        it('Logout first user, register second user, logout.', () => {
+        it('Logout first user, register second user, tries to create project and logout.', () => {
             cy.logout();
             cy.goToRegisterPage();
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
+            // tries to create project
+            const failProjectName = `${randomString()}`;
+            cy.goToProjectsList();
+            cy.get('#cvat-create-project-button').click();
+            cy.get('#name').type(failProjectName);
+            cy.get('.cvat-constructor-viewer-new-item').click();
+            cy.get('[placeholder="Label name"]').type(labelName);
+            cy.get('.cvat-new-attribute-button').click();
+            cy.get('[placeholder="Name"]').type(attrName);
+            cy.get('.cvat-attribute-type-input').click();
+            cy.get('.cvat-attribute-type-input-text').click();
+            cy.get('[placeholder="Default value"]').type(textDefaultValue);
+            if (multiAttrParams) {
+                cy.updateAttributes(multiAttrParams);
+            }
+            cy.contains('button', 'Done').click();
+            cy.get('.cvat-create-project-content').within(() => {
+                cy.contains('Submit').click();
+            });
+            cy.contains('The project has been created').should('not.exist');
+            cy.get('.cvat-notification-notice-create-project-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-create-project-failed');
+            cy.goToProjectsList();
+            cy.contains('.cvat-projects-project-item-title', failProjectName).should('not.exist');
             cy.logout(userName);
         });
         it('Login first user. Assing project to second user. Logout.', () => {
@@ -124,9 +148,28 @@ context('Base actions on the project', () => {
             cy.assignProjectToUser(userName);
             cy.logout();
         });
-        it('Login second user. The project and first tasks available for that user. Logout.', () => {
+        it('Login second user. The project and first tasks available for that user. Tries to delete project. Logout.', () => {
             cy.login(userName, password);
             cy.goToProjectsList();
+            // tries to delete project
+            cy.contains(projectName)
+                .parents('.cvat-projects-project-item-card')
+                .within(() => {
+                    cy.get('.cvat-porjects-project-item-description').within(() => {
+                        cy.get('[type="button"]').trigger('mouseover');
+                    });
+                });
+            cy.get('.cvat-project-actions-menu').contains('Delete').click();
+            cy.get('.ant-modal-content')
+                .should('contain', `The project ${projectID} will be deleted`)
+                .within(() => {
+                    cy.contains('button', 'Delete').click();
+                });
+            cy.get('.cvat-notification-notice-delete-project-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-delete-project-failed');
+            cy.contains('.cvat-projects-project-item-title', projectName)
+                .parents('.cvat-projects-project-item-card')
+                .should('not.have.attr', 'style');
             cy.openProject(projectName);
             cy.goToTaskList();
             cy.contains('strong', taskName.secondTask).should('not.exist');

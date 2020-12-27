@@ -17,7 +17,7 @@ Cypress.Commands.add('createProjects', (projectName, labelName, attrName, textDe
     cy.get('.cvat-new-attribute-button').click();
     cy.get('[placeholder="Name"]').type(attrName);
     cy.get('.cvat-attribute-type-input').click();
-    cy.get('.ant-select-item-option').contains('Text').click();
+    cy.get('.cvat-attribute-type-input-text').click();
     cy.get('[placeholder="Default value"]').type(textDefaultValue);
     if (multiAttrParams) {
         cy.updateAttributes(multiAttrParams);
@@ -74,4 +74,9 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();
         });
+});
+
+Cypress.Commands.add('closeNotification', (className) => {
+    cy.get(className).find('span[aria-label="close"]').click();
+    cy.get(className).should('not.exist');
 });
