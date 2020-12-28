@@ -10,8 +10,8 @@ require('cypress-plugin-tab');
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
         cy.visit('/');
-        cy.closeModalUnsupportedPlatform();
     }
+    cy.closeModalUnsupportedPlatform();
 });
 
 const resizeObserverLoopErrRe = /^[^(ResizeObserver loop limit exceeded)]/;
