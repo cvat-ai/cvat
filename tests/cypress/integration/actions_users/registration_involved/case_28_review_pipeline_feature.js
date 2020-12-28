@@ -227,7 +227,7 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-workspace-selector').should('have.text', 'Review');
             cy.changeWorkspace('Standard', labelName);
             cy.createPoint(createPointsShape);
-            cy.saveJob();
+            cy.saveJob('PATCH', 403);
             cy.get('.cvat-notification-notice-save-annotations-failed')
                 .should('exist')
                 .within(() => {
@@ -312,7 +312,7 @@ context('Review pipeline feature', () => {
         it("Reopen the job. Change something there. Save work. That saving wasn't successful. The third user logout.", () => {
             cy.openJob();
             cy.createPoint(createPointsShapeSecond);
-            cy.saveJob();
+            cy.saveJob('PATCH', 403);
             cy.get('.cvat-notification-notice-save-annotations-failed')
                 .should('exist')
                 .within(() => {
