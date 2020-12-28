@@ -175,9 +175,7 @@ context('Group features', () => {
             cy.saveJob();
             cy.reload();
             if (Cypress.browser.family !== 'chromium') {
-                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
-                    cy.contains('button', 'OK').click();
-                });
+                cy.closeModalUnsupportedPlatform();
             }
             cy.get('.cvat-canvas-container').should('exist');
         });

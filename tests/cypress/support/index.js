@@ -10,9 +10,7 @@ require('cypress-plugin-tab');
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
         cy.visit('/');
-        cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
-            cy.contains('button', 'OK').click();
-        });
+        cy.closeModalUnsupportedPlatform();
     }
 });
 
