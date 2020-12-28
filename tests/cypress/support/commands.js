@@ -438,7 +438,7 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
-    cy.get('.cvat-annotation-header-button').eq(0).click();
+    cy.contains('.cvat-annotation-header-button', 'Menu').click();
     cy.get('.cvat-annotation-menu').within(() => {
         cy.contains('Remove annotations').click();
     });
@@ -461,7 +461,7 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
         });
 });
 
-Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
+Cypress.Commands.add('collectLabelsName', () => {
     let listCvatConstructorViewerItemText = [];
     cy.get('.cvat-constructor-viewer').should('exist');
     cy.document().then((doc) => {
@@ -469,7 +469,13 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
         for (let i = 0; i < labels.length; i++) {
             listCvatConstructorViewerItemText.push(labels[i].textContent);
         }
-        if (listCvatConstructorViewerItemText.indexOf(newLabelName) === -1) {
+        return listCvatConstructorViewerItemText;
+    });
+});
+
+Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
+    cy.collectLabelsName().then((labelsNames) => {
+        if (labelsNames.indexOf(newLabelName) === -1) {
             cy.contains('button', 'Add label').click();
             cy.get('[placeholder="Label name"]').type(newLabelName);
             if (labelColor) {
@@ -482,6 +488,22 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
                 }
             }
             cy.contains('button', 'Done').click();
+        }
+    });
+});
+
+Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
+    cy.collectLabelsName().then((labelsNames) => {
+        if (additionalLabels.some((el) => labelsNames.indexOf(el) === -1)) {
+            cy.contains('button', 'Add label').click();
+            for (let j = 0; j < additionalLabels.length; j++) {
+                cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
+                if (j !== additionalLabels.length - 1) {
+                    cy.contains('button', 'Continue').click();
+                } else {
+                    cy.contains('button', 'Done').click();
+                }
+            }
         }
     });
 });
