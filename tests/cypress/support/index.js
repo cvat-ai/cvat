@@ -6,6 +6,7 @@ require('./commands');
 require('./commands_projects');
 require('./commands_review_pipeline');
 require('@cypress/code-coverage/support');
+require('cypress-plugin-tab');
 
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
