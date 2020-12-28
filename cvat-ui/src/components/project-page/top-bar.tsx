@@ -32,7 +32,7 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
                 </Button>
             </Col>
             <Col className='cvat-project-top-bar-actions'>
-                <Dropdown overlay={<ActionsMenu projectInstance={projectInstance.instance} />}>
+                <Dropdown overlay={<ActionsMenu projectInstance={projectInstance} />}>
                     <Button size='large'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <Icon className='cvat-menu-icon' component={MenuIcon} />
