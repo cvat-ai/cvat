@@ -22,6 +22,7 @@ context('Delete a project via actions.', () => {
             cy.get('.cvat-modal-confirm-remove-project').within(() => {
                 cy.contains('button', 'Delete').click();
             });
+            cy.contains('.cvat-projects-project-item-title', projectName).should('not.exist');
         });
     });
 });
