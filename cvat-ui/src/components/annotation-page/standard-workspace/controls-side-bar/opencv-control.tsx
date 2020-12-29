@@ -8,7 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Select, { OptionProps } from 'antd/lib/select';
 import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
-import Icon from 'antd/lib/icon';
+import Icon, { ScissorOutlined, LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
@@ -21,10 +21,7 @@ import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import openCVWrapper, { Scissors, ScissorsState } from 'utils/opencv-wrapper';
 import {
-    CombinedState,
-    ActiveControl,
-    OpenCVTool,
-    ObjectType,
+    CombinedState, ActiveControl, OpenCVTool, ObjectType,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -65,22 +62,12 @@ function mapStateToProps(state: CombinedState): Props {
         annotation: {
             annotations: {
                 states,
-                zLayer: {
-                    cur: curZOrder,
-                },
+                zLayer: { cur: curZOrder },
             },
-            job: {
-                instance: jobInstance,
-                labels,
-            },
-            canvas: {
-                activeControl,
-                instance: canvasInstance,
-            },
+            job: { instance: jobInstance, labels },
+            canvas: { activeControl, instance: canvasInstance },
             player: {
-                frame: {
-                    number: frame,
-                },
+                frame: { number: frame },
             },
         },
     } = state;
@@ -102,7 +89,6 @@ const mapDispatchToProps = {
     fetchAnnotations: fetchAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
 };
-
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: Scissors | null;
@@ -154,19 +140,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     private getInteractiveState(): any | null {
         const { states } = this.props;
-        return states
-            .filter((_state: any): boolean => (
-                _state.clientID === this.interactiveStateID
-            ))[0] || null;
+        return states.filter((_state: any): boolean => _state.clientID === this.interactiveStateID)[0] || null;
     }
 
     private cancelListener = async (): Promise<void> => {
         const { processing } = this.state;
         const {
-            fetchAnnotations,
-            isActivated,
-            jobInstance,
-            frame,
+            fetchAnnotations, isActivated, jobInstance, frame,
         } = this.props;
 
         if (isActivated) {
@@ -189,13 +169,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     private interactionListener = async (e: Event): Promise<void> => {
         const {
-            fetchAnnotations,
-            updateAnnotations,
-            isActivated,
-            jobInstance,
-            frame,
-            labels,
-            curZOrder,
+            fetchAnnotations, updateAnnotations, isActivated, jobInstance, frame, labels, curZOrder,
         } = this.props;
         const { activeLabelID, processing } = this.state;
         if (!isActivated || !this.activeTool) {
@@ -203,10 +177,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
 
         const {
-            shapesUpdated,
-            isDone,
-            threshold,
-            shapes,
+            shapesUpdated, isDone, threshold, shapes,
         } = (e as CustomEvent).detail;
         this.interactionIsDone = isDone;
         if (processing) return;
@@ -217,8 +188,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 this.setState({ processing: true });
                 try {
                     // Getting image data
-                    const canvas: HTMLCanvasElement | undefined = window.document
-                        .getElementById('cvat_canvas_background') as HTMLCanvasElement | undefined;
+                    const canvas: HTMLCanvasElement | undefined = window.document.getElementById(
+                        'cvat_canvas_background',
+                    ) as HTMLCanvasElement | undefined;
                     if (!canvas) {
                         throw new Error('Element #cvat_canvas_background was not found');
                     }
@@ -272,8 +244,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     ...this.activeTool.params.shape,
                     frame,
                     objectType: ObjectType.SHAPE,
-                    label: labels
-                        .filter((label: any) => label.id === activeLabelID)[0],
+                    label: labels.filter((label: any) => label.id === activeLabelID)[0],
                     points,
                     occluded: false,
                     zOrder: curZOrder,
@@ -325,37 +296,35 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
         return (
             <>
-                <Row type='flex' justify='center'>
+                <Row justify='center'>
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
                             showSearch
-                            filterOption={
-                                (input: string, option: React.ReactElement<OptionProps>) => {
-                                    const { children } = option.props;
-                                    if (typeof (children) === 'string') {
-                                        return children.toLowerCase().includes(input.toLowerCase());
-                                    }
-
-                                    return false;
+                            filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
+                                const { children } = option.props;
+                                if (typeof children === 'string') {
+                                    return children.toLowerCase().includes(input.toLowerCase());
                                 }
-                            }
+
+                                return false;
+                            }}
                             value={`${activeLabelID}`}
                             onChange={(value: string) => {
                                 this.setState({ activeLabelID: +value });
                             }}
                         >
-                            {
-                                labels.map((label: any): JSX.Element => (
+                            {labels.map(
+                                (label: any): JSX.Element => (
                                     <Select.Option key={label.id} value={`${label.id}`}>
                                         {label.name}
                                     </Select.Option>
-                                ))
-                            }
+                                ),
+                            )}
                         </Select>
                     </Col>
                 </Row>
-                <Row type='flex' justify='start' className='cvat-opencv-drawing-tools'>
+                <Row justify='start' className='cvat-opencv-drawing-tools'>
                     <Col>
                         <Tooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
@@ -370,7 +339,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                     });
                                 }}
                             >
-                                <Icon type='scissor' />
+                                <ScissorOutlined />
                             </Button>
                         </Tooltip>
                     </Col>
@@ -384,23 +353,23 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
         return (
             <div className='cvat-opencv-control-popover-content'>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
-                        <Text className='cvat-text-color' strong>OpenCV.js</Text>
+                        <Text className='cvat-text-color' strong>
+                            OpenCV.js
+                        </Text>
                     </Col>
                 </Row>
-                { libraryInitialized ? (
+                {libraryInitialized ? (
                     <Tabs type='card' tabBarGutter={8}>
                         <Tabs.TabPane key='drawing' tab='Drawing' className='cvat-opencv-control-tabpane'>
-                            { this.renderDrawingContent() }
+                            {this.renderDrawingContent()}
                         </Tabs.TabPane>
-                        <Tabs.TabPane disabled key='image' tab='Image' className='cvat-opencv-control-tabpane'>
-
-                        </Tabs.TabPane>
+                        <Tabs.TabPane disabled key='image' tab='Image' className='cvat-opencv-control-tabpane' />
                     </Tabs>
                 ) : (
                     <>
-                        <Row type='flex' justify='start' align='middle'>
+                        <Row justify='start' align='middle'>
                             <Col span={initializationProgress >= 0 ? 17 : 24}>
                                 <Button
                                     disabled={initializationProgress !== -1}
@@ -430,7 +399,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                     Load OpenCV
                                 </Button>
                             </Col>
-                            { initializationProgress >= 0 && (
+                            {initializationProgress >= 0 && (
                                 <Col span={6} offset={1}>
                                     <Progress
                                         width={8 * 5}
@@ -450,20 +419,24 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public render(): JSX.Element {
         const { isActivated, canvasInstance } = this.props;
         const { processing } = this.state;
-        const dynamcPopoverPros = isActivated ? {
-            overlayStyle: {
-                display: 'none',
-            },
-        } : {};
+        const dynamcPopoverPros = isActivated ?
+            {
+                overlayStyle: {
+                    display: 'none',
+                },
+            } :
+            {};
 
-        const dynamicIconProps = isActivated ? {
-            className: 'cvat-active-canvas-control cvat-opencv-control',
-            onClick: (): void => {
-                canvasInstance.interact({ enabled: false });
-            },
-        } : {
-            className: 'cvat-tools-control',
-        };
+        const dynamicIconProps = isActivated ?
+            {
+                className: 'cvat-active-canvas-control cvat-opencv-control',
+                onClick: (): void => {
+                    canvasInstance.interact({ enabled: false });
+                },
+            } :
+            {
+                className: 'cvat-tools-control',
+            };
 
         return (
             <>
@@ -473,10 +446,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     visible={processing}
                     closable={false}
                     footer={[]}
-
                 >
                     <Text>OpenCV handles your request. Please wait..</Text>
-                    <Icon style={{ marginLeft: '10px' }} type='loading' />
+                    <LoadingOutlined style={{ marginLeft: '10px' }} />
                 </Modal>
                 <Popover
                     {...dynamcPopoverPros}
@@ -491,7 +463,4 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(OpenCVControlComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(OpenCVControlComponent);
