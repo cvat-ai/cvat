@@ -8,13 +8,14 @@ import {
     MergeData,
     SplitData,
     GroupData,
-    InteractionData,
-    InteractionResult,
+    InteractionData as _InteractionData,
+    InteractionResult as _InteractionResult,
     CanvasModel,
     CanvasModelImpl,
     RectDrawingMethod,
     CuboidDrawingMethod,
     Configuration,
+    Geometry,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
@@ -28,6 +29,7 @@ const CanvasVersion = pjson.version;
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    setupIssueRegions(issueRegions: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID?: number): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
@@ -43,6 +45,7 @@ interface Canvas {
 
     fitCanvas(): void;
     bitmap(enable: boolean): void;
+    selectRegion(enable: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
@@ -50,6 +53,8 @@ interface Canvas {
     cancel(): void;
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
+
+    readonly geometry: Geometry;
 }
 
 class CanvasImpl implements Canvas {
@@ -71,12 +76,20 @@ class CanvasImpl implements Canvas {
         this.model.setup(frameData, objectStates, zLayer);
     }
 
+    public setupIssueRegions(issueRegions: Record<number, number[]>): void {
+        this.model.setupIssueRegions(issueRegions);
+    }
+
     public fitCanvas(): void {
         this.model.fitCanvas(this.view.html().clientWidth, this.view.html().clientHeight);
     }
 
     public bitmap(enable: boolean): void {
         this.model.bitmap(enable);
+    }
+
+    public selectRegion(enable: boolean): void {
+        this.model.selectRegion(enable);
     }
 
     public dragCanvas(enable: boolean): void {
@@ -146,15 +159,15 @@ class CanvasImpl implements Canvas {
     public isAbleToChangeFrame(): boolean {
         return this.model.isAbleToChangeFrame();
     }
+
+    public get geometry(): Geometry {
+        return this.model.geometry;
+    }
 }
 
+export type InteractionData = _InteractionData;
+export type InteractionResult = _InteractionResult;
+
 export {
-    CanvasImpl as Canvas,
-    CanvasVersion,
-    Configuration,
-    RectDrawingMethod,
-    CuboidDrawingMethod,
-    Mode as CanvasMode,
-    InteractionData,
-    InteractionResult,
+    CanvasImpl as Canvas, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
 };

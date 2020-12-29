@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0-beta] - Unreleased
+## [1.2.0] - Unreleased
 
 ### Added
 
@@ -25,6 +25,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Memory consumption for the task creation process (<https://github.com/openvinotoolkit/cvat/pull/2582>)
+- Frame preloading (<https://github.com/openvinotoolkit/cvat/pull/2608>)
+- Project cannot be removed from the project page (<https://github.com/openvinotoolkit/cvat/pull/2626>)
+
+### Security
+
+-
+
+## [1.2.0-beta] - 2020-12-15
+
+### Added
+
+- GPU support and improved documentation for auto annotation (<https://github.com/openvinotoolkit/cvat/pull/2546>)
+- Manual review pipeline: issues/comments/workspace (<https://github.com/openvinotoolkit/cvat/pull/2357>)
+- Basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
+- Documentation on how to mount cloud starage(AWS S3 bucket, Azure container, Google Drive) as FUSE (<https://github.com/openvinotoolkit/cvat/pull/2377>)
+- Ability to work with share files without copying inside (<https://github.com/openvinotoolkit/cvat/pull/2377>)
+- Tooltips in label selectors (<https://github.com/openvinotoolkit/cvat/pull/2509>)
+- Page redirect after login using `next` query parameter (<https://github.com/openvinotoolkit/cvat/pull/2527>)
+- [ImageNet](http://www.image-net.org) format support (<https://github.com/openvinotoolkit/cvat/pull/2376>)
+- [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/) format support (<https://github.com/openvinotoolkit/cvat/pull/2559>)
+
+### Changed
+
+- PATCH requests from cvat-core submit only changed fields (<https://github.com/openvinotoolkit/cvat/pull/2445>)
+- deploy.sh in serverless folder is seperated into deploy_cpu.sh and deploy_gpu.sh (<https://github.com/openvinotoolkit/cvat/pull/2546>)
+- Bumped nuclio version to 1.5.8
+- Migrated to Antd 4.9 (<https://github.com/openvinotoolkit/cvat/pull/2536>)
+
+### Fixed
+
+- Fixed FastRCNN inference bug for images with 4 channels i.e. png (<https://github.com/openvinotoolkit/cvat/pull/2546>)
 - Django templates for email and user guide (<https://github.com/openvinotoolkit/cvat/pull/2412>)
 - Saving relative paths in dummy chunks instead of absolute (<https://github.com/openvinotoolkit/cvat/pull/2424>)
 - Objects with a specific label cannot be displayed if at least one tag with the label exist (<https://github.com/openvinotoolkit/cvat/pull/2435>)
@@ -33,10 +65,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception: "Value must be a user instance" (<https://github.com/openvinotoolkit/cvat/pull/2441>)
 - Reset zoom option doesn't work in tag annotation mode (<https://github.com/openvinotoolkit/cvat/pull/2443>)
 - Canvas is busy error (<https://github.com/openvinotoolkit/cvat/pull/2437>)
-
-### Security
-
--
+- Projects view layout fix (<https://github.com/openvinotoolkit/cvat/pull/2503>)
+- Fixed the tasks view (infinite loading) when it is impossible to get a preview of the task (<https://github.com/openvinotoolkit/cvat/pull/2504>)
+- Empty frames navigation (<https://github.com/openvinotoolkit/cvat/pull/2505>)
+- TypeError: Cannot read property 'toString' of undefined (<https://github.com/openvinotoolkit/cvat/pull/2517>)
+- Extra shapes are drawn after Esc, or G pressed while drawing a region in grouping (<https://github.com/openvinotoolkit/cvat/pull/2507>)
+- Reset state (reviews, issues) after logout or changing a job (<https://github.com/openvinotoolkit/cvat/pull/2525>)
+- TypeError: Cannot read property 'id' of undefined when updating a task (<https://github.com/openvinotoolkit/cvat/pull/2544>)
 
 ## [1.2.0-alpha] - 2020-11-09
 
@@ -63,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MOTS png mask format support (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 - Ability to correct upload video with a rotation record in the metadata (<https://github.com/openvinotoolkit/cvat/pull/2218>)
 - User search field for assignee fields (<https://github.com/openvinotoolkit/cvat/pull/2370>)
+- Support of mxf videos (<https://github.com/openvinotoolkit/cvat/pull/2514>)
 
 ### Changed
 

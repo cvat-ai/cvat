@@ -290,32 +290,7 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 
 ### Semi-automatic and automatic annotation
 
-- You have to install `nuctl` command line tool to build and deploy serverless
-  functions. Download [the latest release](https://github.com/nuclio/nuclio/releases).
-- Create `cvat` project inside nuclio dashboard where you will deploy new
-  serverless functions and deploy a couple of DL models. Commands below should
-  be run only after CVAT has been installed using docker-compose because it
-  runs nuclio dashboard which manages all serverless functions.
-
-```bash
-nuctl create project cvat
-```
-
-```bash
-nuctl deploy --project-name cvat \
-    --path serverless/openvino/dextr/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
-    --platform local
-```
-
-```bash
-nuctl deploy --project-name cvat \
-    --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
-    --platform local
-```
-
-Note: see [deploy.sh](/serverless/deploy.sh) script for more examples.
+Please follow [instructions](/cvat/apps/documentation/installation_automatic_annotation.md)
 
 ### Stop all containers
 
@@ -372,6 +347,9 @@ volumes:
 You can change the share device path to your actual share. For user convenience
 we have defined the environment variable \$CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
+
+You can [mount](/cvat/apps/documentation/mounting_cloud_storages.md)
+your cloud storage as a FUSE and use it later as a share.
 
 ### Email verification
 

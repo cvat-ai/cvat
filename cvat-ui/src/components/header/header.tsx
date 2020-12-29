@@ -7,8 +7,18 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
+import Icon, {
+    SettingOutlined,
+    InfoCircleOutlined,
+    EditOutlined,
+    LoadingOutlined,
+    LogoutOutlined,
+    GithubOutlined,
+    QuestionCircleOutlined,
+    CaretDownOutlined,
+    ControlOutlined,
+} from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
-import Icon from 'antd/lib/icon';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
@@ -137,7 +147,9 @@ function HeaderContainer(props: Props): JSX.Element {
         isModelsPluginActive,
     } = props;
 
-    const { CHANGELOG_URL, LICENSE_URL, GITTER_URL, FORUM_URL, GITHUB_URL } = consts;
+    const {
+        CHANGELOG_URL, LICENSE_URL, GITTER_URL, FORUM_URL, GITHUB_URL,
+    } = consts;
 
     const history = useHistory();
 
@@ -163,7 +175,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         <Text strong>UI version:</Text>
                         <Text type='secondary'>{` ${tool.ui.version}`}</Text>
                     </p>
-                    <Row type='flex' justify='space-around'>
+                    <Row justify='space-around'>
                         <Col>
                             <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
                                 What&apos;s new?
@@ -206,28 +218,28 @@ function HeaderContainer(props: Props): JSX.Element {
                         window.open(`${tool.server.host}/admin`, '_blank');
                     }}
                 >
-                    <Icon type='control' />
+                    <ControlOutlined />
                     Admin page
                 </Menu.Item>
             )}
 
             <Menu.Item title={`Press ${switchSettingsShortcut} to switch`} onClick={() => switchSettingsDialog(true)}>
-                <Icon type='setting' />
+                <SettingOutlined />
                 Settings
             </Menu.Item>
             <Menu.Item onClick={showAboutModal}>
-                <Icon type='info-circle' />
+                <InfoCircleOutlined />
                 About
             </Menu.Item>
             {renderChangePasswordItem && (
                 <Menu.Item onClick={(): void => switchChangePasswordDialog(true)} disabled={changePasswordFetching}>
-                    {changePasswordFetching ? <Icon type='loading' /> : <Icon type='edit' />}
+                    {changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
                     Change password
                 </Menu.Item>
             )}
 
             <Menu.Item onClick={onLogout} disabled={logoutFetching}>
-                {logoutFetching ? <Icon type='loading' /> : <Icon type='logout' />}
+                {logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />}
                 Logout
             </Menu.Item>
         </Menu>
@@ -237,7 +249,18 @@ function HeaderContainer(props: Props): JSX.Element {
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
-
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='projects'
+                    href='/projects'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/projects');
+                    }}
+                >
+                    Projects
+                </Button>
                 <Button
                     className='cvat-header-button'
                     type='link'
@@ -288,12 +311,10 @@ function HeaderContainer(props: Props): JSX.Element {
                     href={GITHUB_URL}
                     onClick={(event: React.MouseEvent): void => {
                         event.preventDefault();
-                        // false positive
-                        // eslint-disable-next-line security/detect-non-literal-fs-filename
                         window.open(GITHUB_URL, '_blank');
                     }}
                 >
-                    <Icon type='github' />
+                    <GithubOutlined />
                     <Text className='cvat-text-color'>GitHub</Text>
                 </Button>
                 <Button
@@ -307,7 +328,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         window.open(`${tool.server.host}/documentation/user_guide.html`, '_blank');
                     }}
                 >
-                    <Icon type='question-circle' />
+                    <QuestionCircleOutlined />
                     Help
                 </Button>
                 <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
@@ -316,7 +337,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         <Text strong>
                             {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
                         </Text>
-                        <Icon className='cvat-header-menu-icon' type='caret-down' />
+                        <CaretDownOutlined className='cvat-header-menu-icon' />
                     </span>
                 </Dropdown>
             </div>

@@ -4,16 +4,15 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Check if the new label reflects in the options', () => {
     const issueId = '1429';
-    const labelName = `Issue ${issueId}`;
     const newLabelName = `New ${labelName}`;
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -39,8 +38,8 @@ context('Check if the new label reflects in the options', () => {
             cy.createRectangle(createRectangleShape2Points);
         });
         it('Checking for the new label', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1').find('.ant-select-selection').click();
-            cy.get('.ant-select-dropdown-menu-item').should('contain', newLabelName);
+            cy.get('#cvat-objects-sidebar-state-item-1').find('.ant-select-selector').click();
+            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').should('contain', newLabelName);
         });
     });
 });

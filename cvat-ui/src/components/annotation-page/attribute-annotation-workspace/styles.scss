@@ -13,8 +13,8 @@
     padding: 5px;
 }
 
-.attribute-annotation-sidebar-object-switcher,
-.attribute-annotation-sidebar-attribute-switcher {
+.cvat-attribute-annotation-sidebar-object-switcher,
+.cvat-attribute-annotation-sidebar-attribute-switcher {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -27,12 +27,12 @@
         overflow: hidden;
     }
 
-    > button > i {
+    > button > span[role='img'] {
         color: $objects-bar-icons-color;
     }
 }
 
-.attribute-annotation-sidebar-basics-editor {
+.cvat-attribute-annotation-sidebar-basics-editor {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -58,7 +58,7 @@
     justify-content: space-around;
 }
 
-.attribute-annotation-sidebar-attr-editor {
+.cvat-attribute-annotation-sidebar-attr-editor {
     display: flex;
     align-items: center;
     justify-content: space-around;

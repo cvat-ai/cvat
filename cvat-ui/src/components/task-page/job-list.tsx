@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import { LoadingOutlined, QuestionCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Tooltip from 'antd/lib/tooltip';
@@ -24,6 +24,72 @@ const baseURL = core.config.backendAPI.slice(0, -7);
 interface Props {
     taskInstance: any;
     onJobUpdate(jobInstance: any): void;
+}
+
+function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
+    const [summary, setSummary] = useState<Record<string, any> | null>(null);
+    const [error, setError] = useState<any>(null);
+    useEffect(() => {
+        setError(null);
+        jobInstance
+            .reviewsSummary()
+            .then((_summary: Record<string, any>) => {
+                setSummary(_summary);
+            })
+            .catch((_error: any) => {
+                // eslint-disable-next-line
+                console.log(_error);
+                setError(_error);
+            });
+    }, []);
+
+    if (!summary) {
+        if (error) {
+            if (error.toString().includes('403')) {
+                return <p>You do not have permissions</p>;
+            }
+
+            return <p>Could not fetch, check console output</p>;
+        }
+
+        return (
+            <>
+                <p>Loading.. </p>
+                <LoadingOutlined />
+            </>
+        );
+    }
+
+    return (
+        <table className='cvat-review-summary-description'>
+            <tbody>
+                <tr>
+                    <td>
+                        <Text strong>Reviews</Text>
+                    </td>
+                    <td>{summary.reviews}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <Text strong>Average quality</Text>
+                    </td>
+                    <td>{Number.parseFloat(summary.average_estimated_quality).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <Text strong>Unsolved issues</Text>
+                    </td>
+                    <td>{summary.issues_unsolved}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <Text strong>Resolved issues</Text>
+                    </td>
+                    <td>{summary.issues_resolved}</td>
+                </tr>
+            </tbody>
+        </table>
+    );
 }
 
 function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
@@ -64,7 +130,9 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
-            render: (status: string): JSX.Element => {
+            className: 'cvat-job-item-status',
+            render: (jobInstance: any): JSX.Element => {
+                const { status } = jobInstance;
                 let progressColor = null;
                 if (status === 'completed') {
                     progressColor = 'cvat-job-completed-color';
@@ -77,6 +145,9 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 return (
                     <Text strong className={progressColor}>
                         {status}
+                        <Tooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
                     </Text>
                 );
             },
@@ -97,20 +168,33 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Assignee',
             dataIndex: 'assignee',
             key: 'assignee',
-            render: (jobInstance: any): JSX.Element => {
-                const assignee = jobInstance.assignee ? jobInstance.assignee : null;
-
-                return (
-                    <UserSelector
-                        value={assignee}
-                        onSelect={(value: User | null): void => {
-                            // eslint-disable-next-line
-                            jobInstance.assignee = value;
-                            onJobUpdate(jobInstance);
-                        }}
-                    />
-                );
-            },
+            render: (jobInstance: any): JSX.Element => (
+                <UserSelector
+                    className='cvat-job-assignee-selector'
+                    value={jobInstance.assignee}
+                    onSelect={(value: User | null): void => {
+                        // eslint-disable-next-line
+                        jobInstance.assignee = value;
+                        onJobUpdate(jobInstance);
+                    }}
+                />
+            ),
+        },
+        {
+            title: 'Reviewer',
+            dataIndex: 'reviewer',
+            key: 'reviewer',
+            render: (jobInstance: any): JSX.Element => (
+                <UserSelector
+                    className='cvat-job-reviewer-selector'
+                    value={jobInstance.reviewer}
+                    onSelect={(value: User | null): void => {
+                        // eslint-disable-next-line
+                        jobInstance.reviewer = value;
+                        onJobUpdate(jobInstance);
+                    }}
+                />
+            ),
         },
     ];
 
@@ -126,10 +210,11 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             key: job.id,
             job: job.id,
             frames: `${job.startFrame}-${job.stopFrame}`,
-            status: `${job.status}`,
+            status: job,
             started: `${created.format('MMMM Do YYYY HH:MM')}`,
             duration: `${moment.duration(moment(moment.now()).diff(created)).humanize()}`,
             assignee: job,
+            reviewer: job,
         });
 
         return acc;
@@ -137,7 +222,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
     return (
         <div className='cvat-task-job-list'>
-            <Row type='flex' justify='space-between' align='middle'>
+            <Row justify='space-between' align='middle'>
                 <Col>
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
                     <Tooltip trigger='click' title='Copied to clipboard!' mouseLeaveDelay={0}>
@@ -158,14 +243,19 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                                     );
 
                                     if (job.assignee) {
-                                        serialized += `\t assigned to: ${job.assignee.username}`;
+                                        serialized += `\t assigned to "${job.assignee.username}"`;
                                     }
+
+                                    if (job.reviewer) {
+                                        serialized += `\t reviewed by "${job.reviewer.username}"`;
+                                    }
+
                                     serialized += '\n';
                                 }
                                 copy(serialized);
                             }}
                         >
-                            <Icon type='copy' theme='twoTone' />
+                            <CopyOutlined />
                             Copy
                         </Button>
                     </Tooltip>

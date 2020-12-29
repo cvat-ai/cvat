@@ -1,0 +1,112 @@
+// Copyright (C) 2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-create-issue-dialog {
+    position: absolute;
+    pointer-events: auto;
+    width: $grid-unit-size * 30;
+    padding: $grid-unit-size;
+    background: $background-color-2;
+    z-index: 100;
+    transform-origin: top left;
+    box-shadow: $box-shadow-base;
+
+    button {
+        width: $grid-unit-size * 12;
+    }
+}
+
+.cvat-hidden-issue-label {
+    position: absolute;
+    min-width: 8 * $grid-unit-size;
+    opacity: 0.8;
+    z-index: 100;
+    transition: none;
+    pointer-events: auto;
+    max-width: 16 * $grid-unit-size;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 0;
+    transform-origin: top left;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-issue-dialog {
+    width: $grid-unit-size * 35;
+    position: absolute;
+    z-index: 100;
+    transition: none;
+    pointer-events: auto;
+    background: $background-color-2;
+    padding: $grid-unit-size;
+    transform-origin: top left;
+    box-shadow: $box-shadow-base;
+    border-radius: 0.5 * $grid-unit-size;
+    opacity: 0.95;
+
+    .cvat-issue-dialog-chat {
+        > div {
+            width: 100%;
+        }
+
+        .ant-comment {
+            user-select: auto;
+            padding: $grid-unit-size;
+            padding-bottom: 0;
+
+            .ant-comment-content {
+                line-height: 14px;
+            }
+
+            .ant-comment-avatar {
+                margin: 0;
+            }
+        }
+
+        border-radius: 0.5 * $grid-unit-size;
+        background: $background-color-1;
+        padding: $grid-unit-size;
+        max-height: $grid-unit-size * 45;
+        overflow-y: auto;
+        width: 100%;
+    }
+
+    .cvat-issue-dialog-input {
+        background: $background-color-1;
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-issue-dialog-footer {
+        margin-top: $grid-unit-size;
+    }
+
+    .ant-comment > .ant-comment-inner {
+        padding: 0;
+    }
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat-hidden-issue-indicator {
+    margin-right: $grid-unit-size;
+}
+
+.cvat-hidden-issue-resolved-indicator {
+    @extend .cvat-hidden-issue-indicator;
+
+    color: $ok-icon-color;
+}
+
+.cvat-hidden-issue-unsolved-indicator {
+    @extend .cvat-hidden-issue-indicator;
+
+    color: $danger-icon-color;
+}

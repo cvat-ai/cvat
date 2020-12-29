@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Timeline from 'antd/lib/timeline';

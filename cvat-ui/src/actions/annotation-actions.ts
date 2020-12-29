@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction, Dispatch, ActionCreator, Store } from 'redux';
+import {
+    AnyAction, Dispatch, ActionCreator, Store,
+} from 'redux';
 import { ThunkAction } from 'utils/redux';
 
 import {
@@ -122,6 +124,7 @@ export enum AnnotationActionTypes {
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
+    SELECT_ISSUE_POSITION = 'SELECT_ISSUE_POSITION',
     MERGE_OBJECTS = 'MERGE_OBJECTS',
     GROUP_OBJECTS = 'GROUP_OBJECTS',
     SPLIT_TRACK = 'SPLIT_TRACK',
@@ -160,9 +163,6 @@ export enum AnnotationActionTypes {
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
     COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
     COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
-    CHANGE_JOB_STATUS = 'CHANGE_JOB_STATUS',
-    CHANGE_JOB_STATUS_SUCCESS = 'CHANGE_JOB_STATUS_SUCCESS',
-    CHANGE_JOB_STATUS_FAILED = 'CHANGE_JOB_STATUS_FAILED',
     UPLOAD_JOB_ANNOTATIONS = 'UPLOAD_JOB_ANNOTATIONS',
     UPLOAD_JOB_ANNOTATIONS_SUCCESS = 'UPLOAD_JOB_ANNOTATIONS_SUCCESS',
     UPLOAD_JOB_ANNOTATIONS_FAILED = 'UPLOAD_JOB_ANNOTATIONS_FAILED',
@@ -186,6 +186,10 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
     SET_AI_TOOLS_REF = 'SET_AI_TOOLS_REF',
+    GET_DATA_FAILED = 'GET_DATA_FAILED',
+    SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
+    SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
+    SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -216,6 +220,15 @@ export function changeWorkspace(workspace: Workspace): AnyAction {
     };
 }
 
+export function getDataFailed(error: any): AnyAction {
+    return {
+        type: AnnotationActionTypes.GET_DATA_FAILED,
+        payload: {
+            error,
+        },
+    };
+}
+
 export function addZLayer(): AnyAction {
     return {
         type: AnnotationActionTypes.ADD_Z_LAYER,
@@ -235,7 +248,9 @@ export function switchZLayer(cur: number): AnyAction {
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, frame, showAllInterpolationTracks, jobInstance } = receiveAnnotationsParameters();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
             const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
 
@@ -390,36 +405,6 @@ export function uploadJobAnnotationsAsync(job: any, loader: any, file: File): Th
     };
 }
 
-export function changeJobStatusAsync(jobInstance: any, status: string): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const oldStatus = jobInstance.status;
-        try {
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_JOB_STATUS,
-                payload: {},
-            });
-
-            // eslint-disable-next-line no-param-reassign
-            jobInstance.status = status;
-            await jobInstance.save();
-
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_JOB_STATUS_SUCCESS,
-                payload: {},
-            });
-        } catch (error) {
-            // eslint-disable-next-line no-param-reassign
-            jobInstance.status = oldStatus;
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
 export function collectStatisticsAsync(sessionInstance: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
@@ -536,13 +521,13 @@ export function removeObjectAsync(sessionInstance: any, objectState: any, force:
                     },
                 });
             } else {
-                throw new Error('Could not remove the object. Is it locked?');
+                throw new Error('Could not remove the locked object');
             }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
                 payload: {
-                    objectState,
+                    error,
                 },
             });
         }
@@ -893,7 +878,11 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
         try {
             const state: CombinedState = getStore().getState();
             const filters = initialFilters;
-            const { showAllInterpolationTracks } = state.settings.workspace;
+            const {
+                settings: {
+                    workspace: { showAllInterpolationTracks },
+                },
+            } = state;
 
             dispatch({
                 type: AnnotationActionTypes.GET_JOB,
@@ -927,12 +916,27 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
             }
 
+            if (!task.labels.length && task.projectId) {
+                throw new Error(`Project ${task.projectId} does not contain any label`);
+            }
+
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
             // to load and decode first chunk
-            await frameData.data();
+            try {
+                await frameData.data();
+            } catch (error) {
+                dispatch({
+                    type: AnnotationActionTypes.GET_DATA_FAILED,
+                    payload: {
+                        error,
+                    },
+                });
+            }
             const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+            const issues = await job.issues();
+            const reviews = await job.reviews();
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
 
@@ -942,6 +946,8 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
                 payload: {
                     job,
+                    issues,
+                    reviews,
                     states,
                     frameNumber,
                     frameFilename: frameData.filename,
@@ -964,7 +970,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
     };
 }
 
-export function saveAnnotationsAsync(sessionInstance: any): ThunkAction {
+export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => void): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
@@ -990,6 +996,9 @@ export function saveAnnotationsAsync(sessionInstance: any): ThunkAction {
 
             const { frame } = receiveAnnotationsParameters();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            if (typeof afterSave === 'function') {
+                afterSave();
+            }
 
             dispatch({
                 type: AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS,
@@ -1049,6 +1058,15 @@ export function shapeDrawn(): AnyAction {
     };
 }
 
+export function selectIssuePosition(enabled: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SELECT_ISSUE_POSITION,
+        payload: {
+            enabled,
+        },
+    };
+}
+
 export function mergeObjects(enabled: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.MERGE_OBJECTS,
@@ -1078,7 +1096,9 @@ export function splitTrack(enabled: boolean): AnyAction {
 
 export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const { jobInstance, filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
+        const {
+            jobInstance, filters, frame, showAllInterpolationTracks,
+        } = receiveAnnotationsParameters();
 
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
@@ -1473,5 +1493,32 @@ export function redrawShapeAsync(): ThunkAction {
                 });
             }
         }
+    };
+}
+
+export function switchRequestReviewDialog(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_REQUEST_REVIEW_DIALOG,
+        payload: {
+            visible,
+        },
+    };
+}
+
+export function switchSubmitReviewDialog(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SUBMIT_REVIEW_DIALOG,
+        payload: {
+            visible,
+        },
+    };
+}
+
+export function setForceExitAnnotationFlag(forceExit: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG,
+        payload: {
+            forceExit,
+        },
     };
 }

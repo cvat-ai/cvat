@@ -4,6 +4,7 @@
 
 import { combineReducers, Reducer } from 'redux';
 import authReducer from './auth-reducer';
+import projectsReducer from './projects-reducer';
 import tasksReducer from './tasks-reducer';
 import aboutReducer from './about-reducer';
 import shareReducer from './share-reducer';
@@ -15,10 +16,12 @@ import annotationReducer from './annotation-reducer';
 import settingsReducer from './settings-reducer';
 import shortcutsReducer from './shortcuts-reducer';
 import userAgreementsReducer from './useragreements-reducer';
+import reviewReducer from './review-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
         auth: authReducer,
+        projects: projectsReducer,
         tasks: tasksReducer,
         about: aboutReducer,
         share: shareReducer,
@@ -30,5 +33,6 @@ export default function createRootReducer(): Reducer {
         settings: settingsReducer,
         shortcuts: shortcutsReducer,
         userAgreements: userAgreementsReducer,
+        review: reviewReducer,
     });
 }

@@ -102,7 +102,9 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private onDraw(objectType: ObjectType): void {
         const { canvasInstance, shapeType, onDrawStart } = this.props;
 
-        const { rectDrawingMethod, cuboidDrawingMethod, numberOfPoints, selectedLabelID } = this.state;
+        const {
+            rectDrawingMethod, cuboidDrawingMethod, numberOfPoints, selectedLabelID,
+        } = this.state;
 
         canvasInstance.cancel();
         canvasInstance.draw({
@@ -143,14 +145,16 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
     };
 
-    private onChangeLabel = (value: string): void => {
+    private onChangeLabel = (value: any): void => {
         this.setState({
-            selectedLabelID: +value,
+            selectedLabelID: value.id,
         });
     };
 
     public render(): JSX.Element {
-        const { rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints } = this.state;
+        const {
+            rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints,
+        } = this.state;
 
         const { normalizedKeyMap, labels, shapeType } = this.props;
 
@@ -159,7 +163,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 labels={labels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}
-                selectedLabeID={selectedLabelID}
+                selectedLabelID={selectedLabelID}
                 numberOfPoints={numberOfPoints}
                 rectDrawingMethod={rectDrawingMethod}
                 cuboidDrawingMethod={cuboidDrawingMethod}

@@ -22,7 +22,9 @@ interface InputElementParameters {
 }
 
 function renderInputElement(parameters: InputElementParameters): JSX.Element {
-    const { inputType, attrID, clientID, values, currentValue, onChange } = parameters;
+    const {
+        inputType, attrID, clientID, values, currentValue, onChange,
+    } = parameters;
 
     const renderCheckbox = (): JSX.Element => (
         <>
@@ -120,7 +122,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         element = renderText();
     }
 
-    return <div className='attribute-annotation-sidebar-attr-editor'>{element}</div>;
+    return <div className='cvat-attribute-annotation-sidebar-attr-editor'>{element}</div>;
 }
 
 interface ListParameters {
@@ -246,7 +248,9 @@ interface Props {
 }
 
 function AttributeEditor(props: Props): JSX.Element {
-    const { attribute, currentValue, onChange, clientID } = props;
+    const {
+        attribute, currentValue, onChange, clientID,
+    } = props;
     const { inputType, values, id: attrID } = attribute;
 
     return (

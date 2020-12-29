@@ -11,26 +11,16 @@
     height: 100%;
     width: 100%;
 
-    > div:nth-child(1) {
-        padding-bottom: 10px;
-
-        div > {
-            span {
-                color: $text-color;
-            }
-        }
-    }
-
-    > div:nth-child(3) {
+    > div:nth-child(2) {
         height: 83%;
         padding-top: 10px;
     }
 
-    > div:nth-child(4) {
+    > div:nth-child(3) {
         padding-top: 10px;
     }
 
-    > div:nth-child(2) {
+    > div:nth-child(1) {
         > div:nth-child(1) {
             display: flex;
 

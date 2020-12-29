@@ -20,9 +20,9 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14} className='cvat-models-list'>
-                    <Row type='flex' align='middle' style={{ padding: '10px' }}>
+                    <Row align='middle' style={{ padding: '10px' }}>
                         <Col span={3}>
                             <Text strong>Framework</Text>
                         </Col>

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import { PlusCircleOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 
 import ConstructorViewerItem from './constructor-viewer-item';
@@ -21,7 +21,7 @@ export default function ConstructorViewer(props: ConstructorViewerProps): JSX.El
     const list = [
         <Button key='create' type='ghost' onClick={onCreate} className='cvat-constructor-viewer-new-item'>
             Add label
-            <Icon type='plus-circle' />
+            <PlusCircleOutlined />
         </Button>,
     ];
     for (const label of props.labels) {

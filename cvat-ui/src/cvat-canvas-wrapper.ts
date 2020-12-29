@@ -8,8 +8,8 @@ import {
     CanvasVersion,
     RectDrawingMethod,
     CuboidDrawingMethod,
-    InteractionData as InteractionDataType,
-    InteractionResult as InteractionResultType,
+    InteractionData as _InteractionData,
+    InteractionResult as _InteractionResult,
 } from 'cvat-canvas/src/typescript/canvas';
 
 export function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
@@ -28,8 +28,8 @@ export function convertShapesForInteractor(shapes: InteractionResult[]): number[
         .flat().reduce(reducer, []);
 }
 
-export type InteractionData = InteractionDataType;
-export type InteractionResult = InteractionResultType;
+export type InteractionData = _InteractionData;
+export type InteractionResult = _InteractionResult;
 
 export {
     Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,

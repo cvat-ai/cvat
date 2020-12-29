@@ -41,7 +41,7 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col {...sizes}>
                     <Title level={2}> Create an account </Title>
                     <RegisterForm
@@ -59,7 +59,7 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
                             );
                         }}
                     />
-                    <Row type='flex' justify='start' align='top'>
+                    <Row justify='start' align='top'>
                         <Col>
                             <Text strong>
                                 Already have an account?

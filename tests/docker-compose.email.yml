@@ -1,0 +1,6 @@
+version: '3.3'
+
+services:
+  cvat:
+    environment:
+      DJANGO_SETTINGS_MODULE: tests.email_settings

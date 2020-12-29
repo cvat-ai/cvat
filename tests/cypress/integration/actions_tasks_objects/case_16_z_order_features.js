@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
 context('Actions on polygon', () => {
     const caseId = '16';
@@ -12,7 +12,7 @@ context('Actions on polygon', () => {
     const createPolygonShapeFirst = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 340, y: 200 },
             { x: 590, y: 200 },
@@ -24,7 +24,7 @@ context('Actions on polygon', () => {
     const createPolygonShapeSecond = {
         reDraw: false,
         type: 'Shape',
-        switchLabel: false,
+        labelName: labelName,
         pointsMap: [
             { x: 190, y: 210 },
             { x: 440, y: 210 },
@@ -38,17 +38,18 @@ context('Actions on polygon', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-
         it('Create a first polygon shape', () => {
             cy.createPolygon(createPolygonShapeFirst);
         });
 
         it('Increase z-layer with a special switcher', () => {
             cy.get('.cvat-canvas-z-axis-wrapper').within(() => {
-                cy.get('[role="slider"]').should('have.attr', 'aria-valuenow').then($zLayer=> {
-                    zLayer = Number($zLayer);
-                });
-                cy.get('i[aria-label="icon: plus-circle"]').click();
+                cy.get('[role="slider"]')
+                    .should('have.attr', 'aria-valuenow')
+                    .then(($zLayer) => {
+                        zLayer = Number($zLayer);
+                    });
+                cy.get('span[aria-label="plus-circle"]').click();
                 cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', zLayer + 1);
             });
         });
@@ -61,22 +62,25 @@ context('Actions on polygon', () => {
             cy.get('.cvat-canvas-container').click();
         });
 
-        it('Second shape is over the first shape', () => {
+        it('Second shape is over the first shape', () => {
             // The larger the index of an element in the array the closer it is to us
-            cy.get('.cvat_canvas_shape').then($canvasShape => {
-                expect(Number($canvasShape[1].id.match(/\d+$/))).to.be.equal(2);
+            cy.get('.cvat_canvas_shape').then(($canvasShape) => {
+                expect(Number($canvasShape[1].id.match(/\d+$/))).to.be.equal(2);
             });
         });
 
-        it('Activate first shape', () => {
+        it('Activate first shape', () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove').trigger('mouseover');
         });
 
-        it('First shape is over the second shape', () => {
+        it('First shape is over the second shape', () => {
             // The larger the index of an element in the array the closer it is to us
-            cy.get('.cvat_canvas_shape').then($canvasShape => {
-                expect(Number($canvasShape[1].id.match(/\d+$/))).to.be.equal(1);
-                assert.isAbove(Number($canvasShape.eq(-1).attr('fill-opacity')), Number($canvasShape.eq(0).attr('fill-opacity')));
+            cy.get('.cvat_canvas_shape').then(($canvasShape) => {
+                expect(Number($canvasShape[1].id.match(/\d+$/))).to.be.equal(1);
+                assert.isAbove(
+                    Number($canvasShape.eq(-1).attr('fill-opacity')),
+                    Number($canvasShape.eq(0).attr('fill-opacity')),
+                );
             });
         });
 
@@ -97,10 +101,12 @@ context('Actions on polygon', () => {
 
         it('Increase z-layer with a special switcher', () => {
             cy.get('.cvat-canvas-z-axis-wrapper').within(() => {
-                cy.get('[role="slider"]').should('have.attr', 'aria-valuenow').then($zLayer=> {
-                    zLayer = Number($zLayer);
-                });
-                cy.get('i[aria-label="icon: plus-circle"]').click();
+                cy.get('[role="slider"]')
+                    .should('have.attr', 'aria-valuenow')
+                    .then(($zLayer) => {
+                        zLayer = Number($zLayer);
+                    });
+                cy.get('span[aria-label="plus-circle"]').click();
                 cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', zLayer + 2);
             });
         });

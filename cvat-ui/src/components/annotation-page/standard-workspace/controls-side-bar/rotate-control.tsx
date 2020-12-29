@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
 
 import { RotateIcon } from 'icons';
 import { Rotation } from 'reducers/interfaces';
+
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     clockwiseShortcut: string;
@@ -18,12 +20,12 @@ interface Props {
 
 function RotateControl(props: Props): JSX.Element {
     const { anticlockwiseShortcut, clockwiseShortcut, rotateFrame } = props;
+    const CustomPopover = withVisibilityHandling(Popover, 'rotate-canvas');
 
     return (
-        <Popover
-            overlayClassName='cvat-rotate-canvas-controls'
+        <CustomPopover
             placement='right'
-            content={
+            content={(
                 <>
                     <Tooltip
                         title={`Rotate the image anticlockwise ${anticlockwiseShortcut}`}
@@ -48,11 +50,11 @@ function RotateControl(props: Props): JSX.Element {
                         />
                     </Tooltip>
                 </>
-            }
+            )}
             trigger='hover'
         >
             <Icon className='cvat-rotate-canvas-control' component={RotateIcon} />
-        </Popover>
+        </CustomPopover>
     );
 }
 

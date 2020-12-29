@@ -4,9 +4,9 @@
 
 import React, { MutableRefObject } from 'react';
 import { connect } from 'react-redux';
-import Icon from 'antd/lib/icon';
+import Icon, { LoadingOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
-import Select, { OptionProps } from 'antd/lib/select';
+import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
@@ -14,12 +14,15 @@ import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Progress from 'antd/lib/progress';
+import InputNumber from 'antd/lib/input-number';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
-import { CombinedState, ActiveControl, Model, ObjectType, ShapeType } from 'reducers/interfaces';
+import {
+    CombinedState, ActiveControl, Model, ObjectType, ShapeType,
+} from 'reducers/interfaces';
 import {
     interactWithCanvas,
     fetchAnnotationsAsync,
@@ -27,7 +30,8 @@ import {
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
-import InputNumber from 'antd/lib/input-number';
+import LabelSelector from 'components/label-selector/label-selector';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -161,7 +165,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private cancelListener = async (): Promise<void> => {
-        const { isActivated, jobInstance, frame, fetchAnnotations } = this.props;
+        const {
+            isActivated, jobInstance, frame, fetchAnnotations,
+        } = this.props;
         const { interactiveStateID, fetching } = this.state;
 
         if (isActivated) {
@@ -358,17 +364,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
-    private setActiveInteractor = (key: string): void => {
+    private setActiveInteractor = (value: string): void => {
         const { interactors } = this.props;
         this.setState({
-            activeInteractor: interactors.filter((interactor: Model) => interactor.id === key)[0],
+            activeInteractor: interactors.filter((interactor: Model) => interactor.id === value)[0],
         });
     };
 
-    private setActiveTracker = (key: string): void => {
+    private setActiveTracker = (value: string): void => {
         const { trackers } = this.props;
         this.setState({
-            activeTracker: trackers.filter((tracker: Model) => tracker.id === key)[0],
+            activeTracker: trackers.filter((tracker: Model) => tracker.id === value)[0],
         });
     };
 
@@ -440,35 +446,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeLabelID } = this.state;
         return (
             <>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color'>Label</Text>
                     </Col>
                 </Row>
-                <Row type='flex' justify='center'>
+                <Row justify='center'>
                     <Col span={24}>
-                        <Select
+                        <LabelSelector
                             style={{ width: '100%' }}
-                            showSearch
-                            filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                                const { children } = option.props;
-                                if (typeof children === 'string') {
-                                    return children.toLowerCase().includes(input.toLowerCase());
-                                }
-
-                                return false;
-                            }}
-                            value={`${activeLabelID}`}
-                            onChange={(value: string) => {
-                                this.setState({ activeLabelID: +value });
-                            }}
-                        >
-                            {labels.map((label: any) => (
-                                <Select.Option key={label.id} value={`${label.id}`}>
-                                    {label.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
+                            labels={labels}
+                            value={activeLabelID}
+                            onChange={(value: any) => this.setState({ activeLabelID: value.id })}
+                        />
                     </Col>
                 </Row>
             </>
@@ -476,12 +466,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderTrackerBlock(): JSX.Element {
-        const { trackers, canvasInstance, jobInstance, frame, onInteractionStart } = this.props;
-        const { activeTracker, activeLabelID, fetching, trackingFrames } = this.state;
+        const {
+            trackers, canvasInstance, jobInstance, frame, onInteractionStart,
+        } = this.props;
+        const {
+            activeTracker, activeLabelID, fetching, trackingFrames,
+        } = this.state;
 
         if (!trackers.length) {
             return (
-                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
                             No available trackers found
@@ -493,12 +487,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color'>Tracker</Text>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='center'>
+                <Row align='middle' justify='center'>
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
@@ -506,16 +500,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onChange={this.setActiveTracker}
                         >
                             {trackers.map(
-                                (interactor: Model): JSX.Element => (
-                                    <Select.Option title={interactor.description} key={interactor.id}>
-                                        {interactor.name}
+                                (tracker: Model): JSX.Element => (
+                                    <Select.Option value={tracker.id} title={tracker.description} key={tracker.id}>
+                                        {tracker.name}
                                     </Select.Option>
                                 ),
                             )}
                         </Select>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='start' style={{ marginTop: '5px' }}>
+                <Row align='middle' justify='start' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text>Tracking frames</Text>
                     </Col>
@@ -526,17 +520,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             min={1}
                             precision={0}
                             max={jobInstance.stopFrame - frame}
-                            onChange={(value: number | undefined): void => {
+                            onChange={(value: number | undefined | string): void => {
                                 if (typeof value !== 'undefined') {
                                     this.setState({
-                                        trackingFrames: value,
+                                        trackingFrames: +value,
                                     });
                                 }
                             }}
                         />
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='end'>
+                <Row align='middle' justify='end'>
                     <Col>
                         <Button
                             type='primary'
@@ -571,7 +565,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (!interactors.length) {
             return (
-                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
                             No available interactors found
@@ -583,12 +577,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color'>Interactor</Text>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='center'>
+                <Row align='middle' justify='center'>
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
@@ -597,7 +591,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         >
                             {interactors.map(
                                 (interactor: Model): JSX.Element => (
-                                    <Select.Option title={interactor.description} key={interactor.id}>
+                                    <Select.Option
+                                        value={interactor.id}
+                                        title={interactor.description}
+                                        key={interactor.id}
+                                    >
                                         {interactor.name}
                                     </Select.Option>
                                 ),
@@ -605,7 +603,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                 </Row>
-                <Row type='flex' align='middle' justify='end'>
+                <Row align='middle' justify='end'>
                     <Col>
                         <Button
                             type='primary'
@@ -636,11 +634,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderDetectorBlock(): JSX.Element {
-        const { jobInstance, detectors, curZOrder, frame, fetchAnnotations } = this.props;
+        const {
+            jobInstance, detectors, curZOrder, frame, fetchAnnotations,
+        } = this.props;
 
         if (!detectors.length) {
             return (
-                <Row type='flex' justify='center' align='middle' style={{ marginTop: '5px' }}>
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
                             No available detectors found
@@ -691,7 +691,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private renderPopoverContent(): JSX.Element {
         return (
             <div className='cvat-tools-control-popover-content'>
-                <Row type='flex' justify='start'>
+                <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color' strong>
                             AI Tools
@@ -716,29 +716,32 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { interactors, detectors, trackers, isActivated, canvasInstance } = this.props;
+        const {
+            interactors, detectors, trackers, isActivated, canvasInstance,
+        } = this.props;
         const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
+        const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
-        const dynamcPopoverPros = isActivated
-            ? {
-                  overlayStyle: {
-                      display: 'none',
-                  },
-              }
-            : {};
+        const dynamcPopoverPros = isActivated ?
+            {
+                overlayStyle: {
+                    display: 'none',
+                },
+            } :
+            {};
 
-        const dynamicIconProps = isActivated
-            ? {
-                  className: 'cvat-active-canvas-control cvat-tools-control',
-                  onClick: (): void => {
-                      canvasInstance.interact({ enabled: false });
-                  },
-              }
-            : {
-                  className: 'cvat-tools-control',
-              };
+        const dynamicIconProps = isActivated ?
+            {
+                className: 'cvat-active-canvas-control cvat-tools-control',
+                onClick: (): void => {
+                    canvasInstance.interact({ enabled: false });
+                },
+            } :
+            {
+                className: 'cvat-tools-control',
+            };
 
         return (
             <>
@@ -750,19 +753,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     footer={[]}
                 >
                     <Text>Waiting for a server response..</Text>
-                    <Icon style={{ marginLeft: '10px' }} type='loading' />
+                    <LoadingOutlined style={{ marginLeft: '10px' }} />
                     {trackingProgress !== null && (
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}
                 </Modal>
-                <Popover
-                    {...dynamcPopoverPros}
-                    placement='right'
-                    overlayClassName='cvat-tools-control-popover'
-                    content={this.renderPopoverContent()}
-                >
+                <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
-                </Popover>
+                </CustomPopover>
             </>
         );
     }

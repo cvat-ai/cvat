@@ -4,10 +4,10 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
+import { CloseOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import Tooltip from 'antd/lib/tooltip';
-import Icon from 'antd/lib/icon';
 import Modal from 'antd/lib/modal';
 import { ActiveInference } from 'reducers/interfaces';
 
@@ -27,7 +27,7 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                     <Text strong>Automatic annotation</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='space-between'>
+            <Row justify='space-between'>
                 <Col span={22}>
                     <Progress
                         percent={Math.floor(activeInference.progress)}
@@ -42,13 +42,15 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                 </Col>
                 <Col span={1} className='close-auto-annotation-icon'>
                     <Tooltip title='Cancel automatic annotation' mouseLeaveDelay={0}>
-                        <Icon
-                            type='close'
+                        <CloseOutlined
                             onClick={() => {
                                 Modal.confirm({
                                     title: 'You are going to cancel automatic annotation?',
                                     content: 'Reached progress will be lost. Continue?',
-                                    okType: 'danger',
+                                    okButtonProps: {
+                                        type: 'primary',
+                                        danger: true,
+                                    },
                                     onOk() {
                                         cancelAutoAnnotation();
                                     },

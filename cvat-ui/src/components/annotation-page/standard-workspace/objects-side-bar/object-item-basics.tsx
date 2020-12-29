@@ -4,16 +4,17 @@
 
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon from 'antd/lib/icon';
-import Select, { OptionProps } from 'antd/lib/select';
+import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
+import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
 
 interface Props {
+    readonly: boolean;
     clientID: number;
     serverID: number | undefined;
     labelID: number;
@@ -32,7 +33,7 @@ interface Props {
     toForegroundShortcut: string;
     removeShortcut: string;
     changeColor(color: string): void;
-    changeLabel(labelID: string): void;
+    changeLabel(label: any): void;
     copy(): void;
     remove(): void;
     propagate(): void;
@@ -46,6 +47,7 @@ interface Props {
 
 function ItemTopComponent(props: Props): JSX.Element {
     const {
+        readonly,
         clientID,
         serverID,
         labelID,
@@ -92,7 +94,7 @@ function ItemTopComponent(props: Props): JSX.Element {
     };
 
     return (
-        <Row type='flex' align='middle'>
+        <Row align='middle'>
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
@@ -102,28 +104,14 @@ function ItemTopComponent(props: Props): JSX.Element {
             </Col>
             <Col span={12}>
                 <Tooltip title='Change current label' mouseLeaveDelay={0}>
-                    <Select
+                    <LabelSelector
+                        disabled={readonly}
                         size='small'
-                        value={`${labelID}`}
+                        labels={labels}
+                        value={labelID}
                         onChange={changeLabel}
-                        showSearch
-                        filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                            const { children } = option.props;
-                            if (typeof children === 'string') {
-                                return children.toLowerCase().includes(input.toLowerCase());
-                            }
-
-                            return false;
-                        }}
-                    >
-                        {labels.map(
-                            (label: any): JSX.Element => (
-                                <Select.Option key={label.id} value={`${label.id}`}>
-                                    {label.name}
-                                </Select.Option>
-                            ),
-                        )}
-                    </Select>
+                        className='cvat-objects-sidebar-state-item-label-selector'
+                    />
                 </Tooltip>
             </Col>
             <Col span={2}>
@@ -132,6 +120,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                     onVisibleChange={changeMenuVisible}
                     placement='bottomLeft'
                     overlay={ItemMenu({
+                        readonly,
                         serverID,
                         locked,
                         shapeType,
@@ -159,7 +148,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         activateTracking,
                     })}
                 >
-                    <Icon type='more' />
+                    <MoreOutlined />
                 </Dropdown>
             </Col>
         </Row>

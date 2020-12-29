@@ -22,6 +22,35 @@ export interface AuthState {
     allowResetPassword: boolean;
 }
 
+export interface ProjectsQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    owner: string | null;
+    name: string | null;
+    status: string | null;
+    [key: string]: string | number | null | undefined;
+}
+
+export type Project = any;
+
+export interface ProjectsState {
+    initialized: boolean;
+    fetching: boolean;
+    count: number;
+    current: Project[];
+    gettingQuery: ProjectsQuery;
+    activities: {
+        creates: {
+            id: null | number;
+            error: string;
+        };
+        deletes: {
+            [projectId: number]: boolean; // deleted (deleting if in dictionary)
+        };
+    };
+}
+
 export interface TasksQuery {
     page: number;
     id: number | null;
@@ -77,7 +106,6 @@ export interface FormatsState {
     initialized: boolean;
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
@@ -147,6 +175,11 @@ export interface Model {
 }
 
 export type OpenCVTool = Scissors;
+export enum TaskStatus {
+    ANNOTATION = 'annotation',
+    REVIEW = 'validation',
+    COMPLETED = 'completed',
+}
 
 export enum RQStatus {
     unknown = 'unknown',
@@ -181,6 +214,7 @@ export interface ModelsState {
 export interface ErrorState {
     message: string;
     reason: string;
+    className?: string;
 }
 
 export interface NotificationsState {
@@ -194,6 +228,12 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
+        };
+        projects: {
+            fetching: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
+            creating: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;
@@ -252,6 +292,14 @@ export interface NotificationsState {
         userAgreements: {
             fetching: null | ErrorState;
         };
+        review: {
+            initialization: null | ErrorState;
+            finishingIssue: null | ErrorState;
+            resolvingIssue: null | ErrorState;
+            reopeningIssue: null | ErrorState;
+            commentingIssue: null | ErrorState;
+            submittingReview: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -282,6 +330,7 @@ export enum ActiveControl {
     GROUP = 'group',
     SPLIT = 'split',
     EDIT = 'edit',
+    OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
     OPENCV_TOOLS = 'opencv_tools',
 }
@@ -330,6 +379,7 @@ export interface AnnotationState {
             left: number;
             type: ContextMenuType;
             pointID: number | null;
+            clientID: number | null;
         };
         instance: Canvas;
         ready: boolean;
@@ -379,6 +429,7 @@ export interface AnnotationState {
             redo: [string, number][];
         };
         saving: {
+            forceExit: boolean;
             uploading: boolean;
             statuses: string[];
         };
@@ -398,6 +449,8 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
+    requestReviewDialogVisible: boolean;
+    submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
@@ -409,6 +462,7 @@ export enum Workspace {
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
     TAG_ANNOTATION = 'Tag annotation',
+    REVIEW_WORKSPACE = 'Review',
 }
 
 export enum GridColor {
@@ -481,16 +535,29 @@ export interface ShortcutsState {
     normalizedKeyMap: Record<string, string>;
 }
 
-export interface MetaState {
-    initialized: boolean;
-    fetching: boolean;
-    showTasksButton: boolean;
-    showAnalyticsButton: boolean;
-    showModelsButton: boolean;
+export enum ReviewStatus {
+    ACCEPTED = 'accepted',
+    REJECTED = 'rejected',
+    REVIEW_FURTHER = 'review_further',
+}
+
+export interface ReviewState {
+    reviews: any[];
+    issues: any[];
+    frameIssues: any[];
+    latestComments: string[];
+    activeReview: any | null;
+    newIssuePosition: number[] | null;
+    issuesHidden: boolean;
+    fetching: {
+        reviewId: number | null;
+        issueId: number | null;
+    };
 }
 
 export interface CombinedState {
     auth: AuthState;
+    projects: ProjectsState;
     tasks: TasksState;
     about: AboutState;
     share: ShareState;
@@ -502,5 +569,5 @@ export interface CombinedState {
     annotation: AnnotationState;
     settings: SettingsState;
     shortcuts: ShortcutsState;
-    meta: MetaState;
+    review: ReviewState;
 }
