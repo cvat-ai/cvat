@@ -16,6 +16,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Login', () => {
+            cy.closeModalUnsupportedPlatform();
             cy.login();
         });
 
@@ -24,6 +25,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
         });
 
         it('Login and open task', () => {
+            cy.closeModalUnsupportedPlatform();
             cy.login();
             cy.openTask(taskName);
             // get id task
@@ -35,7 +37,9 @@ context('When clicking on the Logout button, get the user session closed.', () =
         it('Logout and login to task via GUI', () => {
             // logout from task
             cy.get('.cvat-right-header').within(() => {
-                cy.get('.cvat-header-menu-dropdown').should('have.text', Cypress.env('user')).trigger('mouseover', { which: 1 });
+                cy.get('.cvat-header-menu-dropdown')
+                    .should('have.text', Cypress.env('user'))
+                    .trigger('mouseover', { which: 1 });
             });
             cy.get('span[aria-label="logout"]').click();
             cy.url().should('include', `/auth/login/?next=/tasks/${taskId}`);
@@ -43,9 +47,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.get('[placeholder="Username"]').type(Cypress.env('user'));
             cy.get('[placeholder="Password"]').type(Cypress.env('password'));
             cy.get('[type="submit"]').click();
-            cy.url()
-                .should('include', `/tasks/${taskId}`)
-                .and('not.include', '/auth/login/');
+            cy.url().should('include', `/tasks/${taskId}`).and('not.include', '/auth/login/');
             cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
         });
 
@@ -64,7 +66,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
                 responce = await responce['headers']['set-cookie'];
                 const csrfToken = responce[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
                 const sessionId = responce[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
-                cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`)
+                cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
+                cy.closeModalUnsupportedPlatform();
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });
         });

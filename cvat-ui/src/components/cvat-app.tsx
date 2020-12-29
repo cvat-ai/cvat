@@ -276,6 +276,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
             Modal.warning({
                 title: 'Unsupported platform detected',
+                className: 'cvat-modal-unsupported-platform-warning',
                 content: (
                     <>
                         <Row>
