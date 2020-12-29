@@ -13,10 +13,10 @@ services:
       - cvat_proxy
     environment:
       COVERALLS_REPO_TOKEN:
-      TRAVIS:
-      TRAVIS_JOB_ID:
-      TRAVIS_BRANCH:
-      TRAVIS_PULL_REQUEST:
       CONTAINER_COVERAGE_DATA_DIR:
+      GITHUB_WORKSPACE:
+      GITHUB_RUN_ID:
+      GITHUB_HEAD_REF:
+      GITHUB_RUN_NUMBER:
     volumes:
       - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}
