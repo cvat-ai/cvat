@@ -151,13 +151,11 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    const pattern = `^(Draw new|Setup) ${objectType}$`;
-    const regex = new RegExp(pattern, 'g');
-    cy.contains(regex)
-        .parents('.cvat-draw-shape-popover-content')
-        .within(() => {
-            cy.get('.ant-select-selection-item').click();
-        });
+    cy.get(
+        objectType === 'tag' ? '.cvat-setup-tag-popover-visible' : `.cvat-draw-${objectType}-popover-visible`,
+    ).within(() => {
+        cy.get('.ant-select-selection-item').click();
+    });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
@@ -488,7 +486,7 @@ Cypress.Commands.add('createTag', (labelName) => {
     cy.get('.cvat-setup-tag-control').click();
     cy.switchLabel(labelName, 'tag');
     cy.contains('Setup tag')
-        .parents('.cvat-draw-shape-popover-content')
+        .parents('.cvat-setup-tag-popover-content')
         .within(() => {
             cy.get('button').click();
         });
