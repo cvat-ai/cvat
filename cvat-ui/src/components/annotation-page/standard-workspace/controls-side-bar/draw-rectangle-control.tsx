@@ -11,6 +11,7 @@ import { RectangleIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     canvasInstance: Canvas;
@@ -19,6 +20,7 @@ interface Props {
 
 function DrawRectangleControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
+    const CustomPopover = withVisibilityHandling(Popover, 'draw-rectangle');
 
     const dynamcPopoverPros = isDrawing ?
         {
@@ -40,14 +42,14 @@ function DrawRectangleControl(props: Props): JSX.Element {
         };
 
     return (
-        <Popover
+        <CustomPopover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.RECTANGLE} />}
         >
             <Icon {...dynamicIconProps} component={RectangleIcon} />
-        </Popover>
+        </CustomPopover>
     );
 }
 
