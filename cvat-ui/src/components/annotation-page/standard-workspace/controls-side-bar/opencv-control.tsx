@@ -5,7 +5,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
-import Select, { OptionProps } from 'antd/lib/select';
 import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
 import Icon, { ScissorOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -29,6 +28,7 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
+import LabelSelector from 'components/label-selector/label-selector';
 
 interface Props {
     labels: any[];
@@ -298,30 +298,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             <>
                 <Row justify='center'>
                     <Col span={24}>
-                        <Select
+                        <LabelSelector
                             style={{ width: '100%' }}
-                            showSearch
-                            filterOption={(input: string, option: React.ReactElement<OptionProps>) => {
-                                const { children } = option.props;
-                                if (typeof children === 'string') {
-                                    return children.toLowerCase().includes(input.toLowerCase());
-                                }
-
-                                return false;
-                            }}
-                            value={`${activeLabelID}`}
-                            onChange={(value: string) => {
-                                this.setState({ activeLabelID: +value });
-                            }}
-                        >
-                            {labels.map(
-                                (label: any): JSX.Element => (
-                                    <Select.Option key={label.id} value={`${label.id}`}>
-                                        {label.name}
-                                    </Select.Option>
-                                ),
-                            )}
-                        </Select>
+                            labels={labels}
+                            value={activeLabelID}
+                            onChange={(label: any) => this.setState({ activeLabelID: label.id })}
+                        />
                     </Col>
                 </Row>
                 <Row justify='start' className='cvat-opencv-drawing-tools'>
