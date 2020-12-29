@@ -174,6 +174,7 @@ context('Group features', () => {
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.reload();
+            cy.closeModalUnsupportedPlatform();
             cy.get('.cvat-canvas-container').should('exist');
         });
 

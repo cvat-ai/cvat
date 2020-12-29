@@ -580,3 +580,11 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
         }
     });
 });
+
+Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
+    if (Cypress.browser.family !== 'chromium') {
+        cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+            cy.contains('button', 'OK').click();
+        });
+    }
+});
