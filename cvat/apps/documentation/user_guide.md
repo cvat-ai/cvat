@@ -103,6 +103,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     **Projects** The project that this task will be related with.
 
+    ![](static/documentation/images/image193.jpg)
+
     **Labels**. There are two ways of working with labels (available only if the task is not related to the project):
 
     - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
