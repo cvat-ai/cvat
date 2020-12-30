@@ -105,7 +105,6 @@ export interface FormatsState {
     initialized: boolean;
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',

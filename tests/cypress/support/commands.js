@@ -151,13 +151,11 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    const pattern = `^(Draw new|Setup) ${objectType}$`;
-    const regex = new RegExp(pattern, 'g');
-    cy.contains(regex)
-        .parents('.cvat-draw-shape-popover-content')
-        .within(() => {
-            cy.get('.ant-select-selection-item').click();
-        });
+    cy.get(
+        objectType === 'tag' ? '.cvat-setup-tag-popover-visible' : `.cvat-draw-${objectType}-popover-visible`,
+    ).within(() => {
+        cy.get('.ant-select-selection-item').click();
+    });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
@@ -437,7 +435,7 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
         });
 });
 
-Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
+Cypress.Commands.add('collectLabelsName', () => {
     let listCvatConstructorViewerItemText = [];
     cy.get('.cvat-constructor-viewer').should('exist');
     cy.document().then((doc) => {
@@ -445,7 +443,13 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
         for (let i = 0; i < labels.length; i++) {
             listCvatConstructorViewerItemText.push(labels[i].textContent);
         }
-        if (listCvatConstructorViewerItemText.indexOf(newLabelName) === -1) {
+        return listCvatConstructorViewerItemText;
+    });
+});
+
+Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
+    cy.collectLabelsName().then((labelsNames) => {
+        if (labelsNames.indexOf(newLabelName) === -1) {
             cy.contains('button', 'Add label').click();
             cy.get('[placeholder="Label name"]').type(newLabelName);
             if (labelColor) {
@@ -462,11 +466,27 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
     });
 });
 
+Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
+    cy.collectLabelsName().then((labelsNames) => {
+        if (additionalLabels.some((el) => labelsNames.indexOf(el) === -1)) {
+            cy.contains('button', 'Add label').click();
+            for (let j = 0; j < additionalLabels.length; j++) {
+                cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
+                if (j !== additionalLabels.length - 1) {
+                    cy.contains('button', 'Continue').click();
+                } else {
+                    cy.contains('button', 'Done').click();
+                }
+            }
+        }
+    });
+});
+
 Cypress.Commands.add('createTag', (labelName) => {
     cy.get('.cvat-setup-tag-control').click();
     cy.switchLabel(labelName, 'tag');
     cy.contains('Setup tag')
-        .parents('.cvat-draw-shape-popover-content')
+        .parents('.cvat-setup-tag-popover-content')
         .within(() => {
             cy.get('button').click();
         });
@@ -572,4 +592,12 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
             }
         }
     });
+});
+
+Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
+    if (Cypress.browser.family !== 'chromium') {
+        cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
+            cy.contains('button', 'OK').click();
+        });
+    }
 });

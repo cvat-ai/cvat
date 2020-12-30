@@ -8,8 +8,8 @@ import {
     MergeData,
     SplitData,
     GroupData,
-    InteractionData,
-    InteractionResult,
+    InteractionData as _InteractionData,
+    InteractionResult as _InteractionResult,
     CanvasModel,
     CanvasModelImpl,
     RectDrawingMethod,
@@ -165,13 +165,9 @@ class CanvasImpl implements Canvas {
     }
 }
 
+export type InteractionData = _InteractionData;
+export type InteractionResult = _InteractionResult;
+
 export {
-    CanvasImpl as Canvas,
-    CanvasVersion,
-    Configuration,
-    RectDrawingMethod,
-    CuboidDrawingMethod,
-    Mode as CanvasMode,
-    InteractionData,
-    InteractionResult,
+    CanvasImpl as Canvas, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
 };
