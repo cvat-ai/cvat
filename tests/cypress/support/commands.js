@@ -549,6 +549,21 @@ Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
         });
 });
 
+Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
+    if (clear) {
+        cy.get('.cvat-annotations-filters-input').within(() => {
+            cy.get('.ant-select-selection-item-remove').click();
+        });
+    }
+    cy.get('body').click();
+    cy.get('.cvat-annotations-filters-input').click();
+    cy.contains('.cvat-annotations-filters-input-history-element', filterValue).scrollIntoView().click();
+    cy.get('body').click();
+    cy.get('.cvat-annotations-filters-input').within(() => {
+        cy.contains('.ant-select-selection-item-content', filterValue);
+    });
+});
+
 Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').clear().type(`${frameNum}{Enter}`).should('have.value', frameNum);
