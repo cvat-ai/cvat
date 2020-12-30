@@ -10,11 +10,8 @@ require('cypress-plugin-tab');
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
         cy.visit('/');
-        cy.get('.ant-modal-body').within(() => {
-            cy.get('.ant-modal-confirm-title').should('contain', 'Unsupported platform detected');
-            cy.get('.ant-modal-confirm-btns').contains('OK').click();
-        });
     }
+    cy.closeModalUnsupportedPlatform();
 });
 
 const resizeObserverLoopErrRe = /^[^(ResizeObserver loop limit exceeded)]/;

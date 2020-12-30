@@ -32,6 +32,7 @@ import {
 import { InteractionResult } from 'cvat-canvas/src/typescript/canvas';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -746,6 +747,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
+        const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
         const dynamcPopoverPros = isActivated ?
             {
@@ -781,14 +783,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}
                 </Modal>
-                <Popover
-                    {...dynamcPopoverPros}
-                    placement='right'
-                    overlayClassName='cvat-tools-control-popover'
-                    content={this.renderPopoverContent()}
-                >
+                <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
-                </Popover>
+                </CustomPopover>
             </>
         );
     }
