@@ -36,7 +36,7 @@
     /**
      * Task dimension
      * @enum
-     * @name TaskDimension
+     * @name DimensionType
      * @memberof module:API.cvat.enums
      * @property {string} DIMENSION_2D '2d'
      * @property {string} DIMENSION_3D '3d'

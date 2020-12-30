@@ -15,7 +15,7 @@
                 format: initialData.ext,
                 version: initialData.version,
                 enabled: initialData.enabled,
-                dimension: initialData.dimension
+                dimension: initialData.dimension,
             };
 
             Object.defineProperties(this, {
@@ -63,7 +63,7 @@
                     /**
                      * @name dimension
                      * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
+                     * @memberof module:API.cvat.enums.DimensionType
                      * @readonly
                      * @instance
                      */
@@ -85,7 +85,7 @@
                 format: initialData.ext,
                 version: initialData.version,
                 enabled: initialData.enabled,
-                dimension: initialData.dimension
+                dimension: initialData.dimension,
             };
 
             Object.defineProperties(this, {
@@ -133,7 +133,7 @@
                     /**
                      * @name dimension
                      * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
+                     * @memberof module:API.cvat.enums.DimensionType
                      * @readonly
                      * @instance
                      */

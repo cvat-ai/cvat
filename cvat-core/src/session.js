@@ -974,7 +974,7 @@
                 use_zip_chunks: undefined,
                 use_cache: undefined,
                 copy_data: undefined,
-                dimension: undefined
+                dimension: undefined,
             };
 
             let updatedFields = {
@@ -1454,15 +1454,15 @@
                         },
                     },
                     dimension: {
-                    /**
-                     * @name enabled
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.dimension,
-                },
+                        /**
+                         * @name enabled
+                         * @type {string}
+                         * @memberof module:API.cvat.enums.DimensionType
+                         * @readonly
+                         * @instance
+                         */
+                        get: () => data.dimension,
+                    },
                 }),
             );
 

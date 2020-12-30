@@ -14,7 +14,6 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
-import {DimensionType} from '../../reducers/interfaces'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
@@ -22,6 +21,7 @@ import { Model, StringObject } from 'reducers/interfaces';
 
 import { clamp } from 'utils/math';
 import consts from 'consts';
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     withCleanup: boolean;

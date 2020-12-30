@@ -11,7 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
 import ExportSubmenu from './export-submenu';
-import {DimensionType} from "../../reducers/interfaces";
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     taskID: number;
@@ -23,7 +23,7 @@ interface Props {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     inferenceIsActive: boolean;
-    taskDimension: DimensionType.DIM_3D | DimensionType.DIM_2D;
+    taskDimension: DimensionType;
     onClickMenu: (params: MenuInfo, file?: File) => void;
 }
 
