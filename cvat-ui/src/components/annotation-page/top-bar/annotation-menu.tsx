@@ -161,7 +161,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 dumpers,
                 dumpActivities,
                 menuKey: Actions.DUMP_TASK_ANNO,
-                taskDimension:jobInstance.task.dimension
+                taskDimension: jobInstance.task.dimension
             })}
             {LoadSubmenu({
                 loaders,
@@ -170,7 +170,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     onClickMenuWrapper(null, file);
                 },
                 menuKey: Actions.LOAD_JOB_ANNO,
-                taskDimension:jobInstance.task.dimension
+                taskDimension: jobInstance.task.dimension
             })}
             {ExportSubmenu({
                 exporters: dumpers,
