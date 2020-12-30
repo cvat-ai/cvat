@@ -25,6 +25,7 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
     cy.visit('/auth/login'); // clear query parameter "next"
+    cy.closeModalUnsupportedPlatform();
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
@@ -53,6 +54,7 @@ Cypress.Commands.add(
         forProject = false,
         attachToProject = false,
         projectName,
+        expectedResult = 'success',
     ) => {
         cy.get('#cvat-create-task-button').click({ force: true });
         cy.url().should('include', '/tasks/create');
@@ -88,7 +90,9 @@ Cypress.Commands.add(
             cy.advancedConfiguration(advancedConfigurationParams);
         }
         cy.contains('button', 'Submit').click();
-        cy.contains('The task has been created');
+        if (expectedResult === 'success') {
+            cy.contains('The task has been created');
+        }
         if (!forProject) {
             cy.goToTaskList();
         } else {
