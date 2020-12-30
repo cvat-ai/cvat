@@ -222,6 +222,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         changePassword: {
                             message: 'Could not change password',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-change-password-failed',
                         },
                     },
                 },

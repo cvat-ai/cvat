@@ -15,7 +15,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.get('[placeholder="Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
-    cy.url().should('include', '/tasks');
+    cy.url().should('match', /\/tasks$/);
 });
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
