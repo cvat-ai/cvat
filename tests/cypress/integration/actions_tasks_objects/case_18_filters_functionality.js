@@ -102,7 +102,6 @@ context('Filters functionality.', () => {
                 }
             });
         });
-
         it('Filter: shape=="polygon". Only the polygon exist.', () => {
             const textFilter = 'shape=="polygon"';
             cvatFiltesList.push(textFilter);
@@ -161,9 +160,7 @@ context('Filters functionality.', () => {
         });
         it('Verify to show all filters', () => {
             cvatFiltesList.forEach(function (filterValue) {
-                cy.contains('.cvat-annotations-filters-input-history-element', filterValue)
-                    .scrollIntoView()
-                    .should('be.visible');
+                cy.contains('.cvat-annotations-filters-input-history-element', filterValue);
             });
         });
         it('Select filter: type=="shape"', () => {
