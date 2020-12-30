@@ -22,11 +22,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Login', () => {
-            if (Cypress.browser.family !== 'chromium') {
-                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
-                    cy.contains('button', 'OK').click();
-                });
-            }
+            cy.closeModalUnsupportedPlatform();
             cy.login();
         });
 
@@ -35,11 +31,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
         });
 
         it('Login and open task', () => {
-            if (Cypress.browser.family !== 'chromium') {
-                cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
-                    cy.contains('button', 'OK').click();
-                });
-            }
+            cy.closeModalUnsupportedPlatform();
             cy.login();
             cy.openTask(taskName);
             // get id task
@@ -79,11 +71,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
                 const csrfToken = responce[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
                 const sessionId = responce[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
                 cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
-                if (Cypress.browser.family !== 'chromium') {
-                    cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
-                        cy.contains('button', 'OK').click();
-                    });
-                }
+                cy.closeModalUnsupportedPlatform();
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });
         });
