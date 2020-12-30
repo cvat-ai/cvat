@@ -100,6 +100,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
             login('randomUser123', 'randomPassword123');
             cy.url().should('include', '/auth/login');
             cy.get('.cvat-notification-notice-login-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-login-failed');
         });
     });
 });
