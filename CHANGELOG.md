@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Memory consumption for the task creation process (<https://github.com/openvinotoolkit/cvat/pull/2582>)
 - Frame preloading (<https://github.com/openvinotoolkit/cvat/pull/2608>)
+- Project cannot be removed from the project page (<https://github.com/openvinotoolkit/cvat/pull/2626>)
 
 ### Security
 

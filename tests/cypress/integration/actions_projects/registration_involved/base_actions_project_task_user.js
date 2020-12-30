@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { projectName } from '../../support/const_project';
+import { projectName } from '../../../support/const_project';
 
 const randomString = (isPassword) => {
     let result = '';

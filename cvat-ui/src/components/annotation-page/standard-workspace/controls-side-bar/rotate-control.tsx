@@ -10,6 +10,8 @@ import Popover from 'antd/lib/popover';
 import { RotateIcon } from 'icons';
 import { Rotation } from 'reducers/interfaces';
 
+import withVisibilityHandling from './handle-popover-visibility';
+
 interface Props {
     clockwiseShortcut: string;
     anticlockwiseShortcut: string;
@@ -18,10 +20,10 @@ interface Props {
 
 function RotateControl(props: Props): JSX.Element {
     const { anticlockwiseShortcut, clockwiseShortcut, rotateFrame } = props;
+    const CustomPopover = withVisibilityHandling(Popover, 'rotate-canvas');
 
     return (
-        <Popover
-            overlayClassName='cvat-rotate-canvas-controls'
+        <CustomPopover
             placement='right'
             content={(
                 <>
@@ -52,7 +54,7 @@ function RotateControl(props: Props): JSX.Element {
             trigger='hover'
         >
             <Icon className='cvat-rotate-canvas-control' component={RotateIcon} />
-        </Popover>
+        </CustomPopover>
     );
 }
 
