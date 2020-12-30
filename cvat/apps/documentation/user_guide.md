@@ -325,8 +325,8 @@ Here you can do the following:
   1. Change labels.
   You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
   You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
-  1. `Tasks` — is a list of all tasks for a particular project.
   1. Assigned to — is used to assign a project to a person. Start typing an assignee's name and/or choose the right person out of the dropdown list.
+  1. `Tasks` — is a list of all tasks for a particular project.
 
 You can remove the project and all related tasks through the Action menu.
 
