@@ -12,6 +12,7 @@
   "testFiles": [
     "auth_page.js",
     "actions_tasks_objects/*",
+    "actions_projects/*",
     "actions_users/*",
     "email_system/*",
     "remove_users_tasks_projects.js"
