@@ -37,6 +37,11 @@ context('Multiple users. Assign task, job.', () => {
         password: 'Fv5Df3#f55g',
     };
 
+    before(() => {
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
+        cy.createZipArchive(directoryToArchive, archivePath);
+    });
+
     after(() => {
         cy.login();
         cy.getTaskID(taskName).then(($taskID) => {
@@ -87,8 +92,6 @@ context('Multiple users. Assign task, job.', () => {
         });
         it('First user login, create a task and logout', () => {
             cy.login();
-            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(directoryToArchive, archivePath);
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
             cy.logout();
         });
