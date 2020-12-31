@@ -108,7 +108,7 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200) => {
     cy.wait('@saveJob').its('status').should('equal', status);
 });
 
-Cypress.Commands.add('getJobNum', (jobNumber) => {
+Cypress.Commands.add('getJobNum', (jobID) => {
     cy.get('.cvat-task-jobs-table')
         .contains(/^0-/)
         .parents('.cvat-task-jobs-table-row')
@@ -116,21 +116,21 @@ Cypress.Commands.add('getJobNum', (jobNumber) => {
         .eq(0)
         .invoke('text')
         .then(($tdText) => {
-            return Number($tdText.match(/\d+/g)) + jobNumber;
+            return Number($tdText.match(/\d+/g)) + jobID;
         });
 });
 
-Cypress.Commands.add('openJob', (jobNumber = 0) => {
-    cy.getJobNum(jobNumber).then(($job) => {
+Cypress.Commands.add('openJob', (jobID = 0) => {
+    cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
     cy.get('.cvat-canvas-container').should('exist');
 });
 
-Cypress.Commands.add('openTaskJob', (taskName, jobNumber = 0) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobID = 0) => {
     cy.openTask(taskName);
-    cy.openJob(jobNumber);
+    cy.openJob(jobID);
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {

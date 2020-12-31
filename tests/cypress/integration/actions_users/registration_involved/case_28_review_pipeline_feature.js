@@ -374,24 +374,20 @@ context('Review pipeline feature', () => {
         });
 
         it('Issue navigation. Navigation works and go only to frames with issues.', () => {
-            cy.get('.cvat-objects-sidebar-issues-list-header-left')
-                .should('have.attr', 'style')
-                .and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-objects-sidebar-issues-list-header-right').click();
+            cy.get('.cvat-issues-sidebar-previous-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
+            cy.get('.cvat-issues-sidebar-next-frame').click();
             cy.checkFrameNum(2); // Frame changed to 2
-            cy.get('.cvat-objects-sidebar-issues-list-header-right')
-                .should('have.attr', 'style')
-                .and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-objects-sidebar-issues-list-header-left').click();
+            cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
+            cy.get('.cvat-issues-sidebar-previous-frame').click();
             cy.checkFrameNum(0); // Frame changed to 0
         });
 
         it('Hide all issues. All issues are hidden on all frames.', () => {
-            cy.get('.cvat-objects-sidebar-issues-list-header-shown').click();
+            cy.get('.cvat-issues-sidebar-shown-issues').click();
             cy.get('.cvat-hidden-issue-label').should('not.exist');
-            cy.get('.cvat-objects-sidebar-issues-list-header-right').click();
+            cy.get('.cvat-issues-sidebar-next-frame').click();
             cy.get('.cvat-hidden-issue-label').should('not.exist');
-            cy.get('.cvat-objects-sidebar-issues-list-header-left').click();
+            cy.get('.cvat-issues-sidebar-previous-frame').click();
         });
 
         it('Display all the issues again. Comment a couple of issues and resolve all them.', () => {
@@ -403,11 +399,11 @@ context('Review pipeline feature', () => {
                 });
             }
 
-            cy.get('.cvat-objects-sidebar-issues-list-header-hidden').click();
+            cy.get('.cvat-issues-sidebar-hidden-issues').click();
             cy.get('.cvat-hidden-issue-label').should('exist').and('have.length', 4);
-            cy.get('.cvat-objects-sidebar-issues-list-header-right').click();
+            cy.get('.cvat-issues-sidebar-next-frame').click();
             cy.get('.cvat-hidden-issue-label').should('exist').and('have.length', 1);
-            cy.get('.cvat-objects-sidebar-issues-list-header-left').click();
+            cy.get('.cvat-issues-sidebar-previous-frame').click();
 
             resolveIssue();
             cy.checkIssueLabel('Done', 'resolved');

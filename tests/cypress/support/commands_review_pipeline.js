@@ -14,8 +14,8 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
         .click();
 });
 
-Cypress.Commands.add('assignJobToUser', (jobNumber, user) => {
-    cy.getJobNum(jobNumber).then(($job) => {
+Cypress.Commands.add('assignJobToUser', (jobID, user) => {
+    cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table')
             .contains('a', `Job #${$job}`)
             .parents('.cvat-task-jobs-table-row')
@@ -28,8 +28,8 @@ Cypress.Commands.add('assignJobToUser', (jobNumber, user) => {
         .click();
 });
 
-Cypress.Commands.add('checkJobStatus', (jobNumber, status, assignee, reviewer) => {
-    cy.getJobNum(jobNumber).then(($job) => {
+Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {
+    cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table')
             .contains('a', `Job #${$job}`)
             .parents('.cvat-task-jobs-table-row')
