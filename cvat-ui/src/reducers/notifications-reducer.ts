@@ -146,6 +146,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         login: {
                             message: 'Could not login on the server',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-login-failed',
                         },
                     },
                 },

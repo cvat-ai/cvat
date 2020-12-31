@@ -25,6 +25,7 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
     cy.visit('/auth/login'); // clear query parameter "next"
+    cy.closeModalUnsupportedPlatform();
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
@@ -584,6 +585,11 @@ Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
 Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
     cy.get('.cvat-player-previous-button').click();
     cy.checkFrameNum(expectedFrameNum);
+});
+
+Cypress.Commands.add('closeNotification', (className) => {
+    cy.get(className).find('span[aria-label="close"]').click();
+    cy.get(className).should('not.exist');
 });
 
 Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
