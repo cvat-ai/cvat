@@ -7,7 +7,6 @@
 import { taskName, labelName } from '../../support/const';
 
 context('Check error сannot read property at saving job', () => {
-
     const prId = '2203';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
@@ -25,7 +24,7 @@ context('Check error сannot read property at saving job', () => {
 
     after('Remove annotations and save job', () => {
         cy.removeAnnotations();
-        cy.saveJob();
+        cy.saveJob('PUT');
     });
 
     describe(`Testing pr "${prId}"`, () => {

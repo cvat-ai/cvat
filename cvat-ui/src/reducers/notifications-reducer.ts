@@ -688,6 +688,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         saving: {
                             message: 'Could not save annotations',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-save-annotations-failed',
                         },
                     },
                 },

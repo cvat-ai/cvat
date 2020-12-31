@@ -69,6 +69,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 Modal.confirm({
                     title: 'The job has unsaved annotations',
                     content: 'Would you like to save changes before continue?',
+                    className: 'cvat-modal-content-save-job',
                     okButtonProps: {
                         children: 'Save',
                     },
@@ -135,6 +136,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 content: 'Status will be changed to "completed". Would you like to continue?',
                 okText: 'Continue',
                 cancelText: 'Cancel',
+                className: 'cvat-modal-content-finish-job',
                 onOk: () => {
                     checkUnsavedChanges(copyParams);
                 },
@@ -145,6 +147,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 content: 'Status will be changed to "annotations". Would you like to continue?',
                 okText: 'Continue',
                 cancelText: 'Cancel',
+                className: 'cvat-modal-content-renew-job',
                 onOk: () => {
                     onClickMenu(copyParams);
                 },
