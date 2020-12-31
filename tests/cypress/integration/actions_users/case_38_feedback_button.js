@@ -22,14 +22,10 @@ context('Check feedback button.', () => {
                 .should('be.visible')
                 .within(() => {
                     cy.get('a').then(($a) => {
-                        const hrefValue = [];
-                        for (let i = 0; i < $a.length; i++) {
-                            hrefValue.push($a[i].href);
-                        }
-                        expect(hrefValue.length).be.equal(3);
-                        expect(hrefValue[0]).be.eq('https://github.com/openvinotoolkit/cvat');
-                        expect(hrefValue[1]).be.eq('https://gitter.im/opencv-cvat/public');
-                        expect(hrefValue[2]).be.eq(hrefValue[1]);
+                        expect($a.length).be.equal(3);
+                        expect($a[0].href).be.eq('https://github.com/openvinotoolkit/cvat');
+                        expect($a[1].href).be.eq('https://gitter.im/opencv-cvat/public');
+                        expect($a[2].href).be.eq($a[1].href);
                     });
                     const socialNetworkList = [
                         'facebook',
