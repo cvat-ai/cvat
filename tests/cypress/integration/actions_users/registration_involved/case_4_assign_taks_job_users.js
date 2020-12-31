@@ -123,7 +123,7 @@ context('Multiple users. Assign task, job.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
-            cy.assignJobToUser(thirdUserName);
+            cy.assignJobToUser(0, thirdUserName);
             cy.logout();
         });
         it('Third user login. Tries to delete task. The task can be opened.', () => {

@@ -58,7 +58,7 @@ context('Label constructor. Color label.', () => {
 
     after('Remove annotation and save job.', () => {
         cy.removeAnnotations();
-        cy.saveJob();
+        cy.saveJob('PUT');
     });
 
     describe(`Testing case "${caseId}"`, () => {

@@ -146,6 +146,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         login: {
                             message: 'Could not login on the server',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-login-failed',
                         },
                     },
                 },
@@ -222,6 +223,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         changePassword: {
                             message: 'Could not change password',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-change-password-failed',
                         },
                     },
                 },
@@ -689,6 +691,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         saving: {
                             message: 'Could not save annotations',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-save-annotations-failed',
                         },
                     },
                 },

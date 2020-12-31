@@ -24,7 +24,7 @@ context('Dump annotation if cuboid created', () => {
 
     after('Go to task list', () => {
         cy.removeAnnotations();
-        cy.saveJob();
+        cy.saveJob('PUT');
     });
 
     describe(`Testing issue "${issueId}"`, () => {

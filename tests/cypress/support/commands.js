@@ -15,7 +15,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.get('[placeholder="Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
-    cy.url().should('include', '/tasks');
+    cy.url().should('match', /\/tasks$/);
 });
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
@@ -106,31 +106,35 @@ Cypress.Commands.add('openTask', (taskName) => {
     cy.get('.cvat-task-details').should('exist');
 });
 
-Cypress.Commands.add('saveJob', () => {
-    cy.server().route('POST', '/api/v1/server/logs').as('sendLogs');
+Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200) => {
+    cy.server().route(method, '/api/v1/jobs/**').as('saveJob');
     cy.get('button').contains('Save').click({ force: true });
-    cy.wait('@sendLogs').its('status').should('equal', 201);
+    cy.wait('@saveJob').its('status').should('equal', status);
 });
 
-Cypress.Commands.add('openJob', (jobNumber = 0) => {
-    let tdText = '';
-    cy.get('.ant-table-tbody')
+Cypress.Commands.add('getJobNum', (jobID) => {
+    cy.get('.cvat-task-jobs-table')
         .contains(/^0-/)
-        .parent()
+        .parents('.cvat-task-jobs-table-row')
         .find('td')
         .eq(0)
         .invoke('text')
         .then(($tdText) => {
-            tdText = Number($tdText.match(/\d+/g)) + jobNumber;
-            cy.get('.ant-table-tbody').contains('a', `Job #${tdText}`).click();
+            return Number($tdText.match(/\d+/g)) + jobID;
         });
+});
+
+Cypress.Commands.add('openJob', (jobID = 0) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
+    });
     cy.url().should('include', '/jobs');
     cy.get('.cvat-canvas-container').should('exist');
 });
 
-Cypress.Commands.add('openTaskJob', (taskName, jobNumber = 0) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobID = 0) => {
     cy.openTask(taskName);
-    cy.openJob(jobNumber);
+    cy.openJob(jobID);
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
@@ -508,30 +512,6 @@ Cypress.Commands.add('goToRegisterPage', () => {
     cy.url().should('include', '/auth/register');
 });
 
-Cypress.Commands.add('assignTaskToUser', (user) => {
-    cy.get('.cvat-task-details-user-block').within(() => {
-        cy.get('.cvat-user-search-field').click().type(user);
-        cy.wait(300);
-    });
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .within(() => {
-            cy.get(`.ant-select-item-option[title="${user}"]`).click();
-        });
-});
-
-Cypress.Commands.add('assignJobToUser', (user) => {
-    cy.get('.cvat-task-job-list').within(() => {
-        cy.get('.cvat-job-assignee-selector').click().type(user);
-        cy.wait(300);
-    });
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .within(() => {
-            cy.get(`.ant-select-item-option[title="${user}"]`).click();
-        });
-});
-
 Cypress.Commands.add('getScaleValue', () => {
     cy.get('#cvat_canvas_background')
         .should('have.attr', 'style')
@@ -553,9 +533,27 @@ Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
         });
 });
 
+Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
+    if (clear) {
+        cy.get('.cvat-annotations-filters-input').within(() => {
+            cy.get('.ant-select-selection-item-remove').click();
+        });
+    }
+    cy.get('body').click();
+    cy.get('.cvat-annotations-filters-input').click();
+    cy.contains('.cvat-annotations-filters-input-history-element', filterValue).scrollIntoView().click();
+    cy.get('body').click();
+    cy.get('.cvat-annotations-filters-input').within(() => {
+        cy.contains('.ant-select-selection-item-content', filterValue);
+    });
+});
+
 Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
-        cy.get('input[role="spinbutton"]').clear().type(`${frameNum}{Enter}`).should('have.value', frameNum);
+        cy.get('input[role="spinbutton"]')
+            .clear({ force: true })
+            .type(`${frameNum}{Enter}`, { force: true })
+            .should('have.value', frameNum);
     });
 });
 
@@ -573,6 +571,13 @@ Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
 Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
     cy.get('.cvat-player-previous-button').click();
     cy.checkFrameNum(expectedFrameNum);
+});
+
+Cypress.Commands.add('interactMenu', (choice) => {
+    cy.contains('.cvat-annotation-header-button', 'Menu').click();
+    cy.get('.cvat-annotation-menu').within(() => {
+        cy.contains(new RegExp(`^${choice}$`, 'g')).click();
+    });
 });
 
 Cypress.Commands.add('closeNotification', (className) => {
