@@ -47,6 +47,7 @@ function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.E
 
     return (
         <Modal
+            className='cvat-modal-change-password'
             title={<Title level={3}>Change password</Title>}
             okType='primary'
             okText='Submit'

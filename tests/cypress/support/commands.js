@@ -15,7 +15,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.get('[placeholder="Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
-    cy.url().should('include', '/tasks');
+    cy.url().should('match', /\/tasks$/);
 });
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
@@ -527,6 +527,21 @@ Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
         .within(() => {
             cy.get('.ant-select-selection-item-content').should('have.text', filterValue);
         });
+});
+
+Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
+    if (clear) {
+        cy.get('.cvat-annotations-filters-input').within(() => {
+            cy.get('.ant-select-selection-item-remove').click();
+        });
+    }
+    cy.get('body').click();
+    cy.get('.cvat-annotations-filters-input').click();
+    cy.contains('.cvat-annotations-filters-input-history-element', filterValue).scrollIntoView().click();
+    cy.get('body').click();
+    cy.get('.cvat-annotations-filters-input').within(() => {
+        cy.contains('.ant-select-selection-item-content', filterValue);
+    });
 });
 
 Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
