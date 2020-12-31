@@ -158,7 +158,7 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
         >
             {annotationsFiltersHistory.map(
                 (element: string): JSX.Element => (
-                    <Select.Option key={element} value={element}>
+                    <Select.Option key={element} value={element} className='cvat-annotations-filters-input-history-element'>
                         {element}
                     </Select.Option>
                 ),
