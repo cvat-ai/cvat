@@ -77,6 +77,7 @@ class LambdaGateway:
         # simple solution.
         return self._http(method="post", url='/api/function_invocations',
             data=payload, headers={
+                'x-nuclio-invoke-via': 'domain-name',
                 'x-nuclio-function-name': func.id,
                 'x-nuclio-path': '/'
             })
