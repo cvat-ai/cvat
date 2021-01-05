@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {Canvas3dController} from './canvas3dController';
-import {Listener, Master} from './master';
+import { Canvas3dController } from './canvas3dController';
+import { Listener, Master } from './master';
 
 import consts from './consts';
 import * as THREE from 'three';
-import {PCDLoader} from 'three/examples/jsm/loaders/PCDLoader.js';
+import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js';
 
 
 import {
@@ -61,7 +61,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private stateIsLocked(state: any): boolean {
-        const {configuration} = this.controller;
+        const { configuration } = this.controller;
         return state.lock || configuration.forceDisableEditing;
     }
 
@@ -91,7 +91,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.camera.lookAt(0, 0, 0);
         this.scene.add(this.camera);
 
-        this.renderer = new THREE.WebGLRenderer({antialias: true});
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
 

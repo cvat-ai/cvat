@@ -98,7 +98,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onURLIconClick,
         onUndoClick,
         onRedoClick,
-        jobInstance
+        jobInstance,
     } = props;
 
     return (
