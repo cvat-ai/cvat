@@ -402,10 +402,10 @@ export interface AnnotationState {
         };
         playing: boolean;
         frameAngles: number[];
-        context_image : {
-            loaded : boolean;
-            data : string;
-            hide : boolean;
+        context_image: {
+            loaded: boolean;
+            data: string;
+            hide: boolean;
         }
     };
     drawing: {

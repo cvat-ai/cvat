@@ -1,4 +1,4 @@
-import {MasterImpl} from './master';
+import { MasterImpl } from './master';
 
 export interface Size {
     width: number;
@@ -260,7 +260,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public fit(): void {
-        const {angle} = this.data;
+        const { angle } = this.data;
 
         if ((angle / 90) % 2) {
             // 90, 270, ..
@@ -285,7 +285,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
 
     public get configuration(): Configuration {
-        return {...this.data.configuration};
+        return { ...this.data.configuration };
     }
 
     public setup(frameData: any, objectStates: any[], zLayer: number): void {
