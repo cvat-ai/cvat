@@ -13,8 +13,14 @@ const BlockType = Object.freeze({
     ARCHIVE: 'archive',
 });
 
+const DimensionType = Object.freeze({
+    DIM_3D: '3d',
+    DIM_2D: '2d',
+});
+
+
 class FrameProvider {
-    constructor(blockType, blockSize, cachedBlockCount, decodedBlocksCacheSize = 5, maxWorkerThreadCount = 2) {
+    constructor(blockType, blockSize, cachedBlockCount, decodedBlocksCacheSize = 5, maxWorkerThreadCount = 2, dimension) {
         this._frames = {};
         this._cachedBlockCount = Math.max(1, cachedBlockCount); // number of stored blocks
         this._decodedBlocksCacheSize = decodedBlocksCacheSize;
@@ -33,6 +39,7 @@ class FrameProvider {
         this._mutex = new Mutex();
         this._promisedFrames = {};
         this._maxWorkerThreadCount = maxWorkerThreadCount;
+        this._dimension = dimension;
     }
 
     async _worker() {
@@ -291,7 +298,7 @@ class FrameProvider {
                 };
 
                 worker.onmessage = async (event) => {
-                    if (event.data.isRaw) {
+                    if (this._dimension === DimensionType.DIM_2D && event.data.isRaw) {
                         // safary doesn't support createImageBitmap
                         // there is a way to polyfill it with using document.createElement
                         // but document.createElement doesn't work in worker
@@ -328,8 +335,8 @@ class FrameProvider {
                     }
                     index++;
                 };
-
-                worker.postMessage({ block, start, end });
+                const dimension = this._dimension
+                worker.postMessage({ block, start, end, dimension, dimension2D: DimensionType.DIM_2D });
                 this._decodeThreadCount++;
             }
         } finally {
@@ -357,4 +364,5 @@ class FrameProvider {
 module.exports = {
     FrameProvider,
     BlockType,
+    DimensionType
 };

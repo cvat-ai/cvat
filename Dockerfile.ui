@@ -20,6 +20,7 @@ RUN apk add python3 g++ make
 # Install dependencies
 COPY cvat-core/package*.json /tmp/cvat-core/
 COPY cvat-canvas/package*.json /tmp/cvat-canvas/
+COPY cvat-canvas3d/package*.json /tmp/cvat-canvas3d/
 COPY cvat-ui/package*.json /tmp/cvat-ui/
 COPY cvat-data/package*.json /tmp/cvat-data/
 
@@ -35,6 +36,10 @@ RUN npm ci
 WORKDIR /tmp/cvat-canvas/
 RUN npm ci
 
+# Install cvat-canvas dependencies
+WORKDIR /tmp/cvat-canvas3d/
+RUN npm ci
+
 # Install cvat-ui dependencies
 WORKDIR /tmp/cvat-ui/
 RUN npm ci
@@ -42,6 +47,7 @@ RUN npm ci
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
 COPY cvat-core/ /tmp/cvat-core/
+COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
 RUN npm run build
