@@ -6,6 +6,7 @@ import React from 'react';
 import { AnyAction } from 'redux';
 
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
@@ -16,7 +17,7 @@ import {
     ObjectType,
     ContextMenuType,
     Workspace,
-    TaskStatus,
+    TaskStatus, DimensionType,
 } from './interfaces';
 
 const defaultState: AnnotationState = {
@@ -55,6 +56,11 @@ const defaultState: AnnotationState = {
         },
         playing: false,
         frameAngles: [],
+        context_image : {
+            loaded : false,
+            data : "",
+            hide: false
+        },
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -176,10 +182,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: new Canvas(),
+                    instance:  job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                workspace: isReview ? Workspace.REVIEW_WORKSPACE : Workspace.STANDARD,
+                workspace: isReview ? Workspace.REVIEW_WORKSPACE :job.task.dimension === DimensionType.DIM_2D ? Workspace.STANDARD : Workspace.STANDARD3D ,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -201,6 +207,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.player.frame,
                         fetching: false,
                     },
+                    context_image : {
+                        loaded : false,
+                        data : "",
+                        hide: state.player.context_image.hide
+                    }
                 },
             };
         }
@@ -243,6 +254,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         changeTime,
                         delay,
                     },
+                    context_image:{
+                    ...state.player.context_image,
+                        loaded: false,
+                    }
                 },
                 annotations: {
                     ...state.annotations,
@@ -1074,6 +1089,36 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
+        const { hide } = action.payload;
+
+        return {
+            ...state,
+            player: {
+                ...state.player,
+                context_image : {
+                    loaded : state.player.context_image.loaded,
+                    data : state.player.context_image.data,
+                    hide : hide
+                }
+            },
+        };
+    }
+    case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
+        const { context,loaded } = action.payload;
+
+        return {
+            ...state,
+            player: {
+                ...state.player,
+                context_image : {
+                    loaded : loaded,
+                    data : context,
+                    hide : state.player.context_image.hide
+                }
+            },
+        };
+    }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

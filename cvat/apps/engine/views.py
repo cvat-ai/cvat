@@ -4,11 +4,13 @@
 
 import os
 import os.path as osp
+import io
 import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
+import PIL
 
 import django_rq
 from django.shortcuts import get_object_or_404
@@ -39,7 +41,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
-    Comment, StorageMethodChoice, ReviewStatus, StorageChoice
+    Comment, StorageMethodChoice, ReviewStatus, StorageChoice, DimensionType, Image
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
@@ -391,7 +393,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @swagger_auto_schema(method='get', operation_summary='Method returns data for a specific task',
         manual_parameters=[
             openapi.Parameter('type', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
-                enum=['chunk', 'frame', 'preview'],
+                enum=['chunk', 'frame', 'preview', 'context_image'],
                 description="Specifies the type of the requested data"),
             openapi.Parameter('quality', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
                 enum=['compressed', 'original'],
@@ -430,7 +432,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             data_id = request.query_params.get('number', None)
             data_quality = request.query_params.get('quality', 'compressed')
 
-            possible_data_type_values = ('chunk', 'frame', 'preview')
+            possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
             possible_quality_values = ('compressed', 'original')
 
             try:
@@ -475,6 +477,22 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                 elif data_type == 'preview':
                     return sendfile(request, frame_provider.get_preview())
+
+                elif data_type == 'context_image':
+                    try:
+                        if db_task.dimension == DimensionType.DIM_3D:
+                            data_id = int(data_id)
+                            image = Image.objects.get(data_id=db_task.data_id, frame=data_id)
+                            for i in image.related_files.all():
+                                path = os.path.realpath(str(i.path))
+                                image = PIL.Image.open(path)
+                                buf = io.BytesIO()
+                                image.save(buf, format='JPEG', optimize=True)
+                                buf.seek(0)
+                                return HttpResponse(buf.getvalue(), content_type="image/jpeg")
+                    except:
+                        return Response(data='unknown data type {}.'.format(data_type),
+                                        status=status.HTTP_400_BAD_REQUEST)
                 else:
                     return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
             except APIException as e:

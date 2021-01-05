@@ -330,6 +330,7 @@ export enum ActiveControl {
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
+    PHOTO_CONTEXT = 'PHOTO_CONTEXT',
 }
 
 export enum ShapeType {
@@ -401,6 +402,11 @@ export interface AnnotationState {
         };
         playing: boolean;
         frameAngles: number[];
+        context_image : {
+            loaded : boolean;
+            data : string;
+            hide : boolean;
+        }
     };
     drawing: {
         activeInteractor?: Model;
@@ -456,6 +462,7 @@ export interface AnnotationState {
 }
 
 export enum Workspace {
+    STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
     TAG_ANNOTATION = 'Tag annotation',
