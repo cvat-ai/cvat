@@ -4,20 +4,20 @@
 
 import '../scss/canvas.scss';
 import pjson from '../../package.json';
-import { Configuration } from "./canvas3dModel";
-import { Canvas3dModelImpl, Canvas3dModel } from './canvas3dModel'
-import {Master} from "./master";
-import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController'
-import { Canvas3dView, Canvas3dViewImpl} from './canvas3dView'
+import { Configuration } from './canvas3dModel';
+import { Canvas3dModelImpl, Canvas3dModel } from './canvas3dModel';
+import { Master } from './master';
+import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
+import { Canvas3dView, Canvas3dViewImpl } from './canvas3dView';
 
 const Canvas3dVersion = pjson.version;
 
 interface Canvas3d {
     html(): any;
-   setup(frameData: any, objectStates: any[], zLayer?: number): void;
-   configure(configuration: Configuration): void;
-   isAbleToChangeFrame(): boolean;
-   fitCanvas(): void;
+    setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    configure(configuration: Configuration): void;
+    isAbleToChangeFrame(): boolean;
+    fitCanvas(): void;
 }
 
 class Canvas3dImpl implements Canvas3d {
@@ -56,7 +56,4 @@ class Canvas3dImpl implements Canvas3d {
     }
 }
 
-export {
-    Canvas3dImpl as Canvas3d,
-    Canvas3dVersion,
-};
+export { Canvas3dImpl as Canvas3d, Canvas3dVersion };
