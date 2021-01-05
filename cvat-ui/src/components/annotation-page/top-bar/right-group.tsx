@@ -8,7 +8,7 @@ import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 
-import {DimensionType, Workspace} from 'reducers/interfaces';
+import { DimensionType, Workspace } from 'reducers/interfaces';
 import { InfoIcon, FullscreenIcon } from 'icons';
 
 interface Props {

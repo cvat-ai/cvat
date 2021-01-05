@@ -8,7 +8,7 @@ import Layout from 'antd/lib/layout/layout';
 
 
 import {
- ObjectType, Workspace,
+    ObjectType, Workspace,
 } from 'reducers/interfaces';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import consts from 'consts';
@@ -29,9 +29,9 @@ interface Props {
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
-    constructor(props){
+    constructor(props) {
         super(props)
-        this.animateID="";
+        this.animateID = "";
     }
 
     public componentDidMount(): void {
@@ -70,13 +70,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     }
 
-    public animateCanvas(){
+    public animateCanvas() {
         const {
-             canvasInstance,
+            canvasInstance,
         } = this.props;
 
         canvasInstance.render()
-        this.animateId= requestAnimationFrame(this.animateCanvas.bind(this))
+        this.animateId = requestAnimationFrame(this.animateCanvas.bind(this))
     }
 
     public componentWillUnmount(): void {

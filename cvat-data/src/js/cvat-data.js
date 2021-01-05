@@ -364,5 +364,5 @@ class FrameProvider {
 module.exports = {
     FrameProvider,
     BlockType,
-    DimensionType
+    DimensionType,
 };

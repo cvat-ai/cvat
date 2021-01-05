@@ -21,9 +21,9 @@ interface StateToProps {
     jobInstance: any;
     frameData: any;
     curZLayer: number;
-    contextImageHide:boolean;
-    loaded:boolean;
-    data:string;
+    contextImageHide: boolean;
+    loaded: boolean;
+    data: string;
     annotations: any[];
 
 }
@@ -37,15 +37,15 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            canvas: {  instance: canvasInstance },
+            canvas: { instance: canvasInstance },
             job: { instance: jobInstance },
             player: {
-                frame: { data: frameData},
-                context_image:{hide:contextImageHide,data:data,loaded:loaded}
+                frame: { data: frameData },
+                context_image: { hide: contextImageHide, data: data, loaded: loaded }
             },
             annotations: {
                 states: annotations,
-                zLayer: { cur: curZLayer},
+                zLayer: { cur: curZLayer },
             },
         },
     } = state;

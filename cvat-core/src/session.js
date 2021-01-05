@@ -8,7 +8,7 @@
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {
-        getFrame, getRanges, getPreview, clear: clearFrames, getContextImage
+        getFrame, getRanges, getPreview, clear: clearFrames, getContextImage,
     } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
@@ -1689,7 +1689,7 @@
             this.stopFrame,
             isPlaying,
             step,
-            this.task.dimension
+            this.task.dimension,
         );
         return frameData;
     };

@@ -13,27 +13,27 @@ import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    hideShowContextImage:any;
-    contextImageHide:boolean;
+    hideShowContextImage: any;
+    contextImageHide: boolean;
 }
 
 function PhotoContextControl(props: Props): JSX.Element {
-    const { activeControl, contextImageHide , hideShowContextImage } = props;
+    const { activeControl, contextImageHide, hideShowContextImage } = props;
 
     return (
         <Tooltip title='Photo context show/hide' placement='right' mouseLeaveDelay={0}>
-        <Icon
-            component={CameraIcon}
-            className={
-                activeControl === ActiveControl.PHOTO_CONTEXT
-                    ? 'cvat-move-control cvat-active-canvas-control'
-                    : 'cvat-move-control'
-            }
-            onClick={(): void => {
-                hideShowContextImage(!contextImageHide)
-            }}
-        />
-    </Tooltip>
+            <Icon
+                component={CameraIcon}
+                className={
+                    activeControl === ActiveControl.PHOTO_CONTEXT
+                        ? 'cvat-move-control cvat-active-canvas-control'
+                        : 'cvat-move-control'
+                }
+                onClick={(): void => {
+                    hideShowContextImage(!contextImageHide)
+                }}
+            />
+        </Tooltip>
     );
 }
 
