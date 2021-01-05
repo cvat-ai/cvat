@@ -102,13 +102,13 @@ spec:
       value: /opt/nuclio/Mask_RCNN
   build:
     image: cvat/tf.matterport.mask_rcnn
-    baseImage: tensorflow/tensorflow:2.1.0-py3
+    baseImage: tensorflow/tensorflow:1.15.4
     directives:
       postCopy:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev
+          value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev libgl1-mesa-glx
         - kind: RUN
           value: git clone https://github.com/matterport/Mask_RCNN.git
         - kind: RUN
@@ -116,7 +116,7 @@ spec:
         - kind: RUN
           value: pip3 install -r Mask_RCNN/requirements.txt
         - kind: RUN
-          value: pip3 install pycocotools tensorflow==1.13.1 keras==2.1.0 pillow pyyaml
+          value: pip3 install pycocotools keras==2.1.0 pillow pyyaml
 
   triggers:
     myHttpTrigger:
@@ -128,6 +128,7 @@ spec:
 
   platform:
     attributes:
+      processorMountMode: volume
       restartPolicy:
         name: always
         maximumRetryCount: 3
