@@ -184,7 +184,12 @@
                         return result;
                     },
                     async contextImage(taskId, frameId) {
-                        const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.contextImage, taskId, frameId);
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.contextImage,
+                            taskId,
+                            frameId,
+                        );
                         return result;
                     },
                 },
@@ -1543,7 +1548,7 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async save(onUpdate = () => { }) {
+        async save(onUpdate = () => {}) {
             const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
             return result;
         }
@@ -1605,17 +1610,17 @@
             for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
                 if (isUpdated) {
                     switch (field) {
-                        case 'status':
-                            jobData.status = this.status;
-                            break;
-                        case 'assignee':
-                            jobData.assignee_id = this.assignee ? this.assignee.id : null;
-                            break;
-                        case 'reviewer':
-                            jobData.reviewer_id = this.reviewer ? this.reviewer.id : null;
-                            break;
-                        default:
-                            break;
+                    case 'status':
+                        jobData.status = this.status;
+                        break;
+                    case 'assignee':
+                        jobData.assignee_id = this.assignee ? this.assignee.id : null;
+                        break;
+                    case 'reviewer':
+                        jobData.reviewer_id = this.reviewer ? this.reviewer.id : null;
+                        break;
+                    default:
+                        break;
                     }
                 }
             }
@@ -1874,20 +1879,20 @@
             for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
                 if (isUpdated) {
                     switch (field) {
-                        case 'assignee':
-                            taskData.assignee_id = this.assignee ? this.assignee.id : null;
-                            break;
-                        case 'name':
-                            taskData.name = this.name;
-                            break;
-                        case 'bug_tracker':
-                            taskData.bug_tracker = this.bugTracker;
-                            break;
-                        case 'labels':
-                            taskData.labels = [...this.labels.map((el) => el.toJSON())];
-                            break;
-                        default:
-                            break;
+                    case 'assignee':
+                        taskData.assignee_id = this.assignee ? this.assignee.id : null;
+                        break;
+                    case 'name':
+                        taskData.name = this.name;
+                        break;
+                    case 'bug_tracker':
+                        taskData.bug_tracker = this.bugTracker;
+                        break;
+                    case 'labels':
+                        taskData.labels = [...this.labels.map((el) => el.toJSON())];
+                        break;
+                    default:
+                        break;
                     }
                 }
             }
@@ -2154,5 +2159,4 @@
         const result = await getContextImage(taskId, frameId);
         return result;
     };
-
 })();
