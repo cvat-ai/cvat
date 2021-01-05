@@ -18,8 +18,8 @@ interface StateToProps {
     activeControl: ActiveControl;
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
-    contextImageHide : boolean,
-    loaded:boolean
+    contextImageHide: boolean,
+    loaded: boolean
 }
 
 interface DispatchToProps {
@@ -31,7 +31,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
-            player :{ context_image:{hide:contextImageHide,loaded:loaded}},
+            player: { context_image: { hide: contextImageHide, loaded: loaded } },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -48,7 +48,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        hideShowContextImage(hide:boolean):void {
+        hideShowContextImage(hide: boolean): void {
             dispatch(hideShowContextImage(hide));
         },
 

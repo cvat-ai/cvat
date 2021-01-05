@@ -56,9 +56,9 @@ const defaultState: AnnotationState = {
         },
         playing: false,
         frameAngles: [],
-        context_image : {
-            loaded : false,
-            data : "",
+        context_image: {
+            loaded: false,
+            data: "",
             hide: false
         },
     },
@@ -148,8 +148,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job,
                     labels: job.task.labels,
                     attributes: job.task.labels.reduce((acc: Record<number, any[]>, label: any): Record<
-                    number,
-                    any[]
+                        number,
+                        any[]
                     > => {
                         acc[label.id] = label.attributes;
                         return acc;
@@ -182,10 +182,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance:  job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
+                    instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                workspace: isReview ? Workspace.REVIEW_WORKSPACE :job.task.dimension === DimensionType.DIM_2D ? Workspace.STANDARD : Workspace.STANDARD3D ,
+                workspace: isReview ? Workspace.REVIEW_WORKSPACE : job.task.dimension === DimensionType.DIM_2D ? Workspace.STANDARD : Workspace.STANDARD3D,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -207,9 +207,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.player.frame,
                         fetching: false,
                     },
-                    context_image : {
-                        loaded : false,
-                        data : "",
+                    context_image: {
+                        loaded: false,
+                        data: "",
                         hide: state.player.context_image.hide
                     }
                 },
@@ -254,8 +254,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         changeTime,
                         delay,
                     },
-                    context_image:{
-                    ...state.player.context_image,
+                    context_image: {
+                        ...state.player.context_image,
                         loaded: false,
                     }
                 },
@@ -1090,35 +1090,35 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
-        const { hide } = action.payload;
+            const { hide } = action.payload;
 
-        return {
-            ...state,
-            player: {
-                ...state.player,
-                context_image : {
-                    loaded : state.player.context_image.loaded,
-                    data : state.player.context_image.data,
-                    hide : hide
-                }
-            },
-        };
-    }
-    case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
-        const { context,loaded } = action.payload;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    context_image: {
+                        loaded: state.player.context_image.loaded,
+                        data: state.player.context_image.data,
+                        hide: hide
+                    }
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
+            const { context, loaded } = action.payload;
 
-        return {
-            ...state,
-            player: {
-                ...state.player,
-                context_image : {
-                    loaded : loaded,
-                    data : context,
-                    hide : state.player.context_image.hide
-                }
-            },
-        };
-    }
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    context_image: {
+                        loaded: loaded,
+                        data: context,
+                        hide: state.player.context_image.hide
+                    }
+                },
+            };
+        }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

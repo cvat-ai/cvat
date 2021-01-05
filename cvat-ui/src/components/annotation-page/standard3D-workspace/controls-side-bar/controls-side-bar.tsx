@@ -35,7 +35,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
-            <GlobalHotKeys  />
+            <GlobalHotKeys />
 
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
@@ -49,7 +49,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
             />
-             <PhotoContextControl
+            <PhotoContextControl
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 contextImageHide={contextImageHide}
