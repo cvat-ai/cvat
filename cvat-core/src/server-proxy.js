@@ -729,7 +729,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError(`Could not get Image Context of the frame for the task ${tid} from the server`, code);
+                    throw new ServerError(
+                        `Could not get Image Context of the frame for the task ${tid} from the server`,
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -1070,7 +1073,7 @@
                             getData,
                             getMeta,
                             getPreview,
-                            getImageContext
+                            getImageContext,
                         }),
                         writable: false,
                     },
