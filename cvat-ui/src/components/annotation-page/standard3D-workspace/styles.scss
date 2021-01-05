@@ -9,23 +9,23 @@
 }
 
 .cvat-contextImage {
-   width: 250px;
-   position: absolute;
-   background: $background-color-2;
-   top: 10px;
-   right: 10px;
-   height: 150px;
-   z-index: 100;
-   border-radius: 6px;
-   //opacity: 0.5;
-   border: 1px solid $border-color-3;
-   display: flex;
-   flex-direction: column;
-   justify-content: space-between;
-   padding: 3px;
-   > div {
-    text-align: center;
-   }
+    width: 250px;
+    position: absolute;
+    background: $background-color-2;
+    top: 10px;
+    right: 10px;
+    height: 150px;
+    z-index: 100;
+    border-radius: 6px;
+    //opacity: 0.5;
+    border: 1px solid $border-color-3;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px;
+    > div {
+        text-align: center;
+    }
 }
 
 .cvat-objects-sidebar-filter-input {
