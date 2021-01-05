@@ -172,7 +172,7 @@ context('Group features', () => {
     describe(`Testing case "${caseId}". Group color feature.`, () => {
         before(() => {
             cy.removeAnnotations();
-            cy.saveJob();
+            cy.saveJob('PUT');
             cy.reload();
             cy.closeModalUnsupportedPlatform();
             cy.get('.cvat-canvas-container').should('exist');
