@@ -16,7 +16,7 @@ interface Props {
 }
 
 function MoveControl(props: Props): JSX.Element {
-    const { canvasInstance, activeControl } = props;
+    const { activeControl } = props;
 
     return (
         <Tooltip title='Move the image' placement='right' mouseLeaveDelay={0}>
@@ -27,7 +27,6 @@ function MoveControl(props: Props): JSX.Element {
                         'cvat-move-control cvat-active-canvas-control' :
                         'cvat-move-control'
                 }
-
             />
         </Tooltip>
     );

@@ -5,14 +5,9 @@
 import { connect } from 'react-redux';
 
 import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper3D';
-import {
-    confirmCanvasReady,
-    getContextImage
-} from 'actions/annotation-actions';
+import { confirmCanvasReady, getContextImage } from 'actions/annotation-actions';
 
-import {
-    CombinedState,
-} from 'reducers/interfaces';
+import { CombinedState } from 'reducers/interfaces';
 
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
@@ -25,13 +20,11 @@ interface StateToProps {
     loaded: boolean;
     data: string;
     annotations: any[];
-
 }
 
 interface DispatchToProps {
     onSetupCanvas(): void;
     getContextImage(): void;
-
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -41,7 +34,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance },
             player: {
                 frame: { data: frameData },
-                context_image: { hide: contextImageHide, data: data, loaded: loaded }
+                contextImage: { hide: contextImageHide, data, loaded },
             },
             annotations: {
                 states: annotations,
@@ -58,7 +51,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contextImageHide,
         loaded,
         data,
-        annotations
+        annotations,
     };
 }
 

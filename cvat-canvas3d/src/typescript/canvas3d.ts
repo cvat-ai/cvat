@@ -4,7 +4,7 @@
 
 import '../scss/canvas.scss';
 import pjson from '../../package.json';
-import { Configuration } from './canvas3dModel';
+import { Configuration, Mode } from './canvas3dModel';
 import { Canvas3dModelImpl, Canvas3dModel } from './canvas3dModel';
 import { Master } from './master';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
@@ -18,6 +18,7 @@ interface Canvas3d {
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
     fitCanvas(): void;
+    mode(): Mode;
 }
 
 class Canvas3dImpl implements Canvas3d {
@@ -43,8 +44,12 @@ class Canvas3dImpl implements Canvas3d {
         this.model.setup(frameData, objectStates, zLayer);
     }
 
-    configure(configuration: Configuration): void {
+    public configure(configuration: Configuration): void {
         this.model.configure(configuration);
+    }
+
+    public mode(): Mode {
+        return this.model.mode;
     }
 
     public isAbleToChangeFrame(): boolean {

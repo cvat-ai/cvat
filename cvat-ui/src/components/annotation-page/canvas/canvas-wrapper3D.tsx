@@ -6,14 +6,10 @@ import React from 'react';
 import { GlobalHotKeys } from 'react-hotkeys';
 import Layout from 'antd/lib/layout/layout';
 
-
-import {
-    ObjectType, Workspace,
-} from 'reducers/interfaces';
+import { ObjectType, Workspace } from 'reducers/interfaces';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import consts from 'consts';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
-
 
 interface Props {
     canvasInstance: Canvas3d;
@@ -26,13 +22,14 @@ interface Props {
     annotations: any[];
     onSetupCanvas: () => void;
     getContextImage(): void;
+    workspace: Workspace;
+    animateID: any;
+    automaticBordering: boolean;
+    showObjectsTextAlways: boolean;
 }
 
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
-    constructor(props) {
-        super(props)
-        this.animateID = "";
-    }
+    animateID = 0;
 
     public componentDidMount(): void {
         const {
@@ -51,15 +48,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         this.initialSetup();
         this.updateCanvas();
-        this.animateCanvas()
+        this.animateCanvas();
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const {
-            frameData,
-            annotations,
-            curZLayer,
-        } = this.props;
+        const { frameData, annotations, curZLayer } = this.props;
 
         if (
             prevProps.annotations !== annotations ||
@@ -70,18 +63,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     }
 
-    public animateCanvas() {
-        const {
-            canvasInstance,
-        } = this.props;
-
-        canvasInstance.render()
-        this.animateId = requestAnimationFrame(this.animateCanvas.bind(this))
-    }
-
     public componentWillUnmount(): void {
         window.removeEventListener('resize', this.fitCanvas);
-        cancelAnimationFrame(this.animateId);
+        cancelAnimationFrame(this.animateID);
     }
 
     private fitCanvas = (): void => {
@@ -93,6 +77,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { onSetupCanvas } = this.props;
         onSetupCanvas();
     };
+
+    public animateCanvas(): void {
+        const { canvasInstance } = this.props;
+
+        canvasInstance.render();
+        this.animateID = requestAnimationFrame(this.animateCanvas.bind(this));
+    }
 
     private updateCanvas(): void {
         const {
@@ -109,30 +100,20 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     private initialSetup(): void {
-        const {
-            canvasInstance,
-        } = this.props;
+        const { canvasInstance } = this.props;
 
         // Size
         window.addEventListener('resize', this.fitCanvas);
         this.fitCanvas();
 
         // Events
-        canvasInstance.html().addEventListener(
-            'canvas.setup',
-            () => { },
-            { once: true },
-        );
+        canvasInstance.html().addEventListener('canvas.setup', () => {}, { once: true });
         canvasInstance.html().addEventListener('canvas.setup', this.onCanvasSetup);
     }
 
     public render(): JSX.Element {
         const {
-            frame,
-            contextImageHide,
-            getContextImage,
-            loaded,
-            data
+            frame, contextImageHide, getContextImage, loaded, data,
         } = this.props;
 
         return (
@@ -147,7 +128,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     frame={frame}
                     contextImageHide={contextImageHide}
                     getContextImage={getContextImage}
-                    loaded={loaded} data={data}
+                    loaded={loaded}
+                    data={data}
                 />
                 <div
                     className='cvat-canvas-container'

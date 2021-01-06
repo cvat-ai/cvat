@@ -5,6 +5,7 @@
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { MutableRefObject } from 'react';
+import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 
 export type StringObject = {
     [index: string]: string;
@@ -379,7 +380,7 @@ export interface AnnotationState {
             pointID: number | null;
             clientID: number | null;
         };
-        instance: Canvas;
+        instance: Canvas | Canvas3d;
         ready: boolean;
         activeControl: ActiveControl;
     };
@@ -402,11 +403,11 @@ export interface AnnotationState {
         };
         playing: boolean;
         frameAngles: number[];
-        context_image: {
+        contextImage: {
             loaded: boolean;
             data: string;
             hide: boolean;
-        }
+        };
     };
     drawing: {
         activeInteractor?: Model;

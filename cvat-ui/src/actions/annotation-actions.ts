@@ -960,7 +960,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 },
             });
             if (job.task.dimension === '3d') {
-                const workspace = Workspace.STANDARD3D
+                const workspace = Workspace.STANDARD3D;
                 dispatch(changeWorkspace(workspace));
             }
             dispatch(changeFrameAsync(frameNumber, false));
@@ -1538,28 +1538,30 @@ export function getContextImage(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
-        const { frame: frame, context_image: context_image } = state.annotation.player;
+        const { frame, contextImage } = state.annotation.player;
 
         try {
-            const context = await job.frames.contextImage(job.task.id, frame.number)
-            const loaded = true, context_image_hide = context_image.hide
+            const context = await job.frames.contextImage(job.task.id, frame.number);
+            const loaded = true;
+            const contextImageHide = contextImage.hide;
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
                 payload: {
                     context,
                     loaded,
-                    context_image_hide
+                    contextImageHide,
                 },
-            })
-        }
-        catch (error) {
-            const context = "", loaded = true, context_image_hide = context_image.hide
+            });
+        } catch (error) {
+            const context = '';
+            const loaded = true;
+            const contextImageHide = contextImage.hide;
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
                 payload: {
                     context,
                     loaded,
-                    context_image_hide
+                    contextImageHide,
                 },
             });
         }

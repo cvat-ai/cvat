@@ -17,7 +17,8 @@ import {
     ObjectType,
     ContextMenuType,
     Workspace,
-    TaskStatus, DimensionType,
+    TaskStatus,
+    DimensionType,
 } from './interfaces';
 
 const defaultState: AnnotationState = {
@@ -56,10 +57,10 @@ const defaultState: AnnotationState = {
         },
         playing: false,
         frameAngles: [],
-        context_image: {
+        contextImage: {
             loaded: false,
-            data: "",
-            hide: false
+            data: '',
+            hide: false,
         },
     },
     drawing: {
@@ -139,7 +140,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             } = action.payload;
 
             const isReview = job.status === TaskStatus.REVIEW;
+            let WorkspaceSelected = Workspace.STANDARD;
 
+            if (job.task.dimension === DimensionType.DIM_3D) {
+                WorkspaceSelected = Workspace.STANDARD3D;
+            }
             return {
                 ...state,
                 job: {
@@ -148,8 +153,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job,
                     labels: job.task.labels,
                     attributes: job.task.labels.reduce((acc: Record<number, any[]>, label: any): Record<
-                        number,
-                        any[]
+                    number,
+                    any[]
                     > => {
                         acc[label.id] = label.attributes;
                         return acc;
@@ -185,7 +190,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                workspace: isReview ? Workspace.REVIEW_WORKSPACE : job.task.dimension === DimensionType.DIM_2D ? Workspace.STANDARD : Workspace.STANDARD3D,
+                workspace: isReview ? Workspace.REVIEW_WORKSPACE : WorkspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -207,11 +212,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.player.frame,
                         fetching: false,
                     },
-                    context_image: {
+                    contextImage: {
                         loaded: false,
-                        data: "",
-                        hide: state.player.context_image.hide
-                    }
+                        data: '',
+                        hide: state.player.contextImage.hide,
+                    },
                 },
             };
         }
@@ -254,10 +259,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         changeTime,
                         delay,
                     },
-                    context_image: {
-                        ...state.player.context_image,
+                    contextImage: {
+                        ...state.player.contextImage,
                         loaded: false,
-                    }
+                    },
                 },
                 annotations: {
                     ...state.annotations,
@@ -1096,11 +1101,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 player: {
                     ...state.player,
-                    context_image: {
-                        loaded: state.player.context_image.loaded,
-                        data: state.player.context_image.data,
-                        hide: hide
-                    }
+                    contextImage: {
+                        loaded: state.player.contextImage.loaded,
+                        data: state.player.contextImage.data,
+                        hide,
+                    },
                 },
             };
         }
@@ -1111,11 +1116,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 player: {
                     ...state.player,
-                    context_image: {
-                        loaded: loaded,
+                    contextImage: {
+                        loaded,
                         data: context,
-                        hide: state.player.context_image.hide
-                    }
+                        hide: state.player.contextImage.hide,
+                    },
                 },
             };
         }

@@ -5,50 +5,34 @@
 import React, { useEffect } from 'react';
 
 interface Props {
-    frame: number,
-    contextImageHide: boolean
-    loaded: boolean
-    data: string
-    getContextImage(): void
+    frame: number;
+    contextImageHide: boolean;
+    loaded: boolean;
+    data: string;
+    getContextImage(): void;
 }
 
 export default function ContextImage(props: Props): JSX.Element {
     const {
-        frame,
-        contextImageHide,
-        loaded,
-        data,
-        getContextImage
+        frame, contextImageHide, loaded, data, getContextImage,
     } = props;
 
     useEffect(() => {
         if (!contextImageHide && !loaded) {
-            getContextImage()
+            getContextImage();
         }
+    }, [frame, contextImageHide, loaded]);
 
-    }, [frame, contextImageHide, loaded])
-
-
-    const renderImage = (loaded: boolean, data: any) => {
+    const renderImage = (): JSX.Element => {
         if (loaded) {
-            if (data === "") {
-                return <div>No Image Context</div>
-            } else {
-                return <img src={data} style={{ maxWidth: '100%', maxHeight: '100%' }} />
+            if (data === '') {
+                return <div>No Image Context</div>;
             }
+            return <img src={data} alt='' style={{ maxWidth: '100%', maxHeight: '100%' }} />;
         }
-        else {
-            return <div> Loading</div>
-        }
-    }
 
+        return <div> Loading</div>;
+    };
 
-    return (
-        <div>
-            { !contextImageHide ?
-                <div className='cvat-contextImage'>
-                    {renderImage(loaded, data)}
-                </div> : null}
-        </div>
-    );
+    return <div>{!contextImageHide ? <div className='cvat-contextImage'>{renderImage()}</div> : null}</div>;
 }

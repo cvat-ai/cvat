@@ -26,11 +26,7 @@ interface Props {
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
-        canvasInstance,
-        activeControl,
-        normalizedKeyMap,
-        contextImageHide,
-        hideShowContextImage
+        canvasInstance, activeControl, normalizedKeyMap, contextImageHide, hideShowContextImage,
     } = props;
 
     return (
@@ -55,7 +51,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 contextImageHide={contextImageHide}
                 hideShowContextImage={hideShowContextImage}
             />
-
         </Layout.Sider>
     );
 }

@@ -17,7 +17,7 @@ interface Props {
 }
 
 function CursorControl(props: Props): JSX.Element {
-    const { canvasInstance, activeControl, cursorShortkey } = props;
+    const { activeControl, cursorShortkey } = props;
 
     return (
         <Tooltip title={`Cursor ${cursorShortkey}`} placement='right' mouseLeaveDelay={0}>
