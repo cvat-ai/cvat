@@ -13,7 +13,11 @@ help:
 
 # target: prod-deploy - Builds, (re)creates, and starts all prod containers (run this from prod VM).
 prod-deploy:
-	docker-compose -f docker-compose.yml -f docker-compose.production.yml up --detach --build
+	docker-compose \
+	    -f docker-compose.yml \
+			-f docker-compose.production.yml \
+			-f components/analytics/docker-compose.analytics.yml \
+			up --detach --build
 
 # target: prod-shell - Starts a shell in the prod Django container (run this from prod VM).
 prod-shell:
