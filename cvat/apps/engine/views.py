@@ -489,10 +489,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                             image.save(buf, format='JPEG', optimize=True)
                             buf.seek(0)
                             return HttpResponse(buf.getvalue(), content_type="image/jpeg")
-                        return Response(data='No context image related to the frame'.format(data_type),
+                        return Response(data='No context image related to the frame',
                                         status=status.HTTP_404_NOT_FOUND)
                     else:
-                        return Response(data='Only 3D tasks support context images'.format(data_type),
+                        return Response(data='Only 3D tasks support context images',
                                         status=status.HTTP_400_BAD_REQUEST)
                 else:
                     return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)

@@ -11,7 +11,7 @@
 .cvat-contextImage {
     width: 250px;
     position: absolute;
-    background: $background-color-2;
+    background: $border-color-3;
     top: 10px;
     right: 10px;
     height: 150px;
@@ -23,10 +23,6 @@
     flex-direction: column;
     justify-content: space-between;
     padding: 3px;
-
-    > div {
-        text-align: center;
-    }
 }
 
 .cvat-objects-sidebar-filter-input {
