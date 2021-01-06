@@ -93,4 +93,3 @@ export const ResetPerspectiveIcon = React.memo((): JSX.Element => <SVGResetPersp
 export const AIToolsIcon = React.memo((): JSX.Element => <SVGAITools />);
 export const ColorizeIcon = React.memo((): JSX.Element => <SVGColorizeIcon />);
 export const CameraIcon = React.memo((): JSX.Element => <SVGCameraIcon />);
-

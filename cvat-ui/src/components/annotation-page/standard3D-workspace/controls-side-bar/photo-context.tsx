@@ -25,12 +25,12 @@ function PhotoContextControl(props: Props): JSX.Element {
             <Icon
                 component={CameraIcon}
                 className={
-                    activeControl === ActiveControl.PHOTO_CONTEXT
-                        ? 'cvat-move-control cvat-active-canvas-control'
-                        : 'cvat-move-control'
+                    activeControl === ActiveControl.PHOTO_CONTEXT ?
+                        'cvat-move-control cvat-active-canvas-control' :
+                        'cvat-move-control'
                 }
                 onClick={(): void => {
-                    hideShowContextImage(!contextImageHide)
+                    hideShowContextImage(!contextImageHide);
                 }}
             />
         </Tooltip>
@@ -38,4 +38,3 @@ function PhotoContextControl(props: Props): JSX.Element {
 }
 
 export default React.memo(PhotoContextControl);
-

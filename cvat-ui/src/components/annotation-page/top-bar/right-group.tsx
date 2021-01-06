@@ -19,7 +19,9 @@ interface Props {
 }
 
 function RightGroup(props: Props): JSX.Element {
-    const { showStatistics, changeWorkspace, workspace, jobInstance } = props;
+    const {
+        showStatistics, changeWorkspace, workspace, jobInstance,
+    } = props;
 
     return (
         <Col className='cvat-annotation-header-right-group'>
@@ -56,20 +58,19 @@ function RightGroup(props: Props): JSX.Element {
                                 return null;
                             }
                             return (
-                                <Select.Option disabled={ws != Workspace.STANDARD3D} key={ws} value={ws}>
+                                <Select.Option disabled={ws !== Workspace.STANDARD3D} key={ws} value={ws}>
                                     {ws}
                                 </Select.Option>
                             );
-                        } else {
-                            if (ws != Workspace.STANDARD3D) {
-                                return (
-                                    <Select.Option key={ws} value={ws}>
-                                        {ws}
-                                    </Select.Option>
-                                );
-                            }
-                            return null;
                         }
+                        if (ws !== Workspace.STANDARD3D) {
+                            return (
+                                <Select.Option key={ws} value={ws}>
+                                    {ws}
+                                </Select.Option>
+                            );
+                        }
+                        return null;
                     })}
                 </Select>
             </div>

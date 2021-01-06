@@ -2,11 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    Canvas3d
-} from 'cvat-canvas3d/src/typescript/canvas3d';
+import { Canvas3d, Canvas3dVersion } from 'cvat-canvas3d/src/typescript/canvas3d';
 
-
-export {
-    Canvas3d
-};
+export { Canvas3d, Canvas3dVersion };
