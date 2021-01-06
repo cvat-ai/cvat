@@ -26,12 +26,12 @@ export default function ContextImage(props: Props): JSX.Element {
     const renderImage = (): JSX.Element => {
         if (loaded) {
             if (data === '') {
-                return <div>No Image Context</div>;
+                return null;
             }
             return <img src={data} alt='' style={{ maxWidth: '100%', maxHeight: '100%' }} />;
         }
 
-        return <div> Loading</div>;
+        return <div style={{ textAlign: 'center' }}> Loading</div>;
     };
 
     return <div>{!contextImageHide ? <div className='cvat-contextImage'>{renderImage()}</div> : null}</div>;
