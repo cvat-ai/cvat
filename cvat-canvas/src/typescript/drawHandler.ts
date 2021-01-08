@@ -16,14 +16,9 @@ import {
     BBox,
     Box,
 } from './shared';
+import Crosshair from './crosshair';
 import consts from './consts';
-import {
-    DrawData,
-    Geometry,
-    RectDrawingMethod,
-    Configuration,
-    CuboidDrawingMethod,
-} from './canvasModel';
+import { DrawData, Geometry, RectDrawingMethod, Configuration, CuboidDrawingMethod } from './canvasModel';
 
 import { cuboidFrom4Points } from './cuboid';
 
@@ -44,10 +39,7 @@ export class DrawHandlerImpl implements DrawHandler {
         x: number;
         y: number;
     };
-    private crosshair: {
-        x: SVG.Line;
-        y: SVG.Line;
-    };
+    private crosshair: Crosshair;
     private drawData: DrawData;
     private geometry: Geometry;
     private autoborderHandler: AutoborderHandler;
@@ -66,8 +58,9 @@ export class DrawHandlerImpl implements DrawHandler {
         const frameHeight = this.geometry.image.height;
         const { offset } = this.geometry;
 
-        let [xtl, ytl, xbr, ybr] = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height]
-            .map((coord: number): number => coord - offset);
+        let [xtl, ytl, xbr, ybr] = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height].map(
+            (coord: number): number => coord - offset,
+        );
 
         xtl = Math.min(Math.max(xtl, 0), frameWidth);
         xbr = Math.min(Math.max(xbr, 0), frameWidth);
@@ -77,7 +70,9 @@ export class DrawHandlerImpl implements DrawHandler {
         return [xtl, ytl, xbr, ybr];
     }
 
-    private getFinalPolyshapeCoordinates(targetPoints: number[]): {
+    private getFinalPolyshapeCoordinates(
+        targetPoints: number[],
+    ): {
         points: number[];
         box: Box;
     } {
@@ -108,7 +103,9 @@ export class DrawHandlerImpl implements DrawHandler {
         };
     }
 
-    private getFinalCuboidCoordinates(targetPoints: number[]): {
+    private getFinalCuboidCoordinates(
+        targetPoints: number[],
+    ): {
         points: number[];
         box: Box;
     } {
@@ -135,8 +132,7 @@ export class DrawHandlerImpl implements DrawHandler {
         for (let i = 0; i < points.length - 1; i += 2) {
             const [x, y] = points.slice(i);
 
-            if (x >= offset && x <= offset + frameWidth
-                && y >= offset && y <= offset + frameHeight) continue;
+            if (x >= offset && x <= offset + frameWidth && y >= offset && y <= offset + frameHeight) continue;
 
             let xOffset = 0;
             let yOffset = 0;
@@ -158,9 +154,8 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (cuboidOffsets.length === points.length / 2) {
             cuboidOffsets.forEach((offsetCoords: number[]): void => {
-                if (Math.sqrt((offsetCoords[0] ** 2) + (offsetCoords[1] ** 2))
-                        < minCuboidOffset.d) {
-                    minCuboidOffset.d = Math.sqrt((offsetCoords[0] ** 2) + (offsetCoords[1] ** 2));
+                if (Math.sqrt(offsetCoords[0] ** 2 + offsetCoords[1] ** 2) < minCuboidOffset.d) {
+                    minCuboidOffset.d = Math.sqrt(offsetCoords[0] ** 2 + offsetCoords[1] ** 2);
                     [minCuboidOffset.dx, minCuboidOffset.dy] = offsetCoords;
                 }
             });
@@ -188,22 +183,11 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private addCrosshair(): void {
         const { x, y } = this.cursorPosition;
-        this.crosshair = {
-            x: this.canvas.line(0, y, this.canvas.node.clientWidth, y).attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
-                zOrder: Number.MAX_SAFE_INTEGER,
-            }).addClass('cvat_canvas_crosshair'),
-            y: this.canvas.line(x, 0, x, this.canvas.node.clientHeight).attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
-                zOrder: Number.MAX_SAFE_INTEGER,
-            }).addClass('cvat_canvas_crosshair'),
-        };
+        this.crosshair.show(this.canvas, x, y, this.geometry.scale);
     }
 
     private removeCrosshair(): void {
-        this.crosshair.x.remove();
-        this.crosshair.y.remove();
-        this.crosshair = null;
+        this.crosshair.hide();
     }
 
     private release(): void {
@@ -228,8 +212,10 @@ export class DrawHandlerImpl implements DrawHandler {
         // Or when no drawn points, but we call cancel() drawing
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
-            if (this.drawData.shapeType !== 'rectangle'
-            && this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC) {
+            if (
+                this.drawData.shapeType !== 'rectangle' &&
+                this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC
+            ) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
             }
@@ -261,37 +247,48 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private drawBox(): void {
         this.drawInstance = this.canvas.rect();
-        this.drawInstance.on('drawstop', (e: Event): void => {
-            const bbox = (e.target as SVGRectElement).getBBox();
-            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
-            const { shapeType, redraw: clientID } = this.drawData;
-            this.release();
+        this.drawInstance
+            .on('drawstop', (e: Event): void => {
+                const bbox = (e.target as SVGRectElement).getBBox();
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                const { shapeType, redraw: clientID } = this.drawData;
+                this.release();
 
-            if (this.canceled) return;
-            if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
-                this.onDrawDone({
-                    clientID,
-                    shapeType,
-                    points: [xtl, ytl, xbr, ybr],
-                }, Date.now() - this.startTimestamp);
-            }
-        }).on('drawupdate', (): void => {
-            this.shapeSizeElement.update(this.drawInstance);
-        }).addClass('cvat_canvas_shape_drawing').attr({
-            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-        });
+                if (this.canceled) return;
+                if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                    this.onDrawDone(
+                        {
+                            clientID,
+                            shapeType,
+                            points: [xtl, ytl, xbr, ybr],
+                        },
+                        Date.now() - this.startTimestamp,
+                    );
+                }
+            })
+            .on('drawupdate', (): void => {
+                this.shapeSizeElement.update(this.drawInstance);
+            })
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            });
     }
 
     private drawBoxBy4Points(): void {
         let numberOfPoints = 0;
-        this.drawInstance = (this.canvas as any).polygon()
-            .addClass('cvat_canvas_shape_drawing').attr({
+        this.drawInstance = (this.canvas as any)
+            .polygon()
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
                 'stroke-width': 0,
                 opacity: 0,
-            }).on('drawstart', (): void => {
+            })
+            .on('drawstart', (): void => {
                 // init numberOfPoints as one on drawstart
                 numberOfPoints = 1;
-            }).on('drawpoint', (e: CustomEvent): void => {
+            })
+            .on('drawpoint', (e: CustomEvent): void => {
                 // increase numberOfPoints by one on drawpoint
                 numberOfPoints += 1;
 
@@ -303,14 +300,18 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.cancel();
 
                     if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
-                        this.onDrawDone({
-                            shapeType,
-                            clientID,
-                            points: [xtl, ytl, xbr, ybr],
-                        }, Date.now() - this.startTimestamp);
+                        this.onDrawDone(
+                            {
+                                shapeType,
+                                clientID,
+                                points: [xtl, ytl, xbr, ybr],
+                            },
+                            Date.now() - this.startTimestamp,
+                        );
                     }
                 }
-            }).on('undopoint', (): void => {
+            })
+            .on('undopoint', (): void => {
                 if (numberOfPoints > 0) {
                     numberOfPoints -= 1;
                 }
@@ -324,12 +325,16 @@ export class DrawHandlerImpl implements DrawHandler {
 
         const sizeDecrement = (): void => {
             if (--size === 0) {
-                this.drawInstance.draw('done');
+                // we need additional settimeout because we cannot invoke draw('done')
+                // from event listener for drawstart event
+                // because of implementation of svg.js
+                setTimeout((): void => this.drawInstance.draw('done'));
             }
         };
 
         this.drawInstance.on('drawstart', sizeDecrement);
         this.drawInstance.on('drawpoint', sizeDecrement);
+        this.drawInstance.on('drawupdate', (): void => this.transform(this.geometry));
         this.drawInstance.on('undopoint', (): number => size++);
 
         // Add ability to cancel the latest drawn point
@@ -360,10 +365,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 } else {
                     this.drawInstance.draw('update', e);
                     const deltaTreshold = 15;
-                    const delta = Math.sqrt(
-                        ((e.clientX - lastDrawnPoint.x) ** 2)
-                        + ((e.clientY - lastDrawnPoint.y) ** 2),
-                    );
+                    const delta = Math.sqrt((e.clientX - lastDrawnPoint.x) ** 2 + (e.clientY - lastDrawnPoint.y) ** 2);
                     if (delta > deltaTreshold) {
                         this.drawInstance.draw('point', e);
                     }
@@ -384,50 +386,67 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToNumberArray((e.target as SVGElement).getAttribute('points'));
             const { shapeType, redraw: clientID } = this.drawData;
-            const { points, box } = shapeType === 'cuboid' ? this.getFinalCuboidCoordinates(targetPoints)
-                : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points, box } =
+                shapeType === 'cuboid'
+                    ? this.getFinalCuboidCoordinates(targetPoints)
+                    : this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
 
             if (this.canceled) return;
-            if (shapeType === 'polygon'
-                && ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD)
-                && points.length >= 3 * 2) {
-                this.onDrawDone({
-                    clientID,
-                    shapeType,
-                    points,
-                }, Date.now() - this.startTimestamp);
-            } else if (shapeType === 'polyline'
-                && ((box.xbr - box.xtl) >= consts.SIZE_THRESHOLD
-                || (box.ybr - box.ytl) >= consts.SIZE_THRESHOLD)
-                && points.length >= 2 * 2) {
-                this.onDrawDone({
-                    clientID,
-                    shapeType,
-                    points,
-                }, Date.now() - this.startTimestamp);
-            } else if (shapeType === 'points'
-                && (e.target as any).getAttribute('points') !== '0,0') {
-                this.onDrawDone({
-                    clientID,
-                    shapeType,
-                    points,
-                }, Date.now() - this.startTimestamp);
+            if (
+                shapeType === 'polygon' &&
+                (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD &&
+                points.length >= 3 * 2
+            ) {
+                this.onDrawDone(
+                    {
+                        clientID,
+                        shapeType,
+                        points,
+                    },
+                    Date.now() - this.startTimestamp,
+                );
+            } else if (
+                shapeType === 'polyline' &&
+                (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD) &&
+                points.length >= 2 * 2
+            ) {
+                this.onDrawDone(
+                    {
+                        clientID,
+                        shapeType,
+                        points,
+                    },
+                    Date.now() - this.startTimestamp,
+                );
+            } else if (shapeType === 'points' && (e.target as any).getAttribute('points') !== '0,0') {
+                this.onDrawDone(
+                    {
+                        clientID,
+                        shapeType,
+                        points,
+                    },
+                    Date.now() - this.startTimestamp,
+                );
                 // TODO: think about correct constraign for cuboids
-            } else if (shapeType === 'cuboid'
-                && points.length === 4 * 2) {
-                this.onDrawDone({
-                    clientID,
-                    shapeType,
-                    points: cuboidFrom4Points(points),
-                }, Date.now() - this.startTimestamp);
+            } else if (shapeType === 'cuboid' && points.length === 4 * 2) {
+                this.onDrawDone(
+                    {
+                        clientID,
+                        shapeType,
+                        points: cuboidFrom4Points(points),
+                    },
+                    Date.now() - this.startTimestamp,
+                );
             }
         });
     }
 
     private drawPolygon(): void {
-        this.drawInstance = (this.canvas as any).polygon()
-            .addClass('cvat_canvas_shape_drawing').attr({
+        this.drawInstance = (this.canvas as any)
+            .polygon()
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
 
@@ -438,8 +457,10 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private drawPolyline(): void {
-        this.drawInstance = (this.canvas as any).polyline()
-            .addClass('cvat_canvas_shape_drawing').attr({
+        this.drawInstance = (this.canvas as any)
+            .polyline()
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': 0,
             });
@@ -451,18 +472,19 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private drawPoints(): void {
-        this.drawInstance = (this.canvas as any).polygon()
-            .addClass('cvat_canvas_shape_drawing').attr({
-                'stroke-width': 0,
-                opacity: 0,
-            });
+        this.drawInstance = (this.canvas as any).polygon().addClass('cvat_canvas_shape_drawing').attr({
+            'stroke-width': 0,
+            opacity: 0,
+        });
 
         this.drawPolyshape();
     }
 
     private drawCuboidBy4Points(): void {
-        this.drawInstance = (this.canvas as any).polyline()
-            .addClass('cvat_canvas_shape_drawing').attr({
+        this.drawInstance = (this.canvas as any)
+            .polyline()
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.drawPolyshape();
@@ -470,25 +492,32 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private drawCuboid(): void {
         this.drawInstance = this.canvas.rect();
-        this.drawInstance.on('drawstop', (e: Event): void => {
-            const bbox = (e.target as SVGRectElement).getBBox();
-            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
-            const { shapeType } = this.drawData;
-            this.release();
+        this.drawInstance
+            .on('drawstop', (e: Event): void => {
+                const bbox = (e.target as SVGRectElement).getBBox();
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                const { shapeType } = this.drawData;
+                this.release();
 
-            if (this.canceled) return;
-            if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
-                const d = { x: (xbr - xtl) * 0.1, y: (ybr - ytl) * 0.1 };
-                this.onDrawDone({
-                    shapeType,
-                    points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
-                }, Date.now() - this.startTimestamp);
-            }
-        }).on('drawupdate', (): void => {
-            this.shapeSizeElement.update(this.drawInstance);
-        }).addClass('cvat_canvas_shape_drawing').attr({
-            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-        });
+                if (this.canceled) return;
+                if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                    const d = { x: (xbr - xtl) * 0.1, y: (ybr - ytl) * 0.1 };
+                    this.onDrawDone(
+                        {
+                            shapeType,
+                            points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
+                        },
+                        Date.now() - this.startTimestamp,
+                    );
+                }
+            })
+            .on('drawupdate', (): void => {
+                this.shapeSizeElement.update(this.drawInstance);
+            })
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            });
     }
 
     private pastePolyshape(): void {
@@ -498,22 +527,28 @@ export class DrawHandlerImpl implements DrawHandler {
                 .split(/[,\s]/g)
                 .map((coord: string): number => +coord);
 
-            const { points } = this.drawData.initialState.shapeType === 'cuboid' ? this.getFinalCuboidCoordinates(targetPoints)
-                : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points } =
+                this.drawData.initialState.shapeType === 'cuboid'
+                    ? this.getFinalCuboidCoordinates(targetPoints)
+                    : this.getFinalPolyshapeCoordinates(targetPoints);
 
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
             }
 
-            this.onDrawDone({
-                shapeType: this.drawData.initialState.shapeType,
-                objectType: this.drawData.initialState.objectType,
-                points,
-                occluded: this.drawData.initialState.occluded,
-                attributes: { ...this.drawData.initialState.attributes },
-                label: this.drawData.initialState.label,
-                color: this.drawData.initialState.color,
-            }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
+            this.onDrawDone(
+                {
+                    shapeType: this.drawData.initialState.shapeType,
+                    objectType: this.drawData.initialState.objectType,
+                    points,
+                    occluded: this.drawData.initialState.occluded,
+                    attributes: { ...this.drawData.initialState.attributes },
+                    label: this.drawData.initialState.label,
+                    color: this.drawData.initialState.color,
+                },
+                Date.now() - this.startTimestamp,
+                e.detail.originalEvent.ctrlKey,
+            );
         });
     }
 
@@ -534,9 +569,11 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private pasteBox(box: BBox): void {
-        this.drawInstance = (this.canvas as any).rect(box.width, box.height)
+        this.drawInstance = (this.canvas as any)
+            .rect(box.width, box.height)
             .move(box.x, box.y)
-            .addClass('cvat_canvas_shape_drawing').attr({
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.pasteShape();
@@ -548,22 +585,27 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.release();
             }
 
-            this.onDrawDone({
-                shapeType: this.drawData.initialState.shapeType,
-                objectType: this.drawData.initialState.objectType,
-                points: [xtl, ytl, xbr, ybr],
-                occluded: this.drawData.initialState.occluded,
-                attributes: { ...this.drawData.initialState.attributes },
-                label: this.drawData.initialState.label,
-                color: this.drawData.initialState.color,
-            }, Date.now() - this.startTimestamp, e.detail.originalEvent.ctrlKey);
+            this.onDrawDone(
+                {
+                    shapeType: this.drawData.initialState.shapeType,
+                    objectType: this.drawData.initialState.objectType,
+                    points: [xtl, ytl, xbr, ybr],
+                    occluded: this.drawData.initialState.occluded,
+                    attributes: { ...this.drawData.initialState.attributes },
+                    label: this.drawData.initialState.label,
+                    color: this.drawData.initialState.color,
+                },
+                Date.now() - this.startTimestamp,
+                e.detail.originalEvent.ctrlKey,
+            );
         });
     }
 
-
     private pastePolygon(points: string): void {
-        this.drawInstance = (this.canvas as any).polygon(points)
-            .addClass('cvat_canvas_shape_drawing').attr({
+        this.drawInstance = (this.canvas as any)
+            .polygon(points)
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.pasteShape();
@@ -571,8 +613,10 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private pastePolyline(points: string): void {
-        this.drawInstance = (this.canvas as any).polyline(points)
-            .addClass('cvat_canvas_shape_drawing').attr({
+        this.drawInstance = (this.canvas as any)
+            .polyline(points)
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
         this.pasteShape();
@@ -580,22 +624,19 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private pasteCuboid(points: string): void {
-        this.drawInstance = (this.canvas as any).cube(points).addClass('cvat_canvas_shape_drawing').attr({
-            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            'face-stroke': 'black',
-        });
+        this.drawInstance = (this.canvas as any)
+            .cube(points)
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'face-stroke': 'black',
+            });
         this.pasteShape();
         this.pastePolyshape();
     }
 
     private pastePoints(initialPoints: string): void {
-        function moveShape(
-            shape: SVG.PolyLine,
-            group: SVG.G,
-            x: number,
-            y: number,
-            scale: number,
-        ): void {
+        function moveShape(shape: SVG.PolyLine, group: SVG.G, x: number, y: number, scale: number): void {
             const bbox = shape.bbox();
             shape.move(x - bbox.width / 2, y - bbox.height / 2);
 
@@ -610,10 +651,9 @@ export class DrawHandlerImpl implements DrawHandler {
 
         const { x: initialX, y: initialY } = this.cursorPosition;
         this.pointsGroup = this.canvas.group();
-        this.drawInstance = (this.canvas as any).polyline(initialPoints)
-            .addClass('cvat_canvas_shape_drawing').style({
-                'stroke-width': 0,
-            });
+        this.drawInstance = (this.canvas as any).polyline(initialPoints).addClass('cvat_canvas_shape_drawing').style({
+            'stroke-width': 0,
+        });
 
         let numOfPoints = initialPoints.split(' ').length;
         while (numOfPoints) {
@@ -626,15 +666,11 @@ export class DrawHandlerImpl implements DrawHandler {
             });
         }
 
-        moveShape(
-            this.drawInstance, this.pointsGroup, initialX, initialY, this.geometry.scale,
-        );
+        moveShape(this.drawInstance, this.pointsGroup, initialX, initialY, this.geometry.scale);
 
         this.canvas.on('mousemove.draw', (): void => {
             const { x, y } = this.cursorPosition; // was computer in another callback
-            moveShape(
-                this.drawInstance, this.pointsGroup, x, y, this.geometry.scale,
-            );
+            moveShape(this.drawInstance, this.pointsGroup, x, y, this.geometry.scale);
         });
 
         this.pastePolyshape();
@@ -668,8 +704,9 @@ export class DrawHandlerImpl implements DrawHandler {
         if (this.drawData.initialState) {
             const { offset } = this.geometry;
             if (this.drawData.shapeType === 'rectangle') {
-                const [xtl, ytl, xbr, ybr] = this.drawData.initialState.points
-                    .map((coord: number): number => coord + offset);
+                const [xtl, ytl, xbr, ybr] = this.drawData.initialState.points.map(
+                    (coord: number): number => coord + offset,
+                );
 
                 this.pasteBox({
                     x: xtl,
@@ -678,8 +715,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     height: ybr - ytl,
                 });
             } else {
-                const points = this.drawData.initialState.points
-                    .map((coord: number): number => coord + offset);
+                const points = this.drawData.initialState.points.map((coord: number): number => coord + offset);
                 const stringifiedPoints = stringifyPoints(points);
 
                 if (this.drawData.shapeType === 'polygon') {
@@ -741,7 +777,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.canceled = false;
         this.drawData = null;
         this.geometry = null;
-        this.crosshair = null;
+        this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
         this.cursorPosition = {
@@ -750,28 +786,20 @@ export class DrawHandlerImpl implements DrawHandler {
         };
 
         this.canvas.on('mousemove.crosshair', (e: MouseEvent): void => {
-            const [x, y] = translateToSVG(
-                this.canvas.node as any as SVGSVGElement,
-                [e.clientX, e.clientY],
-            );
+            const [x, y] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
             this.cursorPosition = { x, y };
             if (this.crosshair) {
-                this.crosshair.x.attr({ y1: y, y2: y });
-                this.crosshair.y.attr({ x1: x, x2: x });
+                this.crosshair.move(x, y);
             }
         });
     }
 
     public configurate(configuration: Configuration): void {
-        if (typeof (configuration.autoborders) === 'boolean') {
+        if (typeof configuration.autoborders === 'boolean') {
             this.autobordersEnabled = configuration.autoborders;
             if (this.drawInstance) {
                 if (this.autobordersEnabled) {
-                    this.autoborderHandler.autoborder(
-                        true,
-                        this.drawInstance,
-                        this.drawData.redraw,
-                    );
+                    this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
                 } else {
                     this.autoborderHandler.autoborder(false);
                 }
@@ -787,12 +815,7 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.crosshair) {
-            this.crosshair.x.attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * geometry.scale),
-            });
-            this.crosshair.y.attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / (2 * geometry.scale),
-            });
+            this.crosshair.scale(this.geometry.scale);
         }
 
         if (this.pointsGroup) {
@@ -813,14 +836,8 @@ export class DrawHandlerImpl implements DrawHandler {
             const paintHandler = this.drawInstance.remember('_paintHandler');
 
             for (const point of (paintHandler as any).set.members) {
-                point.attr(
-                    'stroke-width',
-                    `${consts.POINTS_STROKE_WIDTH / geometry.scale}`,
-                );
-                point.attr(
-                    'r',
-                    `${consts.BASE_POINT_SIZE / geometry.scale}`,
-                );
+                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
+                point.attr('r', `${consts.BASE_POINT_SIZE / geometry.scale}`);
             }
         }
     }

@@ -1,6 +1,6 @@
 {
   "name": "cvat-canvas",
-  "version": "2.0.2",
+  "version": "2.2.1",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
   "main": "src/canvas.ts",
   "scripts": {
@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "svg.draggable.js": "2.2.2",
-    "svg.draw.js": "^2.0.3",
+    "svg.draw.js": "^2.0.4",
     "svg.js": "2.7.1",
     "svg.resize.js": "1.4.3",
     "svg.select.js": "3.0.1"
@@ -20,6 +20,7 @@
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-optional-chaining": "^7.11.0",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-typescript": "^7.3.3",
     "@types/node": "^12.6.8",
@@ -32,15 +33,15 @@
     "eslint-config-airbnb-typescript": "^4.0.1",
     "eslint-config-typescript-recommended": "^1.4.17",
     "eslint-plugin-import": "^2.18.2",
-    "node-sass": "^4.13.1",
-    "nodemon": "^1.19.1",
+    "node-sass": "^4.14.1",
+    "nodemon": "^1.19.4",
     "postcss-loader": "^3.0.0",
     "postcss-preset-env": "^6.7.0",
     "sass-loader": "^8.0.2",
     "style-loader": "^1.0.0",
     "typescript": "^3.5.3",
-    "webpack": "^4.36.1",
+    "webpack": "^4.44.2",
     "webpack-cli": "^3.3.6",
-    "webpack-dev-server": "^3.7.2"
+    "webpack-dev-server": "^3.11.0"
   }
 }

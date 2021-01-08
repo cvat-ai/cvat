@@ -1,3 +1,3 @@
 http.host: 0.0.0.0
 script.painless.regex.enabled: true
-path.repo: ["/usr/share/elasticsearch/data/backup"]
+path.repo: ['/usr/share/elasticsearch/data/backup']

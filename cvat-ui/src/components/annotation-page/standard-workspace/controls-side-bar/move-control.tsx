@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import { MoveIcon } from 'icons';
@@ -22,8 +22,11 @@ function MoveControl(props: Props): JSX.Element {
         <Tooltip title='Move the image' placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={MoveIcon}
-                className={activeControl === ActiveControl.DRAG_CANVAS
-                    ? 'cvat-active-canvas-control' : ''}
+                className={
+                    activeControl === ActiveControl.DRAG_CANVAS ?
+                        'cvat-move-control cvat-active-canvas-control' :
+                        'cvat-move-control'
+                }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.DRAG_CANVAS) {
                         canvasInstance.dragCanvas(false);

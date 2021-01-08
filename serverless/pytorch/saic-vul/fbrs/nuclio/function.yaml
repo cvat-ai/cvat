@@ -1,0 +1,59 @@
+metadata:
+  name: pth-saic-vul-fbrs
+  namespace: cvat
+  annotations:
+    name: f-BRS
+    type: interactor
+    spec:
+    framework: pytorch
+    min_pos_points: 1
+
+spec:
+  description: f-BRS interactive segmentation
+  runtime: 'python:3.6'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/fbrs
+
+  build:
+    image: cvat/pth.saic-vul.fbrs
+    baseImage: python:3.6.11
+
+    directives:
+      preCopy:
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: git clone https://github.com/saic-vul/fbrs_interactive_segmentation.git fbrs
+        - kind: WORKDIR
+          value: /opt/nuclio/fbrs
+        - kind: ENV
+          value: fileid=1Z9dQtpWVTobEdmUBntpUU0pJl-pEXUwR
+        - kind: ENV
+          value: filename=resnet101_dh256_sbd.pth
+        - kind: RUN
+          value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
+        - kind: RUN
+          value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
+        - kind: RUN
+          value: apt update && apt install -y libgl1-mesa-glx
+        - kind: RUN
+          value: pip3 install -r requirements.txt
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3

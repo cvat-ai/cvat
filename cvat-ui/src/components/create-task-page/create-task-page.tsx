@@ -4,6 +4,7 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
@@ -22,12 +23,16 @@ interface Props {
 
 export default function CreateTaskPage(props: Props): JSX.Element {
     const {
-        error,
-        status,
-        taskId,
-        onCreate,
-        installedGit,
+        error, status, taskId, onCreate, installedGit,
     } = props;
+
+    const location = useLocation();
+
+    let projectId = null;
+    const params = new URLSearchParams(location.search);
+    if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
+        projectId = +(params.get('projectId') as string);
+    }
 
     useEffect(() => {
         if (error) {
@@ -64,11 +69,12 @@ export default function CreateTaskPage(props: Props): JSX.Element {
     }, [error]);
 
     return (
-        <Row type='flex' justify='center' align='top' className='cvat-create-task-form-wrapper'>
+        <Row justify='center' align='top' className='cvat-create-task-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>Create a new task</Text>
                 <CreateTaskContent
                     taskId={taskId}
+                    projectId={projectId}
                     status={status}
                     onCreate={onCreate}
                     installedGit={installedGit}

@@ -22,6 +22,21 @@
             "smartStep": true,
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "ui.js: test",
+            "cwd": "${workspaceRoot}/tests",
+            "runtimeExecutable": "${workspaceRoot}/tests/node_modules/.bin/cypress",
+            "args": [
+                "run",
+                "--headless",
+                "--browser",
+                "chrome"
+            ],
+            "outputCapture": "std",
+            "console": "internalConsole"
+        },
+        {
             "name": "server: django",
             "type": "python",
             "request": "launch",

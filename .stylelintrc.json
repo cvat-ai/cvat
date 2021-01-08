@@ -1,20 +1,22 @@
 {
-    "extends": "stylelint-config-standard",
-    "rules": {
-        "indentation": 4,
-        "value-keyword-case": null,
-        "selector-combinator-space-after": null,
-        "no-descending-specificity": null,
-        "at-rule-no-unknown": [true, {
-            "ignoreAtRules": ["extend"]
-        }],
-        "selector-type-no-unknown": [true, {
-            "ignoreTypes": ["first-child"]
-        }]
-    },
-    "ignoreFiles": [
-        "**/*.js",
-        "**/*.ts",
-        "**/*.py"
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "indentation": 4,
+    "value-keyword-case": null,
+    "selector-combinator-space-after": null,
+    "no-descending-specificity": null,
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["extend"]
+      }
+    ],
+    "selector-type-no-unknown": [
+      true,
+      {
+        "ignoreTypes": ["first-child"]
+      }
     ]
+  },
+  "ignoreFiles": ["**/*.js", "**/*.ts", "**/*.py"]
 }

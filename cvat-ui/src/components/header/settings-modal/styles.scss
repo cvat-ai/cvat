@@ -55,6 +55,10 @@
     justify-items: start;
 }
 
+.cvat-player-settings-grid-size-input {
+    height: fit-content;
+}
+
 .cvat-player-settings-grid-color {
     > .ant-select {
         width: 150px;
@@ -75,7 +79,7 @@
     }
 }
 
-.cvat-player-settings-step > div > span > i {
+.cvat-player-settings-step > div > span > span[role='img'] {
     margin: 0 5px;
     font-size: 10px;
 }

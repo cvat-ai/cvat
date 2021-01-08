@@ -13,10 +13,13 @@
   - [CVAT](#cvat)
   - [LabelMe](#labelme)
   - [MOT](#mot)
+  - [MOTS](#mots)
   - [COCO](#coco)
   - [PASCAL VOC and mask](#voc)
   - [YOLO](#yolo)
   - [TF detection API](#tfrecord)
+  - [ImageNet](#imagenet)
+  - [CamVid](#camvid)
 
 ## How to add a new annotation format support<a id="how-to-add"></a>
 
@@ -29,7 +32,7 @@ Each format is supported by an importer and exporter.
 It can be a function or a class decorated with
 `importer` or `exporter` from [registry.py](./registry.py). Examples:
 
-``` python
+```python
 @importer(name="MyFormat", version="1.0", ext="ZIP")
 def my_importer(file_object, task_data, **options):
   ...
@@ -46,27 +49,27 @@ def my_exporter(file_object, task_data, **options):
 
 Each decorator defines format parameters such as:
 
-- *name*
+- _name_
 
-- *version*
+- _version_
 
-- *file extension*. For the `importer` it can be a comma-separated list.
+- _file extension_. For the `importer` it can be a comma-separated list.
   These parameters are combined to produce a visible name. It can be
   set explicitly by the `display_name` argument.
 
 Importer arguments:
 
-- *file_object* - a file with annotations or dataset
-- *task_data* - an instance of `TaskData` class.
+- _file_object_ - a file with annotations or dataset
+- _task_data_ - an instance of `TaskData` class.
 
 Exporter arguments:
 
-- *file_object* - a file for annotations or dataset
+- _file_object_ - a file for annotations or dataset
 
-- *task_data* - an instance of `TaskData` class.
+- _task_data_ - an instance of `TaskData` class.
 
-- *options* - format-specific options. `save_images` is the option to
-distinguish if dataset or just annotations are requested.
+- _options_ - format-specific options. `save_images` is the option to
+  distinguish if dataset or just annotations are requested.
 
 [`TaskData`](../bindings.py) provides many task properties and interfaces
 to add and read task annotations.
@@ -75,18 +78,15 @@ Public members:
 
 - **TaskData. Attribute** - class, `namedtuple('Attribute', 'name, value')`
 
-- **TaskData. LabeledShape** - class, `namedtuple('LabeledShape',
-  'type, frame, label, points, occluded, attributes, group, z_order')`
+- **TaskData. LabeledShape** - class, `namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')`
 
-- **TrackedShape** - `namedtuple('TrackedShape',
-  'type, points, occluded, frame, attributes, outside, keyframe, z_order')`
+- **TrackedShape** - `namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')`
 
 - **Track** - class, `namedtuple('Track', 'label, group, shapes')`
 
 - **Tag** - class, `namedtuple('Tag', 'frame, label, attributes, group')`
 
-- **Frame** - class, `namedtuple('Frame',
-  'frame, name, width, height, labeled_shapes, tags')`
+- **Frame** - class, `namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')`
 
 - **TaskData. shapes** - property, an iterator over `LabeledShape` objects
 
@@ -111,7 +111,7 @@ Public members:
 
 Sample exporter code:
 
-``` python
+```python
 ...
 # dump meta info if necessary
 ...
@@ -140,7 +140,7 @@ file_object.write(...)
 
 Sample importer code:
 
-``` python
+```python
 ...
 #read file_object
 ...
@@ -175,7 +175,7 @@ features, so it can be used to make data backups.
 
 Downloaded file: a ZIP file of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── images/
 |   ├── img1.png
@@ -189,7 +189,7 @@ taskname.zip/
 
 Downloaded file: a ZIP file of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── images/
 |   ├── frame_000000.png
@@ -223,7 +223,7 @@ Uploaded file: an XML file or a ZIP file of the structures above
 
 Downloaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── JpegImages/
 │   ├── <image_name1>.jpg
@@ -250,7 +250,7 @@ bird:::
 
 Uploaded file: a zip archive of the structure declared above or the following:
 
-``` bash
+```bash
 taskname.zip/
 ├── <image_name1>.xml
 ├── <image_name2>.xml
@@ -273,7 +273,7 @@ There are 2 options:
 
 Downloaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── labelmap.txt # optional, required for non-VOC labels
 ├── ImageSets/
@@ -308,7 +308,7 @@ Colors are generated following to Pascal VOC [algorithm](http://host.robots.ox.a
 
 Uploaded file: a zip archive of the following structure:
 
-``` bash
+```bash
   taskname.zip/
   ├── labelmap.txt # optional, required for non-VOC labels
   ├── ImageSets/
@@ -320,7 +320,7 @@ Uploaded file: a zip archive of the following structure:
   └── SegmentationObject/
       ├── image1.png
       └── image2.png
-  ```
+```
 
 It is also possible to import grayscale (1-channel) PNG masks.
 For grayscale masks provide a list of labels with the number of lines equal
@@ -329,6 +329,7 @@ so that line index is equal to the color index. Lines can have arbitrary,
 but different, colors. If there are gaps in the used color
 indices in the annotations, they must be filled with arbitrary dummy labels.
 Example:
+
 ```
 q:0,128,0:: # color index 0
 aeroplane:10,10,128:: # color index 1
@@ -351,7 +352,7 @@ the last label:12,28,0:: # color index 200
 
 1. Create a CVAT task with the following labels:
 
-   ``` bash
+   ```bash
    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable
    dog horse motorbike person pottedplant sheep sofa train tvmonitor
    ```
@@ -377,7 +378,7 @@ the last label:12,28,0:: # color index 200
 
 Downloaded file: a zip archive with following structure:
 
-``` bash
+```bash
 archive.zip/
 ├── obj.data
 ├── obj.names
@@ -439,13 +440,13 @@ and annotation file name. There are 2 options:
 
 1. Zip train images
 
-``` bash
+```bash
 zip images.zip -j -@ < train.txt
 ```
 
 1. Create a CVAT task with the following labels:
 
-   ``` bash
+   ```bash
    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog
    horse motorbike person pottedplant sheep sofa train tvmonitor
    ```
@@ -457,7 +458,7 @@ zip images.zip -j -@ < train.txt
 
 1. Create `obj.names` with the following content:
 
-   ``` bash
+   ```bash
    aeroplane
    bicycle
    bird
@@ -482,7 +483,7 @@ zip images.zip -j -@ < train.txt
 
 1. Zip all label files together (we need to add only label files that correspond to the train subset)
 
-   ``` bash
+   ```bash
    cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
    ```
 
@@ -515,7 +516,7 @@ Uploaded file: single unpacked `*.json` .
 
 1. Create a CVAT task with the following labels:
 
-   ``` bash
+   ```bash
    person bicycle car motorcycle airplane bus train truck boat "traffic light" "fire hydrant" "stop sign" "parking meter" bench bird cat dog horse sheep cow elephant bear zebra giraffe backpack umbrella handbag tie suitcase frisbee skis snowboard "sports ball" kite "baseball bat" "baseball glove" skateboard surfboard "tennis racket" bottle "wine glass" cup fork knife spoon bowl banana apple sandwich orange broccoli carrot "hot dog" pizza donut cake chair couch "potted plant" bed "dining table" toilet tv laptop mouse remote keyboard "cell phone" microwave oven toaster sink refrigerator book clock vase scissors "teddy bear" "hair drier" toothbrush
    ```
 
@@ -538,7 +539,7 @@ with minimal modifications.
 
 Used feature description:
 
-``` python
+```python
 image_feature_description = {
     'image/filename': tf.io.FixedLenFeature([], tf.string),
     'image/source_id': tf.io.FixedLenFeature([], tf.string),
@@ -558,7 +559,7 @@ image_feature_description = {
 
 Downloaded file: a zip archive with following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── task2.tfrecord
 └── label_map.pbtxt
@@ -570,7 +571,7 @@ taskname.zip/
 
 Uploaded file: a zip archive of following structure:
 
-``` bash
+```bash
 taskname.zip/
 └── task2.tfrecord
 ```
@@ -581,7 +582,7 @@ taskname.zip/
 
 1. Create `label_map.pbtxt` file with the following content:
 
-``` js
+```js
 item {
     id: 1
     name: 'aeroplane'
@@ -669,19 +670,19 @@ item {
 to convert VOC2007 dataset to TFRecord format.
 As example:
 
-``` bash
+```bash
 python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --year VOC2007 --output_path pascal.tfrecord --label_map_path label_map.pbtxt
 ```
 
 1. Zip train images
 
-   ``` bash
+   ```bash
    cat <path to VOCdevkit>/VOC2007/ImageSets/Main/train.txt | while read p; do echo <path to VOCdevkit>/VOC2007/JPEGImages/${p}.jpg  ; done | zip images.zip -j -@
    ```
 
 1. Create a CVAT task with the following labels:
 
-   ``` bash
+   ```bash
    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
    ```
 
@@ -691,7 +692,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 
 1. Zip `pascal.tfrecord` and `label_map.pbtxt` files together
 
-   ``` bash
+   ```bash
    zip anno.zip -j <path to pascal.tfrecord> <path to label_map.pbtxt>
    ```
 
@@ -705,11 +706,11 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 
 Downloaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── img1/
-|   ├── imgage1.jpg
-|   └── imgage2.jpg
+|   ├── image1.jpg
+|   └── image2.jpg
 └── gt/
     ├── labels.txt
     └── gt.txt
@@ -734,7 +735,7 @@ person
 
 Uploaded file: a zip archive of the structure above or:
 
-``` bash
+```bash
 taskname.zip/
 ├── labels.txt # optional, mandatory for non-official labels
 └── gt.txt
@@ -742,13 +743,45 @@ taskname.zip/
 
 - supported annotations: Rectangle tracks
 
+### [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)<a id="mots" />
+
+#### MOTS PNG Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+taskname.zip/
+└── <any_subset_name>/
+    |   images/
+    |   ├── image1.jpg
+    |   └── image2.jpg
+    └── instances/
+        ├── labels.txt
+        ├── image1.png
+        └── image2.png
+
+# labels.txt
+cat
+dog
+person
+...
+```
+
+- supported annotations: Rectangle and Polygon tracks
+
+#### MOTS PNG Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Polygon tracks
+
 ### [LabelMe](http://labelme.csail.mit.edu/Release3.0)<a id="labelme" />
 
 #### LabelMe Dumper
 
 Downloaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── img1.jpg
 └── img1.xml
@@ -760,7 +793,7 @@ taskname.zip/
 
 Uploaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── Masks/
 |   ├── img1_mask1.png
@@ -771,3 +804,73 @@ taskname.zip/
 ```
 
 - supported annotations: Rectangles, Polygons, Masks (as polygons)
+
+### [ImageNet](http://www.image-net.org)<a id="imagenet" />
+
+#### ImageNet Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+# if we save images:
+taskname.zip/
+└── label1/
+    ├── label1_image1.jpg
+    └── label1_image2.jpg
+└── label2/
+    ├── label2_image1.jpg
+    ├── label2_image3.jpg
+    └── label2_image4.jpg
+
+# if we keep only annotation:
+taskname.zip/
+└── <any_subset_name>.txt
+└── synsets.txt
+
+```
+
+- supported annotations: Labels
+
+#### ImageNet Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Labels
+
+### [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)<a id="camvid" />
+
+#### CamVid Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+taskname.zip/
+├── labelmap.txt # optional, required for non-CamVid labels
+└── <any_subset_name>/
+    ├── image1.png
+    └── image2.png
+└── <any_subset_name>annot/
+    ├── image1.png
+    └── image2.png
+└── <any_subset_name>.txt
+
+# labelmap.txt
+# color (RGB) label
+0 0 0 Void
+64 128 64 Animal
+192 0 128 Archway
+0 128 192 Bicyclist
+0 128 64 Bridge
+```
+
+Mask is a `png` image with 1 or 3 channels where each pixel
+has own color which corresponds to a label.
+`(0, 0, 0)` is used for background by default.
+
+- supported annotations: Rectangles, Polygons
+
+#### CamVid Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Polygons

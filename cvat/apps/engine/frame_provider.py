@@ -6,12 +6,14 @@ import math
 from enum import Enum
 from io import BytesIO
 
+import cv2
 import numpy as np
 from PIL import Image
 
+from cvat.apps.engine.cache import CacheInteraction
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.mime_types import mimetypes
-from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice
 
 
 class RandomAccessIterator:
@@ -42,6 +44,9 @@ class RandomAccessIterator:
         self.pos = -1
 
 class FrameProvider:
+    VIDEO_FRAME_EXT = '.PNG'
+    VIDEO_FRAME_MIME = 'image/png'
+
     class Quality(Enum):
         COMPRESSED = 0
         ORIGINAL = 100
@@ -65,6 +70,19 @@ class FrameProvider:
                     self.reader_class([self.get_chunk_path(chunk_id)]))
             return self.chunk_reader
 
+    class BuffChunkLoader(ChunkLoader):
+        def __init__(self, reader_class, path_getter, quality, db_data):
+            super().__init__(reader_class, path_getter)
+            self.quality = quality
+            self.db_data = db_data
+
+        def load(self, chunk_id):
+            if self.chunk_id != chunk_id:
+                self.chunk_id = chunk_id
+                self.chunk_reader = RandomAccessIterator(
+                    self.reader_class([self.get_chunk_path(chunk_id, self.quality, self.db_data)[0]]))
+            return self.chunk_reader
+
     def __init__(self, db_data):
         self._db_data = db_data
         self._loaders = {}
@@ -73,12 +91,27 @@ class FrameProvider:
             DataChoice.IMAGESET: ZipReader,
             DataChoice.VIDEO: VideoReader,
         }
-        self._loaders[self.Quality.COMPRESSED] = self.ChunkLoader(
-            reader_class[db_data.compressed_chunk_type],
-            db_data.get_compressed_chunk_path)
-        self._loaders[self.Quality.ORIGINAL] = self.ChunkLoader(
-            reader_class[db_data.original_chunk_type],
-            db_data.get_original_chunk_path)
+
+        if db_data.storage_method == StorageMethodChoice.CACHE:
+            cache = CacheInteraction()
+
+            self._loaders[self.Quality.COMPRESSED] = self.BuffChunkLoader(
+                reader_class[db_data.compressed_chunk_type],
+                cache.get_buff_mime,
+                self.Quality.COMPRESSED,
+                self._db_data)
+            self._loaders[self.Quality.ORIGINAL] = self.BuffChunkLoader(
+                reader_class[db_data.original_chunk_type],
+                cache.get_buff_mime,
+                self.Quality.ORIGINAL,
+                self._db_data)
+        else:
+            self._loaders[self.Quality.COMPRESSED] = self.ChunkLoader(
+                reader_class[db_data.compressed_chunk_type],
+                db_data.get_compressed_chunk_path)
+            self._loaders[self.Quality.ORIGINAL] = self.ChunkLoader(
+                reader_class[db_data.original_chunk_type],
+                db_data.get_original_chunk_path)
 
     def __len__(self):
         return self._db_data.size
@@ -100,13 +133,14 @@ class FrameProvider:
 
         return chunk_number_
 
-    @staticmethod
-    def _av_frame_to_png_bytes(av_frame):
-        pil_img = av_frame.to_image()
-        buf = BytesIO()
-        pil_img.save(buf, format='PNG')
-        buf.seek(0)
-        return buf
+    @classmethod
+    def _av_frame_to_png_bytes(cls, av_frame):
+        ext = cls.VIDEO_FRAME_EXT
+        image = av_frame.to_ndarray(format='bgr24')
+        success, result = cv2.imencode(ext, image)
+        if not success:
+            raise Exception("Failed to encode image to '%s' format" % (ext))
+        return BytesIO(result.tobytes())
 
     def _convert_frame(self, frame, reader_class, out_type):
         if out_type == self.Type.BUFFER:
@@ -115,11 +149,11 @@ class FrameProvider:
             return frame.to_image() if reader_class is VideoReader else Image.open(frame)
         elif out_type == self.Type.NUMPY_ARRAY:
             if reader_class is VideoReader:
-                image = np.array(frame.to_image())
+                image = frame.to_ndarray(format='bgr24')
             else:
                 image = np.array(Image.open(frame))
-            if len(image.shape) == 3 and image.shape[2] in {3, 4}:
-                image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
+                if len(image.shape) == 3 and image.shape[2] in {3, 4}:
+                    image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
             return image
         else:
             raise Exception('unsupported output type')
@@ -129,6 +163,8 @@ class FrameProvider:
 
     def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
         chunk_number = self._validate_chunk_number(chunk_number)
+        if self._db_data.storage_method == StorageMethodChoice.CACHE:
+            return self._loaders[quality].get_chunk_path(chunk_number, quality, self._db_data)
         return self._loaders[quality].get_chunk_path(chunk_number)
 
     def get_frame(self, frame_number, quality=Quality.ORIGINAL,
@@ -140,7 +176,7 @@ class FrameProvider:
 
         frame = self._convert_frame(frame, loader.reader_class, out_type)
         if loader.reader_class is VideoReader:
-            return (frame, 'image/png')
+            return (frame, self.VIDEO_FRAME_MIME)
         return (frame, mimetypes.guess_type(frame_name))
 
     def get_frames(self, quality=Quality.ORIGINAL, out_type=Type.BUFFER):

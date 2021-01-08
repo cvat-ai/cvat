@@ -8,16 +8,15 @@ import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
-import Tooltip from 'antd/lib/tooltip';
-import Modal from 'antd/lib/modal';
 import Progress from 'antd/lib/progress';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import { ActiveInference } from 'reducers/interfaces';
 import { MenuIcon } from 'icons';
+import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
     taskInstance: any;
@@ -53,66 +52,71 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Text strong type='secondary'>{`#${id}: `}</Text>
-                <Text strong className='cvat-text-color'>{name}</Text>
+                <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                <Text strong className='cvat-item-task-name'>
+                    {name}
+                </Text>
                 <br />
-                { owner
-                    && (
-                        <>
-                            <Text type='secondary'>
-                                {`Created ${owner ? `by ${owner}` : ''} on ${created}`}
-                            </Text>
-                            <br />
-                        </>
-                    )}
+                {owner && (
+                    <>
+                        <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
+                        <br />
+                    </>
+                )}
                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
         );
     }
 
     private renderProgress(): JSX.Element {
-        const {
-            taskInstance,
-            activeInference,
-            cancelAutoAnnotation,
-        } = this.props;
+        const { taskInstance, activeInference, cancelAutoAnnotation } = this.props;
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.jobs.length;
-        const numOfCompleted = taskInstance.jobs.filter(
-            (job: any): boolean => job.status === 'completed',
-        ).length;
+        const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.status === 'completed').length;
 
         // Progress appearence depends on number of jobs
         let progressColor = null;
         let progressText = null;
-        if (numOfCompleted === numOfJobs) {
+        if (numOfCompleted && numOfCompleted === numOfJobs) {
             progressColor = 'cvat-task-completed-progress';
-            progressText = <Text strong className={progressColor}>Completed</Text>;
+            progressText = (
+                <Text strong className={progressColor}>
+                    Completed
+                </Text>
+            );
         } else if (numOfCompleted) {
             progressColor = 'cvat-task-progress-progress';
-            progressText = <Text strong className={progressColor}>In Progress</Text>;
+            progressText = (
+                <Text strong className={progressColor}>
+                    In Progress
+                </Text>
+            );
         } else {
             progressColor = 'cvat-task-pending-progress';
-            progressText = <Text strong className={progressColor}>Pending</Text>;
+            progressText = (
+                <Text strong className={progressColor}>
+                    Pending
+                </Text>
+            );
         }
 
         const jobsProgress = numOfCompleted / numOfJobs;
 
         return (
             <Col span={6}>
-                <Row type='flex' justify='space-between' align='top'>
+                <Row justify='space-between' align='top'>
                     <Col>
                         <svg height='8' width='8' className={progressColor}>
                             <circle cx='4' cy='4' r='4' strokeWidth='0' />
                         </svg>
-                        { progressText }
+                        {progressText}
                     </Col>
                     <Col>
                         <Text type='secondary'>{`${numOfCompleted} of ${numOfJobs} jobs`}</Text>
                     </Col>
                 </Row>
                 <Row>
-                    <Col>
+                    <Col span={24}>
                         <Progress
                             className={`${progressColor} cvat-task-progress`}
                             percent={jobsProgress * 100}
@@ -123,61 +127,21 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         />
                     </Col>
                 </Row>
-                { activeInference
-                    && (
-                        <>
-                            <Row>
-                                <Col>
-                                    <Text strong>Automatic annotation</Text>
-                                </Col>
-                            </Row>
-                            <Row type='flex' justify='space-between'>
-                                <Col span={22}>
-                                    <Progress
-                                        percent={Math.floor(activeInference.progress)}
-                                        strokeColor={{
-                                            from: '#108ee9',
-                                            to: '#87d068',
-                                        }}
-                                        showInfo={false}
-                                        strokeWidth={5}
-                                        size='small'
-                                    />
-                                </Col>
-                                <Col span={1} className='close-auto-annotation-icon'>
-                                    <Tooltip title='Cancel automatic annotation' mouseLeaveDelay={0}>
-                                        <Icon
-                                            type='close'
-                                            onClick={() => {
-                                                Modal.confirm({
-                                                    title: 'You are going to cancel automatic annotation?',
-                                                    content: 'Reached progress will be lost. Continue?',
-                                                    okType: 'danger',
-                                                    onOk() {
-                                                        cancelAutoAnnotation();
-                                                    },
-                                                });
-                                            }}
-                                        />
-                                    </Tooltip>
-                                </Col>
-                            </Row>
-                        </>
-                    )}
+                <AutomaticAnnotationProgress
+                    activeInference={activeInference}
+                    cancelAutoAnnotation={cancelAutoAnnotation}
+                />
             </Col>
         );
     }
 
     private renderNavigation(): JSX.Element {
-        const {
-            taskInstance,
-            history,
-        } = this.props;
+        const { taskInstance, history } = this.props;
         const { id } = taskInstance;
 
         return (
             <Col span={4}>
-                <Row type='flex' justify='end'>
+                <Row justify='end'>
                     <Col>
                         <Button
                             className='cvat-item-open-task-button'
@@ -194,7 +158,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         </Button>
                     </Col>
                 </Row>
-                <Row type='flex' justify='end'>
+                <Row justify='end'>
                     <Col className='cvat-item-open-task-actions'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
@@ -207,10 +171,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public render(): JSX.Element {
-        const {
-            deleted,
-            hidden,
-        } = this.props;
+        const { deleted, hidden } = this.props;
         const style = {};
         if (deleted) {
             (style as any).pointerEvents = 'none';
@@ -222,7 +183,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         }
 
         return (
-            <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top' style={{ ...style }}>
+            <Row className='cvat-tasks-list-item' justify='center' align='top' style={{ ...style }}>
                 {this.renderPreview()}
                 {this.renderDescription()}
                 {this.renderProgress()}

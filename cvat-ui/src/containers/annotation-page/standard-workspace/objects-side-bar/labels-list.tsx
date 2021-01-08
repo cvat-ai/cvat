@@ -15,9 +15,7 @@ interface StateToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            job: {
-                labels,
-            },
+            job: { labels },
             tabContentHeight: listHeight,
         },
     } = state;
@@ -28,6 +26,4 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-export default connect(
-    mapStateToProps,
-)(LabelsListComponent);
+export default connect(mapStateToProps)(LabelsListComponent);

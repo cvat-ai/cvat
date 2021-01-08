@@ -39,8 +39,18 @@ hr {
     }
 }
 
+.ant-notification {
+    top: $header-height !important;
+    right: 0 !important;
+    margin-right: 0;
+}
+
 .cvat-info-circle-icon {
     color: $info-icon-color;
+}
+
+.cvat-danger-circle-icon {
+    color: $danger-icon-color;
 }
 
 #root {
@@ -48,4 +58,13 @@ hr {
     height: 100%;
     display: grid;
     min-width: 1280px;
+}
+
+#layout-grid {
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    pointer-events: none;
 }

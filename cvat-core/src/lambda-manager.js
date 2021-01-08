@@ -1,11 +1,6 @@
-/*
-* Copyright (C) 2020 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
-
-/* global
-    require:false
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 const serverProxy = require('./server-proxy');
 const { ArgumentError } = require('./exceptions');
@@ -28,14 +23,12 @@ class LambdaManager {
         const models = [];
 
         for (const model of result) {
-            models.push(new MLModel({
-                id: model.id,
-                name: model.name,
-                description: model.description,
-                framework: model.framework,
-                labels: [...model.labels],
-                type: model.kind,
-            }));
+            models.push(
+                new MLModel({
+                    ...model,
+                    type: model.kind,
+                }),
+            );
         }
 
         this.cachedList = models;
@@ -45,20 +38,18 @@ class LambdaManager {
     async run(task, model, args) {
         if (!(task instanceof Task)) {
             throw new ArgumentError(
-                `Argument task is expected to be an instance of Task class, but got ${typeof (task)}`,
+                `Argument task is expected to be an instance of Task class, but got ${typeof task}`,
             );
         }
 
         if (!(model instanceof MLModel)) {
             throw new ArgumentError(
-                `Argument model is expected to be an instance of MLModel class, but got ${typeof (model)}`,
+                `Argument model is expected to be an instance of MLModel class, but got ${typeof model}`,
             );
         }
 
-        if (args && typeof (args) !== 'object') {
-            throw new ArgumentError(
-                `Argument args is expected to be an object, but got ${typeof (model)}`,
-            );
+        if (args && typeof args !== 'object') {
+            throw new ArgumentError(`Argument args is expected to be an object, but got ${typeof model}`);
         }
 
         const body = args;
@@ -82,7 +73,7 @@ class LambdaManager {
     }
 
     async cancel(requestID) {
-        if (typeof (requestID) !== 'string') {
+        if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
         }
 
@@ -112,7 +103,11 @@ class LambdaManager {
                     delete this.listening[requestID];
                 }
             } catch (error) {
-                onUpdate(RQStatus.UNKNOWN, 0, `Could not get a status of the request ${requestID}. ${error.toString()}`);
+                onUpdate(
+                    RQStatus.UNKNOWN,
+                    0,
+                    `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                );
             }
         };
 

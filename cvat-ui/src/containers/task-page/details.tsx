@@ -7,47 +7,46 @@ import { connect } from 'react-redux';
 
 import DetailsComponent from 'components/task-page/details';
 import { updateTaskAsync } from 'actions/tasks-actions';
-import {
-    Task,
-    CombinedState,
-} from 'reducers/interfaces';
+import { cancelInferenceAsync } from 'actions/models-actions';
+import { Task, CombinedState, ActiveInference } from 'reducers/interfaces';
 
 interface OwnProps {
     task: Task;
 }
 
 interface StateToProps {
-    registeredUsers: any[];
+    activeInference: ActiveInference | null;
     installedGit: boolean;
 }
 
 interface DispatchToProps {
+    cancelAutoAnnotation(): void;
     onTaskUpdate: (taskInstance: any) => void;
 }
 
-function mapStateToProps(state: CombinedState): StateToProps {
+function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { list } = state.plugins;
 
     return {
-        registeredUsers: state.users.users,
         installedGit: list.GIT_INTEGRATION,
+        activeInference: state.models.inferences[own.task.instance.id] || null,
     };
 }
 
-
-function mapDispatchToProps(dispatch: any): DispatchToProps {
+function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
-        onTaskUpdate: (taskInstance: any): void => dispatch(updateTaskAsync(taskInstance)),
+        onTaskUpdate(taskInstance: any): void {
+            dispatch(updateTaskAsync(taskInstance));
+        },
+        cancelAutoAnnotation(): void {
+            dispatch(cancelInferenceAsync(own.task.instance.id));
+        },
     };
 }
-
 
 function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        task,
-        installedGit,
-        registeredUsers,
-        onTaskUpdate,
+        task, installedGit, activeInference, cancelAutoAnnotation, onTaskUpdate,
     } = props;
 
     return (
@@ -55,13 +54,11 @@ function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JS
             previewImage={task.preview}
             taskInstance={task.instance}
             installedGit={installedGit}
+            activeInference={activeInference}
             onTaskUpdate={onTaskUpdate}
-            registeredUsers={registeredUsers}
+            cancelAutoAnnotation={cancelAutoAnnotation}
         />
     );
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(TaskPageContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(TaskPageContainer);

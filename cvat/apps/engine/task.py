@@ -6,6 +6,7 @@
 import itertools
 import os
 import sys
+from re import findall
 import rq
 import shutil
 from traceback import print_exception
@@ -14,8 +15,9 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
-from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice
 from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.prepare import prepare_meta
 
 import django_rq
 from django.conf import settings
@@ -104,7 +106,7 @@ def _save_task_to_db(db_task):
     db_task.data.save()
     db_task.save()
 
-def _count_files(data):
+def _count_files(data, meta_info_file=None):
     share_root = settings.SHARE_ROOT
     server_files = []
 
@@ -131,10 +133,11 @@ def _count_files(data):
             mime = get_mime(full_path)
             if mime in counter:
                 counter[mime].append(rel_path)
+            elif findall('meta_info.txt$', rel_path):
+                meta_info_file.append(rel_path)
             else:
                 slogger.glob.warn("Skip '{}' file (its mime type doesn't "
                     "correspond to a video or an image file)".format(full_path))
-
 
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
 
@@ -150,7 +153,7 @@ def _count_files(data):
 
     return counter
 
-def _validate_data(counter):
+def _validate_data(counter, meta_info_file=None):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
@@ -159,6 +162,9 @@ def _validate_data(counter):
                 unique_entries += len(counter[media_type])
             else:
                 multiple_entries += len(counter[media_type])
+
+            if meta_info_file and media_type != 'video':
+                raise Exception('File with meta information can only be uploaded with video file')
 
     if unique_entries == 1 and multiple_entries > 0 or unique_entries > 1:
         unique_types = ', '.join([k for k, v in MEDIA_TYPES.items() if v['unique']])
@@ -218,11 +224,18 @@ def _create_thread(tid, data):
     if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    media = _count_files(data)
-    media, task_mode = _validate_data(media)
+    meta_info_file = []
+    media = _count_files(data, meta_info_file)
+    media, task_mode = _validate_data(media, meta_info_file)
+    if meta_info_file:
+        assert settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE, \
+            "File with meta information can be uploaded if 'Use cache' option is also selected"
 
     if data['server_files']:
-        _copy_data_from_share(data['server_files'], upload_dir)
+        if db_data.storage == StorageChoice.LOCAL:
+            _copy_data_from_share(data['server_files'], upload_dir)
+        else:
+            upload_dir = settings.SHARE_ROOT
 
     av_scan_paths(upload_dir)
 
@@ -237,12 +250,17 @@ def _create_thread(tid, data):
         if media_files:
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
+            source_paths=[os.path.join(upload_dir, f) for f in media_files]
+            if media_type in  ('archive', 'zip') and db_data.storage == StorageChoice.SHARE:
+                source_paths.append(db_data.get_upload_dirname())
             extractor = MEDIA_TYPES[media_type]['extractor'](
-                source_path=[os.path.join(upload_dir, f) for f in media_files],
+                source_path=source_paths,
                 step=db_data.get_frame_step(),
                 start=db_data.start_frame,
                 stop=data['stop_frame'],
             )
+    if extractor.__class__ == MEDIA_TYPES['zip']['extractor']:
+        extractor.extract()
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
@@ -270,43 +288,115 @@ def _create_thread(tid, data):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            w, h = extractor.get_image_size()
+            w, h = extractor.get_image_size(0)
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
             db_data.chunk_size = 36
 
+
     video_path = ""
     video_size = (0, 0)
 
-    counter = itertools.count()
-    generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
-    for chunk_idx, chunk_data in generator:
-        chunk_data = list(chunk_data)
-        original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
-        original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
+    if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+       for media_type, media_files in media.items():
 
-        compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
-        img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
+            if not media_files:
+                continue
 
-        if db_task.mode == 'annotation':
-            db_images.extend([
-                models.Image(
-                    data=db_data,
-                    path=os.path.relpath(data[1], upload_dir),
-                    frame=data[2],
-                    width=size[0],
-                    height=size[1])
+            if task_mode == MEDIA_TYPES['video']['mode']:
+                try:
+                    if meta_info_file:
+                        try:
+                            from cvat.apps.engine.prepare import UploadedMeta
+                            meta_info = UploadedMeta(source_path=os.path.join(upload_dir, media_files[0]),
+                                                     meta_path=db_data.get_meta_path(),
+                                                     uploaded_meta=os.path.join(upload_dir, meta_info_file[0]))
+                            meta_info.check_seek_key_frames()
+                            meta_info.check_frames_numbers()
+                            meta_info.save_meta_info()
+                            assert len(meta_info.key_frames) > 0, 'No key frames.'
+                        except Exception as ex:
+                            base_msg = str(ex) if isinstance(ex, AssertionError) else \
+                                'Invalid meta information was upload.'
+                            job.meta['status'] = '{} Start prepare valid meta information.'.format(base_msg)
+                            job.save_meta()
+                            meta_info, smooth_decoding = prepare_meta(
+                                media_file=media_files[0],
+                                upload_dir=upload_dir,
+                                meta_dir=os.path.dirname(db_data.get_meta_path()),
+                                chunk_size=db_data.chunk_size
+                            )
+                            assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
+                    else:
+                        meta_info, smooth_decoding = prepare_meta(
+                            media_file=media_files[0],
+                            upload_dir=upload_dir,
+                            meta_dir=os.path.dirname(db_data.get_meta_path()),
+                            chunk_size=db_data.chunk_size
+                        )
+                        assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
 
-                for data, size in zip(chunk_data, img_sizes)
-            ])
-        else:
-            video_size = img_sizes[0]
-            video_path = chunk_data[0][1]
+                    all_frames = meta_info.get_task_size()
+                    video_size = meta_info.frame_sizes
 
-        db_data.size += len(chunk_data)
-        progress = extractor.get_progress(chunk_data[-1][2])
-        update_progress(progress)
+                    db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
+                    video_path = os.path.join(upload_dir, media_files[0])
+                except Exception as ex:
+                    db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
+                    if os.path.exists(db_data.get_meta_path()):
+                        os.remove(db_data.get_meta_path())
+                    base_msg = str(ex) if isinstance(ex, AssertionError) else "Uploaded video does not support a quick way of task creating."
+                    job.meta['status'] = "{} The task will be created using the old method".format(base_msg)
+                    job.save_meta()
+            else:#images,archive
+                db_data.size = len(extractor)
+
+                counter = itertools.count()
+                for chunk_number, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
+                    chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
+                    img_sizes = []
+                    with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
+                        for path, frame_id in chunk_paths:
+                            dummy_chunk.write(os.path.relpath(path, upload_dir) + '\n')
+                            img_sizes.append(extractor.get_image_size(frame_id))
+
+                    db_images.extend([
+                        models.Image(data=db_data,
+                            path=os.path.relpath(path, upload_dir),
+                            frame=frame, width=w, height=h)
+                        for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
+                    ])
+
+    if db_data.storage_method == StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
+        counter = itertools.count()
+        generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
+        for chunk_idx, chunk_data in generator:
+            chunk_data = list(chunk_data)
+            original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
+            original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
+
+            compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
+            img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
+
+            if db_task.mode == 'annotation':
+                db_images.extend([
+                    models.Image(
+                        data=db_data,
+                        path=os.path.relpath(data[1], upload_dir),
+                        frame=data[2],
+                        width=size[0],
+                        height=size[1])
+
+                    for data, size in zip(chunk_data, img_sizes)
+                ])
+            else:
+                video_size = img_sizes[0]
+                video_path = chunk_data[0][1]
+
+            db_data.size += len(chunk_data)
+            progress = extractor.get_progress(chunk_data[-1][2])
+            update_progress(progress)
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
@@ -323,5 +413,5 @@ def _create_thread(tid, data):
     preview = extractor.get_preview()
     preview.save(db_data.get_preview_path())
 
-    slogger.glob.info("Founded frames {} for Data #{}".format(db_data.size, db_data.id))
+    slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)

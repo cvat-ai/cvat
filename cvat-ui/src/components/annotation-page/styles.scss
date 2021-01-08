@@ -6,6 +6,7 @@
 
 .cvat-annotation-page.ant-layout {
     height: 100%;
+    overflow: hidden;
 }
 
 .ant-layout-header.cvat-annotation-header {
@@ -37,21 +38,21 @@
     align-items: center;
     margin: 0 3px;
 
-    > span {
+    > span:not([role='img']) {
         margin-left: 0;
         font-size: 10px;
     }
 
-    > i {
+    > span[role='img'] {
         transform: scale(0.8);
         padding: 3px;
     }
 
-    &:hover > i {
+    &:hover > span[role='img'] {
         transform: scale(0.85);
     }
 
-    &:active > i {
+    &:active > span[role='img'] {
         transform: scale(0.8);
     }
 
@@ -80,7 +81,7 @@
     height: 100%;
     margin-right: 10px;
 
-    > i {
+    > span {
         font-size: 25px;
         margin: 0 7px;
         color: $player-buttons-color;
@@ -96,18 +97,17 @@
 }
 
 .cvat-player-controls {
-    position: relative;
     height: 100%;
     line-height: 27px;
 
     > div {
-        position: relative;
         height: 50%;
     }
 }
 
 .cvat-player-slider {
     width: 350px;
+    margin: 0;
 
     > .ant-slider-rail {
         background-color: $player-slider-color;
@@ -161,22 +161,13 @@
 
     > div:nth-child(1) {
         > div {
-            > .ant-select,
-            i {
-                margin-left: 10px;
-            }
-        }
-    }
-
-    > div:nth-child(2) {
-        > div {
             > span {
                 font-size: 20px;
             }
         }
     }
 
-    > div:nth-child(3) {
+    > div:nth-child(2) {
         > div {
             display: grid;
         }
@@ -204,7 +195,7 @@
 }
 
 .ant-menu.cvat-annotation-menu {
-    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+    box-shadow: $box-shadow-base;
 
     > li:hover {
         background-color: $hover-menu-color;
@@ -275,7 +266,7 @@
         }
     }
 
-    > i {
+    > span[role='img'] {
         opacity: 0.7;
         color: $objects-bar-icons-color;
 
@@ -297,6 +288,48 @@
 
         ul {
             display: flex;
+        }
+    }
+}
+
+.cvat-player-previous-inlined-button,
+.cvat-player-next-inlined-button,
+.cvat-player-previous-filtered-inlined-button,
+.cvat-player-next-filtered-inlined-button,
+.cvat-player-previous-empty-inlined-button,
+.cvat-player-next-empty-inlined-button {
+    color: $player-buttons-color;
+
+    &:not(:first-child) {
+        margin-left: 12px;
+    }
+
+    > svg {
+        transform: scale(1.8);
+    }
+}
+
+.cvat-request-review-dialog {
+    > .ant-modal-content > .ant-modal-body {
+        > div:nth-child(2) {
+            margin-top: $grid-unit-size * 2;
+        }
+
+        > div:nth-child(3) {
+            margin-top: $grid-unit-size * 2;
+        }
+    }
+}
+
+.cvat-submit-review-dialog {
+    > .ant-modal-content > .ant-modal-body {
+        > div:nth-child(2) > div:nth-child(2) {
+            .ant-col {
+                > div:nth-child(2) {
+                    margin-top: $grid-unit-size * 2;
+                    margin-bottom: $grid-unit-size * 2;
+                }
+            }
         }
     }
 }

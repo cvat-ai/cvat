@@ -9,14 +9,12 @@ import { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 
 import { loadShareDataAsync } from 'actions/share-actions';
-import {
-    ShareItem,
-    CombinedState,
-} from 'reducers/interfaces';
+import { ShareItem, CombinedState } from 'reducers/interfaces';
 
 interface OwnProps {
     ref: any;
     withRemote: boolean;
+    onChangeActiveKey(key: string): void;
 }
 
 interface StateToProps {
@@ -29,16 +27,18 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     function convert(items: ShareItem[], path?: string): TreeNodeNormal[] {
-        return items.map((item): TreeNodeNormal => {
-            const isLeaf = item.type !== 'DIR';
-            const key = `${path}${item.name}${isLeaf ? '' : '/'}`;
-            return {
-                key,
-                isLeaf,
-                title: item.name || 'root',
-                children: convert(item.children, key),
-            };
-        });
+        return items.map(
+            (item): TreeNodeNormal => {
+                const isLeaf = item.type !== 'DIR';
+                const key = `${path}${item.name}${isLeaf ? '' : '/'}`;
+                return {
+                    key,
+                    isLeaf,
+                    title: item.name || 'root',
+                    children: convert(item.children, key),
+                };
+            },
+        );
     }
 
     const { root } = state.share;
@@ -69,16 +69,13 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const {
-            treeData,
-            getTreeData,
-            withRemote,
-        } = this.props;
+        const { treeData, getTreeData, withRemote, onChangeActiveKey } = this.props;
 
         return (
             <FileManagerComponent
                 treeData={treeData}
                 onLoadData={getTreeData}
+                onChangeActiveKey={onChangeActiveKey}
                 withRemote={withRemote}
                 ref={(component): void => {
                     this.managerComponentRef = component;
@@ -88,9 +85,4 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-    null,
-    { forwardRef: true },
-)(FileManagerContainer);
+export default connect(mapStateToProps, mapDispatchToProps, null, { forwardRef: true })(FileManagerContainer);

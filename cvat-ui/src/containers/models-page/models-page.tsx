@@ -5,23 +5,25 @@
 import { connect } from 'react-redux';
 
 import ModelsPageComponent from 'components/models-page/models-page';
-import {
-    Model,
-    CombinedState,
-} from 'reducers/interfaces';
+import { Model, CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
-    deployedModels: Model[];
+    interactors: Model[];
+    detectors: Model[];
+    trackers: Model[];
+    reid: Model[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
+    const { interactors, detectors, trackers, reid } = models;
 
     return {
-        deployedModels: models.models,
+        interactors,
+        detectors,
+        trackers,
+        reid,
     };
 }
 
-export default connect(
-    mapStateToProps, {},
-)(ModelsPageComponent);
+export default connect(mapStateToProps, {})(ModelsPageComponent);

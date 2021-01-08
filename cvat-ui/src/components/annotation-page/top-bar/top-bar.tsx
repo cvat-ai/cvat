@@ -5,8 +5,7 @@
 import React from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import InputNumber from 'antd/lib/input-number';
-import { SliderValue } from 'antd/lib/slider';
+import Input from 'antd/lib/input';
 
 import { Workspace } from 'reducers/interfaces';
 import LeftGroup from './left-group';
@@ -20,7 +19,7 @@ interface Props {
     savingStatuses: string[];
     frameNumber: number;
     frameFilename: string;
-    inputFrameRef: React.RefObject<InputNumber>;
+    inputFrameRef: React.RefObject<Input>;
     startFrame: number;
     stopFrame: number;
     undoAction?: string;
@@ -34,6 +33,8 @@ interface Props {
     previousFrameShortcut: string;
     forwardShortcut: string;
     backwardShortcut: string;
+    prevButtonType: string;
+    nextButtonType: string;
     focusFrameInputShortcut: string;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
@@ -45,7 +46,9 @@ interface Props {
     onBackward(): void;
     onFirstFrame(): void;
     onLastFrame(): void;
-    onSliderChange(value: SliderValue): void;
+    setPrevButtonType(type: 'regular' | 'filtered' | 'empty'): void;
+    setNextButtonType(type: 'regular' | 'filtered' | 'empty'): void;
+    onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
     onUndoClick(): void;
@@ -73,6 +76,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         previousFrameShortcut,
         forwardShortcut,
         backwardShortcut,
+        prevButtonType,
+        nextButtonType,
         focusFrameInputShortcut,
         showStatistics,
         changeWorkspace,
@@ -84,6 +89,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onBackward,
         onFirstFrame,
         onLastFrame,
+        setPrevButtonType,
+        setNextButtonType,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -92,7 +99,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Row type='flex' justify='space-between'>
+        <Row justify='space-between'>
             <LeftGroup
                 saving={saving}
                 savingStatuses={savingStatuses}
@@ -106,7 +113,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 onRedoClick={onRedoClick}
             />
             <Col className='cvat-annotation-header-player-group'>
-                <Row type='flex' align='middle'>
+                <Row align='middle'>
                     <PlayerButtons
                         playing={playing}
                         playPauseShortcut={playPauseShortcut}
@@ -114,6 +121,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         previousFrameShortcut={previousFrameShortcut}
                         forwardShortcut={forwardShortcut}
                         backwardShortcut={backwardShortcut}
+                        prevButtonType={prevButtonType}
+                        nextButtonType={nextButtonType}
                         onPrevFrame={onPrevFrame}
                         onNextFrame={onNextFrame}
                         onForward={onForward}
@@ -121,6 +130,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         onFirstFrame={onFirstFrame}
                         onLastFrame={onLastFrame}
                         onSwitchPlay={onSwitchPlay}
+                        setPrevButton={setPrevButtonType}
+                        setNextButton={setNextButtonType}
                     />
                     <PlayerNavigation
                         startFrame={startFrame}
@@ -135,11 +146,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     />
                 </Row>
             </Col>
-            <RightGroup
-                workspace={workspace}
-                changeWorkspace={changeWorkspace}
-                showStatistics={showStatistics}
-            />
+            <RightGroup workspace={workspace} changeWorkspace={changeWorkspace} showStatistics={showStatistics} />
         </Row>
     );
 }

@@ -3,37 +3,40 @@
 // SPDX-License-Identifier: MIT
 
 import 'antd/dist/antd.css';
-import '../styles.scss';
-import React from 'react';
-import { Switch, Route, Redirect } from 'react-router';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, ExtendedKeyMapOptions, configure } from 'react-hotkeys';
-import Spin from 'antd/lib/spin';
+import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
-import { Row, Col } from 'antd/lib/grid';
-import Text from 'antd/lib/typography/Text';
+import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
-
+import Spin from 'antd/lib/spin';
+import Text from 'antd/lib/typography/Text';
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
+import Header from 'components/header/header';
+import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
+import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
 import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
+import ProjectsPageComponent from 'components/projects-page/projects-page';
+import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
+import ProjectPageComponent from 'components/project-page/project-page';
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
+import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
 import TaskPageContainer from 'containers/task-page/task-page';
 import ModelsPageContainer from 'containers/models-page/models-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
-import Header from 'components/header/header';
-import { customWaViewHit } from 'utils/enviroment';
-import showPlatformNotification, { stopNotifications, platformInfo } from 'utils/platform-checker';
-
 import getCore from 'cvat-core-wrapper';
+import React from 'react';
+import { configure, ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
+import { Redirect, Route, Switch } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { NotificationsState } from 'reducers/interfaces';
-import Modal from 'antd/lib/modal';
+import { customWaViewHit } from 'utils/enviroment';
+import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
+import '../styles.scss';
 
 interface CVATAppProps {
     loadFormats: () => void;
-    loadUsers: () => void;
     loadAbout: () => void;
     verifyAuthorized: () => void;
     loadUserAgreements: () => void;
@@ -53,17 +56,15 @@ interface CVATAppProps {
     modelsFetching: boolean;
     formatsInitialized: boolean;
     formatsFetching: boolean;
-    usersInitialized: boolean;
-    usersFetching: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
     userAgreementsInitialized: boolean;
     authActionsFetching: boolean;
     authActionsInitialized: boolean;
-    allowChangePassword: boolean;
     notifications: NotificationsState;
     user: any;
+    isModelPluginActive: boolean;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
@@ -91,7 +92,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const {
             verifyAuthorized,
             loadFormats,
-            loadUsers,
             loadAbout,
             loadUserAgreements,
             initPlugins,
@@ -101,8 +101,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userFetching,
             formatsInitialized,
             formatsFetching,
-            usersInitialized,
-            usersFetching,
             aboutInitialized,
             aboutFetching,
             pluginsInitialized,
@@ -114,6 +112,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userAgreementsInitialized,
             authActionsFetching,
             authActionsInitialized,
+            isModelPluginActive,
         } = this.props;
 
         this.showErrors();
@@ -141,15 +140,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadFormats();
         }
 
-        if (!usersInitialized && !usersFetching) {
-            loadUsers();
-        }
-
         if (!aboutInitialized && !aboutFetching) {
             loadAbout();
         }
 
-        if (!modelsInitialized && !modelsFetching) {
+        if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
         }
 
@@ -173,10 +168,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             });
         }
 
-        const {
-            notifications,
-            resetMessages,
-        } = this.props;
+        const { notifications, resetMessages } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
@@ -195,9 +187,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showErrors(): void {
-        function showError(title: string, _error: any): void {
+        function showError(title: string, _error: any, className?: string): void {
             const error = _error.toString();
+            const dynamicProps = typeof className === 'undefined' ? {} : { className };
             notification.error({
+                ...dynamicProps,
                 message: (
                     <div
                         // eslint-disable-next-line
@@ -214,10 +208,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             console.error(error);
         }
 
-        const {
-            notifications,
-            resetErrors,
-        } = this.props;
+        const { notifications, resetErrors } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
@@ -225,7 +216,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 const error = (notifications as any).errors[where][what];
                 shown = shown || !!error;
                 if (error) {
-                    showError(error.message, error.reason);
+                    showError(error.message, error.reason, error.className);
                 }
             }
         }
@@ -239,19 +230,25 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public render(): JSX.Element {
         const {
             userInitialized,
-            usersInitialized,
             aboutInitialized,
             pluginsInitialized,
             formatsInitialized,
+            modelsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
             user,
             keyMap,
+            location,
+            isModelPluginActive,
         } = this.props;
 
-        const readyForRender = (userInitialized && (user == null || !user.isVerified))
-            || (userInitialized && formatsInitialized
-                && pluginsInitialized && usersInitialized && aboutInitialized);
+        const readyForRender =
+            (userInitialized && (user == null || !user.isVerified)) ||
+            (userInitialized &&
+                formatsInitialized &&
+                pluginsInitialized &&
+                aboutInitialized &&
+                (!isModelPluginActive || modelsInitialized));
 
         const subKeyMap = {
             SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
@@ -273,25 +270,27 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (showPlatformNotification()) {
             stopNotifications(false);
-            const info = platformInfo();
+            const {
+                name, version, engine, os,
+            } = platformInfo();
+
             Modal.warning({
                 title: 'Unsupported platform detected',
+                className: 'cvat-modal-unsupported-platform-warning',
                 content: (
                     <>
                         <Row>
                             <Col>
                                 <Text>
-                                    {`The browser you are using is ${info.name} ${info.version} based on ${info.engine} .`
-                                        + ' CVAT was tested in the latest versions of Chrome and Firefox.'
-                                        + ' We recommend to use Chrome (or another Chromium based browser)'}
+                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
+                                        ' CVAT was tested in the latest versions of Chrome and Firefox.' +
+                                        ' We recommend to use Chrome (or another Chromium based browser)'}
                                 </Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
-                                <Text type='secondary'>
-                                    {`The operating system is ${info.os}`}
-                                </Text>
+                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
                             </Col>
                         </Row>
                     </>
@@ -299,7 +298,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 onOk: () => stopNotifications(true),
             });
         }
-
 
         if (readyForRender) {
             if (user && user.isVerified) {
@@ -311,12 +309,20 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <ShorcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
+                                        <Route exact path='/projects' component={ProjectsPageComponent} />
+                                        <Route exact path='/projects/create' component={CreateProjectPageComponent} />
+                                        <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                         <Route exact path='/tasks' component={TasksPageContainer} />
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        <Route exact path='/models' component={ModelsPageContainer} />
-                                        <Redirect push to='/tasks' />
+                                        {isModelPluginActive && (
+                                            <Route exact path='/models' component={ModelsPageContainer} />
+                                        )}
+                                        <Redirect
+                                            push
+                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                        />
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
@@ -332,15 +338,26 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
-                        <Redirect to='/auth/login' />
+                        <Route
+                            exact
+                            path='/auth/login-with-token/:sessionId/:token'
+                            component={LoginWithTokenComponent}
+                        />
+                        <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
+                        <Route
+                            exact
+                            path='/auth/password/reset/confirm'
+                            component={ResetPasswordPageConfirmComponent}
+                        />
+                        <Redirect
+                            to={location.pathname.length > 1 ? `/auth/login/?next=${location.pathname}` : '/auth/login'}
+                        />
                     </Switch>
                 </GlobalErrorBoundary>
             );
         }
 
-        return (
-            <Spin size='large' className='cvat-spinner' />
-        );
+        return <Spin size='large' className='cvat-spinner' />;
     }
 }
 

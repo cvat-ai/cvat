@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
-from pyhash import murmur3_32
+from hashlib import blake2s
 
 from datumaro.cli.util import make_file_name
 
-hasher = murmur3_32()
 
 def get_color_from_index(index):
     def get_bit(number, index):
@@ -69,7 +68,8 @@ def get_label_color(label_name, label_names):
     normalized_name = normalize_label(label_name)
 
     color = predefined.get(normalized_name, None)
-    offset = hasher(normalized_name) + normalized_names.count(normalized_name)
+    name_hash = int.from_bytes(blake2s(normalized_name.encode(), digest_size=4).digest(), byteorder="big")
+    offset = name_hash + normalized_names.count(normalized_name)
 
     if color is None:
         color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset)

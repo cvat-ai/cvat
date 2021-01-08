@@ -1,17 +1,10 @@
-/*
-* Copyright (C) 2019 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
-
-/* global
-    require:false
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 (() => {
     const FormData = require('form-data');
-    const {
-        ServerError,
-    } = require('./exceptions');
+    const { ServerError } = require('./exceptions');
     const store = require('store');
     const config = require('./config');
     const DownloadWorker = require('./download.worker');
@@ -38,7 +31,13 @@
                     if (e.data.isSuccess) {
                         requests[e.data.id].resolve(e.data.responseData);
                     } else {
-                        requests[e.data.id].reject(e.data.error);
+                        requests[e.data.id].reject({
+                            error: e.data.error,
+                            response: {
+                                status: e.data.status,
+                                data: e.data.responseData,
+                            },
+                        });
                     }
 
                     delete requests[e.data.id];
@@ -71,12 +70,15 @@
                 });
             }
 
-            Object.defineProperties(this, Object.freeze({
-                get: {
-                    value: get,
-                    writable: false,
-                },
-            }));
+            Object.defineProperties(
+                this,
+                Object.freeze({
+                    get: {
+                        value: get,
+                        writable: false,
+                    },
+                }),
+            );
         }
     }
 
@@ -154,7 +156,6 @@
                 return response.data;
             }
 
-
             async function userAgreements() {
                 const { backendAPI } = config;
                 let response = null;
@@ -169,15 +170,7 @@
                 return response.data;
             }
 
-            async function register(
-                username,
-                firstName,
-                lastName,
-                email,
-                password1,
-                password2,
-                confirmations,
-            ) {
+            async function register(username, firstName, lastName, email, password1, password2, confirmations) {
                 let response = null;
                 try {
                     const data = JSON.stringify({
@@ -203,20 +196,19 @@
             }
 
             async function login(username, password) {
-                const authenticationData = ([
+                const authenticationData = [
                     `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
                     `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
-                ]).join('&').replace(/%20/g, '+');
+                ]
+                    .join('&')
+                    .replace(/%20/g, '+');
 
                 Axios.defaults.headers.common.Authorization = '';
                 let authenticationResponse = null;
                 try {
-                    authenticationResponse = await Axios.post(
-                        `${config.backendAPI}/auth/login`,
-                        authenticationData, {
-                            proxy: config.proxy,
-                        },
-                    );
+                    authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData, {
+                        proxy: config.proxy,
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -251,7 +243,7 @@
                     const data = JSON.stringify({
                         old_password: oldPassword,
                         new_password1: newPassword1,
-                        new_password2:newPassword2,
+                        new_password2: newPassword2,
                     });
                     await Axios.post(`${config.backendAPI}/auth/password/change`, data, {
                         proxy: config.proxy,
@@ -264,9 +256,44 @@
                 }
             }
 
+            async function requestPasswordReset(email) {
+                try {
+                    const data = JSON.stringify({
+                        email,
+                    });
+                    await Axios.post(`${config.backendAPI}/auth/password/reset`, data, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function resetPassword(newPassword1, newPassword2, uid, _token) {
+                try {
+                    const data = JSON.stringify({
+                        new_password1: newPassword1,
+                        new_password2: newPassword2,
+                        uid,
+                        token: _token,
+                    });
+                    await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, data, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function authorized() {
                 try {
-                    await module.exports.users.getSelf();
+                    await module.exports.users.self();
                 } catch (serverError) {
                     if (serverError.code === 401) {
                         return false;
@@ -280,10 +307,88 @@
 
             async function serverRequest(url, data) {
                 try {
-                    return (await Axios({
-                        url,
-                        ...data,
-                    })).data;
+                    return (
+                        await Axios({
+                            url,
+                            ...data,
+                        })
+                    ).data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function searchProjectNames(search, limit) {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(
+                        `${backendAPI}/projects?names_only=true&page=1&page_size=${limit}&search=${search}`,
+                        {
+                            proxy,
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function getProjects(filter = '') {
+                const { backendAPI, proxy } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/projects?page_size=12&${filter}`, {
+                        proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function saveProject(id, projectData) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function deleteProject(id) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/projects/${id}`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function createProject(projectSpec) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/projects`, JSON.stringify(projectSpec), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    return response.data;
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -324,7 +429,12 @@
                 const { backendAPI } = config;
 
                 try {
-                    await Axios.delete(`${backendAPI}/tasks/${id}`);
+                    await Axios.delete(`${backendAPI}/tasks/${id}`, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -337,10 +447,9 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios
-                                .get(`${url}`, {
-                                    proxy: config.proxy,
-                                });
+                            const response = await Axios.get(`${url}`, {
+                                proxy: config.proxy,
+                            });
                             if (response.status === 202) {
                                 setTimeout(request, 3000);
                             } else {
@@ -374,21 +483,22 @@
                                 } else if (response.data.state === 'Failed') {
                                     // If request has been successful, but task hasn't been created
                                     // Then passed data is wrong and we can pass code 400
-                                    const message = 'Could not create the task on the server. '
-                                        + `${response.data.message}.`;
+                                    const message = `
+                                        Could not create the task on the server. ${response.data.message}.
+                                    `;
                                     reject(new ServerError(message, 400));
                                 } else {
                                     // If server has another status, it is unexpected
                                     // Therefore it is server error and we can pass code 500
-                                    reject(new ServerError(
-                                        `Unknown task state has been received: ${response.data.state}`,
-                                        500,
-                                    ));
+                                    reject(
+                                        new ServerError(
+                                            `Unknown task state has been received: ${response.data.state}`,
+                                            500,
+                                        ),
+                                    );
                                 }
                             } catch (errorData) {
-                                reject(
-                                    generateError(errorData),
-                                );
+                                reject(generateError(errorData));
                             }
                         }
 
@@ -421,7 +531,7 @@
                     throw generateError(errorData);
                 }
 
-                onUpdate('The data is being uploaded to the server..');
+                onUpdate('The data are being uploaded to the server..');
                 try {
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
                         proxy: config.proxy,
@@ -462,6 +572,90 @@
                 return response.data;
             }
 
+            async function getJobReviews(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createReview(data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/reviews`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getJobIssues(jobID) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createComment(data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function updateIssue(issueID, data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/issues/${issueID}`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             async function saveJob(id, jobData) {
                 const { backendAPI } = config;
 
@@ -477,20 +671,14 @@
                 }
             }
 
-            async function getUsers(id = null) {
+            async function getUsers(filter = 'page_size=all') {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    if (id === null) {
-                        response = await Axios.get(`${backendAPI}/users?page_size=all`, {
-                            proxy: config.proxy,
-                        });
-                    } else {
-                        response = await Axios.get(`${backendAPI}/users/${id}`, {
-                            proxy: config.proxy,
-                        });
-                    }
+                    response = await Axios.get(`${backendAPI}/users?${filter}`, {
+                        proxy: config.proxy,
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -524,10 +712,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError(
-                        `Could not get preview frame for the task ${tid} from the server`,
-                        code,
-                    );
+                    throw new ServerError(`Could not get preview frame for the task ${tid} from the server`, code);
                 }
 
                 return response.data;
@@ -546,7 +731,14 @@
                         },
                     );
                 } catch (errorData) {
-                    throw generateError(errorData);
+                    throw generateError({
+                        ...errorData,
+                        message: '',
+                        response: {
+                            ...errorData.response,
+                            data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
+                        },
+                    });
                 }
 
                 return response;
@@ -621,10 +813,13 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios
-                                .put(`${backendAPI}/${session}s/${id}/annotations?format=${format}`, annotationData, {
+                            const response = await Axios.put(
+                                `${backendAPI}/${session}s/${id}/annotations?format=${format}`,
+                                annotationData,
+                                {
                                     proxy: config.proxy,
-                                });
+                                },
+                            );
                             if (response.status === 202) {
                                 annotationData = new FormData();
                                 setTimeout(request, 3000);
@@ -655,17 +850,19 @@
                     async function request() {
                         Axios.get(`${url}`, {
                             proxy: config.proxy,
-                        }).then((response) => {
-                            if (response.status === 202) {
-                                setTimeout(request, 3000);
-                            } else {
-                                query = `${query}&action=download`;
-                                url = `${baseURL}?${query}`;
-                                resolve(url);
-                            }
-                        }).catch((errorData) => {
-                            reject(generateError(errorData));
-                        });
+                        })
+                            .then((response) => {
+                                if (response.status === 202) {
+                                    setTimeout(request, 3000);
+                                } else {
+                                    query = `${query}&action=download`;
+                                    url = `${baseURL}?${query}`;
+                                    resolve(url);
+                                }
+                            })
+                            .catch((errorData) => {
+                                reject(generateError(errorData));
+                            });
                     }
 
                     setTimeout(request);
@@ -704,13 +901,12 @@
                 const { backendAPI } = config;
 
                 try {
-                    const response = await Axios.post(`${backendAPI}/lambda/requests`,
-                        JSON.stringify(body), {
-                            proxy: config.proxy,
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                        });
+                    const response = await Axios.post(`${backendAPI}/lambda/requests`, JSON.stringify(body), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
 
                     return response.data;
                 } catch (errorData) {
@@ -722,13 +918,12 @@
                 const { backendAPI } = config;
 
                 try {
-                    const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`,
-                        JSON.stringify(body), {
-                            proxy: config.proxy,
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                        });
+                    const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`, JSON.stringify(body), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
 
                     return response.data;
                 } catch (errorData) {
@@ -767,99 +962,145 @@
                 const { backendAPI } = config;
 
                 try {
-                    await Axios.delete(
-                        `${backendAPI}/lambda/requests/${requestId}`, {
-                            method: 'DELETE',
-                        },
-                    );
+                    await Axios.delete(`${backendAPI}/lambda/requests/${requestId}`, {
+                        method: 'DELETE',
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
             }
 
-            Object.defineProperties(this, Object.freeze({
-                server: {
-                    value: Object.freeze({
-                        about,
-                        share,
-                        formats,
-                        exception,
-                        login,
-                        logout,
-                        changePassword,
-                        authorized,
-                        register,
-                        request: serverRequest,
-                        userAgreements,
-                    }),
-                    writable: false,
-                },
+            async function installedApps() {
+                const { backendAPI } = config;
+                try {
+                    const response = await Axios.get(`${backendAPI}/server/plugins`, {
+                        proxy: config.proxy,
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
 
-                tasks: {
-                    value: Object.freeze({
-                        getTasks,
-                        saveTask,
-                        createTask,
-                        deleteTask,
-                        exportDataset,
-                    }),
-                    writable: false,
-                },
+            Object.defineProperties(
+                this,
+                Object.freeze({
+                    server: {
+                        value: Object.freeze({
+                            about,
+                            share,
+                            formats,
+                            exception,
+                            login,
+                            logout,
+                            changePassword,
+                            requestPasswordReset,
+                            resetPassword,
+                            authorized,
+                            register,
+                            request: serverRequest,
+                            userAgreements,
+                            installedApps,
+                        }),
+                        writable: false,
+                    },
 
-                jobs: {
-                    value: Object.freeze({
-                        getJob,
-                        saveJob,
-                    }),
-                    writable: false,
-                },
+                    projects: {
+                        value: Object.freeze({
+                            get: getProjects,
+                            searchNames: searchProjectNames,
+                            save: saveProject,
+                            create: createProject,
+                            delete: deleteProject,
+                        }),
+                        writable: false,
+                    },
 
-                users: {
-                    value: Object.freeze({
-                        getUsers,
-                        getSelf,
-                    }),
-                    writable: false,
-                },
+                    tasks: {
+                        value: Object.freeze({
+                            getTasks,
+                            saveTask,
+                            createTask,
+                            deleteTask,
+                            exportDataset,
+                        }),
+                        writable: false,
+                    },
 
-                frames: {
-                    value: Object.freeze({
-                        getData,
-                        getMeta,
-                        getPreview,
-                    }),
-                    writable: false,
-                },
+                    jobs: {
+                        value: Object.freeze({
+                            get: getJob,
+                            save: saveJob,
+                            issues: getJobIssues,
+                            reviews: {
+                                get: getJobReviews,
+                                create: createReview,
+                            },
+                        }),
+                        writable: false,
+                    },
 
-                annotations: {
-                    value: Object.freeze({
-                        updateAnnotations,
-                        getAnnotations,
-                        dumpAnnotations,
-                        uploadAnnotations,
-                    }),
-                    writable: false,
-                },
+                    users: {
+                        value: Object.freeze({
+                            get: getUsers,
+                            self: getSelf,
+                        }),
+                        writable: false,
+                    },
 
-                logs: {
-                    value: Object.freeze({
-                        save: saveLogs,
-                    }),
-                    writable: false,
-                },
+                    frames: {
+                        value: Object.freeze({
+                            getData,
+                            getMeta,
+                            getPreview,
+                        }),
+                        writable: false,
+                    },
 
-                lambda: {
-                    value: Object.freeze({
-                        list: getLambdaFunctions,
-                        status: getRequestStatus,
-                        requests: getLambdaRequests,
-                        run: runLambdaRequest,
-                        call: callLambdaFunction,
-                        cancel: cancelLambdaRequest,
-                    }),
-                    writable: false,
-                },
-            }));
+                    annotations: {
+                        value: Object.freeze({
+                            updateAnnotations,
+                            getAnnotations,
+                            dumpAnnotations,
+                            uploadAnnotations,
+                        }),
+                        writable: false,
+                    },
+
+                    logs: {
+                        value: Object.freeze({
+                            save: saveLogs,
+                        }),
+                        writable: false,
+                    },
+
+                    lambda: {
+                        value: Object.freeze({
+                            list: getLambdaFunctions,
+                            status: getRequestStatus,
+                            requests: getLambdaRequests,
+                            run: runLambdaRequest,
+                            call: callLambdaFunction,
+                            cancel: cancelLambdaRequest,
+                        }),
+                        writable: false,
+                    },
+
+                    issues: {
+                        value: Object.freeze({
+                            update: updateIssue,
+                        }),
+                        writable: false,
+                    },
+
+                    comments: {
+                        value: Object.freeze({
+                            create: createComment,
+                        }),
+                        writable: false,
+                    },
+                }),
+            );
         }
     }
 

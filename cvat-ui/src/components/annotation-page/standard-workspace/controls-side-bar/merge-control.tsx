@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Tooltip from 'antd/lib/tooltip';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 
 import { MergeIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -18,21 +18,17 @@ interface Props {
 }
 
 function MergeControl(props: Props): JSX.Element {
-    const {
-        switchMergeShortcut,
-        activeControl,
-        canvasInstance,
-        mergeObjects,
-    } = props;
+    const { switchMergeShortcut, activeControl, canvasInstance, mergeObjects } = props;
 
-    const dynamicIconProps = activeControl === ActiveControl.MERGE
-        ? {
-            className: 'cvat-active-canvas-control',
+    const dynamicIconProps =
+        activeControl === ActiveControl.MERGE ? {
+            className: 'cvat-merge-control cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.merge({ enabled: false });
                 mergeObjects(false);
             },
         } : {
+            className: 'cvat-merge-control',
             onClick: (): void => {
                 canvasInstance.cancel();
                 canvasInstance.merge({ enabled: true });

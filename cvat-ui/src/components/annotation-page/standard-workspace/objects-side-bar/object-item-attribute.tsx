@@ -15,6 +15,7 @@ import consts from 'consts';
 import { clamp } from 'utils/math';
 
 interface Props {
+    readonly: boolean;
     attrInputType: string;
     attrValues: string[];
     attrValue: string;
@@ -23,27 +24,22 @@ interface Props {
     changeAttribute(attrID: number, value: string): void;
 }
 
-function attrIsTheSame(
-    prevProps: Props,
-    nextProps: Props,
-): boolean {
-    return nextProps.attrID === prevProps.attrID
-        && nextProps.attrValue === prevProps.attrValue
-        && nextProps.attrName === prevProps.attrName
-        && nextProps.attrInputType === prevProps.attrInputType
-        && nextProps.attrValues
+function attrIsTheSame(prevProps: Props, nextProps: Props): boolean {
+    return (
+        nextProps.readonly === prevProps.readonly &&
+        nextProps.attrID === prevProps.attrID &&
+        nextProps.attrValue === prevProps.attrValue &&
+        nextProps.attrName === prevProps.attrName &&
+        nextProps.attrInputType === prevProps.attrInputType &&
+        nextProps.attrValues
             .map((value: string, id: number): boolean => prevProps.attrValues[id] === value)
-            .every((value: boolean): boolean => value);
+            .every((value: boolean): boolean => value)
+    );
 }
 
 function ItemAttributeComponent(props: Props): JSX.Element {
     const {
-        attrInputType,
-        attrValues,
-        attrValue,
-        attrName,
-        attrID,
-        changeAttribute,
+        attrInputType, attrValues, attrValue, attrName, attrID, readonly, changeAttribute,
     } = props;
 
     const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em' };
@@ -54,6 +50,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                 <Checkbox
                     className='cvat-object-item-checkbox-attribute'
                     checked={attrValue === 'true'}
+                    disabled={readonly}
                     onChange={(event: CheckboxChangeEvent): void => {
                         const value = event.target.checked ? 'true' : 'false';
                         changeAttribute(attrID, value);
@@ -72,21 +69,25 @@ function ItemAttributeComponent(props: Props): JSX.Element {
             <Col span={24}>
                 <fieldset className='cvat-object-item-radio-attribute'>
                     <legend>
-                        <Text style={attrNameStyle} className='cvat-text'>{attrName}</Text>
+                        <Text style={attrNameStyle} className='cvat-text'>
+                            {attrName}
+                        </Text>
                     </legend>
                     <Radio.Group
+                        disabled={readonly}
                         size='small'
                         value={attrValue}
                         onChange={(event: RadioChangeEvent): void => {
                             changeAttribute(attrID, event.target.value);
                         }}
                     >
-                        { attrValues.map((value: string): JSX.Element => (
-                            <Radio key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
-                                    ? consts.NO_BREAK_SPACE : value}
-                            </Radio>
-                        )) }
+                        {attrValues.map(
+                            (value: string): JSX.Element => (
+                                <Radio key={value} value={value}>
+                                    {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                </Radio>
+                            ),
+                        )}
                     </Radio.Group>
                 </fieldset>
             </Col>
@@ -97,12 +98,11 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         return (
             <>
                 <Col span={8} style={attrNameStyle}>
-                    <Text className='cvat-text'>
-                        {attrName}
-                    </Text>
+                    <Text className='cvat-text'>{attrName}</Text>
                 </Col>
                 <Col span={16}>
                     <Select
+                        disabled={readonly}
                         size='small'
                         onChange={(value: string): void => {
                             changeAttribute(attrID, value);
@@ -110,12 +110,13 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         value={attrValue}
                         className='cvat-object-item-select-attribute'
                     >
-                        { attrValues.map((value: string): JSX.Element => (
-                            <Select.Option key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE
-                                    ? consts.NO_BREAK_SPACE : value}
-                            </Select.Option>
-                        )) }
+                        {attrValues.map(
+                            (value: string): JSX.Element => (
+                                <Select.Option key={value} value={value}>
+                                    {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                </Select.Option>
+                            ),
+                        )}
                     </Select>
                 </Col>
             </>
@@ -127,18 +128,15 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         return (
             <>
                 <Col span={8} style={attrNameStyle}>
-                    <Text className='cvat-text'>
-                        {attrName}
-                    </Text>
+                    <Text className='cvat-text'>{attrName}</Text>
                 </Col>
                 <Col span={16}>
                     <InputNumber
+                        disabled={readonly}
                         size='small'
-                        onChange={(value: number | undefined): void => {
-                            if (typeof (value) === 'number') {
-                                changeAttribute(
-                                    attrID, `${clamp(value, min, max)}`,
-                                );
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                changeAttribute(attrID, `${clamp(+value, min, max)}`);
                             }
                         }}
                         value={+attrValue}
@@ -174,14 +172,13 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     return (
         <>
             <Col span={8} style={attrNameStyle}>
-                <Text className='cvat-text'>
-                    {attrName}
-                </Text>
+                <Text className='cvat-text'>{attrName}</Text>
             </Col>
             <Col span={16}>
                 <Input
                     ref={ref}
                     size='small'
+                    disabled={readonly}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
                         if (ref.current && ref.current.input) {
                             setSelection({

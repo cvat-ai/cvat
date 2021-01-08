@@ -1,5 +1,5 @@
 click==7.1.2
-Django==2.2.13
+Django==3.1.1
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-cacheops==5.0.1
@@ -10,7 +10,6 @@ Pillow==7.2.0
 numpy==1.18.5
 python-ldap==3.3.1
 pytz==2020.1
-pyhash==0.9.3
 pyunpack==0.2.1
 rcssmin==1.0.6
 redis==3.5.3
@@ -18,14 +17,13 @@ rjsmin==1.1.0
 requests==2.24.0
 rq==1.5.1
 rq-scheduler==0.10.0
-scipy==1.4.1
 sqlparse==0.3.1
 django-sendfile==0.3.11
 dj-pagination==2.5.0
 python-logstash==0.4.6
 django-revproxy==0.10.0
 rules==2.2
-GitPython==3.1.3
+GitPython==3.1.8
 coreapi==2.3.3
 django-filter==2.3.0
 Markdown==3.2.2
@@ -34,19 +32,16 @@ Pygments==2.6.1
 drf-yasg==1.17.1
 Shapely==1.7.1
 pdf2image==1.14.0
-pascal_voc_writer==0.1.4
 django-rest-auth[with_social]==0.9.5
 cython==0.29.21
-matplotlib==3.0.3
-scikit-image==0.15.0
-tensorflow==2.2.0
-keras==2.4.2
-opencv-python==4.4.0.42
+opencv-python-headless==4.4.0.42
 h5py==2.10.0
-imgaug==0.4.0
-django-cors-headers==3.4.0
+django-cors-headers==3.5.0
 furl==2.1.0
-av==6.2.0
+av==8.0.2 --no-binary=av
+tensorflow==2.4.0 # Optional requirement of Datumaro
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
+diskcache==5.0.2
+git+https://github.com/openvinotoolkit/datumaro@v0.1.4

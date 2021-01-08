@@ -12,7 +12,6 @@ export interface MergeHandler {
     repeatSelection(): void;
 }
 
-
 export class MergeHandlerImpl implements MergeHandler {
     // callback is used to notify about merging end
     private onMergeDone: (objects: any[] | null, duration?: number) => void;
@@ -40,8 +39,10 @@ export class MergeHandlerImpl implements MergeHandler {
     }
 
     private checkConstraints(state: any): boolean {
-        return !this.constraints || (state.label.id === this.constraints.labelID
-            && state.shapeType === this.constraints.shapeType);
+        return (
+            !this.constraints ||
+            (state.label.id === this.constraints.labelID && state.shapeType === this.constraints.shapeType)
+        );
     }
 
     private release(): void {
@@ -118,8 +119,7 @@ export class MergeHandlerImpl implements MergeHandler {
             }
         } else {
             const shape = this.canvas.select(`#cvat_canvas_shape_${objectState.clientID}`).first();
-            if (shape && this.checkConstraints(objectState)
-            && !stateFrames.includes(objectState.frame)) {
+            if (shape && this.checkConstraints(objectState) && !stateFrames.includes(objectState.frame)) {
                 this.statesToBeMerged.push(objectState);
                 this.highlightedShapes[objectState.clientID] = shape;
                 shape.addClass('cvat_canvas_shape_merging');

@@ -17,15 +17,18 @@ import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 interface RegisterPageComponentProps {
     fetching: boolean;
     userAgreements: UserAgreement[];
-    onRegister: (username: string, firstName: string,
-        lastName: string, email: string,
-        password1: string, password2: string,
-        confirmations: UserConfirmation[]) => void;
+    onRegister: (
+        username: string,
+        firstName: string,
+        lastName: string,
+        email: string,
+        password1: string,
+        password2: string,
+        confirmations: UserConfirmation[],
+    ) => void;
 }
 
-function RegisterPageComponent(
-    props: RegisterPageComponentProps & RouteComponentProps,
-): JSX.Element {
+function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps): JSX.Element {
     const sizes = {
         xs: { span: 14 },
         sm: { span: 14 },
@@ -34,15 +37,11 @@ function RegisterPageComponent(
         xl: { span: 5 },
     };
 
-    const {
-        fetching,
-        userAgreements,
-        onRegister,
-    } = props;
+    const { fetching, userAgreements, onRegister } = props;
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col {...sizes}>
                     <Title level={2}> Create an account </Title>
                     <RegisterForm
@@ -60,7 +59,7 @@ function RegisterPageComponent(
                             );
                         }}
                     />
-                    <Row type='flex' justify='start' align='top'>
+                    <Row justify='start' align='top'>
                         <Col>
                             <Text strong>
                                 Already have an account?

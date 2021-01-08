@@ -49,7 +49,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-workspace-settings'>
-            <Row type='flex'>
+            <Row>
                 <Col>
                     <Checkbox
                         className='cvat-text-color cvat-workspace-settings-auto-save'
@@ -62,7 +62,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Checkbox>
                 </Col>
             </Row>
-            <Row type='flex'>
+            <Row>
                 <Col className='cvat-workspace-settings-auto-save-interval'>
                     <Text type='secondary'> Auto save every </Text>
                     <InputNumber
@@ -70,15 +70,11 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         max={maxAutoSaveInterval}
                         step={1}
                         value={Math.round(autoSaveInterval / (60 * 1000))}
-                        onChange={(value: number | undefined): void => {
-                            if (typeof (value) === 'number') {
-                                onChangeAutoSaveInterval(Math.floor(
-                                    clamp(
-                                        value,
-                                        minAutoSaveInterval,
-                                        maxAutoSaveInterval,
-                                    ),
-                                ) * 60 * 1000);
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                onChangeAutoSaveInterval(
+                                    Math.floor(clamp(+value, minAutoSaveInterval, maxAutoSaveInterval)) * 60 * 1000,
+                                );
                             }
                         }}
                     />
@@ -86,7 +82,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-show-interpolated'>
-                <Col>
+                <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
                         checked={showAllInterpolationTracks}
@@ -97,12 +93,12 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         Show all interpolation tracks
                     </Checkbox>
                 </Col>
-                <Col>
+                <Col span={24}>
                     <Text type='secondary'> Show hidden interpolated objects in the side panel </Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-show-text-always'>
-                <Col>
+                <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
                         checked={showObjectsTextAlways}
@@ -113,12 +109,16 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         Always show object details
                     </Checkbox>
                 </Col>
-                <Col>
-                    <Text type='secondary'> Show text for an object on the canvas not only when the object is activated  </Text>
+                <Col span={24}>
+                    <Text type='secondary'>
+                        {' '}
+                        Show text for an object on the canvas not only when the object is activated
+                        {' '}
+                    </Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-autoborders'>
-                <Col>
+                <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
                         checked={automaticBordering}
@@ -129,8 +129,12 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         Automatic bordering
                     </Checkbox>
                 </Col>
-                <Col>
-                    <Text type='secondary'> Enable automatic bordering for polygons and polylines during drawing/editing </Text>
+                <Col span={24}>
+                    <Text type='secondary'>
+                        {' '}
+                        Enable automatic bordering for polygons and polylines during drawing/editing
+                        {' '}
+                    </Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-aam-zoom-margin'>
@@ -140,11 +144,9 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         min={minAAMMargin}
                         max={maxAAMMargin}
                         value={aamZoomMargin}
-                        onChange={(value: number | undefined): void => {
-                            if (typeof (value) === 'number') {
-                                onChangeAAMZoomMargin(Math.floor(
-                                    clamp(value, minAAMMargin, maxAAMMargin),
-                                ));
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                onChangeAAMZoomMargin(Math.floor(clamp(+value, minAAMMargin, maxAAMMargin)));
                             }
                         }}
                     />

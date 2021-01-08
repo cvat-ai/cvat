@@ -1,6 +1,6 @@
 {
   "name": "cvat-data",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "src/js/cvat-data.js",
   "devDependencies": {
@@ -21,8 +21,8 @@
     "worker-loader": "^2.0.0"
   },
   "dependencies": {
-    "async-mutex": "^0.1.4",
-    "jszip": "3.1.5"
+    "async-mutex": "^0.2.6",
+    "jszip": "3.5.0"
   },
   "scripts": {
     "patch": "cd src/js && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",

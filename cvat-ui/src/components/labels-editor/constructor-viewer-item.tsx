@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import { EditOutlined, CloseOutlined } from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
@@ -19,10 +19,7 @@ interface ConstructorViewerItemProps {
 
 export default function ConstructorViewerItem(props: ConstructorViewerItemProps): JSX.Element {
     const {
-        color,
-        label,
-        onUpdate,
-        onDelete,
+        color, label, onUpdate, onDelete,
     } = props;
 
     return (
@@ -35,22 +32,21 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     onClick={(): void => onUpdate(label)}
                     onKeyPress={(): boolean => false}
                 >
-                    <Icon theme='filled' type='edit' />
+                    <EditOutlined />
                 </span>
             </Tooltip>
-            { label.id < 0
-                && (
-                    <Tooltip title='Delete label' mouseLeaveDelay={0}>
-                        <span
-                            role='button'
-                            tabIndex={0}
-                            onClick={(): void => onDelete(label)}
-                            onKeyPress={(): boolean => false}
-                        >
-                            <Icon type='close' />
-                        </span>
-                    </Tooltip>
-                )}
+            {label.id < 0 && (
+                <Tooltip title='Delete label' mouseLeaveDelay={0}>
+                    <span
+                        role='button'
+                        tabIndex={0}
+                        onClick={(): void => onDelete(label)}
+                        onKeyPress={(): boolean => false}
+                    >
+                        <CloseOutlined />
+                    </span>
+                </Tooltip>
+            )}
         </div>
     );
 }

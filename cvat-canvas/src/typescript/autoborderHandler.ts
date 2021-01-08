@@ -27,10 +27,16 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private groups: SVGGElement[];
     private auxiliaryGroupID: number | null;
     private auxiliaryClicks: number[];
-    private listeners: Record<number, Record<number, {
-        click: (event: MouseEvent) => void;
-        dblclick: (event: MouseEvent) => void;
-    }>>;
+    private listeners: Record<
+        number,
+        Record<
+            number,
+            {
+                click: (event: MouseEvent) => void;
+                dblclick: (event: MouseEvent) => void;
+            }
+        >
+    >;
 
     public constructor(frameContent: SVGSVGElement) {
         this.frameContent = frameContent;
@@ -47,12 +53,11 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private removeMarkers(): void {
         this.groups.forEach((group: SVGGElement): void => {
             const groupID = group.dataset.groupId;
-            Array.from(group.children)
-                .forEach((circle: SVGCircleElement, pointID: number): void => {
-                    circle.removeEventListener('click', this.listeners[+groupID][pointID].click);
-                    circle.removeEventListener('dblclick', this.listeners[+groupID][pointID].click);
-                    circle.remove();
-                });
+            Array.from(group.children).forEach((circle: SVGCircleElement, pointID: number): void => {
+                circle.removeEventListener('click', this.listeners[+groupID][pointID].click);
+                circle.removeEventListener('dblclick', this.listeners[+groupID][pointID].click);
+                circle.remove();
+            });
 
             group.remove();
         });
@@ -89,8 +94,9 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         if (this.auxiliaryGroupID !== null) {
             while (this.auxiliaryClicks.length > 0) {
                 const resetID = this.auxiliaryClicks.pop();
-                this.groups[this.auxiliaryGroupID]
-                    .children[resetID].classList.remove('cvat_canvas_autoborder_point_direction');
+                this.groups[this.auxiliaryGroupID].children[resetID].classList.remove(
+                    'cvat_canvas_autoborder_point_direction',
+                );
             }
         }
 
@@ -103,125 +109,125 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private drawMarkers(transformedShapes: TransformedShape[]): void {
         const svgNamespace = 'http://www.w3.org/2000/svg';
 
-        this.groups = transformedShapes
-            .map((shape: TransformedShape, groupID: number): SVGGElement => {
+        this.groups = transformedShapes.map(
+            (shape: TransformedShape, groupID: number): SVGGElement => {
                 const group = document.createElementNS(svgNamespace, 'g');
                 group.setAttribute('data-group-id', `${groupID}`);
 
                 this.listeners[groupID] = this.listeners[groupID] || {};
-                const circles = shape.points.split(/\s/).map((
-                    point: string, pointID: number, points: string[],
-                ): SVGCircleElement => {
-                    const [x, y] = point.split(',');
+                const circles = shape.points.split(/\s/).map(
+                    (point: string, pointID: number, points: string[]): SVGCircleElement => {
+                        const [x, y] = point.split(',');
 
-                    const circle = document.createElementNS(svgNamespace, 'circle');
-                    circle.classList.add('cvat_canvas_autoborder_point');
-                    circle.setAttribute('fill', shape.color);
-                    circle.setAttribute('stroke', 'black');
-                    circle.setAttribute('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.scale}`);
-                    circle.setAttribute('cx', x);
-                    circle.setAttribute('cy', y);
-                    circle.setAttribute('r', `${consts.BASE_POINT_SIZE / this.scale}`);
+                        const circle = document.createElementNS(svgNamespace, 'circle');
+                        circle.classList.add('cvat_canvas_autoborder_point');
+                        circle.setAttribute('fill', shape.color);
+                        circle.setAttribute('stroke', 'black');
+                        circle.setAttribute('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.scale}`);
+                        circle.setAttribute('cx', x);
+                        circle.setAttribute('cy', y);
+                        circle.setAttribute('r', `${consts.BASE_POINT_SIZE / this.scale}`);
 
-                    const click = (event: MouseEvent): void => {
-                        event.stopPropagation();
+                        const click = (event: MouseEvent): void => {
+                            event.stopPropagation();
 
-                        // another shape was clicked
-                        if (this.auxiliaryGroupID !== null
-                            && this.auxiliaryGroupID !== groupID
-                        ) {
-                            this.resetAuxiliaryShape();
-                        }
-
-                        this.auxiliaryGroupID = groupID;
-                        // up clicked group for convenience
-                        this.frameContent.appendChild(group);
-
-                        if (this.auxiliaryClicks[1] === pointID) {
-                            // the second point was clicked twice
-                            this.addPointToCurrentShape(+x, +y);
-                            this.resetAuxiliaryShape();
-                            return;
-                        }
-
-                        // the first point can not be clicked twice
-                        // just ignore such a click if it is
-                        if (this.auxiliaryClicks[0] !== pointID) {
-                            this.auxiliaryClicks.push(pointID);
-                        } else {
-                            return;
-                        }
-
-                        // it is the first click
-                        if (this.auxiliaryClicks.length === 1) {
-                            const handler = this.currentShape.remember('_paintHandler');
-                            // draw and remove initial point just to initialize data structures
-                            if (!handler || !handler.startPoint) {
-                                (this.currentShape as any).draw('point', event);
-                                (this.currentShape as any).draw('undo');
+                            // another shape was clicked
+                            if (this.auxiliaryGroupID !== null && this.auxiliaryGroupID !== groupID) {
+                                this.resetAuxiliaryShape();
                             }
 
-                            this.addPointToCurrentShape(+x, +y);
-                        // is is the second click
-                        } else if (this.auxiliaryClicks.length === 2) {
-                            circle.classList.add('cvat_canvas_autoborder_point_direction');
-                        // it is the third click
-                        } else {
-                            // sign defines bypass direction
-                            const landmarks = this.auxiliaryClicks;
-                            const sign = Math.sign(landmarks[2] - landmarks[0])
-                                * Math.sign(landmarks[1] - landmarks[0])
-                                * Math.sign(landmarks[2] - landmarks[1]);
+                            this.auxiliaryGroupID = groupID;
+                            // up clicked group for convenience
+                            this.frameContent.appendChild(group);
 
-                            // go via a polygon and get vertexes
-                            // the first vertex has been already drawn
-                            const way = [];
-                            for (let i = landmarks[0] + sign; ; i += sign) {
-                                if (i < 0) {
-                                    i = points.length - 1;
-                                } else if (i === points.length) {
-                                    i = 0;
+                            if (this.auxiliaryClicks[1] === pointID) {
+                                // the second point was clicked twice
+                                this.addPointToCurrentShape(+x, +y);
+                                this.resetAuxiliaryShape();
+                                return;
+                            }
+
+                            // the first point can not be clicked twice
+                            // just ignore such a click if it is
+                            if (this.auxiliaryClicks[0] !== pointID) {
+                                this.auxiliaryClicks.push(pointID);
+                            } else {
+                                return;
+                            }
+
+                            // it is the first click
+                            if (this.auxiliaryClicks.length === 1) {
+                                const handler = this.currentShape.remember('_paintHandler');
+                                // draw and remove initial point just to initialize data structures
+                                if (!handler || !handler.startPoint) {
+                                    (this.currentShape as any).draw('point', event);
+                                    (this.currentShape as any).draw('undo');
                                 }
 
-                                way.push(points[i]);
+                                this.addPointToCurrentShape(+x, +y);
+                                // is is the second click
+                            } else if (this.auxiliaryClicks.length === 2) {
+                                circle.classList.add('cvat_canvas_autoborder_point_direction');
+                                // it is the third click
+                            } else {
+                                // sign defines bypass direction
+                                const landmarks = this.auxiliaryClicks;
+                                const sign =
+                                    Math.sign(landmarks[2] - landmarks[0]) *
+                                    Math.sign(landmarks[1] - landmarks[0]) *
+                                    Math.sign(landmarks[2] - landmarks[1]);
 
-                                if (i === this.auxiliaryClicks[this.auxiliaryClicks.length - 1]) {
-                                    // put the last element twice
-                                    // specific of svg.draw.js
-                                    // way.push(points[i]);
-                                    break;
+                                // go via a polygon and get vertexes
+                                // the first vertex has been already drawn
+                                const way = [];
+                                for (let i = landmarks[0] + sign; ; i += sign) {
+                                    if (i < 0) {
+                                        i = points.length - 1;
+                                    } else if (i === points.length) {
+                                        i = 0;
+                                    }
+
+                                    way.push(points[i]);
+
+                                    if (i === this.auxiliaryClicks[this.auxiliaryClicks.length - 1]) {
+                                        // put the last element twice
+                                        // specific of svg.draw.js
+                                        // way.push(points[i]);
+                                        break;
+                                    }
                                 }
+
+                                // remove the latest cursor position from drawing array
+                                for (const wayPoint of way) {
+                                    const [_x, _y] = wayPoint
+                                        .split(',')
+                                        .map((coordinate: string): number => +coordinate);
+                                    this.addPointToCurrentShape(_x, _y);
+                                }
+
+                                this.resetAuxiliaryShape();
                             }
+                        };
 
-                            // remove the latest cursor position from drawing array
-                            for (const wayPoint of way) {
-                                const [_x, _y] = wayPoint.split(',')
-                                    .map((coordinate: string): number => +coordinate);
-                                this.addPointToCurrentShape(_x, _y);
-                            }
+                        const dblclick = (event: MouseEvent): void => {
+                            event.stopPropagation();
+                        };
 
-                            this.resetAuxiliaryShape();
-                        }
-                    };
+                        this.listeners[groupID][pointID] = {
+                            click,
+                            dblclick,
+                        };
 
-
-                    const dblclick = (event: MouseEvent): void => {
-                        event.stopPropagation();
-                    };
-
-                    this.listeners[groupID][pointID] = {
-                        click,
-                        dblclick,
-                    };
-
-                    circle.addEventListener('mousedown', this.listeners[groupID][pointID].click);
-                    circle.addEventListener('dblclick', this.listeners[groupID][pointID].click);
-                    return circle;
-                });
+                        circle.addEventListener('mousedown', this.listeners[groupID][pointID].click);
+                        circle.addEventListener('dblclick', this.listeners[groupID][pointID].click);
+                        return circle;
+                    },
+                );
 
                 group.append(...circles);
                 return group;
-            });
+            },
+        );
 
         this.frameContent.append(...this.groups);
     }
@@ -231,55 +237,54 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         this.removeMarkers();
 
         const currentClientID = this.currentShape.node.dataset.originClientId;
-        const shapes = Array.from(this.frameContent.getElementsByClassName('cvat_canvas_shape'))
-            .filter((shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID);
-        const transformedShapes = shapes.map((shape: HTMLElement): TransformedShape | null => {
-            const color = shape.getAttribute('fill');
-            const clientID = shape.getAttribute('clientID');
+        const shapes = Array.from(this.frameContent.getElementsByClassName('cvat_canvas_shape')).filter(
+            (shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID,
+        );
+        const transformedShapes = shapes
+            .map((shape: HTMLElement): TransformedShape | null => {
+                const color = shape.getAttribute('fill');
+                const clientID = shape.getAttribute('clientID');
 
-            if (color === null || clientID === null) return null;
-            if (+clientID === +currentClientID) {
-                return null;
-            }
-
-            let points = '';
-            if (shape.tagName === 'polyline' || shape.tagName === 'polygon') {
-                points = shape.getAttribute('points');
-            } else if (shape.tagName === 'rect') {
-                const x = +shape.getAttribute('x');
-                const y = +shape.getAttribute('y');
-                const width = +shape.getAttribute('width');
-                const height = +shape.getAttribute('height');
-
-                if (Number.isNaN(x) || Number.isNaN(y) || Number.isNaN(x) || Number.isNaN(x)) {
+                if (color === null || clientID === null) return null;
+                if (+clientID === +currentClientID) {
                     return null;
                 }
 
-                points = `${x},${y} ${x + width},${y} ${x + width},${y + height} ${x},${y + height}`;
-            } else if (shape.tagName === 'g') {
-                const polylineID = shape.dataset.polylineId;
-                const polyline = this.frameContent.getElementById(polylineID);
-                if (polyline && polyline.getAttribute('points')) {
-                    points = polyline.getAttribute('points');
-                } else {
-                    return null;
-                }
-            }
+                let points = '';
+                if (shape.tagName === 'polyline' || shape.tagName === 'polygon') {
+                    points = shape.getAttribute('points');
+                } else if (shape.tagName === 'rect') {
+                    const x = +shape.getAttribute('x');
+                    const y = +shape.getAttribute('y');
+                    const width = +shape.getAttribute('width');
+                    const height = +shape.getAttribute('height');
 
-            return {
-                color,
-                points: points.trim(),
-            };
-        }).filter((state: TransformedShape | null): boolean => state !== null);
+                    if (Number.isNaN(x) || Number.isNaN(y) || Number.isNaN(x) || Number.isNaN(x)) {
+                        return null;
+                    }
+
+                    points = `${x},${y} ${x + width},${y} ${x + width},${y + height} ${x},${y + height}`;
+                } else if (shape.tagName === 'g') {
+                    const polylineID = shape.dataset.polylineId;
+                    const polyline = this.frameContent.getElementById(polylineID);
+                    if (polyline && polyline.getAttribute('points')) {
+                        points = polyline.getAttribute('points');
+                    } else {
+                        return null;
+                    }
+                }
+
+                return {
+                    color,
+                    points: points.trim(),
+                };
+            })
+            .filter((state: TransformedShape | null): boolean => state !== null);
 
         this.drawMarkers(transformedShapes);
     }
 
-    public autoborder(
-        enabled: boolean,
-        currentShape?: SVG.Shape,
-        currentID?: number,
-    ): void {
+    public autoborder(enabled: boolean, currentShape?: SVG.Shape, currentID?: number): void {
         if (enabled && !this.enabled && currentShape) {
             this.enabled = true;
             this.currentShape = currentShape;

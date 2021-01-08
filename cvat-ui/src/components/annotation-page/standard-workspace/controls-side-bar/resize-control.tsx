@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Tooltip from 'antd/lib/tooltip';
 
 import { ZoomIcon } from 'icons';
@@ -16,17 +16,17 @@ interface Props {
 }
 
 function ResizeControl(props: Props): JSX.Element {
-    const {
-        activeControl,
-        canvasInstance,
-    } = props;
+    const { activeControl, canvasInstance } = props;
 
     return (
         <Tooltip title='Select a region of interest' placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={ZoomIcon}
-                className={activeControl === ActiveControl.ZOOM_CANVAS
-                    ? 'cvat-active-canvas-control' : ''}
+                className={
+                    activeControl === ActiveControl.ZOOM_CANVAS ?
+                        'cvat-resize-control cvat-active-canvas-control' :
+                        'cvat-resize-control'
+                }
                 onClick={(): void => {
                     if (activeControl === ActiveControl.ZOOM_CANVAS) {
                         canvasInstance.zoomCanvas(false);

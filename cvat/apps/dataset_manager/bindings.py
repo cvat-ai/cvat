@@ -13,7 +13,7 @@ import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType
 from datumaro.util import cast
-from datumaro.util.image import Image
+from datumaro.util.image import ByteImage, Image
 
 from .annotation import AnnotationManager, TrackManager
 
@@ -42,7 +42,7 @@ class TaskData:
         self._frame_mapping = {}
         self._frame_step = db_task.data.get_frame_step()
 
-        db_labels = self._db_task.label_set.all().prefetch_related(
+        db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
             'attributespec_set').order_by('pk')
 
         self._label_mapping = OrderedDict(
@@ -147,7 +147,6 @@ class TaskData:
                 ("start_frame", str(self._db_task.data.start_frame)),
                 ("stop_frame", str(self._db_task.data.stop_frame)),
                 ("frame_filter", self._db_task.data.frame_filter),
-                ("z_order", str(self._db_task.z_order)),
 
                 ("labels", [
                     ("label", OrderedDict([
@@ -269,6 +268,8 @@ class TaskData:
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
             if 'track_id' in shape:
+                if shape['outside']:
+                    continue
                 exported_shape = self._export_tracked_shape(shape)
             else:
                 exported_shape = self._export_labeled_shape(shape)
@@ -450,25 +451,43 @@ class TaskData:
         return None
 
 class CvatTaskDataExtractor(datumaro.SourceExtractor):
-    def __init__(self, task_data, include_images=False, include_outside=False):
+    def __init__(self, task_data, include_images=False):
         super().__init__()
         self._categories = self._load_categories(task_data)
-        self._include_outside = include_outside
 
         dm_items = []
 
+        is_video = task_data.meta['task']['mode'] == 'interpolation'
+        ext = ''
+        if is_video:
+            ext = FrameProvider.VIDEO_FRAME_EXT
         if include_images:
             frame_provider = FrameProvider(task_data.db_task.data)
+            if is_video:
+                # optimization for videos: use numpy arrays instead of bytes
+                # some formats or transforms can require image data
+                def _make_image(i, **kwargs):
+                    loader = lambda _: frame_provider.get_frame(i,
+                        quality=frame_provider.Quality.ORIGINAL,
+                        out_type=frame_provider.Type.NUMPY_ARRAY)[0]
+                    return Image(loader=loader, **kwargs)
+            else:
+                # for images use encoded data to avoid recoding
+                def _make_image(i, **kwargs):
+                    loader = lambda _: frame_provider.get_frame(i,
+                        quality=frame_provider.Quality.ORIGINAL,
+                        out_type=frame_provider.Type.BUFFER)[0].getvalue()
+                    return ByteImage(data=loader, **kwargs)
 
         for frame_data in task_data.group_by_frame(include_empty=True):
-            loader = None
+            image_args = {
+                'path': frame_data.name + ext,
+                'size': (frame_data.height, frame_data.width),
+            }
             if include_images:
-                loader = lambda p, i=frame_data.idx: frame_provider.get_frame(i,
-                    quality=frame_provider.Quality.ORIGINAL,
-                    out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-            dm_image = Image(path=frame_data.name, loader=loader,
-                size=(frame_data.height, frame_data.width)
-            )
+                dm_image = _make_image(frame_data.idx, **image_args)
+            else:
+                dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, task_data)
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
                 annotations=dm_anno, image=dm_image,
@@ -549,9 +568,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             if hasattr(shape_obj, 'track_id'):
                 anno_attr['track_id'] = shape_obj.track_id
                 anno_attr['keyframe'] = shape_obj.keyframe
-
-                if not self._include_outside and shape_obj.outside:
-                    continue
 
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:

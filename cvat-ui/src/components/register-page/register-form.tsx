@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Form, { FormComponentProps } from 'antd/lib/form/Form';
+import { UserAddOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
+import Form, { RuleRender, RuleObject } from 'antd/lib/form';
 import Button from 'antd/lib/button';
-import Icon from 'antd/lib/icon';
 import Input from 'antd/lib/input';
 import Checkbox from 'antd/lib/checkbox';
 
@@ -29,302 +29,240 @@ export interface RegisterData {
     confirmations: UserConfirmation[];
 }
 
-type RegisterFormProps = {
+interface Props {
     fetching: boolean;
     userAgreements: UserAgreement[];
     onSubmit(registerData: RegisterData): void;
-} & FormComponentProps;
+}
 
-class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
-    private validateConfirmation = (rule: any, value: any, callback: any): void => {
-        const { form } = this.props;
-        if (value && value !== form.getFieldValue('password1')) {
-            callback('Two passwords that you enter is inconsistent!');
-        } else {
-            callback();
-        }
-    };
+function validateUsername(_: RuleObject, value: string): Promise<void> {
+    if (!patterns.validateUsernameLength.pattern.test(value)) {
+        return Promise.reject(new Error(patterns.validateUsernameLength.message));
+    }
 
-    private validatePassword = (_: any, value: any, callback: any): void => {
-        const { form } = this.props;
+    if (!patterns.validateUsernameCharacters.pattern.test(value)) {
+        return Promise.reject(new Error(patterns.validateUsernameCharacters.message));
+    }
+
+    return Promise.resolve();
+}
+
+export const validatePassword: RuleRender = (): RuleObject => ({
+    validator(_: RuleObject, value: string): Promise<void> {
         if (!patterns.validatePasswordLength.pattern.test(value)) {
-            callback(patterns.validatePasswordLength.message);
+            return Promise.reject(new Error(patterns.validatePasswordLength.message));
         }
 
         if (!patterns.passwordContainsNumericCharacters.pattern.test(value)) {
-            callback(patterns.passwordContainsNumericCharacters.message);
+            return Promise.reject(new Error(patterns.passwordContainsNumericCharacters.message));
         }
 
         if (!patterns.passwordContainsUpperCaseCharacter.pattern.test(value)) {
-            callback(patterns.passwordContainsUpperCaseCharacter.message);
+            return Promise.reject(new Error(patterns.passwordContainsUpperCaseCharacter.message));
         }
 
         if (!patterns.passwordContainsLowerCaseCharacter.pattern.test(value)) {
-            callback(patterns.passwordContainsLowerCaseCharacter.message);
+            return Promise.reject(new Error(patterns.passwordContainsLowerCaseCharacter.message));
         }
 
-        if (value) {
-            form.validateFields(['password2'], { force: true });
-        }
-        callback();
-    };
+        return Promise.resolve();
+    },
+});
 
-    private validateUsername = (_: any, value: any, callback: any): void => {
-        if (!patterns.validateUsernameLength.pattern.test(value)) {
-            callback(patterns.validateUsernameLength.message);
-        }
-
-        if (!patterns.validateUsernameCharacters.pattern.test(value)) {
-            callback(patterns.validateUsernameCharacters.message);
+export const validateConfirmation: ((firstFieldName: string) => RuleRender) = (
+    firstFieldName: string,
+): RuleRender => ({ getFieldValue }): RuleObject => ({
+    validator(_: RuleObject, value: string): Promise<void> {
+        if (value && value !== getFieldValue(firstFieldName)) {
+            return Promise.reject(new Error('Two passwords that you enter is inconsistent!'));
         }
 
-        callback();
-    };
+        return Promise.resolve();
+    },
+});
 
-    private validateAgrement = (agreement: any, value: any, callback: any): void => {
-        const { userAgreements } = this.props;
-        let isValid = true;
-        for (const userAgreement of userAgreements) {
-            if (agreement.field === userAgreement.name
-                && userAgreement.required && !value) {
-                isValid = false;
-                callback(`You must accept the ${userAgreement.displayText} to continue!`);
-                break;
-            }
+const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
+    userAgreements: UserAgreement[],
+): RuleRender => () => ({
+    validator(rule: any, value: boolean): Promise<void> {
+        const [, name] = rule.field.split(':');
+        const [agreement] = userAgreements
+            .filter((userAgreement: UserAgreement): boolean => userAgreement.name === name);
+        if (agreement.required && !value) {
+            return Promise.reject(new Error(`You must accept ${agreement.displayText} to continue!`));
         }
-        if (isValid) {
-            callback();
-        }
-    };
 
-    private handleSubmit = (e: React.FormEvent): void => {
-        e.preventDefault();
-        const {
-            form,
-            onSubmit,
-            userAgreements,
-        } = this.props;
+        return Promise.resolve();
+    },
+});
 
-        form.validateFields((error, values): void => {
-            if (!error) {
-                const validatedFields = {
-                    ...values,
-                    confirmations: [],
-                };
+function RegisterFormComponent(props: Props): JSX.Element {
+    const { fetching, userAgreements, onSubmit } = props;
+    return (
+        <Form
+            onFinish={(values: Record<string, string | boolean>) => {
+                const agreements = Object.keys(values)
+                    .filter((key: string):boolean => key.startsWith('agreement:'));
+                const confirmations = agreements
+                    .map((key: string): UserConfirmation => ({ name: key.split(':')[1], value: (values[key] as boolean) }));
+                const rest = Object.entries(values)
+                    .filter((entry: (string | boolean)[]) => !agreements.includes(entry[0] as string));
 
-                for (const userAgreement of userAgreements) {
-                    validatedFields.confirmations.push({
-                        name: userAgreement.name,
-                        value: validatedFields[userAgreement.name],
-                    });
-                    delete validatedFields[userAgreement.name];
-                }
-
-                onSubmit(validatedFields);
-            }
-        });
-    };
-
-    private renderFirstNameField(): JSX.Element {
-        const { form } = this.props;
-
-        return (
-            <Form.Item hasFeedback>
-                {form.getFieldDecorator('firstName', {
-                    rules: [{
-                        required: true,
-                        message: 'Please specify a first name',
-                        pattern: patterns.validateName.pattern,
-                    }],
-                })(
-                    <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                        placeholder='First name'
-                    />,
-                )}
-            </Form.Item>
-        );
-    }
-
-    private renderLastNameField(): JSX.Element {
-        const { form } = this.props;
-
-        return (
-            <Form.Item hasFeedback>
-                {form.getFieldDecorator('lastName', {
-                    rules: [{
-                        required: true,
-                        message: 'Please specify a last name',
-                        pattern: patterns.validateName.pattern,
-                    }],
-                })(
-                    <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                        placeholder='Last name'
-                    />,
-                )}
-            </Form.Item>
-        );
-    }
-
-    private renderUsernameField(): JSX.Element {
-        const { form } = this.props;
-
-        return (
-            <Form.Item hasFeedback>
-                {form.getFieldDecorator('username', {
-                    rules: [{
+                onSubmit({
+                    ...(Object.fromEntries(rest) as any as RegisterData),
+                    confirmations,
+                });
+            }}
+            className='register-form'
+        >
+            <Row gutter={8}>
+                <Col span={12}>
+                    <Form.Item
+                        hasFeedback
+                        name='firstName'
+                        rules={[
+                            {
+                                required: true,
+                                message: 'Please specify a first name',
+                                pattern: patterns.validateName.pattern,
+                            },
+                        ]}
+                    >
+                        <Input
+                            prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                            placeholder='First name'
+                        />
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item
+                        hasFeedback
+                        name='lastName'
+                        rules={[
+                            {
+                                required: true,
+                                message: 'Please specify a last name',
+                                pattern: patterns.validateName.pattern,
+                            },
+                        ]}
+                    >
+                        <Input
+                            prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                            placeholder='Last name'
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Form.Item
+                hasFeedback
+                name='username'
+                rules={[
+                    {
                         required: true,
                         message: 'Please specify a username',
-                    }, {
-                        validator: this.validateUsername,
-                    }],
-                })(
-                    <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                        placeholder='Username'
-                    />,
-                )}
+                    },
+                    {
+                        validator: validateUsername,
+                    },
+                ]}
+            >
+                <Input
+                    prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    placeholder='Username'
+                />
             </Form.Item>
-        );
-    }
 
-    private renderEmailField(): JSX.Element {
-        const { form } = this.props;
-
-        return (
-            <Form.Item hasFeedback>
-                {form.getFieldDecorator('email', {
-                    rules: [{
+            <Form.Item
+                hasFeedback
+                name='email'
+                rules={[
+                    {
                         type: 'email',
                         message: 'The input is not valid E-mail!',
-                    }, {
+                    },
+                    {
                         required: true,
                         message: 'Please specify an email address',
-                    }],
-                })(
-                    <Input
-                        autoComplete='email'
-                        prefix={<Icon type='mail' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                        placeholder='Email address'
-                    />,
-                )}
+                    },
+                ]}
+            >
+                <Input
+                    autoComplete='email'
+                    prefix={<MailOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    placeholder='Email address'
+                />
             </Form.Item>
-        );
-    }
 
-    private renderPasswordField(): JSX.Element {
-        const { form } = this.props;
-
-        return (
-            <Form.Item hasFeedback>
-                {form.getFieldDecorator('password1', {
-                    rules: [{
+            <Form.Item
+                hasFeedback
+                name='password1'
+                rules={[
+                    {
                         required: true,
                         message: 'Please input your password!',
-                    }, {
-                        validator: this.validatePassword,
-                    }],
-                })(<Input.Password
+                    }, validatePassword,
+                ]}
+            >
+                <Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Password'
-                />)}
+                />
             </Form.Item>
-        );
-    }
 
-    private renderPasswordConfirmationField(): JSX.Element {
-        const { form } = this.props;
-
-        return (
-            <Form.Item hasFeedback>
-                {form.getFieldDecorator('password2', {
-                    rules: [{
+            <Form.Item
+                hasFeedback
+                name='password2'
+                dependencies={['password1']}
+                rules={[
+                    {
                         required: true,
                         message: 'Please confirm your password!',
-                    }, {
-                        validator: this.validateConfirmation,
-                    }],
-                })(<Input.Password
+                    }, validateConfirmation('password1'),
+                ]}
+            >
+                <Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Confirm password'
-                />)}
+                />
             </Form.Item>
-        );
-    }
 
-    private renderUserAgreements(): JSX.Element[] {
-        const { form, userAgreements } = this.props;
-        const getUserAgreementsElements = (): JSX.Element[] => {
-            const agreementsList: JSX.Element[] = [];
-            for (const userAgreement of userAgreements) {
-                agreementsList.push(
-                    <Form.Item key={userAgreement.name}>
-                        {form.getFieldDecorator(userAgreement.name, {
-                            initialValue: false,
-                            valuePropName: 'checked',
-                            rules: [{
-                                required: true,
-                                message: 'You must accept to continue!',
-                            }, {
-                                validator: this.validateAgrement,
-                            }],
-                        })(
-                            <Checkbox>
-                                I read and accept the
-                                <a
-                                    rel='noopener noreferrer'
-                                    target='_blank'
-                                    href={userAgreement.url}
-                                >
-                                    {` ${userAgreement.displayText}`}
-                                </a>
-                            </Checkbox>,
-                        )}
-                    </Form.Item>,
-                );
-            }
-            return agreementsList;
-        };
-
-        return getUserAgreementsElements();
-    }
-
-    public render(): JSX.Element {
-        const { fetching } = this.props;
-
-        return (
-            <Form onSubmit={this.handleSubmit} className='login-form'>
-                <Row gutter={8}>
-                    <Col span={12}>
-                        {this.renderFirstNameField()}
-                    </Col>
-                    <Col span={12}>
-                        {this.renderLastNameField()}
-                    </Col>
-                </Row>
-                {this.renderUsernameField()}
-                {this.renderEmailField()}
-                {this.renderPasswordField()}
-                {this.renderPasswordConfirmationField()}
-                {this.renderUserAgreements()}
-
-                <Form.Item>
-                    <Button
-                        type='primary'
-                        htmlType='submit'
-                        className='register-form-button'
-                        loading={fetching}
-                        disabled={fetching}
-                    >
-                        Submit
-                    </Button>
+            {userAgreements.map((userAgreement: UserAgreement): JSX.Element => (
+                <Form.Item
+                    name={`agreement:${userAgreement.name}`}
+                    key={userAgreement.name}
+                    initialValue={false}
+                    valuePropName='checked'
+                    rules={[
+                        {
+                            required: true,
+                            message: 'You must accept to continue!',
+                        }, validateAgreement(userAgreements),
+                    ]}
+                >
+                    <Checkbox>
+                        I read and accept the
+                        <a rel='noopener noreferrer' target='_blank' href={userAgreement.url}>
+                            {` ${userAgreement.displayText}`}
+                        </a>
+                    </Checkbox>
                 </Form.Item>
-            </Form>
-        );
-    }
+            ))}
+
+            <Form.Item>
+                <Button
+                    type='primary'
+                    htmlType='submit'
+                    className='register-form-button'
+                    loading={fetching}
+                    disabled={fetching}
+                >
+                    Submit
+                </Button>
+            </Form.Item>
+        </Form>
+    );
 }
 
-export default Form.create<RegisterFormProps>()(RegisterFormComponent);
+export default React.memo(RegisterFormComponent);

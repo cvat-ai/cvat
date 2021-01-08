@@ -9,15 +9,15 @@ import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
 import { ShareActionTypes } from 'actions/share-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
-import { UsersActionTypes } from 'actions/users-actions';
+import { ProjectsActionTypes } from 'actions/projects-actions';
 import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
+import { ReviewActionTypes } from 'actions/review-actions';
 
 import { NotificationsState } from './interfaces';
-
 
 const defaultState: NotificationsState = {
     errors: {
@@ -27,7 +27,15 @@ const defaultState: NotificationsState = {
             logout: null,
             register: null,
             changePassword: null,
+            requestPasswordReset: null,
+            resetPassword: null,
             loadAuthActions: null,
+        },
+        projects: {
+            fetching: null,
+            updating: null,
+            deleting: null,
+            creating: null,
         },
         tasks: {
             fetching: null,
@@ -51,9 +59,7 @@ const defaultState: NotificationsState = {
             fetching: null,
         },
         models: {
-            creating: null,
             starting: null,
-            deleting: null,
             fetching: null,
             canceling: null,
             metaFetching: null,
@@ -79,6 +85,7 @@ const defaultState: NotificationsState = {
             undo: null,
             redo: null,
             search: null,
+            searchEmptyFrame: null,
             savingLogs: null,
         },
         boundaries: {
@@ -86,6 +93,14 @@ const defaultState: NotificationsState = {
         },
         userAgreements: {
             fetching: null,
+        },
+        review: {
+            commentingIssue: null,
+            finishingIssue: null,
+            initialization: null,
+            reopeningIssue: null,
+            resolvingIssue: null,
+            submittingReview: null,
         },
     },
     messages: {
@@ -98,6 +113,8 @@ const defaultState: NotificationsState = {
         auth: {
             changePasswordDone: '',
             registerDone: '',
+            requestPasswordResetDone: '',
+            resetPasswordDone: '',
         },
     },
 };
@@ -129,6 +146,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         login: {
                             message: 'Could not login on the server',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-login-failed',
                         },
                     },
                 },
@@ -205,6 +223,62 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         changePassword: {
                             message: 'Could not change password',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-change-password-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        requestPasswordResetDone: `Check your email for a link to reset your password.
+                            If it doesn’t appear within a few minutes, check your spam folder.`,
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        requestPasswordReset: {
+                            message: 'Could not reset password on the server.',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.RESET_PASSWORD_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        resetPasswordDone: 'Password has been reset with the new password.',
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.RESET_PASSWORD_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        resetPassword: {
+                            message: 'Could not set new password on the server.',
+                            reason: action.payload.error.toString(),
                         },
                     },
                 },
@@ -234,8 +308,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         exporting: {
-                            message: 'Could not export dataset for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not export dataset for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -266,8 +341,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         loading: {
-                            message: 'Could not upload annotation for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not upload annotation for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -282,8 +358,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     tasks: {
                         ...state.messages.tasks,
-                        loadingDone: 'Annotations have been loaded to the '
-                            + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                        loadingDone:
+                            'Annotations have been loaded to the ' +
+                            `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                     },
                 },
             };
@@ -297,8 +374,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         updating: {
-                            message: 'Could not update '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -314,8 +390,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         dumping: {
-                            message: 'Could not dump annotations for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not dump annotations for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -331,8 +408,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         deleting: {
-                            message: 'Could not delete the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not delete the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -354,6 +432,72 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ProjectsActionTypes.GET_PROJECTS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        fetching: {
+                            message: 'Could not fetch projects',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.CREATE_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        creating: {
+                            message: 'Could not create the project',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { id: projectId } = action.payload.project;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        updating: {
+                            message:
+                                'Could not update ' +
+                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.DELETE_PROJECT_FAILED: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        updating: {
+                            message:
+                                'Could not delete ' +
+                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case FormatsActionTypes.GET_FORMATS_FAILED: {
             return {
                 ...state,
@@ -363,21 +507,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.formats,
                         fetching: {
                             message: 'Could not get formats from the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case UsersActionTypes.GET_USERS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    users: {
-                        ...state.errors.users,
-                        fetching: {
-                            message: 'Could not get users from the server',
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -414,21 +543,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ModelsActionTypes.CREATE_MODEL_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    models: {
-                        ...state.errors.models,
-                        creating: {
-                            message: 'Could not create the model',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             if (action.payload.activeInference.status === 'finished') {
                 const { taskID } = action.payload;
@@ -438,8 +552,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         models: {
                             ...state.messages.models,
-                            inferenceDone: 'Automatic annotation finished for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            inferenceDone:
+                                'Automatic annotation finished for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                         },
                     },
                 };
@@ -473,8 +588,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         inferenceStatusFetching: {
-                            message: 'Fetching inference status for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Fetching inference status for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -505,8 +621,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         starting: {
-                            message: 'Could not infer model for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not infer model for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -522,8 +639,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         canceling: {
-                            message: 'Could not cancel model inference for the '
-                                + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message:
+                                'Could not cancel model inference for the ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -570,6 +688,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         saving: {
                             message: 'Could not save annotations',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-save-annotations-failed',
                         },
                     },
                 },
@@ -585,6 +704,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         updating: {
                             message: 'Could not update annotations',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-annotations-failed',
                         },
                     },
                 },
@@ -660,6 +780,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         removing: {
                             message: 'Could not remove the object',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-object-failed',
                         },
                     },
                 },
@@ -695,32 +816,12 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.CHANGE_JOB_STATUS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        savingJob: {
-                            message: 'Could not save the job on the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED: {
-            const {
-                job,
-                error,
-            } = action.payload;
+            const { job, error } = action.payload;
 
             const {
                 id: jobID,
-                task: {
-                    id: taskID,
-                },
+                task: { id: taskID },
             } = job;
 
             return {
@@ -730,8 +831,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     annotation: {
                         ...state.errors.annotation,
                         uploadAnnotations: {
-                            message: 'Could not upload annotations for the '
-                                + `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
+                            message:
+                                'Could not upload annotations for the ' +
+                                `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
                             reason: error.toString(),
                         },
                     },
@@ -813,6 +915,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AnnotationActionTypes.SEARCH_EMPTY_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        searchEmptyFrame: {
+                            message: 'Could not search an empty frame',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case AnnotationActionTypes.SAVE_LOGS_FAILED: {
             return {
                 ...state,
@@ -858,6 +975,96 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ReviewActionTypes.INITIALIZE_REVIEW_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        initialization: {
+                            message: 'Could not initialize review session',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.FINISH_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        finishingIssue: {
+                            message: 'Could not open a new issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.RESOLVE_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        resolvingIssue: {
+                            message: 'Could not resolve the issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.REOPEN_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        reopeningIssue: {
+                            message: 'Could not reopen the issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.COMMENT_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        commentingIssue: {
+                            message: 'Could not comment the issue',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.SUBMIT_REVIEW_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        submittingReview: {
+                            message: 'Could not submit review session to the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case NotificationsActionType.RESET_ERRORS: {
             return {
                 ...state,
@@ -871,6 +1078,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 ...state,
                 messages: {
                     ...defaultState.messages,
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_DATA_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        jobFetching: {
+                            message: 'Could not fetch frame data from the server',
+                            reason: action.payload.error,
+                        },
+                    },
                 },
             };
         }

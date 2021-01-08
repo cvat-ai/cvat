@@ -5,10 +5,7 @@
 import * as SVG from 'svg.js';
 import { GroupData } from './canvasModel';
 
-import {
-    translateToSVG,
-} from './shared';
-
+import { translateToSVG } from './shared';
 
 export interface GroupHandler {
     group(groupData: GroupData): void;
@@ -35,16 +32,15 @@ export class GroupHandlerImpl implements GroupHandler {
     private statesToBeGroupped: any[];
     private highlightedShapes: Record<number, SVG.Shape>;
 
-    private getSelectionBox(event: MouseEvent): {
-        xtl: number;
-        ytl: number;
-        xbr: number;
-        ybr: number;
-    } {
-        const point = translateToSVG(
-            (this.canvas.node as any as SVGSVGElement),
-            [event.clientX, event.clientY],
-        );
+    private getSelectionBox(
+        event: MouseEvent,
+    ): {
+            xtl: number;
+            ytl: number;
+            xbr: number;
+            ybr: number;
+        } {
+        const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         const stopSelectionPoint = {
             x: point[0],
             y: point[1],
@@ -60,10 +56,7 @@ export class GroupHandlerImpl implements GroupHandler {
 
     private onSelectStart(event: MouseEvent): void {
         if (!this.selectionRect) {
-            const point = translateToSVG(
-                this.canvas.node as any as SVGSVGElement,
-                [event.clientX, event.clientY],
-            );
+            const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
             this.startSelectionPoint = {
                 x: point[0],
                 y: point[1],
@@ -102,12 +95,16 @@ export class GroupHandlerImpl implements GroupHandler {
                 // TODO: Doesn't work properly for groups
                 const bbox = shape.bbox();
                 const clientID = shape.attr('clientID');
-                if (bbox.x > box.xtl && bbox.y > box.ytl
+                if (
+                    bbox.x > box.xtl
+                    && bbox.y > box.ytl
                     && bbox.x + bbox.width < box.xbr
                     && bbox.y + bbox.height < box.ybr
-                    && !(clientID in this.highlightedShapes)) {
-                    const objectState = this.getStates()
-                        .filter((state: any): boolean => state.clientID === clientID)[0];
+                    && !(clientID in this.highlightedShapes)
+                ) {
+                    const objectState = this.getStates().filter(
+                        (state: any): boolean => state.clientID === clientID,
+                    )[0];
 
                     if (objectState) {
                         this.statesToBeGroupped.push(objectState);
@@ -127,7 +124,6 @@ export class GroupHandlerImpl implements GroupHandler {
 
         this.resetSelectedObjects();
         this.initialized = false;
-        this.selectionRect = null;
         this.startSelectionPoint = {
             x: null,
             y: null,
@@ -216,6 +212,10 @@ export class GroupHandlerImpl implements GroupHandler {
         }
         this.statesToBeGroupped = [];
         this.highlightedShapes = {};
+        if (this.selectionRect) {
+            this.selectionRect.remove();
+            this.selectionRect = null;
+        }
     }
 
     public cancel(): void {

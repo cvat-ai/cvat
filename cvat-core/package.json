@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "3.5.0",
+  "version": "3.10.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "babel.config.js",
   "scripts": {
@@ -25,6 +25,7 @@
     "eslint-plugin-no-unsafe-innerhtml": "^1.0.16",
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-security": "^1.4.0",
+    "eslint-plugin-jest": "^24.1.0",
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
     "jsdoc": "^3.6.4",
@@ -32,16 +33,17 @@
     "webpack-cli": "^3.3.2"
   },
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "browser-or-node": "^1.2.1",
     "cvat-data": "../cvat-data",
-    "detect-browser": "^5.0.0",
+    "detect-browser": "^5.2.0",
     "error-stack-parser": "^2.0.2",
     "form-data": "^2.5.0",
-    "jest-config": "^24.8.0",
+    "jest-config": "^26.6.3",
     "js-cookie": "^2.2.0",
     "jsonpath": "^1.0.2",
     "platform": "^1.3.5",
+    "quickhull": "^1.0.3",
     "store": "^2.0.12",
     "worker-loader": "^2.0.0"
   }

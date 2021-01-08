@@ -13,6 +13,36 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 
+class BasicUserSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        if hasattr(self, 'initial_data'):
+            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
+            if unknown_keys:
+                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
+                    message = 'You do not have permissions to access some of' + \
+                        ' these fields: {}'.format(unknown_keys)
+                else:
+                    message = 'Got unknown fields: {}'.format(unknown_keys)
+                raise serializers.ValidationError(message)
+        return data
+
+    class Meta:
+        model = User
+        fields = ('url', 'id', 'username', 'first_name', 'last_name')
+        ordering = ['-id']
+
+class UserSerializer(serializers.ModelSerializer):
+    groups = serializers.SlugRelatedField(many=True,
+        slug_field='name', queryset=Group.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
+            'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
+            'date_joined')
+        read_only_fields = ('last_login', 'date_joined')
+        write_only_fields = ('password', )
+        ordering = ['-id']
 
 class AttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,6 +74,47 @@ class LabelSerializer(serializers.ModelSerializer):
         model = models.Label
         fields = ('id', 'name', 'color', 'attributes')
 
+    @staticmethod
+    def update_instance(validated_data, parent_instance):
+        attributes = validated_data.pop('attributespec_set', [])
+        instance = dict()
+        if isinstance(parent_instance, models.Project):
+            instance['project'] = parent_instance
+            logger = slogger.project[parent_instance.id]
+        else:
+            instance['task'] = parent_instance
+            logger = slogger.task[parent_instance.id]
+        (db_label, created) = models.Label.objects.get_or_create(name=validated_data['name'],
+            **instance)
+        if created:
+            logger.info("New {} label was created".format(db_label.name))
+        else:
+            logger.info("{} label was updated".format(db_label.name))
+        if not validated_data.get('color', None):
+            label_names = [l.name for l in
+                instance[tuple(instance.keys())[0]].label_set.exclude(id=db_label.id).order_by('id')
+            ]
+            db_label.color = get_label_color(db_label.name, label_names)
+        else:
+            db_label.color = validated_data.get('color', db_label.color)
+        db_label.save()
+        for attr in attributes:
+            (db_attr, created) = models.AttributeSpec.objects.get_or_create(
+                label=db_label, name=attr['name'], defaults=attr)
+            if created:
+                logger.info("New {} attribute for {} label was created"
+                    .format(db_attr.name, db_label.name))
+            else:
+                logger.info("{} attribute for {} label was updated"
+                    .format(db_attr.name, db_label.name))
+
+                # FIXME: need to update only "safe" fields
+                db_attr.default_value = attr.get('default_value', db_attr.default_value)
+                db_attr.mutable = attr.get('mutable', db_attr.mutable)
+                db_attr.input_type = attr.get('input_type', db_attr.input_type)
+                db_attr.values = attr.get('values', db_attr.values)
+                db_attr.save()
+
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.JobCommit
@@ -53,16 +124,27 @@ class JobSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    reviewer = BasicUserSerializer(allow_null=True, required=False)
+    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status', 'start_frame',
-            'stop_frame', 'task_id')
+        fields = ('url', 'id', 'assignee', 'assignee_id', 'reviewer',
+            'reviewer_id', 'status', 'start_frame', 'stop_frame', 'task_id')
+        read_only_fields = ('assignee', 'reviewer')
 
 class SimpleJobSerializer(serializers.ModelSerializer):
+    assignee = BasicUserSerializer(allow_null=True)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
+    reviewer = BasicUserSerializer(allow_null=True, required=False)
+    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status')
+        fields = ('url', 'id', 'assignee', 'assignee_id', 'reviewer', 'reviewer_id', 'status')
+        read_only_fields = ('assignee', 'reviewer')
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
@@ -120,6 +202,7 @@ class RqStatusSerializer(serializers.Serializer):
     message = serializers.CharField(allow_blank=True, default="")
 
 class WriteOnceMixin:
+
     """Adds support for write once fields to serializers.
 
     To use it, specify a list of fields as `write_once_fields` on the
@@ -170,11 +253,14 @@ class DataSerializer(serializers.ModelSerializer):
     client_files = ClientFileSerializer(many=True, default=[])
     server_files = ServerFileSerializer(many=True, default=[])
     remote_files = RemoteFileSerializer(many=True, default=[])
+    use_cache = serializers.BooleanField(default=False)
+    copy_data = serializers.BooleanField(default=False)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks')
+            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
+            'use_cache', 'copy_data')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -202,6 +288,8 @@ class DataSerializer(serializers.ModelSerializer):
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
         validated_data.pop('use_zip_chunks')
+        validated_data.pop('use_cache')
+        validated_data.pop('copy_data')
         db_data = models.Data.objects.create(**validated_data)
 
         data_path = db_data.get_data_dirname()
@@ -228,7 +316,7 @@ class DataSerializer(serializers.ModelSerializer):
         return db_data
 
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True)
+    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type')
@@ -236,21 +324,31 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
+    owner = BasicUserSerializer(required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    project_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee', 'owner_id', 'assignee_id',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
-            'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
+            'segment_size', 'status', 'labels', 'segments',
+            'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'owner', 'assignee',
             'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
-        write_once_fields = ('overlap', 'segment_size')
+        write_once_fields = ('overlap', 'segment_size', 'project_id')
         ordering = ['-id']
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
-        labels = validated_data.pop('label_set')
+        if not (validated_data.get("label_set") or validated_data.get("project_id")):
+            raise serializers.ValidationError('Label set or project_id must be present')
+        if validated_data.get("label_set") and validated_data.get("project_id"):
+            raise serializers.ValidationError('Project must have only one of Label set or project_id')
+
+        labels = validated_data.pop('label_set', [])
         db_task = models.Task.objects.create(**validated_data)
         label_names = list()
         for label in labels:
@@ -272,101 +370,96 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task.save()
         return db_task
 
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if instance.project_id:
+            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
+        return response
+
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
-        instance.owner = validated_data.get('owner', instance.owner)
-        instance.assignee = validated_data.get('assignee', instance.assignee)
+        instance.owner_id = validated_data.get('owner_id', instance.owner_id)
+        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker',
             instance.bug_tracker)
-        instance.z_order = validated_data.get('z_order', instance.z_order)
-        instance.project = validated_data.get('project', instance.project)
         labels = validated_data.get('label_set', [])
         for label in labels:
-            attributes = label.pop('attributespec_set', [])
-            (db_label, created) = models.Label.objects.get_or_create(task=instance,
-                name=label['name'])
-            if created:
-                slogger.task[instance.id].info("New {} label was created"
-                    .format(db_label.name))
-            else:
-                slogger.task[instance.id].info("{} label was updated"
-                    .format(db_label.name))
-            if not label.get('color', None):
-                label_names = [l.name for l in
-                    models.Label.objects.filter(task_id=instance.id).exclude(id=db_label.id).order_by('id')
-                ]
-                db_label.color = get_label_color(db_label.name, label_names)
-            else:
-                db_label.color = label.get('color', db_label.color)
-            db_label.save()
-            for attr in attributes:
-                (db_attr, created) = models.AttributeSpec.objects.get_or_create(
-                    label=db_label, name=attr['name'], defaults=attr)
-                if created:
-                    slogger.task[instance.id].info("New {} attribute for {} label was created"
-                        .format(db_attr.name, db_label.name))
-                else:
-                    slogger.task[instance.id].info("{} attribute for {} label was updated"
-                        .format(db_attr.name, db_label.name))
-
-                    # FIXME: need to update only "safe" fields
-                    db_attr.default_value = attr.get('default_value', db_attr.default_value)
-                    db_attr.mutable = attr.get('mutable', db_attr.mutable)
-                    db_attr.input_type = attr.get('input_type', db_attr.input_type)
-                    db_attr.values = attr.get('values', db_attr.values)
-                    db_attr.save()
+            LabelSerializer.update_instance(label, instance)
 
         instance.save()
         return instance
 
     def validate_labels(self, value):
-        if not value:
-            raise serializers.ValidationError('Label set must not be empty')
         label_names = [label['name'] for label in value]
         if len(label_names) != len(set(label_names)):
             raise serializers.ValidationError('All label names must be unique for the task')
         return value
 
-
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'owner', 'assignee', 'bug_tracker',
-            'created_date', 'updated_date', 'status')
-        read_only_fields = ('created_date', 'updated_date', 'status')
+        fields = ('id', 'name')
+        read_only_fields = ('name',)
         ordering = ['-id']
 
-class BasicUserSerializer(serializers.ModelSerializer):
-    def validate(self, data):
-        if hasattr(self, 'initial_data'):
-            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
-            if unknown_keys:
-                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
-                    message = 'You do not have permissions to access some of' + \
-                        ' these fields: {}'.format(unknown_keys)
-                else:
-                    message = 'Got unknown fields: {}'.format(unknown_keys)
-                raise serializers.ValidationError(message)
-        return data
 
+class ProjectSerializer(serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
+    tasks = TaskSerializer(many=True, read_only=True)
+    owner = BasicUserSerializer(required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     class Meta:
-        model = User
-        fields = ('url', 'id', 'username', 'first_name', 'last_name')
+        model = models.Project
+        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
+            'bug_tracker', 'created_date', 'updated_date', 'status')
+        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
         ordering = ['-id']
 
-class UserSerializer(serializers.ModelSerializer):
-    groups = serializers.SlugRelatedField(many=True,
-        slug_field='name', queryset=Group.objects.all())
+    # pylint: disable=no-self-use
+    def create(self, validated_data):
+        labels = validated_data.pop('label_set')
+        db_project = models.Project.objects.create(**validated_data)
+        label_names = list()
+        for label in labels:
+            attributes = label.pop('attributespec_set')
+            if not label.get('color', None):
+                label['color'] = get_label_color(label['name'], label_names)
+            label_names.append(label['name'])
+            db_label = models.Label.objects.create(project=db_project, **label)
+            for attr in attributes:
+                models.AttributeSpec.objects.create(label=db_label, **attr)
 
-    class Meta:
-        model = User
-        fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
-            'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
-            'date_joined')
-        read_only_fields = ('last_login', 'date_joined')
-        write_only_fields = ('password', )
-        ordering = ['-id']
+        project_path = db_project.get_project_dirname()
+        if os.path.isdir(project_path):
+            shutil.rmtree(project_path)
+        os.makedirs(db_project.get_project_logs_dirname())
+
+        db_project.save()
+        return db_project
+
+    # pylint: disable=no-self-use
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.owner_id = validated_data.get('owner_id', instance.owner_id)
+        instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
+        instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
+        labels = validated_data.get('label_set', [])
+        for label in labels:
+            LabelSerializer.update_instance(label, instance)
+
+        instance.save()
+        return instance
+
+
+    def validate_labels(self, value):
+        if value:
+            label_names = [label['name'] for label in value]
+            if len(label_names) != len(set(label_names)):
+                raise serializers.ValidationError('All label names must be unique for the project')
+        return value
 
 class ExceptionSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=255)
@@ -394,6 +487,11 @@ class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
+
+class PluginsSerializer(serializers.Serializer):
+    GIT_INTEGRATION = serializers.BooleanField()
+    ANALYTICS = serializers.BooleanField()
+    MODELS = serializers.BooleanField()
 
 class DataMetaSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
@@ -489,3 +587,64 @@ class LogEventSerializer(serializers.Serializer):
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
+
+class ReviewSerializer(serializers.ModelSerializer):
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    reviewer = BasicUserSerializer(allow_null=True, required=False)
+    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
+    class Meta:
+        model = models.Review
+        fields = '__all__'
+        read_only_fields = ('id', 'assignee', 'reviewer', )
+        write_once_fields = ('job', 'reviewer_id', 'assignee_id', 'estimated_quality', 'status', )
+        ordering = ['-id']
+
+class IssueSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer(allow_null=True, required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    resolver = BasicUserSerializer(allow_null=True, required=False)
+    resolver_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
+    position = serializers.ListField(
+        child=serializers.FloatField(),
+        allow_empty=False,
+    )
+
+    class Meta:
+        model = models.Issue
+        fields = '__all__'
+        read_only_fields = ('created_date', 'id', 'owner', 'resolver', )
+        write_once_fields = ('frame', 'position', 'job', 'owner_id', 'review', )
+        ordering = ['-id']
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = BasicUserSerializer(allow_null=True, required=False)
+    author_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
+    class Meta:
+        model = models.Comment
+        fields = '__all__'
+        read_only_fields = ('created_date', 'updated_date', 'id', 'author', )
+        write_once_fields = ('issue', 'author_id', )
+
+class CombinedIssueSerializer(IssueSerializer):
+    comment_set = CommentSerializer(many=True)
+
+class CombinedReviewSerializer(ReviewSerializer):
+    issue_set = CombinedIssueSerializer(many=True)
+
+    def create(self, validated_data):
+        issues_validated_data = validated_data.pop('issue_set')
+        db_review = models.Review.objects.create(**validated_data)
+        for issue in issues_validated_data:
+            issue['review'] = db_review
+
+            comments_validated_data = issue.pop('comment_set')
+            db_issue = models.Issue.objects.create(**issue)
+            for comment in comments_validated_data:
+                comment['issue'] = db_issue
+                models.Comment.objects.create(**comment)
+
+        return db_review

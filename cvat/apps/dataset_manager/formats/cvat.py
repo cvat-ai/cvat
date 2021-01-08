@@ -229,8 +229,7 @@ def dump_as_cvat_annotation(file_object, annotations):
                     )),
                 ]))
 
-            if annotations.meta["task"]["z_order"] != "False":
-                dump_data['z_order'] = str(shape.z_order)
+            dump_data['z_order'] = str(shape.z_order)
             if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
@@ -343,8 +342,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                         for x,y in pairwise(shape.points)]))
                 ]))
 
-            if annotations.meta["task"]["z_order"] != "False":
-                dump_data["z_order"] = str(shape.z_order)
+            dump_data["z_order"] = str(shape.z_order)
 
             if shape.type == "rectangle":
                 dumper.open_box(dump_data)
@@ -398,8 +396,9 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
-            ),
-            annotations.TrackedShape(
+            )] +
+            ( # add a finishing frame if it does not hop over the last frame
+            [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
                 occluded=shape.occluded,
@@ -408,8 +407,10 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + annotations.frame_step,
                 attributes=shape.attributes,
+            )] if shape.frame + annotations.frame_step < \
+                    int(annotations.meta['task']['stop_frame']) \
+               else []
             ),
-            ],
         ))
         counter += 1
 
@@ -439,7 +440,9 @@ def load(file_object, annotations):
                 )
             elif el.tag == 'image':
                 image_is_opened = True
-                frame_id = match_dm_item(DatasetItem(id=el.attrib['id'], image=el.attrib['name']), annotations)
+                frame_id = annotations.abs_frame_id(match_dm_item(
+                    DatasetItem(id=el.attrib['id'], image=el.attrib['name']),
+                    annotations))
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
                 attributes = []
                 shape = {
@@ -526,19 +529,21 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
             anno_callback(f, task_data)
 
         if save_images:
+            ext = ''
+            if task_data.meta['task']['mode'] == 'interpolation':
+                ext = FrameProvider.VIDEO_FRAME_EXT
+
             img_dir = osp.join(temp_dir, 'images')
             frame_provider = FrameProvider(task_data.db_task.data)
             frames = frame_provider.get_frames(
                 frame_provider.Quality.ORIGINAL,
-                frame_provider.Type.NUMPY_ARRAY)
+                frame_provider.Type.BUFFER)
             for frame_id, (frame_data, _) in enumerate(frames):
                 frame_name = task_data.frame_info[frame_id]['path']
-                if '.' in frame_name:
-                    save_image(osp.join(img_dir, frame_name),
-                        frame_data, jpeg_quality=100, create_dir=True)
-                else:
-                    save_image(osp.join(img_dir, frame_name + '.png'),
-                        frame_data, create_dir=True)
+                img_path = osp.join(img_dir, frame_name + ext)
+                os.makedirs(osp.dirname(img_path), exist_ok=True)
+                with open(img_path, 'wb') as f:
+                    f.write(frame_data.getvalue())
 
         make_zip_archive(temp_dir, dst_file)
 

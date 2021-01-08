@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.settings.base import BASE_DIR, DATUMARO_PATH
+from cvat.settings.base import BASE_DIR
 from datumaro.components.project import Project
 
 from ..registry import dm_env, exporter
@@ -79,14 +79,7 @@ class DatumaroProjectExporter:
                 osp.join(templates_dir, self._REMOTE_IMAGES_EXTRACTOR + '.py'),
                 osp.join(target_dir, self._REMOTE_IMAGES_EXTRACTOR + '.py'))
 
-        # Make Datumaro and CVAT CLI modules available to the user
-        shutil.copytree(DATUMARO_PATH, osp.join(save_dir, 'datumaro'),
-            ignore=lambda src, names: ['__pycache__'] + [
-                n for n in names
-                if sum([int(n.endswith(ext)) for ext in
-                        ['.pyx', '.pyo', '.pyd', '.pyc']])
-            ])
-
+        # Make CVAT CLI module available to the user
         cvat_utils_dst_dir = osp.join(save_dir, 'cvat', 'utils')
         os.makedirs(cvat_utils_dst_dir)
         shutil.copytree(osp.join(BASE_DIR, 'utils', 'cli'),

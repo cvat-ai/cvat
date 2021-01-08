@@ -1,10 +1,6 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
-
-/* global
-    require:false
-*/
 
 const PluginRegistry = require('./plugins');
 const serverProxy = require('./server-proxy');
@@ -14,6 +10,12 @@ const { LogType } = require('./enums');
 
 const WORKING_TIME_THRESHOLD = 100000; // ms, 1.66 min
 
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 class LoggerStorage {
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
@@ -22,6 +24,7 @@ class LoggerStorage {
         this.collection = [];
         this.ignoreRules = {}; // by event
         this.isActiveChecker = null;
+        this.saving = false;
 
         this.ignoreRules[LogType.zoomImage] = {
             lastLog: null,
@@ -34,8 +37,10 @@ class LoggerStorage {
         this.ignoreRules[LogType.changeAttribute] = {
             lastLog: null,
             ignore(previousLog, currentPayload) {
-                return currentPayload.object_id === previousLog.payload.object_id
-                    && currentPayload.id === previousLog.payload.id;
+                return (
+                    currentPayload.object_id === previousLog.payload.object_id
+                    && currentPayload.id === previousLog.payload.id
+                );
             },
         };
     }
@@ -50,32 +55,28 @@ class LoggerStorage {
     }
 
     async configure(isActiveChecker, activityHelper) {
-        const result = await PluginRegistry
-            .apiWrapper.call(
-                this, LoggerStorage.prototype.configure,
-                isActiveChecker, activityHelper,
-            );
+        const result = await PluginRegistry.apiWrapper.call(
+            this,
+            LoggerStorage.prototype.configure,
+            isActiveChecker,
+            activityHelper,
+        );
         return result;
     }
 
     async log(logType, payload = {}, wait = false) {
-        const result = await PluginRegistry
-            .apiWrapper.call(this, LoggerStorage.prototype.log, logType, payload, wait);
+        const result = await PluginRegistry.apiWrapper.call(this, LoggerStorage.prototype.log, logType, payload, wait);
         return result;
     }
 
     async save() {
-        const result = await PluginRegistry
-            .apiWrapper.call(this, LoggerStorage.prototype.save);
+        const result = await PluginRegistry.apiWrapper.call(this, LoggerStorage.prototype.save);
         return result;
     }
 }
 
-LoggerStorage.prototype.configure.implementation = function (
-    isActiveChecker,
-    userActivityCallback,
-) {
-    if (typeof (isActiveChecker) !== 'function') {
+LoggerStorage.prototype.configure.implementation = function (isActiveChecker, userActivityCallback) {
+    if (typeof isActiveChecker !== 'function') {
         throw new ArgumentError('isActiveChecker argument must be callable');
     }
 
@@ -88,11 +89,11 @@ LoggerStorage.prototype.configure.implementation = function (
 };
 
 LoggerStorage.prototype.log.implementation = function (logType, payload, wait) {
-    if (typeof (payload) !== 'object') {
+    if (typeof payload !== 'object') {
         throw new ArgumentError('Payload must be an object');
     }
 
-    if (typeof (wait) !== 'boolean') {
+    if (typeof wait !== 'boolean') {
         throw new ArgumentError('Payload must be an object');
     }
 
@@ -146,6 +147,10 @@ LoggerStorage.prototype.log.implementation = function (logType, payload, wait) {
 };
 
 LoggerStorage.prototype.save.implementation = async function () {
+    while (this.saving) {
+        await sleep(100);
+    }
+
     const collectionToSend = [...this.collection];
     const lastLog = this.collection[this.collection.length - 1];
 
@@ -164,14 +169,18 @@ LoggerStorage.prototype.save.implementation = async function () {
     const userActivityLog = logFactory(LogType.sendUserActivity, logPayload);
     collectionToSend.push(userActivityLog);
 
-    await serverProxy.logs.save(collectionToSend.map((log) => log.dump()));
-
-    for (const rule of Object.values(this.ignoreRules)) {
-        rule.lastLog = null;
+    try {
+        this.saving = true;
+        await serverProxy.logs.save(collectionToSend.map((log) => log.dump()));
+        for (const rule of Object.values(this.ignoreRules)) {
+            rule.lastLog = null;
+        }
+        this.collection = [];
+        this.workingTime = 0;
+        this.lastLogTime = Date.now();
+    } finally {
+        this.saving = false;
     }
-    this.collection = [];
-    this.workingTime = 0;
-    this.lastLogTime = Date.now();
 };
 
 module.exports = new LoggerStorage();

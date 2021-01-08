@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 
 interface Props {
     currentLabel: string;
@@ -20,21 +20,15 @@ interface Props {
 
 function ObjectSwitcher(props: Props): JSX.Element {
     const {
-        currentLabel,
-        clientID,
-        objectsCount,
-        currentIndex,
-        nextObject,
-        normalizedKeyMap,
+        currentLabel, clientID, objectsCount, currentIndex, nextObject, normalizedKeyMap,
     } = props;
-
 
     const title = `${currentLabel} ${clientID} [${currentIndex + 1}/${objectsCount}]`;
     return (
-        <div className='attribute-annotation-sidebar-object-switcher'>
+        <div className='cvat-attribute-annotation-sidebar-object-switcher'>
             <Tooltip title={`Previous object ${normalizedKeyMap.PREVIOUS_OBJECT}`} mouseLeaveDelay={0}>
-                <Button disabled={objectsCount <= 1} onClick={() => nextObject(-1)}>
-                    <Icon type='left' />
+<Button className='cvat-attribute-annotation-sidebar-object-switcher-left' disabled={objectsCount <= 1} onClick={() => nextObject(-1)}>
+                    <LeftOutlined />
                 </Button>
             </Tooltip>
             <Tooltip title={title} mouseLeaveDelay={0}>
@@ -43,8 +37,8 @@ function ObjectSwitcher(props: Props): JSX.Element {
                 <Text strong>{`[${currentIndex + 1}/${objectsCount}]`}</Text>
             </Tooltip>
             <Tooltip title={`Next object ${normalizedKeyMap.NEXT_OBJECT}`} mouseLeaveDelay={0}>
-                <Button disabled={objectsCount <= 1} onClick={() => nextObject(1)}>
-                    <Icon type='right' />
+                <Button className='cvat-attribute-annotation-sidebar-object-switcher-right' disabled={objectsCount <= 1} onClick={() => nextObject(1)}>
+                    <RightOutlined />
                 </Button>
             </Tooltip>
         </div>

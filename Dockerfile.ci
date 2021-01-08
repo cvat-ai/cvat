@@ -3,23 +3,34 @@ FROM cvat/server
 ENV DJANGO_CONFIGURATION=testing
 USER root
 
-RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | tee /etc/apt/sources.list.d/google-chrome.list && \
-    curl https://deb.nodesource.com/setup_12.x | bash - && \
-    apt-get update && \
+RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
+        gpg-agent \
+        gnupg2 \
         apt-utils \
         build-essential \
-        google-chrome-stable \
-        nodejs \
         python3-dev \
         ruby \
         && \
+    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | tee /etc/apt/sources.list.d/google-chrome.list && \
+    curl https://deb.nodesource.com/setup_12.x | bash - && \
+    DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
+        google-chrome-stable \
+        nodejs \
+        && \
     rm -rf /var/lib/apt/lists/*;
 
-RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt && \
+COPY cvat/requirements/ /tmp/requirements/
+
+RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt && \
     python3 -m pip install --no-cache-dir coveralls
 RUN gem install coveralls-lcov
+
+COPY utils ${HOME}/utils
+COPY cvat-core ${HOME}/cvat-core
+COPY cvat-data ${HOME}/cvat-data
+COPY tests ${HOME}/tests
 
 COPY .coveragerc .
 

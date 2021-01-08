@@ -30,9 +30,13 @@
             margin-top: 10px;
         }
 
-        > div:nth-child(7) > button {
+        .cvat-create-task-submit-section > button {
             float: right;
             width: 120px;
+        }
+
+        .cvat-project-search-field {
+            width: 100%;
         }
     }
 }

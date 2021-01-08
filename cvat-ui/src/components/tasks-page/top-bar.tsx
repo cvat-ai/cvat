@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
+import { PlusOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
@@ -15,51 +15,36 @@ interface VisibleTopBarProps {
     searchValue: string;
 }
 
-function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps): JSX.Element {
-    const {
-        searchValue,
-        history,
-        onSearch,
-    } = props;
+export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
+    const { searchValue, onSearch } = props;
+
+    const history = useHistory();
 
     return (
         <>
-            <Row type='flex' justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Text strong>Default project</Text>
-                </Col>
-            </Row>
-            <Row type='flex' justify='center' align='middle'>
+            <Row justify='center' align='middle'>
                 <Col md={11} lg={9} xl={8} xxl={7}>
                     <Text className='cvat-title'>Tasks</Text>
                     <Input.Search
+                        className='cvat-task-page-search-task'
                         defaultValue={searchValue}
                         onSearch={onSearch}
                         size='large'
                         placeholder='Search'
                     />
                 </Col>
-                <Col
-                    md={{ span: 11 }}
-                    lg={{ span: 9 }}
-                    xl={{ span: 8 }}
-                    xxl={{ span: 7 }}
-                >
+                <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 8 }} xxl={{ span: 7 }}>
                     <Button
                         size='large'
                         id='cvat-create-task-button'
                         type='primary'
-                        onClick={
-                            (): void => history.push('/tasks/create')
-                        }
-                        icon='plus'
+                        onClick={(): void => history.push('/tasks/create')}
+                        icon={<PlusOutlined />}
                     >
-                         Create new task
+                        Create new task
                     </Button>
                 </Col>
             </Row>
         </>
     );
 }
-
-export default withRouter(TopBarComponent);

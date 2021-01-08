@@ -52,30 +52,24 @@ export default function PropagateConfirmComponent(props: Props): JSX.Element {
                     size='small'
                     min={minPropagateFrames}
                     value={propagateFrames}
-                    onChange={(value: number | undefined) => {
-                        if (typeof (value) === 'number') {
-                            changePropagateFrames(Math.floor(
-                                clamp(value, minPropagateFrames, Number.MAX_SAFE_INTEGER),
-                            ));
+                    onChange={(value: number | undefined | string) => {
+                        if (typeof value !== 'undefined') {
+                            changePropagateFrames(
+                                Math.floor(clamp(+value, minPropagateFrames, Number.MAX_SAFE_INTEGER)),
+                            );
                         }
                     }}
                 />
-                {
-                    propagateFrames > 1
-                        ? <Text> frames </Text>
-                        : <Text> frame </Text>
-                }
+                {propagateFrames > 1 ? <Text> frames </Text> : <Text> frame </Text>}
                 <Text>up to the </Text>
                 <InputNumber
                     size='small'
                     value={propagateUpToFrame}
                     min={frameNumber + 1}
                     max={stopFrame}
-                    onChange={(value: number | undefined) => {
-                        if (typeof (value) === 'number') {
-                            changeUpToFrame(Math.floor(
-                                clamp(value, frameNumber + 1, stopFrame),
-                            ));
+                    onChange={(value: number | undefined | string) => {
+                        if (typeof value !== 'undefined') {
+                            changeUpToFrame(Math.floor(clamp(+value, frameNumber + 1, stopFrame)));
                         }
                     }}
                 />

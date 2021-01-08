@@ -5,9 +5,9 @@
 import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
-import Icon from 'antd/lib/icon';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal/Modal';
+import { PlayCircleOutlined, LaptopOutlined } from '@ant-design/icons';
 
 import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspace-settings';
 import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
@@ -35,32 +35,25 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             )}
         >
             <div className='cvat-settings-tabs'>
-                <Tabs
-                    type='card'
-                    tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}
-                >
+                <Tabs type='card' tabBarStyle={{ marginBottom: '0px', marginLeft: '-1px' }}>
                     <Tabs.TabPane
-                        tab={
-                            (
-                                <span>
-                                    <Icon type='play-circle' />
-                                    <Text>Player</Text>
-                                </span>
-                            )
-                        }
+                        tab={(
+                            <span>
+                                <PlayCircleOutlined />
+                                <Text>Player</Text>
+                            </span>
+                        )}
                         key='player'
                     >
                         <PlayerSettingsContainer />
                     </Tabs.TabPane>
                     <Tabs.TabPane
-                        tab={
-                            (
-                                <span>
-                                    <Icon type='laptop' />
-                                    <Text>Workspace</Text>
-                                </span>
-                            )
-                        }
+                        tab={(
+                            <span>
+                                <LaptopOutlined />
+                                <Text>Workspace</Text>
+                            </span>
+                        )}
                         key='workspace'
                     >
                         <WorkspaceSettingsContainer />

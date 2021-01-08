@@ -4,13 +4,14 @@
 
 import React from 'react';
 import Popover from 'antd/lib/popover';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { PointIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     canvasInstance: Canvas;
@@ -19,35 +20,36 @@ interface Props {
 
 function DrawPointsControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
+    const CustomPopover = withVisibilityHandling(Popover, 'draw-points');
 
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing ?
+        {
+            overlayStyle: {
+                display: 'none',
+            },
+        } :
+        {};
 
-    const dynamicIconProps = isDrawing ? {
-        className: 'cvat-active-canvas-control',
-        onClick: (): void => {
-            canvasInstance.draw({ enabled: false });
-        },
-    } : {};
+    const dynamicIconProps = isDrawing ?
+        {
+            className: 'cvat-draw-points-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.draw({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-draw-points-control',
+        };
 
     return (
-        <Popover
+        <CustomPopover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
-            content={(
-                <DrawShapePopoverContainer shapeType={ShapeType.POINTS} />
-            )}
+            content={<DrawShapePopoverContainer shapeType={ShapeType.POINTS} />}
         >
-            <Icon
-                className='cvat-draw-points-control'
-                {...dynamicIconProps}
-                component={PointIcon}
-            />
-        </Popover>
+            <Icon {...dynamicIconProps} component={PointIcon} />
+        </CustomPopover>
     );
 }
 

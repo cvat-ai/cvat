@@ -41,7 +41,7 @@ polyline.cvat_shape_drawing_opacity {
     font-size: 1.2em;
     fill: white;
     cursor: default;
-    font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+    font-family: Calibri, Candara, Segoe, 'Segoe UI', Optima, Arial, sans-serif;
     text-shadow: 0 0 4px black;
     user-select: none;
     pointer-events: none;
@@ -56,6 +56,23 @@ polyline.cvat_shape_drawing_opacity {
     @extend .cvat_shape_action_opacity;
 
     fill: darkmagenta;
+}
+
+.cvat_canvas_shape_region_selection {
+    @extend .cvat_shape_action_dasharray;
+    @extend .cvat_shape_action_opacity;
+
+    fill: white;
+    stroke: white;
+}
+
+.cvat_canvas_issue_region {
+    display: none;
+    stroke-width: 0;
+}
+
+circle.cvat_canvas_issue_region {
+    opacity: 1 !important;
 }
 
 polyline.cvat_canvas_shape_grouping {
@@ -256,6 +273,15 @@ polyline.cvat_canvas_shape_splitting {
     outline: 10px solid black;
     width: 100%;
     height: 100%;
+}
+
+#cvat_canvas_attachment_board {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    user-select: none;
 }
 
 @keyframes loadingAnimation {

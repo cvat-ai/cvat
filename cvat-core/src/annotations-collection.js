@@ -1,11 +1,6 @@
-/*
-* Copyright (C) 2019-2020 Intel Corporation
-* SPDX-License-Identifier: MIT
-*/
-
-/* global
-    require:false
-*/
+// Copyright (C) 2019-2020 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
 (() => {
     const {
@@ -28,17 +23,10 @@
     const { checkObjectType } = require('./common');
     const Statistics = require('./statistics');
     const { Label } = require('./labels');
-    const {
-        DataError,
-        ArgumentError,
-        ScriptingError,
-    } = require('./exceptions');
+    const { DataError, ArgumentError, ScriptingError } = require('./exceptions');
 
     const {
-        HistoryActions,
-        ObjectShape,
-        ObjectType,
-        colors,
+        HistoryActions, ObjectShape, ObjectType, colors,
     } = require('./enums');
     const ObjectState = require('./object-state');
 
@@ -64,14 +52,11 @@
             shapeModel = new CuboidShape(shapeData, clientID, color, injection);
             break;
         default:
-            throw new DataError(
-                `An unexpected type of shape "${type}"`,
-            );
+            throw new DataError(`An unexpected type of shape "${type}"`);
         }
 
         return shapeModel;
     }
-
 
     function trackFactory(trackData, clientID, injection) {
         if (trackData.shapes.length) {
@@ -96,9 +81,7 @@
                 trackModel = new CuboidTrack(trackData, clientID, color, injection);
                 break;
             default:
-                throw new DataError(
-                    `An unexpected type of track "${type}"`,
-                );
+                throw new DataError(`An unexpected type of track "${type}"`);
             }
 
             return trackModel;
@@ -185,18 +168,20 @@
 
         export() {
             const data = {
-                tracks: this.tracks.filter((track) => !track.removed)
-                    .map((track) => track.toJSON()),
+                tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
                 shapes: Object.values(this.shapes)
                     .reduce((accumulator, value) => {
                         accumulator.push(...value);
                         return accumulator;
-                    }, []).filter((shape) => !shape.removed)
+                    }, [])
+                    .filter((shape) => !shape.removed)
                     .map((shape) => shape.toJSON()),
-                tags: Object.values(this.tags).reduce((accumulator, value) => {
-                    accumulator.push(...value);
-                    return accumulator;
-                }, []).filter((tag) => !tag.removed)
+                tags: Object.values(this.tags)
+                    .reduce((accumulator, value) => {
+                        accumulator.push(...value);
+                        return accumulator;
+                    }, [])
+                    .filter((tag) => !tag.removed)
                     .map((tag) => tag.toJSON()),
             };
 
@@ -252,7 +237,7 @@
             const objectsForMerge = objectStates.map((state) => {
                 checkObjectType('object state', state, null, ObjectState);
                 const object = this.objects[state.clientID];
-                if (typeof (object) === 'undefined') {
+                if (typeof object === 'undefined') {
                     throw new ArgumentError(
                         'The object has not been saved yet. Call ObjectState.put([state]) before you can merge it',
                     );
@@ -263,15 +248,11 @@
             const keyframes = {}; // frame: position
             const { label, shapeType } = objectStates[0];
             if (!(label.id in this.labels)) {
-                throw new ArgumentError(
-                    `Unknown label for the task: ${label.id}`,
-                );
+                throw new ArgumentError(`Unknown label for the task: ${label.id}`);
             }
 
             if (!Object.values(ObjectShape).includes(shapeType)) {
-                throw new ArgumentError(
-                    `Got unknown shapeType "${shapeType}"`,
-                );
+                throw new ArgumentError(`Got unknown shapeType "${shapeType}"`);
             }
 
             const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
@@ -290,18 +271,14 @@
                 }
 
                 if (state.shapeType !== shapeType) {
-                    throw new ArgumentError(
-                        `All shapes are expected to be ${shapeType}, but got ${state.shapeType}`,
-                    );
+                    throw new ArgumentError(`All shapes are expected to be ${shapeType}, but got ${state.shapeType}`);
                 }
 
                 // If this object is shape, get it position and save as a keyframe
                 if (object instanceof Shape) {
                     // Frame already saved and it is not outside
                     if (object.frame in keyframes && !keyframes[object.frame].outside) {
-                        throw new ArgumentError(
-                            'Expected only one visible shape per frame',
-                        );
+                        throw new ArgumentError('Expected only one visible shape per frame');
                     }
 
                     keyframes[object.frame] = {
@@ -325,9 +302,8 @@
 
                     // Push outside shape after each annotation shape
                     // Any not outside shape rewrites it
-                    if (!((object.frame + 1) in keyframes) && object.frame + 1 <= this.stopFrame) {
-                        keyframes[object.frame + 1] = JSON
-                            .parse(JSON.stringify(keyframes[object.frame]));
+                    if (!(object.frame + 1 in keyframes) && object.frame + 1 <= this.stopFrame) {
+                        keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
                         keyframes[object.frame + 1].frame++;
                     }
@@ -344,17 +320,14 @@
                                 continue;
                             }
 
-                            throw new ArgumentError(
-                                'Expected only one visible shape per frame',
-                            );
+                            throw new ArgumentError('Expected only one visible shape per frame');
                         }
 
                         // We do not save an attribute if it has the same value
                         // We save only updates
                         let updatedAttributes = false;
                         for (const attrID in shape.attributes) {
-                            if (!(attrID in attributes)
-                                || attributes[attrID] !== shape.attributes[attrID]) {
+                            if (!(attrID in attributes) || attributes[attrID] !== shape.attributes[attrID]) {
                                 updatedAttributes = true;
                                 attributes[attrID] = shape.attributes[attrID];
                             }
@@ -367,15 +340,16 @@
                             occluded: shape.occluded,
                             outside: shape.outside,
                             zOrder: shape.zOrder,
-                            attributes: updatedAttributes ? Object.keys(attributes)
-                                .reduce((accumulator, attrID) => {
+                            attributes: updatedAttributes
+                                ? Object.keys(attributes).reduce((accumulator, attrID) => {
                                     accumulator.push({
                                         spec_id: +attrID,
                                         value: attributes[attrID],
                                     });
 
                                     return accumulator;
-                                }, []) : [],
+                                }, [])
+                                : [],
                         };
                     }
                 } else {
@@ -399,22 +373,24 @@
 
             const clientID = ++this.count;
             const track = {
-                frame: Math.min.apply(null, Object.keys(keyframes).map((frame) => +frame)),
+                frame: Math.min.apply(
+                    null,
+                    Object.keys(keyframes).map((frame) => +frame),
+                ),
                 shapes: Object.values(keyframes),
                 group: 0,
                 source: objectStates[0].source,
                 label_id: label.id,
-                attributes: Object.keys(objectStates[0].attributes)
-                    .reduce((accumulator, attrID) => {
-                        if (!labelAttributes[attrID].mutable) {
-                            accumulator.push({
-                                spec_id: +attrID,
-                                value: objectStates[0].attributes[attrID],
-                            });
-                        }
+                attributes: Object.keys(objectStates[0].attributes).reduce((accumulator, attrID) => {
+                    if (!labelAttributes[attrID].mutable) {
+                        accumulator.push({
+                            spec_id: +attrID,
+                            value: objectStates[0].attributes[attrID],
+                        });
+                    }
 
-                        return accumulator;
-                    }, []),
+                    return accumulator;
+                }, []),
             };
 
             const trackModel = trackFactory(track, clientID, this.injection);
@@ -426,20 +402,23 @@
                 object.removed = true;
             }
 
-            this.history.do(HistoryActions.MERGED_OBJECTS, () => {
-                trackModel.removed = true;
-                for (const object of objectsForMerge) {
-                    object.removed = false;
-                }
-            }, () => {
-                trackModel.removed = false;
-                for (const object of objectsForMerge) {
-                    object.removed = true;
-                }
-            }, [
-                ...objectsForMerge
-                    .map((object) => object.clientID), trackModel.clientID,
-            ], objectStates[0].frame);
+            this.history.do(
+                HistoryActions.MERGED_OBJECTS,
+                () => {
+                    trackModel.removed = true;
+                    for (const object of objectsForMerge) {
+                        object.removed = false;
+                    }
+                },
+                () => {
+                    trackModel.removed = false;
+                    for (const object of objectsForMerge) {
+                        object.removed = true;
+                    }
+                },
+                [...objectsForMerge.map((object) => object.clientID), trackModel.clientID],
+                objectStates[0].frame,
+            );
         }
 
         split(objectState, frame) {
@@ -447,10 +426,8 @@
             checkObjectType('frame', frame, 'integer', null);
 
             const object = this.objects[objectState.clientID];
-            if (typeof (object) === 'undefined') {
-                throw new ArgumentError(
-                    'The object has not been saved yet. Call annotations.put([state]) before',
-                );
+            if (typeof object === 'undefined') {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
             }
 
             if (objectState.objectType !== ObjectType.TRACK) {
@@ -474,17 +451,16 @@
                 occluded: objectState.occluded,
                 outside: objectState.outside,
                 zOrder: objectState.zOrder,
-                attributes: Object.keys(objectState.attributes)
-                    .reduce((accumulator, attrID) => {
-                        if (!labelAttributes[attrID].mutable) {
-                            accumulator.push({
-                                spec_id: +attrID,
-                                value: objectState.attributes[attrID],
-                            });
-                        }
+                attributes: Object.keys(objectState.attributes).reduce((accumulator, attrID) => {
+                    if (!labelAttributes[attrID].mutable) {
+                        accumulator.push({
+                            spec_id: +attrID,
+                            value: objectState.attributes[attrID],
+                        });
+                    }
 
-                        return accumulator;
-                    }, []),
+                    return accumulator;
+                }, []),
                 frame,
             };
 
@@ -526,15 +502,21 @@
             // Remove source object
             object.removed = true;
 
-            this.history.do(HistoryActions.SPLITTED_TRACK, () => {
-                object.removed = false;
-                prevTrack.removed = true;
-                nextTrack.removed = true;
-            }, () => {
-                object.removed = true;
-                prevTrack.removed = false;
-                nextTrack.removed = false;
-            }, [object.clientID, prevTrack.clientID, nextTrack.clientID], frame);
+            this.history.do(
+                HistoryActions.SPLITTED_TRACK,
+                () => {
+                    object.removed = false;
+                    prevTrack.removed = true;
+                    nextTrack.removed = true;
+                },
+                () => {
+                    object.removed = true;
+                    prevTrack.removed = false;
+                    nextTrack.removed = false;
+                },
+                [object.clientID, prevTrack.clientID, nextTrack.clientID],
+                frame,
+            );
         }
 
         group(objectStates, reset) {
@@ -543,10 +525,8 @@
             const objectsForGroup = objectStates.map((state) => {
                 checkObjectType('object state', state, null, ObjectState);
                 const object = this.objects[state.clientID];
-                if (typeof (object) === 'undefined') {
-                    throw new ArgumentError(
-                        'The object has not been saved yet. Call annotations.put([state]) before',
-                    );
+                if (typeof object === 'undefined') {
+                    throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
                 }
                 return object;
             });
@@ -558,15 +538,21 @@
             }
             const redoGroups = objectsForGroup.map((object) => object.group);
 
-            this.history.do(HistoryActions.GROUPED_OBJECTS, () => {
-                objectsForGroup.forEach((object, idx) => {
-                    object.group = undoGroups[idx];
-                });
-            }, () => {
-                objectsForGroup.forEach((object, idx) => {
-                    object.group = redoGroups[idx];
-                });
-            }, objectsForGroup.map((object) => object.clientID), objectStates[0].frame);
+            this.history.do(
+                HistoryActions.GROUPED_OBJECTS,
+                () => {
+                    objectsForGroup.forEach((object, idx) => {
+                        object.group = undoGroups[idx];
+                    });
+                },
+                () => {
+                    objectsForGroup.forEach((object, idx) => {
+                        object.group = redoGroups[idx];
+                    });
+                },
+                objectsForGroup.map((object) => object.clientID),
+                objectStates[0].frame,
+            );
 
             return groupIdx;
         }
@@ -629,9 +615,7 @@
                 } else if (object instanceof Tag) {
                     objectType = 'tag';
                 } else {
-                    throw new ScriptingError(
-                        `Unexpected object type: "${objectType}"`,
-                    );
+                    throw new ScriptingError(`Unexpected object type: "${objectType}"`);
                 }
 
                 const label = object.label.name;
@@ -645,7 +629,8 @@
 
                     if (objectType === 'track') {
                         const keyframes = Object.keys(object.shapes)
-                            .sort((a, b) => +a - +b).map((el) => +el);
+                            .sort((a, b) => +a - +b)
+                            .map((el) => +el);
 
                         let prevKeyframe = keyframes[0];
                         let visible = false;
@@ -680,7 +665,7 @@
 
             for (const label of Object.keys(labels)) {
                 for (const key of Object.keys(labels[label])) {
-                    if (typeof (labels[label][key]) === 'object') {
+                    if (typeof labels[label][key] === 'object') {
                         for (const objectType of Object.keys(labels[label][key])) {
                             total[key][objectType] += labels[label][key][objectType];
                         }
@@ -723,8 +708,7 @@
                 checkObjectType('state attributes', state.attributes, null, Object);
                 checkObjectType('state label', state.label, null, Label);
 
-                const attributes = Object.keys(state.attributes)
-                    .reduce(convertAttributes.bind(state), []);
+                const attributes = Object.keys(state.attributes).reduce(convertAttributes.bind(state), []);
                 const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
                     accumulator[attribute.id] = attribute;
                     return accumulator;
@@ -749,8 +733,7 @@
 
                     if (!Object.values(ObjectShape).includes(state.shapeType)) {
                         throw new ArgumentError(
-                            'Object shape must be one of: '
-                                + `${JSON.stringify(Object.values(ObjectShape))}`,
+                            `Object shape must be one of: ${JSON.stringify(Object.values(ObjectShape))}`,
                         );
                     }
 
@@ -768,27 +751,26 @@
                         });
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
-                            attributes: attributes
-                                .filter((attr) => !labelAttributes[attr.spec_id].mutable),
+                            attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
                             frame: state.frame,
                             group: 0,
                             source: state.source,
                             label_id: state.label.id,
-                            shapes: [{
-                                attributes: attributes
-                                    .filter((attr) => labelAttributes[attr.spec_id].mutable),
-                                frame: state.frame,
-                                occluded: state.occluded || false,
-                                outside: false,
-                                points: [...state.points],
-                                type: state.shapeType,
-                                z_order: state.zOrder,
-                            }],
+                            shapes: [
+                                {
+                                    attributes: attributes.filter((attr) => labelAttributes[attr.spec_id].mutable),
+                                    frame: state.frame,
+                                    occluded: state.occluded || false,
+                                    outside: false,
+                                    points: [...state.points],
+                                    type: state.shapeType,
+                                    z_order: state.zOrder,
+                                },
+                            ],
                         });
                     } else {
                         throw new ArgumentError(
-                            'Object type must be one of: '
-                                + `${JSON.stringify(Object.values(ObjectType))}`,
+                            `Object type must be one of: ${JSON.stringify(Object.values(ObjectType))}`,
                         );
                     }
                 }
@@ -796,20 +778,24 @@
 
             // Add constructed objects to a collection
             const imported = this.import(constructed);
-            const importedArray = imported.tags
-                .concat(imported.tracks)
-                .concat(imported.shapes);
+            const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
 
             if (objectStates.length) {
-                this.history.do(HistoryActions.CREATED_OBJECTS, () => {
-                    importedArray.forEach((object) => {
-                        object.removed = true;
-                    });
-                }, () => {
-                    importedArray.forEach((object) => {
-                        object.removed = false;
-                    });
-                }, importedArray.map((object) => object.clientID), objectStates[0].frame);
+                this.history.do(
+                    HistoryActions.CREATED_OBJECTS,
+                    () => {
+                        importedArray.forEach((object) => {
+                            object.removed = true;
+                        });
+                    },
+                    () => {
+                        importedArray.forEach((object) => {
+                            object.removed = false;
+                        });
+                    },
+                    importedArray.map((object) => object.clientID),
+                    objectStates[0].frame,
+                );
             }
 
             return importedArray.map((value) => value.clientID);
@@ -829,14 +815,11 @@
                 }
 
                 const object = this.objects[state.clientID];
-                if (typeof (object) === 'undefined') {
-                    throw new ArgumentError(
-                        'The object has not been saved yet. Call annotations.put([state]) before',
-                    );
+                if (typeof object === 'undefined') {
+                    throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
                 }
                 const distance = object.constructor.distance(state.points, x, y);
-                if (distance !== null && (minimumDistance === null
-                    || distance < minimumDistance)) {
+                if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;
                 }
@@ -848,14 +831,47 @@
             };
         }
 
+        searchEmpty(frameFrom, frameTo) {
+            const sign = Math.sign(frameTo - frameFrom);
+            const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
+            const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+            for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+                if (frame in this.shapes && this.shapes[frame].some((shape) => !shape.removed)) {
+                    continue;
+                }
+                if (frame in this.tags && this.tags[frame].some((tag) => !tag.removed)) {
+                    continue;
+                }
+                const filteredTracks = this.tracks.filter((track) => !track.removed);
+                let found = false;
+                for (const track of filteredTracks) {
+                    const keyframes = track.boundedKeyframes(frame);
+                    const { prev, first } = keyframes;
+                    const last = prev === null ? first : prev;
+                    const lastShape = track.shapes[last];
+                    const isKeyfame = frame in track.shapes;
+                    if (first <= frame && (!lastShape.outside || isKeyfame)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) continue;
+
+                return frame;
+            }
+
+            return null;
+        }
+
         search(filters, frameFrom, frameTo) {
             const [groups, query] = this.annotationsFilter.toJSONQuery(filters);
             const sign = Math.sign(frameTo - frameFrom);
 
             const flattenedQuery = groups.flat(Number.MAX_SAFE_INTEGER);
-            const containsDifficultProperties = flattenedQuery
-                .some((fragment) => fragment
-                    .match(/^width/) || fragment.match(/^height/));
+            const containsDifficultProperties = flattenedQuery.some(
+                (fragment) => fragment.match(/^width/) || fragment.match(/^height/),
+            );
 
             const deepSearch = (deepSearchFrom, deepSearchTo) => {
                 // deepSearchFrom is expected to be a frame that doesn't satisfy a filter
@@ -878,12 +894,8 @@
             };
 
             const keyframesMemory = {};
-            const predicate = sign > 0
-                ? (frame) => frame <= frameTo
-                : (frame) => frame >= frameTo;
-            const update = sign > 0
-                ? (frame) => frame + 1
-                : (frame) => frame - 1;
+            const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
+            const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
             for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
                 // First prepare all data for the frame
                 // Consider all shapes, tags, and not outside tracks that have keyframe here
@@ -897,15 +909,9 @@
                         .map((tag) => tag.get(frame)),
                 );
                 const tracks = Object.values(this.tracks)
-                    .filter((track) => (
-                        frame in track.shapes
-                        || frame === frameFrom
-                        || frame === frameTo
-                    )).filter((track) => !track.removed);
-                statesData.push(
-                    ...tracks.map((track) => track.get(frame))
-                        .filter((state) => !state.outside),
-                );
+                    .filter((track) => frame in track.shapes || frame === frameFrom || frame === frameTo)
+                    .filter((track) => !track.removed);
+                statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
                 // Nothing to filtering, go to the next iteration
                 if (!statesData.length) {
@@ -926,12 +932,8 @@
                     for (const track of tracks) {
                         const trackIsSatisfy = filtered.includes(track.clientID);
                         if (!trackIsSatisfy) {
-                            keyframesMemory[track.clientID] = [
-                                filtered.includes(track.clientID),
-                                frame,
-                            ];
-                        } else if (keyframesMemory[track.clientID]
-                            && keyframesMemory[track.clientID][0] === false) {
+                            keyframesMemory[track.clientID] = [filtered.includes(track.clientID), frame];
+                        } else if (keyframesMemory[track.clientID] && keyframesMemory[track.clientID][0] === false) {
                             withDeepSearch = true;
                         }
                     }
@@ -939,9 +941,7 @@
 
                 if (withDeepSearch) {
                     const reducer = sign > 0 ? Math.min : Math.max;
-                    const deepSearchFrom = reducer(
-                        ...Object.values(keyframesMemory).map((value) => value[1]),
-                    );
+                    const deepSearchFrom = reducer(...Object.values(keyframesMemory).map((value) => value[1]));
                     return deepSearch(deepSearchFrom, frame);
                 }
 

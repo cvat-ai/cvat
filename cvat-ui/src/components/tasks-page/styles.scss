@@ -3,34 +3,24 @@
 // SPDX-License-Identifier: MIT
 
 @import '../../base.scss';
+@import '../../styles.scss';
 
 .cvat-tasks-page {
     padding-top: 15px;
     padding-bottom: 40px;
     height: 100%;
-    position: fixed;
     width: 100%;
 
-    > div:nth-child(1) {
-        padding-bottom: 10px;
-
-        div > {
-            span {
-                color: $text-color;
-            }
-        }
-    }
-
-    > div:nth-child(3) {
+    > div:nth-child(2) {
         height: 83%;
         padding-top: 10px;
     }
 
-    > div:nth-child(4) {
+    > div:nth-child(3) {
         padding-top: 10px;
     }
 
-    > div:nth-child(2) {
+    > div:nth-child(1) {
         > div:nth-child(1) {
             display: flex;
 
@@ -158,6 +148,10 @@
 
 .cvat-item-open-task-button {
     margin-right: 20px;
+}
+
+.cvat-item-task-name {
+    @extend .cvat-text-color;
 }
 
 #cvat-create-task-button {

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { boundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { FormatsActionTypes, FormatsActions } from 'actions/formats-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 
@@ -16,7 +16,7 @@ const defaultState: FormatsState = {
 
 export default (
     state: FormatsState = defaultState,
-    action: FormatsActions | AuthActions | boundariesActions,
+    action: FormatsActions | AuthActions | BoundariesActions,
 ): FormatsState => {
     switch (action.type) {
         case FormatsActionTypes.GET_FORMATS: {

@@ -11,7 +11,7 @@ import Slider from 'antd/lib/slider';
 import Select from 'antd/lib/select';
 import Popover from 'antd/lib/popover';
 import InputNumber from 'antd/lib/input-number';
-import Icon from 'antd/lib/icon';
+import Icon from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import { CompactPicker } from 'react-color';
 
@@ -19,7 +19,6 @@ import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
 import { FrameSpeed, GridColor } from 'reducers/interfaces';
 import consts from 'consts';
-
 
 interface Props {
     frameStep: number;
@@ -83,20 +82,16 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-player-settings'>
-            <Row type='flex' align='bottom' className='cvat-player-settings-step'>
+            <Row align='bottom' className='cvat-player-settings-step'>
                 <Col>
                     <Text className='cvat-text-color'> Player step </Text>
                     <InputNumber
                         min={minFrameStep}
                         max={maxFrameStep}
                         value={frameStep}
-                        onChange={(value: number | undefined): void => {
-                            if (typeof (value) === 'number') {
-                                onChangeFrameStep(
-                                    Math.floor(
-                                        clamp(value, minFrameStep, maxFrameStep),
-                                    ),
-                                );
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                onChangeFrameStep(Math.floor(clamp(+value, minFrameStep, maxFrameStep)));
                             }
                         }}
                     />
@@ -110,7 +105,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Row type='flex' align='middle' className='cvat-player-settings-speed'>
+            <Row align='middle' className='cvat-player-settings-speed'>
                 <Col>
                     <Text className='cvat-text-color'> Player speed </Text>
                     <Select
@@ -119,16 +114,28 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                             onChangeFrameSpeed(speed);
                         }}
                     >
-                        <Select.Option key='fastest' value={FrameSpeed.Fastest}>Fastest</Select.Option>
-                        <Select.Option key='fast' value={FrameSpeed.Fast}>Fast</Select.Option>
-                        <Select.Option key='usual' value={FrameSpeed.Usual}>Usual</Select.Option>
-                        <Select.Option key='slow' value={FrameSpeed.Slow}>Slow</Select.Option>
-                        <Select.Option key='slower' value={FrameSpeed.Slower}>Slower</Select.Option>
-                        <Select.Option key='slowest' value={FrameSpeed.Slowest}>Slowest</Select.Option>
+                        <Select.Option key='fastest' value={FrameSpeed.Fastest}>
+                            Fastest
+                        </Select.Option>
+                        <Select.Option key='fast' value={FrameSpeed.Fast}>
+                            Fast
+                        </Select.Option>
+                        <Select.Option key='usual' value={FrameSpeed.Usual}>
+                            Usual
+                        </Select.Option>
+                        <Select.Option key='slow' value={FrameSpeed.Slow}>
+                            Slow
+                        </Select.Option>
+                        <Select.Option key='slower' value={FrameSpeed.Slower}>
+                            Slower
+                        </Select.Option>
+                        <Select.Option key='slowest' value={FrameSpeed.Slowest}>
+                            Slowest
+                        </Select.Option>
                     </Select>
                 </Col>
             </Row>
-            <Row type='flex' className='cvat-player-settings-canvas-background'>
+            <Row className='cvat-player-settings-canvas-background'>
                 <Col>
                     <Popover
                         content={(
@@ -145,7 +152,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Popover>
                 </Col>
             </Row>
-            <Row type='flex'>
+            <Row>
                 <Col>
                     <Checkbox
                         className='cvat-text-color cvat-player-settings-grid'
@@ -158,19 +165,18 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     </Checkbox>
                 </Col>
             </Row>
-            <Row type='flex' justify='space-between'>
+            <Row justify='space-between'>
                 <Col span={8} className='cvat-player-settings-grid-size'>
                     <Text className='cvat-text-color'> Grid size </Text>
                     <InputNumber
+                        className='cvat-player-settings-grid-size-input'
                         min={minGridSize}
                         max={maxGridSize}
                         value={gridSize}
                         disabled={!grid}
-                        onChange={(value: number | undefined): void => {
-                            if (typeof (value) === 'number') {
-                                onChangeGridSize(Math.floor(
-                                    clamp(value, minGridSize, maxGridSize),
-                                ));
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                onChangeGridSize(Math.floor(clamp(+value, minGridSize, maxGridSize)));
                             }
                         }}
                     />
@@ -178,22 +184,34 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col span={8} className='cvat-player-settings-grid-color'>
                     <Text className='cvat-text-color'> Grid color </Text>
                     <Select
+                        className='cvat-player-settings-grid-color-input'
                         value={gridColor}
                         disabled={!grid}
                         onChange={(color: GridColor): void => {
                             onChangeGridColor(color);
                         }}
                     >
-                        <Select.Option key='white' value={GridColor.White}>White</Select.Option>
-                        <Select.Option key='black' value={GridColor.Black}>Black</Select.Option>
-                        <Select.Option key='red' value={GridColor.Red}>Red</Select.Option>
-                        <Select.Option key='green' value={GridColor.Green}>Green</Select.Option>
-                        <Select.Option key='blue' value={GridColor.Blue}>Blue</Select.Option>
+                        <Select.Option key='white' value={GridColor.White}>
+                            White
+                        </Select.Option>
+                        <Select.Option key='black' value={GridColor.Black}>
+                            Black
+                        </Select.Option>
+                        <Select.Option key='red' value={GridColor.Red}>
+                            Red
+                        </Select.Option>
+                        <Select.Option key='green' value={GridColor.Green}>
+                            Green
+                        </Select.Option>
+                        <Select.Option key='blue' value={GridColor.Blue}>
+                            Blue
+                        </Select.Option>
                     </Select>
                 </Col>
                 <Col span={8} className='cvat-player-settings-grid-opacity'>
                     <Text className='cvat-text-color'> Grid opacity </Text>
                     <Slider
+                        className='cvat-player-settings-grid-opacity-input'
                         min={0}
                         max={100}
                         value={gridOpacity}
@@ -205,10 +223,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color'>{`${gridOpacity} %`}</Text>
                 </Col>
             </Row>
-            <Row type='flex' justify='start'>
-                <Col>
+            <Row justify='start'>
+                <Col span={7}>
                     <Row className='cvat-player-settings-reset-zoom'>
-                        <Col className='cvat-player-settings-reset-zoom-checkbox'>
+                        <Col span={24} className='cvat-player-settings-reset-zoom-checkbox'>
                             <Checkbox
                                 className='cvat-text-color'
                                 checked={resetZoom}
@@ -219,14 +237,14 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                                 Reset zoom
                             </Checkbox>
                         </Col>
-                        <Col>
+                        <Col span={24}>
                             <Text type='secondary'> Fit image after changing frame </Text>
                         </Col>
                     </Row>
                 </Col>
-                <Col offset={5}>
+                <Col span={7} offset={5}>
                     <Row className='cvat-player-settings-rotate-all'>
-                        <Col className='cvat-player-settings-rotate-all-checkbox'>
+                        <Col span={24} className='cvat-player-settings-rotate-all-checkbox'>
                             <Checkbox
                                 className='cvat-text-color'
                                 checked={rotateAll}
@@ -237,7 +255,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                                 Rotate all images
                             </Checkbox>
                         </Col>
-                        <Col>
+                        <Col span={24}>
                             <Text type='secondary'> Rotate all images simultaneously </Text>
                         </Col>
                     </Row>
@@ -246,10 +264,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             <Row>
                 <Col span={12}>
                     <Row className='cvat-player-settings-brightness'>
-                        <Col className='cvat-text-color'>
+                        <Col span={24} className='cvat-text-color'>
                             Brightness
                         </Col>
-                        <Col>
+                        <Col span={24}>
                             <Slider
                                 min={50}
                                 max={200}
@@ -261,10 +279,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     <Row className='cvat-player-settings-contrast'>
-                        <Col className='cvat-text-color'>
+                        <Col span={24} className='cvat-text-color'>
                             Contrast
                         </Col>
-                        <Col>
+                        <Col span={24}>
                             <Slider
                                 min={50}
                                 max={200}
@@ -276,10 +294,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     <Row className='cvat-player-settings-saturation'>
-                        <Col className='cvat-text-color'>
+                        <Col span={24} className='cvat-text-color'>
                             Saturation
                         </Col>
-                        <Col>
+                        <Col span={24}>
                             <Slider
                                 min={0}
                                 max={300}

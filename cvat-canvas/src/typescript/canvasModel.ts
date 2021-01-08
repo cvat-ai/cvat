@@ -43,7 +43,7 @@ export interface ActiveElement {
 
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
-    EXTREME_POINTS = 'By 4 points'
+    EXTREME_POINTS = 'By 4 points',
 }
 
 export enum CuboidDrawingMethod {
@@ -56,6 +56,7 @@ export interface Configuration {
     displayAllText?: boolean;
     undefinedAttrValue?: string;
     showProjections?: boolean;
+    forceDisableEditing?: boolean;
 }
 
 export interface DrawData {
@@ -67,6 +68,20 @@ export interface DrawData {
     initialState?: any;
     crosshair?: boolean;
     redraw?: number;
+}
+
+export interface InteractionData {
+    enabled: boolean;
+    shapeType?: string;
+    crosshair?: boolean;
+    minPosVertices?: number;
+    minNegVertices?: number;
+}
+
+export interface InteractionResult {
+    points: number[];
+    shapeType: string;
+    button: number;
 }
 
 export interface EditData {
@@ -99,12 +114,14 @@ export enum UpdateReasons {
     IMAGE_MOVED = 'image_moved',
     GRID_UPDATED = 'grid_updated',
 
+    ISSUE_REGIONS_UPDATED = 'issue_regions_updated',
     OBJECTS_UPDATED = 'objects_updated',
     SHAPE_ACTIVATED = 'shape_activated',
     SHAPE_FOCUSED = 'shape_focused',
 
     FITTED_CANVAS = 'fitted_canvas',
 
+    INTERACT = 'interact',
     DRAW = 'draw',
     MERGE = 'merge',
     SPLIT = 'split',
@@ -112,9 +129,11 @@ export enum UpdateReasons {
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
+    SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
     CONFIG_UPDATED = 'config_updated',
+    DATA_FAILED = 'data_failed',
 }
 
 export enum Mode {
@@ -126,6 +145,8 @@ export enum Mode {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    INTERACT = 'interact',
+    SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
 }
@@ -133,12 +154,14 @@ export enum Mode {
 export interface CanvasModel {
     readonly imageBitmap: boolean;
     readonly image: Image | null;
+    readonly issueRegions: Record<number, number[]>;
     readonly objects: any[];
     readonly zLayer: number | null;
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
     readonly drawData: DrawData;
+    readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
@@ -146,11 +169,13 @@ export interface CanvasModel {
     readonly selected: any;
     geometry: Geometry;
     mode: Mode;
+    exception: Error | null;
 
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[], zLayer: number): void;
+    setupIssueRegions(issueRegions: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
@@ -162,9 +187,11 @@ export interface CanvasModel {
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
+    interact(interactionData: InteractionData): void;
 
     fitCanvas(width: number, height: number): void;
     bitmap(enabled: boolean): void;
+    selectRegion(enabled: boolean): void;
     dragCanvas(enable: boolean): void;
     zoomCanvas(enable: boolean): void;
 
@@ -188,15 +215,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         gridSize: Size;
         left: number;
         objects: any[];
+        issueRegions: Record<number, number[]>;
         scale: number;
         top: number;
         zLayer: number | null;
         drawData: DrawData;
+        interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
         splitData: SplitData;
         selected: any;
         mode: Mode;
+        exception: Error | null;
     };
 
     public constructor() {
@@ -235,12 +265,16 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             left: 0,
             objects: [],
+            issueRegions: {},
             scale: 1,
             top: 0,
             zLayer: null,
             drawData: {
                 enabled: false,
                 initialState: null,
+            },
+            interactionData: {
+                enabled: false,
             },
             mergeData: {
                 enabled: false,
@@ -253,28 +287,29 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             selected: null,
             mode: Mode.IDLE,
+            exception: null,
         };
     }
 
     public zoom(x: number, y: number, direction: number): void {
         const oldScale: number = this.data.scale;
-        const newScale: number = direction > 0 ? oldScale * 6 / 5 : oldScale * 5 / 6;
+        const newScale: number = direction > 0 ? (oldScale * 6) / 5 : (oldScale * 5) / 6;
         this.data.scale = Math.min(Math.max(newScale, FrameZoom.MIN), FrameZoom.MAX);
 
         const { angle } = this.data;
 
-        const mutiplier = Math.sin(angle * Math.PI / 180) + Math.cos(angle * Math.PI / 180);
+        const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
-            this.data.top += mutiplier * ((x - this.data.imageSize.width / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.left -= mutiplier * ((y - this.data.imageSize.height / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            const topMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
+            const leftMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
+            this.data.top += mutiplier * topMultiplier * this.data.scale;
+            this.data.left -= mutiplier * leftMultiplier * this.data.scale;
         } else {
-            this.data.left += mutiplier * ((x - this.data.imageSize.width / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
-            this.data.top += mutiplier * ((y - this.data.imageSize.height / 2)
-                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            const leftMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
+            const topMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
+            this.data.left += mutiplier * leftMultiplier * this.data.scale;
+            this.data.top += mutiplier * topMultiplier * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
@@ -290,10 +325,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.canvasSize.height = height;
         this.data.canvasSize.width = width;
 
-        this.data.imageOffset = Math.floor(Math.max(
-            this.data.canvasSize.height / FrameZoom.MIN,
-            this.data.canvasSize.width / FrameZoom.MIN,
-        ));
+        this.data.imageOffset = Math.floor(
+            Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
+        );
 
         this.notify(UpdateReasons.FITTED_CANVAS);
         this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -302,6 +336,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public bitmap(enabled: boolean): void {
         this.data.imageBitmap = enabled;
         this.notify(UpdateReasons.BITMAP);
+    }
+
+    public selectRegion(enable: boolean): void {
+        if (enable && this.data.mode !== Mode.IDLE) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (!enable && this.data.mode !== Mode.SELECT_REGION) {
+            throw Error(`Canvas is not in the region selecting mode. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = enable ? Mode.SELECT_REGION : Mode.IDLE;
+        this.notify(UpdateReasons.SELECT_REGION);
     }
 
     public dragCanvas(enable: boolean): void {
@@ -345,36 +392,42 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.imageID = frameData.number;
-        frameData.data(
-            (): void => {
+        frameData
+            .data((): void => {
                 this.data.image = null;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
-            },
-        ).then((data: Image): void => {
-            if (frameData.number !== this.data.imageID) {
-                // already another image
-                return;
-            }
+            })
+            .then((data: Image): void => {
+                if (frameData.number !== this.data.imageID) {
+                    // already another image
+                    return;
+                }
 
-            this.data.imageSize = {
-                height: (frameData.height as number),
-                width: (frameData.width as number),
-            };
+                this.data.imageSize = {
+                    height: frameData.height as number,
+                    width: frameData.width as number,
+                };
 
-            this.data.image = data;
-            this.notify(UpdateReasons.IMAGE_CHANGED);
-            this.data.zLayer = zLayer;
-            this.data.objects = objectStates;
-            this.notify(UpdateReasons.OBJECTS_UPDATED);
-        }).catch((exception: any): void => {
-            throw exception;
-        });
+                this.data.image = data;
+                this.notify(UpdateReasons.IMAGE_CHANGED);
+                this.data.zLayer = zLayer;
+                this.data.objects = objectStates;
+                this.notify(UpdateReasons.OBJECTS_UPDATED);
+            })
+            .catch((exception: any): void => {
+                this.data.exception = exception;
+                this.notify(UpdateReasons.DATA_FAILED);
+                throw exception;
+            });
+    }
+
+    public setupIssueRegions(issueRegions: Record<number, number[]>): void {
+        this.data.issueRegions = issueRegions;
+        this.notify(UpdateReasons.ISSUE_REGIONS_UPDATED);
     }
 
     public activate(clientID: number | null, attributeID: number | null): void {
-        if (this.data.activeElement.clientID === clientID
-            && this.data.activeElement.attributeID === attributeID
-        ) {
+        if (this.data.activeElement.clientID === clientID && this.data.activeElement.attributeID === attributeID) {
             return;
         }
 
@@ -382,9 +435,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (typeof (clientID) === 'number') {
-            const [state] = this.objects
-                .filter((_state: any): boolean => _state.clientID === clientID);
+        if (typeof clientID === 'number') {
+            const [state] = this.objects.filter((_state: any): boolean => _state.clientID === clientID);
             if (!state || state.objectType === 'tag') {
                 return;
             }
@@ -400,7 +452,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public rotate(rotationAngle: number): void {
         if (this.data.angle !== rotationAngle) {
-            this.data.angle = (360 + Math.floor((rotationAngle) / 90) * 90) % 360;
+            this.data.angle = (360 + Math.floor(rotationAngle / 90) * 90) % 360;
             this.fit();
         }
     }
@@ -430,13 +482,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             );
         }
 
-        this.data.scale = Math.min(
-            Math.max(this.data.scale, FrameZoom.MIN),
-            FrameZoom.MAX,
-        );
+        this.data.scale = Math.min(Math.max(this.data.scale, FrameZoom.MIN), FrameZoom.MAX);
 
-        this.data.top = (this.data.canvasSize.height / 2 - this.data.imageSize.height / 2);
-        this.data.left = (this.data.canvasSize.width / 2 - this.data.imageSize.width / 2);
+        this.data.top = this.data.canvasSize.height / 2 - this.data.imageSize.height / 2;
+        this.data.left = this.data.canvasSize.width / 2 - this.data.imageSize.width / 2;
 
         this.notify(UpdateReasons.IMAGE_FITTED);
     }
@@ -460,7 +509,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw new Error('Drawing has been already started');
             } else if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
-            } else if (typeof (drawData.numberOfPoints) !== 'undefined') {
+            } else if (typeof drawData.numberOfPoints !== 'undefined') {
                 if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
                     throw new Error('A polygon consists of at least 3 points');
                 } else if (drawData.shapeType === 'polyline' && drawData.numberOfPoints < 2) {
@@ -469,10 +518,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
         }
 
-        if (typeof (drawData.redraw) === 'number') {
+        if (typeof drawData.redraw === 'number') {
             const clientID = drawData.redraw;
-            const [state] = this.data.objects
-                .filter((_state: any): boolean => _state.clientID === clientID);
+            const [state] = this.data.objects.filter((_state: any): boolean => _state.clientID === clientID);
 
             if (state) {
                 this.data.drawData = { ...drawData };
@@ -488,6 +536,27 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.notify(UpdateReasons.DRAW);
+    }
+
+    public interact(interactionData: InteractionData): void {
+        if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (interactionData.enabled) {
+            if (this.data.interactionData.enabled) {
+                throw new Error('Interaction has been already started');
+            } else if (!interactionData.shapeType) {
+                throw new Error('A shape type was not specified');
+            }
+        }
+
+        this.data.interactionData = interactionData;
+        if (typeof this.data.interactionData.crosshair !== 'boolean') {
+            this.data.interactionData.crosshair = true;
+        }
+
+        this.notify(UpdateReasons.INTERACT);
     }
 
     public split(splitData: SplitData): void {
@@ -548,27 +617,31 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public configure(configuration: Configuration): void {
-        if (typeof (configuration.displayAllText) !== 'undefined') {
+        if (typeof configuration.displayAllText !== 'undefined') {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
-        if (typeof (configuration.showProjections) !== 'undefined') {
+        if (typeof configuration.showProjections !== 'undefined') {
             this.data.configuration.showProjections = configuration.showProjections;
         }
-        if (typeof (configuration.autoborders) !== 'undefined') {
+        if (typeof configuration.autoborders !== 'undefined') {
             this.data.configuration.autoborders = configuration.autoborders;
         }
 
-        if (typeof (configuration.undefinedAttrValue) !== 'undefined') {
+        if (typeof configuration.undefinedAttrValue !== 'undefined') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
+        }
+
+        if (typeof configuration.forceDisableEditing !== 'undefined') {
+            this.data.configuration.forceDisableEditing = configuration.forceDisableEditing;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE].includes(this.data.mode)
-            || (this.data.mode === Mode.DRAW && typeof (this.data.drawData.redraw) === 'number');
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
+            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }
@@ -604,10 +677,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.imageOffset = geometry.offset;
         this.data.scale = geometry.scale;
 
-        this.data.imageOffset = Math.floor(Math.max(
-            this.data.canvasSize.height / FrameZoom.MIN,
-            this.data.canvasSize.width / FrameZoom.MIN,
-        ));
+        this.data.imageOffset = Math.floor(
+            Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
+        );
     }
 
     public get zLayer(): number | null {
@@ -622,10 +694,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.image;
     }
 
+    public get issueRegions(): Record<number, number[]> {
+        return { ...this.data.issueRegions };
+    }
+
     public get objects(): any[] {
         if (this.data.zLayer !== null) {
-            return this.data.objects
-                .filter((object: any): boolean => object.zOrder <= this.data.zLayer);
+            return this.data.objects.filter((object: any): boolean => object.zOrder <= this.data.zLayer);
         }
 
         return this.data.objects;
@@ -645,6 +720,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get drawData(): DrawData {
         return { ...this.data.drawData };
+    }
+
+    public get interactionData(): InteractionData {
+        return { ...this.data.interactionData };
     }
 
     public get mergeData(): MergeData {
@@ -669,5 +748,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get mode(): Mode {
         return this.data.mode;
+    }
+    public get exception(): Error {
+        return this.data.exception;
     }
 }

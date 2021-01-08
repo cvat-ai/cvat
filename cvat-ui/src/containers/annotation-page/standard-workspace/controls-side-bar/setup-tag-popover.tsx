@@ -40,22 +40,13 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            canvas: {
-                instance: canvasInstance,
-            },
-            job: {
-                instance: jobInstance,
-                labels,
-            },
+            canvas: { instance: canvasInstance },
+            job: { instance: jobInstance, labels },
             player: {
-                frame: {
-                    number: frame,
-                },
+                frame: { number: frame },
             },
         },
-        shortcuts: {
-            normalizedKeyMap,
-        },
+        shortcuts: { normalizedKeyMap },
     } = state;
 
     return {
@@ -83,20 +74,15 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         };
     }
 
-    private onChangeLabel = (value: string): void => {
+    private onChangeLabel = (value: any): void => {
         this.setState({
-            selectedLabelID: +value,
+            selectedLabelID: value.id,
         });
     };
 
     private onSetup = (): void => {
         const {
-            frame,
-            labels,
-            jobInstance,
-            canvasInstance,
-            onAnnotationCreate,
-            onRememberObject,
+            frame, labels, jobInstance, canvasInstance, onAnnotationCreate, onRememberObject,
         } = this.props;
 
         const { selectedLabelID } = this.state;
@@ -121,7 +107,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         return (
             <SetupTagPopoverComponent
                 labels={labels}
-                selectedLabeID={selectedLabelID}
+                selectedLabelID={selectedLabelID}
                 repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}
                 onSetup={this.onSetup}
@@ -130,7 +116,4 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     }
 }
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(DrawShapePopoverContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(DrawShapePopoverContainer);

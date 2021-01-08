@@ -1,0 +1,20 @@
+{
+  "video": false,
+  "baseUrl": "http://localhost:8080",
+  "viewportWidth": 1300,
+  "viewportHeight": 960,
+  "defaultCommandTimeout": 25000,
+  "env": {
+    "user": "admin",
+    "email": "admin@localhost.company",
+    "password": "12qwaszx"
+  },
+  "testFiles": [
+    "auth_page.js",
+    "actions_tasks_objects/*",
+    "actions_projects/*",
+    "actions_users/*",
+    "email_system/*",
+    "remove_users_tasks_projects.js"
+  ]
+}
