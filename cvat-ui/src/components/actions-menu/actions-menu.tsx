@@ -11,6 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
 import ExportSubmenu from './export-submenu';
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     taskID: number;
@@ -22,7 +23,7 @@ interface Props {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     inferenceIsActive: boolean;
-
+    taskDimension: DimensionType;
     onClickMenu: (params: MenuInfo, file?: File) => void;
 }
 
@@ -47,6 +48,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         dumpActivities,
         exportActivities,
         loadActivity,
+        taskDimension,
     } = props;
 
     let latestParams: MenuInfo | null = null;
@@ -102,6 +104,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                 dumpers,
                 dumpActivities,
                 menuKey: Actions.DUMP_TASK_ANNO,
+                taskDimension,
             })}
             {LoadSubmenu({
                 loaders,
@@ -110,11 +113,13 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     onClickMenuWrapper(null, file);
                 },
                 menuKey: Actions.LOAD_TASK_ANNO,
+                taskDimension,
             })}
             {ExportSubmenu({
                 exporters: dumpers,
                 exportActivities,
                 menuKey: Actions.EXPORT_TASK_DATASET,
+                taskDimension,
             })}
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
