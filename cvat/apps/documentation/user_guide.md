@@ -3,6 +3,7 @@
     - [Authorization](#authorization)
     - [Administration panel](#administration-panel)
     - [Creating an annotation task](#creating-an-annotation-task)
+    - [Projects](#projects)
     - [Models](#models)
     - [Search](#search)
   - [Interface of the annotation tool](#interface-of-the-annotation-tool)
@@ -89,7 +90,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 ### Creating an annotation task
 
-1.  Create an annotation task pressing `Create new task` button on the main page.
+1.  Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
     ![](static/documentation/images/image004.jpg)
 
 1.  Specify parameters of the task:
@@ -100,7 +101,11 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     ![](static/documentation/images/image005.jpg)
 
-    **Labels**. There are two ways of working with labels:
+    **Projects** The project that this task will be related with.
+
+    ![](static/documentation/images/image193.jpg)
+
+    **Labels**. There are two ways of working with labels (available only if the task is not related to the project):
 
     - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
       ![](static/documentation/images/image123.jpg)
@@ -229,11 +234,11 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Issue tracker**. Specify full issue tracker's URL if it's necessary.
 
     Push `Submit` button and it will be added into the list of annotation tasks.
-    Then, the created task will be displayed on a dashboard:
+    Then, the created task will be displayed on a tasks page:
 
     ![](static/documentation/images/image006_detrac.jpg)
 
-1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
+1.  The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
     Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
     Each button is responsible for a in menu `Actions` specific function:
 
@@ -257,7 +262,6 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - [CVAT](/cvat/apps/documentation/xml_format.md) accepts both video and image sub-formats.
     - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
-    - `Open bug tracker` — opens a link to Issue tracker.
     - `Delete` — delete task.
 
     Push `Open` button to go to task details.
@@ -271,7 +275,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       1. Change the task’s title.
       1. Open `Actions` menu.
       1. Change issue tracker or open issue tracker if it is specified.
-      1. Change labels.
+      1. Change labels (available only if the task is not related to the project).
          You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode.
          By clicking `Copy` you will copy the labels to the clipboard.
       1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
@@ -296,6 +300,35 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     to annotate first images. Other frames will be loaded in background.
 
     ![](static/documentation/images/image007_detrac.jpg)
+
+### Projects
+
+At CVAT, you can create a project containing tasks of the same type. All tasks related to the project will inherit a list of labels.
+
+To create a project, go to the projects section by clicking on the `Projects` item in the top menu. 
+On the projects page, you can see a list of projects, use a search, or create a new project by clicking `Create New Project`.
+
+![](static/documentation/images/image190.jpg)
+
+You can change: the name of the project, the list of labels (which will be used for tasks created as parts of this project) and a link to the issue.
+
+![](static/documentation/images/image191.jpg)
+
+Once created, the project will appear on the projects page. To open a project, just click on it.
+
+![](static/documentation/images/image192_mapillary_vistas.jpg)
+
+Here you can do the following:
+  1. Change the project's title.
+  1. Open the `Actions` menu.
+  1. Change issue tracker or open issue tracker if it is specified.
+  1. Change labels.
+  You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
+  You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
+  1. Assigned to — is used to assign a project to a person. Start typing an assignee's name and/or choose the right person out of the dropdown list.
+  1. `Tasks` — is a list of all tasks for a particular project.
+
+You can remove the project and all related tasks through the Action menu.
 
 ### Models
 
@@ -1022,7 +1055,7 @@ Shapes that were created in the track mode, have extra navigation buttons.
 
   ![](static/documentation/images/image057.jpg)
 
-You can use the `` Split '' function to split one track into two tracks:
+You can use the `Split` function to split one track into two tracks:
 
 ![](static/documentation/images/gif010_detrac.gif)
 
