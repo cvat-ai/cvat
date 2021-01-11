@@ -19,7 +19,7 @@ from .annotation import AnnotationManager, TrackManager
 
 
 class TaskData:
-        Attribute = namedtuple('Attribute', 'name, value')
+    Attribute = namedtuple('Attribute', 'name, value')
     LabeledShape = namedtuple(
         'LabeledShape', 'type, frame, label, points, occluded, attributes, source, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
@@ -33,23 +33,23 @@ class TaskData:
     Frame = namedtuple(
         'Frame', 'idx, frame, name, width, height, labeled_shapes, tags')
 
-    def __init__(self, annotation_ir, db_task, host = '', create_callback = None):
-        self._annotation_ir=annotation_ir
-        self._db_task=db_task
-        self._host=host
-        self._create_callback=create_callback
-        self._MAX_ANNO_SIZE=30000
-        self._frame_info={}
-        self._frame_mapping={}
-        self._frame_step=db_task.data.get_frame_step()
+    def __init__(self, annotation_ir, db_task, host='', create_callback=None):
+        self._annotation_ir = annotation_ir
+        self._db_task = db_task
+        self._host = host
+        self._create_callback = create_callback
+        self._MAX_ANNO_SIZE = 30000
+        self._frame_info = {}
+        self._frame_mapping = {}
+        self._frame_step = db_task.data.get_frame_step()
 
-        db_labels=(self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
+        db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
             'attributespec_set').order_by('pk')
 
-        self._label_mapping=OrderedDict(
+        self._label_mapping = OrderedDict(
             (db_label.id, db_label) for db_label in db_labels)
 
-        self._attribute_mapping={db_label.id: {
+        self._attribute_mapping = {db_label.id: {
             'mutable': {}, 'immutable': {}, 'spec': {}}
             for db_label in db_labels}
 
@@ -86,11 +86,11 @@ class TaskData:
             if attribute_id in attribute_mapping:
                 return attribute_mapping[attribute_id]
 
-    def _get_attribute_id(self, label_id, attribute_name, attribute_type = None):
+    def _get_attribute_id(self, label_id, attribute_name, attribute_type=None):
         if attribute_type:
-            container=self._attribute_mapping[label_id][attribute_type]
+            container = self._attribute_mapping[label_id][attribute_type]
         else:
-            container=self._attribute_mapping_merged[label_id]
+            container = self._attribute_mapping_merged[label_id]
 
         for attr_id, attr_name in container.items():
             if attribute_name == attr_name:
@@ -109,7 +109,7 @@ class TaskData:
         return relative_id * self._frame_step + self._db_task.data.start_frame
 
     def rel_frame_id(self, absolute_id):
-        d, m=divmod(
+        d, m = divmod(
             absolute_id - self._db_task.data.start_frame, self._frame_step)
         if m or d not in range(0, self._db_task.data.size):
             raise ValueError("Unknown frame %s" % absolute_id)
@@ -117,19 +117,19 @@ class TaskData:
 
     def _init_frame_info(self):
         if hasattr(self._db_task.data, 'video'):
-            self._frame_info={frame: {
+            self._frame_info = {frame: {
                 "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
                 "width": self._db_task.data.video.width,
                 "height": self._db_task.data.video.height,
             } for frame in range(self._db_task.data.size)}
         else:
-            self._frame_info={self.rel_frame_id(db_image.frame): {
+            self._frame_info = {self.rel_frame_id(db_image.frame): {
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
             } for db_image in self._db_task.data.images.all()}
 
-        self._frame_mapping={
+        self._frame_mapping = {
             self._get_filename(info["path"]): frame_number
             for frame_number, info in self._frame_info.items()
         }
@@ -198,9 +198,9 @@ class TaskData:
                 osp.basename(self._db_task.data.video.path))
 
     def _export_attributes(self, attributes):
-        exported_attributes=[]
+        exported_attributes = []
         for attr in attributes:
-            attribute_name=self._get_attribute_name(attr["spec_id"])
+            attribute_name = self._get_attribute_name(attr["spec_id"])
             exported_attributes.append(TaskData.Attribute(
                 name=attribute_name,
                 value=attr["value"],
@@ -338,7 +338,7 @@ class TaskData:
 
             try:
                 if spec.input_type == AttributeType.NUMBER:
-                    pass # no extra processing required
+                    pass  # no extra processing required
                 elif spec.input_type == AttributeType.CHECKBOX:
                     if isinstance(value, str):
                         value = value.lower()
@@ -349,9 +349,9 @@ class TaskData:
                         raise ValueError("Unexpected attribute value")
             except Exception as e:
                 raise Exception("Failed to convert attribute '%s'='%s': %s" %
-                    (self._get_label_name(label_id), value, e))
+                                (self._get_label_name(label_id), value, e))
 
-        return { 'spec_id': spec_id, 'value': value }
+        return {'spec_id': spec_id, 'value': value}
 
     def _import_shape(self, shape):
         _shape = shape._asdict()
@@ -359,8 +359,8 @@ class TaskData:
         _shape['frame'] = self.rel_frame_id(int(_shape['frame']))
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
-            for attrib in _shape['attributes']
-            if self._get_attribute_id(label_id, attrib.name)]
+                                for attrib in _shape['attributes']
+                                if self._get_attribute_id(label_id, attrib.name)]
         _shape['points'] = list(map(float, _shape['points']))
         return _shape
 
@@ -378,8 +378,8 @@ class TaskData:
                                     for attrib in shape['attributes']
                                     if self._get_immutable_attribute_id(label_id, attrib.name)]
             shape['attributes'] = [self._import_attribute(label_id, attrib)
-                for attrib in shape['attributes']
-                if self._get_mutable_attribute_id(label_id, attrib.name)]
+                                   for attrib in shape['attributes']
+                                   if self._get_mutable_attribute_id(label_id, attrib.name)]
             shape['points'] = list(map(float, shape['points']))
 
         return _track
@@ -450,7 +450,7 @@ class TaskData:
 
         path = Path(self._get_filename(path)).parts
         for p, v in self._frame_mapping.items():
-            if Path(p).parts[-len(path):] == path: # endswith() for paths
+            if Path(p).parts[-len(path):] == path:  # endswith() for paths
                 return v
         return None
 
@@ -472,16 +472,16 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 # optimization for videos: use numpy arrays instead of bytes
                 # some formats or transforms can require image data
                 def _make_image(i, **kwargs):
-                    loader = lambda _: frame_provider.get_frame(i,
-                        quality=frame_provider.Quality.ORIGINAL,
-                        out_type=frame_provider.Type.NUMPY_ARRAY)[0]
+                    def loader(_): return frame_provider.get_frame(i,
+                                                                   quality=frame_provider.Quality.ORIGINAL,
+                                                                   out_type=frame_provider.Type.NUMPY_ARRAY)[0]
                     return Image(loader=loader, **kwargs)
             else:
                 # for images use encoded data to avoid recoding
                 def _make_image(i, **kwargs):
-                    loader = lambda _: frame_provider.get_frame(i,
-                        quality=frame_provider.Quality.ORIGINAL,
-                        out_type=frame_provider.Type.BUFFER)[0].getvalue()
+                    def loader(_): return frame_provider.get_frame(i,
+                                                                   quality=frame_provider.Quality.ORIGINAL,
+                                                                   out_type=frame_provider.Type.BUFFER)[0].getvalue()
                     return ByteImage(data=loader, **kwargs)
 
         for frame_data in task_data.group_by_frame(include_empty=True):
@@ -495,8 +495,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, task_data)
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
-                annotations=dm_anno, image=dm_image,
-                attributes={'frame': frame_data.frame})
+                                           annotations=dm_anno, image=dm_image,
+                                           attributes={'frame': frame_data.frame})
             dm_items.append(dm_item)
 
         self._items = dm_items
@@ -601,6 +601,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
         return item_anno
 
+
 def match_dm_item(item, task_data, root_hint=None):
     is_video = task_data.meta['task']['mode'] == 'interpolation'
 
@@ -618,6 +619,7 @@ def match_dm_item(item, task_data, root_hint=None):
         raise Exception("Could not match item id: '%s' with any task frame" %
                         item.id)
     return frame_number
+
 
 def find_dataset_root(dm_dataset, task_data):
     longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts)).id
