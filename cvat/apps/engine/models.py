@@ -20,18 +20,8 @@ class SafeCharField(models.CharField):
         return value
 
 class DimensionType(str, Enum):
-<<<<<<< HEAD
-<<<<<<< HEAD
     DIM_3D = '3d'
     DIM_2D = '2d'
-=======
-    THREED = '3d'
-    TWOD = '2d'
->>>>>>> Modified code as per review comments
-=======
-    DIM_3D = '3d'
-    DIM_2D = '2d'
->>>>>>> Refactored Dimension Enum in UI and backend code
 
     @classmethod
     def choices(cls):

@@ -106,10 +106,6 @@ image/x-jng	jng
 image/jp2	jp2
 image/x-portable-bitmap	pbm
 image/x-eps	epsf
-<<<<<<< HEAD
-=======
-image/x-photo-cd	pcd
->>>>>>> Modified code as per review comments
 image/x.point-cloud-data pcd
 image/x.kitti-velodyne bin
 image/jpeg	jpe
