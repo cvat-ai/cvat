@@ -33,18 +33,6 @@ def get_mime(name):
 
     return 'unknown'
 
-def get_pcd_properties(file):
-        kv = {}
-        for line_no, line in enumerate(file):
-            line = line.decode("utf-8")
-            if line.startswith("#"):
-                continue
-            k, v = line.split(" ", maxsplit=1)
-            kv[k] = v.strip()
-            if "DATA" in line:
-                break
-        return kv
-
 def create_tmp_dir():
     return tempfile.mkdtemp(prefix='cvat-', suffix='.data')
 
@@ -64,7 +52,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self, dimension="2d"):
+    def get_preview(self):
         pass
 
     @abstractmethod
@@ -83,7 +71,7 @@ class IMediaReader(ABC):
         return preview.convert('RGB')
 
     @abstractmethod
-    def get_image_size(self, i, dimension="2d"):
+    def get_image_size(self, i):
         pass
 
     def __len__(self):
@@ -125,11 +113,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self, dimension="2d"):
+    def get_preview(self):
         fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
-    def get_image_size(self, i, dimension="2d"):
+    def get_image_size(self, i):
         img = Image.open(self._source_path[i])
         return img.width, img.height
 
@@ -305,7 +293,7 @@ class VideoReader(IMediaReader):
             self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
 
-    def get_preview(self, dimension="2d"):
+    def get_preview(self):
         container = self._get_av_container()
         stream = container.streams.video[0]
         preview = next(container.decode(stream))
@@ -319,7 +307,7 @@ class VideoReader(IMediaReader):
             ).to_image()
         )
 
-    def get_image_size(self, i, dimension="2d"):
+    def get_image_size(self, i):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
@@ -385,8 +373,8 @@ class ZipCompressedChunkWriter(IChunkWriter):
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _, dimension="2d"):
-        super().__init__(17, dimension)
+    def __init__(self, _):
+        super().__init__(17)
         self._output_fps = 25
 
     @staticmethod
@@ -445,7 +433,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             container.mux(packet)
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality, dimension="2d"):
+    def __init__(self, quality):
         # translate inversed range [1:100] to [0:51]
         self._image_quality = round(51 * (100 - quality) / 99)
         self._output_fps = 25

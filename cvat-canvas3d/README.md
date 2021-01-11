@@ -1,4 +1,4 @@
-# Module CVAT-CANVAS
+# Module CVAT-CANVAS-3D
 
 ## Description
 

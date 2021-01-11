@@ -18,9 +18,15 @@ const DimensionType = Object.freeze({
     DIM_2D: '2d',
 });
 
-
 class FrameProvider {
-    constructor(blockType, blockSize, cachedBlockCount, decodedBlocksCacheSize = 5, maxWorkerThreadCount = 2, dimension) {
+    constructor(
+        blockType,
+        blockSize,
+        cachedBlockCount,
+        decodedBlocksCacheSize = 5,
+        maxWorkerThreadCount = 2,
+        dimension,
+    ) {
         this._frames = {};
         this._cachedBlockCount = Math.max(1, cachedBlockCount); // number of stored blocks
         this._decodedBlocksCacheSize = decodedBlocksCacheSize;
@@ -335,8 +341,10 @@ class FrameProvider {
                     }
                     index++;
                 };
-                const dimension = this._dimension
-                worker.postMessage({ block, start, end, dimension, dimension2D: DimensionType.DIM_2D });
+                const dimension = this._dimension;
+                worker.postMessage({
+                    block, start, end, dimension, dimension2D: DimensionType.DIM_2D,
+                });
                 this._decodeThreadCount++;
             }
         } finally {

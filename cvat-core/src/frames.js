@@ -100,7 +100,7 @@
          * @throws {module:API.cvat.exception.ServerError}
          * @throws {module:API.cvat.exception.PluginError}
          */
-        async data(onServerRequest = () => { }) {
+        async data(onServerRequest = () => {}) {
             const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
             return result;
         }
@@ -341,7 +341,7 @@
         constructor(size, chunkSize, stopFrame, taskID) {
             this._size = size;
             this._buffer = {};
-            this._contextImage = {}
+            this._contextImage = {};
             this._requestedChunks = {};
             this._chunkSize = chunkSize;
             this._stopFrame = stopFrame;
@@ -355,13 +355,13 @@
 
         getContextImage(frame) {
             if (frame in this._contextImage) {
-                return this._contextImage[frame]
+                return this._contextImage[frame];
             }
-            return null
+            return null;
         }
 
         addContextImage(frame, data) {
-            this._contextImage[frame] = data
+            this._contextImage[frame] = data;
         }
 
         getFreeBufferSize() {
@@ -551,15 +551,35 @@
         }
     }
 
+    async function getImageContext(taskID, frame) {
+        return new Promise((resolve, reject) => {
+            serverProxy.frames
+                .getImageContext(taskID, frame)
+                .then((result) => {
+                    if (isNode) {
+                        // eslint-disable-next-line no-undef
+                        resolve(global.Buffer.from(result, 'binary').toString('base64'));
+                    } else if (isBrowser) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            resolve(reader.result);
+                        };
+                        reader.readAsDataURL(result);
+                    }
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+    }
+
     async function getContextImage(taskID, frame) {
-        if (frameDataCache[taskID]['frameBuffer'].isContextImageAvailable(frame)) {
-            return frameDataCache[taskID]['frameBuffer'].getContextImage(frame)
+        if (frameDataCache[taskID].frameBuffer.isContextImageAvailable(frame)) {
+            return frameDataCache[taskID].frameBuffer.getContextImage(frame);
         }
-        else {
-            const response = getImageContext(taskID, frame)
-            frameDataCache[taskID]['frameBuffer'].addContextImage(frame, response)
-            return frameDataCache[taskID]['frameBuffer'].getContextImage(frame)
-        }
+        const response = getImageContext(taskID, frame);
+        frameDataCache[taskID].frameBuffer.addContextImage(frame, response);
+        return frameDataCache[taskID].frameBuffer.getContextImage(frame);
     }
 
     async function getPreview(taskID) {
@@ -585,29 +605,18 @@
         });
     }
 
-    async function getImageContext(taskID, frame) {
-        return new Promise((resolve, reject) => {
-            serverProxy.frames
-                .getImageContext(taskID, frame)
-                .then((result) => {
-                    if (isNode) {
-                        // eslint-disable-next-line no-undef
-                        resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                    } else if (isBrowser) {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            resolve(reader.result);
-                        };
-                        reader.readAsDataURL(result);
-                    }
-                })
-                .catch((error) => {
-                    reject(error);
-                });
-        });
-    }
-
-    async function getFrame(taskID, chunkSize, chunkType, mode, frame, startFrame, stopFrame, isPlaying, step, dimension) {
+    async function getFrame(
+        taskID,
+        chunkSize,
+        chunkType,
+        mode,
+        frame,
+        startFrame,
+        stopFrame,
+        isPlaying,
+        step,
+        dimension,
+    ) {
         if (!(taskID in frameDataCache)) {
             const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
 
@@ -615,7 +624,7 @@
             const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
             const stdDev = Math.sqrt(
                 meta.frames.map((x) => Math.pow(x.width * x.height - mean, 2)).reduce((a, b) => a + b)
-                / meta.frames.length,
+                    / meta.frames.length,
             );
 
             // limit of decoded frames cache by 2GB
@@ -633,7 +642,7 @@
                     Math.max(decodedBlocksCacheSize, 9),
                     decodedBlocksCacheSize,
                     1,
-                    dimension
+                    dimension,
                 ),
                 frameBuffer: new FrameBuffer(
                     Math.min(180, decodedBlocksCacheSize * chunkSize),
@@ -680,6 +689,6 @@
         getRanges,
         getPreview,
         clear,
-        getContextImage
+        getContextImage,
     };
 })();

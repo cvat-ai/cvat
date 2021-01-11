@@ -309,7 +309,7 @@ def _create_thread(tid, data):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            w, h = extractor.get_image_size(0, dimension=validate_dimension.dimension)
+            w, h = extractor.get_image_size(0)
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
@@ -380,7 +380,7 @@ def _create_thread(tid, data):
                     with open(db_data.get_dummy_chunk_path(chunk_number), 'w') as dummy_chunk:
                         for path, frame_id in chunk_paths:
                             dummy_chunk.write(os.path.relpath(path, upload_dir) + '\n')
-                            img_sizes.append(extractor.get_image_size(frame_id, dimension=validate_dimension.dimension))
+                            img_sizes.append(extractor.get_image_size(frame_id))
 
                     db_images.extend([
                         models.Image(data=db_data,
@@ -451,7 +451,7 @@ def _create_thread(tid, data):
     if db_data.stop_frame == 0:
         db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
 
-    preview = extractor.get_preview(dimension=validate_dimension.dimension)
+    preview = extractor.get_preview()
     preview.save(db_data.get_preview_path())
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
