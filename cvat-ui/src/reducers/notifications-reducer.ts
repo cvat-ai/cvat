@@ -460,6 +460,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         creating: {
                             message: 'Could not create the project',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-project-failed',
                         },
                     },
                 },
@@ -478,6 +479,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not update ' +
                                 `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-project-failed',
                         },
                     },
                 },
@@ -496,6 +498,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not delete ' +
                                 `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-project-failed',
                         },
                     },
                 },
