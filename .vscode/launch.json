@@ -108,7 +108,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath":"${command:python.interpreterPath}",
+            "python":"${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
