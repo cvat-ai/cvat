@@ -376,6 +376,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         updating: {
                             message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-task-failed',
                         },
                     },
                 },
@@ -412,6 +413,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not delete the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-task-failed',
                         },
                     },
                 },
@@ -427,6 +429,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         creating: {
                             message: 'Could not create the task',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-task-failed',
                         },
                     },
                 },

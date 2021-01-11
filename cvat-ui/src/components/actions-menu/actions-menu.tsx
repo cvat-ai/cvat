@@ -83,6 +83,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             Modal.confirm({
                 title: `The task ${taskID} will be deleted`,
                 content: 'All related data (images, annotations) will be lost. Continue?',
+                className: 'cvat-modal-confirm-delete-task',
                 onOk: () => {
                     onClickMenu(copyParams);
                 },

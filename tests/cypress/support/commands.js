@@ -54,6 +54,7 @@ Cypress.Commands.add(
         forProject = false,
         attachToProject = false,
         projectName,
+        expectedResult = 'success',
     ) => {
         cy.get('#cvat-create-task-button').click({ force: true });
         cy.url().should('include', '/tasks/create');
@@ -64,7 +65,7 @@ Cypress.Commands.add(
             cy.get('.cvat-new-attribute-button').click();
             cy.get('[placeholder="Name"]').type(attrName);
             cy.get('.cvat-attribute-type-input').click();
-            cy.get('.ant-select-item-option').contains('Text').click();
+            cy.get('.cvat-attribute-type-input-text').click();
             cy.get('[placeholder="Default value"]').type(textDefaultValue);
             if (multiAttrParams) {
                 cy.updateAttributes(multiAttrParams);
@@ -89,7 +90,9 @@ Cypress.Commands.add(
             cy.advancedConfiguration(advancedConfigurationParams);
         }
         cy.contains('button', 'Submit').click();
-        cy.contains('The task has been created');
+        if (expectedResult === 'success') {
+            cy.contains('The task has been created');
+        }
         if (!forProject) {
             cy.goToTaskList();
         } else {
@@ -394,7 +397,7 @@ Cypress.Commands.add('getTaskID', (taskName) => {
 Cypress.Commands.add('deleteTask', (taskName, taskID) => {
     cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').trigger('mouseover');
     cy.get('.cvat-actions-menu').contains('Delete').click();
-    cy.get('.ant-modal-content')
+    cy.get('.cvat-modal-confirm-delete-task')
         .should('contain', `The task ${taskID} will be deleted`)
         .within(() => {
             cy.contains('button', 'Delete').click();
