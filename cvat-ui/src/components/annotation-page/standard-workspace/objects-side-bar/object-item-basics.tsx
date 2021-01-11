@@ -96,7 +96,15 @@ function ItemTopComponent(props: Props): JSX.Element {
     return (
         <Row align='middle'>
             <Col span={10}>
-                <Text style={{ fontSize: 12 }}>{clientID}</Text>
+                <Text style={{ fontSize: 12 }}>
+                    Client ID:
+                    {clientID}
+                </Text>
+                <br />
+                <Text style={{ fontSize: 12 }}>
+                    Server ID:
+                    {serverID || 'unsaved'}
+                </Text>
                 <br />
                 <Text type='secondary' style={{ fontSize: 10 }}>
                     {type}
