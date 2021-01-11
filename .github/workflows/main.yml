@@ -45,7 +45,6 @@ jobs:
       - name: End-to-end testing
         run: |
           cd ./tests
-          pwd
           npm install
           npx cypress run --headless --browser chrome
       - name: Collect coverage data
