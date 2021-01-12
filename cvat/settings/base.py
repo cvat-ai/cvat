@@ -361,7 +361,7 @@ os.makedirs(LOGS_ROOT, exist_ok=True)
 MIGRATIONS_LOGS_ROOT = os.path.join(LOGS_ROOT, 'migrations')
 os.makedirs(MIGRATIONS_LOGS_ROOT, exist_ok=True)
 
-CLOUD_STORAGE_ROOT = os.path.join(BASE_DIR, 'storages')
+CLOUD_STORAGE_ROOT = os.path.join(DATA_ROOT, 'storages')
 os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 LOGGING = {

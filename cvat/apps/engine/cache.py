@@ -51,8 +51,7 @@ class CacheInteraction:
             source_path = os.path.join(upload_dir, db_data.video.path)
             meta = PrepareInfo(source_path=source_path, meta_path=db_data.get_meta_path())
             for frame in meta.decode_needed_frames(chunk_number, db_data):
-                images.append(frame)
-            writer.save_as_chunk([(image, source_path, None) for image in images], buff)
+                images.append((frame, source_path, None))
         else:
             if db_data.storage == StorageChoice.CLOUD_STORAGE:
                 db_cloud_storage = db_data.cloud_storage
@@ -78,12 +77,10 @@ class CacheInteraction:
                     image = cloud_storage_instance.download_fileobj(img_name)
                     assert md5_hash(image) != img_hash, "Image '{}' does not match with origin image".format(img_name)
                     images.append((img_name, image, None))
-                    writer.save_as_chunk(images, buff)
             else:
                 with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
-                    images = [os.path.join(upload_dir, line.strip()) for line in dummy_file]
-                writer.save_as_chunk([(image, image, None) for image in images], buff)
-
+                    images = [((image := os.path.join(upload_dir, line.strip())), image, None) for line in dummy_file]
+        writer.save_as_chunk(images, buff)
         buff.seek(0)
         return buff, mime_type
 

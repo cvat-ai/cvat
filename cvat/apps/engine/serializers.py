@@ -654,7 +654,7 @@ class CombinedReviewSerializer(ReviewSerializer):
 class BaseCloudStorageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CloudStorage
-        fields = '__all__'
+        exclude = ['credentials']
 
 class CloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
