@@ -10,12 +10,19 @@ context('When clicking on the Logout button, get the user session closed.', () =
     const issueId = '1810';
     let taskId;
 
+    function login(userName, password) {
+        cy.get('[placeholder="Username"]').clear().type(userName);
+        cy.get('[placeholder="Password"]').clear().type(password);
+        cy.get('[type="submit"]').click();
+    }
+
     before(() => {
         cy.visit('auth/login');
     });
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Login', () => {
+            cy.closeModalUnsupportedPlatform();
             cy.login();
         });
 
@@ -35,17 +42,15 @@ context('When clicking on the Logout button, get the user session closed.', () =
         it('Logout and login to task via GUI', () => {
             // logout from task
             cy.get('.cvat-right-header').within(() => {
-                cy.get('.cvat-header-menu-dropdown').should('have.text', Cypress.env('user')).trigger('mouseover', { which: 1 });
+                cy.get('.cvat-header-menu-dropdown')
+                    .should('have.text', Cypress.env('user'))
+                    .trigger('mouseover', { which: 1 });
             });
             cy.get('span[aria-label="logout"]').click();
             cy.url().should('include', `/auth/login/?next=/tasks/${taskId}`);
             // login to task
-            cy.get('[placeholder="Username"]').type(Cypress.env('user'));
-            cy.get('[placeholder="Password"]').type(Cypress.env('password'));
-            cy.get('[type="submit"]').click();
-            cy.url()
-                .should('include', `/tasks/${taskId}`)
-                .and('not.include', '/auth/login/');
+            login(Cypress.env('user'), Cypress.env('password'));
+            cy.url().should('include', `/tasks/${taskId}`).and('not.include', '/auth/login');
             cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
         });
 
@@ -64,9 +69,28 @@ context('When clicking on the Logout button, get the user session closed.', () =
                 responce = await responce['headers']['set-cookie'];
                 const csrfToken = responce[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
                 const sessionId = responce[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
-                cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`)
+                cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });
+        });
+
+        it('Incorrect user and correct password', () => {
+            cy.logout();
+            login('randomUser123', Cypress.env('password'));
+            cy.url().should('include', '/auth/login');
+            cy.closeNotification('.cvat-notification-notice-login-failed');
+        });
+
+        it('Correct user and incorrect password', () => {
+            login(Cypress.env('user'), 'randomPassword123');
+            cy.url().should('include', '/auth/login');
+            cy.closeNotification('.cvat-notification-notice-login-failed');
+        });
+
+        it('Incorrect user and incorrect password', () => {
+            login('randomUser123', 'randomPassword123');
+            cy.url().should('include', '/auth/login');
+            cy.closeNotification('.cvat-notification-notice-login-failed');
         });
     });
 });

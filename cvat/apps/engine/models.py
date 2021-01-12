@@ -19,6 +19,17 @@ class SafeCharField(models.CharField):
             return value[:self.max_length]
         return value
 
+class DimensionType(str, Enum):
+    DIM_3D = '3d'
+    DIM_2D = '2d'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class StatusChoice(str, Enum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
@@ -202,6 +213,7 @@ class Task(models.Model):
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
+    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
 
     # Extend default permission model
     class Meta:
@@ -264,6 +276,17 @@ class RemoteFile(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class RelatedFile(models.Model):
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
+    path = models.FileField(upload_to=upload_path_handler,
+                            max_length=1024, storage=MyFileSystemStorage())
+    primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ("data", "path")
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
