@@ -15,15 +15,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
             node-version: 12
-      - uses: actions/setup-python@v2
-        with:
-            python-version: '3.5'
-      - uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
       - name: Build CVAT
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
