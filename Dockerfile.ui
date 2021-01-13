@@ -36,8 +36,12 @@ WORKDIR /tmp/cvat-canvas/
 RUN npm ci
 
 # Install cvat-ui dependencies
+# Voxel hack: npm ci breaks with nested local dependencies
+# so we use `npm install` instead of `npm ci`.
+# Newer versions of npm should address this?
+# Context: https://github.com/npm/cli/issues/1397
 WORKDIR /tmp/cvat-ui/
-RUN npm ci
+RUN npm install
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
