@@ -11,6 +11,7 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 import PIL
+import cv2
 
 import django_rq
 from django.shortcuts import get_object_or_404
@@ -484,11 +485,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         image = Image.objects.get(data_id=db_task.data_id, frame=data_id)
                         for i in image.related_files.all():
                             path = os.path.realpath(str(i.path))
-                            image = PIL.Image.open(path)
-                            buf = io.BytesIO()
-                            image.save(buf, format='JPEG', optimize=True)
-                            buf.seek(0)
-                            return HttpResponse(buf.getvalue(), content_type="image/jpeg")
+                            image = cv2.imread(path)
+                            success, result = cv2.imencode('.JPEG', image)
+                            if not success:
+                                raise Exception("Failed to encode image to '%s' format" % (".jpeg"))
+                            return HttpResponse(io.BytesIO(result.tobytes()), content_type="image/jpeg")
                         return Response(data='No context image related to the frame',
                                         status=status.HTTP_404_NOT_FOUND)
                     else:
