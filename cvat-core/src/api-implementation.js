@@ -10,7 +10,7 @@
         isBoolean, isInteger, isEnum, isString, checkFilter,
     } = require('./common');
 
-    const { TaskStatus, TaskMode } = require('./enums');
+    const { TaskStatus, TaskMode, DimensionType } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
@@ -176,6 +176,7 @@
                 search: isString,
                 status: isEnum.bind(TaskStatus),
                 mode: isEnum.bind(TaskMode),
+                dimension: isEnum.bind(DimensionType),
             });
 
             if ('search' in filter && Object.keys(filter).length > 1) {
@@ -198,7 +199,7 @@
             }
 
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId']) {
+            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId', 'dimension']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }
