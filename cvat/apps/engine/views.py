@@ -10,7 +10,6 @@ import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
-import PIL
 import cv2
 
 import django_rq
