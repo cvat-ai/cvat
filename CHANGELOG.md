@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Kibana startup initialization (<https://github.com/openvinotoolkit/cvat/pull/2659>)
 
 ### Security
 -
