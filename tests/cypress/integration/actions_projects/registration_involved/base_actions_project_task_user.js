@@ -111,10 +111,17 @@ context('Base actions on the project', () => {
             cy.openTask(taskName.firstTask);
             cy.get('.cvat-constructor-viewer').should('not.exist');
         });
-        it('Logout first user, register second user, logout.', () => {
+        it('Logout first user, register second user, tries to create project and logout.', () => {
             cy.logout();
             cy.goToRegisterPage();
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
+            cy.goToProjectsList();
+            // tries to create project
+            const failProjectName = `${randomString()}`;
+            cy.createProjects(failProjectName, labelName, attrName, textDefaultValue, null, 'fail');
+            cy.closeNotification('.cvat-notification-notice-create-project-failed');
+            cy.goToProjectsList();
+            cy.contains('.cvat-projects-project-item-title', failProjectName).should('not.exist');
             cy.logout(userName);
         });
         it('Login first user. Assing project to second user. Logout.', () => {
@@ -124,9 +131,12 @@ context('Base actions on the project', () => {
             cy.assignProjectToUser(userName);
             cy.logout();
         });
-        it('Login second user. The project and first tasks available for that user. Logout.', () => {
+        it('Login second user. The project and first tasks available for that user. Tries to delete project. Logout.', () => {
             cy.login(userName, password);
             cy.goToProjectsList();
+            // tries to delete project
+            cy.deleteProject(projectName, projectID, 'fail');
+            cy.closeNotification('.cvat-notification-notice-delete-project-failed');
             cy.openProject(projectName);
             cy.goToTaskList();
             cy.contains('strong', taskName.secondTask).should('not.exist');

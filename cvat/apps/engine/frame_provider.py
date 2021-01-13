@@ -13,7 +13,7 @@ from PIL import Image
 from cvat.apps.engine.cache import CacheInteraction
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.mime_types import mimetypes
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
 
 
 class RandomAccessIterator:
@@ -83,7 +83,7 @@ class FrameProvider:
                     self.reader_class([self.get_chunk_path(chunk_id, self.quality, self.db_data)[0]]))
             return self.chunk_reader
 
-    def __init__(self, db_data):
+    def __init__(self, db_data, dimension=DimensionType.DIM_2D):
         self._db_data = db_data
         self._loaders = {}
 
@@ -93,7 +93,7 @@ class FrameProvider:
         }
 
         if db_data.storage_method == StorageMethodChoice.CACHE:
-            cache = CacheInteraction()
+            cache = CacheInteraction(dimension=dimension)
 
             self._loaders[self.Quality.COMPRESSED] = self.BuffChunkLoader(
                 reader_class[db_data.compressed_chunk_type],

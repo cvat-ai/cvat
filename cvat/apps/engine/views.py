@@ -447,7 +447,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 if not db_data:
                     raise NotFound(detail='Cannot find requested data for the task')
 
-                frame_provider = FrameProvider(db_task.data)
+                frame_provider = FrameProvider(db_task.data, db_task.dimension)
 
                 if data_type == 'chunk':
                     data_id = int(data_id)
