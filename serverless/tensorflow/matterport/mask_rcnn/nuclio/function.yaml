@@ -102,7 +102,7 @@ spec:
       value: /opt/nuclio/Mask_RCNN
   build:
     image: cvat/tf.matterport.mask_rcnn
-    baseImage: tensorflow/tensorflow:1.15.4
+    baseImage: tensorflow/tensorflow:1.15.5
     directives:
       postCopy:
         - kind: WORKDIR

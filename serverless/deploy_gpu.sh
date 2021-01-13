@@ -13,13 +13,13 @@ nuctl deploy --project-name cvat \
     --triggers '{"myHttpTrigger": {"maxWorkers": 1}}' \
     --resource-limit nvidia.com/gpu=1
 
-
-# nuctl deploy --project-name cvat \
-#     --path "$SCRIPT_DIR/tensorflow/matterport/mask_rcnn/nuclio" \
-#     --platform local --base-image tensorflow/tensorflow:1.13.4-gpu \
-#     --desc "GPU based implementation of Mask RCNN on Python 3, Keras, and TensorFlow." \
-#     --image cvat/tf.matterport.mask_rcnn_gpu \
-#     --resource-limit nvidia.com/gpu=1
+nuctl deploy --project-name cvat \
+    --path "$SCRIPT_DIR/tensorflow/matterport/mask_rcnn/nuclio" \
+    --platform local --base-image tensorflow/tensorflow:1.15.5-gpu-py3 \
+    --desc "GPU based implementation of Mask RCNN on Python 3, Keras, and TensorFlow." \
+    --image cvat/tf.matterport.mask_rcnn_gpu\
+    --triggers '{"myHttpTrigger": {"maxWorkers": 1}}' \
+    --resource-limit nvidia.com/gpu=1
 
 
 nuctl get function

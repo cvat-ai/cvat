@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import coco
+from mrcnn import model as modellib
 import os
 import numpy as np
 import sys
@@ -10,7 +12,7 @@ from skimage.measure import find_contours, approximate_polygon
 # workaround for tf.placeholder() is not compatible with eager execution
 # https://github.com/tensorflow/tensorflow/issues/18165
 import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
+# tf.compat.v1.disable_eager_execution()
 #import tensorflow.compat.v1 as tf
 #   tf.disable_v2_behavior()
 
@@ -22,8 +24,6 @@ if MASK_RCNN_DIR:
     sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
     sys.path.append(os.path.join(MASK_RCNN_DIR, 'samples/coco'))
 
-from mrcnn import model as modellib
-import coco
 
 class ModelLoader:
     def __init__(self, labels):
@@ -42,7 +42,7 @@ class ModelLoader:
         self.config.display()
 
         self.model = modellib.MaskRCNN(mode="inference",
-            config=self.config, model_dir=MASK_RCNN_DIR)
+                                       config=self.config, model_dir=MASK_RCNN_DIR)
         self.model.load_weights(COCO_MODEL_PATH, by_name=True)
         self.labels = labels
 
@@ -54,7 +54,7 @@ class ModelLoader:
         for i in range(len(output["rois"])):
             score = output["scores"][i]
             class_id = output["class_ids"][i]
-            mask = output["masks"][:,:,i]
+            mask = output["masks"][:, :, i]
             if score >= threshold:
                 mask = mask.astype(np.uint8)
                 contours = find_contours(mask, MASK_THRESHOLD)
@@ -75,5 +75,3 @@ class ModelLoader:
                 })
 
         return results
-
-
