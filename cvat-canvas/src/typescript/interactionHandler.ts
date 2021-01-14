@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +25,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private currentInteractionShape: SVG.Shape | null;
     private crosshair: Crosshair;
     private threshold: SVG.Rect | null;
-    private thresholdValue: number;
+    private thresholdRectSize: number;
 
     private prepareResult(): InteractionResult[] {
         return this.interactionShapes.map(
@@ -65,16 +65,18 @@ export class InteractionHandlerImpl implements InteractionHandler {
             return enabled && !ctrlKey && !!interactionShapes.length;
         }
 
-        const minimumVerticesAchieved =
-            (typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length) &&
-            (typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length);
+        const minPosVerticesAchieved = typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length;
+        const minNegVerticesAchieved = typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length;
+        const minimumVerticesAchieved = minPosVerticesAchieved && minNegVerticesAchieved;
         return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
     }
 
     private addThreshold(): void {
         const { x, y } = this.cursorPosition;
-        this.threshold = this.canvas.rect(this.thresholdValue, this.thresholdValue)
-            .fill('none').addClass('cvat_canvas_threshold');
+        this.threshold = this.canvas
+            .rect(this.thresholdRectSize, this.thresholdRectSize)
+            .fill('none')
+            .addClass('cvat_canvas_threshold');
         this.threshold.center(x, y);
     }
 
@@ -92,6 +94,17 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if ((e.button === 0 || e.button === 2) && !e.altKey) {
                 e.preventDefault();
                 const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
+                const [prev] = this.interactionShapes.slice(-1);
+                if (this.interactionData.withThreshold && prev) {
+                    const [prevCx, prevCy] = [(prev as SVG.Circle).cx(), (prev as SVG.Circle).cy()];
+                    if (
+                        Math.abs(prevCx - cx) > this.thresholdRectSize / 2
+                        || Math.abs(prevCy - cy) > this.thresholdRectSize / 2
+                    ) {
+                        return;
+                    }
+                }
+
                 this.currentInteractionShape = this.canvas
                     .circle((consts.BASE_POINT_SIZE * 2) / this.geometry.scale)
                     .center(cx, cy)
@@ -222,12 +235,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     ) {
         this.onInteraction = (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean): void => {
             this.shapesWereUpdated = false;
-            onInteraction(
-                shapes,
-                shapesUpdated,
-                isDone,
-                this.threshold ? this.thresholdValue / 2 : null,
-            );
+            onInteraction(shapes, shapesUpdated, isDone, this.threshold ? this.thresholdRectSize / 2 : null);
         };
         this.canvas = canvas;
         this.geometry = geometry;
@@ -237,7 +245,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.currentInteractionShape = null;
         this.crosshair = new Crosshair();
         this.threshold = null;
-        this.thresholdValue = 100;
+        this.thresholdRectSize = 300;
         this.cursorPosition = {
             x: 0,
             y: 0,
@@ -252,6 +260,29 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.threshold) {
                 this.threshold.center(x, y);
             }
+
+            if (this.interactionShapes.length) {
+                const [prev] = this.interactionShapes.slice(-1);
+                const [prevCx, prevCy] = [(prev as SVG.Circle).cx(), (prev as SVG.Circle).cy()];
+
+                const xDiff = Math.abs(prevCx - x);
+                const yDiff = Math.abs(prevCy - y);
+                const inThreshold = xDiff < this.thresholdRectSize / 2 && yDiff < this.thresholdRectSize / 2;
+                if (inThreshold) {
+                    this.onInteraction(
+                        [
+                            ...this.prepareResult(),
+                            {
+                                points: [x - this.geometry.offset, y - this.geometry.offset],
+                                shapeType: 'points',
+                                button: 0,
+                            },
+                        ],
+                        true,
+                        false,
+                    );
+                }
+            }
         });
 
         this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
@@ -260,11 +291,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     const { x, y } = this.cursorPosition;
                     e.preventDefault();
                     if (e.deltaY > 0) {
-                        this.thresholdValue *= 6 / 5;
+                        this.thresholdRectSize *= 6 / 5;
                     } else {
-                        this.thresholdValue *= 5 / 6;
+                        this.thresholdRectSize *= 5 / 6;
                     }
-                    this.threshold.size(this.thresholdValue, this.thresholdValue);
+                    this.threshold.size(this.thresholdRectSize, this.thresholdRectSize);
                     this.threshold.center(x, y);
                 }
             }

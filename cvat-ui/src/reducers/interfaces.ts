@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
-import { Scissors } from 'utils/opencv-wrapper';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { MutableRefObject } from 'react';
 
 export type StringObject = {
@@ -174,7 +174,7 @@ export interface Model {
     };
 }
 
-export type OpenCVTool = Scissors;
+export type OpenCVTool = IntelligentScissors;
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',

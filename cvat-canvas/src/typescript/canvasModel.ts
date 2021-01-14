@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -70,6 +70,11 @@ export interface DrawData {
     redraw?: number;
 }
 
+export enum InteractionEnumStrategy {
+    ANY = 'any', // can remove any point
+    LAST = 'last', // can remove only the latest point
+}
+
 export interface InteractionData {
     enabled: boolean;
     shapeType?: string;
@@ -77,6 +82,7 @@ export interface InteractionData {
     minPosVertices?: number;
     minNegVertices?: number;
     withThreshold?: boolean;
+    removeStrategy?: InteractionEnumStrategy;
 }
 
 export interface InteractionResult {

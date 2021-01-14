@@ -47,7 +47,8 @@
 .cvat-group-control,
 .cvat-split-track-control,
 .cvat-issue-control,
-.cvat-tools-control {
+.cvat-tools-control,
+.cvat-opencv-control {
     border-radius: 3.3px;
     transform: scale(0.65);
     padding: 2px;
@@ -119,7 +120,7 @@
 
     .ant-tabs-tab {
         width: $grid-unit-size * 14;
-        text-align: center;
+        justify-content: center;
     }
 }
 

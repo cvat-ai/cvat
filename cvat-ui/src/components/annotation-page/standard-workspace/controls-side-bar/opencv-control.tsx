@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,18 +7,18 @@ import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
-import Icon, { ScissorOutlined, LoadingOutlined } from '@ant-design/icons';
+import Icon, { ScissorOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
 import Progress from 'antd/lib/progress';
-import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 
 import { OpenCVIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
-import openCVWrapper, { Scissors, ScissorsState } from 'utils/opencv-wrapper';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
     CombinedState, ActiveControl, OpenCVTool, ObjectType,
 } from 'reducers/interfaces';
@@ -52,7 +52,6 @@ interface State {
     initializationError: boolean;
     initializationProgress: number;
     activeLabelID: number;
-    processing: boolean;
 }
 
 const core = getCore();
@@ -91,28 +90,23 @@ const mapDispatchToProps = {
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
-    private activeTool: Scissors | null;
-    private toolState: ScissorsState | null;
+    private activeTool: IntelligentScissors | null;
     private interactiveStateID: number | null;
     private interactionIsDone: boolean;
-    private interactionIsAborted: boolean;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels } = props;
 
         this.activeTool = null;
-        this.toolState = null;
         this.interactiveStateID = null;
         this.interactionIsDone = false;
-        this.interactionIsAborted = false;
 
         this.state = {
-            libraryInitialized: true,
+            libraryInitialized: openCVWrapper.isInitialized,
             initializationError: false,
             initializationProgress: -1,
             activeLabelID: labels[0].id,
-            processing: false,
         };
     }
 
@@ -126,9 +120,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { isActivated } = this.props;
         if (!prevProps.isActivated && isActivated) {
             // reset flags when before using a tool
+            if (this.activeTool) {
+                this.activeTool.reset();
+            }
             this.interactiveStateID = null;
             this.interactionIsDone = false;
-            this.interactionIsAborted = false;
         }
     }
 
@@ -144,18 +140,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private cancelListener = async (): Promise<void> => {
-        const { processing } = this.state;
         const {
             fetchAnnotations, isActivated, jobInstance, frame,
         } = this.props;
 
         if (isActivated) {
-            if (processing && !this.interactionIsDone) {
-                // user pressed ESC
-                this.setState({ processing: false });
-                this.interactionIsAborted = true;
-            }
-
             if (this.interactiveStateID !== null) {
                 const state = this.getInteractiveState();
                 this.interactiveStateID = null;
@@ -171,7 +160,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const {
             fetchAnnotations, updateAnnotations, isActivated, jobInstance, frame, labels, curZOrder,
         } = this.props;
-        const { activeLabelID, processing } = this.state;
+        const { activeLabelID } = this.state;
         if (!isActivated || !this.activeTool) {
             return;
         }
@@ -179,60 +168,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const {
             shapesUpdated, isDone, threshold, shapes,
         } = (e as CustomEvent).detail;
+        const pressedPoints = convertShapesForInteractor(shapes).flat();
         this.interactionIsDone = isDone;
-        if (processing) return;
 
         try {
             let points: number[] = [];
             if (shapesUpdated) {
-                this.setState({ processing: true });
-                try {
-                    // Getting image data
-                    const canvas: HTMLCanvasElement | undefined = window.document.getElementById(
-                        'cvat_canvas_background',
-                    ) as HTMLCanvasElement | undefined;
-                    if (!canvas) {
-                        throw new Error('Element #cvat_canvas_background was not found');
-                    }
-
-                    const { width, height } = canvas;
-                    const context = canvas.getContext('2d');
-                    if (!context) {
-                        throw new Error('Canvas context is empty');
-                    }
-
-                    const imageData = context.getImageData(0, 0, width, height);
-
-                    // Handling via OpenCV.js
-                    const result = await this.activeTool.run(
-                        convertShapesForInteractor(shapes).flat(),
-                        imageData,
-                        threshold,
-                        this.toolState,
-                    );
-                    this.toolState = result.state;
-                    points = result.points;
-
-                    // Increasing number of points artificially
-                    let minNumberOfPoints = 1;
-                    // eslint-disable-next-line: eslintdot-notation
-                    if (this.activeTool.params.shape.shapeType === 'polyline') {
-                        minNumberOfPoints = 2;
-                    } else if (this.activeTool.params.shape.shapeType === 'polygon') {
-                        minNumberOfPoints = 3;
-                    }
-                    while (points.length < minNumberOfPoints * 2) {
-                        points.push(...points.slice(points.length - 2));
-                    }
-
-                    if (this.interactionIsAborted) {
-                        // user has cancelled interaction (for example pressed ESC)
-                        // while opencv was processing the request
-                        return;
-                    }
-                } finally {
-                    this.setState({ processing: false });
-                }
+                points = await this.runCVAlgorithm(pressedPoints, threshold);
             }
 
             if (this.interactiveStateID === null) {
@@ -266,7 +208,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     objectType: state.objectType,
                     label: state.label,
                     shapeType: state.shapeType,
-                    points: state.points,
+                    // need to recalculate without the latest sliding point
+                    points: points = await this.runCVAlgorithm(pressedPoints, threshold),
                     occluded: state.occluded,
                     zOrder: state.zOrder,
                 });
@@ -285,10 +228,57 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 description: error.toString(),
                 message: 'Processing error occured',
             });
-        } finally {
-            this.setState({ processing: false });
         }
     };
+
+    private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[]> {
+        // Getting image data
+        const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+            | HTMLCanvasElement
+            | undefined;
+        if (!canvas) {
+            throw new Error('Element #cvat_canvas_background was not found');
+        }
+
+        const { width, height } = canvas;
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new Error('Canvas context is empty');
+        }
+
+        const [x, y] = pressedPoints.slice(-2);
+        if (pressedPoints.length > 2) {
+            const [prevX, prevY] = pressedPoints.slice(-4, -2);
+            if (Math.abs(prevX - x) > threshold || Math.abs(prevY - y) > threshold) {
+                throw new Error('The point location is out of threshold, increase threshold or press point nearer');
+            }
+        }
+
+        const startX = Math.max(0, x - threshold);
+        const startY = Math.max(0, y - threshold);
+        const segmentWidth = Math.min(2 * threshold, width - startX);
+        const segmentHeight = Math.min(2 * threshold, height - startY);
+        const imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
+
+        if (!this.activeTool) return [];
+
+        // Handling via OpenCV.js
+        const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);
+
+        // Increasing number of points artificially
+        let minNumberOfPoints = 1;
+        // eslint-disable-next-line: eslintdot-notation
+        if (this.activeTool.params.shape.shapeType === 'polyline') {
+            minNumberOfPoints = 2;
+        } else if (this.activeTool.params.shape.shapeType === 'polygon') {
+            minNumberOfPoints = 3;
+        }
+        while (points.length < minNumberOfPoints * 2) {
+            points.push(...points.slice(points.length - 2));
+        }
+
+        return points;
+    }
 
     private renderDrawingContent(): JSX.Element {
         const { activeLabelID } = this.state;
@@ -311,8 +301,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         <Tooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
                                 onClick={() => {
-                                    this.activeTool = openCVWrapper.scissors();
-                                    this.toolState = null;
+                                    this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
                                     canvasInstance.cancel();
                                     onInteractionStart(this.activeTool, activeLabelID);
                                     canvasInstance.interact({
@@ -338,12 +327,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color' strong>
-                            OpenCV.js
+                            OpenCV
                         </Text>
                     </Col>
                 </Row>
                 {libraryInitialized ? (
-                    <Tabs type='card' tabBarGutter={8}>
+                    <Tabs tabBarGutter={8}>
                         <Tabs.TabPane key='drawing' tab='Drawing' className='cvat-opencv-control-tabpane'>
                             {this.renderDrawingContent()}
                         </Tabs.TabPane>
@@ -400,7 +389,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public render(): JSX.Element {
         const { isActivated, canvasInstance } = this.props;
-        const { processing } = this.state;
         const dynamcPopoverPros = isActivated ?
             {
                 overlayStyle: {
@@ -421,26 +409,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             };
 
         return (
-            <>
-                <Modal
-                    title='The request is being processed'
-                    zIndex={Number.MAX_SAFE_INTEGER}
-                    visible={processing}
-                    closable={false}
-                    footer={[]}
-                >
-                    <Text>OpenCV handles your request. Please wait..</Text>
-                    <LoadingOutlined style={{ marginLeft: '10px' }} />
-                </Modal>
-                <Popover
-                    {...dynamcPopoverPros}
-                    placement='right'
-                    overlayClassName='cvat-opencv-control-popover'
-                    content={this.renderContent()}
-                >
-                    <Icon {...dynamicIconProps} component={OpenCVIcon} />
-                </Popover>
-            </>
+            <Popover
+                {...dynamcPopoverPros}
+                placement='right'
+                overlayClassName='cvat-opencv-control-popover'
+                content={this.renderContent()}
+            >
+                <Icon {...dynamicIconProps} component={OpenCVIcon} />
+            </Popover>
         );
     }
 }
