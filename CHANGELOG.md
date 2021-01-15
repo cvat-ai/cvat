@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Kibana startup initialization (<https://github.com/openvinotoolkit/cvat/pull/2659>)
+- The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
 
 ### Security
 -

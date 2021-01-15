@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.13.3",
+  "version": "1.13.4",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -58,7 +58,7 @@
     "@types/react-router-dom": "^5.1.6",
     "@types/react-share": "^3.0.3",
     "@types/redux-logger": "^3.0.8",
-    "antd": "^4.9.1",
+    "antd": "^4.10.2",
     "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "file:../cvat-canvas",
     "cvat-core": "file:../cvat-core",
@@ -68,7 +68,6 @@
     "moment": "^2.29.1",
     "platform": "^1.3.6",
     "prop-types": "^15.7.2",
-    "rc-virtual-list": "^3.2.3",
     "react": "^16.14.0",
     "react-color": "^2.19.3",
     "react-cookie": "^4.0.3",
