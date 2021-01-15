@@ -1,0 +1,51 @@
+name: CI
+on:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+      - name: Build CVAT
+        env:
+          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+          CONTAINER_COVERAGE_DATA_DIR: '/coverage_data'
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
+          docker-compose up -d
+          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+      - name: Code instrumentation
+        run: |
+          npm ci
+          npm run coverage
+          docker-compose up -d --build
+      - name: End-to-end testing
+        run: |
+          cd ./tests
+          npm ci
+          npx cypress run --headless --browser chrome
+      - name: Collect coverage data
+        env:
+          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
+          COVERALLS_SERVICE_NAME: github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mv ./tests/.nyc_output ./
+          npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
