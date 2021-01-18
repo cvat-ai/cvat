@@ -1,0 +1,28 @@
+name: CI-nightly
+on:
+  schedule:
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+      - name: Build CVAT
+        env:
+          DJANGO_SU_NAME: "admin"
+          DJANGO_SU_EMAIL: "admin@localhost.company"
+          DJANGO_SU_PASSWORD: "12qwaszx"
+          API_ABOUT_PAGE: "localhost:8080/api/v1/server/about"
+        run: |
+          docker-compose -f docker-compose.yml -f ./tests/docker-compose.email.yml up -d --build
+          /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
+          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+      - name: End-to-end testing
+        run: |
+          cd ./tests
+          npm ci
+          npm run cypress:run:firefox
