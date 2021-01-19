@@ -571,3 +571,8 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
 }
+
+export enum DimensionType {
+    DIM_3D = '3d',
+    DIM_2D = '2d',
+}

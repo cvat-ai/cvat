@@ -26,7 +26,7 @@
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-security": "^1.4.0",
     "eslint-plugin-jest": "^24.1.0",
-    "jest": "^24.8.0",
+    "jest": "^26.6.3",
     "jest-junit": "^6.4.0",
     "jsdoc": "^3.6.4",
     "webpack": "^4.31.0",

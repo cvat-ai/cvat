@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ describe('Check server availability', () => {
     });
 
     it('"/auth/login" contains in the URL', () => {
-        cy.url({ timeout: 8000 }).should('include', '/auth/login');
+        cy.url().should('include', '/auth/login');
     });
 
     it('"Sign in" button is exists', () => {

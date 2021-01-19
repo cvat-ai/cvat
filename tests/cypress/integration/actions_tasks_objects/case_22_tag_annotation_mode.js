@@ -19,7 +19,7 @@ context('Tag annotation mode.', () => {
 
     function checkPresenceFrameTags() {
         cy.get('.cvat-tag-annotation-sidebar-frame-tags').within(() => {
-            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('exist');
+            cy.get('.cvat-tag-annotation-sidebar-frame-tag-label').should('exist');
         });
     }
 
