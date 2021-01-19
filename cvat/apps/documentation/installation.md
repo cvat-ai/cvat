@@ -373,7 +373,7 @@ This depends on the email server you are using and is not covered in this tutori
 [Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
 for details.
 
-### Deploy secure CVAT instance with HTTPS certificates (issued by let's encrypt) to cloud instance.
+### Deploy secure CVAT instance with HTTPS certificates (issued by let's encrypt) to cloud instance
 
 #### Prerequisites
 
@@ -394,7 +394,7 @@ There are multiple approaches. Our approach suggests:
 We will go through the following sequence of steps to get CVAT over HTTPS:
 
 - Install [acme.sh](https://github.com/acmesh-official/acme.sh) on the virtual instance (docker host).
-- Configure Nginx site template `HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` used in `cvat_proxy` container to pass one of the [ACME challenges](https://letsencrypt.org/docs/challenge-types/) - webroot.
+- Configure Nginx site template `HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` used in `cvat_proxy` container.
 - Deploy CVAT services in the most common way with docker-compose utilizes default HTTP scheme.
 - Create the https certificates with `acme.sh` client.
 - Reconfigure Nginx to serve over HTTPS.
@@ -422,7 +422,8 @@ mkdir -p $HOME/cvat/letsencrypt-webroot/.well-known/acme-challenge
 
 Create `docker-compose.override.yml` in repo root like follows:
 
-> modify CVAT_HOST with your own domain name (nginx tests the request’s header field “Host” to determine which server the request should be routed to)
+> modify CVAT_HOST with your own domain name
+> (nginx tests the request’s header field “Host” to determine which server the request should be routed to)
 
 ```yaml
 version: '3.3'
@@ -454,7 +455,9 @@ Add a location to server with `server_name ${CVAT_HOST};` ahead others:
     }
 ```
 
-Make the changes where necessary, e.g. base.py or somewhere else and build the containers with new configurations updated in `docker-compose.override.yml`
+Make the changes where necessary, e.g. base.py or somewhere else.
+
+Build the containers with new configurations updated in `docker-compose.override.yml`
 
 E.g. including `analytics` module:
 
@@ -477,7 +480,7 @@ At this point your deployment is up and running, ready for run acme-challenge fo
 
 ###### Create certificate files using an ACME challenge on docker host
 
-**Prepare certificates.**
+####### Prepare certificates
 
 Point you shell in cvat repository directory, usually `cd $HOME/cvat` on docker host.
 
@@ -495,24 +498,26 @@ If certificates is issued a successful we can test a renew:
 ~/.acme.sh/acme.sh --renew --force --staging -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
 ```
 
-**Remove test certificate, if success:**
+####### Remove test certificate, if success
 
 ```
 ~/.acme.sh/acme.sh --remove -d CVAT.example.com --debug
 rm -r /root/.acme.sh/CVAT.example.com
 ```
 
-**Issue a production certificate:**
+####### Issue a production certificate
 ```
 ~/.acme.sh/acme.sh --issue -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
 ```
 
-**Install production certificate and a user cron job (`crontab -e`) for update it:**
+####### Install production certificate and a user cron job (`crontab -e`) for update it
 
-This will copy necessary certificate files to a permanent directory for serve (according to acme.sh [documentation](https://github.com/acmesh-official/acme.sh#3-install-the-cert-to-apachenginx-etc))
+This will copy necessary certificate files to a permanent directory for serve.
+According to acme.sh [documentation](https://github.com/acmesh-official/acme.sh#3-install-the-cert-to-apachenginx-etc)
 
-Additionally, we must create a directory for our domain. Acme supports a valid install configuration options in domain config file, e.g. `~/.acme.sh/CVAT.example.com/lsoft-cvat.cvisionlab.com.conf`.
-
+Additionally, we must create a directory for our domain.
+Acme supports a valid install configuration options in domain config file
+E.g. `~/.acme.sh/CVAT.example.com/lsoft-cvat.cvisionlab.com.conf`.
 
 ```
 mkdir /etc/ssl/private/CVAT.example.com
@@ -530,7 +535,7 @@ Down the cvat_proxy container for setup https with issued certificate.
 docker stop cvat_proxy
 ```
 
-**Reconfigure nginx for use certificates.**
+####### Reconfigure nginx for use certificates
 
 Bring the configuration file `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` to the following form:
 
@@ -540,7 +545,9 @@ Bring the configuration file `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` t
 
 Final configuration file should look like:
 
-> for a more accurate proxy configuration according to upstream, do not neglect the verification with this configuration [file](https://github.com/openvinotoolkit/cvat/blob/v1.2.0/cvat_proxy/conf.d/cvat.conf.template).
+> for a more accurate proxy configuration according to upstream,
+> do not neglect the verification with
+> this configuration [file](https://github.com/openvinotoolkit/cvat/blob/v1.2.0/cvat_proxy/conf.d/cvat.conf.template).
 
 ```
 server {
