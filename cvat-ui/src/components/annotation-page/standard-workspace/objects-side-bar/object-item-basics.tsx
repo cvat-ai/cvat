@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -110,6 +110,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         labels={labels}
                         value={labelID}
                         onChange={changeLabel}
+                        className='cvat-objects-sidebar-state-item-label-selector'
                     />
                 </Tooltip>
             </Col>

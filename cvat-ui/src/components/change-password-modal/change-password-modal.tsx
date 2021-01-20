@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,10 +43,13 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.Element {
-    const { fetching, onChangePassword, visible, onClose } = props;
+    const {
+        fetching, onChangePassword, visible, onClose,
+    } = props;
 
     return (
         <Modal
+            className='cvat-modal-change-password'
             title={<Title level={3}>Change password</Title>}
             okType='primary'
             okText='Submit'

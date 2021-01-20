@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -107,6 +107,7 @@ export default function Feedback(): JSX.Element {
                 title={<Text className='cvat-text-color'>Help to make CVAT better</Text>}
                 content={renderContent()}
                 visible={visible}
+                overlayClassName='cvat-feedback-popover'
             >
                 <Button
                     style={visible ? { color: '#ff4d4f' } : {}}

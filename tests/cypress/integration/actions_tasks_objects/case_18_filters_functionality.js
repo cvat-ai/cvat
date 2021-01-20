@@ -69,6 +69,7 @@ context('Filters functionality.', () => {
     };
 
     let cvatCanvasShapeList = [];
+    let cvatFiltesList = [];
 
     function checkingFilterApplication(ids) {
         for (let i = 0; i < cvatCanvasShapeList.length; i++) {
@@ -101,48 +102,82 @@ context('Filters functionality.', () => {
                 }
             });
         });
-
         it('Filter: shape=="polygon". Only the polygon exist.', () => {
-            cy.writeFilterValue(false, 'shape=="polygon"'); // #cvat_canvas_shape_1,4, #cvat-objects-sidebar-state-item-1,4
+            const textFilter = 'shape=="polygon"';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(false, textFilter); // #cvat_canvas_shape_1,4, #cvat-objects-sidebar-state-item-1,4
             checkingFilterApplication([1, 4]);
         });
         it('Filter: shape=="polygon" | shape=="rectangle". Only the rectangle and polygon exist.', () => {
-            cy.writeFilterValue(true, 'shape=="polygon" | shape=="rectangle"'); // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
+            const textFilter = 'shape=="polygon" | shape=="rectangle"';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter); // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
             checkingFilterApplication([1, 2, 3, 4]);
         });
         it('Filter: type=="shape". Only the objects with shape type exist.', () => {
-            cy.writeFilterValue(true, 'type=="shape"'); // #cvat_canvas_shape_1,3, #cvat-objects-sidebar-state-item-1,3
+            const textFilter = 'type=="shape"';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter); // #cvat_canvas_shape_1,3, #cvat-objects-sidebar-state-item-1,3
             checkingFilterApplication([1, 3]);
         });
         it('Filter: label=="track 4 points". Only the polygon exist.', () => {
-            cy.writeFilterValue(true, `label=="${labelTrack}"`); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            const textFilter = `label=="${labelTrack}"`;
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
             checkingFilterApplication([2, 4]);
         });
         it('Filter: attr["count points"] == "4". Only the objects with same attr exist.', () => {
-            cy.writeFilterValue(true, 'attr["count points"] == "4"'); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            const textFilter = 'attr["count points"] == "4"';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
             checkingFilterApplication([2, 4]);
         });
         it('Filter: width >= height. All objects exist.', () => {
-            cy.writeFilterValue(true, 'width >= height'); // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
+            const textFilter = 'width >= height';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter); // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
             checkingFilterApplication([1, 2, 3, 4]);
         });
         it('Filter: clientID == 4. Only the objects with same id exist (polygon track).', () => {
-            cy.writeFilterValue(true, 'clientID == 4'); // #cvat_canvas_shape_7, #cvat-objects-sidebar-state-item-4
+            const textFilter = 'clientID == 4';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter); // #cvat_canvas_shape_7, #cvat-objects-sidebar-state-item-4
             checkingFilterApplication([4]);
         });
         it('Filter: (label=="shape 3 points" & attr["polylines"]==true) | (label=="track 4 points" & width > 60). Only the objects polygon and rectangle exist.', () => {
-            cy.writeFilterValue(
-                true,
-                '(label=="shape 3 points" & attr["polylines"]==true) | (label=="track 4 points" & width > 60)',
-            ); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            const textFilter =
+                '(label=="shape 3 points" & attr["polylines"]==true) | (label=="track 4 points" & width > 60)';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
             checkingFilterApplication([2, 4]);
         });
         it('Filter: (( label==["shape 3 points"]) | (attr["type"]=="shape" & width > 50)) & (height > 50 & (clientID == serverID))). All objects not exist.', () => {
-            cy.writeFilterValue(
-                true,
-                '(( label==["points shape"]) | (attr["type"]=="shape" & width > 50)) & (height > 50 & (clientID == serverID)))',
-            );
+            const textFilter =
+                '(( label==["points shape"]) | (attr["type"]=="shape" & width > 50)) & (height > 50 & (clientID == serverID)))';
+            cvatFiltesList.push(textFilter);
+            cy.writeFilterValue(true, textFilter);
             checkingFilterApplication([]);
+        });
+        it('Verify to show all filters', () => {
+            cvatFiltesList.forEach(function (filterValue) {
+                cy.contains('.cvat-annotations-filters-input-history-element', filterValue);
+            });
+        });
+        it('Select filter: type=="shape"', () => {
+            cy.selectFilterValue(true, 'type=="shape"'); // #cvat_canvas_shape_1,3, #cvat-objects-sidebar-state-item-1,3
+            checkingFilterApplication([1, 3]);
+        });
+        it('Select filter: clientID == 4', () => {
+            cy.selectFilterValue(true, 'clientID == 4'); // #cvat_canvas_shape_7, #cvat-objects-sidebar-state-item-4
+            checkingFilterApplication([4]);
+        });
+        it('Select two filters', () => {
+            const textFirstFilter =
+                '(label=="shape 3 points" & attr["polylines"]==true) | (label=="track 4 points" & width > 60)'; // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            const textSecondFilter = 'shape=="polygon"'; // #cvat_canvas_shape_1,4, #cvat-objects-sidebar-state-item-1,4
+            cy.selectFilterValue(true, textFirstFilter);
+            cy.selectFilterValue(false, textSecondFilter);
+            checkingFilterApplication([1, 2, 4]);
         });
     });
 });

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -146,6 +146,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         login: {
                             message: 'Could not login on the server',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-login-failed',
                         },
                     },
                 },
@@ -222,6 +223,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         changePassword: {
                             message: 'Could not change password',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-change-password-failed',
                         },
                     },
                 },
@@ -374,6 +376,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         updating: {
                             message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-task-failed',
                         },
                     },
                 },
@@ -410,6 +413,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not delete the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-task-failed',
                         },
                     },
                 },
@@ -425,6 +429,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         creating: {
                             message: 'Could not create the task',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-task-failed',
                         },
                     },
                 },
@@ -455,6 +460,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         creating: {
                             message: 'Could not create the project',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-project-failed',
                         },
                     },
                 },
@@ -473,6 +479,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not update ' +
                                 `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-project-failed',
                         },
                     },
                 },
@@ -491,6 +498,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not delete ' +
                                 `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-project-failed',
                         },
                     },
                 },
@@ -686,6 +694,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         saving: {
                             message: 'Could not save annotations',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-save-annotations-failed',
                         },
                     },
                 },
@@ -701,6 +710,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         updating: {
                             message: 'Could not update annotations',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-annotations-failed',
                         },
                     },
                 },

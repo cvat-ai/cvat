@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ function SetupTagPopover(props: Props): JSX.Element {
     } = props;
 
     return (
-        <div className='cvat-draw-shape-popover-content'>
+        <div className='cvat-setup-tag-popover-content'>
             <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color' strong>

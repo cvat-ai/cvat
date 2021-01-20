@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,9 +25,13 @@ function ObjectSwitcher(props: Props): JSX.Element {
 
     const title = `${currentLabel} ${clientID} [${currentIndex + 1}/${objectsCount}]`;
     return (
-        <div className='attribute-annotation-sidebar-object-switcher'>
+        <div className='cvat-attribute-annotation-sidebar-object-switcher'>
             <Tooltip title={`Previous object ${normalizedKeyMap.PREVIOUS_OBJECT}`} mouseLeaveDelay={0}>
-                <Button disabled={objectsCount <= 1} onClick={() => nextObject(-1)}>
+                <Button
+                    className='cvat-attribute-annotation-sidebar-object-switcher-left'
+                    disabled={objectsCount <= 1}
+                    onClick={() => nextObject(-1)}
+                >
                     <LeftOutlined />
                 </Button>
             </Tooltip>
@@ -37,7 +41,11 @@ function ObjectSwitcher(props: Props): JSX.Element {
                 <Text strong>{`[${currentIndex + 1}/${objectsCount}]`}</Text>
             </Tooltip>
             <Tooltip title={`Next object ${normalizedKeyMap.NEXT_OBJECT}`} mouseLeaveDelay={0}>
-                <Button disabled={objectsCount <= 1} onClick={() => nextObject(1)}>
+                <Button
+                    className='cvat-attribute-annotation-sidebar-object-switcher-right'
+                    disabled={objectsCount <= 1}
+                    onClick={() => nextObject(1)}
+                >
                     <RightOutlined />
                 </Button>
             </Tooltip>

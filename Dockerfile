@@ -72,7 +72,10 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
         apache2 \
+        ca-certificates \
         libapache2-mod-xsendfile \
+        libgomp1 \
+        libgl1 \
         supervisor \
         libldap-2.4-2 \
         libsasl2-2 \

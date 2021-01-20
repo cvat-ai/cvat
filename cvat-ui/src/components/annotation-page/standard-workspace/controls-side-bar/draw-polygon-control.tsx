@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ import { PolygonIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     canvasInstance: Canvas;
@@ -19,6 +20,7 @@ interface Props {
 
 function DrawPolygonControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
+    const CustomPopover = withVisibilityHandling(Popover, 'draw-polygon');
 
     const dynamcPopoverPros = isDrawing ?
         {
@@ -40,14 +42,14 @@ function DrawPolygonControl(props: Props): JSX.Element {
         };
 
     return (
-        <Popover
+        <CustomPopover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POLYGON} />}
         >
             <Icon {...dynamicIconProps} component={PolygonIcon} />
-        </Popover>
+        </CustomPopover>
     );
 }
 

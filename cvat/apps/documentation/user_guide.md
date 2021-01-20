@@ -3,6 +3,7 @@
     - [Authorization](#authorization)
     - [Administration panel](#administration-panel)
     - [Creating an annotation task](#creating-an-annotation-task)
+    - [Projects](#projects)
     - [Models](#models)
     - [Search](#search)
   - [Interface of the annotation tool](#interface-of-the-annotation-tool)
@@ -34,6 +35,7 @@
   - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with tags](#annotation-with-tags)
   - [Track mode with polygons](#track-mode-with-polygons)
+  - [Review](#review)
   - [Automatic annotation](#automatic-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
@@ -69,7 +71,7 @@ computer vision tasks developed by our team.
   [Django administration panel](http://localhost:8080/admin) to assign correct
   groups to the user. Please use the command below to create an admin account:
 
-  `docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'`
+  `docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'`
 
 - If you want to create a non-admin account, you can do that using the link below
   on the login page. Don't forget to modify permissions for the new user in the
@@ -89,7 +91,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 ### Creating an annotation task
 
-1.  Create an annotation task pressing `Create new task` button on the main page.
+1.  Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
     ![](static/documentation/images/image004.jpg)
 
 1.  Specify parameters of the task:
@@ -100,7 +102,11 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     ![](static/documentation/images/image005.jpg)
 
-    **Labels**. There are two ways of working with labels:
+    **Projects** The project that this task will be related with.
+
+    ![](static/documentation/images/image193.jpg)
+
+    **Labels**. There are two ways of working with labels (available only if the task is not related to the project):
 
     - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
       ![](static/documentation/images/image123.jpg)
@@ -229,11 +235,11 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Issue tracker**. Specify full issue tracker's URL if it's necessary.
 
     Push `Submit` button and it will be added into the list of annotation tasks.
-    Then, the created task will be displayed on a dashboard:
+    Then, the created task will be displayed on a tasks page:
 
     ![](static/documentation/images/image006_detrac.jpg)
 
-1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
+1.  The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
     Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
     Each button is responsible for a in menu `Actions` specific function:
 
@@ -257,7 +263,6 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - [CVAT](/cvat/apps/documentation/xml_format.md) accepts both video and image sub-formats.
     - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
-    - `Open bug tracker` — opens a link to Issue tracker.
     - `Delete` — delete task.
 
     Push `Open` button to go to task details.
@@ -271,7 +276,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       1. Change the task’s title.
       1. Open `Actions` menu.
       1. Change issue tracker or open issue tracker if it is specified.
-      1. Change labels.
+      1. Change labels (available only if the task is not related to the project).
          You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode.
          By clicking `Copy` you will copy the labels to the clipboard.
       1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
@@ -286,6 +291,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - Duration — is the amount of time the job is being worked.
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
+      - Reviewer – a user assigned to carry out the review, read more in the [review](#review) section.
       - `Copy`. By clicking Copy you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
 
@@ -296,6 +302,36 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     to annotate first images. Other frames will be loaded in background.
 
     ![](static/documentation/images/image007_detrac.jpg)
+
+### Projects
+
+At CVAT, you can create a project containing tasks of the same type. All tasks related to the project will inherit a list of labels.
+
+To create a project, go to the projects section by clicking on the `Projects` item in the top menu. 
+On the projects page, you can see a list of projects, use a search, or create a new project by clicking `Create New Project`.
+
+![](static/documentation/images/image190.jpg)
+
+You can change: the name of the project, the list of labels (which will be used for tasks created as parts of this project) and a link to the issue.
+
+![](static/documentation/images/image191.jpg)
+
+Once created, the project will appear on the projects page. To open a project, just click on it.
+
+![](static/documentation/images/image192_mapillary_vistas.jpg)
+
+Here you can do the following:
+
+1. Change the project's title.
+1. Open the `Actions` menu.
+1. Change issue tracker or open issue tracker if it is specified.
+1. Change labels.
+   You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
+   You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
+1. Assigned to — is used to assign a project to a person. Start typing an assignee's name and/or choose the right person out of the dropdown list.
+1. `Tasks` — is a list of all tasks for a particular project.
+
+You can remove the project and all related tasks through the Action menu.
 
 ### Models
 
@@ -720,6 +756,9 @@ Button assignment:
   - [MS COCO](http://cocodataset.org/#format-data)
   - [YOLO](https://pjreddie.com/darknet/yolo/)
 - `Open the task` — opens a page with details about the task.
+- `Request a review` - calls up the form to submit the job for a review, read more in the [review](#review) section.
+- `Finish the job` - changes the status of the job to `completed` and returns to the task page without review.
+- `Submit the review` - (available during the review) calls up the form to submit a review, read more in the [review](#review) section.
 
 #### Save Work
 
@@ -780,11 +819,10 @@ Open the job info.
 
 ![](static/documentation/images/image144_detrac.jpg)
 
-- Job status: `annotation`, `validation` or `completed` task
-
 _Overview_:
 
 - `Assinger` - the one to whom the job is assigned.
+- `Reviewer` – a user assigned to carry out the review, read more in the [review](#review) section.
 - `Start Frame` - the number of the first frame in this job.
 - `End Frame` - the number of the last frame in this job.
 - `Frames` - the total number of all frames in the job.
@@ -827,6 +865,7 @@ Switching between user interface modes.
 |![](static/documentation/images/image170.jpg)|`Points` |[Annotation with points](#annotation-with-points) |
 |![](static/documentation/images/image176.jpg)|`Cuboid` |[Annotation with cuboids](#annotation-with-cuboids) |
 |![](static/documentation/images/image171.jpg)|`Tag` |[Annotation with tags](#annotation-with-tag) |
+|![](static/documentation/images/image195.jpg)|`Open an issue` |[Review](#review) (available only in review mode) |
 
 **Edit block** - contains tools for editing tracks and shapes.
 |Icon |Description |Links to section |
@@ -1022,7 +1061,7 @@ Shapes that were created in the track mode, have extra navigation buttons.
 
   ![](static/documentation/images/image057.jpg)
 
-You can use the `` Split '' function to split one track into two tracks:
+You can use the `Split` function to split one track into two tracks:
 
 ![](static/documentation/images/gif010_detrac.gif)
 
@@ -1382,6 +1421,39 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
 
 There is no need to redraw the polygon every time using `Shift+N`,
 instead you can simply move the points or edit a part of the polygon by pressing `Shift+Click`.
+
+## Review
+
+A special mode to check the annotation allows you to point to an object or area in the frame containing an error.
+To go into review mode, you need to select `Request a review` in the menu and assign the user to run a check.
+
+![](static/documentation/images/image194.jpg)
+
+After that, the job status will be changed to `validation`
+and the reviewer will be able to open the task in review mode.
+Review mode is a UI mode, there is a special "issue" tool which you can use to identify objects
+or areas in the frame and describe the problem.
+
+- To do this, first click `open an issue` icon on the controls sidebar:
+
+  ![](static/documentation/images/image195.jpg)
+
+- Then click on an object in the frame to highlight the object or highlight the area by holding the left mouse button
+  and describe the problem. The object or area will be shaded in red.
+- The created issue will appear in the workspace and in the `issues` tab on the objects sidebar.
+- After you save the annotation, other users will be able to see the problem, comment on each issue
+  and change the status of the problem to `resolved`.
+- You can use the arrows on the issues tab to navigate the frames that contain problems.
+
+  ![](static/documentation/images/image196_detrac.jpg)
+
+- Once all the problems are marked, save the annotation, open the menu and select "submit the review". After that you'll see a form containing the verification statistics, here you can give an assessment of the job and choose further actions:
+
+  - Accept - changes the status of the job to `completed`.
+  - Review next – passes the job to another user for re-review.
+  - Reject - changes the status of the job to `annotation`.
+
+  ![](static/documentation/images/image197.jpg)
 
 ## Automatic annotation
 

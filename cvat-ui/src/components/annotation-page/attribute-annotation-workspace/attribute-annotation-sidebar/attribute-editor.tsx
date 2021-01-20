@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -122,7 +122,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         element = renderText();
     }
 
-    return <div className='attribute-annotation-sidebar-attr-editor'>{element}</div>;
+    return <div className='cvat-attribute-annotation-sidebar-attr-editor'>{element}</div>;
 }
 
 interface ListParameters {

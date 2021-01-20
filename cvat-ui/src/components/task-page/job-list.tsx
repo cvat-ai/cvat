@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -264,7 +264,13 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     <Text className='cvat-text-color'>{`${completed} of ${data.length} jobs`}</Text>
                 </Col>
             </Row>
-            <Table className='cvat-task-jobs-table' columns={columns} dataSource={data} size='small' />
+            <Table
+                className='cvat-task-jobs-table'
+                rowClassName={() => 'cvat-task-jobs-table-row'}
+                columns={columns}
+                dataSource={data}
+                size='small'
+            />
         </div>
     );
 }
