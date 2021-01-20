@@ -1,0 +1,5 @@
+[core]
+project = phu-le-it
+
+[auth]
+credential_file_override = /tmp/certs/phu-le-it-913bd04a3d75.json

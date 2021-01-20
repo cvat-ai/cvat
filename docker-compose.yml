@@ -59,10 +59,22 @@ services:
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
 
+  cvat_api_gcp:
+    container_name: cvat_api_gcp
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    volumes:
+      - ./cvat-api-gcp/certs:/tmp/certs
+      - ./cvat-api-gcp/configurations:/root/.config/gcloud/configurations
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    command: /bin/sh -c "while :; do sleep 10; done"
+
   cvat_ui:
     container_name: cvat_ui
     image: cvat/ui
     restart: always
+    volumes:
+      - ./cvat-ui-gcp/build:/tmp/build
     build:
       context: .
       args:
@@ -78,6 +90,17 @@ services:
           - ui
     depends_on:
       - cvat
+
+  cvat_ui_gcp:
+    container_name: cvat_ui_gcp
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    volumes:
+      - ./cvat-ui-gcp/app.yaml:/app/app.yaml
+      - ./cvat-ui-gcp/build:/app/build
+      - ./cvat-ui-gcp/certs:/tmp/certs
+      - ./cvat-ui-gcp/configurations:/root/.config/gcloud/configurations
+    working_dir: /app
+    command: /bin/sh -c "while :; do sleep 10; done"
 
   cvat_proxy:
     container_name: cvat_proxy

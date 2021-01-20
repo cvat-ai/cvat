@@ -1,0 +1,5 @@
+[core]
+project = phu-le-it
+
+[auth]
+credential_file_override = /tmp/certs/cvat-api-deployer-9ec45e7c1310.json
