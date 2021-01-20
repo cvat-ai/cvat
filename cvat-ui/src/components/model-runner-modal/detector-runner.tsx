@@ -21,6 +21,7 @@ import { Model, StringObject } from 'reducers/interfaces';
 
 import { clamp } from 'utils/math';
 import consts from 'consts';
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     withCleanup: boolean;
@@ -127,7 +128,8 @@ function DetectorRunner(props: Props): JSX.Element {
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
-                        placeholder='Select a model'
+                        placeholder={task.dimension === DimensionType.DIM_2D ? 'Select a model' : 'No models available'}
+                        disabled={task.dimension !== DimensionType.DIM_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
                             const newmodel = models.filter((_model): boolean => _model.id === _modelID)[0];
