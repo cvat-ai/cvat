@@ -10,7 +10,8 @@ export interface IntelligentScissorsParams {
     };
     canvas: {
         shapeType: 'points';
-        withThreshold: boolean;
+        enableThreshold: boolean;
+        enableSliding: boolean;
         minPosVertices: number;
     };
 }
@@ -163,7 +164,8 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             },
             canvas: {
                 shapeType: 'points',
-                withThreshold: true,
+                enableThreshold: true,
+                enableSliding: true,
                 minPosVertices: 1,
             },
         };

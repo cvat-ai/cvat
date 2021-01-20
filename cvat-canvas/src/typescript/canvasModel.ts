@@ -81,7 +81,8 @@ export interface InteractionData {
     crosshair?: boolean;
     minPosVertices?: number;
     minNegVertices?: number;
-    withThreshold?: boolean;
+    enableThreshold?: boolean;
+    enableSliding?: boolean;
     removeStrategy?: InteractionEnumStrategy;
 }
 
