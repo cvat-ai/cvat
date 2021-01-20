@@ -130,6 +130,10 @@
     padding: 5px;
     height: 80px;
 
+    > div:nth-child(1) > div:nth-child(1) {
+        height: 32px;
+    }
+
     > div:nth-child(2) {
         margin-top: $grid-unit-size;
 
