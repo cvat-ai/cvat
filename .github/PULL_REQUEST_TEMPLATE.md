@@ -1,5 +1,5 @@
 <!---
-Copyright (C) 2020 Intel Corporation
+Copyright (C) 2020-2021 Intel Corporation
 
 SPDX-License-Identifier: MIT
 -->
@@ -45,7 +45,7 @@ If you're unsure about any of these, don't hesitate to ask. We're here to help! 
 - [ ] I have updated the license header for each file (see an example below)
 
 ```python
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 ```
