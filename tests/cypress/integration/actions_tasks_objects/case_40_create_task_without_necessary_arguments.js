@@ -27,6 +27,13 @@ context('Try to create a task without necessary arguments.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
     });
 
+    after(() => {
+        cy.goToTaskList();
+        cy.getTaskID(taskName).then(($taskID) => {
+            cy.deleteTask(taskName, $taskID);
+        });
+    });
+
     describe(`Testing "${labelName}"`, () => {
         it('Go to create task page.', () => {
             cy.get('#cvat-create-task-button').click();
