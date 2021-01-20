@@ -6,16 +6,36 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
 import { FilterOutlined, PlusOutlined, QuestionOutlined } from '@ant-design/icons';
+import {
+    changeAnnotationsFilters as changeAnnotationsFiltersAction,
+    fetchAnnotationsAsync,
+} from 'actions/annotation-actions';
 import { Popconfirm, Tag } from 'antd';
 import React, {
     ReactElement, useEffect, useRef, useState,
 } from 'react';
+import { connect } from 'react-redux';
 import { v4 as uuidv4 } from 'uuid';
 import AnnotationFilterItem from '../annotation-filter-item/annotation-filter-item';
 import AnnotationFilterPanel from '../annotation-filter-panel/annotation-filter-panel';
 import './annotation-filter-pane.scss';
 
-const AnnotationFilterPane = (): ReactElement => {
+interface DispatchToProps {
+    changeAnnotationsFilters(value: any): void;
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        changeAnnotationsFilters(value: any) {
+            dispatch(changeAnnotationsFiltersAction(value));
+            dispatch(fetchAnnotationsAsync());
+        },
+    };
+}
+
+const AnnotationFilterPane = (props: DispatchToProps): ReactElement => {
+    const { changeAnnotationsFilters } = props;
+
     const [editItem, setEditItem] = useState();
     const [filters, setFilters] = useState([] as any);
     const [filterPanelVisible, setFilterPanelVisible] = useState(false);
@@ -39,6 +59,8 @@ const AnnotationFilterPane = (): ReactElement => {
     };
 
     useEffect(() => {
+        const filtersStringified = filtersPaneRef.current?.innerText.replace(/(?:\r\n|\r|\n)/g, '');
+        changeAnnotationsFilters(filters.length ? [filtersStringified] : []);
         scrollFiltersToBottom();
     }, [filters]);
 
@@ -73,8 +95,6 @@ const AnnotationFilterPane = (): ReactElement => {
                 ref={filtersPaneRef}
                 className='annotation-filters-pane'
                 onClick={() => {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                    filters.length && console.log(filtersPaneRef.current?.innerText.replace(/(?:\r\n|\r|\n)/g, '')); // TMP
                     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                     !filters.length && setFilterPanelVisible(true);
                 }}
@@ -139,4 +159,4 @@ const AnnotationFilterPane = (): ReactElement => {
     );
 };
 
-export default AnnotationFilterPane;
+export default connect(null, mapDispatchToProps)(AnnotationFilterPane);
