@@ -10,14 +10,13 @@
     - [Advanced settings](#advanced-settings)
     - [Share path](#share-path)
     - [Email verification](#email-verification)
-    - [Serving over HTTPS](#serving-over-https)
+    - [Deploy secure CVAT instance with HTTPS](#deploy-secure-cvat-instance-with-https)
       - [Prerequisites](#prerequisites)
       - [Roadmap](#roadmap)
       - [Step-by-step instructions](#step-by-step-instructions)
-        - [1. Make the proxy listen on standard port 80 and prepare nginx for the ACME challenge via webroot method](#1-make-the-proxy-listen-on-standard-port-80-and-prepare-nginx-for-the-acme-challenge-via-webroot-method)
-        - [2. Setting up HTTPS with `acme.sh` helper](#2-setting-up-https-with-acmesh-helper)
+        - [1. Make the proxy listen on 80 and 443 ports](#1-make-the-proxy-listen-on-80-and-443-ports)
+        - [2. Issue a certificate and run HTTPS versions with `acme.sh` helper](#2-issue-a-certificate-and-run-https-versions-with-acmesh-helper)
           - [Create certificate files using an ACME challenge on docker host](#create-certificate-files-using-an-acme-challenge-on-docker-host)
-
 # Quick installation guide
 
 Before you can use CVAT, you’ll need to get it installed. The document below
@@ -373,7 +372,9 @@ This depends on the email server you are using and is not covered in this tutori
 [Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
 for details.
 
-### Deploy secure CVAT instance with HTTPS certificates (issued by let's encrypt) to cloud instance
+### Deploy secure CVAT instance with HTTPS
+
+Certificates (issued by let's encrypt) to cloud instance.
 
 #### Prerequisites
 
@@ -402,7 +403,9 @@ We will go through the following sequence of steps to get CVAT over HTTPS:
 
 #### Step-by-step instructions
 
-##### 1. Make the proxy listen on 80 and 443 ports (prepare nginx for the ACME challenge via webroot method)
+##### 1. Make the proxy listen on 80 and 443 ports
+
+Prepare nginx for the ACME challenge via webroot method
 
 Let's assume the server domain name is `CVAT.example.com`.
 
