@@ -12,6 +12,7 @@ export interface IntelligentScissorsParams {
         shapeType: 'points';
         enableThreshold: boolean;
         enableSliding: boolean;
+        allowRemoveOnlyLast: boolean;
         minPosVertices: number;
     };
 }
@@ -106,8 +107,13 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 const latestPointReplaced = points.length === Object.keys(state.anchors).length;
 
                 if (latestPointRemoved) {
-                    state.path = state.path.slice(0, state.anchors[points.length].start);
-                    delete state.anchors[points.length];
+                    for (const i of Object.keys(state.anchors).sort((a, b) => +b - +a)) {
+                        if (+i >= points.length) {
+                            state.path = state.path.slice(0, state.anchors[points.length].start);
+                            delete state.anchors[+i];
+                        }
+                    }
+
                     return [...state.path];
                 }
 
@@ -166,6 +172,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 shapeType: 'points',
                 enableThreshold: true,
                 enableSliding: true,
+                allowRemoveOnlyLast: true,
                 minPosVertices: 1,
             },
         };

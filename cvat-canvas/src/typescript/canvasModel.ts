@@ -70,20 +70,16 @@ export interface DrawData {
     redraw?: number;
 }
 
-export enum InteractionEnumStrategy {
-    ANY = 'any', // can remove any point
-    LAST = 'last', // can remove only the latest point
-}
-
 export interface InteractionData {
     enabled: boolean;
     shapeType?: string;
     crosshair?: boolean;
     minPosVertices?: number;
     minNegVertices?: number;
+    enableNegVertices?: boolean;
     enableThreshold?: boolean;
     enableSliding?: boolean;
-    removeStrategy?: InteractionEnumStrategy;
+    allowRemoveOnlyLast?: boolean;
 }
 
 export interface InteractionResult {

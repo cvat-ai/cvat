@@ -247,13 +247,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
 
         const [x, y] = pressedPoints.slice(-2);
-        if (pressedPoints.length > 2) {
-            const [prevX, prevY] = pressedPoints.slice(-4, -2);
-            if (Math.abs(prevX - x) > threshold || Math.abs(prevY - y) > threshold) {
-                throw new Error('The point location is out of threshold, increase threshold or press point nearer');
-            }
-        }
-
         const startX = Math.max(0, x - threshold);
         const startY = Math.max(0, y - threshold);
         const segmentWidth = Math.min(2 * threshold, width - startX);

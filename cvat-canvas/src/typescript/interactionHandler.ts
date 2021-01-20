@@ -91,9 +91,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private interactPoints(): void {
         const eventListener = (e: MouseEvent): void => {
-            if ((e.button === 0 || e.button === 2) && !e.altKey) {
+            if ((e.button === 0 || (e.button === 2 && this.interactionData.enableNegVertices)) && !e.altKey) {
                 e.preventDefault();
                 const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
+                if (!this.isWithingFrame(cx, cy)) return;
                 if (!this.isWithinThreshold(cx, cy)) return;
 
                 this.currentInteractionShape = this.canvas
@@ -114,6 +115,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
                 const self = this.currentInteractionShape;
                 self.on('mouseenter', (): void => {
+                    if (this.interactionData.allowRemoveOnlyLast) {
+                        if (this.interactionShapes.indexOf(self) !== this.interactionShapes.length - 1) {
+                            return;
+                        }
+                    }
+
                     self.attr({
                         'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
                     });
@@ -227,6 +234,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
         return xDiff < this.thresholdRectSize / 2 && yDiff < this.thresholdRectSize / 2;
     }
 
+    private isWithingFrame(x: number, y: number): boolean {
+        const { offset, image } = this.geometry;
+        const { width, height } = image;
+        const [imageX, imageY] = [Math.round(x - offset), Math.round(y - offset)];
+        return imageX >= 0 && imageX < width && imageY >= 0 && imageY < height;
+    }
+
     public constructor(
         onInteraction: (
             shapes: InteractionResult[] | null,
@@ -265,19 +279,22 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.threshold.center(x, y);
             }
 
-            if (this.interactionData.enableSliding && this.interactionShapes.length && this.isWithinThreshold(x, y)) {
-                this.onInteraction(
-                    [
-                        ...this.prepareResult(),
-                        {
-                            points: [x - this.geometry.offset, y - this.geometry.offset],
-                            shapeType: 'points',
-                            button: 0,
-                        },
-                    ],
-                    true,
-                    false,
-                );
+            if (this.interactionData.enableSliding && this.interactionShapes.length) {
+                if (this.isWithingFrame(x, y)) {
+                    if (this.interactionData.enableThreshold && !this.isWithinThreshold(x, y)) return;
+                    this.onInteraction(
+                        [
+                            ...this.prepareResult(),
+                            {
+                                points: [x - this.geometry.offset, y - this.geometry.offset],
+                                shapeType: 'points',
+                                button: 0,
+                            },
+                        ],
+                        true,
+                        false,
+                    );
+                }
             }
         });
 
