@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,8 +8,6 @@ context('Try to create a task without necessary arguments.', () => {
     const caseId = '40';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
-    const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 1;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 800;
@@ -30,8 +28,38 @@ context('Try to create a task without necessary arguments.', () => {
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Go to create task page', () => {
-            cy.log('121212');
+        it('Go to create task page.', () => {
+            cy.get('#cvat-create-task-button').click();
+        });
+
+        it('Try to create a task without any fields. A task is not created.', () => {
+            cy.get('.cvat-create-task-submit-section').click();
+            cy.get('.cvat-notification-create-task-fail').should('exist');
+            cy.closeNotification('.cvat-notification-create-task-fail');
+        });
+
+        it('Input a task name. Try to create a task without any fields. A task is not created.', () => {
+            cy.get('[id="name"]').type(taskName);
+            cy.get('.cvat-create-task-submit-section').click();
+            cy.get('.cvat-notification-create-task-fail').should('exist');
+            cy.closeNotification('.cvat-notification-create-task-fail');
+        });
+
+        it('Input task labels. Try to create a task without any fields. A task is not created.', () => {
+            cy.addNewLabel(labelName);
+            cy.get('.cvat-create-task-submit-section').click();
+            cy.get('.cvat-notification-create-task-fail').should('exist');
+            cy.closeNotification('.cvat-notification-create-task-fail');
+        });
+
+        it('Add some files. Try to create a task without any fields. A task created.', () => {
+            cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
+            cy.get('.cvat-create-task-submit-section').click();
+            cy.get('.cvat-notification-create-task-fail').should('not.exist');
+            cy.get('.cvat-notification-create-task-success').should('exist');
+            // Check that the interface is prepared for creating the next task.
+            cy.get('[id="name"]').should('have.value', '');
+            cy.get('.cvat-constructor-viewer-item').should('not.exist');
         });
     });
 });
