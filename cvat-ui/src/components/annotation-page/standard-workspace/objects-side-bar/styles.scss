@@ -128,11 +128,7 @@
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
     padding: 5px;
-    min-height: 80px;
-
-    > div:nth-child(1) > div:nth-child(1) {
-        min-height: 32px;
-    }
+    height: 80px;
 
     > div:nth-child(2) {
         margin-top: $grid-unit-size;
