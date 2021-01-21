@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -120,7 +120,8 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
         changeAnnotationsFilters,
     } = props;
 
-    const [underCursor, setUnderCursor] = useState(false);
+    const [underCursor, setUnderCursor] = useState<boolean>(false);
+    const [dropdownVisible, setDropdownVisible] = useState<boolean>(true);
 
     return (
         <Select
@@ -128,20 +129,27 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
             allowClear
             value={annotationsFilters}
             mode='tags'
+            disabled={!dropdownVisible}
             style={{ width: '100%' }}
             placeholder={
                 underCursor ? (
                     <>
                         <Tooltip title='Click to open help' mouseLeaveDelay={0}>
                             <FilterOutlined
-                                onClick={(e: React.MouseEvent) => {
-                                    e.stopPropagation();
+                                style={{ pointerEvents: 'all' }}
+                                onClick={() => {
+                                    // also opens the select dropdown
+                                    // looks like it is done on capturing state
+                                    // so we cannot cancel it somehow via the event handling
+                                    // to avoid it we use also onMouseEnter, onMouseLeave below
                                     Modal.info({
                                         width: 700,
                                         title: 'How to use filters?',
                                         content: filtersHelpModalContent(searchForwardShortcut, searchBackwardShortcut),
                                     });
                                 }}
+                                onMouseEnter={() => setDropdownVisible(false)}
+                                onMouseLeave={() => setDropdownVisible(true)}
                             />
                         </Tooltip>
                     </>
@@ -158,7 +166,11 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
         >
             {annotationsFiltersHistory.map(
                 (element: string): JSX.Element => (
-                    <Select.Option key={element} value={element} className='cvat-annotations-filters-input-history-element'>
+                    <Select.Option
+                        key={element}
+                        value={element}
+                        className='cvat-annotations-filters-input-history-element'
+                    >
                         {element}
                     </Select.Option>
                 ),
