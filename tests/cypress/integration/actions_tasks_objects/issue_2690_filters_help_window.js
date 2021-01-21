@@ -14,7 +14,7 @@ context('Annotation filter help dialog window.', () => {
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Open annotation filters help window. The window is visible.', () => {
+        it('Open annotation filters help dialog window. The window is visible.', () => {
             cy.get('.cvat-annotations-filters-input').within(() => {
                 // class="ant-select-selection-placeholder" has CSS pointer-events: none
                 cy.get('.ant-select-selection-placeholder').invoke('css', 'pointer-events', 'auto'); // Replace CSS "pointer-events" to auto
@@ -23,7 +23,7 @@ context('Annotation filter help dialog window.', () => {
             cy.get('.cvat-annotations-filters-help-modal-window').should('exist').and('be.visible');
         });
 
-        it('Close annotation filters help window. The window is closed.', () => {
+        it('Close annotation filters help dialog window. The window is closed.', () => {
             cy.get('.cvat-annotations-filters-help-modal-window').within(() => {
                 cy.contains('button', 'OK').click();
             });
