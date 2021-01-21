@@ -59,8 +59,8 @@ const AnnotationFilterPane = (props: DispatchToProps): ReactElement => {
     };
 
     useEffect(() => {
-        const filtersStringified = filtersPaneRef.current?.innerText.replace(/(?:\r\n|\r|\n)/g, '');
-        changeAnnotationsFilters(filters.length ? [filtersStringified] : []);
+        const filtersStr = filtersPaneRef.current?.innerText.replace(/(?:\r\n|\r|\n)/g, '');
+        changeAnnotationsFilters(filters.length ? [filtersStr] : []);
         scrollFiltersToBottom();
     }, [filters]);
 
@@ -84,7 +84,7 @@ const AnnotationFilterPane = (props: DispatchToProps): ReactElement => {
         });
         if (filterToEditIndex >= 0) {
             filters[filterToEditIndex] = { ...filter, id: uuidv4() };
-            setFilters(filters);
+            setFilters([...filters]);
         }
         setFilterPanelVisible(false);
     };
