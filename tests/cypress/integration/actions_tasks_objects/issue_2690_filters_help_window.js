@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Points track it is still invisible on next frames', () => {
+context('Annotation filter help dialog window.', () => {
     const issueId = '2690';
 
     before(() => {
