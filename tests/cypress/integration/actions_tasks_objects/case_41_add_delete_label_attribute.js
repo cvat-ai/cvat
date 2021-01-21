@@ -13,15 +13,12 @@ context('Add/delete labels and attributes.', () => {
     before(() => {
         cy.visit('auth/login');
         cy.login();
+        cy.get('#cvat-create-task-button').click();
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Go to create task page. Open label constructor.', () => {
-            cy.get('#cvat-create-task-button').click();
-            cy.get('.cvat-constructor-viewer-new-item').click();
-        });
-
         it('Start adding a label. Press Cancel. The label is not created.', () => {
+            cy.get('.cvat-constructor-viewer-new-item').click(); // Open label constructor
             cy.get('[placeholder="Label name"]').type(labelName);
             cy.contains('[type="button"]', 'Cancel').click();
             cy.get('.cvat-constructor-viewer-item').should('not.exist');
@@ -51,7 +48,7 @@ context('Add/delete labels and attributes.', () => {
             cy.get('.cvat-constructor-viewer-item').should('exist');
         });
 
-        it('Start to edit the label. Attribute should be exist. Remove the atrribute. Press Done.', () => {
+        it('Start to edit the label. Attribute should exist. Remove the atrribute. Press Done.', () => {
             cy.get('.cvat-constructor-viewer-item').find('[aria-label="edit"]').click();
             cy.get('.cvat-attribute-inputs-wrapper')
                 .should('exist')
@@ -60,9 +57,7 @@ context('Add/delete labels and attributes.', () => {
                 });
             cy.get('.cvat-attribute-inputs-wrapper').should('not.exist');
             cy.contains('[type="submit"]', 'Done').click();
-        });
-
-        it('Start to edit the created label. Attribute should not be exist. Press Cancel.', () => {
+            // After deleting the attribute and saving the changes, check that the attribute is missing.
             cy.get('.cvat-constructor-viewer-item').find('[aria-label="edit"]').click();
             cy.get('.cvat-attribute-inputs-wrapper').should('not.exist');
             cy.contains('[type="button"]', 'Cancel').click();
