@@ -5,9 +5,7 @@
 import { Tag } from 'antd';
 import PropTypes from 'prop-types';
 import React, { ReactElement, useEffect, useReducer } from 'react';
-import './annotation-filter-item.scss';
 
-// TODO: DRY
 interface State {
     id: string;
     concatenator: string;
@@ -67,7 +65,7 @@ function AnnotationFilterItem({
             {state.concatenator && ` ${state.concatenator} `}
             <span className='group'>{state.left?.map((leftItem: string) => leftItem)}</span>
             <Tag
-                className='annotation-filters-item'
+                style={{ cursor: 'context-menu' }}
                 onClick={(e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
                     e.stopPropagation();
                     if (e.shiftKey) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -120,7 +120,6 @@ const AnnotationFilterPanel = ({
 
     const isFilled = (fieldName: StateFields): boolean => state[fieldName]?.toString().trim().length > 0;
 
-    // TODO: DRY
     const isAttributeFilterBy = (): boolean => FilterByValues.attribute === state.filterBy;
     const isBooleanFilterBy = (): boolean => Object.values(BooleanFilterByOptions).includes(state.filterBy);
     const isNumericFilterBy = (): boolean => Object.values(NumericFilterByOptions).includes(state.filterBy);
@@ -142,7 +141,6 @@ const AnnotationFilterPanel = ({
         localStorage.setItem('filters', JSON.stringify(filters));
     };
 
-    // TODO: DRY
     useEffect(() => {
         if (editModeInitiated) return;
         dispatch({ type: ActionType.partialReset, payload: StateLevels.concatenator });
@@ -386,12 +384,12 @@ const AnnotationFilterPanel = ({
                                 <div className='filter-option-value'>
                                     <AutoComplete
                                         className='numeric-autocomplete'
-                                        // options={[{ label: '88', value: '88' }, { label: '99', value: '99' }]}
                                         options={getMemorizedFilterOptions()}
                                         filterOption={(inputValue, option) =>
                                             `${option?.value}`.indexOf(inputValue) >= 0}
                                         onChange={(value: SelectValue) =>
                                             dispatch({ type: ActionType.value, payload: value })}
+                                        value={state.value}
                                         placeholder=''
                                         size='small'
                                     />
