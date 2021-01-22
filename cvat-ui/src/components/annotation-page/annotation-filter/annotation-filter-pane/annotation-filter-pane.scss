@@ -12,13 +12,18 @@
     min-height: $grid-unit-size * 5;
     max-height: $grid-unit-size * 15;
     padding: $grid-unit-size/2;
-    background-color: white;
+    background-color: #fff;
+    border: 1px solid #ccc;
     border-radius: $grid-unit-size/2;
     user-select: none;
     overflow: auto;
 
     & > *:not(.group) {
         margin: $grid-unit-size/2;
+    }
+
+    &.invalid {
+        border-color: #f00;
     }
 
     .add-more {

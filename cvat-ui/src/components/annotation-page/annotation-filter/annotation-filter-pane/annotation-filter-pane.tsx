@@ -10,7 +10,7 @@ import {
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
     fetchAnnotationsAsync,
 } from 'actions/annotation-actions';
-import { Popconfirm, Tag } from 'antd';
+import { Popconfirm, Tag, Tooltip } from 'antd';
 import React, {
     ReactElement, useEffect, useRef, useState,
 } from 'react';
@@ -58,9 +58,22 @@ const AnnotationFilterPane = (props: DispatchToProps): ReactElement => {
         clearFiltersRef?.current?.click();
     };
 
+    const isGroupingValid = (): boolean => {
+        let openBraces = 0;
+        let closeBraces = 0;
+        filters.forEach((filter: any) => {
+            openBraces += filter.left.length;
+            closeBraces += filter.right.length;
+        });
+        if (openBraces === 0 && closeBraces === 0) return true;
+        return openBraces === closeBraces;
+    };
+
     useEffect(() => {
-        const filtersStr = filtersPaneRef.current?.innerText.replace(/(?:\r\n|\r|\n)/g, '');
-        changeAnnotationsFilters(filters.length ? [filtersStr] : []);
+        if (isGroupingValid()) {
+            const filtersStr = filtersPaneRef.current?.innerText.replace(/(?:\r\n|\r|\n)/g, '');
+            changeAnnotationsFilters(filters.length ? [filtersStr] : []);
+        }
         scrollFiltersToBottom();
     }, [filters]);
 
@@ -91,70 +104,81 @@ const AnnotationFilterPane = (props: DispatchToProps): ReactElement => {
 
     return (
         <>
-            <div
-                ref={filtersPaneRef}
-                className='annotation-filters-pane'
-                onClick={() => {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                    !filters.length && setFilterPanelVisible(true);
-                }}
-                style={{ cursor: filters.length ? 'default' : 'pointer' }}
-                onContextMenu={(e: React.MouseEvent<HTMLElement, MouseEvent>) => confirmClearFilters(e)}
-            >
-                {filters?.length ? (
-                    <>
-                        {filters.map((item: any) => (
-                            <AnnotationFilterItem
-                                key={item.id}
-                                item={item}
-                                onEdit={(filterToEdit: any) => {
-                                    setEditItem(filterToEdit);
-                                    setFilterPanelVisible(true);
-                                }}
-                                onDelete={(filterToDelete: any) => {
-                                    const newFilters = filters.filter(
-                                        (filterItem: any) => filterItem.id !== filterToDelete.id,
-                                    );
-                                    if (newFilters.length) {
-                                        newFilters[0].id = uuidv4();
-                                        newFilters[0].concatenator = null;
-                                    }
-                                    setFilters(newFilters);
-                                }}
-                            />
-                        ))}
-                        <div className='pop-confirm-wrapper' onClick={(e) => e.stopPropagation()}>
-                            <Popconfirm
-                                placement='bottom'
-                                title='Are you sure you want to clear all filters?'
-                                icon={<QuestionOutlined style={{ color: 'red' }} />}
-                                onConfirm={(e: any) => resetFilters(e)}
-                                okText='Yes'
-                                cancelText='No'
-                            >
-                                <span ref={clearFiltersRef} />
-                            </Popconfirm>
+            <Tooltip placement='topLeft' title={!isGroupingValid() ? 'Invalid grouping' : ''}>
+                <div
+                    ref={filtersPaneRef}
+                    className={`annotation-filters-pane ${isGroupingValid() ? '' : 'invalid'}`}
+                    onClick={() => {
+                        if (!filters.length) {
+                            setFilterPanelVisible(true);
+                        }
+                    }}
+                    style={{ cursor: filters.length ? 'default' : 'pointer' }}
+                    onContextMenu={(e: React.MouseEvent<HTMLElement, MouseEvent>) => confirmClearFilters(e)}
+                >
+                    {filters?.length ? (
+                        <>
+                            {filters.map((item: any) => (
+                                <AnnotationFilterItem
+                                    key={item.id}
+                                    item={item}
+                                    onGrouping={(filter: any) => {
+                                        const filterIndex = filters.findIndex(
+                                            (filterItem: any) => filterItem.id === filter.id,
+                                        );
+                                        filters[filterIndex] = { ...filters[filterIndex], left: filter.left };
+                                        filters[filterIndex] = { ...filters[filterIndex], right: filter.right };
+                                        setFilters([...filters]);
+                                    }}
+                                    onEdit={(filterToEdit: any) => {
+                                        setEditItem(filterToEdit);
+                                        setFilterPanelVisible(true);
+                                    }}
+                                    onDelete={(filterToDelete: any) => {
+                                        const newFilters = filters.filter(
+                                            (filterItem: any) => filterItem.id !== filterToDelete.id,
+                                        );
+                                        if (newFilters.length) {
+                                            newFilters[0].id = uuidv4();
+                                            newFilters[0].concatenator = null;
+                                        }
+                                        setFilters(newFilters);
+                                    }}
+                                />
+                            ))}
+                            <div className='pop-confirm-wrapper' onClick={(e) => e.stopPropagation()}>
+                                <Popconfirm
+                                    placement='bottom'
+                                    title='Are you sure you want to clear all filters?'
+                                    icon={<QuestionOutlined style={{ color: 'red' }} />}
+                                    onConfirm={(e: any) => resetFilters(e)}
+                                    okText='Yes'
+                                    cancelText='No'
+                                >
+                                    <span ref={clearFiltersRef} />
+                                </Popconfirm>
+                            </div>
+                            <Tag className='add-more' onClick={() => setFilterPanelVisible(true)}>
+                                <PlusOutlined />
+                            </Tag>
+                            <div ref={filtersEndRef} />
+                        </>
+                    ) : (
+                        <div className='no-filters'>
+                            <FilterOutlined className='no-filters-icon' />
+                            <span>Annotations filters</span>
                         </div>
-                        <Tag className='add-more' onClick={() => setFilterPanelVisible(true)}>
-                            <PlusOutlined />
-                        </Tag>
-                        <div ref={filtersEndRef} />
-                    </>
-                ) : (
-                    <div className='no-filters'>
-                        <FilterOutlined className='no-filters-icon' />
-                        <span>Annotations filters</span>
-                    </div>
-                )}
-            </div>
-            <AnnotationFilterPanel
-                editItem={editItem}
-                isFirst={!filters.length || (editItem && !editItem.concatenator?.length)}
-                isVisible={filterPanelVisible}
-                onClose={() => setFilterPanelVisible(false)}
-                onAdd={(filter: any) => addFilter(filter)}
-                onEdit={(filter: any) => editFilter(filter)}
-            />
+                    )}
+                </div>
+                <AnnotationFilterPanel
+                    editItem={editItem}
+                    isFirst={!filters.length || (editItem && !editItem.concatenator?.length)}
+                    isVisible={filterPanelVisible}
+                    onClose={() => setFilterPanelVisible(false)}
+                    onAdd={(filter: any) => addFilter(filter)}
+                    onEdit={(filter: any) => editFilter(filter)}
+                />
+            </Tooltip>
         </>
     );
 };

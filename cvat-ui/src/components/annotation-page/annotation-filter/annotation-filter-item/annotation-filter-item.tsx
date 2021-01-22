@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Tag } from 'antd';
 import PropTypes from 'prop-types';
-import React, { ReactElement, useReducer } from 'react';
+import React, { ReactElement, useEffect, useReducer } from 'react';
 import './annotation-filter-item.scss';
 
 // TODO: DRY
@@ -27,6 +27,7 @@ interface Props {
     item: State;
     onEdit: Function;
     onDelete: Function;
+    onGrouping: Function;
 }
 
 enum ActionType {
@@ -52,8 +53,14 @@ const reducer = (state: State, action: { type: ActionType; payload?: any }): Sta
             return state;
     }
 };
-function AnnotationFilterItem({ item, onEdit, onDelete }: Props): ReactElement {
+function AnnotationFilterItem({
+    item, onEdit, onDelete, onGrouping,
+}: Props): ReactElement {
     const [state, dispatch] = useReducer(reducer, item);
+
+    useEffect(() => {
+        onGrouping(state);
+    }, [state]);
 
     return (
         <>
@@ -104,6 +111,7 @@ AnnotationFilterItem.propTypes = {
     item: PropTypes.objectOf(PropTypes.any),
     onEdit: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
+    onGrouping: PropTypes.func,
 };
 
 export default AnnotationFilterItem;
