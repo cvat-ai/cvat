@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { GlobalHotKeys } from 'react-hotkeys';
 import Layout from 'antd/lib/layout/layout';
 
@@ -28,67 +28,33 @@ interface Props {
     showObjectsTextAlways: boolean;
 }
 
-export default class CanvasWrapperComponent extends React.PureComponent<Props> {
-    animateID = 0;
+const CanvasWrapperComponent = (props: Props) => {
+    const animateId = useRef(0);
+    const cvatCanvasContainerRef = useRef();
 
-    public componentDidMount(): void {
-        const {
-            automaticBordering, showObjectsTextAlways, canvasInstance, workspace,
-        } = this.props;
+    const {
+        frameData, contextImageHide, getContextImage, loaded, data, annotations, curZLayer,
+    } = props;
 
-        const [wrapper] = window.document.getElementsByClassName('cvat-canvas-container');
-        wrapper.appendChild(canvasInstance.html());
-
-        canvasInstance.configure({
-            autoborders: automaticBordering,
-            undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
-            displayAllText: showObjectsTextAlways,
-            forceDisableEditing: [Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace),
-        });
-
-        this.initialSetup();
-        this.updateCanvas();
-        this.animateCanvas();
-    }
-
-    public componentDidUpdate(prevProps: Props): void {
-        const { frameData, annotations, curZLayer } = this.props;
-
-        if (
-            prevProps.annotations !== annotations ||
-            prevProps.frameData !== frameData ||
-            prevProps.curZLayer !== curZLayer
-        ) {
-            this.updateCanvas();
-        }
-    }
-
-    public componentWillUnmount(): void {
-        window.removeEventListener('resize', this.fitCanvas);
-        cancelAnimationFrame(this.animateID);
-    }
-
-    private fitCanvas = (): void => {
-        const { canvasInstance } = this.props;
+    const fitCanvas = (): void => {
+        const { canvasInstance } = props;
         canvasInstance.fitCanvas();
     };
 
-    private onCanvasSetup = (): void => {
-        const { onSetupCanvas } = this.props;
+    const onCanvasSetup = (): void => {
+        const { onSetupCanvas } = props;
         onSetupCanvas();
     };
 
-    public animateCanvas(): void {
-        const { canvasInstance } = this.props;
+    const animateCanvas = (): void => {
+        const { canvasInstance } = props;
 
         canvasInstance.render();
-        this.animateID = requestAnimationFrame(this.animateCanvas.bind(this));
-    }
+        animateId.current = requestAnimationFrame(animateCanvas);
+    };
 
-    private updateCanvas(): void {
-        const {
-            curZLayer, annotations, frameData, canvasInstance,
-        } = this.props;
+    const updateCanvas = () => {
+        const { canvasInstance } = props;
 
         if (frameData !== null) {
             canvasInstance.setup(
@@ -97,49 +63,67 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 curZLayer,
             );
         }
-    }
+    };
 
-    private initialSetup(): void {
-        const { canvasInstance } = this.props;
+    const initialSetup = (): void => {
+        const { canvasInstance } = props;
 
         // Size
-        window.addEventListener('resize', this.fitCanvas);
-        this.fitCanvas();
+        window.addEventListener('resize', fitCanvas);
+        fitCanvas();
 
         // Events
-        canvasInstance.html().addEventListener('canvas.setup', () => {}, { once: true });
-        canvasInstance.html().addEventListener('canvas.setup', this.onCanvasSetup);
-    }
+        canvasInstance.html().addEventListener('canvas.setup', onCanvasSetup);
+    };
 
-    public render(): JSX.Element {
+    useEffect(() => {
         const {
-            frame, contextImageHide, getContextImage, loaded, data,
-        } = this.props;
+            automaticBordering, showObjectsTextAlways, canvasInstance, workspace,
+        } = props;
 
-        return (
-            <Layout.Content style={{ position: 'relative' }}>
-                <GlobalHotKeys />
-                {/*
+        cvatCanvasContainerRef.current.appendChild(canvasInstance.html());
+
+        canvasInstance.configure({
+            autoborders: automaticBordering,
+            undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
+            displayAllText: showObjectsTextAlways,
+            forceDisableEditing: [Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace),
+        });
+
+        initialSetup();
+        updateCanvas();
+        animateCanvas();
+
+        return () => {
+            canvasInstance.html().removeEventListener('canvas.setup', onCanvasSetup);
+            window.removeEventListener('resize', fitCanvas);
+            cancelAnimationFrame(animateId.current);
+        };
+    });
+
+    useEffect(() => {
+        updateCanvas();
+    }, [frameData, annotations, curZLayer]);
+
+    return (
+        <Layout.Content style={{ position: 'relative' }}>
+            <GlobalHotKeys />
+            {/*
                     This element doesn't have any props
                     So, React isn't going to rerender it
                     And it's a reason why cvat-canvas appended in mount function works
                 */}
-                <ContextImage
-                    frame={frame}
-                    contextImageHide={contextImageHide}
-                    getContextImage={getContextImage}
-                    loaded={loaded}
-                    data={data}
-                />
-                <div
-                    className='cvat-canvas-container'
-                    style={{
-                        overflow: 'hidden',
-                        width: '100%',
-                        height: '100%',
-                    }}
-                />
-            </Layout.Content>
-        );
-    }
-}
+
+            <ContextImage
+                frame={frameData}
+                contextImageHide={contextImageHide}
+                getContextImage={getContextImage}
+                loaded={loaded}
+                data={data}
+            />
+            <div ref={cvatCanvasContainerRef} className='cvat-canvas-container cvat-canvas-container-overflow' />
+        </Layout.Content>
+    );
+};
+
+export default React.memo(CanvasWrapperComponent);

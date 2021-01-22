@@ -23,11 +23,10 @@ function CursorControl(props: Props): JSX.Element {
         <Tooltip title={`Cursor ${cursorShortkey}`} placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={CursorIcon}
-                className={
-                    activeControl === ActiveControl.CURSOR ?
-                        'cvat-active-canvas-control cvat-cursor-control' :
-                        'cvat-cursor-control'
-                }
+                className={[
+                    'cvat-cursor-control',
+                    activeControl === ActiveControl.CURSOR ? 'cvat-active-canvas-control ' : null,
+                ]}
             />
         </Tooltip>
     );

@@ -81,27 +81,27 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 <AnnotationTopBarContainer />
             </Layout.Header>
             {workspace === Workspace.STANDARD3D && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <StandardWorkspace3DComponent />
                 </Layout.Content>
             )}
             {workspace === Workspace.STANDARD && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <StandardWorkspaceComponent />
                 </Layout.Content>
             )}
             {workspace === Workspace.ATTRIBUTE_ANNOTATION && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <AttributeAnnotationWorkspace />
                 </Layout.Content>
             )}
             {workspace === Workspace.TAG_ANNOTATION && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <TagAnnotationWorkspace />
                 </Layout.Content>
             )}
             {workspace === Workspace.REVIEW_WORKSPACE && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <ReviewAnnotationsWorkspace />
                 </Layout.Content>
             )}

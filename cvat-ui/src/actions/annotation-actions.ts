@@ -18,6 +18,7 @@ import {
     ContextMenuType,
     Workspace,
     Model,
+    DimensionType,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core-wrapper';
@@ -959,7 +960,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     maxZ,
                 },
             });
-            if (job.task.dimension === '3d') {
+            if (job.task.dimension === DimensionType.DIM_3D) {
                 const workspace = Workspace.STANDARD3D;
                 dispatch(changeWorkspace(workspace));
             }

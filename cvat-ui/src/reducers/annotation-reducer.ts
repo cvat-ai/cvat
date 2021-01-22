@@ -140,10 +140,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             } = action.payload;
 
             const isReview = job.status === TaskStatus.REVIEW;
-            let WorkspaceSelected = Workspace.STANDARD;
+            let workspaceSelected = Workspace.STANDARD;
 
             if (job.task.dimension === DimensionType.DIM_3D) {
-                WorkspaceSelected = Workspace.STANDARD3D;
+                workspaceSelected = Workspace.STANDARD3D;
             }
             return {
                 ...state,
@@ -190,7 +190,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                workspace: isReview ? Workspace.REVIEW_WORKSPACE : WorkspaceSelected,
+                workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -1096,14 +1096,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
             const { hide } = action.payload;
-
+            const { loaded, data } = state.player.contextImage;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     contextImage: {
-                        loaded: state.player.contextImage.loaded,
-                        data: state.player.contextImage.data,
+                        loaded,
+                        data,
                         hide,
                     },
                 },

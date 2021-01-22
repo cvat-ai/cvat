@@ -14,24 +14,24 @@ interface Props {
 
 export default function ContextImage(props: Props): JSX.Element {
     const {
-        frame, contextImageHide, loaded, data, getContextImage,
+        contextImageHide, loaded, data, getContextImage,
     } = props;
 
     useEffect(() => {
         if (!contextImageHide && !loaded) {
             getContextImage();
         }
-    }, [frame, contextImageHide, loaded]);
+    }, [contextImageHide, loaded]);
 
     const renderImage = (): JSX.Element => {
         if (loaded) {
             if (data === '') {
                 return null;
             }
-            return <img src={data} alt='' style={{ maxWidth: '100%', maxHeight: '100%' }} />;
+            return <img src={data} alt='Context not available' className='cvat-contextImage-show' />;
         }
 
-        return <div style={{ textAlign: 'center' }}> Loading</div>;
+        return <div className='cvat-contextImage-loading'> Loading</div>;
     };
 
     return <div>{!contextImageHide ? <div className='cvat-contextImage'>{renderImage()}</div> : null}</div>;

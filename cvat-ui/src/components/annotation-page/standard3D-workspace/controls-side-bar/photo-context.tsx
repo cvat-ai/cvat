@@ -24,11 +24,10 @@ function PhotoContextControl(props: Props): JSX.Element {
         <Tooltip title='Photo context show/hide' placement='right' mouseLeaveDelay={0}>
             <Icon
                 component={CameraIcon}
-                className={
-                    activeControl === ActiveControl.PHOTO_CONTEXT ?
-                        'cvat-move-control cvat-active-canvas-control' :
-                        'cvat-move-control'
-                }
+                className={[
+                    'cvat-move-control',
+                    activeControl === ActiveControl.PHOTO_CONTEXT ? 'cvat-active-canvas-control' : null,
+                ]}
                 onClick={(): void => {
                     hideShowContextImage(!contextImageHide);
                 }}
