@@ -59,6 +59,11 @@ const AnnotationFilterHelp = ({ searchForwardShortcut, searchBackwardShortcut }:
             <br />
             <br />
             If grouping is invalid you will see the red border across the pane
+            <br />
+            <br />
+            To clean up the filters use
+            <Text strong> Right click </Text>
+            in any place of the pane
         </Paragraph>
     </Paragraph>
 );
