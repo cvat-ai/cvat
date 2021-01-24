@@ -124,7 +124,6 @@ spec:
 
   platform:
     attributes:
-      processorMountMode: volume
       restartPolicy:
         name: always
         maximumRetryCount: 3
