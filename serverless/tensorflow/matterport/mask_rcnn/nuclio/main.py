@@ -31,10 +31,3 @@ def handler(context, event):
 
     return context.Response(body=json.dumps(results), headers={},
                             content_type='application/json', status_code=200)
-
-
-functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
-labels_spec = functionconfig['metadata']['annotations']['spec']
-labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
-
-model_handler = ModelLoader(labels)
