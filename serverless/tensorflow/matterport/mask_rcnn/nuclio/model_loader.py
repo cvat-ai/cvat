@@ -2,36 +2,31 @@
 #
 # SPDX-License-Identifier: MIT
 
-import coco
-from mrcnn import model as modellib
 import os
 import numpy as np
 import sys
 from skimage.measure import find_contours, approximate_polygon
-
-# workaround for tf.placeholder() is not compatible with eager execution
-# https://github.com/tensorflow/tensorflow/issues/18165
+from pathlib import Path
 import tensorflow as tf
-# tf.compat.v1.disable_eager_execution()
-#import tensorflow.compat.v1 as tf
-#   tf.disable_v2_behavior()
-
-# The directory should contain a clone of
-# https://github.com/matterport/Mask_RCNN repository and
-# downloaded mask_rcnn_coco.h5 model.
-MASK_RCNN_DIR = os.path.abspath(os.environ.get('MASK_RCNN_DIR'))
-if MASK_RCNN_DIR:
-    sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
-    sys.path.append(os.path.join(MASK_RCNN_DIR, 'samples/coco'))
-
+MASK_RCNN_DIR = '/opt/nuclio/Mask_RCNN'
+sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
+from mrcnn import model as modellib
+from mrcnn.config import Config
 
 class ModelLoader:
-    def __init__(self, labels):
-        COCO_MODEL_PATH = os.path.join(MASK_RCNN_DIR, "mask_rcnn_coco.h5")
-        if COCO_MODEL_PATH is None:
-            raise OSError('Model path env not found in the system.')
 
-        class InferenceConfig(coco.CocoConfig):
+    def __init__(self, labels):
+        COCO_MODEL_PATH = Path("/opt/nuclio/Mask_RCNN/mask_rcnn_coco.h5")
+        if not COCO_MODEL_PATH.exists():
+            raise OSError('Model not found in the system.')
+
+        class InferenceConfig(Config):
+            # Give the configuration a recognizable name
+            NAME = "coco"
+
+            # Number of classes (including background)
+            NUM_CLASSES = 1 + 80  # COCO has 80 classes
+
             # Set batch size to 1 since we'll be running inference on
             # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
             GPU_COUNT = 1
@@ -43,7 +38,7 @@ class ModelLoader:
 
         self.model = modellib.MaskRCNN(mode="inference",
                                        config=self.config, model_dir=MASK_RCNN_DIR)
-        self.model.load_weights(COCO_MODEL_PATH, by_name=True)
+        self.model.load_weights(str(COCO_MODEL_PATH), by_name=True)
         self.labels = labels
 
     def infer(self, image, threshold):

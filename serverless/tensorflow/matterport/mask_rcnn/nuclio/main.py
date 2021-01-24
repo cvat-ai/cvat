@@ -19,6 +19,7 @@ def init_context(context):
 
     context.logger.info("Init context...100%")
 
+
 def handler(context, event):
     context.logger.info("Run tf.matterport.mask_rcnn model")
     data = event.body
@@ -29,4 +30,11 @@ def handler(context, event):
     results = context.user_data.model_handler.infer(np.array(image), threshold)
 
     return context.Response(body=json.dumps(results), headers={},
-        content_type='application/json', status_code=200)
+                            content_type='application/json', status_code=200)
+
+
+functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+labels_spec = functionconfig['metadata']['annotations']['spec']
+labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
+
+model_handler = ModelLoader(labels)
