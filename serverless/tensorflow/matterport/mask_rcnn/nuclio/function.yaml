@@ -97,26 +97,22 @@ spec:
   runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
-  env:
-    - name: MASK_RCNN_DIR
-      value: /opt/nuclio/Mask_RCNN
+
   build:
     image: cvat/tf.matterport.mask_rcnn
-    baseImage: tensorflow/tensorflow:1.15.5
+    baseImage: tensorflow/tensorflow:1.13.1-py3
     directives:
       postCopy:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev libgl1-mesa-glx
+          value: apt update && apt install --no-install-recommends -y git curl
         - kind: RUN
-          value: git clone https://github.com/matterport/Mask_RCNN.git
+          value: git clone --depth 1 https://github.com/matterport/Mask_RCNN.git
         - kind: RUN
           value: curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5
         - kind: RUN
-          value: pip3 install -r Mask_RCNN/requirements.txt
-        - kind: RUN
-          value: pip3 install pycocotools keras==2.1.0 pillow pyyaml
+          value: pip3 install numpy cython pyyaml keras==2.1.0 scikit-image Pillow
 
   triggers:
     myHttpTrigger:
