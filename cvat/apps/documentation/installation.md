@@ -290,7 +290,7 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 
 ### Semi-automatic and automatic annotation
 
-Please follow [instructions](/cvat/apps/documentation/installation_automatic_annotation.md)
+Please follow this [guide](/cvat/apps/documentation/installation_automatic_annotation.md).
 
 ### Stop all containers
 
