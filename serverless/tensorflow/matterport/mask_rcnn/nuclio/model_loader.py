@@ -1,7 +1,3 @@
-# Copyright (C) 2018-2020 Intel Corporation
-#
-# SPDX-License-Identifier: MIT
-
 import os
 import numpy as np
 import sys
@@ -13,6 +9,7 @@ sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
 from mrcnn import model as modellib
 from mrcnn.config import Config
 
+
 class ModelLoader:
 
     def __init__(self, labels):
@@ -21,17 +18,20 @@ class ModelLoader:
             raise OSError('Model not found in the system.')
 
         class InferenceConfig(Config):
-            # Give the configuration a recognizable name
             NAME = "coco"
-
-            # Number of classes (including background)
             NUM_CLASSES = 1 + 80  # COCO has 80 classes
-
-            # Set batch size to 1 since we'll be running inference on
-            # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
             GPU_COUNT = 1
             IMAGES_PER_GPU = 1
 
+        # Limit gpu memory to 30% to allow for other nuclio gpu functions. Increase fraction as you like
+        import keras.backend.tensorflow_backend as ktf
+        def get_session(gpu_fraction=0.333):
+            gpu_options = tf.GPUOptions(
+            per_process_gpu_memory_fraction=gpu_fraction,
+            allow_growth=True)
+            return tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
+        ktf.set_session(get_session())
         # Print config details
         self.config = InferenceConfig()
         self.config.display()
