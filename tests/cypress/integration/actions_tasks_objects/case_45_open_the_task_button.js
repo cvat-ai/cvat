@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Check go to task button.', () => {
+context('Check "Open the task" button.', () => {
     const caseId = '45';
 
     before(() => {
