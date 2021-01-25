@@ -339,7 +339,11 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 
         if (multiAttrParams.typeAttribute === 'Text' || multiAttrParams.typeAttribute === 'Number') {
             cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
-                cy.get('.cvat-attribute-values-input').type(multiAttrParams.additionalValue);
+                if (multiAttrParams.additionalValue !== '') {
+                    cy.get('.cvat-attribute-values-input').type(multiAttrParams.additionalValue);
+                } else {
+                    cy.get('.cvat-attribute-values-input').clear();
+                }
             });
         } else if (multiAttrParams.typeAttribute === 'Radio') {
             cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
