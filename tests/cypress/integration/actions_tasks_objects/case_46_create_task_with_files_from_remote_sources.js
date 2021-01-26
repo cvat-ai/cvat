@@ -10,8 +10,7 @@ context('Create a task with files from remote sources.', () => {
     const taskName = `New annotation task for ${labelName}`;
     const wrongUrl =
         'https://raw.githubusercontent.com/openvinotoolkit/cvat/develop/cvat/apps/documentation/static/documentation/images/cvatt.jpg';
-    const correctUrl =
-        'https://raw.githubusercontent.com/openvinotoolkit/cvat/develop/cvat/apps/documentation/static/documentation/images/cvat.jpg';
+    const correctUrl = wrongUrl.replace('cvatt.jpg', 'cvat.jpg');
 
     before(() => {
         cy.visit('auth/login');
@@ -27,7 +26,7 @@ context('Create a task with files from remote sources.', () => {
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Try to create a task with wrong file from remote source. The task is not created.', () => {
+        it('Try to create a task with wrong remote file. The task is not created.', () => {
             cy.get('[id="name"]').type(taskName);
             cy.addNewLabel(labelName);
             cy.contains('Remote sources').click();
@@ -37,7 +36,7 @@ context('Create a task with files from remote sources.', () => {
             cy.closeNotification('.cvat-notification-notice-create-task-failed');
         });
 
-        it('Set cottect URL to remote file. The task is created.', () => {
+        it('Set correct URL to remote file. The task is created.', () => {
             cy.get('[placeholder="Enter one URL per line"]').clear().type(correctUrl);
             cy.contains('[type="button"]', 'Submit').click();
             cy.get('.cvat-notification-create-task-success').should('exist');
