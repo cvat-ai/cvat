@@ -1,6 +1,7 @@
 FROM cvat/server
 
-ENV DJANGO_CONFIGURATION=testing
+ENV DJANGO_CONFIGURATION=testing \
+    PIP_DEFAULT_TIMEOUT=1000
 USER root
 
 RUN apt-get update && \
