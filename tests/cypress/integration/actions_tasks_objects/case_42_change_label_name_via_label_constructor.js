@@ -24,7 +24,7 @@ context('Changing a label name via label constructor.', () => {
 
         it('Change label name to any other correct value. Press "Done" button. The label created.', () => {
             cy.get('[placeholder="Label name"]').type(firstLabelName);
-            cy.contains('[type="submit"]', 'Done').click();
+            cy.contains('[type="submit"]', 'Done').click({ force: true });
             cy.get('.cvat-constructor-viewer-item').should('exist').and('have.text', firstLabelName);
         });
 
