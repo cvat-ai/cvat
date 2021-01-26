@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -86,6 +86,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             notification.info({
                 message: 'The task has been created',
                 btn,
+                className: 'cvat-notification-create-task-success',
             });
 
             if (this.basicConfigurationComponent.current) {
