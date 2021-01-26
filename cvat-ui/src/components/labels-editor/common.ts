@@ -72,7 +72,7 @@ export function validateParsedLabel(label: Label): void {
         throw new Error(`Label "${label.name}". ` + `Label color must be a string. Got ${typeof label.color}`);
     }
 
-    if (!label.color.match(/^#[0-9a-f]{6}$|^$/)) {
+    if (!label.color.match(/^#[0-9a-fA-F]{6}$|^$/)) {
         throw new Error(
             `Label "${label.name}". ` +
                 `Type of label color must be only a valid color string. Got value ${label.color}`,
