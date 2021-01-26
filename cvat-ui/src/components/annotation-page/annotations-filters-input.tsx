@@ -146,6 +146,7 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
                                         width: 700,
                                         title: 'How to use filters?',
                                         content: filtersHelpModalContent(searchForwardShortcut, searchBackwardShortcut),
+                                        className: 'cvat-annotations-filters-help-modal-window',
                                     });
                                 }}
                                 onMouseEnter={() => setDropdownVisible(false)}
