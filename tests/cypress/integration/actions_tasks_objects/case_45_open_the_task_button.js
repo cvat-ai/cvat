@@ -14,11 +14,8 @@ context('Check "Open the task" button.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Open a menu. Press "Open the task".', () => {
+        it('Open a menu. Press "Open the task". CVAT navigate to the task page.', () => {
             cy.interactMenu('Open the task');
-        });
-
-        it('CVAT navigate to the task page.', () => {
             cy.get('.cvat-task-details').should('exist');
             cy.get('.cvat-task-job-list').should('exist');
             cy.contains('.cvat-task-details-task-name', taskName).should('exist');
