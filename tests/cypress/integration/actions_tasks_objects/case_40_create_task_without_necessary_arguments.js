@@ -25,6 +25,7 @@ context('Try to create a task without necessary arguments.', () => {
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.get('#cvat-create-task-button').click();
     });
 
     after(() => {
@@ -35,10 +36,6 @@ context('Try to create a task without necessary arguments.', () => {
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Go to create task page.', () => {
-            cy.get('#cvat-create-task-button').click();
-        });
-
         it('Try to create a task without any fields. A task is not created.', () => {
             cy.get('.cvat-create-task-submit-section').click();
             cy.get('.cvat-notification-create-task-fail').should('exist');
