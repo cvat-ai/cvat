@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SSLCertVerificationError when remote source is used (<https://github.com/openvinotoolkit/cvat/pull/2683>)
 - Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
 - Cuboids are missed in annotations statistics (<https://github.com/openvinotoolkit/cvat/pull/2704>)
+- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pull/2706>)
 
 ### Security
 
