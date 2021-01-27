@@ -3855,6 +3855,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
 
+            elif annotation_format == "WiderFace 1.0":
+                annotations["tags"] = tags_wo_attrs
+
+            elif annotation_format == "VggFace2 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = rectangle_shapes_wo_attrs
+
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
