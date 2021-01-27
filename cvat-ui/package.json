@@ -58,7 +58,7 @@
     "@types/react-router-dom": "^5.1.7",
     "@types/react-share": "^3.0.3",
     "@types/redux-logger": "^3.0.8",
-    "@types/uuid": "^8.3.0",
+    "@types/uuid": "8.3.0",
     "antd": "^4.10.2",
     "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "file:../cvat-canvas",
@@ -82,6 +82,6 @@
     "redux-devtools-extension": "^2.13.8",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
-    "uuid": "^8.3.1"
+    "uuid": "8.3.0"
   }
 }
