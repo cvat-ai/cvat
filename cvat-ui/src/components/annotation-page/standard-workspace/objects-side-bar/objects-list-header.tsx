@@ -1,22 +1,21 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import { Row, Col } from 'antd/lib/grid';
 import {
-    LockFilled,
-    UnlockOutlined,
-    EyeInvisibleFilled,
-    EyeOutlined,
     CaretDownOutlined,
     CaretUpFilled,
+    EyeInvisibleFilled,
+    EyeOutlined,
+    LockFilled,
+    UnlockOutlined,
 } from '@ant-design/icons';
+import { Col, Row } from 'antd/lib/grid';
 import Tooltip from 'antd/lib/tooltip';
-
-import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
+import React from 'react';
 import { StatesOrdering } from 'reducers/interfaces';
+import AnnotationFilterPane from '../../annotation-filter/annotation-filter-pane/annotation-filter-pane';
 
 interface Props {
     readonly: boolean;
@@ -87,7 +86,7 @@ function ObjectListHeader(props: Props): JSX.Element {
         <div className='cvat-objects-sidebar-states-header'>
             <Row>
                 <Col span={24}>
-                    <AnnotationsFiltersInput />
+                    <AnnotationFilterPane />
                 </Col>
             </Row>
             <Row justify='space-between' align='middle'>

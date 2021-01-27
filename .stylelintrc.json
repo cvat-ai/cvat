@@ -8,7 +8,7 @@
     "at-rule-no-unknown": [
       true,
       {
-        "ignoreAtRules": ["extend"]
+        "ignoreAtRules": ["extend", "for"]
       }
     ],
     "selector-type-no-unknown": [
