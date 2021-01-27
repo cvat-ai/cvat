@@ -12,8 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CVAT-3D: support lidar data on the server side (<https://github.com/openvinotoolkit/cvat/pull/2534>)
 
 ### Changed
-
--
+- Updated HTTPS install README section (cleanup and described more robust deploy)
 
 ### Deprecated
 
