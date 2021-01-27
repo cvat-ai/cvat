@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
 - SSLCertVerificationError when remote source is used (<https://github.com/openvinotoolkit/cvat/pull/2683>)
 - Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
+- Fixed tasks in project autoannotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
 
 ### Security
 
