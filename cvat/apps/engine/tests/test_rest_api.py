@@ -3770,6 +3770,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "occluded": False,
             }]
 
+            points_wo_attrs = [{
+                "frame": 1,
+                "label_id": task["labels"][1]["id"],
+                "group": 1,
+                "source": "manual",
+                "attributes": [],
+                "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
+                "type": "points",
+                "occluded": False,
+            }]
+
             tags_wo_attrs = [{
                 "frame": 2,
                 "label_id": task["labels"][1]["id"],
@@ -3860,7 +3871,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
             elif annotation_format == "VggFace2 1.0":
                 annotations["tags"] = tags_wo_attrs
-                annotations["shapes"] = rectangle_shapes_wo_attrs
+                annotations["shapes"] = rectangle_shapes_wo_attrs \
+                                      + points_wo_attrs
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
@@ -3958,7 +3970,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 # 7. check annotation
-                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0", "CamVid 1.0"}:
+                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
+                        "CamVid 1.0", "VggFace2 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)
