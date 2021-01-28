@@ -247,8 +247,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
 
         const [x, y] = pressedPoints.slice(-2);
-        const startX = Math.max(0, x - threshold);
-        const startY = Math.max(0, y - threshold);
+        const startX = Math.round(Math.max(0, x - threshold));
+        const startY = Math.round(Math.max(0, y - threshold));
         const segmentWidth = Math.min(2 * threshold, width - startX);
         const segmentHeight = Math.min(2 * threshold, height - startY);
         const imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
