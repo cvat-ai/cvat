@@ -23,6 +23,10 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+
+    &.ant-layout-sider-collapsed {
+        overflow: initial;
+    }
 }
 
 .cvat-rotate-canvas-controls-right > svg {
