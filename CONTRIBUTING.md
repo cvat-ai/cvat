@@ -68,7 +68,9 @@ patches and features.
 
   ```sh
   npm ci && \
-  cd cvat-core && npm ci && \
+  cd cvat-canvas && npm ci && \
+  cd ../cvat-core && npm ci && \
+  cd ../cvat-data && npm ci && \
   cd ../cvat-ui && npm ci && npm start
   ```
 
