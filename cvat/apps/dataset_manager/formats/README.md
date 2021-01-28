@@ -20,8 +20,8 @@
   - [TF detection API](#tfrecord)
   - [ImageNet](#imagenet)
   - [CamVid](#camvid)
-  - [WiderFace](#widerface)
-  - [VggFace2](#vggface2)
+  - [WIDER Face](#widerface)
+  - [VGGFace2](#vggface2)
 
 ## How to add a new annotation format support<a id="how-to-add"></a>
 
