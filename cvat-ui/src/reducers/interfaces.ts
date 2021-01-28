@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -406,7 +406,7 @@ export interface AnnotationState {
         contextImage: {
             loaded: boolean;
             data: string;
-            hide: boolean;
+            hidden: boolean;
         };
     };
     drawing: {

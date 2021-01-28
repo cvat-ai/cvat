@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,19 +9,10 @@ import consts from './consts';
 import * as THREE from 'three';
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js';
 
-
-import {
-    Canvas3dModel,
-    UpdateReasons,
-    ActiveElement,
-    Mode,
-    Configuration,
-
-} from './canvas3dModel';
+import { Canvas3dModel, UpdateReasons, ActiveElement, Mode, Configuration } from './canvas3dModel';
 
 export interface Canvas3dView {
     html(): HTMLDivElement;
-
     render(): any;
 }
 
@@ -188,13 +179,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public async notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
-
         if (reason === UpdateReasons.IMAGE_CHANGED) {
             const loader = new PCDLoader();
-            this.clearScene()
+            this.clearScene();
             const objectURL = URL.createObjectURL(model.data.image.imageData);
-            loader.load(objectURL, this.addScene.bind(this))
-            URL.revokeObjectURL(objectURL)
+            loader.load(objectURL, this.addScene.bind(this));
+            URL.revokeObjectURL(objectURL);
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.renderer.domElement.dispatchEvent(event);
         }
@@ -209,17 +199,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public addScene(points: any) {
         points.material.size = 0.03;
         points.material.color = new THREE.Color(0x0000ff);
-        this.scene.add(points)
+        this.scene.add(points);
     }
 
     public render() {
         this.renderer.render(this.scene, this.camera);
-
     }
 
     public html(): any {
         this.render();
         return this.renderer.domElement;
     }
-
 }

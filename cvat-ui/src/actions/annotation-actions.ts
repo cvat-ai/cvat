@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1526,11 +1526,11 @@ export function setForceExitAnnotationFlag(forceExit: boolean): AnyAction {
     };
 }
 
-export function hideShowContextImage(hide: boolean): AnyAction {
+export function hideShowContextImage(hidden: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE,
         payload: {
-            hide,
+            hidden,
         },
     };
 }
@@ -1544,7 +1544,7 @@ export function getContextImage(): ThunkAction {
         try {
             const context = await job.frames.contextImage(job.task.id, frame.number);
             const loaded = true;
-            const contextImageHide = contextImage.hide;
+            const contextImageHide = contextImage.hidden;
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
                 payload: {
@@ -1556,7 +1556,7 @@ export function getContextImage(): ThunkAction {
         } catch (error) {
             const context = '';
             const loaded = true;
-            const contextImageHide = contextImage.hide;
+            const contextImageHide = contextImage.hidden;
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
                 payload: {

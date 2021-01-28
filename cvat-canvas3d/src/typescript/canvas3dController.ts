@@ -1,12 +1,8 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    Canvas3dModel,
-    Mode,
-    Configuration,
-} from './canvas3dModel';
+import { Canvas3dModel, Mode, Configuration } from './canvas3dModel';
 
 export interface Canvas3dController {
     readonly configuration: Configuration;

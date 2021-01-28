@@ -47,10 +47,3 @@ console.log('Current mode is ', window.canvas.mode());
 htmlContainer.appendChild(canvas.html());
 canvas.fitCanvas();
 ```
-
-<!--lint enable maximum-line-length-->
-
-You can call setup() during editing, dragging, and resizing only to update objects, not to change a frame.
-You can change frame during draw only when you do not redraw an existing object
-
-Other methods do not change state and can be used everytime.

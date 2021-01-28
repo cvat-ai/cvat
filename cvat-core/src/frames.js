@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -354,10 +354,7 @@
         }
 
         getContextImage(frame) {
-            if (frame in this._contextImage) {
-                return this._contextImage[frame];
-            }
-            return null;
+            return this._contextImage[frame] || null;
         }
 
         addContextImage(frame, data) {

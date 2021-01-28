@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -60,7 +60,7 @@ const defaultState: AnnotationState = {
         contextImage: {
             loaded: false,
             data: '',
-            hide: false,
+            hidden: false,
         },
     },
     drawing: {
@@ -215,7 +215,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     contextImage: {
                         loaded: false,
                         data: '',
-                        hide: state.player.contextImage.hide,
+                        hidden: state.player.contextImage.hidden,
                     },
                 },
             };
@@ -1095,7 +1095,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
-            const { hide } = action.payload;
+            const { hidden } = action.payload;
             const { loaded, data } = state.player.contextImage;
             return {
                 ...state,
@@ -1104,7 +1104,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     contextImage: {
                         loaded,
                         data,
-                        hide,
+                        hidden,
                     },
                 },
             };
@@ -1119,7 +1119,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     contextImage: {
                         loaded,
                         data: context,
-                        hide: state.player.contextImage.hide,
+                        hidden: state.player.contextImage.hidden,
                     },
                 },
             };

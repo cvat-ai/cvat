@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,16 +23,12 @@ export default function ContextImage(props: Props): JSX.Element {
         }
     }, [contextImageHide, loaded]);
 
-    const renderImage = (): JSX.Element => {
-        if (loaded) {
-            if (data === '') {
-                return null;
-            }
-            return <img src={data} alt='Context not available' className='cvat-contextImage-show' />;
-        }
-
-        return <div className='cvat-contextImage-loading'> Loading</div>;
-    };
-
-    return <div>{!contextImageHide ? <div className='cvat-contextImage'>{renderImage()}</div> : null}</div>;
+    if (!contextImageHide && data !== '') {
+        return (
+            <div className='cvat-contextImage'>
+                <img src={data} alt='Context not available' className='cvat-contextImage-show' />
+            </div>
+        );
+    }
+    return null;
 }

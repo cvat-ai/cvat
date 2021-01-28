@@ -1,3 +1,7 @@
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { MasterImpl } from './master';
 
 export interface Size {
@@ -10,7 +14,6 @@ export interface Image {
     renderHeight: number;
     imageData: ImageData | CanvasImageSource;
 }
-
 
 export interface Geometry {
     image: Size;
@@ -69,7 +72,6 @@ export interface InteractionData {
     minPosVertices?: number;
     minNegVertices?: number;
 }
-
 
 export interface GroupData {
     enabled: boolean;
@@ -142,11 +144,9 @@ export interface Canvas3dModel {
     isAbleToChangeFrame(): boolean;
 
     fitCanvas(width: number, height: number): void;
-
 }
 
 export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
-
     private data: {
         activeElement: ActiveElement;
         angle: number;
@@ -283,7 +283,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.IMAGE_FITTED);
     }
 
-
     public get configuration(): Configuration {
         return { ...this.data.configuration };
     }
@@ -318,7 +317,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 this.data.imageSize = {
                     height: frameData.height as number,
                     width: frameData.width as number,
-                    frameData: frameData.number
+                    frameData: frameData.number,
                 };
 
                 this.data.image = data;
@@ -343,8 +342,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
-            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable =
+            [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
+            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }
@@ -360,5 +360,4 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.FITTED_CANVAS);
         this.notify(UpdateReasons.OBJECTS_UPDATED);
     }
-
 }
