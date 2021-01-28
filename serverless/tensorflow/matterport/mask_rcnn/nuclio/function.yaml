@@ -97,7 +97,9 @@ spec:
   runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
-
+  env:	
+    - name: MASK_RCNN_DIR	
+      value: /opt/nuclio/Mask_RCNN
   build:
     image: cvat/tf.matterport.mask_rcnn
     baseImage: tensorflow/tensorflow:1.13.1-py3
