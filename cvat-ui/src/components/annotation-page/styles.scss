@@ -280,15 +280,14 @@
     }
 }
 
-.cvat-annotations-filters-input.ant-select > div {
-    height: 32px;
-
-    > div {
+.cvat-annotations-filters-input.ant-select {
+    > .ant-select-selector {
         height: 32px;
+        overflow: auto;
+    }
 
-        ul {
-            display: flex;
-        }
+    > .ant-select-clear {
+        right: 20px;
     }
 }
 

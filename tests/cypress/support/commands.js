@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -523,7 +523,7 @@ Cypress.Commands.add('getScaleValue', () => {
 Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
     if (clear) {
         cy.get('.cvat-annotations-filters-input').within(() => {
-            cy.get('.ant-select-selection-item-remove').click();
+            cy.get('[aria-label="close-circle"]').click();
         });
     }
     cy.get('.cvat-annotations-filters-input')
@@ -536,7 +536,7 @@ Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
 Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
     if (clear) {
         cy.get('.cvat-annotations-filters-input').within(() => {
-            cy.get('.ant-select-selection-item-remove').click();
+            cy.get('[aria-label="close-circle"]').click();
         });
     }
     cy.get('body').click();

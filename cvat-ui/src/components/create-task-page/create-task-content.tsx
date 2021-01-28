@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -86,6 +86,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             notification.info({
                 message: 'The task has been created',
                 btn,
+                className: 'cvat-notification-create-task-success',
             });
 
             if (this.basicConfigurationComponent.current) {
@@ -149,6 +150,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one label or belong to some project',
+                className: 'cvat-notification-create-task-fail',
             });
             return;
         }
@@ -157,6 +159,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one file',
+                className: 'cvat-notification-create-task-fail',
             });
             return;
         }
@@ -179,6 +182,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     notification.error({
                         message: 'Could not create a task',
                         description: error.toString(),
+                        className: 'cvat-notification-create-task-fail',
                     });
                 });
         }

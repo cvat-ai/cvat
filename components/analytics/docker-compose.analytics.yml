@@ -69,6 +69,10 @@ services:
         ELK_VERSION: 6.4.0
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+    environment:
+        LOGSTASH_OUTPUT_HOST: elasticsearch:9200
+        LOGSTASH_OUTPUT_USER:
+        LOGSTASH_OUTPUT_PASS:
     depends_on: ['cvat_elasticsearch']
     restart: always
 
