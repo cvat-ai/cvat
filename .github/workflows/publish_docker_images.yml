@@ -1,0 +1,50 @@
+name: Publish Docker images
+on:
+  release:
+    types: [published]
+
+jobs:
+  build_and_push_to_registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+
+      - name: Build images
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml build
+
+      - name: Unit tests
+        env:
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli'
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test'
+          docker-compose up -d
+          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+
+      - name: End-to-end testing
+        run: |
+          cd ./tests
+          npm ci
+          npx cypress run --headless --browser chrome
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -name: Push to Docker Hub
+        env:
+          DOCKERHUB_WORKSPACE: 'azhavoro'
+          SERVER_IMAGE_REPO: 'cvat-server'
+          UI_IMAGE_REPO: 'cvat-ui'
+        run: |
+          docker tag cvat/server:latest '${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}'
+          docker push '${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}'
+
+          # docker tag cvat/ui:latest '${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:${{ github.event.release.tag_name }}'
+          # docker push '${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:${{ github.event.release.tag_name }}'
