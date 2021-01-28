@@ -37,7 +37,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -name: Push to Docker Hub
+      - name: Push to Docker Hub
         env:
           DOCKERHUB_WORKSPACE: 'azhavoro'
           SERVER_IMAGE_REPO: 'cvat-server'
