@@ -1,11 +1,17 @@
+# Copyright (C) 2020-2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import os
 import numpy as np
 import sys
 from skimage.measure import find_contours, approximate_polygon
 from pathlib import Path
 import tensorflow as tf
-MASK_RCNN_DIR = '/opt/nuclio/Mask_RCNN'
-sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
+MASK_RCNN_DIR = os.path.abspath(os.environ.get('MASK_RCNN_DIR'))	
+if MASK_RCNN_DIR:	
+    sys.path.append(MASK_RCNN_DIR)  # To find local version of the library	
+
 from mrcnn import model as modellib
 from mrcnn.config import Config
 
@@ -13,9 +19,9 @@ from mrcnn.config import Config
 class ModelLoader:
 
     def __init__(self, labels):
-        COCO_MODEL_PATH = Path("/opt/nuclio/Mask_RCNN/mask_rcnn_coco.h5")
-        if not COCO_MODEL_PATH.exists():
-            raise OSError('Model not found in the system.')
+        COCO_MODEL_PATH = os.path.join(MASK_RCNN_DIR, "mask_rcnn_coco.h5")
+        if COCO_MODEL_PATH is None:
+            raise OSError('Model path env not found in the system.')
 
         class InferenceConfig(Config):
             NAME = "coco"
@@ -37,8 +43,8 @@ class ModelLoader:
         self.config.display()
 
         self.model = modellib.MaskRCNN(mode="inference",
-                                       config=self.config, model_dir=MASK_RCNN_DIR)
-        self.model.load_weights(str(COCO_MODEL_PATH), by_name=True)
+            config=self.config, model_dir=MASK_RCNN_DIR)
+        self.model.load_weights(COCO_MODEL_PATH, by_name=True)
         self.labels = labels
 
     def infer(self, image, threshold):
