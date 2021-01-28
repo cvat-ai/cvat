@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated HTTPS install README section (cleanup and described more robust deploy)
 - Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
+- Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
 
 ### Deprecated
 
