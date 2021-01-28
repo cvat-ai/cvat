@@ -51,21 +51,14 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
 
     public constructor(cv: any) {
         this.cv = cv;
-        this.scissors = {
-            // eslint-disable-next-line new-cap
-            tool: new cv.segmentation_IntelligentScissorsMB(),
-            state: {
-                path: [],
-                anchors: {},
-                image: null,
-            },
-        };
-
-        this.scissors.tool.setEdgeFeatureCannyParameters(32, 100);
-        this.scissors.tool.setGradientMagnitudeMaxLimit(200);
+        this.reset();
     }
 
     public reset(): void {
+        if (this.scissors && this.scissors.tool) {
+            this.scissors.tool.delete();
+        }
+
         this.scissors = {
             // eslint-disable-next-line new-cap
             tool: new this.cv.segmentation_IntelligentScissorsMB(),
@@ -75,6 +68,9 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 image: null,
             },
         };
+
+        this.scissors.tool.setEdgeFeatureCannyParameters(32, 100);
+        this.scissors.tool.setGradientMagnitudeMaxLimit(200);
     }
 
     public run(coordinates: number[], image: ImageData, offsetX: number, offsetY: number): number[] {
