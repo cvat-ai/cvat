@@ -137,7 +137,9 @@ class LambdaFunction:
             quality = data.get("quality")
             mapping = data.get("mapping")
             mapping_by_default = {db_label.name:db_label.name
-                for db_label in db_task.label_set.all()}
+                for db_label in (
+                        db_task.project.label_set if db_task.project_id else db_task.label_set
+                    ).all()}
             if not mapping:
                 # use mapping by default to avoid labels in mapping which
                 # don't exist in the task
@@ -477,7 +479,7 @@ class LambdaJob:
         db_task = TaskModel.objects.get(pk=task)
         if cleanup:
             dm.task.delete_task_data(db_task.id)
-        db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
+        db_labels = (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all()
         labels = {db_label.name:db_label.id for db_label in db_labels}
 
         if function.kind == LambdaType.DETECTOR:
