@@ -119,19 +119,20 @@ context('Object make a copy.', () => {
             }
         });
 
-        it('Make a copy via object context menu.', () => {
+        // Disabled part of the test for the Firefox browser due to possible problems positioning the element and completing the trigger() construct for moving the mouse cursor over the element.
+        it('Make a copy via object context menu.', { browser: '!firefox' }, () => {
             let coordX = 100;
             let coordY = 400;
             for (let id = 1; id < countObject; id++) {
                 // Point doesn't have a context menu
                 if (id === 4) {
                     cy.get(`#cvat_canvas_shape_${id}`)
-                        .trigger('mousemove', 'top')
+                        .trigger('mousemove', 'right')
                         .should('have.class', 'cvat_canvas_shape_activated')
                         .rightclick('right'); // When click in the center of polyline: is being covered by another element: <svg xmlns="http://www.w3.org/2000/svg" ...
                 } else {
                     cy.get(`#cvat_canvas_shape_${id}`)
-                        .trigger('mousemove', 'top')
+                        .trigger('mousemove')
                         .should('have.class', 'cvat_canvas_shape_activated')
                         .rightclick();
                 }
@@ -148,15 +149,19 @@ context('Object make a copy.', () => {
             }
         });
 
-        it('After copying via object context menu, the attributes of the objects are the same.', () => {
-            checkObjectArrSize(14); // The point was not copied via the object's context menu
-            for (let id = 11; id < 15; id++) {
-                compareObjectsAttr('#cvat_canvas_shape_1', `#cvat_canvas_shape_${id}`);
-                compareObjectsSidebarAttr(
-                    '#cvat-objects-sidebar-state-item-1',
-                    `#cvat-objects-sidebar-state-item-${id}`,
-                );
-            }
-        });
+        it(
+            'After copying via object context menu, the attributes of the objects are the same.',
+            { browser: '!firefox' },
+            () => {
+                checkObjectArrSize(14); // The point was not copied via the object's context menu
+                for (let id = 11; id < 15; id++) {
+                    compareObjectsAttr('#cvat_canvas_shape_1', `#cvat_canvas_shape_${id}`);
+                    compareObjectsSidebarAttr(
+                        '#cvat-objects-sidebar-state-item-1',
+                        `#cvat-objects-sidebar-state-item-${id}`,
+                    );
+                }
+            },
+        );
     });
 });
