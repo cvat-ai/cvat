@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,7 +34,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance },
             player: {
                 frame: { data: frameData },
-                contextImage: { hide: contextImageHide, data, loaded },
+                contextImage: { hidden: contextImageHide, data, loaded },
             },
             annotations: {
                 states: annotations,

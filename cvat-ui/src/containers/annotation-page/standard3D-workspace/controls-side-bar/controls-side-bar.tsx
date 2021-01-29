@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    hideShowContextImage(hide: boolean): void;
+    hideShowContextImage(hidden: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -28,7 +28,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
             player: {
-                contextImage: { hide: contextImageHide, loaded },
+                contextImage: { hidden: contextImageHide, loaded },
             },
         },
         shortcuts: { keyMap, normalizedKeyMap },
@@ -46,8 +46,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        hideShowContextImage(hide: boolean): void {
-            dispatch(hideShowContextImage(hide));
+        hideShowContextImage(hidden: boolean): void {
+            dispatch(hideShowContextImage(hidden));
         },
     };
 }

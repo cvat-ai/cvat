@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,7 +21,7 @@ interface Props {
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
     contextImageHide: boolean;
-    hideShowContextImage(hide: boolean): void;
+    hideShowContextImage(hidden: boolean): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {

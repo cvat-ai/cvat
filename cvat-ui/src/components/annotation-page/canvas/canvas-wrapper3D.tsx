@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ import Layout from 'antd/lib/layout/layout';
 
 import { ObjectType, Workspace } from 'reducers/interfaces';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import consts from 'consts';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
 
 interface Props {
@@ -60,7 +59,6 @@ const CanvasWrapperComponent = (props: Props) => {
             canvasInstance.setup(
                 frameData,
                 annotations.filter((e) => e.objectType !== ObjectType.TAG),
-                curZLayer,
             );
         }
     };
@@ -77,18 +75,9 @@ const CanvasWrapperComponent = (props: Props) => {
     };
 
     useEffect(() => {
-        const {
-            automaticBordering, showObjectsTextAlways, canvasInstance, workspace,
-        } = props;
+        const { canvasInstance } = props;
 
         cvatCanvasContainerRef.current.appendChild(canvasInstance.html());
-
-        canvasInstance.configure({
-            autoborders: automaticBordering,
-            undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
-            displayAllText: showObjectsTextAlways,
-            forceDisableEditing: [Workspace.ATTRIBUTE_ANNOTATION, Workspace.REVIEW_WORKSPACE].includes(workspace),
-        });
 
         initialSetup();
         updateCanvas();

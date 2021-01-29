@@ -5,9 +5,7 @@
 import { Canvas3dModel, Mode, Configuration } from './canvas3dModel';
 
 export interface Canvas3dController {
-    readonly configuration: Configuration;
     mode: Mode;
-    fit(): void;
 }
 
 export class Canvas3dControllerImpl implements Canvas3dController {
@@ -15,14 +13,6 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public constructor(model: Canvas3dModel) {
         this.model = model;
-    }
-
-    public fit(): void {
-        this.model.fit();
-    }
-
-    public get configuration(): Configuration {
-        return this.model.configuration;
     }
 
     public set mode(value: Mode) {

@@ -15,10 +15,10 @@ const Canvas3dVersion = pjson.version;
 interface Canvas3d {
     html(): any;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
-    configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
     fitCanvas(): void;
     mode(): Mode;
+    render(): void;
 }
 
 class Canvas3dImpl implements Canvas3d {
@@ -42,10 +42,6 @@ class Canvas3dImpl implements Canvas3d {
 
     public setup(frameData: any, objectStates: any[], zLayer = 0): void {
         this.model.setup(frameData, objectStates, zLayer);
-    }
-
-    public configure(configuration: Configuration): void {
-        this.model.configure(configuration);
     }
 
     public mode(): Mode {

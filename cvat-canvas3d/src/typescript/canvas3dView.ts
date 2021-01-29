@@ -178,7 +178,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         model.subscribe(this);
     }
 
-    public async notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
+    public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
         if (reason === UpdateReasons.IMAGE_CHANGED) {
             const loader = new PCDLoader();
             this.clearScene();
@@ -190,13 +190,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    public clearScene() {
+    private clearScene() {
         for (let i = this.scene.children.length - 1; i >= 0; i--) {
             this.scene.remove(this.scene.children[i]);
         }
     }
 
-    public addScene(points: any) {
+    private addScene(points: any) {
         points.material.size = 0.03;
         points.material.color = new THREE.Color(0x0000ff);
         this.scene.add(points);

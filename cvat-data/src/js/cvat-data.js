@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +25,7 @@ class FrameProvider {
         cachedBlockCount,
         decodedBlocksCacheSize = 5,
         maxWorkerThreadCount = 2,
-        dimension,
+        dimension = DimensionType.DIM_2D,
     ) {
         this._frames = {};
         this._cachedBlockCount = Math.max(1, cachedBlockCount); // number of stored blocks
@@ -343,7 +343,11 @@ class FrameProvider {
                 };
                 const dimension = this._dimension;
                 worker.postMessage({
-                    block, start, end, dimension, dimension2D: DimensionType.DIM_2D,
+                    block,
+                    start,
+                    end,
+                    dimension,
+                    dimension2D: DimensionType.DIM_2D,
                 });
                 this._decodeThreadCount++;
             }
