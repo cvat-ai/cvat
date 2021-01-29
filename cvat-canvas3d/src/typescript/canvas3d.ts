@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import '../scss/canvas.scss';
 import pjson from '../../package.json';
-import { Configuration, Mode } from './canvas3dModel';
-import { Canvas3dModelImpl, Canvas3dModel } from './canvas3dModel';
-import { Master } from './master';
+import '../scss/canvas.scss';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
+import { Canvas3dModel, Canvas3dModelImpl, Mode } from './canvas3dModel';
 import { Canvas3dView, Canvas3dViewImpl } from './canvas3dView';
+import { Master } from './master';
 
 const Canvas3dVersion = pjson.version;
 
