@@ -58,11 +58,11 @@ context('Object make a copy.', () => {
     };
     const countObject = 5;
 
-    function checkObjectArrSize(expectedValue) {
+    function checkObjectArrSize(expectedValueShape, expectedValueSidebar) {
         cy.get('.cvat_canvas_shape').then(($cvatCanvasShape) => {
             cy.get('.cvat-objects-sidebar-state-item').then(($cvatObjectsSidebarStateItem) => {
-                expect($cvatCanvasShape.length).be.equal(expectedValue);
-                expect($cvatObjectsSidebarStateItem.length).be.equal(expectedValue);
+                expect($cvatCanvasShape.length).be.equal(expectedValueShape);
+                expect($cvatObjectsSidebarStateItem.length).be.equal(expectedValueSidebar);
             });
         });
     }
@@ -91,13 +91,14 @@ context('Object make a copy.', () => {
         cy.createPolygon(createPolygonShape);
         cy.createPolyline(createPolylinesShape);
         cy.createPoint(createPointsShape);
+        cy.createTag(labelName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Make a copy via sidebar.', () => {
             let coordX = 100;
             let coordY = 300;
-            for (let id = 1; id < countObject + 1; id++) {
+            for (let id = 1; id < countObject + 2; id++) {
                 cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
                     cy.get('[aria-label="more"]').trigger('mouseover').wait(300); // Wait dropdown menu transition
                 });
@@ -109,13 +110,15 @@ context('Object make a copy.', () => {
         });
 
         it('After copying via sidebar, the attributes of the objects are the same.', () => {
-            checkObjectArrSize(10);
-            for (let id = 6; id < 11; id++) {
-                compareObjectsAttr('#cvat_canvas_shape_1', `#cvat_canvas_shape_${id}`);
+            checkObjectArrSize(10, 12);
+            for (let id = 1; id < countObject; id++) {
+                compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject + 1}`); // Parameters id 1 equal patameters id 7, 2 to 8, etc.
+            }
+            for (let idSidebar = 1; idSidebar < 7; idSidebar++) {
                 compareObjectsSidebarAttr(
-                    '#cvat-objects-sidebar-state-item-1',
-                    `#cvat-objects-sidebar-state-item-${id}`,
-                );
+                    `#cvat-objects-sidebar-state-item-${idSidebar}`,
+                    `#cvat-objects-sidebar-state-item-${idSidebar + countObject + 1}`,
+                ); // Parameters sidebar id 1 equal patameters sidebar id 7, 2 to 8, etc.
             }
         });
 
@@ -153,13 +156,15 @@ context('Object make a copy.', () => {
             'After copying via object context menu, the attributes of the objects are the same.',
             { browser: '!firefox' },
             () => {
-                checkObjectArrSize(14); // The point was not copied via the object's context menu
-                for (let id = 11; id < 15; id++) {
-                    compareObjectsAttr('#cvat_canvas_shape_1', `#cvat_canvas_shape_${id}`);
+                checkObjectArrSize(14, 16); // The point and tag was not copied via the object's context menu
+                for (let id = 1; id < countObject; id++) {
+                    compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject + 7}`); // Parameters id 1 equal patameters id 13, 2 to 14, etc.
+                }
+                for (let idSidebar = 1; idSidebar < 6; idSidebar++) {
                     compareObjectsSidebarAttr(
-                        '#cvat-objects-sidebar-state-item-1',
-                        `#cvat-objects-sidebar-state-item-${id}`,
-                    );
+                        `#cvat-objects-sidebar-state-item-${idSidebar}`,
+                        `#cvat-objects-sidebar-state-item-${idSidebar + countObject + 6}`,
+                    ); // Parameters sidebar id 1 equal patameters sidebar id 13, 2 to 14, etc.
                 }
             },
         );
