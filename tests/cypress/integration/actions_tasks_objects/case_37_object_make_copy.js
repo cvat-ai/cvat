@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,11 +12,51 @@ context('Object make a copy.', () => {
         points: 'By 2 Points',
         type: 'Shape',
         labelName: labelName,
-        firstX: 400,
+        firstX: 100,
         firstY: 100,
-        secondX: 500,
-        secondY: 200,
+        secondX: 150,
+        secondY: 150,
     };
+    const createCuboidShape2Points = {
+        points: 'From rectangle',
+        type: 'Shape',
+        labelName: labelName,
+        firstX: 200,
+        firstY: 100,
+        secondX: 250,
+        secondY: 150,
+    };
+    const createPolygonShape = {
+        reDraw: false,
+        type: 'Shape',
+        labelName: labelName,
+        pointsMap: [
+            { x: 300, y: 100 },
+            { x: 350, y: 100 },
+            { x: 350, y: 150 },
+        ],
+        complete: true,
+        numberOfPoints: null,
+    };
+    const createPolylinesShape = {
+        type: 'Shape',
+        labelName: labelName,
+        pointsMap: [
+            { x: 400, y: 100 },
+            { x: 450, y: 100 },
+            { x: 450, y: 150 },
+        ],
+        complete: true,
+        numberOfPoints: null,
+    };
+    const createPointsShape = {
+        type: 'Shape',
+        labelName: labelName,
+        pointsMap: [{ x: 500, y: 100 }],
+        complete: true,
+        numberOfPoints: null,
+    };
+    const countObject = 5;
 
     function checkObjectArrSize(expectedValue) {
         cy.get('.cvat_canvas_shape').then(($cvatCanvasShape) => {
@@ -47,42 +87,76 @@ context('Object make a copy.', () => {
     before(() => {
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
+        cy.createCuboid(createCuboidShape2Points);
+        cy.createPolygon(createPolygonShape);
+        cy.createPolyline(createPolylinesShape);
+        cy.createPoint(createPointsShape);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Make a copy via sidebar.', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
-                cy.get('[aria-label="more"]').trigger('mouseover');
-            });
-            cy.get('.cvat-object-item-menu').within(() => {
-                cy.contains('button', 'Make a copy').click();
-            });
-            cy.get('.cvat-canvas-container').click();
+            let coordX = 100;
+            let coordY = 300;
+            for (let id = 1; id < countObject + 1; id++) {
+                cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
+                    cy.get('[aria-label="more"]').trigger('mouseover').wait(300); // Wait dropdown menu transition
+                });
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the tast element from cvat-object-item-menu array
+                cy.get('.cvat-canvas-container').click(coordX, coordY);
+                cy.get('.cvat-canvas-container').click();
+                coordX += 100;
+            }
         });
 
-        it('Object attributes are the same.', () => {
-            checkObjectArrSize(2);
-            compareObjectsAttr('#cvat_canvas_shape_1', '#cvat_canvas_shape_2');
-            compareObjectsSidebarAttr('#cvat-objects-sidebar-state-item-1', '#cvat-objects-sidebar-state-item-2');
+        it('After copying via sidebar, the attributes of the objects are the same.', () => {
+            checkObjectArrSize(10);
+            for (let id = 6; id < 11; id++) {
+                compareObjectsAttr('#cvat_canvas_shape_1', `#cvat_canvas_shape_${id}`);
+                compareObjectsSidebarAttr(
+                    '#cvat-objects-sidebar-state-item-1',
+                    `#cvat-objects-sidebar-state-item-${id}`,
+                );
+            }
         });
 
         it('Make a copy via object context menu.', () => {
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove')
-                .should('have.class', 'cvat_canvas_shape_activated')
-                .rightclick();
-            cy.get('.cvat-canvas-context-menu').within(() => {
-                cy.get('[aria-label="more"]').trigger('mouseover');
-            });
-            cy.get('.cvat-object-item-menu').contains('button', 'Make a copy').click({ force: true });
-            cy.get('.cvat-canvas-container').click(500, 500);
-            cy.get('.cvat-canvas-container').click(300, 500); //deactivate all objects and hide context menu
+            let coordX = 100;
+            let coordY = 400;
+            for (let id = 1; id < countObject; id++) {
+                // Point doesn't have a context menu
+                if (id === 4) {
+                    cy.get(`#cvat_canvas_shape_${id}`)
+                        .trigger('mousemove', 'top')
+                        .should('have.class', 'cvat_canvas_shape_activated')
+                        .rightclick('right'); // When click in the center of polyline: is being covered by another element: <svg xmlns="http://www.w3.org/2000/svg" ...
+                } else {
+                    cy.get(`#cvat_canvas_shape_${id}`)
+                        .trigger('mousemove', 'top')
+                        .should('have.class', 'cvat_canvas_shape_activated')
+                        .rightclick();
+                }
+                cy.get('.cvat-canvas-context-menu')
+                    .last()
+                    .should('be.visible')
+                    .find('[aria-label="more"]')
+                    .trigger('mouseover')
+                    .wait(300); // Wait dropdown menu transition;
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the tast element from cvat-object-item-menu array
+                cy.get('.cvat-canvas-container').click(coordX, coordY);
+                cy.get('.cvat-canvas-container').click(); // Deactivate all objects and hide context menu
+                coordX += 100;
+            }
         });
 
-        it('Attributes of objects 1 and 3 are the same.', () => {
-            checkObjectArrSize(3);
-            compareObjectsAttr('#cvat_canvas_shape_1', '#cvat_canvas_shape_3');
-            compareObjectsSidebarAttr('#cvat-objects-sidebar-state-item-1', '#cvat-objects-sidebar-state-item-3');
+        it('After copying via object context menu, the attributes of the objects are the same.', () => {
+            checkObjectArrSize(14); // The point was not copied via the object's context menu
+            for (let id = 11; id < 15; id++) {
+                compareObjectsAttr('#cvat_canvas_shape_1', `#cvat_canvas_shape_${id}`);
+                compareObjectsSidebarAttr(
+                    '#cvat-objects-sidebar-state-item-1',
+                    `#cvat-objects-sidebar-state-item-${id}`,
+                );
+            }
         });
     });
 });
