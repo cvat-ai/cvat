@@ -15,7 +15,6 @@ class ModelLoader:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-            
             gpu_fraction = 0.333
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction,
                                         allow_growth=True)

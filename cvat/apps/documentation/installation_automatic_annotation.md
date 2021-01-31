@@ -49,7 +49,7 @@
   - See [deploy_cpu.sh](/serverless/deploy_cpu.sh) for more examples.
 
   #### GPU Support
-  You will need to install [Nvidia Container Toolkit](https://www.tensorflow.org/install/docker#gpu_support) and make sure your docker supports GPU.
+  You will need to install [Nvidia Container Toolkit](https://www.tensorflow.org/install/docker#gpu_support).
   Also you will need to add `--resource-limit nvidia.com/gpu=1 --triggers '{"myHttpTrigger": {"maxWorkers": 1}}'` to
   the nuclio deployment command. You can increase the maxWorker if you have enough GPU memory.
   As an example, below will run on the GPU:
@@ -113,14 +113,15 @@
   ```
   </details>
 
-- To check for internal server errors, run `docker ps -a` to see the list of containers. Find the container that you are interested, e.g., `nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu`.
+- To check for internal server errors, run `docker ps -a` to see the list of containers.
+  Find the container that you are interested, e.g., `nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu`.
   Then check its logs by `docker logs <name of your container>`
   e.g.,
   ```bash
   docker logs nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu
   ```
 
-- If you would like to debug a code inside a container, you can use vscode to directly attach to a container [instructions](https://code.visualstudio.com/docs/remote/attach-container). To apply your changes, make sure to restart the container.
+- If you want to debug a code inside a container, you can use vscode to directly attach to a container [instructions](https://code.visualstudio.com/docs/remote/attach-container). To apply your changes, make sure to restart the container.
   ```bash
   docker restart <name_of_the_container>
   ```
