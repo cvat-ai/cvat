@@ -21,6 +21,7 @@
             height: 25px;
 
             .ant-collapse-arrow {
+                padding: 0;
                 top: $grid-unit-size;
             }
         }
@@ -32,6 +33,7 @@
 
             > .ant-collapse-content-box {
                 padding: 10px;
+                padding-bottom: 0;
             }
         }
     }
@@ -215,6 +217,7 @@
 .cvat-objects-sidebar-state-item-collapse {
     border: 0;
     background: inherit;
+    width: 100%;
 
     > .ant-collapse-item {
         background: inherit;
@@ -226,6 +229,7 @@
             padding-bottom: 2px;
 
             .ant-collapse-arrow {
+                padding: 0;
                 top: $grid-unit-size;
             }
         }

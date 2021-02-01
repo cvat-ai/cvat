@@ -21,6 +21,12 @@
 
 .cvat-objects-sidebar {
     height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    &.ant-layout-sider-collapsed {
+        overflow: initial;
+    }
 }
 
 .cvat-rotate-canvas-controls-right > svg {
@@ -30,6 +36,8 @@
 .cvat-canvas-controls-sidebar {
     background-color: $background-color-2;
     border-right: 1px solid $border-color-1;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .cvat-cursor-control,
