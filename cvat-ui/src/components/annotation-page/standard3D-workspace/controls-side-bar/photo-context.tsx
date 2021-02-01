@@ -2,13 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import Icon from '@ant-design/icons';
+import CameraIcon from '@ant-design/icons/CameraOutlined';
 import Tooltip from 'antd/lib/tooltip';
-
-import { CameraIcon } from 'icons';
-import { ActiveControl } from 'reducers/interfaces';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
+import React from 'react';
+import { ActiveControl } from 'reducers/interfaces';
 
 interface Props {
     canvasInstance: Canvas;
@@ -22,12 +20,11 @@ function PhotoContextControl(props: Props): JSX.Element {
 
     return (
         <Tooltip title='Photo context show/hide' placement='right' mouseLeaveDelay={0}>
-            <Icon
-                component={CameraIcon}
-                className={[
-                    'cvat-move-control',
-                    activeControl === ActiveControl.PHOTO_CONTEXT ? 'cvat-active-canvas-control' : null,
-                ]}
+            <CameraIcon
+                className={`cvat-move-control
+    cvat-control-side-bar-icon-size ${
+        activeControl === ActiveControl.PHOTO_CONTEXT ? 'cvat-active-canvas-control' : ''
+        }`}
                 onClick={(): void => {
                     hideShowContextImage(!contextImageHide);
                 }}
