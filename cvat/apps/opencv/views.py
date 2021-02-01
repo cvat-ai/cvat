@@ -1,7 +1,10 @@
 import os
+import glob
 from django.conf import settings
 from sendfile import sendfile
 
 def OpenCVLibrary(request):
-    path = os.path.realpath(os.path.join(settings.STATIC_ROOT, 'opencv', 'js', 'opencv.js'))
+    dirname = os.path.join(settings.STATIC_ROOT, 'opencv', 'js')
+    pattern = os.path.join(dirname, 'opencv_*.js')
+    path = glob.glob(pattern)[0]
     return sendfile(request, path)
