@@ -121,7 +121,8 @@
   docker logs nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu
   ```
 
-- If you want to debug a code inside a container, you can use vscode to directly attach to a container [instructions](https://code.visualstudio.com/docs/remote/attach-container). To apply your changes, make sure to restart the container.
+- To debug a code inside a container, you can use vscode to attach to a container [instructions](https://code.visualstudio.com/docs/remote/attach-container).
+  To apply your changes, make sure to restart the container.
   ```bash
   docker restart <name_of_the_container>
   ```
