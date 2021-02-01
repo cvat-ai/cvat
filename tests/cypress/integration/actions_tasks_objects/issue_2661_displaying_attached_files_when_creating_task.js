@@ -7,7 +7,7 @@
 context('Displaying attached files when creating a task.', () => {
     const issueId = '2661';
     const labelName = `Issue ${issueId}`;
-    const imagesCount = 6;
+    const imagesCount = 5;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 800;
     const height = 800;
@@ -19,7 +19,7 @@ context('Displaying attached files when creating a task.', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     let imageListToAttach = [];
-    for (let i = 1; i < imagesCount; i++) {
+    for (let i = 1; i <= imagesCount; i++) {
         imageListToAttach.push(`${imageFileName}/${imageFileName}_${i}.png`);
     }
 
@@ -39,9 +39,7 @@ context('Displaying attached files when creating a task.', () => {
 
         it('Attach more then 4 files. Attached files is visible and contain text "<count_files> files selected".', () => {
             cy.get('input[type="file"]').attachFile(imageListToAttach, { subjectType: 'drag-n-drop' });
-            cy.get('.cvat-file-manager-local-tab')
-                .should('contain', `${imagesCount - 1} files selected`)
-                .and('be.visible');
+            cy.get('.cvat-file-manager-local-tab').should('contain', `${imagesCount} files selected`).and('be.visible');
         });
     });
 });
