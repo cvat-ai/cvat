@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -204,6 +204,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
         return (
             <Tabs.TabPane key='remote' tab='Remote sources'>
                 <Input.TextArea
+                    className='cvat-file-selector-remote'
                     placeholder='Enter one URL per line'
                     rows={6}
                     value={[...files.remote].join('\n')}
