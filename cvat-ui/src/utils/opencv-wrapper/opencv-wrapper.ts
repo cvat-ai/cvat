@@ -61,42 +61,19 @@ export class OpenCVWrapper {
         }
 
         // Inject opencv to DOM
-        const scriptElement = window.document.createElement('script');
-        scriptElement.text = decodedScript;
-        scriptElement.type = 'text/javascript';
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval
+        const OpenCVConstructor = new Function(decodedScript);
+        OpenCVConstructor();
 
-        let injectionError: null | Error = null;
-        const errorListener = (event: ErrorEvent): void => {
-            injectionError = event.error;
-        };
+        const global = window as any;
+        await waitFor(
+            100,
+            () =>
+                typeof global.cv !== 'undefined' && typeof global.cv.segmentation_IntelligentScissorsMB !== 'undefined',
+        );
 
-        // need check if appending new script dinamically doesn't throw any error
-        // if it does, need rethrow it to main thread via listener & closure variable
-        window.addEventListener('error', errorListener);
-        try {
-            window.document.body.appendChild(scriptElement);
-        } finally {
-            // Wait while injecting, there is not any events, so we just watching for window object
-            const global = window as any;
-            await waitFor(
-                100,
-                () =>
-                    injectionError ||
-                    (typeof global.cv !== 'undefined' &&
-                        typeof global.cv.segmentation_IntelligentScissorsMB !== 'undefined'),
-            );
-
-            window.removeEventListener('error', errorListener);
-
-            if (!injectionError) {
-                this.cv = global.cv;
-                this.initialized = true;
-            }
-        }
-
-        if (injectionError) {
-            throw injectionError as Error;
-        }
+        this.cv = global.cv;
+        this.initialized = true;
     }
 
     public get isInitialized(): boolean {
