@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--
+- Updated HTTPS install README section (cleanup and described more robust deploy)
+- Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
 
 ### Deprecated
 
@@ -29,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
 - SSLCertVerificationError when remote source is used (<https://github.com/openvinotoolkit/cvat/pull/2683>)
 - Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
+- Fixed tasks in project autoannotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
+- Cuboids are missed in annotations statistics (<https://github.com/openvinotoolkit/cvat/pull/2704>)
+- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pull/2706>)
+- A couple of css-related issues (top bar disappear, wrong arrow position on collapse elements) (<https://github.com/openvinotoolkit/cvat/pull/2736>)
 
 ### Security
 
@@ -120,7 +125,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added auto inference of url schema from host in CLI, if provided (<https://github.com/openvinotoolkit/cvat/pull/2240>)
 - Track frames in skips between annotation is presented in MOT and MOTS formats are marked `outside` (<https://github.com/openvinotoolkit/cvat/pull/2198>)
 - UI packages installation with `npm ci` instead of `npm install` (<https://github.com/openvinotoolkit/cvat/pull/2350>)
-- Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
 
 ### Removed
 
