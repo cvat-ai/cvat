@@ -9,7 +9,7 @@ context('Create a task with files from remote sources.', () => {
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
     const wrongUrl =
-        'https://raw.githubusercontent.com/openvinotoolkit/cvat/develop/cvat/apps/documentation/static/documentation/images/cvatt.jpg';
+        'https://raw.githubusercontent.com/openvinotoolkit/cvat/v1.2.0/cvat/apps/documentation/static/documentation/images/cvatt.jpg';
     const correctUrl = wrongUrl.replace('cvatt.jpg', 'cvat.jpg');
 
     before(() => {
@@ -30,15 +30,15 @@ context('Create a task with files from remote sources.', () => {
             cy.get('[id="name"]').type(taskName);
             cy.addNewLabel(labelName);
             cy.contains('Remote sources').click();
-            cy.get('[placeholder="Enter one URL per line"]').type(wrongUrl);
-            cy.contains('[type="button"]', 'Submit').click();
+            cy.get('.cvat-file-selector-remote').type(wrongUrl);
+            cy.get('.cvat-create-task-submit-section').click();
             cy.get('.cvat-notification-notice-create-task-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-create-task-failed');
         });
 
         it('Set correct URL to remote file. The task is created.', () => {
-            cy.get('[placeholder="Enter one URL per line"]').clear().type(correctUrl);
-            cy.contains('[type="button"]', 'Submit').click();
+            cy.get('.cvat-file-selector-remote').clear().type(correctUrl);
+            cy.get('.cvat-create-task-submit-section').click();
             cy.get('.cvat-notification-create-task-success').should('exist');
             cy.goToTaskList();
             cy.contains('.cvat-item-task-name', taskName).should('exist');
