@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -58,7 +58,7 @@ context('Drawing with predefined number of points.', () => {
 
     function tryDeletePoint() {
         let svgJsCircleId = [];
-        cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.attr', 'fill-opacity', 0.3);
+        cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true }).should('have.attr', 'fill-opacity', 0.3);
         cy.get('circle').then((circle) => {
             for (let i = 0; i < circle.length; i++) {
                 if (circle[i].id.match(/^SvgjsCircle\d+$/)) {
