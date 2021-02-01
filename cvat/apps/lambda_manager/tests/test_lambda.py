@@ -1,44 +1,18 @@
 
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import io
 import json
-import os
-import os.path as osp
-import random
-import shutil
-import struct
-import tempfile
-import xml.etree.ElementTree as ET
-import zipfile
-from collections import defaultdict
-from enum import Enum
-from glob import glob
 from io import BytesIO
 from unittest import mock, skip
 
-import av
-import numpy as np
-import open3d as o3d
 import requests
-from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.http import (Http404, HttpRequest, HttpResponse,
-                         HttpResponseNotFound)
-from pdf2image import convert_from_bytes
+from django.http import HttpResponseNotFound
 from PIL import Image
-from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
-
-from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.engine.models import (AttributeType, Data, DimensionType, Job,
-                                     Label, Project, Segment, StatusChoice,
-                                     StorageChoice, StorageMethodChoice, Task)
-from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
-from cvat.apps.lambda_manager.views import LambdaGateway, LambdaQueue
 
 LAMBDA_ROOT_PATH = '/api/v1/lambda'
 LAMBDA_FUNCTIONS_PATH = f'{LAMBDA_ROOT_PATH}/functions'
@@ -76,7 +50,7 @@ tasks = {
             {"name": "person"},
         ],
     },
-    "assignee_to_user": {
+    "assigneed_to_user": {
         "name": "assignee to user task",
         "overlap": 0,
         "segment_size": 100,
@@ -202,12 +176,12 @@ class LambdaTestCase(APITestCase):
 
         patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self.__get_response_data_from_lambda_gateway_http)
         self.addCleanup(patcher.stop)
-        self.mock_foo = patcher.start()
+        patcher.start()
 
         images_main_task = self._generate_task_images(3)
         images_assigneed_to_user_task = self._generate_task_images(3)
         self.main_task = self._create_task(tasks["main"], images_main_task)
-        self.assigneed_to_user_task = self._create_task(tasks["assignee_to_user"], images_assigneed_to_user_task)
+        self.assigneed_to_user_task = self._create_task(tasks["assigneed_to_user"], images_assigneed_to_user_task)
 
 
     def __get_response_data_from_lambda_gateway_http(self, *args, **kwargs):
@@ -392,32 +366,32 @@ class LambdaTestCase(APITestCase):
 
     @skip("Fail: add mock")
     def test_api_v1_lambda_requests_read(self):
-        id = "cf343b95-afeb-475e-ab53-8d7e64991d30"
+        id_request = "cf343b95-afeb-475e-ab53-8d7e64991d30"
 
-        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id}', self.admin)
+        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data[0])
 
-        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id}', self.user)
+        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data[0])
 
-        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id}', None)
+        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
     def test_api_v1_lambda_requests_read_wrong_id(self):
-        id = "cf343b95-afeb-475e-ab53-8d7e64991d30-wrong-id"
+        id_request = "cf343b95-afeb-475e-ab53-8d7e64991d30-wrong-id"
 
-        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id}', self.admin)
+        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.admin)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id}', self.user)
+        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id}', None)
+        response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
