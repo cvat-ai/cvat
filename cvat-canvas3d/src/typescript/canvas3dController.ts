@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Canvas3dModel, Mode, Configuration } from './canvas3dModel';
+import { Canvas3dModel, Mode } from './canvas3dModel';
 
 export interface Canvas3dController {
     mode: Mode;

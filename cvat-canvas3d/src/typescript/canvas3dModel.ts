@@ -15,27 +15,10 @@ export interface Image {
     imageData: ImageData | CanvasImageSource;
 }
 
-export enum CuboidDrawingMethod {
-    CLASSIC = 'From rectangle',
-    CORNER_POINTS = 'By 4 points',
-}
-
 export interface DrawData {
     enabled: boolean;
-    shapeType?: string;
-    cuboidDrawingMethod?: CuboidDrawingMethod;
-    numberOfPoints?: number;
     initialState?: any;
-    crosshair?: boolean;
     redraw?: number;
-}
-
-export interface InteractionData {
-    enabled: boolean;
-    shapeType?: string;
-    crosshair?: boolean;
-    minPosVertices?: number;
-    minNegVertices?: number;
 }
 
 export enum FrameZoom {
@@ -59,14 +42,13 @@ export enum Mode {
     RESIZE = 'resize',
     DRAW = 'draw',
     EDIT = 'edit',
-    GROUP = 'group',
     INTERACT = 'interact',
 }
 
 export interface Canvas3dModel {
     mode: Mode;
 
-    setup(frameData: any, objectStates: any[], zLayer: number): void;
+    setup(frameData: any): void;
 
     isAbleToChangeFrame(): boolean;
 
@@ -108,7 +90,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         };
     }
 
-    public setup(frameData: any, objectStates: any[]): void {
+    public setup(frameData: any): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -151,9 +133,8 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable =
-            [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
-            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
+            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }

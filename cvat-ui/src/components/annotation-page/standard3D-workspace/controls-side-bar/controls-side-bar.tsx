@@ -21,7 +21,7 @@ interface Props {
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
     contextImageHide: boolean;
-    hideShowContextImage(hidden: boolean): void;
+    hideShowContextImage: (hidden: boolean) => void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {

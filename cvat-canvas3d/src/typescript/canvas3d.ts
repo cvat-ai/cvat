@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import pjson from '../../package.json';
-import '../scss/canvas.scss';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
 import { Canvas3dModel, Canvas3dModelImpl, Mode } from './canvas3dModel';
 import { Canvas3dView, Canvas3dViewImpl } from './canvas3dView';
@@ -13,7 +12,7 @@ const Canvas3dVersion = pjson.version;
 
 interface Canvas3d {
     html(): any;
-    setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    setup(frameData: any): void;
     isAbleToChangeFrame(): boolean;
     fitCanvas(): void;
     mode(): Mode;
@@ -35,12 +34,12 @@ class Canvas3dImpl implements Canvas3d {
         return this.view.html();
     }
 
-    public render(): any {
-        return this.view.render();
+    public render(): void {
+        this.view.render();
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0): void {
-        this.model.setup(frameData, objectStates, zLayer);
+    public setup(frameData: any): void {
+        this.model.setup(frameData);
     }
 
     public mode(): Mode {

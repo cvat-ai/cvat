@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    hideShowContextImage: any;
+    hideShowContextImage: (hidden: boolean) => void;
     contextImageHide: boolean;
 }
 

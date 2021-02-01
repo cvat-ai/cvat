@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useRef } from 'react';
+import React, { ReactElement, useEffect, useRef } from 'react';
 import { GlobalHotKeys } from 'react-hotkeys';
 import Layout from 'antd/lib/layout/layout';
 
-import { ObjectType, Workspace } from 'reducers/interfaces';
+import { Workspace } from 'reducers/interfaces';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
 
@@ -27,7 +27,7 @@ interface Props {
     showObjectsTextAlways: boolean;
 }
 
-const CanvasWrapperComponent = (props: Props) => {
+const CanvasWrapperComponent = (props: Props): ReactElement => {
     const animateId = useRef(0);
     const cvatCanvasContainerRef = useRef();
 
@@ -52,14 +52,11 @@ const CanvasWrapperComponent = (props: Props) => {
         animateId.current = requestAnimationFrame(animateCanvas);
     };
 
-    const updateCanvas = () => {
+    const updateCanvas = (): void => {
         const { canvasInstance } = props;
 
         if (frameData !== null) {
-            canvasInstance.setup(
-                frameData,
-                annotations.filter((e) => e.objectType !== ObjectType.TAG),
-            );
+            canvasInstance.setup(frameData);
         }
     };
 
@@ -97,12 +94,6 @@ const CanvasWrapperComponent = (props: Props) => {
     return (
         <Layout.Content style={{ position: 'relative' }}>
             <GlobalHotKeys />
-            {/*
-                    This element doesn't have any props
-                    So, React isn't going to rerender it
-                    And it's a reason why cvat-canvas appended in mount function works
-                */}
-
             <ContextImage
                 frame={frameData}
                 contextImageHide={contextImageHide}

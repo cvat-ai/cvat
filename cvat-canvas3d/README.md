@@ -27,10 +27,11 @@ npm run build -- --mode=development     # without a minification
 ```ts
 interface Canvas3d {
   html(): HTMLDivElement;
-  setup(frameData: any, objectStates: any[], zLayer?: number): void;
+  setup(frameData: any): void;
   fitCanvas(): void;
   mode(): Mode;
-  configure(configuration: Configuration): void;
+  isAbleToChangeFrame(): boolean;
+  render(): void;
 }
 ```
 
