@@ -4,54 +4,59 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, imageFileName } from '../../support/const';
 
 context('Settings. "Player speed" option.', () => {
     const caseId = '50';
 
     let timeBeforePlay = 0;
     let timeAferPlay = 0;
-    let durationUsual = 0;
+    let durationSlower = 0;
     let durationFastest = 0;
+
+    function changePlayerSpeed(speed) {
+        cy.openSettings();
+        cy.get('.cvat-player-settings-speed').within(() => {
+            cy.get('.cvat-player-settings-speed-select').click();
+        });
+        cy.get(`.cvat-player-settings-speed-${speed}`).click();
+        cy.get('.cvat-player-settings-speed-select').should(
+            'contain.text',
+            speed.charAt(0).toUpperCase() + speed.slice(1),
+        );
+        cy.closeSettings();
+    }
 
     before(() => {
         cy.openTaskJob(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Get current time interval for chenge of frames.', () => {
+        it('Change "Player speed" to "Slower" and measure the speed of changing frames. Go to first frame.', () => {
+            changePlayerSpeed('slower');
             cy.get('.cvat-player-play-button').click();
             timeBeforePlay = Date.now();
+            cy.log(timeBeforePlay);
             cy.get('.cvat-player-filename-wrapper')
-                .should('have.text', 'image_main_task_28.png')
+                .should('have.text', `${imageFileName}_28.png`)
                 .then(() => {
                     timeAferPlay = Date.now();
-                    durationUsual = timeAferPlay - timeBeforePlay;
+                    durationSlower = timeAferPlay - timeBeforePlay;
                 });
+            cy.goCheckFrameNumber(0);
         });
 
-        it('Change "Player speed" to "Fastest"', () => {
-            cy.openSettings();
-            cy.get('.cvat-player-settings-speed').within(() => {
-                cy.get('[title="Usual"]').click();
-            });
-            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').contains('Fastest').click();
-            cy.get('.cvat-player-settings-speed').within(() => {
-                cy.get('[title="Fastest"]').should('exist');
-            });
-            cy.closeSettings();
-        });
-
-        it('Go to first frame and get the frame change time.', () => {
-            cy.get('.cvat-player-first-button').click();
+        it('Change "Player speed" to "Fastest" and measure the speed of changing frames. The "Slower" is expected to be slower than the "Fastest"', () => {
+            changePlayerSpeed('fastest');
             cy.get('.cvat-player-play-button').click();
             timeBeforePlay = Date.now();
+            cy.log(timeBeforePlay);
             cy.get('.cvat-player-filename-wrapper')
-                .should('have.text', 'image_main_task_28.png')
+                .should('have.text', `${imageFileName}_28.png`)
                 .then(() => {
                     timeAferPlay = Date.now();
                     durationFastest = timeAferPlay - timeBeforePlay;
-                    expect(durationUsual).to.be.greaterThan(durationFastest);
+                    expect(durationSlower).to.be.greaterThan(durationFastest);
                 });
         });
     });
