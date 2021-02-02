@@ -1,9 +1,9 @@
-# Simple command line for prepare meta information for video data
+# Simple command line for prepare dataset manifest file
 
 **Usage**
 
 ```bash
-usage: prepare.py [-h] [-chunk_size CHUNK_SIZE] video_file meta_directory
+usage: prepare.py [-h] [-chunk_size CHUNK_SIZE] video_file manifest_directory
 
 positional arguments:
   video_file            Path to video file
