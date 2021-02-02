@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -109,27 +109,28 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col>
                     <Text className='cvat-text-color'> Player speed </Text>
                     <Select
+                        className='cvat-player-settings-speed-select'
                         value={frameSpeed}
                         onChange={(speed: FrameSpeed): void => {
                             onChangeFrameSpeed(speed);
                         }}
                     >
-                        <Select.Option key='fastest' value={FrameSpeed.Fastest}>
+                        <Select.Option key='fastest' value={FrameSpeed.Fastest} className='cvat-player-settings-speed-fastest'>
                             Fastest
                         </Select.Option>
-                        <Select.Option key='fast' value={FrameSpeed.Fast}>
+                        <Select.Option key='fast' value={FrameSpeed.Fast} className='cvat-player-settings-speed-fast'>
                             Fast
                         </Select.Option>
-                        <Select.Option key='usual' value={FrameSpeed.Usual}>
+                        <Select.Option key='usual' value={FrameSpeed.Usual} className='cvat-player-settings-speed-usual'>
                             Usual
                         </Select.Option>
-                        <Select.Option key='slow' value={FrameSpeed.Slow}>
+                        <Select.Option key='slow' value={FrameSpeed.Slow} className='cvat-player-settings-speed-slow'>
                             Slow
                         </Select.Option>
-                        <Select.Option key='slower' value={FrameSpeed.Slower}>
+                        <Select.Option key='slower' value={FrameSpeed.Slower} className='cvat-player-settings-speed-slower'>
                             Slower
                         </Select.Option>
-                        <Select.Option key='slowest' value={FrameSpeed.Slowest}>
+                        <Select.Option key='slowest' value={FrameSpeed.Slowest} className='cvat-player-settings-speed-slowest'>
                             Slowest
                         </Select.Option>
                     </Select>
