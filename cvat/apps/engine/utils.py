@@ -5,11 +5,13 @@
 import ast
 import cv2 as cv
 from collections import namedtuple
+import hashlib
 import importlib
 import sys
 import traceback
 import subprocess
 import os
+from av import VideoFrame
 
 from django.core.exceptions import ValidationError
 
@@ -88,3 +90,8 @@ def rotate_image(image, angle):
     matrix[1, 2] += bound_h/2 - image_center[1]
     matrix = cv.warpAffine(image, matrix, (bound_w, bound_h))
     return matrix
+
+def md5_hash(frame):
+    if isinstance(frame, VideoFrame):
+        frame = frame.to_image()
+    return hashlib.md5(frame.tobytes()).hexdigest()

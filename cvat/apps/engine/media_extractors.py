@@ -25,6 +25,7 @@ from cvat.apps.engine.models import DimensionType
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.prepare import VManifestManager, IManifestManager, WorkWithVideo
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
@@ -310,6 +311,90 @@ class VideoReader(IMediaReader):
     def get_image_size(self, i):
         image = (next(iter(self)))[0]
         return image.width, image.height
+
+class FragmentMediaReader:
+    def __init__(self, chunk_number, chunk_size, start, stop, step=1, *args, **kwargs):
+        self._start = start
+        self._stop = stop + 1 # up to the last inclusive
+        self._step = step
+        self._chunk_number = chunk_number
+        self._chunk_size = chunk_size
+        self._start_chunk_frame_number = self._start + self._chunk_number * self._chunk_size * self._step
+        self._end_chunk_frame_number = min(self._start_chunk_frame_number + (self._chunk_size - 1) * self._step + 1, self._stop)
+        self._frame_range = self._get_frame_range()
+
+    @property
+    def frame_range(self):
+        return self._frame_range
+
+    def _get_frame_range(self):
+        frame_range = []
+        for idx in range(self._start, self._stop, self._step):
+            if idx < self._start_chunk_frame_number:
+                continue
+            elif idx < self._end_chunk_frame_number and not ((idx - self._start_chunk_frame_number) % self._step):
+                frame_range.append(idx)
+            elif (idx - self._start_chunk_frame_number) % self._step:
+                continue
+            else:
+                break
+        return frame_range
+
+class MImagesReader(FragmentMediaReader):
+    def __init__(self, manifest_path, **kwargs):
+        super().__init__(**kwargs)
+        self._manifest = IManifestManager(manifest_path)
+        self._manifest.init_index()
+
+    def __iter__(self):
+        for idx in self._frame_range:
+            yield self._manifest[idx]
+
+class MVideoReader(WorkWithVideo, FragmentMediaReader):
+    def __init__(self, manifest_path, **kwargs):
+        WorkWithVideo.__init__(self, **kwargs)
+        FragmentMediaReader.__init__(self, **kwargs)
+        self._manifest = VManifestManager(manifest_path)
+        self._manifest.init_index()
+
+    def _get_nearest_left_key_frame(self):
+        start_decode_frame_number = 0
+        start_decode_timestamp = 0
+        for _, frame in self._manifest:
+            frame_number, timestamp = frame.get('number'), frame.get('pts')
+            if int(frame_number) <= self._start_chunk_frame_number:
+                start_decode_frame_number = frame_number
+                start_decode_timestamp = timestamp
+            else:
+                break
+        return int(start_decode_frame_number), int(start_decode_timestamp)
+
+    def __iter__(self):
+        start_decode_frame_number, start_decode_timestamp = self._get_nearest_left_key_frame()
+        container = self._open_video_container(self.source_path, mode='r')
+        video_stream = self._get_video_stream(container)
+        container.seek(offset=start_decode_timestamp, stream=video_stream)
+
+        frame_number = start_decode_frame_number - 1
+        for packet in container.demux(video_stream):
+            for frame in packet.decode():
+                frame_number += 1
+                if frame_number in self._frame_range:
+                    if video_stream.metadata.get('rotate'):
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(
+                                frame.to_ndarray(format='bgr24'),
+                                360 - int(container.streams.video[0].metadata.get('rotate'))
+                            ),
+                            format ='bgr24'
+                        )
+                    yield frame
+                elif frame_number < self._frame_range[-1]:
+                    continue
+                else:
+                    self._close_video_container(container)
+                    return
+        self._close_video_container(container)
 
 class IChunkWriter(ABC):
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
