@@ -48,6 +48,7 @@ import SVGResetPerspectiveIcon from './assets/reset-perspective.svg';
 import SVGColorizeIcon from './assets/colorize-icon.svg';
 import SVGAITools from './assets/ai-tools-icon.svg';
 import SVGBrain from './assets/brain.svg';
+import SVGOpenCV from './assets/opencv.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const AccountIcon = React.memo((): JSX.Element => <SVGAccountIcon />);
@@ -93,3 +94,4 @@ export const ResetPerspectiveIcon = React.memo((): JSX.Element => <SVGResetPersp
 export const AIToolsIcon = React.memo((): JSX.Element => <SVGAITools />);
 export const ColorizeIcon = React.memo((): JSX.Element => <SVGColorizeIcon />);
 export const BrainIcon = React.memo((): JSX.Element => <SVGBrain />);
+export const OpenCVIcon = React.memo((): JSX.Element => <SVGOpenCV />);
