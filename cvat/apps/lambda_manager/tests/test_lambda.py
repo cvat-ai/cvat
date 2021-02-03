@@ -6,10 +6,11 @@
 import json
 from io import BytesIO
 from unittest import mock, skip
+from collections import OrderedDict
 
 import requests
 from django.contrib.auth.models import Group, User
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, HttpResponseServerError
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -18,7 +19,17 @@ LAMBDA_ROOT_PATH = '/api/v1/lambda'
 LAMBDA_FUNCTIONS_PATH = f'{LAMBDA_ROOT_PATH}/functions'
 LAMBDA_REQUESTS_PATH = f'{LAMBDA_ROOT_PATH}/requests'
 
-id_function = "test-openvino-omz-public-yolo-v3-tf"
+id_function_detector = "test-openvino-omz-public-yolo-v3-tf"
+id_function_reid = "test-openvino-omz-intel-person-reidentification-retail-0300"
+id_function_interactor = "test-openvino-dextr"
+id_function_tracker = "test-pth-foolwood-siammask"
+id_function_non_type = "test-model-has-non-type"
+id_function_wrong_type = "test-model-has-wrong-type"
+id_function_unknown_type = "test-model-has-unknown-type"
+id_function_non_unique_labels = "test-model-has-non-unique-labels"
+id_function_state_building = "test-model-has-state-building"
+id_function_state_error = "test-model-has-state-error"
+
 expected_keys_in_response_functions = ["id", "kind", "labels", "state", "description", "framework", "name", "min_pos_points"]
 expected_keys_in_response_requests = ["id", "function", "status", "progress", "enqueued", "started", "ended", "exc_info"]
 
@@ -81,25 +92,7 @@ tasks = {
 }
 
 # removed unnecessary data
-functions = {
-	'test-openvino-dextr': {
-		'metadata': {
-			'name': 'test-openvino-dextr',
-			'annotations': {
-				'framework': 'openvino',
-				'min_pos_points': '4',
-				'name': 'DEXTR',
-				'spec': '',
-				'type': 'interactor',
-			},
-		},
-		'spec': {
-			'description': 'Deep Extreme Cut',
-		},
-		'status': {
-			'state': 'error',
-		},
-	},
+functions_positive = {
 	'test-openvino-omz-public-yolo-v3-tf': {
 		'metadata': {
 			'name': 'test-openvino-omz-public-yolo-v3-tf',
@@ -121,29 +114,188 @@ functions = {
 			'httpPort': 49155,
 		},
 	},
-	'test-openvino-omz-semantic-segmentation-adas-0001': {
+	'test-openvino-omz-intel-person-reidentification-retail-0300': {
 		'metadata': {
-			'name': 'test-openvino-omz-semantic-segmentation-adas-0001',
+			'name': 'test-openvino-omz-intel-person-reidentification-retail-0300',
 			'annotations': {
 				'framework': 'openvino',
-				'name': 'Semantic segmentation for ADAS',
-				'spec': '[\n  { "id": 0, "name": "road" },\
-                          \n  { "id": 1, "name": "person" },\
-                          \n  { "id": 2, "name": "car" }\
-                          \n]\n',
-				'type': 'detector',
+				'name': 'Person reidentification',
+				'spec': '',
+				'type': 'reid',
 			},
 		},
 		'spec': {
-			'description': 'Segmentation network to classify each pixel into typical 20 classes for ADAS',
+			'description': 'Person reidentification model for a general scenario',
 		},
 		'status': {
 			'state': 'ready',
 			'httpPort': 49156,
 		},
 	},
+	'test-openvino-dextr': {
+		'metadata': {
+			'name': 'test-openvino-dextr',
+			'annotations': {
+				'framework': 'openvino',
+				'name': 'DEXTR',
+				'spec': '',
+				'type': 'interactor',
+			},
+		},
+		'spec': {
+			'description': 'Deep Extreme Cut',
+		},
+		'status': {
+			'state': 'ready',
+			'httpPort': 49157,
+		},
+	},
+	'test-pth-foolwood-siammask': {
+		'metadata': {
+			'name': 'test-pth-foolwood-siammask',
+			'annotations': {
+				'framework': 'pytorch',
+				'name': 'SiamMask',
+				'spec': '',
+				'type': 'tracker',
+			},
+		},
+		'spec': {
+			'description': 'Fast Online Object Tracking and Segmentation',
+		},
+		'status': {
+			'state': 'ready',
+			'httpPort': 49158,
+		},
+	},
+    'test-model-has-non-type': {
+		'metadata': {
+			'name': 'test-model-has-non-type',
+			'annotations': {
+				'framework': 'openvino',
+				'name': 'Non type',
+				'spec': '[\n  { "id": 0, "name": "person" },\
+                          \n  { "id": 1, "name": "bicycle" },\
+                          \n  { "id": 2, "name": "car" }\
+                          \n]\n',
+			},
+		},
+		'spec': {
+			'description': 'Test non type',
+		},
+		'status': {
+			'state': 'ready',
+			'httpPort': 49160,
+		},
+	},
+    'test-model-has-wrong-type': {
+		'metadata': {
+			'name': 'test-model-has-wrong-type',
+			'annotations': {
+				'framework': 'openvino',
+				'name': 'Non type',
+				'spec': '[\n  { "id": 0, "name": "person" },\
+                          \n  { "id": 1, "name": "bicycle" },\
+                          \n  { "id": 2, "name": "car" }\
+                          \n]\n',
+                'type': 'car-bicycle-person-detector',
+			},
+		},
+		'spec': {
+			'description': 'Test wrong type',
+		},
+		'status': {
+			'state': 'ready',
+			'httpPort': 49161,
+		},
+	},
+    'test-model-has-unknown-type': {
+		'metadata': {
+			'name': 'test-model-has-unknown-type',
+			'annotations': {
+				'framework': 'openvino',
+				'name': 'Non type',
+				'spec': '[\n  { "id": 0, "name": "person" },\
+                          \n  { "id": 1, "name": "bicycle" },\
+                          \n  { "id": 2, "name": "car" }\
+                          \n]\n',
+                'type': 'unknown',
+			},
+		},
+		'spec': {
+			'description': 'Test unknown type',
+		},
+		'status': {
+			'state': 'ready',
+			'httpPort': 49162,
+		},
+	},
+    'test-model-has-state-building': {
+		'metadata': {
+			'name': 'test-model-has-state-building',
+			'annotations': {
+				'framework': 'openvino',
+				'name': 'State is building',
+				'spec': '[\n  { "id": 0, "name": "person" },\
+                          \n  { "id": 1, "name": "bicycle" },\
+                          \n  { "id": 2, "name": "car" }\
+                          \n]\n',
+                'type': 'detector',
+			},
+		},
+		'spec': {
+			'description': 'Test state building',
+		},
+		'status': {
+			'state': 'building',
+		},
+	},
+    'test-model-has-state-error': {
+		'metadata': {
+			'name': 'test-model-has-state-building',
+			'annotations': {
+				'framework': 'openvino',
+				'name': 'State is error',
+				'spec': '[\n  { "id": 0, "name": "person" },\
+                          \n  { "id": 1, "name": "bicycle" },\
+                          \n  { "id": 2, "name": "car" }\
+                          \n]\n',
+                'type': 'detector',
+			},
+		},
+		'spec': {
+			'description': 'Test state error',
+		},
+		'status': {
+			'state': 'error',
+		},
+	},
 }
 
+functions_negative = {
+    'test-model-has-non-unique-labels': {
+		'metadata': {
+			'name': 'test-model-has-non-unique-labels',
+			'annotations': {
+				'framework': 'openvino',
+				'name': 'Non-unique labels',
+				'spec': '[\n  { "id": 0, "name": "person" },\
+                          \n  { "id": 1, "name": "bicycle" },\
+                          \n  { "id": 2, "name": "car" },\
+                          \n  { "id": 3, "name": "car" }\
+                          \n]\n',
+				'type': 'detector',
+			},
+		},
+		'spec': {
+			'description': 'Test non-unique labels',
+		},
+		'status': {
+			'state': 'ready',
+			'httpPort': 49159,
+		},
+	},
+}
 
 def generate_image_file(filename, size=(100, 100)):
     f = BytesIO()
@@ -190,9 +342,20 @@ class LambdaTestCase(APITestCase):
         if url == "/api/function_invocations":
             data = []
             id_function = kwargs["headers"]["x-nuclio-function-name"]
-            type_function = functions[id_function]["metadata"]["annotations"]["type"]
-            if type_function == "interactor":
-                data = [] # TODO
+            type_function = functions_positive[id_function]["metadata"]["annotations"]["type"]
+            if type_function == "reid":
+                data = [] # TODO add return values in data
+            elif type_function == "tracker":
+                data = {
+                    "shape": [12.34, 34.0, 35.01, 41.99],
+                    "state": {"key": "value"},
+                }
+            elif type_function == "interactor":
+                data = [
+                    [8, 12],
+                    [34, 56],
+                    [77, 77],
+                ]
             elif type_function == "detector":
                 data = [
                     {'confidence': '0.9959098', 'label': 'car', 'points': [3, 3, 15, 15], 'type': 'rectangle'},
@@ -202,12 +365,18 @@ class LambdaTestCase(APITestCase):
             return data
         # GET query for get all functions
         elif url == "/api/functions":
-            return functions
+            return functions_positive
         # GET query for get function
         else:
             id_function = url.split("/")[-1]
-            if id_function in functions:
-                return functions[id_function]
+            if id_function in functions_positive:
+                # raise 500 Internal_Server error
+                if id_function in [id_function_state_building, id_function_state_error]:
+                    r = requests.RequestException()
+                    r.response = HttpResponseServerError()
+                    raise r
+                # return values
+                return functions_positive[id_function]
             # raise 404 Not Found error
             else:
                 r = requests.HTTPError()
@@ -294,7 +463,7 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value={})
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = {})
     def test_api_v1_lambda_functions_list_empty(self, mock_http):
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -308,23 +477,36 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative)
+    def test_api_v1_lambda_functions_list_wrong(self, mock_http):
+        response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.admin)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
     def test_api_v1_lambda_functions_read(self):
-        response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_function}', self.admin)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_functions:
-            self.assertIn(key, response.data)
+        ids_functions = [id_function_detector, id_function_interactor,\
+                         id_function_tracker, id_function_reid, \
+                         id_function_non_type, id_function_wrong_type, id_function_unknown_type]
 
-        response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_function}', self.user)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_functions:
-            self.assertIn(key, response.data)
+        for id_func in ids_functions:
+            path = f'{LAMBDA_FUNCTIONS_PATH}/{id_func}'
 
-        response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_function}', None)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            response = self._get_request(path, self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            for key in expected_keys_in_response_functions:
+                self.assertIn(key, response.data)
+
+            response = self._get_request(path, self.user)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            for key in expected_keys_in_response_functions:
+                self.assertIn(key, response.data)
+
+            response = self._get_request(path, None)
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
     def test_api_v1_lambda_functions_read_wrong_id(self):
-        id_wrong_function = f"{id_function}-wrong-id"
+        id_wrong_function = "test-functions-wrong-id"
         response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_wrong_function}', self.admin)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -333,6 +515,12 @@ class LambdaTestCase(APITestCase):
 
         response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_wrong_function}', None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative[id_function_non_unique_labels])
+    def test_api_v1_lambda_functions_read_non_unique_labels(self, mock_http):
+        response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_function_non_unique_labels}', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
     @skip("Fail: add mock")
@@ -397,7 +585,7 @@ class LambdaTestCase(APITestCase):
 
     def test_api_v1_lambda_requests_delete_finished_request(self):
         data = {
-            "function": id_function,
+            "function": id_function_detector,
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
@@ -429,51 +617,62 @@ class LambdaTestCase(APITestCase):
 
 
     def test_api_v1_lambda_requests_create(self):
-        data_main_task = {
-            "function": id_function,
-            "task": self.main_task["id"],
-            "cleanup": True,
-            "mapping": {
-                "car": "car",
-            },
-        }
-        data_assigneed_to_user_task = {
-            "function": id_function,
-            "task": self.assigneed_to_user_task["id"],
-            "cleanup": True,
-            "mapping": {
-                "car": "car",
-            },
-        }
+        ids_functions = [id_function_detector, id_function_interactor,\
+                         id_function_tracker, id_function_reid, \
+                         id_function_non_type, id_function_wrong_type, id_function_unknown_type]
 
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_requests:
-            self.assertIn(key, response.data)
+        for id_func in ids_functions:
+            data_main_task = {
+                "function": id_func,
+                "task": self.main_task["id"],
+                "cleanup": True,
+                "threshold": 55,
+                "quality": "original",
+                "mapping": {
+                    "car": "car",
+                },
+            }
+            data_assigneed_to_user_task = {
+                "function": id_func,
+                "task": self.assigneed_to_user_task["id"],
+                "cleanup": False,
+                "quality": "compressed",
+                "max_distance": 70,
+                "mapping": {
+                    "car": "car",
+                },
+            }
 
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data_assigneed_to_user_task)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_requests:
-            self.assertIn(key, response.data)
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            for key in expected_keys_in_response_requests:
+                self.assertIn(key, response.data)
 
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data_main_task)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data_assigneed_to_user_task)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            for key in expected_keys_in_response_requests:
+                self.assertIn(key, response.data)
 
-        response = self._post_request(LAMBDA_REQUESTS_PATH, None, data_main_task)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data_main_task)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+            response = self._post_request(LAMBDA_REQUESTS_PATH, None, data_main_task)
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    def test_api_v1_lambda_requests_create_empty_mapping(self):
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative["test-model-has-non-unique-labels"])
+    def test_api_v1_lambda_requests_create_non_unique_labels(self, mock_http):
         data = {
-            "function": id_function,
+            "function": id_function_non_unique_labels,
             "task": self.main_task["id"],
             "cleanup": True,
-            "mapping": {},
+            "mapping": {
+                "car": "car",
+            },
         }
+
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_requests:
-            self.assertIn(key, response.data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
     @skip("Fail: expected result != actual result")
@@ -481,32 +680,6 @@ class LambdaTestCase(APITestCase):
         data = {}
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-    def test_api_v1_lambda_requests_create_without_cleanup(self):
-        data = {
-            "function": id_function,
-            "task": self.main_task["id"],
-            "mapping": {
-                "car": "car",
-            },
-        }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_requests:
-            self.assertIn(key, response.data)
-
-
-    def test_api_v1_lambda_requests_create_without_mapping(self):
-        data = {
-            "function": id_function,
-            "task": self.main_task["id"],
-            "cleanup": True,
-        }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_requests:
-            self.assertIn(key, response.data)
 
 
     @skip("Fail: expected result != actual result")
@@ -522,21 +695,9 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_api_v1_lambda_requests_create_without_task(self):
-        data = {
-            "function": id_function,
-            "cleanup": True,
-            "mapping": {
-                "car": "car",
-            },
-        }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
     def test_api_v1_lambda_requests_create_wrong_id_function(self):
         data = {
-            "function": f"{id_function}-wrong-id",
+            "function": "test-requests-wrong-id",
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
@@ -547,23 +708,10 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-    def test_api_v1_lambda_requests_create_wrong_id_task(self):
-        data = {
-            "function": id_function,
-            "task": 12345,
-            "cleanup": True,
-            "mapping": {
-                "car": "car",
-            },
-        }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
     @skip("Fail: add mock")
     def test_api_v1_lambda_requests_create_two_requests(self):
         data = {
-            "function": id_function,
+            "function": id_function_detector,
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
@@ -575,11 +723,93 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
 
-    def test_api_v1_lambda_functions_create(self):
+    def test_api_v1_lambda_requests_create_empty_mapping(self):
+        data = {
+            "function": id_function_detector,
+            "task": self.main_task["id"],
+            "cleanup": True,
+            "mapping": {},
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for key in expected_keys_in_response_requests:
+            self.assertIn(key, response.data)
+
+
+    def test_api_v1_lambda_requests_create_without_cleanup(self):
+        data = {
+            "function": id_function_detector,
+            "task": self.main_task["id"],
+            "mapping": {
+                "car": "car",
+            },
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for key in expected_keys_in_response_requests:
+            self.assertIn(key, response.data)
+
+
+    def test_api_v1_lambda_requests_create_without_mapping(self):
+        data = {
+            "function": id_function_detector,
+            "task": self.main_task["id"],
+            "cleanup": True,
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for key in expected_keys_in_response_requests:
+            self.assertIn(key, response.data)
+
+
+    def test_api_v1_lambda_requests_create_without_task(self):
+        data = {
+            "function": id_function_detector,
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_api_v1_lambda_requests_create_wrong_id_task(self):
+        data = {
+            "function": id_function_detector,
+            "task": 12345,
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_api_v1_lambda_requests_create_is_not_ready(self):
+        ids_functions = [id_function_state_building, id_function_state_error]
+
+        for id_func in ids_functions:
+            data = {
+                "function": id_func,
+                "task": self.main_task["id"],
+                "cleanup": True,
+                "mapping": {
+                    "car": "car",
+                },
+            }
+
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def test_api_v1_lambda_functions_create_detector(self):
         data_main_task = {
             "task": self.main_task["id"],
             "frame": 0,
             "cleanup": True,
+            "threshold": 0.55,
             "mapping": {
                 "car": "car",
             },
@@ -593,15 +823,14 @@ class LambdaTestCase(APITestCase):
             },
         }
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.user, data_assigneed_to_user_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.user, data_assigneed_to_user_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", None, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", None, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
 
     @skip("Fail: expected result != actual result") # TODO move test to test_api_v1_lambda_functions_create
     def test_api_v1_lambda_functions_create_user_assigned_to_no_user(self):
@@ -613,28 +842,223 @@ class LambdaTestCase(APITestCase):
                 "car": "car",
             },
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.user, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.user, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_api_v1_lambda_functions_create_interactor(self):
+        data_main_task = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "points": [
+				[3.45, 6.78],
+				[12.1, 12.1],
+				[34.1, 41.0],
+				[43.01, 43.99],
+			],
+        }
+        data_assigneed_to_user_task = {
+            "task": self.assigneed_to_user_task["id"],
+            "frame": 0,
+            "threshold": 0.1,
+            "points": [
+				[3.45, 6.78],
+				[12.1, 12.1],
+				[34.1, 41.0],
+				[43.01, 43.99],
+			],
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", self.admin, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", self.user, data_assigneed_to_user_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", None, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+    def test_api_v1_lambda_functions_create_tracker(self):
+        data_main_task = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "shape": [
+				12.12,
+				34.45,
+				54.0,
+				76.12,
+			],
+        }
+        data_assigneed_to_user_task = {
+            "task": self.assigneed_to_user_task["id"],
+            "frame": 0,
+            "shape": [
+				12.12,
+				34.45,
+				54.0,
+				76.12,
+			],
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", self.admin, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", self.user, data_assigneed_to_user_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", None, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+    def test_api_v1_lambda_functions_create_reid(self):
+        data_main_task = {
+            "task": self.main_task["id"],
+            "frame0": 0,
+            "frame1": 1,
+            "boxes0": [
+                OrderedDict([('attributes', []), ('frame', 0), ('group', None), ('id', 11258), ('label_id', 8), ('occluded', False), ('path_id', 0), ('points', [137.0, 129.0, 457.0, 676.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+                OrderedDict([('attributes', []), ('frame', 0), ('group', None), ('id', 11259), ('label_id', 8), ('occluded', False), ('path_id', 1), ('points', [1511.0, 224.0, 1537.0, 437.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+            ],
+            "boxes1": [
+                OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11260), ('label_id', 8), ('occluded', False), ('points', [1076.0, 199.0, 1218.0, 593.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+                OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11261), ('label_id', 8), ('occluded', False), ('points', [924.0, 177.0, 1090.0, 615.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+            ],
+            "quality": None,
+            "threshold": 0.5,
+            "max_distance": 55,
+        }
+        data_assigneed_to_user_task = {
+            "task": self.assigneed_to_user_task["id"],
+            "frame0": 0,
+            "frame1": 1,
+            "boxes0": [
+                OrderedDict([('attributes', []), ('frame', 0), ('group', None), ('id', 11258), ('label_id', 8), ('occluded', False), ('path_id', 0), ('points', [137.0, 129.0, 457.0, 676.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+                OrderedDict([('attributes', []), ('frame', 0), ('group', None), ('id', 11259), ('label_id', 8), ('occluded', False), ('path_id', 1), ('points', [1511.0, 224.0, 1537.0, 437.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+            ],
+            "boxes1": [
+                OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11260), ('label_id', 8), ('occluded', False), ('points', [1076.0, 199.0, 1218.0, 593.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+                OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11261), ('label_id', 8), ('occluded', False), ('points', [924.0, 177.0, 1090.0, 615.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+            ],
+            "quality": None,
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid}", self.admin, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid}", self.user, data_assigneed_to_user_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid}", None, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+    def test_api_v1_lambda_functions_create_non_type(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_non_type}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def test_api_v1_lambda_functions_create_wrong_type(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_wrong_type}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def test_api_v1_lambda_functions_create_unknown_type(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_unknown_type}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative["test-model-has-non-unique-labels"])
+    def test_api_v1_lambda_functions_create_non_unique_labels(self, mock_http):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_non_unique_labels}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+    def test_api_v1_lambda_functions_create_quality(self):
+        qualities = [None, "original", "compressed"]
+
+        for quality in qualities:
+            data = {
+                "task": self.main_task["id"],
+                "frame": 0,
+                "cleanup": True,
+                "quality": quality,
+                "mapping": {
+                    "car": "car",
+                },
+            }
+
+            response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "quality": "test-error-quality",
+            "mapping": {
+                "car": "car",
+            },
+        }
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_api_v1_lambda_functions_create_empty_data(self):
         data = {}
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_api_v1_lambda_functions_create_empty_mapping(self):
+    def test_api_v1_lambda_functions_create_detector_empty_mapping(self):
         data = {
             "task": self.main_task["id"],
             "frame": 0,
             "cleanup": True,
             "mapping": {},
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    def test_api_v1_lambda_functions_create_without_cleanup(self):
+    def test_api_v1_lambda_functions_create_detector_without_cleanup(self):
         data = {
             "task": self.main_task["id"],
             "frame": 0,
@@ -642,21 +1066,21 @@ class LambdaTestCase(APITestCase):
                 "car": "car",
             },
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    def test_api_v1_lambda_functions_create_without_mapping(self):
+    def test_api_v1_lambda_functions_create_detector_without_mapping(self):
         data = {
             "task": self.main_task["id"],
             "frame": 0,
             "cleanup": True,
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    def test_api_v1_lambda_functions_create_without_task(self):
+    def test_api_v1_lambda_functions_create_detector_without_task(self):
         data = {
             "frame": 0,
             "cleanup": True,
@@ -664,7 +1088,19 @@ class LambdaTestCase(APITestCase):
                 "car": "car",
             },
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_api_v1_lambda_functions_create_detector_without_id_frame(self):
+        data = {
+            "task": self.main_task["id"],
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -677,7 +1113,7 @@ class LambdaTestCase(APITestCase):
                 "car": "car",
             },
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}-wrong-id", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/test-functions-wrong-id", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
@@ -690,12 +1126,12 @@ class LambdaTestCase(APITestCase):
                 "car": "car",
             },
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     @skip("Fail: expected result != actual result")
-    def test_api_v1_lambda_functions_create_wrong_id_frame(self):
+    def test_api_v1_lambda_functions_create_detector_wrong_id_frame(self):
         data = {
             "task": self.main_task["id"],
             "frame": 12345,
@@ -704,7 +1140,7 @@ class LambdaTestCase(APITestCase):
                 "car": "car",
             },
         }
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -718,7 +1154,23 @@ class LambdaTestCase(APITestCase):
                 "car": "car",
             },
         }
-        self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function}", self.admin, data)
+        self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+
+    def test_api_v1_lambda_functions_create_function_is_not_ready(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "mapping": {
+                "car": "car",
+            },
+        }
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_building}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_error}", self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
