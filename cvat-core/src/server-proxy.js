@@ -970,7 +970,7 @@
                 }
             }
 
-            function predictorStatus(projectId, onUpdate) {
+            function predictorStatus(projectId) {
                 const { backendAPI } = config;
 
                 return new Promise((resolve, reject) => {
@@ -1011,31 +1011,54 @@
                 });
             }
 
-            async function predictAnnotations(taskId, frame) {
-                const { backendAPI } = config;
+            function predictAnnotations(taskId, frame) {
+                return new Promise((resolve, reject) => {
+                    const { backendAPI } = config;
 
-                try {
-                    // const response = await Axios.get(`${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`);
-                    const fakeResponse = {
-                        data: {
-                            status: 'done',
-                            annotation: await callLambdaFunction(
-                                'openvino-omz-public-yolo-v3-tf',
-                                {
-                                    cleanup: false,
-                                    frame,
-                                    task: taskId,
-                                    mapping: {
-                                        person: 'lenna',
-                                    },
+                    async function request() {
+                        try {
+                            // const response = await Axios
+                            // .get(`${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`);
+                            const fakeResponse = {
+                                data: {
+                                    status: 'done',
+                                    annotation: await callLambdaFunction(
+                                        'openvino-omz-public-yolo-v3-tf',
+                                        {
+                                            cleanup: false,
+                                            frame,
+                                            task: taskId,
+                                            mapping: {
+                                                person: 'lenna',
+                                            },
+                                        },
+                                    ),
                                 },
-                            ),
-                        },
+                            };
+                            return fakeResponse.data;
+                        } catch (errorData) {
+                            throw generateError(errorData);
+                        }
+                    }
+
+                    const timeoutCallback = async () => {
+                        let data = null;
+                        try {
+                            data = await request();
+                            if (data.status === 'queued') {
+                                setTimeout(timeoutCallback, 1000);
+                            } else if (data.status === 'done') {
+                                resolve(data.annotation);
+                            } else {
+                                throw new Error(`Unknown status was received "${data.status}"`);
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
                     };
-                    return fakeResponse.data.annotation;
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
+
+                    setTimeout(timeoutCallback);
+                });
             }
 
             async function installedApps() {

@@ -74,7 +74,7 @@ button.cvat-predictor-button {
     &.cvat-predictor-fetching {
         > span {
             > svg {
-                animation-duration: 1s;
+                animation-duration: 500ms;
                 animation-name: predictorBlinking;
                 animation-iteration-count: infinite;
 
