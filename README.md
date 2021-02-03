@@ -91,6 +91,13 @@ Limitations:
 - No more than 10 tasks per user
 - Uploaded data is limited to 500Mb
 
+## Prebuilt Docker images
+
+Prebuilt docker images for CVAT releases are available on Docker Hub:
+
+- [cvat_server](https://hub.docker.com/r/openvino/cvat_server)
+- [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui)
+
 ## REST API
 
 Automatically generated Swagger documentation for Django REST API is
@@ -102,6 +109,15 @@ Swagger documentation is visiable on allowed hostes, Update environement variabl
 ## LICENSE
 
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
+
+This software uses libraries from the [FFmpeg](https://www.ffmpeg.org) project.
+
+FFmpeg is an open source framework licensed under LGPL and GPL.
+See https://www.ffmpeg.org/legal.html. You are solely responsible
+for determining if your use of FFmpeg requires any
+additional licenses. Intel is not responsible for obtaining any
+such licenses, nor liable for any licensing fees due in
+connection with your use of FFmpeg.
 
 ## Questions
 
