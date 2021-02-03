@@ -11,6 +11,7 @@ from distutils.util import strtobool
 from tempfile import mkstemp
 
 import django_rq
+from cacheops import cache, CacheMiss
 from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.conf import settings
@@ -24,7 +25,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
 from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, serializers, status, viewsets
+from rest_framework import mixins, serializers, status, viewsets, views
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
@@ -41,6 +42,7 @@ from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice
 )
+from cvat.apps.engine.training import get_prediction_server_status, get_frame_prediction
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
@@ -51,7 +53,7 @@ from cvat.apps.engine.serializers import (
 )
 from cvat.apps.engine.utils import av_scan_paths
 
-from . import models, task
+from . import models, task, training
 from .log import clogger, slogger
 
 
@@ -280,6 +282,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True,
             context={"request": request})
         return Response(serializer.data)
+
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -660,6 +663,61 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             format_name=format_name,
             filename=request.query_params.get("filename", "").lower(),
         )
+
+
+class PredictView(viewsets.ViewSet):
+    # TODO: change serializer TaskSerializer
+    @swagger_auto_schema(method='get', operation_summary='Returns prediction for image',
+                         responses={'200': TaskSerializer(many=True)})
+    @action(detail=False, methods=['GET'], url_path='frame')
+    def predict_image(self, request):
+        # TODO: check that it is needed
+        # self.get_object()  # force to call check_object_permissions
+
+        frame = self.request.query_params.get('frame')
+        project_id = self.request.query_params.get('project')
+        if not project_id:
+            return Response(data='query param "project" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
+        if not frame:
+            return Response(data='query param "frame" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
+        cache_key = f'predict_image_{project_id}_{frame}'
+        try:
+            annotation = cache.get(cache_key)
+            resp = {
+                'annotation': annotation,
+                'status': 'done',
+            }
+        except CacheMiss:
+            get_frame_prediction.delay(cache_key)
+            resp = {
+                'status': 'queued',
+            }
+        return Response(resp)
+
+
+    # TODO: change serializer TaskSerializer
+    @swagger_auto_schema(method='get',
+                         operation_summary='Returns information of the tasks of the project with the selected id',
+                         responses={'200': TaskSerializer(many=True)})
+    @action(detail=False, methods=['GET'], url_path='status')
+    def predict_status(self, request):
+        # TODO: check that it is needed
+        # self.get_object()  # force to call check_object_permissions
+        project_id = self.request.query_params.get('project')
+        if not project_id:
+            return Response(data='query param "project" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
+        cache_key = f'predict_status_{project_id}'
+        try:
+            resp = cache.get(cache_key)
+            resp.update({
+                'status': 'done',
+            })
+        except CacheMiss:
+            get_prediction_server_status.delay(cache_key)
+            resp = {
+                'status': 'queued',
+            }
+        return Response(resp)
 
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))
@@ -1073,3 +1131,5 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
+
+
