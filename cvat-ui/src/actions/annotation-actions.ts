@@ -646,6 +646,13 @@ export function getPredictionsAsync(): ThunkAction {
         let annotations = [];
         try {
             annotations = await job.predictor.predict(frame);
+            // current frame could be changed during a request above, need to fetch it from store again
+            const { number: currentFrame } = getStore().getState().annotation.player.frame;
+            if (frame !== currentFrame || annotations === null) {
+                // another request has already been sent or user went to another frame
+                // we do not need dispatch predictions success action
+                return;
+            }
             annotations = annotations.map(
                 (data: any): any =>
                     new cvat.classes.ObjectState({
@@ -674,29 +681,25 @@ export function getPredictionsAsync(): ThunkAction {
             });
         }
 
-        // current frame could be changed during a request above, need to fetch it from store again
-        const { number: currentFrame } = getStore().getState().annotation.player.frame;
-        if (frame === currentFrame) {
-            try {
-                await job.annotations.put(annotations);
-                const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
-                const history = await job.actions.get();
+        try {
+            await job.annotations.put(annotations);
+            const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
+            const history = await job.actions.get();
 
-                dispatch({
-                    type: AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS,
-                    payload: {
-                        states,
-                        history,
-                    },
-                });
-            } catch (error) {
-                dispatch({
-                    type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
-                    payload: {
-                        error,
-                    },
-                });
-            }
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                    history,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
         }
     };
 }

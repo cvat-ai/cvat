@@ -9,6 +9,31 @@
     const config = require('./config');
     const DownloadWorker = require('./download.worker');
 
+    function waitFor(frequencyHz, predicate) {
+        return new Promise((resolve, reject) => {
+            if (typeof predicate !== 'function') {
+                reject(new Error(`Predicate must be a function, got ${typeof predicate}`));
+            }
+
+            const internalWait = () => {
+                let result = false;
+                try {
+                    result = predicate();
+                } catch (error) {
+                    reject(error);
+                }
+
+                if (result) {
+                    resolve();
+                } else {
+                    setTimeout(internalWait, 1000 / frequencyHz);
+                }
+            };
+
+            setTimeout(internalWait);
+        });
+    }
+
     function generateError(errorData) {
         if (errorData.response) {
             const message = `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
@@ -1048,18 +1073,43 @@
                             if (data.status === 'queued') {
                                 setTimeout(timeoutCallback, 1000);
                             } else if (data.status === 'done') {
+                                predictAnnotations.latestRequest.fetching = false;
                                 resolve(data.annotation);
                             } else {
                                 throw new Error(`Unknown status was received "${data.status}"`);
                             }
                         } catch (error) {
+                            predictAnnotations.latestRequest.fetching = false;
                             reject(error);
                         }
                     };
 
-                    setTimeout(timeoutCallback);
+
+                    console.log(frame);
+                    const closureId = Date.now();
+                    predictAnnotations.latestRequest.id = closureId;
+                    const predicate = () => (!predictAnnotations.latestRequest.fetching ||
+                        predictAnnotations.latestRequest.id !== closureId);
+                    if (predictAnnotations.latestRequest.fetching) {
+                        waitFor(5, predicate).then(() => {
+                            if (predictAnnotations.latestRequest.id !== closureId) {
+                                resolve(null);
+                            } else {
+                                predictAnnotations.latestRequest.fetching = true;
+                                setTimeout(timeoutCallback);
+                            }
+                        });
+                    } else {
+                        predictAnnotations.latestRequest.fetching = true;
+                        setTimeout(timeoutCallback);
+                    }
                 });
             }
+
+            predictAnnotations.latestRequest = {
+                fetching: false,
+                id: null,
+            };
 
             async function installedApps() {
                 const { backendAPI } = config;

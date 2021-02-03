@@ -704,7 +704,7 @@
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.DataError}
-             * @returns {object[]} annotations
+             * @returns {object[] | null} annotations
              * @instance
              * @async
              */
