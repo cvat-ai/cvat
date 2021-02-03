@@ -6,20 +6,25 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import Text from 'antd/lib/typography/Text';
 import { ExportOutlined, LoadingOutlined } from '@ant-design/icons';
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     menuKey: string;
     exporters: any[];
     exportActivities: string[] | null;
+    taskDimension: DimensionType;
 }
 
 export default function ExportSubmenu(props: Props): JSX.Element {
-    const { menuKey, exporters, exportActivities } = props;
+    const {
+        menuKey, exporters, exportActivities, taskDimension,
+    } = props;
 
     return (
         <Menu.SubMenu key={menuKey} title='Export as a dataset'>
             {exporters
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                .filter((exporter: any): boolean => exporter.dimension === taskDimension)
                 .map(
                     (exporter: any): JSX.Element => {
                         const pending = (exportActivities || []).includes(exporter.name);

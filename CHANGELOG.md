@@ -5,10 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0-beta] - Unreleased
+## [1.3.0-alpha] - Unreleased
 
 ### Added
 
+- CVAT-3D: support lidar data on the server side (<https://github.com/openvinotoolkit/cvat/pull/2534>)
+- Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
+
+### Changed
+
+- Updated HTTPS install README section (cleanup and described more robust deploy)
+- Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
+
+### Deprecated
+
+-
+
+### Removed
+
+-
+
+### Fixed
+
+- Kibana startup initialization (<https://github.com/openvinotoolkit/cvat/pull/2659>)
+- The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
+- SSLCertVerificationError when remote source is used (<https://github.com/openvinotoolkit/cvat/pull/2683>)
+- Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
+- Fixed tasks in project autoannotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
+- Cuboids are missed in annotations statistics (<https://github.com/openvinotoolkit/cvat/pull/2704>)
+- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pul
+- A couple of css-related issues (top bar disappear, wrong arrow position on collapse elements) (<https://github.com/openvinotoolkit/cvat/pull/2736>)
+- Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
+
+### Security
+
+-
+
+## [1.2.0] - 2020-01-08
+
+### Fixed
+
+- Memory consumption for the task creation process (<https://github.com/openvinotoolkit/cvat/pull/2582>)
+- Frame preloading (<https://github.com/openvinotoolkit/cvat/pull/2608>)
+- Project cannot be removed from the project page (<https://github.com/openvinotoolkit/cvat/pull/2626>)
+
+## [1.2.0-beta] - 2020-12-15
+
+### Added
+
+- GPU support and improved documentation for auto annotation (<https://github.com/openvinotoolkit/cvat/pull/2546>)
 - Manual review pipeline: issues/comments/workspace (<https://github.com/openvinotoolkit/cvat/pull/2357>)
 - Basic projects implementation (<https://github.com/openvinotoolkit/cvat/pull/2255>)
 - Documentation on how to mount cloud starage(AWS S3 bucket, Azure container, Google Drive) as FUSE (<https://github.com/openvinotoolkit/cvat/pull/2377>)
@@ -21,18 +66,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - PATCH requests from cvat-core submit only changed fields (<https://github.com/openvinotoolkit/cvat/pull/2445>)
+- deploy.sh in serverless folder is seperated into deploy_cpu.sh and deploy_gpu.sh (<https://github.com/openvinotoolkit/cvat/pull/2546>)
+- Bumped nuclio version to 1.5.8
 - Migrated to Antd 4.9 (<https://github.com/openvinotoolkit/cvat/pull/2536>)
-
-### Deprecated
-
--
-
-### Removed
-
--
 
 ### Fixed
 
+- Fixed FastRCNN inference bug for images with 4 channels i.e. png (<https://github.com/openvinotoolkit/cvat/pull/2546>)
 - Django templates for email and user guide (<https://github.com/openvinotoolkit/cvat/pull/2412>)
 - Saving relative paths in dummy chunks instead of absolute (<https://github.com/openvinotoolkit/cvat/pull/2424>)
 - Objects with a specific label cannot be displayed if at least one tag with the label exist (<https://github.com/openvinotoolkit/cvat/pull/2435>)
@@ -48,10 +88,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extra shapes are drawn after Esc, or G pressed while drawing a region in grouping (<https://github.com/openvinotoolkit/cvat/pull/2507>)
 - Reset state (reviews, issues) after logout or changing a job (<https://github.com/openvinotoolkit/cvat/pull/2525>)
 - TypeError: Cannot read property 'id' of undefined when updating a task (<https://github.com/openvinotoolkit/cvat/pull/2544>)
-
-### Security
-
--
 
 ## [1.2.0-alpha] - 2020-11-09
 

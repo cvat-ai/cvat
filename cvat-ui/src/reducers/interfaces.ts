@@ -1,9 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { MutableRefObject } from 'react';
 
 export type StringObject = {
@@ -105,7 +106,6 @@ export interface FormatsState {
     initialized: boolean;
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
@@ -174,6 +174,7 @@ export interface Model {
     };
 }
 
+export type OpenCVTool = IntelligentScissors;
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',
@@ -331,6 +332,7 @@ export enum ActiveControl {
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
+    OPENCV_TOOLS = 'opencv_tools',
 }
 
 export enum ShapeType {
@@ -404,7 +406,7 @@ export interface AnnotationState {
         frameAngles: number[];
     };
     drawing: {
-        activeInteractor?: Model;
+        activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;
@@ -568,4 +570,9 @@ export interface CombinedState {
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;
+}
+
+export enum DimensionType {
+    DIM_3D = '3d',
+    DIM_2D = '2d',
 }

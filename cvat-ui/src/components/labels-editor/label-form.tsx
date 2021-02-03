@@ -135,11 +135,11 @@ export default class LabelForm extends React.Component<Props> {
             <Tooltip title='An HTML element representing the attribute' mouseLeaveDelay={0}>
                 <Form.Item name={[key, 'type']} fieldKey={[fieldInstance.fieldKey, 'type']} initialValue={type}>
                     <Select className='cvat-attribute-type-input' disabled={locked}>
-                        <Select.Option value={AttributeType.SELECT}>Select</Select.Option>
-                        <Select.Option value={AttributeType.RADIO}>Radio</Select.Option>
-                        <Select.Option value={AttributeType.CHECKBOX}>Checkbox</Select.Option>
-                        <Select.Option value={AttributeType.TEXT}>Text</Select.Option>
-                        <Select.Option value={AttributeType.NUMBER}>Number</Select.Option>
+                        <Select.Option value={AttributeType.SELECT} className='cvat-attribute-type-input-select'>Select</Select.Option>
+                        <Select.Option value={AttributeType.RADIO} className='cvat-attribute-type-input-radio'>Radio</Select.Option>
+                        <Select.Option value={AttributeType.CHECKBOX} className='cvat-attribute-type-input-checkbox'>Checkbox</Select.Option>
+                        <Select.Option value={AttributeType.TEXT} className='cvat-attribute-type-input-text'>Text</Select.Option>
+                        <Select.Option value={AttributeType.NUMBER} className='cvat-attribute-type-input-number'>Number</Select.Option>
                     </Select>
                 </Form.Item>
             </Tooltip>

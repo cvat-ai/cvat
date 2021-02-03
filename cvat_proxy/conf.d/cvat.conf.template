@@ -12,7 +12,7 @@ server {
     proxy_set_header        Host $http_host;
     proxy_pass_header       Set-Cookie;
 
-    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin(?:/(.*))?.*|documentation/.*|django-rq(?:/(.*))? {
+    location ~* /api/.*|git/.*|opencv/.*|analytics/.*|static/.*|admin(?:/(.*))?.*|documentation/.*|django-rq(?:/(.*))? {
         proxy_pass              http://cvat:8080;
     }
 

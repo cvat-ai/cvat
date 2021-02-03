@@ -16,6 +16,8 @@ from enum import Enum
 from glob import glob
 from io import BytesIO
 from unittest import mock
+import open3d as o3d
+import struct
 
 import av
 import numpy as np
@@ -31,6 +33,8 @@ from rest_framework.test import APIClient, APITestCase
 from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
+from cvat.apps.engine.media_extractors import ValidateDimension
+from cvat.apps.engine.models import DimensionType
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1840,6 +1844,47 @@ class TaskDataAPITestCase(APITestCase):
             zip_archive.write(data.read())
         cls._image_sizes[filename] = img_sizes
 
+        filename = "test_pointcloud_pcd.zip"
+        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        image_sizes = []
+        # container = av.open(path, 'r')
+        zip_file = zipfile.ZipFile(path)
+        for info in zip_file.namelist():
+            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
+                with zip_file.open(info, "r") as file:
+                    data = ValidateDimension.get_pcd_properties(file)
+                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+        cls._image_sizes[filename] = image_sizes
+
+        filename = "test_velodyne_points.zip"
+        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        image_sizes = []
+        # create zip instance
+
+        zip_file = zipfile.ZipFile(path, mode='a')
+
+        source_path = []
+        root_path = os.path.abspath(os.path.split(path)[0])
+
+        for info in zip_file.namelist():
+            if os.path.splitext(info)[1][1:] == "bin":
+                zip_file.extract(info, root_path)
+                bin_path = os.path.abspath(os.path.join(root_path, info))
+                source_path.append(ValidateDimension.convert_bin_to_pcd(bin_path))
+
+        for path in source_path:
+            zip_file.write(path, os.path.abspath(path.replace(root_path, "")))
+
+        for info in zip_file.namelist():
+            if os.path.splitext(info)[1][1:] == "pcd":
+                with zip_file.open(info, "r") as file:
+                    data = ValidateDimension.get_pcd_properties(file)
+                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+        root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
+
+        shutil.rmtree(root_path)
+        cls._image_sizes[filename] = image_sizes
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -1905,8 +1950,10 @@ class TaskDataAPITestCase(APITestCase):
         return self._run_api_v1_task_id_data_get(tid, user, "frame", "original", number)
 
     @staticmethod
-    def _extract_zip_chunk(chunk_buffer):
+    def _extract_zip_chunk(chunk_buffer, dimension=DimensionType.DIM_2D):
         chunk = zipfile.ZipFile(chunk_buffer, mode='r')
+        if dimension == DimensionType.DIM_3D:
+            return [BytesIO(chunk.read(f)) for f in sorted(chunk.namelist()) if f.rsplit(".", maxsplit=1)[-1] == "pcd"]
         return [Image.open(BytesIO(chunk.read(f))) for f in sorted(chunk.namelist())]
 
     @staticmethod
@@ -1917,7 +1964,7 @@ class TaskDataAPITestCase(APITestCase):
 
     def _test_api_v1_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
-                                        expected_uploaded_data_location=StorageChoice.LOCAL):
+                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.DIM_2D):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -1953,8 +2000,9 @@ class TaskDataAPITestCase(APITestCase):
         response = self._get_preview(task_id, user)
         self.assertEqual(response.status_code, expected_status_code)
         if expected_status_code == status.HTTP_200_OK:
-            preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
-            self.assertLessEqual(preview.size, image_sizes[0])
+            if dimension == DimensionType.DIM_2D:
+                preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
+                self.assertLessEqual(preview.size, image_sizes[0])
 
         # check compressed chunk
         response = self._get_compressed_chunk(task_id, user, 0)
@@ -1965,14 +2013,18 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 compressed_chunk = io.BytesIO(b"".join(response.streaming_content))
             if task["data_compressed_chunk_type"] == self.ChunkType.IMAGESET:
-                images = self._extract_zip_chunk(compressed_chunk)
+                images = self._extract_zip_chunk(compressed_chunk, dimension=dimension)
             else:
                 images = self._extract_video_chunk(compressed_chunk)
 
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
             for image_idx, image in enumerate(images):
-                self.assertEqual(image.size, image_sizes[image_idx])
+                if dimension == DimensionType.DIM_3D:
+                    properties = ValidateDimension.get_pcd_properties(image)
+                    self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), image_sizes[image_idx])
+                else:
+                    self.assertEqual(image.size, image_sizes[image_idx])
 
         # check original chunk
         response = self._get_original_chunk(task_id, user, 0)
@@ -1983,12 +2035,16 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 original_chunk  = io.BytesIO(b"".join(response.streaming_content))
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
-                images = self._extract_zip_chunk(original_chunk)
+                images = self._extract_zip_chunk(original_chunk, dimension=dimension)
             else:
                 images = self._extract_video_chunk(original_chunk)
 
             for image_idx, image in enumerate(images):
-                self.assertEqual(image.size, image_sizes[image_idx])
+                if dimension == DimensionType.DIM_3D:
+                    properties = ValidateDimension.get_pcd_properties(image)
+                    self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), image_sizes[image_idx])
+                else:
+                    self.assertEqual(image.size, image_sizes[image_idx])
 
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
@@ -2004,7 +2060,7 @@ class TaskDataAPITestCase(APITestCase):
                 source_images = []
                 for f in source_files:
                     if zipfile.is_zipfile(f):
-                        source_images.extend(self._extract_zip_chunk(f))
+                        source_images.extend(self._extract_zip_chunk(f, dimension=dimension))
                     elif isinstance(f, io.BytesIO) and \
                             str(getattr(f, 'name', None)).endswith('.pdf'):
                         source_images.extend(convert_from_bytes(f.getvalue(),
@@ -2013,9 +2069,14 @@ class TaskDataAPITestCase(APITestCase):
                         source_images.append(Image.open(f))
 
                 for img_idx, image in enumerate(images):
-                    server_image = np.array(image)
-                    source_image = np.array(source_images[img_idx])
-                    self.assertTrue(np.array_equal(source_image, server_image))
+                    if dimension == DimensionType.DIM_3D:
+                        server_image = np.array(image.getbuffer())
+                        source_image = np.array(source_images[img_idx].getbuffer())
+                        self.assertTrue(np.array_equal(source_image, server_image))
+                    else:
+                        server_image = np.array(image)
+                        source_image = np.array(source_images[img_idx])
+                        self.assertTrue(np.array_equal(source_image, server_image))
 
     def _test_api_v1_tasks_id_data(self, user):
         task_spec = {
@@ -2414,6 +2475,45 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
+
+        task_spec = {
+            "name": "my archive task #24",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'), 'rb'),
+            "image_quality": 100,
+        }
+        image_sizes = self._image_sizes["test_pointcloud_pcd.zip"]
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+                                             self.ChunkType.IMAGESET,
+                                             image_sizes, dimension=DimensionType.DIM_3D)
+
+        task_spec = {
+            "name": "my archive task #25",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_velodyne_points.zip'),
+                                    'rb'),
+            "image_quality": 100,
+        }
+        image_sizes = self._image_sizes["test_velodyne_points.zip"]
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+                                             self.ChunkType.IMAGESET,
+                                             image_sizes, dimension=DimensionType.DIM_3D)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
