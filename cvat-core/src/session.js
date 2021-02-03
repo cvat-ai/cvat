@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@
     const {
         getFrame, getRanges, getPreview, clear: clearFrames,
     } = require('./frames');
-    const { ArgumentError } = require('./exceptions');
+    const { ArgumentError, DataError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
     const User = require('./user');
@@ -243,6 +243,23 @@
                             prototype.events.unsubscribe,
                             evType,
                             callback,
+                        );
+                        return result;
+                    },
+                },
+                writable: true,
+            }),
+            predictor: Object.freeze({
+                value: {
+                    async status() {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this, prototype.predictor.status,
+                        );
+                        return result;
+                    },
+                    async predict(frame) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this, prototype.predictor.predict, frame,
                         );
                         return result;
                     },
@@ -656,6 +673,41 @@
              * @instance
              * @async
              */
+
+            /**
+             * @typedef {Object} PredictorStatus
+             * @property {string} message - message for a user to be displayed somewhere
+             * @property {number} projectScore - model accuracy
+             * @global
+             */
+            /**
+             * Namespace is used for an interaction with events
+             * @namespace predictor
+             * @memberof Session
+             */
+            /**
+             * Subscribe to updates of a ML model binded to the project
+             * @method status
+             * @memberof Session.predictor
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             * @returns {PredictorStatus}
+             * @instance
+             * @async
+             */
+            /**
+             * Get predictions from a ML model binded to the project
+             * @method predict
+             * @memberof Session.predictor
+             * @param {number} frame - number of frame to inference
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             * @throws {module:API.cvat.exceptions.DataError}
+             * @returns {object[]} annotations
+             * @instance
+             * @async
+             */
         }
     }
 
@@ -854,6 +906,11 @@
 
             this.logger = {
                 log: Object.getPrototypeOf(this).logger.log.bind(this),
+            };
+
+            this.predictor = {
+                status: Object.getPrototypeOf(this).predictor.status.bind(this),
+                predict: Object.getPrototypeOf(this).predictor.predict.bind(this),
             };
         }
 
@@ -1506,6 +1563,11 @@
             this.logger = {
                 log: Object.getPrototypeOf(this).logger.log.bind(this),
             };
+
+            this.predictor = {
+                status: Object.getPrototypeOf(this).predictor.status.bind(this),
+                predict: Object.getPrototypeOf(this).predictor.predict.bind(this),
+            };
         }
 
         /**
@@ -1692,6 +1754,11 @@
         return rangesData;
     };
 
+    Job.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.task.id);
+        return frameData;
+    };
+
     // TODO: Check filter for annotations
     Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
         if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
@@ -1848,6 +1915,16 @@
         return result;
     };
 
+    Job.prototype.predictor.status.implementation = async function () {
+        const result = await this.task.predictor.status();
+        return result;
+    };
+
+    Job.prototype.predictor.predict.implementation = async function (frame) {
+        const result = await this.task.predictor.predict(frame + this.startFrame);
+        return result;
+    };
+
     Task.prototype.close.implementation = function closeTask() {
         clearFrames(this.id);
         for (const job of this.jobs) {
@@ -1970,11 +2047,6 @@
             step,
         );
         return result;
-    };
-
-    Job.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.task.id);
-        return frameData;
     };
 
     Task.prototype.frames.ranges.implementation = async function () {
@@ -2140,6 +2212,35 @@
 
     Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
         const result = await loggerStorage.log(logType, { ...payload, task_id: this.id }, wait);
+        return result;
+    };
+
+    Task.prototype.predictor.status.implementation = async function () {
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The task must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.status(this.projectId);
+        return {
+            message: result.message,
+            projectScore: result.project_score,
+        };
+    };
+
+    Task.prototype.predictor.predict.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+        }
+
+        if (frame >= this.size) {
+            throw new ArgumentError(`The frame with number ${frame} is out of the task`);
+        }
+
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The task must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.predict(this.id, frame);
         return result;
     };
 })();

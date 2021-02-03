@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -970,6 +970,74 @@
                 }
             }
 
+            function predictorStatus(projectId, onUpdate) {
+                const { backendAPI } = config;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            // const response = await Axios.get(`${backendAPI}/predict/status?project=${projectId}`);
+                            const fakeResponse = {
+                                data: {
+                                    status: 'done',
+                                    message: 'test message 1',
+                                    project_score: 0.51,
+                                },
+                            };
+
+                            return fakeResponse.data;
+                        } catch (errorData) {
+                            throw generateError(errorData);
+                        }
+                    }
+
+                    const timeoutCallback = async () => {
+                        let data = null;
+                        try {
+                            data = await request();
+                            if (data.status === 'queued') {
+                                setTimeout(timeoutCallback, 1000);
+                            } else if (data.status === 'done') {
+                                resolve(data);
+                            } else {
+                                throw new Error(`Unknown status was received "${data.status}"`);
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+
+                    setTimeout(timeoutCallback);
+                });
+            }
+
+            async function predictAnnotations(taskId, frame) {
+                const { backendAPI } = config;
+
+                try {
+                    // const response = await Axios.get(`${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`);
+                    const fakeResponse = {
+                        data: {
+                            status: 'done',
+                            annotation: await callLambdaFunction(
+                                'openvino-omz-public-yolo-v3-tf',
+                                {
+                                    cleanup: false,
+                                    frame,
+                                    task: taskId,
+                                    mapping: {
+                                        person: 'lenna',
+                                    },
+                                },
+                            ),
+                        },
+                    };
+                    return fakeResponse.data.annotation;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function installedApps() {
                 const { backendAPI } = config;
                 try {
@@ -1096,6 +1164,14 @@
                     comments: {
                         value: Object.freeze({
                             create: createComment,
+                        }),
+                        writable: false,
+                    },
+
+                    predictor: {
+                        value: Object.freeze({
+                            status: predictorStatus,
+                            predict: predictAnnotations,
                         }),
                         writable: false,
                     },

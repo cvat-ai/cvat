@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -101,6 +101,9 @@ const defaultState: NotificationsState = {
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
+        },
+        predictor: {
+            prediction: null,
         },
     },
     messages: {
@@ -1096,6 +1099,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         jobFetching: {
                             message: 'Could not fetch frame data from the server',
+                            reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    predictor: {
+                        ...state.errors.predictor,
+                        prediction: {
+                            message: 'Could not fetch prediction data',
                             reason: action.payload.error,
                         },
                     },

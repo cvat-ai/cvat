@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -189,6 +189,10 @@ export enum AnnotationActionTypes {
     SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
     SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
+    UPDATE_PREDICTOR_STATE = 'UPDATE_PREDICTOR_STATE',
+    GET_PREDICTIONS = 'GET_PREDICTIONS',
+    GET_PREDICTIONS_FAILED = 'GET_PREDICTIONS_FAILED',
+    GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -615,6 +619,88 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
+export function getPredictionsAsync(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const {
+            annotations: {
+                states: currentStates,
+                zLayer: {
+                    cur: curZOrder,
+                },
+            },
+            predictor: {
+                enabled,
+            },
+        } = getStore().getState().annotation;
+        if (!enabled || currentStates.length) return;
+
+        dispatch({
+            type: AnnotationActionTypes.GET_PREDICTIONS,
+            payload: {},
+        });
+
+        const {
+            filters, frame, showAllInterpolationTracks, jobInstance: job,
+        } = receiveAnnotationsParameters();
+
+        let annotations = [];
+        try {
+            annotations = await job.predictor.predict(frame);
+            annotations = annotations.map(
+                (data: any): any =>
+                    new cvat.classes.ObjectState({
+                        shapeType: data.type,
+                        label: job.task.labels.filter((label: any): boolean => label.name === data.label)[0],
+                        points: data.points,
+                        objectType: ObjectType.SHAPE,
+                        frame,
+                        occluded: false,
+                        source: 'auto',
+                        attributes: {},
+                        zOrder: curZOrder,
+                    }),
+            );
+
+            dispatch({
+                type: AnnotationActionTypes.GET_PREDICTIONS_SUCCESS,
+                payload: {},
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.GET_PREDICTIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+
+        // current frame could be changed during a request above, need to fetch it from store again
+        const { number: currentFrame } = getStore().getState().annotation.player.frame;
+        if (frame === currentFrame) {
+            try {
+                await job.annotations.put(annotations);
+                const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
+                const history = await job.actions.get();
+
+                dispatch({
+                    type: AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS,
+                    payload: {
+                        states,
+                        history,
+                    },
+                });
+            } catch (error) {
+                dispatch({
+                    type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
+                    payload: {
+                        error,
+                    },
+                });
+            }
+        }
+    };
+}
+
 export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
@@ -692,6 +778,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                     delay,
                 },
             });
+            dispatch(getPredictionsAsync());
         } catch (error) {
             if (error !== 'not needed') {
                 dispatch({
@@ -957,6 +1044,21 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     maxZ,
                 },
             });
+
+            // Fetching predictor status
+            try {
+                const status = await job.predictor.status();
+                dispatch({
+                    type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+                    payload: status,
+                });
+            } catch (error) {
+                dispatch({
+                    type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+                    payload: { error },
+                });
+            }
+
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
             dispatch({
@@ -1515,6 +1617,15 @@ export function setForceExitAnnotationFlag(forceExit: boolean): AnyAction {
         type: AnnotationActionTypes.SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG,
         payload: {
             forceExit,
+        },
+    };
+}
+
+export function switchPredictor(predictorEnabled: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+        payload: {
+            enabled: predictorEnabled,
         },
     };
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -102,6 +102,13 @@ const defaultState: AnnotationState = {
     requestReviewDialogVisible: false,
     submitReviewDialogVisible: false,
     tabContentHeight: 0,
+    predictor: {
+        enabled: false,
+        error: null,
+        message: '',
+        projectScore: 0,
+        fetching: false,
+    },
     workspace: Workspace.STANDARD,
 };
 
@@ -1063,6 +1070,35 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 workspace,
+            };
+        }
+        case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {
+            const { payload } = action;
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    ...payload,
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS: {
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    fetching: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS_SUCCESS:
+        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    fetching: false,
+                },
             };
         }
         case AnnotationActionTypes.RESET_CANVAS: {

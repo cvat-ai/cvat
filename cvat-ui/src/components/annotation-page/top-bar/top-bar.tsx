@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
-import { Workspace } from 'reducers/interfaces';
+import { PredictorState, Workspace } from 'reducers/interfaces';
 import LeftGroup from './left-group';
 import RightGroup from './right-group';
 import PlayerNavigation from './player-navigation';
@@ -36,7 +36,9 @@ interface Props {
     prevButtonType: string;
     nextButtonType: string;
     focusFrameInputShortcut: string;
+    predictor: PredictorState;
     changeWorkspace(workspace: Workspace): void;
+    switchPredictor(predictorEnabled: boolean): void;
     showStatistics(): void;
     onSwitchPlay(): void;
     onSaveAnnotation(): void;
@@ -78,8 +80,10 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         backwardShortcut,
         prevButtonType,
         nextButtonType,
+        predictor,
         focusFrameInputShortcut,
         showStatistics,
+        switchPredictor,
         changeWorkspace,
         onSwitchPlay,
         onSaveAnnotation,
@@ -146,7 +150,13 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     />
                 </Row>
             </Col>
-            <RightGroup workspace={workspace} changeWorkspace={changeWorkspace} showStatistics={showStatistics} />
+            <RightGroup
+                predictor={predictor}
+                workspace={workspace}
+                switchPredictor={switchPredictor}
+                changeWorkspace={changeWorkspace}
+                showStatistics={showStatistics}
+            />
         </Row>
     );
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -298,6 +298,9 @@ export interface NotificationsState {
             commentingIssue: null | ErrorState;
             submittingReview: null | ErrorState;
         };
+        predictor: {
+            prediction: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -360,6 +363,14 @@ export enum ContextMenuType {
 export enum Rotation {
     ANTICLOCKWISE90,
     CLOCKWISE90,
+}
+
+export interface PredictorState {
+    projectScore: number;
+    message: string;
+    error: Error | null;
+    enabled: boolean;
+    fetching: boolean;
 }
 
 export interface AnnotationState {
@@ -452,6 +463,7 @@ export interface AnnotationState {
     appearanceCollapsed: boolean;
     tabContentHeight: number;
     workspace: Workspace;
+    predictor: PredictorState;
     aiToolsRef: MutableRefObject<any>;
 }
 
