@@ -1,15 +1,15 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 context("Some parts of the Redux state (issues) isn't reset after chaning a task.", () => {
-    const issueId = '2524';
-    const labelName = `Case ${issueId}`;
+    const issueId = '2524_2633';
+    const labelName = `Issue ${issueId}`;
     const taskName = {
-        firstTaskName: 'First task issue 2524',
-        secondTaskName: 'Second task issue 2524',
+        firstTaskName: `First task issue ${issueId}`,
+        secondTaskName: `Second task issue ${issueId}`,
     };
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some default value for type Text';
@@ -32,6 +32,12 @@ context("Some parts of the Redux state (issues) isn't reset after chaning a task
         firstY: 100,
         secondX: 650,
         secondY: 200,
+    };
+    const createIssuePoint = {
+        type: 'point',
+        description: 'point issue',
+        firstX: 500,
+        firstY: 300,
     };
 
     before(() => {
@@ -83,9 +89,10 @@ context("Some parts of the Redux state (issues) isn't reset after chaning a task
             cy.url().should('include', '/tasks');
         });
 
-        it('Open job again and create an issue', () => {
+        it('Open job again and create an issue. Check issue 2633.', () => {
             cy.openJob();
             cy.createIssueFromControlButton(createIssueRectangle);
+            cy.createIssueFromControlButton(createIssuePoint); // Issue 2633
         });
 
         it('Open the second task. Open job. Issue not exist.', () => {
