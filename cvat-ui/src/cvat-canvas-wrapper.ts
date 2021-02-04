@@ -12,6 +12,22 @@ import {
     InteractionResult as _InteractionResult,
 } from 'cvat-canvas/src/typescript/canvas';
 
+export function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
+    const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
+        if (!(index % 2)) { // 0, 2, 4
+            acc.push([
+                array[index],
+                array[index + 1],
+            ]);
+        }
+        return acc;
+    };
+
+    return shapes.filter((shape: InteractionResult): boolean => shape.shapeType === 'points' && shape.button === 0)
+        .map((shape: InteractionResult): number[] => shape.points)
+        .flat().reduce(reducer, []);
+}
+
 export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
 
