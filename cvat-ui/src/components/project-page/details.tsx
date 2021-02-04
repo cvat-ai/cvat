@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,16 +41,18 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                                 dispatch(updateProjectAsync(project));
                             },
                         }}
-                        className='cvat-text-color'
+                        className='cvat-text-color cvat-item-project-name'
                     >
                         {projectName}
                     </Title>
                 </Col>
             </Row>
-            <Row justify='space-between'>
+            <Row justify='space-between' className='cvat-project-item-description'>
                 <Col>
+                    <Text type='secondary'>{'Project '}</Text>
+                    <Text type='secondary' className='cvat-item-project-id'>{`#${project.id}`}</Text>
+                    <Text type='secondary'>{' created '}</Text>
                     <Text type='secondary'>
-                        {`Project #${project.id} created`}
                         {project.owner ? ` by ${project.owner.username}` : null}
                         {` on ${moment(project.createdDate).format('MMMM Do YYYY')}`}
                     </Text>
