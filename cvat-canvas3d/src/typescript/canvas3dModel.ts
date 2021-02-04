@@ -47,12 +47,8 @@ export enum Mode {
 
 export interface Canvas3dModel {
     mode: Mode;
-
     setup(frameData: any): void;
-
     isAbleToChangeFrame(): boolean;
-
-    fitCanvas(width: number, height: number): void;
 }
 
 export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
@@ -137,17 +133,5 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
-    }
-
-    public fitCanvas(width: number, height: number): void {
-        this.data.canvasSize.height = height;
-        this.data.canvasSize.width = width;
-
-        this.data.imageOffset = Math.floor(
-            Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
-        );
-
-        this.notify(UpdateReasons.FITTED_CANVAS);
-        this.notify(UpdateReasons.OBJECTS_UPDATED);
     }
 }
