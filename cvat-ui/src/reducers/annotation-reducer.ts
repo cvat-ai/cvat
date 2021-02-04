@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1010,6 +1010,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {
+            const { activeInteractor, activeLabelID } = action.payload;
             return {
                 ...state,
                 annotations: {
@@ -1018,12 +1019,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 drawing: {
                     ...state.drawing,
-                    activeInteractor: action.payload.activeInteractor,
-                    activeLabelID: action.payload.activeLabelID,
+                    activeInteractor,
+                    activeLabelID,
                 },
                 canvas: {
                     ...state.canvas,
-                    activeControl: ActiveControl.AI_TOOLS,
+                    activeControl: activeInteractor.type.startsWith('opencv') ?
+                        ActiveControl.OPENCV_TOOLS :
+                        ActiveControl.AI_TOOLS,
                 },
             };
         }

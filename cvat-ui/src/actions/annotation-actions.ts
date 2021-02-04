@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,6 +18,7 @@ import {
     ContextMenuType,
     Workspace,
     Model,
+    OpenCVTool,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core-wrapper';
@@ -1354,7 +1355,7 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
-export function interactWithCanvas(activeInteractor: Model, activeLabelID: number): AnyAction {
+export function interactWithCanvas(activeInteractor: Model | OpenCVTool, activeLabelID: number): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
         payload: {
