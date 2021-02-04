@@ -386,25 +386,23 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
 });
 
-Cypress.Commands.add('getTaskID', (taskName) => {
-    cy.contains('strong', taskName)
-        .parents('.cvat-tasks-list-item')
-        .within(() => {
-            cy.get('span')
-                .invoke('text')
-                .then((text) => {
-                    return String(text.match(/^#\d+\:/g)).replace(/[^\d]/g, '');
+Cypress.Commands.add('deleteTask', (taskName) => {
+    let taskId = '';
+    cy.contains('.cvat-item-task-name', taskName)
+        .parents('.cvat-task-item-description')
+        .find('.cvat-item-task-id')
+        .then(($taskId) => {
+            taskId = $taskId.text().replace(/[^\d]/g, '');
+            cy.contains('.cvat-item-task-name', taskName)
+                .parents('.cvat-tasks-list-item')
+                .find('.cvat-menu-icon')
+                .trigger('mouseover');
+            cy.get('.cvat-actions-menu').contains('Delete').click();
+            cy.get('.cvat-modal-confirm-delete-task')
+                .should('contain', `The task ${taskId} will be deleted`)
+                .within(() => {
+                    cy.contains('button', 'Delete').click();
                 });
-        });
-});
-
-Cypress.Commands.add('deleteTask', (taskName, taskID) => {
-    cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').trigger('mouseover');
-    cy.get('.cvat-actions-menu').contains('Delete').click();
-    cy.get('.cvat-modal-confirm-delete-task')
-        .should('contain', `The task ${taskID} will be deleted`)
-        .within(() => {
-            cy.contains('button', 'Delete').click();
         });
 });
 
