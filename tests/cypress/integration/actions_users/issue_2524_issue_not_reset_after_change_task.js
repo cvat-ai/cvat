@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -55,14 +55,10 @@ context("Some parts of the Redux state (issues) isn't reset after chaning a task
 
     after(() => {
         cy.goToTaskList();
-        cy.getTaskID(taskName.firstTaskName).then(($taskID) => {
-            cy.deleteTask(taskName.firstTaskName, $taskID);
-        });
+        cy.deleteTask(taskName.firstTaskName);
         cy.reload();
         cy.closeModalUnsupportedPlatform();
-        cy.getTaskID(taskName.secondTaskName).then(($taskID) => {
-            cy.deleteTask(taskName.secondTaskName, $taskID);
-        });
+        cy.deleteTask(taskName.secondTaskName);
     });
 
     describe(`Testing "${labelName}"`, () => {

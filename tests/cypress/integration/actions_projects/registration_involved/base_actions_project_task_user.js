@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -52,6 +52,15 @@ context('Base actions on the project', () => {
     const password = `${randomString(true)}`;
     let projectID = '';
 
+    function getProjectID(projectName) {
+        cy.contains('.cvat-item-project-name', projectName)
+            .parents('.cvat-project-details')
+            .find('.cvat-item-project-id')
+            .then(($projectID) => {
+                projectID = $projectID.text().replace(/[^\d]/g, '');
+            });
+    }
+
     before(() => {
         cy.openProject(projectName);
     });
@@ -101,9 +110,7 @@ context('Base actions on the project', () => {
         it('The task is successfully opened. No label editor on task page.', () => {
             cy.goToProjectsList();
             cy.openProject(projectName);
-            cy.getProjectID(projectName).then(($projectID) => {
-                projectID = $projectID;
-            });
+            getProjectID(projectName);
             cy.get('.cvat-tasks-list-item').then((countTasks) => {
                 // The number of created tasks is greater than zero
                 expect(countTasks.length).to.be.gt(0);
