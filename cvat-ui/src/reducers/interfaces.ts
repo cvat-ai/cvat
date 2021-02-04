@@ -1,9 +1,10 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 
@@ -174,6 +175,7 @@ export interface Model {
     };
 }
 
+export type OpenCVTool = IntelligentScissors;
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',
@@ -332,6 +334,7 @@ export enum ActiveControl {
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
     PHOTO_CONTEXT = 'PHOTO_CONTEXT',
+    OPENCV_TOOLS = 'opencv_tools',
 }
 
 export enum ShapeType {
@@ -410,7 +413,7 @@ export interface AnnotationState {
         };
     };
     drawing: {
-        activeInteractor?: Model;
+        activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;

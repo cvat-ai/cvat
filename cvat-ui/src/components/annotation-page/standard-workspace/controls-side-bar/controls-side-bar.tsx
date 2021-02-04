@@ -15,6 +15,7 @@ import MoveControl from './move-control';
 import FitControl from './fit-control';
 import ResizeControl from './resize-control';
 import ToolsControl from './tools-control';
+import OpenCVControl from './opencv-control';
 import DrawRectangleControl from './draw-rectangle-control';
 import DrawPolygonControl from './draw-polygon-control';
 import DrawPolylineControl from './draw-polyline-control';
@@ -90,6 +91,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 ActiveControl.DRAW_RECTANGLE,
                 ActiveControl.DRAW_CUBOID,
                 ActiveControl.AI_TOOLS,
+                ActiveControl.OPENCV_TOOLS,
             ].includes(activeControl);
 
             if (!drawing) {
@@ -103,7 +105,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     repeatDrawShape();
                 }
             } else {
-                if (activeControl === ActiveControl.AI_TOOLS) {
+                if ([ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl)) {
                     // separated API method
                     canvasInstance.interact({ enabled: false });
                     return;
@@ -187,6 +189,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
             <ToolsControl />
+            <OpenCVControl />
             <DrawRectangleControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
