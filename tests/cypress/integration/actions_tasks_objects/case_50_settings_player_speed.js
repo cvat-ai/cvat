@@ -13,6 +13,7 @@ context('Settings. "Player speed" option.', () => {
     let timeAferPlay = 0;
     let durationSlower = 0;
     let durationFastest = 0;
+    let durationFast = 0;
 
     function changePlayerSpeed(speed) {
         cy.openSettings();
@@ -57,6 +58,21 @@ context('Settings. "Player speed" option.', () => {
                     timeAferPlay = Date.now();
                     durationFastest = timeAferPlay - timeBeforePlay;
                     expect(durationSlower).to.be.greaterThan(durationFastest);
+                });
+            cy.goCheckFrameNumber(0);
+        });
+
+        it('Change "Player speed" to "Fast" and measure the speed of changing frames. The "Slower" is expected to be slower than the "Fastest"', () => {
+            changePlayerSpeed('fast');
+            cy.get('.cvat-player-play-button').click();
+            timeBeforePlay = Date.now();
+            cy.log(timeBeforePlay);
+            cy.get('.cvat-player-filename-wrapper')
+                .should('have.text', `${imageFileName}_28.png`)
+                .then(() => {
+                    timeAferPlay = Date.now();
+                    durationFast = timeAferPlay - timeBeforePlay;
+                    expect(durationSlower).to.be.greaterThan(durationFast);
                 });
         });
     });
