@@ -252,8 +252,10 @@ def _create_thread(tid, data):
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if media_type in  ('archive', 'zip') and db_data.storage == StorageChoice.SHARE:
+            if media_type in ('archive', 'zip') and db_data.storage == StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
+                upload_dir = db_data.get_upload_dirname()
+                db_data.storage = StorageChoice.LOCAL
             extractor = MEDIA_TYPES[media_type]['extractor'](
                 source_path=source_paths,
                 step=db_data.get_frame_step(),
