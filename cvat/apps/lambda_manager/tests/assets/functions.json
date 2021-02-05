@@ -36,6 +36,24 @@
         "httpPort": 49156
       }
     },
+    "test-openvino-omz-intel-person-reidentification-retail-1234": {
+      "metadata": {
+        "name": "test-openvino-omz-intel-person-reidentification-retail-1234",
+        "annotations": {
+          "framework": "openvino",
+          "name": "Person reidentification",
+          "spec": "",
+          "type": "reid"
+        }
+      },
+      "spec": {
+        "description": "Person reidentification model for a general scenario"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49156
+      }
+    },
     "test-openvino-dextr": {
       "metadata": {
         "name": "test-openvino-dextr",

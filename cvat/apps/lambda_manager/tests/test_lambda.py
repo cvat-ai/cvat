@@ -21,7 +21,8 @@ LAMBDA_FUNCTIONS_PATH = f'{LAMBDA_ROOT_PATH}/functions'
 LAMBDA_REQUESTS_PATH = f'{LAMBDA_ROOT_PATH}/requests'
 
 id_function_detector = "test-openvino-omz-public-yolo-v3-tf"
-id_function_reid = "test-openvino-omz-intel-person-reidentification-retail-0300"
+id_function_reid_response_data = "test-openvino-omz-intel-person-reidentification-retail-0300"
+id_function_reid_response_no_data = "test-openvino-omz-intel-person-reidentification-retail-1234"
 id_function_interactor = "test-openvino-dextr"
 id_function_tracker = "test-pth-foolwood-siammask"
 id_function_non_type = "test-model-has-non-type"
@@ -91,7 +92,10 @@ class LambdaTestCase(APITestCase):
             id_function = kwargs["headers"]["x-nuclio-function-name"]
             type_function = functions["positive"][id_function]["metadata"]["annotations"]["type"]
             if type_function == "reid":
-                data = [0, 1]
+                if id_function == id_function_reid_response_data:
+                    data = [0, 1]
+                else:
+                    data = []
             elif type_function == "tracker":
                 data = {
                     "shape": [12.34, 34.0, 35.01, 41.99],
@@ -232,7 +236,7 @@ class LambdaTestCase(APITestCase):
 
     def test_api_v1_lambda_functions_read(self):
         ids_functions = [id_function_detector, id_function_interactor,\
-                         id_function_tracker, id_function_reid, \
+                         id_function_tracker, id_function_reid_response_data, \
                          id_function_non_type, id_function_wrong_type, id_function_unknown_type]
 
         for id_func in ids_functions:
@@ -376,8 +380,8 @@ class LambdaTestCase(APITestCase):
 
 
     def test_api_v1_lambda_requests_create(self):
-        ids_functions = [id_function_detector, id_function_interactor,\
-                         id_function_tracker, id_function_reid, \
+        ids_functions = [id_function_detector, id_function_interactor, id_function_tracker, \
+                         id_function_reid_response_data, id_function_detector, id_function_reid_response_no_data, \
                          id_function_non_type, id_function_wrong_type, id_function_unknown_type]
 
         for id_func in ids_functions:
@@ -702,13 +706,22 @@ class LambdaTestCase(APITestCase):
             "quality": None,
         }
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid}", self.admin, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_data}", self.admin, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid}", self.user, data_assigneed_to_user_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_data}", self.user, data_assigneed_to_user_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid}", None, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_data}", None, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_no_data}", self.admin, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_no_data}", self.user, data_assigneed_to_user_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_no_data}", None, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
