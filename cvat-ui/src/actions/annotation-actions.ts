@@ -18,6 +18,7 @@ import {
     ContextMenuType,
     Workspace,
     Model,
+    DimensionType,
     OpenCVTool,
 } from 'reducers/interfaces';
 
@@ -194,6 +195,8 @@ export enum AnnotationActionTypes {
     GET_PREDICTIONS = 'GET_PREDICTIONS',
     GET_PREDICTIONS_FAILED = 'GET_PREDICTIONS_FAILED',
     GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
+    HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
+    GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1049,6 +1052,11 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 },
             });
 
+            if (job.task.dimension === DimensionType.DIM_3D) {
+                const workspace = Workspace.STANDARD3D;
+                dispatch(changeWorkspace(workspace));
+            }
+
             // Fetching predictor status
             try {
                 const status = await job.predictor.status();
@@ -1634,5 +1642,47 @@ export function switchPredictor(predictorEnabled: boolean): AnyAction {
         payload: {
             enabled: predictorEnabled,
         },
+    };
+}
+export function hideShowContextImage(hidden: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE,
+        payload: {
+            hidden,
+        },
+    };
+}
+
+export function getContextImage(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const { instance: job } = state.annotation.job;
+        const { frame, contextImage } = state.annotation.player;
+
+        try {
+            const context = await job.frames.contextImage(job.task.id, frame.number);
+            const loaded = true;
+            const contextImageHide = contextImage.hidden;
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
+                payload: {
+                    context,
+                    loaded,
+                    contextImageHide,
+                },
+            });
+        } catch (error) {
+            const context = '';
+            const loaded = true;
+            const contextImageHide = contextImage.hidden;
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
+                payload: {
+                    context,
+                    loaded,
+                    contextImageHide,
+                },
+            });
+        }
     };
 }

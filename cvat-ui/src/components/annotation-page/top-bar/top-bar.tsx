@@ -55,6 +55,8 @@ interface Props {
     onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
+    jobInstance: any;
+    hideShowContextImage(): any;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -100,6 +102,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onURLIconClick,
         onUndoClick,
         onRedoClick,
+        jobInstance,
     } = props;
 
     return (
@@ -154,6 +157,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 predictor={predictor}
                 workspace={workspace}
                 switchPredictor={switchPredictor}
+                jobInstance={jobInstance}
                 changeWorkspace={changeWorkspace}
                 showStatistics={showStatistics}
             />

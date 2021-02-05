@@ -18,6 +18,7 @@ import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-wo
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
 import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
 import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
+import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 
 interface Props {
     job: any | null | undefined;
@@ -79,23 +80,28 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             <Layout.Header className='cvat-annotation-header'>
                 <AnnotationTopBarContainer />
             </Layout.Header>
+            {workspace === Workspace.STANDARD3D && (
+                <Layout.Content className='cvat-annotation-layout-content'>
+                    <StandardWorkspace3DComponent />
+                </Layout.Content>
+            )}
             {workspace === Workspace.STANDARD && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <StandardWorkspaceComponent />
                 </Layout.Content>
             )}
             {workspace === Workspace.ATTRIBUTE_ANNOTATION && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <AttributeAnnotationWorkspace />
                 </Layout.Content>
             )}
             {workspace === Workspace.TAG_ANNOTATION && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <TagAnnotationWorkspace />
                 </Layout.Content>
             )}
             {workspace === Workspace.REVIEW_WORKSPACE && (
-                <Layout.Content style={{ height: '100%' }}>
+                <Layout.Content className='cvat-annotation-layout-content'>
                     <ReviewAnnotationsWorkspace />
                 </Layout.Content>
             )}

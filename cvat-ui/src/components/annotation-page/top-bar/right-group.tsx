@@ -8,10 +8,10 @@ import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-
-import { PredictorState, Workspace } from 'reducers/interfaces';
-import { InfoIcon, FullscreenIcon, BrainIcon } from 'icons';
 import Tooltip from 'antd/lib/tooltip';
+
+import { DimensionType, PredictorState, Workspace } from 'reducers/interfaces';
+import { InfoIcon, FullscreenIcon, BrainIcon } from 'icons';
 
 interface Props {
     workspace: Workspace;
@@ -19,11 +19,12 @@ interface Props {
     showStatistics(): void;
     switchPredictor(predictorEnabled: boolean): void;
     changeWorkspace(workspace: Workspace): void;
+    jobInstance: any;
 }
 
 function RightGroup(props: Props): JSX.Element {
     const {
-        showStatistics, changeWorkspace, switchPredictor, workspace, predictor,
+        showStatistics, changeWorkspace, switchPredictor, workspace, predictor, jobInstance,
     } = props;
 
     const formattedScore = `${(predictor.projectScore * 100).toFixed(0)}%`;
@@ -97,11 +98,26 @@ function RightGroup(props: Props): JSX.Element {
                     onChange={changeWorkspace}
                     value={workspace}
                 >
-                    {Object.values(Workspace).map((ws) => (
-                        <Select.Option key={ws} value={ws}>
-                            {ws}
-                        </Select.Option>
-                    ))}
+                    {Object.values(Workspace).map((ws) => {
+                        if (jobInstance.task.dimension === DimensionType.DIM_3D) {
+                            if (ws === Workspace.STANDARD) {
+                                return null;
+                            }
+                            return (
+                                <Select.Option disabled={ws !== Workspace.STANDARD3D} key={ws} value={ws}>
+                                    {ws}
+                                </Select.Option>
+                            );
+                        }
+                        if (ws !== Workspace.STANDARD3D) {
+                            return (
+                                <Select.Option key={ws} value={ws}>
+                                    {ws}
+                                </Select.Option>
+                            );
+                        }
+                        return null;
+                    })}
                 </Select>
             </div>
         </Col>
