@@ -625,6 +625,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
+                    jobInstance={jobInstance}
                 />
             </>
         );

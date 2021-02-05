@@ -8,7 +8,7 @@
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {
-        getFrame, getRanges, getPreview, clear: clearFrames,
+        getFrame, getRanges, getPreview, clear: clearFrames, getContextImage,
     } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
@@ -181,6 +181,15 @@
                     },
                     async preview() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
+                        return result;
+                    },
+                    async contextImage(taskId, frameId) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.contextImage,
+                            taskId,
+                            frameId,
+                        );
                         return result;
                     },
                 },
@@ -850,6 +859,7 @@
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
             this.logger = {
@@ -1529,6 +1539,7 @@
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
             this.logger = {
@@ -1711,6 +1722,7 @@
             this.stopFrame,
             isPlaying,
             step,
+            this.task.dimension,
         );
         return frameData;
     };
@@ -2175,6 +2187,11 @@
 
     Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
         const result = await loggerStorage.log(logType, { ...payload, task_id: this.id }, wait);
+        return result;
+    };
+
+    Job.prototype.frames.contextImage.implementation = async function (taskId, frameId) {
+        const result = await getContextImage(taskId, frameId);
         return result;
     };
 })();
