@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -962,6 +962,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 bug_tracker: undefined,
+                subset: undefined,
                 overlap: undefined,
                 segment_size: undefined,
                 image_quality: undefined,
@@ -981,6 +982,7 @@
                 name: false,
                 assignee: false,
                 bug_tracker: false,
+                subset: false,
                 labels: false,
             };
 
@@ -1157,8 +1159,34 @@
                     bugTracker: {
                         get: () => data.bug_tracker,
                         set: (tracker) => {
+                            if (typeof tracker !== 'string') {
+                                throw new ArgumentError(
+                                    `Subset value must be a string. But ${typeof tracker} has been got.`,
+                                );
+                            }
+
                             updatedFields.bug_tracker = true;
                             data.bug_tracker = tracker;
+                        },
+                    },
+                    /**
+                     * @name subset
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     * @throws {module:API.cvat.exception.ArgumentError}
+                     */
+                    subset: {
+                        get: () => data.subset,
+                        set: (subset) => {
+                            if (typeof subset !== 'string') {
+                                throw new ArgumentError(
+                                    `Subset value must be a string. But ${typeof subset} has been got.`,
+                                );
+                            }
+
+                            updatedFields.subset = true;
+                            data.subset = subset;
                         },
                     },
                     /**
@@ -1876,6 +1904,9 @@
                     case 'bug_tracker':
                         taskData.bug_tracker = this.bugTracker;
                         break;
+                    case 'subset':
+                        taskData.subset = this.subset;
+                        break;
                     case 'labels':
                         taskData.labels = [...this.labels.map((el) => el.toJSON())];
                         break;
@@ -1891,6 +1922,7 @@
                 assignee: false,
                 name: false,
                 bugTracker: false,
+                subset: false,
                 labels: false,
             };
 
@@ -1913,6 +1945,9 @@
         }
         if (typeof this.projectId !== 'undefined') {
             taskSpec.project_id = this.projectId;
+        }
+        if (typeof this.subset !== 'undefined') {
+            taskSpec.subset = this.subset;
         }
 
         const taskDataSpec = {

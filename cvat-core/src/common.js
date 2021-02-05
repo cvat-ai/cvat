@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,6 +37,25 @@
                     throw new ArgumentError(`Unsupported filter property has been recieved: "${prop}"`);
                 } else if (!fields[prop](filter[prop])) {
                     throw new ArgumentError(`Received filter property "${prop}" is not satisfied for checker`);
+                }
+            }
+        }
+    }
+
+    function checkExclusiveFields(obj, exclusive, ignore) {
+        const fields = {
+            exclusive: [],
+            other: [],
+        };
+        for (const field in Object.keys(obj)) {
+            if (!(field in ignore)) {
+                if (field in exclusive) {
+                    if (fields.other.length) {
+                        throw new ArgumentError(`Do not use the filter field "${field}" with others`);
+                    }
+                    fields.exclusive.push(field);
+                } else {
+                    fields.other.push(field);
                 }
             }
         }
@@ -83,5 +102,6 @@
         checkFilter,
         checkObjectType,
         negativeIDGenerator,
+        checkExclusiveFields,
     };
 })();
