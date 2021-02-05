@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from collections import OrderedDict
 from io import BytesIO
 from unittest import mock, skip
-from collections import OrderedDict
+import os
 
 import requests
 from django.contrib.auth.models import Group, User
@@ -33,269 +34,15 @@ id_function_state_error = "test-model-has-state-error"
 expected_keys_in_response_functions = ["id", "kind", "labels", "state", "description", "framework", "name", "min_pos_points"]
 expected_keys_in_response_requests = ["id", "function", "status", "progress", "enqueued", "started", "ended", "exc_info"]
 
-tasks = {
-    "main": {
-        "name": "main task",
-        "overlap": 0,
-        "segment_size": 100,
-        "owner_id": 1, # admin
-        "labels": [
-            {
-                "name": "car",
-                "attributes": [
-                    {
-                        "name": "model",
-                        "mutable": False,
-                        "input_type": "select",
-                        "default_value": "mazda",
-                        "values": ["bmw", "mazda", "renault"],
-                    },
-                    {
-                        "name": "parked",
-                        "mutable": True,
-                        "input_type": "checkbox",
-                        "default_value": False,
-                    },
-                ],
-            },
-            {"name": "person"},
-        ],
-    },
-    "assigneed_to_user": {
-        "name": "assignee to user task",
-        "overlap": 0,
-        "segment_size": 100,
-        "owner_id": 1, # admin
-        "assignee_id": 2, # user
-        "labels": [
-            {
-                "name": "car",
-                "attributes": [
-                    {
-                        "name": "model",
-                        "mutable": False,
-                        "input_type": "select",
-                        "default_value": "mazda",
-                        "values": ["bmw", "mazda", "renault"],
-                    },
-                    {
-                        "name": "parked",
-                        "mutable": True,
-                        "input_type": "checkbox",
-                        "default_value": False,
-                    },
-                ],
-            },
-            {"name": "person"},
-        ],
-    },
-}
+path = os.path.join(os.path.dirname(__file__), 'assets', 'tasks.json')
+with open(path) as f:
+    tasks = json.load(f)
 
 # removed unnecessary data
-functions_positive = {
-	'test-openvino-omz-public-yolo-v3-tf': {
-		'metadata': {
-			'name': 'test-openvino-omz-public-yolo-v3-tf',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'YOLO v3',
-				'spec': '[\n  { "id": 0, "name": "person" },\
-                          \n  { "id": 1, "name": "bicycle" },\
-                          \n  { "id": 2, "name": "car" }\
-                          \n]\n',
-				'type': 'detector',
-			},
-		},
-		'spec': {
-			'description': 'YOLO v3 via Intel OpenVINO',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49155,
-		},
-	},
-	'test-openvino-omz-intel-person-reidentification-retail-0300': {
-		'metadata': {
-			'name': 'test-openvino-omz-intel-person-reidentification-retail-0300',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'Person reidentification',
-				'spec': '',
-				'type': 'reid',
-			},
-		},
-		'spec': {
-			'description': 'Person reidentification model for a general scenario',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49156,
-		},
-	},
-	'test-openvino-dextr': {
-		'metadata': {
-			'name': 'test-openvino-dextr',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'DEXTR',
-				'spec': '',
-				'type': 'interactor',
-			},
-		},
-		'spec': {
-			'description': 'Deep Extreme Cut',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49157,
-		},
-	},
-	'test-pth-foolwood-siammask': {
-		'metadata': {
-			'name': 'test-pth-foolwood-siammask',
-			'annotations': {
-				'framework': 'pytorch',
-				'name': 'SiamMask',
-				'spec': '',
-				'type': 'tracker',
-			},
-		},
-		'spec': {
-			'description': 'Fast Online Object Tracking and Segmentation',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49158,
-		},
-	},
-    'test-model-has-non-type': {
-		'metadata': {
-			'name': 'test-model-has-non-type',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'Non type',
-				'spec': '[\n  { "id": 0, "name": "person" },\
-                          \n  { "id": 1, "name": "bicycle" },\
-                          \n  { "id": 2, "name": "car" }\
-                          \n]\n',
-			},
-		},
-		'spec': {
-			'description': 'Test non type',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49160,
-		},
-	},
-    'test-model-has-wrong-type': {
-		'metadata': {
-			'name': 'test-model-has-wrong-type',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'Non type',
-				'spec': '[\n  { "id": 0, "name": "person" },\
-                          \n  { "id": 1, "name": "bicycle" },\
-                          \n  { "id": 2, "name": "car" }\
-                          \n]\n',
-                'type': 'car-bicycle-person-detector',
-			},
-		},
-		'spec': {
-			'description': 'Test wrong type',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49161,
-		},
-	},
-    'test-model-has-unknown-type': {
-		'metadata': {
-			'name': 'test-model-has-unknown-type',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'Non type',
-				'spec': '[\n  { "id": 0, "name": "person" },\
-                          \n  { "id": 1, "name": "bicycle" },\
-                          \n  { "id": 2, "name": "car" }\
-                          \n]\n',
-                'type': 'unknown',
-			},
-		},
-		'spec': {
-			'description': 'Test unknown type',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49162,
-		},
-	},
-    'test-model-has-state-building': {
-		'metadata': {
-			'name': 'test-model-has-state-building',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'State is building',
-				'spec': '[\n  { "id": 0, "name": "person" },\
-                          \n  { "id": 1, "name": "bicycle" },\
-                          \n  { "id": 2, "name": "car" }\
-                          \n]\n',
-                'type': 'detector',
-			},
-		},
-		'spec': {
-			'description': 'Test state building',
-		},
-		'status': {
-			'state': 'building',
-		},
-	},
-    'test-model-has-state-error': {
-		'metadata': {
-			'name': 'test-model-has-state-building',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'State is error',
-				'spec': '[\n  { "id": 0, "name": "person" },\
-                          \n  { "id": 1, "name": "bicycle" },\
-                          \n  { "id": 2, "name": "car" }\
-                          \n]\n',
-                'type': 'detector',
-			},
-		},
-		'spec': {
-			'description': 'Test state error',
-		},
-		'status': {
-			'state': 'error',
-		},
-	},
-}
+path = os.path.join(os.path.dirname(__file__), 'assets', 'functions.json')
+with open(path) as f:
+    functions = json.load(f)
 
-functions_negative = {
-    'test-model-has-non-unique-labels': {
-		'metadata': {
-			'name': 'test-model-has-non-unique-labels',
-			'annotations': {
-				'framework': 'openvino',
-				'name': 'Non-unique labels',
-				'spec': '[\n  { "id": 0, "name": "person" },\
-                          \n  { "id": 1, "name": "bicycle" },\
-                          \n  { "id": 2, "name": "car" },\
-                          \n  { "id": 3, "name": "car" }\
-                          \n]\n',
-				'type': 'detector',
-			},
-		},
-		'spec': {
-			'description': 'Test non-unique labels',
-		},
-		'status': {
-			'state': 'ready',
-			'httpPort': 49159,
-		},
-	},
-}
 
 def generate_image_file(filename, size=(100, 100)):
     f = BytesIO()
@@ -342,9 +89,9 @@ class LambdaTestCase(APITestCase):
         if url == "/api/function_invocations":
             data = []
             id_function = kwargs["headers"]["x-nuclio-function-name"]
-            type_function = functions_positive[id_function]["metadata"]["annotations"]["type"]
+            type_function = functions["positive"][id_function]["metadata"]["annotations"]["type"]
             if type_function == "reid":
-                data = [] # TODO add return values in data
+                data = [0, 1]
             elif type_function == "tracker":
                 data = {
                     "shape": [12.34, 34.0, 35.01, 41.99],
@@ -360,23 +107,23 @@ class LambdaTestCase(APITestCase):
                 data = [
                     {'confidence': '0.9959098', 'label': 'car', 'points': [3, 3, 15, 15], 'type': 'rectangle'},
                     {'confidence': '0.89535173', 'label': 'car', 'points': [20, 25, 30, 35], 'type': 'rectangle'},
-                    {'confidence': '0.59464583', 'label': 'car', 'points': [40, 40, 80, 80], 'type': 'rectangle'},
+                    {'confidence': '0.59464583', 'label': 'car', 'points': [12.17, 45.0, 69.80, 18.99], 'type': 'polygon'},
                 ]
             return data
         # GET query for get all functions
         elif url == "/api/functions":
-            return functions_positive
+            return functions["positive"]
         # GET query for get function
         else:
             id_function = url.split("/")[-1]
-            if id_function in functions_positive:
+            if id_function in functions["positive"]:
                 # raise 500 Internal_Server error
                 if id_function in [id_function_state_building, id_function_state_error]:
                     r = requests.RequestException()
                     r.response = HttpResponseServerError()
                     raise r
                 # return values
-                return functions_positive[id_function]
+                return functions["positive"][id_function]
             # raise 404 Not Found error
             else:
                 r = requests.HTTPError()
@@ -477,7 +224,7 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative)
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"])
     def test_api_v1_lambda_functions_list_wrong(self, mock_http):
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.admin)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -517,7 +264,7 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative[id_function_non_unique_labels])
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"][id_function_non_unique_labels])
     def test_api_v1_lambda_functions_read_non_unique_labels(self, mock_http):
         response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_function_non_unique_labels}', self.admin)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -552,19 +299,31 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @skip("Fail: add mock")
     def test_api_v1_lambda_requests_read(self):
-        id_request = "cf343b95-afeb-475e-ab53-8d7e64991d30"
+        # create request
+        data_main_task = {
+            "function": id_function_detector,
+            "task": self.main_task["id"],
+            "cleanup": True,
+            "threshold": 55,
+            "quality": "original",
+            "mapping": {
+                "car": "car",
+            },
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        id_request = response.data["id"]
 
         response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in expected_keys_in_response_requests:
-            self.assertIn(key, response.data[0])
+            self.assertIn(key, response.data)
 
         response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in expected_keys_in_response_requests:
-            self.assertIn(key, response.data[0])
+            self.assertIn(key, response.data)
 
         response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -660,7 +419,7 @@ class LambdaTestCase(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative["test-model-has-non-unique-labels"])
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"]["test-model-has-non-unique-labels"])
     def test_api_v1_lambda_requests_create_non_unique_labels(self, mock_http):
         data = {
             "function": id_function_non_unique_labels,
@@ -938,7 +697,7 @@ class LambdaTestCase(APITestCase):
             ],
             "boxes1": [
                 OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11260), ('label_id', 8), ('occluded', False), ('points', [1076.0, 199.0, 1218.0, 593.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
-                OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11261), ('label_id', 8), ('occluded', False), ('points', [924.0, 177.0, 1090.0, 615.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
+                OrderedDict([('attributes', []), ('frame', 1), ('group', 0), ('id', 11398), ('label_id', 8), ('occluded', False), ('points', [184.3935546875, 211.5048828125, 331.64968722073354, 97.27792672028772, 445.87667560321825, 126.17873100983161, 454.13404825737416, 691.8087578194827, 180.26452189455085]), ('source', 'manual'), ('type', 'polygon'), ('z_order', 0)]),
             ],
             "quality": None,
         }
@@ -995,7 +754,7 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions_negative["test-model-has-non-unique-labels"])
+    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"]["test-model-has-non-unique-labels"])
     def test_api_v1_lambda_functions_create_non_unique_labels(self, mock_http):
         data = {
             "task": self.main_task["id"],
