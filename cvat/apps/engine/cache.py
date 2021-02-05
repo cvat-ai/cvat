@@ -10,7 +10,7 @@ from django.conf import settings
 
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
-    MImagesReader, MVideoReader)
+    IDatasetManifestReader, VDatasetManifestReader)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType
 
@@ -53,14 +53,14 @@ class CacheInteraction:
             }[db_data.storage]
         if hasattr(db_data, 'video'):
             source_path = os.path.join(upload_dir, db_data.video.path)
-            reader = MVideoReader(manifest_path=db_data.get_manifest_path(),
+            reader = VDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
                 source_path=source_path, chunk_number=chunk_number,
                 chunk_size=db_data.chunk_size, start=db_data.start_frame,
                 stop=db_data.stop_frame,step=db_data.get_frame_step())
             for frame in reader:
                 images.append((frame, source_path, None))
         else:
-            reader = MImagesReader(manifest_path=db_data.get_manifest_path(),
+            reader = IDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
                 chunk_number=chunk_number,chunk_size=db_data.chunk_size,
                 start=db_data.start_frame, stop=db_data.stop_frame,
                 step=db_data.get_frame_step())

@@ -17,8 +17,8 @@ from urllib import request as urlrequest
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter, ValidateDimension
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.prepare import prepare_meta, IManifestManager, VManifestManager
 from cvat.apps.engine.models import DimensionType
+from utils.dataset_manifest import prepare_meta, IManifestManager, VManifestManager
 
 import django_rq
 from django.conf import settings
@@ -340,7 +340,7 @@ def _create_thread(tid, data):
                 try:
                     if manifest_file:
                         try:
-                            from cvat.apps.engine.prepare import VManifestValidator
+                            from utils.dataset_manifest.core import VManifestValidator
                             manifest = VManifestValidator(source_path=os.path.join(upload_dir, media_files[0]),
                                                           manifest_path=db_data.get_manifest_path())
                             manifest.init_index()
@@ -400,13 +400,9 @@ def _create_thread(tid, data):
                 db_data.size = len(extractor)
                 manifest = IManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
-                    # redefine paths due to archives, pdf
-                    sources = []
-                    for _, path, _ in extractor:
-                        sources.append(path)
                     meta_info = prepare_meta(
                         data_type='images',
-                        sources=sources,
+                        sources=extractor.absolute_source_paths,
                         data_dir=upload_dir
                     )
                     manifest.create(meta_info.content)

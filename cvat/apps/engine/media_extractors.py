@@ -25,7 +25,8 @@ from cvat.apps.engine.models import DimensionType
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
-from cvat.apps.engine.prepare import VManifestManager, IManifestManager, WorkWithVideo
+from utils.dataset_manifest import VManifestManager, IManifestManager
+from utils.dataset_manifest.core import WorkWithVideo
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
@@ -121,6 +122,10 @@ class ImageListReader(IMediaReader):
     def get_image_size(self, i):
         img = Image.open(self._source_path[i])
         return img.width, img.height
+
+    @property
+    def absolute_source_paths(self):
+        return [self.get_path(idx) for idx, _ in enumerate(self._source_path)]
 
 class DirectoryReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
@@ -340,7 +345,7 @@ class FragmentMediaReader:
                 break
         return frame_range
 
-class MImagesReader(FragmentMediaReader):
+class IDatasetManifestReader(FragmentMediaReader):
     def __init__(self, manifest_path, **kwargs):
         super().__init__(**kwargs)
         self._manifest = IManifestManager(manifest_path)
@@ -350,7 +355,7 @@ class MImagesReader(FragmentMediaReader):
         for idx in self._frame_range:
             yield self._manifest[idx]
 
-class MVideoReader(WorkWithVideo, FragmentMediaReader):
+class VDatasetManifestReader(WorkWithVideo, FragmentMediaReader):
     def __init__(self, manifest_path, **kwargs):
         WorkWithVideo.__init__(self, **kwargs)
         FragmentMediaReader.__init__(self, **kwargs)

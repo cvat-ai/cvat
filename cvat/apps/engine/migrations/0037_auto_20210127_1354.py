@@ -2,8 +2,8 @@
 
 from django.db import migrations
 from cvat.apps.engine.models import StorageMethodChoice, StorageChoice
-from cvat.apps.engine.prepare import prepare_meta, VManifestManager, IManifestManager
 from django.conf import settings
+from utils.dataset_manifest import prepare_meta, VManifestManager, IManifestManager
 import glob
 import os
 

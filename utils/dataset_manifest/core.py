@@ -9,8 +9,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from PIL import Image
-from cvat.apps.engine.utils import rotate_image
-from .utils import md5_hash
+from .utils import md5_hash, rotate_image
 
 class WorkWithVideo:
     def __init__(self, **kwargs):
@@ -240,18 +239,22 @@ class _Index:
                 skip -= 1
             image_number = 0
             self._index[image_number] = manifest_file.tell()
-            while (line := manifest_file.readline()):
+            line = manifest_file.readline()
+            while line:
                 if line.strip():
                     image_number += 1
                     self._index[image_number] = manifest_file.tell()
+                line = manifest_file.readline()
 
     def partial_update(self, manifest, number):
         with open(manifest, 'r+') as manifest_file:
             manifest_file.seek(self._index[number])
-            while (line := manifest_file.readline()):
+            line = manifest_file.readline()
+            while line:
                 if line.strip():
-                    index[number] = manifest_file.tell()
+                    self._index[number] = manifest_file.tell()
                     number += 1
+                line = manifest_file.readline()
 
     def __getitem__(self, number):
         assert 0 <= number < len(self), 'A invalid index number'
@@ -303,11 +306,13 @@ class _ManifestManager(ABC):
         with open(self._manifest.path, 'r') as manifest_file:
             manifest_file.seek(self._index[0])
             image_number = 0
-            while (line := manifest_file.readline()):
+            line = manifest_file.readline()
+            while line:
                 if not line.strip():
                     continue
                 yield (image_number, json.loads(line))
                 image_number += 1
+                line = manifest_file.readline()
 
     @property
     def manifest(self):
@@ -327,8 +332,6 @@ class _ManifestManager(ABC):
         return self._index
 
 class VManifestManager(_ManifestManager):
-    #TODO:
-    #NUMBER_ADDITIONAL_LINES = 3
     def __init__(self, manifest_path, *args, **kwargs):
         super().__init__(manifest_path)
         setattr(self._manifest, 'TYPE', 'video')
@@ -373,7 +376,7 @@ class VManifestValidator(VManifestManager, WorkWithVideo):
         last_key_frame = None
 
         for _, key_frame in self:
-            # chack that key frames sequence sorted
+            # check that key frames sequence sorted
             if last_key_frame and last_key_frame['number'] >= key_frame['number']:
                 raise AssertionError('Invalid saved key frames sequence in manifest file')
             container.seek(offset=key_frame['pts'], stream=video_stream)
@@ -394,7 +397,6 @@ class VManifestValidator(VManifestManager, WorkWithVideo):
         self._close_video_container(container)
 
 class IManifestManager(_ManifestManager):
-    #NUMBER_ADDITIONAL_LINES = 2
     def __init__(self, manifest_path):
         super().__init__(manifest_path)
         setattr(self._manifest, 'TYPE', 'images')

@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 import argparse
-import sys
 import os
+import sys
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -35,7 +35,7 @@ def main():
         manifest = IManifestManager(manifest_path=args.manifest_directory)
         manifest.create(meta_info)
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(base_dir)
-    from cvat.apps.engine.prepare import prepare_meta, IManifestManager, VManifestManager
+    from dataset_manifest.core import prepare_meta, VManifestManager, IManifestManager
     main()
