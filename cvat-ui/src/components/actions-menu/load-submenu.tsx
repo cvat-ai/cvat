@@ -8,23 +8,26 @@ import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import { UploadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     menuKey: string;
     loaders: any[];
     loadActivity: string | null;
     onFileUpload(file: File): void;
+    taskDimension: DimensionType;
 }
 
 export default function LoadSubmenu(props: Props): JSX.Element {
     const {
-        menuKey, loaders, loadActivity, onFileUpload,
+        menuKey, loaders, loadActivity, onFileUpload, taskDimension,
     } = props;
 
     return (
         <Menu.SubMenu key={menuKey} title='Upload annotations'>
             {loaders
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                .filter((loader: any): boolean => loader.dimension === taskDimension)
                 .map(
                     (loader: any): JSX.Element => {
                         const accept = loader.format

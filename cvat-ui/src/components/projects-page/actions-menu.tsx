@@ -22,6 +22,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
         Modal.confirm({
             title: `The project ${projectInstance.id} will be deleted`,
             content: 'All related data (images, annotations) will be lost. Continue?',
+            className: 'cvat-modal-confirm-remove-project',
             onOk: () => {
                 dispatch(deleteProjectAsync(projectInstance));
             },

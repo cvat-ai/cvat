@@ -36,18 +36,18 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
                     textValue = $textValue.text().split(': ')[1];
                 });
             });
-            cy.get('.attribute-annotation-sidebar-attr-editor').within(() => {
+            cy.get('.cvat-attribute-annotation-sidebar-attr-editor').within(() => {
                 cy.get('[type="text"]').should('have.value', textValue);
             });
         });
         it('Go to next attribute and check again', () => {
-            cy.get('.attribute-annotation-sidebar-attribute-switcher').find('.anticon-right').click({ force: true });
+            cy.get('.cvat-attribute-annotation-sidebar-attribute-switcher-right').click();
             cy.get('.cvat_canvas_text').within(() => {
                 cy.get('[style="fill: red;"]').then(($textValue) => {
                     textValue = $textValue.text().split(': ')[1];
                 });
             });
-            cy.get('.attribute-annotation-sidebar-attr-editor').within(() => {
+            cy.get('.cvat-attribute-annotation-sidebar-attr-editor').within(() => {
                 cy.get('[type="text"]').should('have.value', textValue);
             });
         });

@@ -110,6 +110,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         labels={labels}
                         value={labelID}
                         onChange={changeLabel}
+                        className='cvat-objects-sidebar-state-item-label-selector'
                     />
                 </Tooltip>
             </Col>

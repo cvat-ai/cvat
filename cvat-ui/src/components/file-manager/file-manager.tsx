@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -87,7 +87,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
         const { files } = this.state;
 
         return (
-            <Tabs.TabPane key='local' tab='My computer'>
+            <Tabs.TabPane className='cvat-file-manager-local-tab' key='local' tab='My computer'>
                 <Upload.Dragger
                     multiple
                     listType='text'
@@ -204,6 +204,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
         return (
             <Tabs.TabPane key='remote' tab='Remote sources'>
                 <Input.TextArea
+                    className='cvat-file-selector-remote'
                     placeholder='Enter one URL per line'
                     rows={6}
                     value={[...files.remote].join('\n')}

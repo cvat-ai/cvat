@@ -34,6 +34,20 @@
     });
 
     /**
+     * Task dimension
+     * @enum
+     * @name DimensionType
+     * @memberof module:API.cvat.enums
+     * @property {string} DIMENSION_2D '2d'
+     * @property {string} DIMENSION_3D '3d'
+     * @readonly
+     */
+    const DimensionType = Object.freeze({
+        DIMENSION_2D: '2d',
+        DIMENSION_3D: '3d',
+    });
+
+    /**
      * Review statuses
      * @enum {string}
      * @name ReviewStatus
@@ -333,5 +347,6 @@
         RQStatus,
         colors,
         Source,
+        DimensionType,
     };
 })();
