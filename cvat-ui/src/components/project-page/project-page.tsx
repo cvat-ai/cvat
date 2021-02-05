@@ -91,7 +91,7 @@ export default function ProjectPageComponent(): JSX.Element {
                     </Col>
                 </Row>
                 {projectSubsets.map((subset) => (
-                    <>
+                    <React.Fragment key={subset}>
                         {subset && <Title level={4}>{subset}</Title>}
                         {tasks
                             .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
@@ -108,7 +108,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                     taskInstance={task.instance}
                                 />
                             ))}
-                    </>
+                    </React.Fragment>
                 ))}
             </Col>
         </Row>
