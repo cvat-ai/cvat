@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -247,6 +247,7 @@ class _Index:
                 line = manifest_file.readline()
 
     def partial_update(self, manifest, number):
+        assert os.path.exists(manifest), 'A manifest file not exists, index cannot be updated'
         with open(manifest, 'r+') as manifest_file:
             manifest_file.seek(self._index[number])
             line = manifest_file.readline()
@@ -275,7 +276,8 @@ class _ManifestManager(ABC):
         """ Getting a random line from the manifest file """
         with open(self._manifest.path, 'r') as manifest_file:
             if isinstance(line, str):
-                assert line in self.BASE_INFORMATION.keys()
+                assert line in self.BASE_INFORMATION.keys(), \
+                    'An attempt to get non-existent information from the manifest'
                 for _ in range(self.BASE_INFORMATION[line]):
                     fline = manifest_file.readline()
                 return json.loads(fline)[line]
@@ -340,8 +342,8 @@ class VManifestManager(_ManifestManager):
     def create(self, content, **kwargs):
         """ Creating and saving a manifest file """
         with open(self._manifest.path, 'w') as manifest_file:
-            manifest_file.write(f"{json.dumps({'version':self._manifest.VERSION})}\n")
-            manifest_file.write(f"{json.dumps({'type':self._manifest.TYPE})}\n")
+            manifest_file.write(f"{json.dumps({'version': self._manifest.VERSION}, separators=(',', ':'))}\n")
+            manifest_file.write(f"{json.dumps({'type': self._manifest.TYPE},  separators=(',', ':'))}\n")
             manifest_file.write(f"{json.dumps({'properties':{'name':os.path.basename(content.source_path),'resolution': content.frame_sizes, 'length': content.get_task_size()}})}\n")
             for item in content:
                 json_item = json.dumps({'number': item[0], 'pts': item[1], 'checksum': item[2]}, separators=(',', ':'))

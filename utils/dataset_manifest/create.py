@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 import argparse
@@ -25,15 +25,15 @@ def main():
             )
             manifest = VManifestManager(manifest_path=args.manifest_directory)
             manifest.create(meta_info)
-            if smooth_decoding != None and not smooth_decoding:
+            if smooth_decoding is not None and not smooth_decoding:
                 print('NOTE: prepared manifest file contains too few key frames for smooth decoding.')
-            print('A manifest file had been prepared ')
         except Exception as ex:
             print(ex)
     else:
         meta_info = prepare_meta(data_type=args.type, sources=args.sources, is_sorted=False)
         manifest = IManifestManager(manifest_path=args.manifest_directory)
         manifest.create(meta_info)
+    print('A manifest file had been prepared ')
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(base_dir)

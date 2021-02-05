@@ -1,3 +1,6 @@
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
 import hashlib
 import cv2 as cv
 from av import VideoFrame
