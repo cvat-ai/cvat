@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,6 +76,10 @@ export interface InteractionData {
     crosshair?: boolean;
     minPosVertices?: number;
     minNegVertices?: number;
+    enableNegVertices?: boolean;
+    enableThreshold?: boolean;
+    enableSliding?: boolean;
+    allowRemoveOnlyLast?: boolean;
 }
 
 export interface InteractionResult {

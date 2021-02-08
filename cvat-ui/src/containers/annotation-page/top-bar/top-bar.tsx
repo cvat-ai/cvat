@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,11 +23,15 @@ import {
     changeWorkspace as changeWorkspaceAction,
     activateObject,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
+    switchPredictor as switchPredictorAction,
+    getPredictionsAsync,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
+import {
+    CombinedState, FrameSpeed, PredictorState, Workspace,
+} from 'reducers/interfaces';
 
 interface StateToProps {
     jobInstance: any;
@@ -49,6 +53,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     forceExit: boolean;
+    predictor: PredictorState;
 }
 
 interface DispatchToProps {
@@ -62,6 +67,7 @@ interface DispatchToProps {
     searchEmptyFrame(sessionInstance: any, frameFrom: number, frameTo: number): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
+    switchPredictor(predictorEnabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -78,6 +84,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance },
             canvas: { ready: canvasIsReady, instance: canvasInstance },
             workspace,
+            predictor,
         },
         settings: {
             player: { frameSpeed, frameStep },
@@ -106,6 +113,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         normalizedKeyMap,
         canvasInstance,
         forceExit,
+        predictor,
     };
 }
 
@@ -142,6 +150,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
+        },
+        switchPredictor(predictorEnabled: boolean): void {
+            dispatch(switchPredictorAction(predictorEnabled));
+            if (predictorEnabled) {
+                dispatch(getPredictionsAsync());
+            }
         },
     };
 }
@@ -488,11 +502,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             redoAction,
             workspace,
             canvasIsReady,
-            searchAnnotations,
-            changeWorkspace,
             keyMap,
             normalizedKeyMap,
             canvasInstance,
+            predictor,
+            searchAnnotations,
+            changeWorkspace,
+            switchPredictor,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -601,6 +617,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onInputChange={this.onChangePlayerInputValue}
                     onURLIconClick={this.onURLIconClick}
                     changeWorkspace={changeWorkspace}
+                    switchPredictor={switchPredictor}
+                    predictor={predictor}
                     workspace={workspace}
                     playing={playing}
                     saving={saving}
@@ -625,6 +643,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
+                    jobInstance={jobInstance}
                 />
             </>
         );

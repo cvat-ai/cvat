@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - CVAT-3D: support lidar data on the server side (<https://github.com/openvinotoolkit/cvat/pull/2534>)
+- CVAT-3D: Load all frames corresponding to the job instance
+  (<https://github.com/openvinotoolkit/cvat/pull/2645>)
+- Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
 
 ### Changed
 
@@ -32,8 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
 - Fixed tasks in project autoannotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
 - Cuboids are missed in annotations statistics (<https://github.com/openvinotoolkit/cvat/pull/2704>)
-- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pull/2706>)
+- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pul
 - A couple of css-related issues (top bar disappear, wrong arrow position on collapse elements) (<https://github.com/openvinotoolkit/cvat/pull/2736>)
+- Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
+- Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
 
 ### Security
 

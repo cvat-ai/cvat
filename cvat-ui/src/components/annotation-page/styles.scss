@@ -9,6 +9,10 @@
     overflow: hidden;
 }
 
+.cvat-annotation-layout-content {
+    height: 100%;
+}
+
 .ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
     border-bottom: 1px solid $border-color-1;
@@ -59,6 +63,52 @@
     > * {
         display: block;
         line-height: 0;
+    }
+}
+
+button.cvat-predictor-button {
+    &.cvat-predictor-inprogress {
+        > span {
+            > svg {
+                fill: $inprogress-progress-color;
+            }
+        }
+    }
+
+    &.cvat-predictor-fetching {
+        > span {
+            > svg {
+                animation-duration: 500ms;
+                animation-name: predictorBlinking;
+                animation-iteration-count: infinite;
+
+                @keyframes predictorBlinking {
+                    0% {
+                        fill: $inprogress-progress-color;
+                    }
+
+                    50% {
+                        fill: $completed-progress-color;
+                    }
+
+                    100% {
+                        fill: $inprogress-progress-color;
+                    }
+                }
+            }
+        }
+    }
+
+    &.cvat-predictor-disabled {
+        opacity: 0.5;
+
+        &:active {
+            pointer-events: none;
+        }
+
+        > span[role='img'] {
+            transform: scale(0.8) !important;
+        }
     }
 }
 
