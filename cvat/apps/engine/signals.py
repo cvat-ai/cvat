@@ -3,21 +3,22 @@
 # SPDX-License-Identifier: MIT
 import shutil
 
+from django.contrib.auth.models import User
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from django.contrib.auth.models import User
 
+from cvat.apps.engine.training import create_training_project_job, upload_images_job, \
+    upload_annotation_to_training_project
 from .models import (
     Data,
     Job,
     StatusChoice,
     Task,
-    Profile,
-)
+    Profile, Project, )
 
 
 @receiver(post_save, sender=Job, dispatch_uid="update_task_status")
-def update_task_status(instance, **kwargs):
+def update_task_status(instance: Job, **kwargs):
     db_task = instance.segment.task
     db_jobs = list(Job.objects.filter(segment__task_id=db_task.id))
     status = StatusChoice.COMPLETED
@@ -30,18 +31,42 @@ def update_task_status(instance, **kwargs):
         db_task.status = status
         db_task.save()
 
+    upload_annotation_to_training_project.delay(instance.id)
+
+
 @receiver(post_save, sender=User, dispatch_uid="create_a_profile_on_create_a_user")
-def create_profile(instance, **kwargs):
+def create_profile(instance: User, **kwargs):
     if not hasattr(instance, 'profile'):
         profile = Profile()
         profile.user = instance
         profile.save()
 
+
 @receiver(post_delete, sender=Task, dispatch_uid="delete_task_files_on_delete_task")
-def delete_task_files_on_delete_task(instance, **kwargs):
+def delete_task_files_on_delete_task(instance: Task, **kwargs):
     shutil.rmtree(instance.get_task_dirname(), ignore_errors=True)
 
 
 @receiver(post_delete, sender=Data, dispatch_uid="delete_data_files_on_delete_data")
-def delete_data_files_on_delete_data(instance, **kwargs):
+def delete_data_files_on_delete_data(instance: Data, **kwargs):
     shutil.rmtree(instance.get_data_dirname(), ignore_errors=True)
+
+
+@receiver(post_save, sender=Project, dispatch_uid="create_training_project")
+def create_training_project(instance: Project, **kwargs):
+    # TODO: uncomment when ui will be finished
+    # if instance.project_class and instance.training_project:
+    #     create_training_project_job.delay(instance.id)
+    create_training_project_job.delay(instance.id)
+
+
+@receiver(post_save, sender=Task, dispatch_uid='upload_images_to_training_project')
+def upload_images_to_training_project(instance: Task, update_fields, **kwargs):
+    print(update_fields)
+    if update_fields and 'status' in update_fields and instance.status == StatusChoice.ANNOTATION \
+        and instance.project.project_class \
+        and instance.project.training_project:
+        print('upload_images_job.delay(instance.id)')
+        upload_images_job.delay(instance.id)
+    else:
+        print('not match')

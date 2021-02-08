@@ -12,12 +12,12 @@ from tempfile import mkstemp
 
 import django_rq
 from cacheops import cache, CacheMiss
-from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -25,7 +25,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
 from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, serializers, status, viewsets, views
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
@@ -34,7 +34,7 @@ from rest_framework.response import Response
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views # pylint: disable=unused-import
+import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -42,7 +42,6 @@ from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice
 )
-from cvat.apps.engine.training import get_prediction_server_status, get_frame_prediction
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
@@ -51,9 +50,9 @@ from cvat.apps.engine.serializers import (
     TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer
 )
+from cvat.apps.engine.training import save_prediction_server_status_to_cache_job, save_frame_prediction_to_cache_job
 from cvat.apps.engine.utils import av_scan_paths
-
-from . import models, task, training
+from . import models, task
 from .log import clogger, slogger
 
 
@@ -682,16 +681,14 @@ class PredictView(viewsets.ViewSet):
             return Response(data='query param "frame" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
         cache_key = f'predict_image_{project_id}_{frame}'
         try:
-            annotation = cache.get(cache_key)
-            resp = {
-                'annotation': annotation,
-                'status': 'done',
-            }
+            resp = cache.get(cache_key)
         except CacheMiss:
-            get_frame_prediction.delay(cache_key)
+            save_frame_prediction_to_cache_job.delay(cache_key)
             resp = {
                 'status': 'queued',
             }
+            cache.set(cache_key=cache_key, data=resp, timeout=60)
+
         return Response(resp)
 
 
@@ -709,14 +706,13 @@ class PredictView(viewsets.ViewSet):
         cache_key = f'predict_status_{project_id}'
         try:
             resp = cache.get(cache_key)
-            resp.update({
-                'status': 'done',
-            })
         except CacheMiss:
-            get_prediction_server_status.delay(cache_key)
+            save_prediction_server_status_to_cache_job.delay(cache_key)
             resp = {
                 'status': 'queued',
             }
+            cache.set(cache_key=cache_key, data=resp, timeout=60)
+
         return Response(resp)
 
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))

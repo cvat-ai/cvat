@@ -5,28 +5,29 @@
 
 import itertools
 import os
-import sys
-from re import findall
-import rq
 import shutil
+import sys
+from distutils.dir_util import copy_tree
+from re import findall
 from traceback import print_exception
 from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter, ValidateDimension
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
-from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.prepare import prepare_meta
-from cvat.apps.engine.models import DimensionType
-
 import django_rq
+import rq
 from django.conf import settings
 from django.db import transaction
-from distutils.dir_util import copy_tree
 
+from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, \
+    Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter, ValidateDimension
+from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile, StatusChoice
+from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine.prepare import prepare_meta
+from cvat.apps.engine.utils import av_scan_paths
 from . import models
 from .log import slogger
+
 
 ############################# Low Level server API
 
@@ -105,7 +106,8 @@ def _save_task_to_db(db_task):
         db_job.save()
 
     db_task.data.save()
-    db_task.save()
+    db_task.status = StatusChoice.ANNOTATION
+    db_task.save(update_fields=['status'])
 
 def _count_files(data, meta_info_file=None):
     share_root = settings.SHARE_ROOT

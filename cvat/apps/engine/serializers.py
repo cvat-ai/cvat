@@ -6,12 +6,13 @@ import os
 import re
 import shutil
 
-from rest_framework import serializers
 from django.contrib.auth.models import User, Group
+from rest_framework import serializers
 
+from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.dataset_manager.formats.utils import get_label_color
+
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
@@ -413,6 +414,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
@@ -439,7 +441,6 @@ class ProjectSerializer(serializers.ModelSerializer):
             shutil.rmtree(project_path)
         os.makedirs(db_project.get_project_logs_dirname())
 
-        db_project.save()
         return db_project
 
     # pylint: disable=no-self-use
