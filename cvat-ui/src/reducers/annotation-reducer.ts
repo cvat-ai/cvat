@@ -115,6 +115,7 @@ const defaultState: AnnotationState = {
         message: '',
         projectScore: 0,
         fetching: false,
+        annotatedFrames: [],
     },
     workspace: Workspace.STANDARD,
 };
@@ -1113,7 +1114,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.GET_PREDICTIONS_SUCCESS:
+        case AnnotationActionTypes.GET_PREDICTIONS_SUCCESS: {
+            const { frame } = action.payload;
+            const annotatedFrames = [...state.predictor.annotatedFrames, frame];
+
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    fetching: false,
+                    annotatedFrames,
+                },
+            };
+        }
         case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
             return {
                 ...state,

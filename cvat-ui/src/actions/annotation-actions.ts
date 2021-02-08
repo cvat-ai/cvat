@@ -634,18 +634,19 @@ export function getPredictionsAsync(): ThunkAction {
             },
             predictor: {
                 enabled,
+                annotatedFrames,
             },
         } = getStore().getState().annotation;
-        if (!enabled || currentStates.length) return;
+
+        const {
+            filters, frame, showAllInterpolationTracks, jobInstance: job,
+        } = receiveAnnotationsParameters();
+        if (!enabled || currentStates.length || annotatedFrames.includes(frame)) return;
 
         dispatch({
             type: AnnotationActionTypes.GET_PREDICTIONS,
             payload: {},
         });
-
-        const {
-            filters, frame, showAllInterpolationTracks, jobInstance: job,
-        } = receiveAnnotationsParameters();
 
         let annotations = [];
         try {
@@ -674,7 +675,7 @@ export function getPredictionsAsync(): ThunkAction {
 
             dispatch({
                 type: AnnotationActionTypes.GET_PREDICTIONS_SUCCESS,
-                payload: {},
+                payload: { frame },
             });
         } catch (error) {
             dispatch({

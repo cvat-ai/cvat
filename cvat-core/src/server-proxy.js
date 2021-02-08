@@ -1107,8 +1107,6 @@
                         }
                     };
 
-
-                    console.log(frame);
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
                     const predicate = () => (!predictAnnotations.latestRequest.fetching ||
