@@ -65,6 +65,8 @@ For more information about supported formats look at the
 
 ## Deep learning serverless functions for automatic labeling
 
+<!--lint disable maximum-line-length-->
+
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
 | [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |     |
@@ -79,6 +81,8 @@ For more information about supported formats look at the
 | [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | X   |     |
 | [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
 | [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   |     |
+
+<!--lint enable maximum-line-length-->
 
 ## Online demo: [cvat.org](https://cvat.org)
 
