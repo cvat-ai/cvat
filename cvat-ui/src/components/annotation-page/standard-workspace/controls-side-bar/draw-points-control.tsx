@@ -43,6 +43,7 @@ function DrawPointsControl(props: Props): JSX.Element {
     return (
         <CustomPopover
             {...dynamcPopoverPros}
+            trigger='click'
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POINTS} />}

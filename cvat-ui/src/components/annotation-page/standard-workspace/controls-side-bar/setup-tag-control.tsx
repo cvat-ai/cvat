@@ -29,7 +29,7 @@ function SetupTagControl(props: Props): JSX.Element {
         {};
 
     return (
-        <CustomPopover {...dynamcPopoverPros} placement='right' content={<SetupTagPopoverContainer />}>
+        <CustomPopover trigger='click' {...dynamcPopoverPros} placement='right' content={<SetupTagPopoverContainer />}>
             <Icon className='cvat-setup-tag-control' component={TagIcon} />
         </CustomPopover>
     );

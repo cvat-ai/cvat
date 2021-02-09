@@ -755,7 +755,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}
                 </Modal>
-                <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
+                <CustomPopover
+                    trigger='click'
+                    {...dynamcPopoverPros}
+                    placement='right'
+                    content={this.renderPopoverContent()}
+                >
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
             </>
