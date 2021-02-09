@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,10 +18,9 @@ interface Props {
     isDrawing: boolean;
 }
 
+const CustomPopover = withVisibilityHandling(Popover, 'draw-polygon');
 function DrawPolygonControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
-    const CustomPopover = withVisibilityHandling(Popover, 'draw-polygon');
-
     const dynamcPopoverPros = isDrawing ?
         {
             overlayStyle: {

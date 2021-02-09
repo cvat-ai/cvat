@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -56,6 +56,7 @@ interface DispatchToProps {
 }
 
 const core = getCore();
+const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { annotation } = state;
@@ -73,7 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
         states: annotation.annotations.states,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         jobInstance,
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
@@ -516,8 +517,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             min={1}
                             precision={0}
                             max={jobInstance.stopFrame - frame}
-                            onChange={(value: number | undefined | string): void => {
-                                if (typeof value !== 'undefined') {
+                            onChange={(value: number | undefined | string | null): void => {
+                                if (typeof value !== 'undefined' && value !== null) {
                                     this.setState({
                                         trackingFrames: +value,
                                     });
@@ -719,7 +720,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
-        const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
         const dynamcPopoverPros = isActivated ?
             {

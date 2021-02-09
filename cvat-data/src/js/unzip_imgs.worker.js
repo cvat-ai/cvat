@@ -7,7 +7,7 @@ const JSZip = require('jszip');
 onmessage = (e) => {
     const zip = new JSZip();
     if (e.data) {
-        const { start, end, block } = e.data;
+        const { start, end, block, dimension, dimension2D } = e.data;
 
         zip.loadAsync(block).then((_zip) => {
             let index = start;
@@ -18,7 +18,7 @@ onmessage = (e) => {
                         .async('blob')
                         .then((fileData) => {
                             // eslint-disable-next-line no-restricted-globals
-                            if (self.createImageBitmap) {
+                            if (dimension === dimension2D && self.createImageBitmap) {
                                 createImageBitmap(fileData).then((img) => {
                                     postMessage({
                                         fileName: relativePath,

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,9 +18,9 @@ interface Props {
     rotateFrame(rotation: Rotation): void;
 }
 
+const CustomPopover = withVisibilityHandling(Popover, 'rotate-canvas');
 function RotateControl(props: Props): JSX.Element {
     const { anticlockwiseShortcut, clockwiseShortcut, rotateFrame } = props;
-    const CustomPopover = withVisibilityHandling(Popover, 'rotate-canvas');
 
     return (
         <CustomPopover
