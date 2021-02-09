@@ -56,6 +56,7 @@ interface DispatchToProps {
 }
 
 const core = getCore();
+const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { annotation } = state;
@@ -73,7 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
         states: annotation.annotations.states,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         jobInstance,
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
@@ -720,7 +721,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
-        const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
         const dynamcPopoverPros = isActivated ?
             {
