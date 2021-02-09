@@ -406,7 +406,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return (
             <CustomPopover
                 {...dynamcPopoverPros}
-                trigger='click'
                 placement='right'
                 overlayClassName='cvat-opencv-control-popover'
                 content={this.renderContent()}
