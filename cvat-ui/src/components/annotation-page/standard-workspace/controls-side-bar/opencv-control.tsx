@@ -29,6 +29,7 @@ import {
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     labels: any[];
@@ -55,6 +56,7 @@ interface State {
 }
 
 const core = getCore();
+const CustomPopover = withVisibilityHandling(Popover, 'opencv-control');
 
 function mapStateToProps(state: CombinedState): Props {
     const {
@@ -73,7 +75,7 @@ function mapStateToProps(state: CombinedState): Props {
 
     return {
         isActivated: activeControl === ActiveControl.OPENCV_TOOLS,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         jobInstance,
         curZOrder,
         labels,
@@ -402,14 +404,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             };
 
         return (
-            <Popover
+            <CustomPopover
                 {...dynamcPopoverPros}
                 placement='right'
                 overlayClassName='cvat-opencv-control-popover'
                 content={this.renderContent()}
             >
                 <Icon {...dynamicIconProps} component={OpenCVIcon} />
-            </Popover>
+            </CustomPopover>
         );
     }
 }
