@@ -12,6 +12,7 @@ from rest_framework import serializers
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
+from cvat.apps.engine.models import TrainingProject
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -399,12 +400,20 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError('All label names must be unique for the task')
         return value
 
+
 class ProjectSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('id', 'name')
         read_only_fields = ('name',)
         ordering = ['-id']
+
+
+class TrainingProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainingProject
+        fields = ('host', 'username', 'password', 'enabled')
+        write_once_fields = ('host', 'username', 'password')
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -414,18 +423,26 @@ class ProjectSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    training_project = TrainingProjectSerializer(required=True)
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
-            'bug_tracker', 'created_date', 'updated_date', 'status')
+                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
         ordering = ['-id']
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
-        db_project = models.Project.objects.create(**validated_data)
+        training_data = validated_data.pop('training_project', {})
+        if training_data.get('enabled'):
+            tr_p = models.TrainingProject.objects.create(**training_data)
+            db_project = models.Project.objects.create(**validated_data,
+                                                       project_class=models.Project.ProjectClass.DETECTION,
+                                                       training_project=tr_p)
+        else:
+            db_project = models.Project.objects.create(**validated_data)
         label_names = list()
         for label in labels:
             attributes = label.pop('attributespec_set')

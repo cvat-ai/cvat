@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
-import { MutableRefObject } from 'react';
-import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
+import {ExtendedKeyMapOptions} from 'react-hotkeys';
+import {Canvas, RectDrawingMethod} from 'cvat-canvas-wrapper';
+import {IntelligentScissors} from 'utils/opencv-wrapper/intelligent-scissors';
+import {MutableRefObject} from 'react';
+import {Canvas3d} from 'cvat-canvas3d/src/typescript/canvas3d';
 
 export type StringObject = {
     [index: string]: string;
@@ -371,6 +371,8 @@ export enum Rotation {
 }
 
 export interface PredictorState {
+    timeRemaining: any;
+    progress: number;
     projectScore: number;
     message: string;
     error: Error | null;

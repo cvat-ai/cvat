@@ -2,31 +2,29 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    AnyAction, Dispatch, ActionCreator, Store,
-} from 'redux';
-import { ThunkAction } from 'utils/redux';
+import {ActionCreator, AnyAction, Dispatch, Store,} from 'redux';
+import {ThunkAction} from 'utils/redux';
 
 import {
-    CombinedState,
     ActiveControl,
-    ShapeType,
-    ObjectType,
-    Task,
-    FrameSpeed,
-    Rotation,
+    CombinedState,
     ContextMenuType,
-    Workspace,
-    Model,
     DimensionType,
+    FrameSpeed,
+    Model,
+    ObjectType,
     OpenCVTool,
+    Rotation,
+    ShapeType,
+    Task,
+    Workspace,
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core-wrapper';
-import logger, { LogType } from 'cvat-logger';
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
-import { getCVATStore } from 'cvat-store';
-import { MutableRefObject } from 'react';
+import logger, {LogType} from 'cvat-logger';
+import {RectDrawingMethod} from 'cvat-canvas-wrapper';
+import {getCVATStore} from 'cvat-store';
+import {MutableRefObject} from 'react';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -662,7 +660,7 @@ export function getPredictionsAsync(): ThunkAction {
                 (data: any): any =>
                     new cvat.classes.ObjectState({
                         shapeType: data.type,
-                        label: job.task.labels.filter((label: any): boolean => label.name === data.label)[0],
+                        label: job.task.labels.filter((label: any): boolean => label.id === data.label)[0],
                         points: data.points,
                         objectType: ObjectType.SHAPE,
                         frame,

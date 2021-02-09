@@ -32,6 +32,7 @@
                 bug_tracker: undefined,
                 created_date: undefined,
                 updated_date: undefined,
+                training_project: undefined,
             };
 
             for (const property in data) {
@@ -56,6 +57,8 @@
                     data.tasks.push(taskInstance);
                 }
             }
+
+            data.training_project = JSON.parse(JSON.stringify(initialData.training_project))
 
             Object.defineProperties(
                 this,
@@ -192,6 +195,13 @@
                     tasks: {
                         get: () => [...data.tasks],
                     },
+
+                    training_project: {
+                        get: () => data.training_project,
+                        set: (training) => {
+                            data.training_project = JSON.parse(JSON.stringify(training))
+                        },
+                    },
                 }),
             );
         }
@@ -239,6 +249,7 @@
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],
+                training_project: JSON.parse(JSON.stringify(this.training_project)),
             };
 
             await serverProxy.projects.save(this.id, projectData);
@@ -248,6 +259,7 @@
         const projectSpec = {
             name: this.name,
             labels: [...this.labels.map((el) => el.toJSON())],
+            training_project: JSON.parse(JSON.stringify(this.training_project)),
         };
 
         if (this.bugTracker) {

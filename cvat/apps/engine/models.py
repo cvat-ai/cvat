@@ -173,6 +173,7 @@ class TrainingProject(models.Model):
     username = models.CharField(max_length=256)
     password = models.CharField(max_length=256)
     training_id = models.CharField(max_length=64)
+    enabled = models.BooleanField(null=True)
 
 
 class Project(models.Model):
@@ -342,6 +343,12 @@ class Label(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ('task', 'name')
+
+
+class TrainingProjectLabel(models.Model):
+    cvat_label = models.ForeignKey(Label, on_delete=models.CASCADE, related_name='training_project_label')
+    training_label_id = models.CharField(max_length=64)
+
 
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'

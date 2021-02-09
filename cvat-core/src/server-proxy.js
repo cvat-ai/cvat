@@ -1024,16 +1024,8 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            // const response = await Axios.get(`${backendAPI}/predict/status?project=${projectId}`);
-                            const fakeResponse = {
-                                data: {
-                                    status: 'done',
-                                    message: 'test message 1',
-                                    project_score: 0.51,
-                                },
-                            };
-
-                            return fakeResponse.data;
+                            const response = await Axios.get(`${backendAPI}/predict/status?project=${projectId}`)
+                            return response.data;
                         } catch (errorData) {
                             throw generateError(errorData);
                         }
@@ -1065,25 +1057,9 @@
 
                     async function request() {
                         try {
-                            // const response = await Axios
-                            // .get(`${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`);
-                            const fakeResponse = {
-                                data: {
-                                    status: 'done',
-                                    annotation: await callLambdaFunction(
-                                        'openvino-omz-public-yolo-v3-tf',
-                                        {
-                                            cleanup: false,
-                                            frame,
-                                            task: taskId,
-                                            mapping: {
-                                                person: 'lenna',
-                                            },
-                                        },
-                                    ),
-                                },
-                            };
-                            return fakeResponse.data;
+                            const response = await Axios
+                                .get(`${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`);
+                            return response.data;
                         } catch (errorData) {
                             throw generateError(errorData);
                         }

@@ -2,32 +2,30 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { MutableRefObject } from 'react';
-import { connect } from 'react-redux';
-import Icon, { LoadingOutlined } from '@ant-design/icons';
+import React, {MutableRefObject} from 'react';
+import {connect} from 'react-redux';
+import Icon, {LoadingOutlined} from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
-import { Row, Col } from 'antd/lib/grid';
+import {Col, Row} from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
 
-import { AIToolsIcon } from 'icons';
-import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
+import {AIToolsIcon} from 'icons';
+import {Canvas, convertShapesForInteractor} from 'cvat-canvas-wrapper';
 import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
+import {ActiveControl, CombinedState, Model, ObjectType, ShapeType,} from 'reducers/interfaces';
 import {
-    CombinedState, ActiveControl, Model, ObjectType, ShapeType,
-} from 'reducers/interfaces';
-import {
-    interactWithCanvas,
-    fetchAnnotationsAsync,
-    updateAnnotationsAsync,
     createAnnotationsAsync,
+    fetchAnnotationsAsync,
+    interactWithCanvas,
+    updateAnnotationsAsync,
 } from 'actions/annotation-actions';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
@@ -662,7 +660,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         const states = result.map((data: any): any => (
                             new core.classes.ObjectState({
                                 shapeType: data.type,
-                                label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
+                                label: task.labels.filter((label: any): boolean => label.id === data.label)[0],
                                 points: data.points,
                                 objectType: ObjectType.SHAPE,
                                 frame,

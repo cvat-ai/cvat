@@ -2,24 +2,24 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {
-    useState, useRef, useEffect, RefObject,
-} from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
-import { Col, Row } from 'antd/lib/grid';
+import React, {RefObject, useEffect, useRef, useState,} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
+import {useHistory} from 'react-router';
+import {Col, Row} from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import Form, { FormInstance } from 'antd/lib/form';
+import Form, {FormInstance} from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
 import patterns from 'utils/validation-patterns';
-import { CombinedState } from 'reducers/interfaces';
+import {CombinedState} from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
-import { createProjectAsync } from 'actions/projects-actions';
+import {createProjectAsync} from 'actions/projects-actions';
+import {Switch} from "antd";
 
-function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
+function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }): JSX.Element {
+    const [trainingEnabled, setTrainingEnabled] = useState(false);
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
@@ -33,8 +33,53 @@ function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }
                     },
                 ]}
             >
-                <Input />
+                <Input/>
             </Form.Item>
+
+            <Form.Item
+                name={['training', 'enabled']}
+                label='Adaptive auto annotation'
+                initialValue={trainingEnabled}
+            >
+                <Switch
+                    checked={trainingEnabled}
+                    onClick={() => setTrainingEnabled(!trainingEnabled)}
+                />
+            </Form.Item>
+            <Form.Item
+                name={['training', 'host']}
+                label='Host'
+            >
+                <Input
+                    placeholder={'https://example.host'}
+                    disabled={!trainingEnabled}
+                />
+            </Form.Item>
+            <Row gutter={16}>
+                <Col span={12}>
+                    <Form.Item
+                        name={['training', 'username']}
+                        label='Username'
+                    >
+                        <Input
+                            placeholder={'UserName'}
+                            disabled={!trainingEnabled}
+                        />
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item
+                        name={['training', 'password']}
+                        label='Password'
+                    >
+                        <Input
+                            placeholder={'Pa$$w0rd'}
+                            disabled={!trainingEnabled}
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
+
         </Form>
     );
 }
@@ -103,6 +148,11 @@ export default function CreateProjectContent(): JSX.Element {
             const basicValues = await nameFormRef.current.validateFields();
             const advancedValues = await advancedFormRef.current.validateFields();
             projectData.name = basicValues.name;
+            projectData.training_project = {};
+            for (const [field, value] of Object.entries(basicValues.training)) {
+                console.log(field, value)
+                projectData.training_project[field] = value;
+            }
             for (const [field, value] of Object.entries(advancedValues)) {
                 projectData[field] = value;
             }

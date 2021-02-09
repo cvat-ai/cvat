@@ -14,7 +14,9 @@ from .models import (
     Job,
     StatusChoice,
     Task,
-    Profile, Project, )
+    Profile,
+    Project,
+)
 
 
 @receiver(post_save, sender=Job, dispatch_uid="update_task_status")
@@ -31,7 +33,8 @@ def update_task_status(instance: Job, **kwargs):
         db_task.status = status
         db_task.save()
 
-    upload_annotation_to_training_project.delay(instance.id)
+    if instance.status == StatusChoice.COMPLETED:
+        upload_annotation_to_training_project.delay(instance.id)
 
 
 @receiver(post_save, sender=User, dispatch_uid="create_a_profile_on_create_a_user")
@@ -54,19 +57,15 @@ def delete_data_files_on_delete_data(instance: Data, **kwargs):
 
 @receiver(post_save, sender=Project, dispatch_uid="create_training_project")
 def create_training_project(instance: Project, **kwargs):
-    # TODO: uncomment when ui will be finished
-    # if instance.project_class and instance.training_project:
-    #     create_training_project_job.delay(instance.id)
-    create_training_project_job.delay(instance.id)
+    if instance.project_class and instance.training_project:
+        create_training_project_job.delay(instance.id)
 
 
 @receiver(post_save, sender=Task, dispatch_uid='upload_images_to_training_project')
 def upload_images_to_training_project(instance: Task, update_fields, **kwargs):
-    print(update_fields)
-    if update_fields and 'status' in update_fields and instance.status == StatusChoice.ANNOTATION \
-        and instance.project.project_class \
-        and instance.project.training_project:
-        print('upload_images_job.delay(instance.id)')
+    if update_fields \
+            and 'status' in update_fields \
+            and instance.status == StatusChoice.ANNOTATION \
+            and instance.project.project_class \
+            and instance.project.training_project:
         upload_images_job.delay(instance.id)
-    else:
-        print('not match')

@@ -2235,7 +2235,11 @@
         const result = await serverProxy.predictor.status(this.projectId);
         return {
             message: result.message,
-            projectScore: result.project_score,
+            progress: result.progress,
+            projectScore: result.score,
+            timeRemaining: result.time_remaining,
+            mediaAmount: result.media_amount,
+            annotationAmount: result.annotation_amount,
         };
     };
 

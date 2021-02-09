@@ -3,22 +3,27 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { Col } from 'antd/lib/grid';
+import {Col} from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
+import Moment from 'react-moment';
 
-import { DimensionType, PredictorState, Workspace } from 'reducers/interfaces';
-import { InfoIcon, FullscreenIcon, BrainIcon } from 'icons';
+import {DimensionType, PredictorState, Workspace} from 'reducers/interfaces';
+import {BrainIcon, FullscreenIcon, InfoIcon} from 'icons';
 
 interface Props {
     workspace: Workspace;
     predictor: PredictorState;
+
     showStatistics(): void;
+
     switchPredictor(predictorEnabled: boolean): void;
+
     changeWorkspace(workspace: Workspace): void;
+
     jobInstance: any;
 }
 
@@ -28,6 +33,7 @@ function RightGroup(props: Props): JSX.Element {
     } = props;
 
     const formattedScore = `${(predictor.projectScore * 100).toFixed(0)}%`;
+    const timeNow = Date.now()
     const predictorTooltip = (
         <div className='cvat-predictor-tooltip'>
             <span>Adaptive auto annotation is</span>
@@ -44,6 +50,18 @@ function RightGroup(props: Props): JSX.Element {
                 </Text>
             ) : null }
             { predictor.message ? <span>{`Message: ${predictor.message}`}</span> : null }
+            { predictor.timeRemaining > 0 ? (
+                <span>
+                    Time Remaining: <Moment toNow unix>timeNow + Math.trunc(predictor.timeRemaining)</Moment>
+                </span>
+            ) : null }
+            { predictor.progress > 0 ? (
+                <span>
+                    Progress: {predictor.progress.toFixed(1)} %
+                </span>
+            ) : null }
+
+
         </div>
     );
 
