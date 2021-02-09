@@ -12,7 +12,7 @@ import {
     InteractionResult as _InteractionResult,
 } from 'cvat-canvas/src/typescript/canvas';
 
-function convertShapesForInteractor(shapes: InteractionResult[], button: number): number[][] {
+export function convertShapesForInteractor(shapes: InteractionResult[], button: number): number[][] {
     const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
         if (!(index % 2)) {
             // 0, 2, 4
@@ -32,5 +32,5 @@ export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
 
 export {
-    Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, convertShapesForInteractor,
+    Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,
 };
