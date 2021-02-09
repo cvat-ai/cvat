@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -351,23 +351,23 @@ context('Review pipeline feature', () => {
         });
 
         it('Select an issue on sidebar. Issue indication has changed the color for highlighted issue', () => {
-            let index = 0;
             cy.collectIssueRegionId().then(($issueRegionList) => {
                 cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
                     for (let i = 0; i < sidebarIssueItems.length; i++) {
-                        cy.get(sidebarIssueItems[i]).trigger('mousemove').trigger('mouseover');
-                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`).should(
+                        cy.get(`#cvat-objects-sidebar-issue-item-${$issueRegionList[i]}`)
+                            .trigger('mousemove')
+                            .trigger('mouseover');
+                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[i]}`).should(
                             'have.attr',
                             'fill',
                             'url(#cvat_issue_region_pattern_2)',
                         );
-                        cy.get(sidebarIssueItems[i]).trigger('mouseout');
-                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`).should(
+                        cy.get(`#cvat-objects-sidebar-issue-item-${$issueRegionList[i]}`).trigger('mouseout');
+                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[i]}`).should(
                             'have.attr',
                             'fill',
                             'url(#cvat_issue_region_pattern_1)',
                         );
-                        index++;
                     }
                 });
             });
