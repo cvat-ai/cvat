@@ -11,7 +11,7 @@ metadata:
 
 spec:
   description: Interactive Object Segmentation with Inside-Outside Guidance
-  runtime: "python:3.6"
+  runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -24,48 +24,47 @@ spec:
 
     directives:
       preCopy:
-      - kind: WORKDIR
-        value: /opt/nuclio
-      - kind: RUN
-        value: conda create -y -n iog python=3.6
-      - kind: RUN
-        value: echo "source activate iog" > ~/.bashrc
-      - kind: ENV
-        value: PATH=/opt/conda/envs/env/bin:$PATH
-      - kind: RUN
-        value: conda install -y -c anaconda curl
-      - kind: RUN
-        value: conda install -y pytorch=0.4 torchvision=0.2 -c pytorch
-      - kind: RUN
-        value: conda install -y -c conda-forge pycocotools opencv scipy
-      - kind: RUN
-        value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
-      - kind: WORKDIR
-        value: /opt/nuclio/iog
-      - kind: ENV
-        value: fileid=1Lm1hhMhhjjnNwO4Pf7SC6tXLayH2iH0l
-      - kind: ENV
-        value: filename=IOG_PASCAL_SBD.pth
-      - kind: RUN
-        value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
-      - kind: RUN
-        value: echo "/download/ {print \$NF}" > confirm_code.awk
-      - kind: RUN
-        value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk -f confirm_code.awk ./cookie`&id=${fileid}" -o ${filename}
-      - kind: WORKDIR
-        value: /opt/nuclio
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: conda create -y -n iog python=3.6
+        - kind: RUN
+          value: echo "source activate iog" > ~/.bashrc
+        - kind: ENV
+          value: PATH=/opt/conda/envs/env/bin:$PATH
+        - kind: RUN
+          value: conda install -y -c anaconda curl
+        - kind: RUN
+          value: conda install -y pytorch=0.4 torchvision=0.2 -c pytorch
+        - kind: RUN
+          value: conda install -y -c conda-forge pycocotools opencv scipy
+        - kind: RUN
+          value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
+        - kind: WORKDIR
+          value: /opt/nuclio/iog
+        - kind: ENV
+          value: fileid=1Lm1hhMhhjjnNwO4Pf7SC6tXLayH2iH0l
+        - kind: ENV
+          value: filename=IOG_PASCAL_SBD.pth
+        - kind: RUN
+          value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
+        - kind: RUN
+          value: echo "/download/ {print \$NF}" > confirm_code.awk
+        - kind: RUN
+          value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk -f confirm_code.awk ./cookie`&id=${fileid}" -o ${filename}
+        - kind: WORKDIR
+          value: /opt/nuclio
 
   triggers:
     myHttpTrigger:
       maxWorkers: 2
-      kind: "http"
+      kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
 
   platform:
     attributes:
-      processorMountMode: volume
       restartPolicy:
         name: always
         maximumRetryCount: 3
