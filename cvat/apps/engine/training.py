@@ -1,4 +1,4 @@
-import asyncio
+import os
 import os
 import uuid
 from abc import ABC, abstractmethod
@@ -13,19 +13,20 @@ from django_rq import job
 
 from cvat.apps import dataset_manager  as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Project, Task, TrainingProjectImage, TrainingProject, Job, ShapeType, Label, Image, \
-    Data
+from cvat.apps.engine.models import Project, Task, TrainingProjectImage, Job, ShapeType, Label, Image, \
+    Data, TrainingProjectLabel, TrainingProject
 
 
 @job
-def save_prediction_server_status_to_cache_job(cache_key,
-                                               host='https://nnlicv205.inn.intel.com',
-                                               login='intel',
-                                               password='Int3l!',
-                                               project_id='600a9a440337dc6e03183104',
-                                               timeout=60):
-    training_server = TrainingServerAPI(host, login, password)
-    status = training_server.get_project_status(project_id=project_id)
+def save_prediction_server_status_to_cache_job(cache_key: str,
+                                               cvat_project_id: int,
+                                               timeout: int = 60):
+    training_project = Project.objects.get(pk=cvat_project_id).training_project
+    api = TrainingServerAPI(host=training_project.host,
+                            username=training_project.username,
+                            password=training_project.password)
+    training_project = Project.objects.get(pk=cvat_project_id).training_project
+    status = api.get_project_status(project_id=training_project.training_id)
     resp = {
         **status,
         'status': 'done'
@@ -35,14 +36,23 @@ def save_prediction_server_status_to_cache_job(cache_key,
 
 @job
 def save_frame_prediction_to_cache_job(cache_key: str,
-                                       image_id='600a9a560337dc6e0318310b',
-                                       host='https://nnlicv205.inn.intel.com',
-                                       login='intel',
-                                       password='Int3l!',
-                                       project_id='600a9a440337dc6e03183104',
-                                       timeout=60):
-    training_server = TrainingServerAPI(host, login, password)
-    annotation = training_server.get_annotation(project_id=project_id, image_id=image_id)
+                                       cvat_project_id: int,
+                                       frame: int,
+                                       timeout: int = 60):
+    training_project_image = TrainingProjectImage.objects.get(idx=frame, task__project_id=cvat_project_id)
+    cvat_labels = Label.objects.filter(project__id=cvat_project_id).all()
+    training_project = Project.objects.get(pk=cvat_project_id).training_project
+    api = TrainingServerAPI(host=training_project.host,
+                            username=training_project.username,
+                            password=training_project.password)
+    labels_mapping = {
+        cvat_labels.training_project_label: cvat_label.id
+        for cvat_label in cvat_labels
+    }
+    annotation = api.get_annotation(project_id=training_project.training_id,
+                                    image_id=training_project_image.training_image_id,
+                                    labels_mapping=labels_mapping,
+                                    frame=frame)
     resp = {
         'annotation': annotation,
         'status': 'done'
@@ -99,13 +109,11 @@ def upload_annotation_to_training_project(job_id: int):
         username=cvat_project.training_project.username,
         password=cvat_project.training_project.password,
     )
-    training_project_labels = api.get_labels(project_id=training_project.training_id)
+    # training_project_labels = api.get_labels(project_id=training_project.training_id)
     cvat_labels = Label.objects.filter(project=cvat_project).all()
     labels_mapping = {
-        cvat_label.id: trai_label['id']
+        cvat_label.id: cvat_labels.training_project_label
         for cvat_label in cvat_labels
-        for trai_label in training_project_labels
-        if trai_label['name'] == cvat_label.name
     }
 
     for frame in range(start, stop + 1):
@@ -129,47 +137,21 @@ def upload_annotation_to_training_project(job_id: int):
     api.upload_annotations(project_id=training_project.training_id, frames_data=frames_data)
 
 
-# @async_to_sync
-# async def upload_images_job_async(task_id: int):
-#     task = await sync_to_async(Task.objects.get)(pk=task_id)
-#     # task_data = await sync_to_async(task.data)()
-#     # frame_provider = await sync_to_async(FrameProvider, thread_sensitive=True)(task_data)
-#     frame_provider = FrameProvider(task.data)
-#     frames = frame_provider.get_frames()
-#     api = TrainingServerAPI(
-#         host=task.project.training_project.host,
-#         username=task.project.training_project.username,
-#         password=task.project.training_project.password,
-#     )
-#     for i, (buffer, _) in enumerate(frames):
-#         training_image_id = api.upload_image(training_id=task.project.training_project.training_id, buffer=buffer)
-#         if training_image_id:
-#             TrainingProjectImage.objects.create(task=task, idx=i,
-#                                                 training_image_id=training_image_id)
-
-
 @async_to_sync
 async def create_training_project_job_async(cvat_project_id):
     cvat_project = Project.objects.get(pk=cvat_project_id)
-    if not cvat_project.training_project:
-        training_project = TrainingProject.objects.create(host='https://nnlicv205.inn.intel.com',
-                                                          username='intel',
-                                                          password='Int3l!')
-        cvat_project.training_project = training_project
-        cvat_project.project_class = cvat_project.ProjectClass.DETECTION
-        cvat_project.save()
-    else:
-        # api = TrainingServer(
-        #     host=cvat_project.training_project.host,
-        #     username=cvat_project.training_project.username,
-        #     password=cvat_project.training_project.password,
-        # )
-        api = TrainingServerAPI(
-            host=cvat_project.training_project.host,
-            username=cvat_project.training_project.username,
-            password=cvat_project.training_project.password,
-        )
-        training_id = await create_training_project(cvat_project=cvat_project, api=api)
+    # training_project_filter = TrainingProject.objects.filter(cvat_project=cvat_project).all()
+    # if len(training_project_filter) == 0:
+    training_project, _ = TrainingProject.objects.get_or_create(host='https://nnlicv205.inn.intel.com',
+                                                                username='intel',
+                                                                password='Int3l!',
+                                                                cvat_project=cvat_project)
+    api = TrainingServerAPI(
+        host=training_project.host,
+        username=training_project.username,
+        password=training_project.password,
+    )
+    training_id = await create_training_project(cvat_project=cvat_project, training_project=training_project, api=api)
 
 
 # async def create_training_project_async(cvat_project_id):
@@ -183,19 +165,21 @@ async def create_training_project_job_async(cvat_project_id):
 #     await upload_images(cvat_project_id=cvat_project_id, training_id=training_id, api=api)
 
 
-async def create_training_project(cvat_project, api):
-    await asyncio.sleep(0.1)
-    training_project = cvat_project.training_project
+async def create_training_project(cvat_project, training_project, api):
     labels = cvat_project.label_set.all()
-    training_id = api.create_project(
+    training_project_resp = api.create_project(
         name=f'{cvat_project.name}_cvat',
         project_class=cvat_project.project_class,
         labels=[{'name': label.name} for label in labels]
     )
-    if training_id:
-        training_project.training_id = training_id
+    if training_project_resp.get('id'):
+        training_project.training_id = training_project_resp['id']
         training_project.save()
-    return training_id
+
+    for cvat_label in labels:
+        training_label = list(filter(lambda x: x['name'] == cvat_label.name, training_project_resp.get('labels', [])))
+        if training_label:
+            TrainingProjectLabel.objects.create(cvat_label=cvat_label, training_label_id=training_label[0]['id'])
 
 
 async def upload_images(cvat_project_id, training_id, api):
@@ -239,7 +223,8 @@ class TrainingServerAPIAbs(ABC):
         pass
 
     @abstractmethod
-    def get_annotation(self, project_id: str, image_id: str) -> dict:
+    def get_annotation(self, project_id: str, image_id: str, width: int, height: int, frame: int,
+                       labels_mapping: dict) -> dict:
         pass
 
 
@@ -412,7 +397,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
             x0, y0, x1, y1 = shape['points']
             x = x0 / shape['width']
             y = y0 / shape['height']
-            width = (x1 - x0) / shape['width']
+            width = (x1 - x0) / shape['width']  # width * shape['width'] + x0
             height = (y1 - y0) / shape['height']
             data.append({
                 "id": str(uuid.uuid4()),
@@ -439,7 +424,35 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         return data
 
     @staticmethod
-    def __convert_annotation_to_cvat(annotation: dict) -> dict:
+    def __convert_annotation_to_cvat(annotation: dict, image_width: int, image_height: int, frame: int,
+                                     labels_mapping: dict) -> dict:
+        shapes = []
+        for i, annotation in enumerate(annotation['data']):
+            shape = annotation['shapes'][0]
+            label_id = annotation['labels'][0]['id']
+            if shape['type'] != 'rect':
+                continue
+            x = shape['geometry']['x']
+            y = shape['geometry']['y']
+            w = shape['geometry']['width']
+            h = shape['geometry']['height']
+            x0 = x * image_width
+            y0 = y * image_height
+            x1 = image_width * w + x0
+            y1 = image_height * h + y0
+            shapes.append(OrderedDict([
+                ('type', ShapeType.RECTANGLE),
+                ('occluded', False),
+                ('z_order', 0),
+                ('points', [x0, y0, x1, y1]),
+                ('id', i),
+                ('frame', frame),
+                ('label_id', labels_mapping[label_id]),
+                ('group', 0),
+                ('source', 'auto'),
+                ('attributes', [])
+            ]))
+
         return annotation
 
     @retry()
@@ -608,7 +621,8 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         print('Resp', result, '\n')
         return result
 
-    def create_project(self, name: str, description: str = '', project_class: str = None, labels: List[dict] = None):
+    def create_project(self, name: str, description: str = '', project_class: str = None,
+                       labels: List[dict] = None) -> dict:
         all_tasks = self.__get_tasks()
         task_type = self.TRAINING_CLASS.get(project_class)
         tasks = [
@@ -624,7 +638,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
             'temp_id': label['name']
         } for label in labels]
         r = self.__create_project(name=name, description=description, tasks=tasks, labels=labels)
-        return r.get('id')
+        return r
 
     def get_server_status(self) -> dict:
         return self.__get_server_status()
@@ -673,9 +687,12 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         }
         return result
 
-    def get_annotation(self, project_id: str, image_id: str) -> dict:
+    def get_annotation(self, project_id: str, image_id: str, width: int, height: int, frame: int,
+                       labels_mapping: dict) -> dict:
         annotation = self.__get_annotation(project_id=project_id, image_id=image_id)
-        cvat_annotation = self.__convert_annotation_to_cvat(annotation)
+        cvat_annotation = self.__convert_annotation_to_cvat(annotation=annotation, image_width=width,
+                                                            image_height=height, frame=frame,
+                                                            labels_mapping=labels_mapping)
         return cvat_annotation
 
     def get_labels(self, project_id: str) -> dict:

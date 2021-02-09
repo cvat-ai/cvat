@@ -54,7 +54,6 @@ def delete_data_files_on_delete_data(instance: Data, **kwargs):
 
 @receiver(post_save, sender=Project, dispatch_uid="create_training_project")
 def create_training_project(instance: Project, **kwargs):
-    # TODO: uncomment when ui will be finished
     # if instance.project_class and instance.training_project:
     #     create_training_project_job.delay(instance.id)
     create_training_project_job.delay(instance.id)
