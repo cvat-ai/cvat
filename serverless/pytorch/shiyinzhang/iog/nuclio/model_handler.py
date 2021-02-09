@@ -6,12 +6,8 @@ import numpy as np
 import os
 import cv2
 import torch
-from torchvision import transforms
-from dataloaders import custom_transforms as tr
 from networks.mainnetwork import Network
-from PIL import Image
 from dataloaders import helpers
-import os
 
 def convert_mask_to_polygon(mask):
     mask = np.array(mask, dtype=np.uint8)

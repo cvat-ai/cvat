@@ -97,11 +97,12 @@ Limitations:
 
 ## REST API
 
-Automatically generated Swagger documentation for Django REST API is
-available on `<cvat_origin>/api/swagger`
-(default: `localhost:8080/api/swagger`).
+Automatically generated Swagger documentation for Django REST API is available
+on `<cvat_origin>/api/swagger`(default: `localhost:8080/api/swagger`).
 
-Swagger documentation is visiable on allowed hostes, Update environement variable in docker-compose.yml file with cvat hosted machine IP or domain name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`)
+Swagger documentation is visiable on allowed hostes, Update environement
+variable in docker-compose.yml file with cvat hosted machine IP or domain
+name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`.
 
 ## LICENSE
 
@@ -133,4 +134,6 @@ Other ways to ask questions and get our support:
 
 ## Projects using CVAT
 
-- [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source vision AI platform that fully integrates CVAT with scalable data processing and parallelized training pipelines.
+- [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source
+  vision AI platform that fully integrates CVAT with scalable data processing
+  and parallelized training pipelines.
