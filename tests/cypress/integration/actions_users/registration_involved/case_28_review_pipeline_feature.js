@@ -352,21 +352,13 @@ context('Review pipeline feature', () => {
 
         it('Select an issue on sidebar. Issue indication has changed the color for highlighted issue', () => {
             cy.collectIssueRegionId().then(($issueRegionList) => {
-                for (let i = 0; i < $issueRegionList.length; i++) {
-                    cy.get(`#cvat-objects-sidebar-issue-item-${$issueRegionList[i]}`)
-                        .trigger('mousemove')
-                        .trigger('mouseover');
-                    cy.get(`#cvat_canvas_issue_region_${$issueRegionList[i]}`).should(
-                        'have.attr',
-                        'fill',
-                        'url(#cvat_issue_region_pattern_2)',
-                    );
-                    cy.get(`#cvat-objects-sidebar-issue-item-${$issueRegionList[i]}`).trigger('mouseout');
-                    cy.get(`#cvat_canvas_issue_region_${$issueRegionList[i]}`).should(
-                        'have.attr',
-                        'fill',
-                        'url(#cvat_issue_region_pattern_1)',
-                    );
+                for (const issueRegionID of $issueRegionList) {
+                    const objectsSidebarIssueItem = `#cvat-objects-sidebar-issue-item-${issueRegionID}`;
+                    const canvasIssueRegion = `#cvat_canvas_issue_region_${issueRegionID}`;
+                    cy.get(objectsSidebarIssueItem).trigger('mousemove').trigger('mouseover');
+                    cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_2)');
+                    cy.get(objectsSidebarIssueItem).trigger('mouseout');
+                    cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_1)');
                 }
             });
         });
