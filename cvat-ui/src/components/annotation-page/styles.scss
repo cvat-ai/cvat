@@ -9,6 +9,10 @@
     overflow: hidden;
 }
 
+.cvat-annotation-layout-content {
+    height: 100%;
+}
+
 .ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
     border-bottom: 1px solid $border-color-1;

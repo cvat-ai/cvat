@@ -124,17 +124,26 @@ Cypress.Commands.add('getJobNum', (jobID) => {
         });
 });
 
-Cypress.Commands.add('openJob', (jobID = 0) => {
+Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true) => {
     cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
     cy.get('.cvat-canvas-container').should('exist');
+    if (removeAnnotations) {
+        cy.document().then((doc) => {
+            const objects = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
+            if (typeof objects !== 'undefined' && objects.length > 0) {
+                cy.removeAnnotations();
+                cy.saveJob('PUT');
+            }
+        });
+    }
 });
 
-Cypress.Commands.add('openTaskJob', (taskName, jobID = 0) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true) => {
     cy.openTask(taskName);
-    cy.openJob(jobID);
+    cy.openJob(jobID, removeAnnotations);
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {

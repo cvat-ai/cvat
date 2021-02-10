@@ -601,7 +601,7 @@ def match_dm_item(item, task_data, root_hint=None):
 
     frame_number = None
     if frame_number is None and item.has_image:
-        frame_number = task_data.match_frame(item.image.path, root_hint)
+        frame_number = task_data.match_frame(item.id + item.image.ext, root_hint)
     if frame_number is None:
         frame_number = task_data.match_frame(item.id, root_hint)
     if frame_number is None:

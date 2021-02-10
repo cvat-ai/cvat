@@ -8,17 +8,20 @@ import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 
-import { Workspace } from 'reducers/interfaces';
+import { DimensionType, Workspace } from 'reducers/interfaces';
 import { InfoIcon, FullscreenIcon } from 'icons';
 
 interface Props {
     workspace: Workspace;
     showStatistics(): void;
     changeWorkspace(workspace: Workspace): void;
+    jobInstance: any;
 }
 
 function RightGroup(props: Props): JSX.Element {
-    const { showStatistics, changeWorkspace, workspace } = props;
+    const {
+        showStatistics, changeWorkspace, workspace, jobInstance,
+    } = props;
 
     return (
         <Col className='cvat-annotation-header-right-group'>
@@ -49,11 +52,26 @@ function RightGroup(props: Props): JSX.Element {
                     onChange={changeWorkspace}
                     value={workspace}
                 >
-                    {Object.values(Workspace).map((ws) => (
-                        <Select.Option key={ws} value={ws}>
-                            {ws}
-                        </Select.Option>
-                    ))}
+                    {Object.values(Workspace).map((ws) => {
+                        if (jobInstance.task.dimension === DimensionType.DIM_3D) {
+                            if (ws === Workspace.STANDARD) {
+                                return null;
+                            }
+                            return (
+                                <Select.Option disabled={ws !== Workspace.STANDARD3D} key={ws} value={ws}>
+                                    {ws}
+                                </Select.Option>
+                            );
+                        }
+                        if (ws !== Workspace.STANDARD3D) {
+                            return (
+                                <Select.Option key={ws} value={ws}>
+                                    {ws}
+                                </Select.Option>
+                            );
+                        }
+                        return null;
+                    })}
                 </Select>
             </div>
         </Col>

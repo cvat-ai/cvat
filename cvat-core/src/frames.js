@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -341,11 +341,24 @@
         constructor(size, chunkSize, stopFrame, taskID) {
             this._size = size;
             this._buffer = {};
+            this._contextImage = {};
             this._requestedChunks = {};
             this._chunkSize = chunkSize;
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
             this._taskID = taskID;
+        }
+
+        isContextImageAvailable(frame) {
+            return frame in this._contextImage;
+        }
+
+        getContextImage(frame) {
+            return this._contextImage[frame] || null;
+        }
+
+        addContextImage(frame, data) {
+            this._contextImage[frame] = data;
         }
 
         getFreeBufferSize() {
@@ -535,6 +548,37 @@
         }
     }
 
+    async function getImageContext(taskID, frame) {
+        return new Promise((resolve, reject) => {
+            serverProxy.frames
+                .getImageContext(taskID, frame)
+                .then((result) => {
+                    if (isNode) {
+                        // eslint-disable-next-line no-undef
+                        resolve(global.Buffer.from(result, 'binary').toString('base64'));
+                    } else if (isBrowser) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            resolve(reader.result);
+                        };
+                        reader.readAsDataURL(result);
+                    }
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+    }
+
+    async function getContextImage(taskID, frame) {
+        if (frameDataCache[taskID].frameBuffer.isContextImageAvailable(frame)) {
+            return frameDataCache[taskID].frameBuffer.getContextImage(frame);
+        }
+        const response = getImageContext(taskID, frame);
+        frameDataCache[taskID].frameBuffer.addContextImage(frame, response);
+        return frameDataCache[taskID].frameBuffer.getContextImage(frame);
+    }
+
     async function getPreview(taskID) {
         return new Promise((resolve, reject) => {
             // Just go to server and get preview (no any cache)
@@ -558,7 +602,18 @@
         });
     }
 
-    async function getFrame(taskID, chunkSize, chunkType, mode, frame, startFrame, stopFrame, isPlaying, step) {
+    async function getFrame(
+        taskID,
+        chunkSize,
+        chunkType,
+        mode,
+        frame,
+        startFrame,
+        stopFrame,
+        isPlaying,
+        step,
+        dimension,
+    ) {
         if (!(taskID in frameDataCache)) {
             const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
 
@@ -584,6 +639,7 @@
                     Math.max(decodedBlocksCacheSize, 9),
                     decodedBlocksCacheSize,
                     1,
+                    dimension,
                 ),
                 frameBuffer: new FrameBuffer(
                     Math.min(180, decodedBlocksCacheSize * chunkSize),
@@ -630,5 +686,6 @@
         getRanges,
         getPreview,
         clear,
+        getContextImage,
     };
 })();
