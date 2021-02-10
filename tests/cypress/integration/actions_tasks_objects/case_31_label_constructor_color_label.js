@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -54,11 +54,6 @@ context('Label constructor. Color label.', () => {
 
     before(() => {
         cy.openTask(taskName);
-    });
-
-    after('Remove annotation and save job.', () => {
-        cy.removeAnnotations();
-        cy.saveJob('PUT');
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -117,7 +112,7 @@ context('Label constructor. Color label.', () => {
         });
 
         it('Open the job. Existing objects with this label have changed their color.', () => {
-            cy.openJob();
+            cy.openJob(0, false);
             cy.getObjectIdNumberByLabelName(colorRed).then((objectId) => {
                 cy.get(`#cvat_canvas_shape_${objectId}`).should('have.attr', 'stroke', `#${labelColor.yellowHex}`);
                 cy.get(`#cvat-objects-sidebar-state-item-${objectId}`)
