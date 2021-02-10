@@ -26,14 +26,9 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         cy.createRectangle(createRectangleTrack2Points);
     });
 
-    after('Go to task list', () => {
-        cy.removeAnnotations();
-        cy.saveJob('PUT');
-    });
-
     describe(`Testing case "${caseId}"`, () => {
         it('Save job. Dump annotaion. Remove annotation. Save job.', () => {
-            cy.saveJob();
+            cy.saveJob('PATCH', 200, 'saveJobDump');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
             cy.interactMenu('Dump annotations');
             cy.get('.cvat-menu-dump-submenu-item').within(() => {

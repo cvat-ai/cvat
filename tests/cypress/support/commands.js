@@ -106,10 +106,10 @@ Cypress.Commands.add('openTask', (taskName) => {
     cy.get('.cvat-task-details').should('exist');
 });
 
-Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200) => {
-    cy.intercept(method, '/api/v1/jobs/**').as('saveJob');
+Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
+    cy.intercept(method, '/api/v1/jobs/**').as(as);
     cy.get('button').contains('Save').click({ force: true });
-    cy.wait('@saveJob').its('response.statusCode').should('equal', status);
+    cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
 Cypress.Commands.add('getJobNum', (jobID) => {
