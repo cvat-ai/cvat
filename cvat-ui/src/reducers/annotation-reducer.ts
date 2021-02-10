@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import React from 'react';
 import { AnyAction } from 'redux';
 
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
@@ -17,6 +18,7 @@ import {
     ContextMenuType,
     Workspace,
     TaskStatus,
+    DimensionType,
 } from './interfaces';
 
 const defaultState: AnnotationState = {
@@ -55,6 +57,11 @@ const defaultState: AnnotationState = {
         },
         playing: false,
         frameAngles: [],
+        contextImage: {
+            loaded: false,
+            data: '',
+            hidden: false,
+        },
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -133,7 +140,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             } = action.payload;
 
             const isReview = job.status === TaskStatus.REVIEW;
+            let workspaceSelected = Workspace.STANDARD;
 
+            if (job.task.dimension === DimensionType.DIM_3D) {
+                workspaceSelected = Workspace.STANDARD3D;
+            }
             return {
                 ...state,
                 job: {
@@ -176,10 +187,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: new Canvas(),
+                    instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                workspace: isReview ? Workspace.REVIEW_WORKSPACE : Workspace.STANDARD,
+                workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -200,6 +211,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         fetching: false,
+                    },
+                    contextImage: {
+                        loaded: false,
+                        data: '',
+                        hidden: state.player.contextImage.hidden,
                     },
                 },
             };
@@ -242,6 +258,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         fetching: false,
                         changeTime,
                         delay,
+                    },
+                    contextImage: {
+                        ...state.player.contextImage,
+                        loaded: false,
                     },
                 },
                 annotations: {
@@ -1073,6 +1093,36 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.CURSOR,
+                },
+            };
+        }
+        case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
+            const { hidden } = action.payload;
+            const { loaded, data } = state.player.contextImage;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contextImage: {
+                        loaded,
+                        data,
+                        hidden,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
+            const { context, loaded } = action.payload;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contextImage: {
+                        loaded,
+                        data: context,
+                        hidden: state.player.contextImage.hidden,
+                    },
                 },
             };
         }

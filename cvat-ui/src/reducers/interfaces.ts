@@ -6,6 +6,7 @@ import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { MutableRefObject } from 'react';
+import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 
 export type StringObject = {
     [index: string]: string;
@@ -332,6 +333,7 @@ export enum ActiveControl {
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
+    PHOTO_CONTEXT = 'PHOTO_CONTEXT',
     OPENCV_TOOLS = 'opencv_tools',
 }
 
@@ -381,7 +383,7 @@ export interface AnnotationState {
             pointID: number | null;
             clientID: number | null;
         };
-        instance: Canvas;
+        instance: Canvas | Canvas3d;
         ready: boolean;
         activeControl: ActiveControl;
     };
@@ -404,6 +406,11 @@ export interface AnnotationState {
         };
         playing: boolean;
         frameAngles: number[];
+        contextImage: {
+            loaded: boolean;
+            data: string;
+            hidden: boolean;
+        };
     };
     drawing: {
         activeInteractor?: Model | OpenCVTool;
@@ -459,6 +466,7 @@ export interface AnnotationState {
 }
 
 export enum Workspace {
+    STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
     TAG_ANNOTATION = 'Tag annotation',

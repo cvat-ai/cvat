@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,6 +18,7 @@ import {
     ContextMenuType,
     Workspace,
     Model,
+    DimensionType,
     OpenCVTool,
 } from 'reducers/interfaces';
 
@@ -190,6 +191,8 @@ export enum AnnotationActionTypes {
     SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
     SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
+    HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
+    GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -958,6 +961,10 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     maxZ,
                 },
             });
+            if (job.task.dimension === DimensionType.DIM_3D) {
+                const workspace = Workspace.STANDARD3D;
+                dispatch(changeWorkspace(workspace));
+            }
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
             dispatch({
@@ -1520,5 +1527,48 @@ export function setForceExitAnnotationFlag(forceExit: boolean): AnyAction {
         payload: {
             forceExit,
         },
+    };
+}
+
+export function hideShowContextImage(hidden: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE,
+        payload: {
+            hidden,
+        },
+    };
+}
+
+export function getContextImage(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const { instance: job } = state.annotation.job;
+        const { frame, contextImage } = state.annotation.player;
+
+        try {
+            const context = await job.frames.contextImage(job.task.id, frame.number);
+            const loaded = true;
+            const contextImageHide = contextImage.hidden;
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
+                payload: {
+                    context,
+                    loaded,
+                    contextImageHide,
+                },
+            });
+        } catch (error) {
+            const context = '';
+            const loaded = true;
+            const contextImageHide = contextImage.hidden;
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
+                payload: {
+                    context,
+                    loaded,
+                    contextImageHide,
+                },
+            });
+        }
     };
 }
