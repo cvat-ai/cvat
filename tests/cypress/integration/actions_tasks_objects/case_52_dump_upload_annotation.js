@@ -34,13 +34,13 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Save job. Dump annotaion. Remove annotation. Save job.', () => {
             cy.saveJob();
-            cy.server().route('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
+            cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
             cy.interactMenu('Dump annotations');
             cy.get('.cvat-menu-dump-submenu-item').within(() => {
                 cy.contains(dumpType).click();
             });
-            cy.wait('@dumpAnnotations', { timeout: 5000 }).its('status').should('equal', 202);
-            cy.wait('@dumpAnnotations').its('status').should('equal', 201);
+            cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
+            cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');
@@ -64,14 +64,14 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                         .get('input[type=file]')
                         .attachFile(annotationArchiveName);
                 });
-            cy.server().route('PUT', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsPut');
-            cy.server().route('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
+            cy.intercept('PUT', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsPut');
+            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.get('.cvat-modal-content-load-job-annotation').within(() => {
                 cy.contains('button', 'Update').click();
             });
-            cy.wait('@uploadAnnotationsPut', { timeout: 5000 }).its('status').should('equal', 202);
-            cy.wait('@uploadAnnotationsPut').its('status').should('equal', 201);
-            cy.wait('@uploadAnnotationsGet').its('status').should('equal', 200);
+            cy.wait('@uploadAnnotationsPut', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
+            cy.wait('@uploadAnnotationsPut').its('response.statusCode').should('equal', 201);
+            cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
         });

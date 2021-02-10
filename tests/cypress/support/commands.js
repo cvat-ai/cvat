@@ -107,9 +107,9 @@ Cypress.Commands.add('openTask', (taskName) => {
 });
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200) => {
-    cy.server().route(method, '/api/v1/jobs/**').as('saveJob');
+    cy.intercept(method, '/api/v1/jobs/**').as('saveJob');
     cy.get('button').contains('Save').click({ force: true });
-    cy.wait('@saveJob').its('status').should('equal', status);
+    cy.wait('@saveJob').its('response.statusCode').should('equal', status);
 });
 
 Cypress.Commands.add('getJobNum', (jobID) => {
