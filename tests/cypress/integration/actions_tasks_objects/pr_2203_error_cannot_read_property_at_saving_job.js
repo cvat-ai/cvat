@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,11 +20,6 @@ context('Check error сannot read property at saving job', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
-    });
-
-    after('Remove annotations and save job', () => {
-        cy.removeAnnotations();
-        cy.saveJob('PUT');
     });
 
     describe(`Testing pr "${prId}"`, () => {
