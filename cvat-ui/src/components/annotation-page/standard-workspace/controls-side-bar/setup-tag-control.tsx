@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,10 +17,9 @@ interface Props {
     isDrawing: boolean;
 }
 
+const CustomPopover = withVisibilityHandling(Popover, 'setup-tag');
 function SetupTagControl(props: Props): JSX.Element {
     const { isDrawing } = props;
-    const CustomPopover = withVisibilityHandling(Popover, 'setup-tag');
-
     const dynamcPopoverPros = isDrawing ?
         {
             overlayStyle: {
