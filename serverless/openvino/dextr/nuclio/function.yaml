@@ -51,3 +51,4 @@ spec:
       restartPolicy:
         name: always
         maximumRetryCount: 3
+      mountMode: volume
