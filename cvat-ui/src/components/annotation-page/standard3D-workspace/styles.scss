@@ -218,29 +218,27 @@
     width: $grid-unit-size * 4;
 }
 
-.cvat-canvas3d-topview {
+.cvat-canvas3d-orthographic-view {
     width: 33.333%;
     height: 100%;
     padding-top: $grid-unit-size/2;
-    padding-left: $grid-unit-size/2;
     padding-bottom: $grid-unit-size/2;
+}
+.cvat-canvas3d-topview {
+    padding-left: $grid-unit-size/2;
 }
 
 .cvat-canvas3d-sideview {
-    width: 33.333%;
-    height: 100%;
-    padding: $grid-unit-size/2;
+    padding-left: $grid-unit-size/2;
+    padding-right: $grid-unit-size/2;
 }
 
 .cvat-canvas3d-frontview {
-    width: 33.333%;
-    height: 100%;
-    padding-top: $grid-unit-size/2;
     padding-right: $grid-unit-size/2;
-    padding-bottom: $grid-unit-size/2;
 }
 
 .cvat-canvas3d-fullsize {
+    position: relative;
     width: 100%;
     height: 100%;
 }

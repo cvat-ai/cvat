@@ -68,7 +68,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.setup', onCanvasSetup);
     };
 
-    const keyControls = (key: any): void => {
+    const keyControls = (key: KeyboardEvent): void => {
         const { canvasInstance } = props;
         canvasInstance.keyControls(key);
     };
@@ -143,7 +143,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     );
 
     return (
-        <Layout.Content style={{ position: 'relative' }}>
+        <Layout.Content className='cvat-canvas3d-fullsize'>
             <GlobalHotKeys />
 
             <ContextImage
@@ -160,15 +160,15 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 {renderControlGroup()}
             </div>
             <div className='cvat-canvas3d-orthographic-views'>
-                <div className='cvat-canvas3d-topview'>
+                <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
                     <div className='cvat-canvas3d-header'>TOP VIEW</div>
                     <div className='cvat-canvas3d-fullsize' ref={topView} />
                 </div>
-                <div className='cvat-canvas3d-sideview'>
+                <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
                     <div className='cvat-canvas3d-header'>SIDE VIEW</div>
                     <div className='cvat-canvas3d-fullsize' ref={sideView} />
                 </div>
-                <div className='cvat-canvas3d-frontview'>
+                <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-frontview'>
                     <div className='cvat-canvas3d-header'>FRONT VIEW</div>
                     <div className='cvat-canvas3d-fullsize' ref={frontView} />
                 </div>

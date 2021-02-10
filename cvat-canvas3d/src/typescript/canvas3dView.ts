@@ -8,27 +8,27 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import CameraControls from 'camera-controls';
 import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
-
+import CONST from './consts';
 import { Canvas3dModel, UpdateReasons, Mode } from './canvas3dModel';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
-    keyControls(keys: any): void;
+    keyControls(keys: KeyboardEvent): void;
 }
 
-const CAMERA_ACTION = Object.freeze({
-    ZOOM_IN: 'KeyI',
-    MOVE_UP: 'KeyU',
-    MOVE_DOWN: 'KeyO',
-    MOVE_LEFT: 'KeyJ',
-    ZOOM_OUT: 'KeyK',
-    MOVE_RIGHT: 'KeyL',
-    TILT_UP: 'ArrowUp',
-    TILT_DOWN: 'ArrowDown',
-    ROTATE_RIGHT: 'ArrowRight',
-    ROTATE_LEFT: 'ArrowLeft',
-});
+enum CAMERA_ACTION {
+    ZOOM_IN = 'KeyI',
+    MOVE_UP = 'KeyU',
+    MOVE_DOWN = 'KeyO',
+    MOVE_LEFT = 'KeyJ',
+    ZOOM_OUT = 'KeyK',
+    MOVE_RIGHT = 'KeyL',
+    TILT_UP = 'ArrowUp',
+    TILT_DOWN = 'ArrowDown',
+    ROTATE_RIGHT = 'ArrowRight',
+    ROTATE_LEFT = 'ArrowLeft',
+}
 
 export interface Views {
     perspective: RenderView;
@@ -38,10 +38,10 @@ export interface Views {
 }
 
 export interface RenderView {
-    renderer: any;
-    scene: any;
-    camera?: any;
-    controls?: any;
+    renderer: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera?: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+    controls?: CameraControls | OrbitControls;
 }
 
 export interface ViewsDOM {
@@ -54,7 +54,7 @@ export interface ViewsDOM {
 export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private controller: Canvas3dController;
     private views: Views;
-    private clock: any;
+    private clock: THREE.Clock;
     private speed: number;
 
     private set mode(value: Mode) {
@@ -68,8 +68,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public constructor(model: Canvas3dModel & Master, controller: Canvas3dController) {
         this.controller = controller;
         this.clock = new THREE.Clock();
-        this.speed = 50;
-
+        this.speed = CONST.MOVEMENT_FACTOR;
         this.views = {
             perspective: {
                 renderer: new THREE.WebGLRenderer({ antialias: true }),
@@ -92,17 +91,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.mode = Mode.IDLE;
 
-        this.views.perspective.scene.background = new THREE.Color(0x000000);
-        this.views.top.scene.background = new THREE.Color(0x000000);
-        this.views.side.scene.background = new THREE.Color(0x000000);
-        this.views.front.scene.background = new THREE.Color(0x000000);
+        Object.keys(this.views).forEach((view: string): void => {
+            this.views[view as keyof Views].scene.background = new THREE.Color(0x000000);
+        });
 
-        const viewSize = 7;
+        const viewSize = CONST.ZOOM_FACTOR;
         const height = window.innerHeight;
         const width = window.innerWidth;
         const aspectRatio = window.innerWidth / window.innerHeight;
 
-        this.clock = new THREE.Clock();
         // setting up the camera and adding it in the scene
         this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 1, 500);
         this.views.perspective.camera.position.set(-15, 0, 4);
@@ -142,35 +139,19 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.front.camera.up.set(0, 0, 1);
         this.views.front.camera.lookAt(0, 0, 0);
 
-        this.views.perspective.renderer.setSize(width, height);
-        this.views.top.renderer.setSize(width, height);
-        this.views.side.renderer.setSize(width, height);
-        this.views.front.renderer.setSize(width, height);
-
-        this.views.perspective.controls = new CameraControls(
-            this.views.perspective.camera,
-            this.views.perspective.renderer.domElement,
-        );
-
-        this.views.side.controls = new OrbitControls(this.views.side.camera, this.views.side.renderer.domElement);
-        this.views.side.controls.minDistance = 0;
-        this.views.side.controls.maxDistance = 100;
-        this.views.side.controls.enableRotate = false;
-        this.views.side.controls.enablePan = false;
-
-        this.views.front.controls = new OrbitControls(this.views.front.camera, this.views.front.renderer.domElement);
-        this.views.front.controls.minDistance = 0;
-        this.views.front.controls.maxDistance = 100;
-        this.views.front.controls.enableRotate = false;
-        this.views.front.controls.enablePan = false;
-
-        this.views.top.controls = new OrbitControls(this.views.top.camera, this.views.top.renderer.domElement);
-        this.views.top.controls.minDistance = 0;
-        this.views.top.controls.maxDistance = 100;
-        this.views.top.controls.enableRotate = false;
-        this.views.top.controls.enablePan = false;
-
-        this.views.perspective.renderer.render(this.views.perspective.scene, this.views.perspective.camera);
+        Object.keys(this.views).forEach((view: string) => {
+            const viewType = this.views[view as keyof Views];
+            viewType.renderer.setSize(width, height);
+            if (view !== 'perspective') {
+                viewType.controls = new OrbitControls(viewType.camera, viewType.renderer.domElement);
+                viewType.controls.enableRotate = false;
+                viewType.controls.enablePan = false;
+            } else {
+                viewType.controls = new CameraControls(viewType.camera, viewType.renderer.domElement);
+            }
+            viewType.controls.minDistance = CONST.MIN_DISTANCE;
+            viewType.controls.maxDistance = CONST.MAX_DISTANCE;
+        });
 
         model.subscribe(this);
     }
@@ -221,60 +202,56 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public render(): void {
-        this.views.perspective.controls.update(this.clock.getDelta());
-        this.views.side.controls.update();
-        this.views.top.controls.update();
-        this.views.front.controls.update();
-        Canvas3dViewImpl.resizeRendererToDisplaySize(this.views.perspective);
-        Canvas3dViewImpl.resizeRendererToDisplaySize(this.views.top);
-        Canvas3dViewImpl.resizeRendererToDisplaySize(this.views.side);
-        Canvas3dViewImpl.resizeRendererToDisplaySize(this.views.front);
-        this.views.perspective.renderer.render(this.views.perspective.scene, this.views.perspective.camera);
-        this.views.top.renderer.render(this.views.top.scene, this.views.top.camera);
-        this.views.side.renderer.render(this.views.side.scene, this.views.side.camera);
-        this.views.front.renderer.render(this.views.front.scene, this.views.front.camera);
+        Object.keys(this.views).forEach((view: string) => {
+            const viewType = this.views[view as keyof Views];
+            Canvas3dViewImpl.resizeRendererToDisplaySize(viewType);
+            viewType.controls.update(this.clock.getDelta());
+            viewType.renderer.render(viewType.scene, viewType.camera);
+        });
     }
 
     public keyControls(key: any): void {
-        if (key.altKey === true) {
+        if (!(this.views.perspective.controls instanceof OrbitControls)) {
+            const { controls } = this.views.perspective;
             switch (key.code) {
-                case CAMERA_ACTION.ZOOM_IN:
-                    this.views.perspective.controls.dolly(5, true);
+                case CAMERA_ACTION.ROTATE_RIGHT:
+                    controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
                     break;
-                case CAMERA_ACTION.ZOOM_OUT:
-                    this.views.perspective.controls.dolly(-5, true);
+                case CAMERA_ACTION.ROTATE_LEFT:
+                    controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
                     break;
-                case CAMERA_ACTION.MOVE_LEFT:
-                    this.views.perspective.controls.truck(-0.01 * this.speed, 0, true);
+                case CAMERA_ACTION.TILT_UP:
+                    controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
                     break;
-                case CAMERA_ACTION.MOVE_RIGHT:
-                    this.views.perspective.controls.truck(0.01 * this.speed, 0, true);
-                    break;
-                case CAMERA_ACTION.MOVE_DOWN:
-                    this.views.perspective.controls.truck(0, -0.01 * this.speed, true);
-                    break;
-                case CAMERA_ACTION.MOVE_UP:
-                    this.views.perspective.controls.truck(0, 0.01 * this.speed, true);
+                case CAMERA_ACTION.TILT_DOWN:
+                    controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
                     break;
                 default:
                     break;
             }
-        } else {
-            switch (key.code) {
-                case CAMERA_ACTION.ROTATE_RIGHT:
-                    this.views.perspective.controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                    break;
-                case CAMERA_ACTION.ROTATE_LEFT:
-                    this.views.perspective.controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                    break;
-                case CAMERA_ACTION.TILT_UP:
-                    this.views.perspective.controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                    break;
-                case CAMERA_ACTION.TILT_DOWN:
-                    this.views.perspective.controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                    break;
-                default:
-                    break;
+            if (key.altKey === true) {
+                switch (key.code) {
+                    case CAMERA_ACTION.ZOOM_IN:
+                        controls.dolly(CONST.DOLLY_FACTOR, true);
+                        break;
+                    case CAMERA_ACTION.ZOOM_OUT:
+                        controls.dolly(-CONST.DOLLY_FACTOR, true);
+                        break;
+                    case CAMERA_ACTION.MOVE_LEFT:
+                        controls.truck(-0.01 * this.speed, 0, true);
+                        break;
+                    case CAMERA_ACTION.MOVE_RIGHT:
+                        controls.truck(0.01 * this.speed, 0, true);
+                        break;
+                    case CAMERA_ACTION.MOVE_DOWN:
+                        controls.truck(0, -0.01 * this.speed, true);
+                        break;
+                    case CAMERA_ACTION.MOVE_UP:
+                        controls.truck(0, 0.01 * this.speed, true);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }
