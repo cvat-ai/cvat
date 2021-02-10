@@ -170,7 +170,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const {
             shapesUpdated, isDone, threshold, shapes,
         } = (e as CustomEvent).detail;
-        const pressedPoints = convertShapesForInteractor(shapes).flat();
+        const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
         this.interactionIsDone = isDone;
 
         try {
