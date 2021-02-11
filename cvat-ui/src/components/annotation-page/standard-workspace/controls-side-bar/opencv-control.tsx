@@ -5,7 +5,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
-import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
 import Icon, { ScissorOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
@@ -29,6 +28,7 @@ import {
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -293,7 +293,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 </Row>
                 <Row justify='start' className='cvat-opencv-drawing-tools'>
                     <Col>
-                        <Tooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
+                        <CVATTooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
                                 onClick={() => {
                                     this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
@@ -307,7 +307,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             >
                                 <ScissorOutlined />
                             </Button>
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                 </Row>
             </>

@@ -1,12 +1,13 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { ReactPortal, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import Tooltip from 'antd/lib/tooltip';
 import { CheckOutlined, CloseCircleOutlined } from '@ant-design/icons';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     id: number;
@@ -34,7 +35,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
 
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
-        <Tooltip title={message}>
+        <CVATTooltip title={message}>
             <Tag
                 id={elementID}
                 onClick={onClick}
@@ -50,7 +51,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 )}
                 {message}
             </Tag>
-        </Tooltip>,
+        </CVATTooltip>,
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
     );
 }
