@@ -63,18 +63,26 @@ For more information about supported formats look at the
 | [ImageNet](http://www.image-net.org)                                          | X      | X      |
 | [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
 
-## Deep learning models for automatic labeling
+## Deep learning serverless functions for automatic labeling
+
+<!--lint disable maximum-line-length-->
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
-| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |
+| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |     |
+| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | X   |     |
+| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |     |
+| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |     |
+| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |     |
+| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |     |
+| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |     |
+| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | X   |     |
+| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    | X   |     |
+| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | X   |     |
 | [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
-| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |
-| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |
-| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |
-| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |
-| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   |
-| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |
+| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   |     |
+
+<!--lint enable maximum-line-length-->
 
 ## Online demo: [cvat.org](https://cvat.org)
 
@@ -93,11 +101,12 @@ Limitations:
 
 ## REST API
 
-Automatically generated Swagger documentation for Django REST API is
-available on `<cvat_origin>/api/swagger`
-(default: `localhost:8080/api/swagger`).
+Automatically generated Swagger documentation for Django REST API is available
+on `<cvat_origin>/api/swagger`(default: `localhost:8080/api/swagger`).
 
-Swagger documentation is visiable on allowed hostes, Update environement variable in docker-compose.yml file with cvat hosted machine IP or domain name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`)
+Swagger documentation is visiable on allowed hostes, Update environement
+variable in docker-compose.yml file with cvat hosted machine IP or domain
+name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`.
 
 ## LICENSE
 
@@ -129,4 +138,6 @@ Other ways to ask questions and get our support:
 
 ## Projects using CVAT
 
-- [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source vision AI platform that fully integrates CVAT with scalable data processing and parallelized training pipelines.
+- [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source
+  vision AI platform that fully integrates CVAT with scalable data processing
+  and parallelized training pipelines.

@@ -4,11 +4,11 @@
 
 import React from 'react';
 import Icon from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 
 import { CursorIcon } from 'icons';
 import { ActiveControl } from 'reducers/interfaces';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     canvasInstance: Canvas;
@@ -20,15 +20,15 @@ function CursorControl(props: Props): JSX.Element {
     const { activeControl, cursorShortkey } = props;
 
     return (
-        <Tooltip title={`Cursor ${cursorShortkey}`} placement='right' mouseLeaveDelay={0}>
+        <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>
             <Icon
                 component={CursorIcon}
                 className={[
                     'cvat-cursor-control',
-                    activeControl === ActiveControl.CURSOR ? 'cvat-active-canvas-control ' : null,
-                ]}
+                    activeControl === ActiveControl.CURSOR ? 'cvat-active-canvas-control ' : '',
+                ].join(' ')}
             />
-        </Tooltip>
+        </CVATTooltip>
     );
 }
 

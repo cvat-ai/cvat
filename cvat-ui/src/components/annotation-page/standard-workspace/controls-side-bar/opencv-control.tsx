@@ -5,7 +5,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
-import Tooltip from 'antd/lib/tooltip';
 import Popover from 'antd/lib/popover';
 import Icon, { ScissorOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
@@ -29,6 +28,8 @@ import {
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     labels: any[];
@@ -55,6 +56,7 @@ interface State {
 }
 
 const core = getCore();
+const CustomPopover = withVisibilityHandling(Popover, 'opencv-control');
 
 function mapStateToProps(state: CombinedState): Props {
     const {
@@ -73,7 +75,7 @@ function mapStateToProps(state: CombinedState): Props {
 
     return {
         isActivated: activeControl === ActiveControl.OPENCV_TOOLS,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         jobInstance,
         curZOrder,
         labels,
@@ -168,7 +170,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const {
             shapesUpdated, isDone, threshold, shapes,
         } = (e as CustomEvent).detail;
-        const pressedPoints = convertShapesForInteractor(shapes).flat();
+        const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
         this.interactionIsDone = isDone;
 
         try {
@@ -291,7 +293,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 </Row>
                 <Row justify='start' className='cvat-opencv-drawing-tools'>
                     <Col>
-                        <Tooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
+                        <CVATTooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
                                 onClick={() => {
                                     this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
@@ -305,7 +307,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             >
                                 <ScissorOutlined />
                             </Button>
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                 </Row>
             </>
@@ -402,14 +404,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             };
 
         return (
-            <Popover
+            <CustomPopover
                 {...dynamcPopoverPros}
                 placement='right'
                 overlayClassName='cvat-opencv-control-popover'
                 content={this.renderContent()}
             >
                 <Icon {...dynamicIconProps} component={OpenCVIcon} />
-            </Popover>
+            </CustomPopover>
         );
     }
 }

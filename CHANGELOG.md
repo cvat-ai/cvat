@@ -13,12 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CVAT-3D: Load all frames corresponding to the job instance
   (<https://github.com/openvinotoolkit/cvat/pull/2645>)
 - Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
+- [Inside Outside Guidence](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
+  function for interative segmentation
 - Project task subsets (<https://github.com/openvinotoolkit/cvat/pull/2774>)
 
 ### Changed
 
 - Updated HTTPS install README section (cleanup and described more robust deploy)
 - Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
+- Bumped nuclio version to 1.5.16
+- All methods for interative segmentation accept negative points as well
 
 ### Deprecated
 
@@ -40,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A couple of css-related issues (top bar disappear, wrong arrow position on collapse elements) (<https://github.com/openvinotoolkit/cvat/pull/2736>)
 - Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
 - Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
+- Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
 
 ### Security
 
