@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -84,6 +84,7 @@ export default function LabelsListComponent(): JSX.Element {
                 {frameIssues.map(
                     (frameIssue: any): JSX.Element => (
                         <div
+                            id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
                             className='cvat-objects-sidebar-issue-item'
                             onMouseEnter={() => {
                                 const element = window.document.getElementById(

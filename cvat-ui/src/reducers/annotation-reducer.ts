@@ -1052,8 +1052,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    activeControl: activeInteractor
-                        .type.startsWith('opencv') ? ActiveControl.OPENCV_TOOLS : ActiveControl.AI_TOOLS,
+                    activeControl: activeInteractor.type.startsWith('opencv') ?
+                        ActiveControl.OPENCV_TOOLS :
+                        ActiveControl.AI_TOOLS,
                 },
             };
         }

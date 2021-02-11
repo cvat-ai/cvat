@@ -9,7 +9,9 @@ import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-m
 import { CombinedState } from 'reducers/interfaces';
 
 import { modelsActions } from 'actions/models-actions';
-import { dumpAnnotationsAsync, loadAnnotationsAsync, exportDatasetAsync, deleteTaskAsync } from 'actions/tasks-actions';
+import {
+    dumpAnnotationsAsync, loadAnnotationsAsync, exportDatasetAsync, deleteTaskAsync,
+} from 'actions/tasks-actions';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
