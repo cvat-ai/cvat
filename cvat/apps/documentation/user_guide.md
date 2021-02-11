@@ -1157,14 +1157,14 @@ The distance between the adjacent points is limited by the threshold of action,
 displayed as a red square which is tied to the cursor.
  
 - First, select the label and then click on the `intelligent scissors` button.
- 
+
   ![](static/documentation/images/image199.jpg)
 
 - Create the first point on the boundary of the allocated object.
 You will see a line repeating the outline of the object.
 - Place the second point, so that the previous point is within the restrictive threshold.
 After that a line repeating the object boundary will be automatically created between the points.
- 
+
   ![](static/documentation/images/image200_detrac.jpg) 
 
   To increase or lower the action threshold, hold `Ctrl` and scroll the mouse wheel.
