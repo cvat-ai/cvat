@@ -18,7 +18,7 @@
     "nodemon": "^1.19.2",
     "webpack": "^5.20.2",
     "webpack-cli": "^3.3.7",
-    "worker-loader": "^2.0.0"
+    "worker-loader": "^3.0.0"
   },
   "dependencies": {
     "async-mutex": "^0.2.6",

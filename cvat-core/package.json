@@ -45,6 +45,6 @@
     "platform": "^1.3.5",
     "quickhull": "^1.0.3",
     "store": "^2.0.12",
-    "worker-loader": "^2.0.0"
+    "worker-loader": "^3.0.0"
   }
 }
