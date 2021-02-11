@@ -49,6 +49,7 @@
     "precommit:cvat-data": "cd cvat-ui && eslint --fix",
     "precommit:cvat-core": "cd cvat-ui && eslint --fix",
     "precommit:cvat-canvas": "cd cvat-ui && eslint --fix",
+    "precommit:cvat-canvas3d": "cd cvat-ui && eslint --fix",
     "precommit:cvat-ui": "cd cvat-ui && eslint --fix"
   },
   "repository": {

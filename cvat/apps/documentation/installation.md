@@ -284,7 +284,8 @@ Please see the [Docker documentation](https://docs.docker.com/network/proxy/) fo
 
 ```bash
 # Build and run containers with Analytics component support:
-docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
+docker-compose -f docker-compose.yml \
+  -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
 
 ### Semi-automatic and automatic annotation
