@@ -346,8 +346,8 @@ class TaskExportTest(_DbTestBase):
                             project.config.remove('sources')
 
                             return project.make_dataset()
-                        return dm_env.make_importer(importer_name)(src) \
-                            .make_dataset()
+                        return datumaro.components.dataset. \
+                            Dataset.import_from(src, importer_name)
 
                     if zipfile.is_zipfile(file_path):
                         with tempfile.TemporaryDirectory() as tmp_dir:
