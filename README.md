@@ -110,10 +110,11 @@ Swagger documentation is visiable on allowed hostes, Update environement variabl
 
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
 
-This software uses libraries from the [FFmpeg](https://www.ffmpeg.org) project.
+This software uses LGPL licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
+The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
 
 FFmpeg is an open source framework licensed under LGPL and GPL.
-See https://www.ffmpeg.org/legal.html. You are solely responsible
+See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
 for determining if your use of FFmpeg requires any
 additional licenses. Intel is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in

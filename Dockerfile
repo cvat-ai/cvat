@@ -37,6 +37,7 @@ WORKDIR /tmp/ffmpeg
 RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --output - | \
     tar -jx --strip-components=1 && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-shared --disable-static --prefix="${PREFIX}" && \
+    # make clean keeps the configuration files that let to know how the original sources were used to create the binary
     make -j5 && make install && make clean && \
     tar -zcf "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" . && mv "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" .
 
