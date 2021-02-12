@@ -1150,7 +1150,7 @@ First step to work with OpenCV is to load it into CVAT. Click on the toolbar ico
 
 Once it is loaded, the tool's functionality will be available.
 
-### intelligent scissors
+### Intelligent scissors
 
 Intelligent scissors is an CV method of creating a polygon by placing points with automatic drawing of a line between them.
 The distance between the adjacent points is limited by the threshold of action,
