@@ -26,7 +26,7 @@
   - [Track mode (advanced)](#track-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
   - [AI Tools](#ai-tools)
-  - [OpenCV](#opencv-tools)
+  - [OpenCV Tools](#opencv-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
@@ -1142,17 +1142,17 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 
 ## OpenCV tools
 
-This tools based on Open CV, it is used to create polygons. To work with tool, you need to download it.
+The tool based on [Open CV](https://opencv.org/) Computer Vision library which is an open-source product that includes many CV algorithms. Some of these algorithms can be used to simplify the annotation process.
 
-To load OpenCV, click on the toolbar icon, then click `Load OpenCV`.
+First step to work with OpenCV is to load it into CVAT. Click on the toolbar icon, then click `Load OpenCV`.
 
   ![](static/documentation/images/image198.jpg)
 
 Once it is loaded, the tool's functionality will be available.
 
-### Drawing
+### intelligent scissors
 
-Drawing is an AI method of creating a polygon by placing points with automatic drawing of a line between them.
+Intelligent scissors is an CV method of creating a polygon by placing points with automatic drawing of a line between them.
 The distance between the adjacent points is limited by the threshold of action,
 displayed as a red square which is tied to the cursor.
  
