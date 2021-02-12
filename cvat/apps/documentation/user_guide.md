@@ -26,7 +26,7 @@
   - [Track mode (advanced)](#track-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
   - [AI Tools](#ai-tools)
-  - [OpenCV](#opencv)
+  - [OpenCV](#opencv-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
