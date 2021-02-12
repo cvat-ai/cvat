@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
 - [Inside Outside Guidence](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
   function for interative segmentation
+- Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
+  [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) images were published on DockerHub (<https://github.com/openvinotoolkit/cvat/pull/2766>)
 
 ### Changed
 
