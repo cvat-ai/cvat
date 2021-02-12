@@ -1140,7 +1140,7 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 - This action will automatically annotates one frame.
   In the [Automatic annotation](#automatic-annotation) section you can read how to make automatic annotation of all frames.
 
-## OpenCV
+## OpenCV tools
 
 This tools based on Open CV, it is used to create polygons. To work with tool, you need to download it.
 
