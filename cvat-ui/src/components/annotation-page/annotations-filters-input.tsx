@@ -8,7 +8,6 @@ import Select, { SelectValue, LabeledValue } from 'antd/lib/select';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import Tooltip from 'antd/lib/tooltip';
 import Modal from 'antd/lib/modal';
 import { FilterOutlined } from '@ant-design/icons';
 
@@ -16,6 +15,7 @@ import {
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
     fetchAnnotationsAsync,
 } from 'actions/annotation-actions';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -53,7 +53,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(fetchAnnotationsAsync());
             } else if (
                 Array.isArray(value) &&
-                value.every((element: string | number | LabeledValue): boolean => typeof element === 'string')
+                !value.some((element: string | number | LabeledValue): boolean => typeof element !== 'string')
             ) {
                 dispatch(changeAnnotationsFiltersAction(value as string[]));
                 dispatch(fetchAnnotationsAsync());
@@ -134,7 +134,7 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
             placeholder={
                 underCursor ? (
                     <>
-                        <Tooltip title='Click to open help' mouseLeaveDelay={0}>
+                        <CVATTooltip title='Click to open help'>
                             <FilterOutlined
                                 style={{ pointerEvents: 'all' }}
                                 onClick={() => {
@@ -152,7 +152,7 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
                                 onMouseEnter={() => setDropdownVisible(false)}
                                 onMouseLeave={() => setDropdownVisible(true)}
                             />
-                        </Tooltip>
+                        </CVATTooltip>
                     </>
                 ) : (
                     <>

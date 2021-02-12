@@ -1,13 +1,14 @@
-
 ### Semi-automatic and Automatic Annotation
 
-
 > **⚠ WARNING: Do not use `docker-compose up`**
->  If you did, make sure all containers are stopped by `docker-compose down`.
+> If you did, make sure all containers are stopped by `docker-compose down`.
+
 - To bring up cvat with auto annotation tool, from cvat root directory, you need to run:
+
   ```bash
   docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
   ```
+
   If you did any changes to the docker-compose files, make sure to add `--build` at the end.
 
   To stop the containers, simply run:
@@ -17,10 +18,11 @@
   ```
 
 - You have to install `nuctl` command line tool to build and deploy serverless
-  functions. Download [version 1.5.16](https://github.com/nuclio/nuclio/releases).
+  functions. Download [version 1.5.16](https://github.com/nuclio/nuclio/releases/tag/1.5.16).
   It is important that the version you download matches the version in
   [docker-compose.serverless.yml](/components/serverless/docker-compose.serverless.yml)
   After downloading the nuclio, give it a proper permission and do a softlink
+
   ```
   sudo chmod +x nuctl-<version>-linux-amd64
   sudo ln -sf $(pwd)/nuctl-<version>-linux-amd64 /usr/local/bin/nuctl
@@ -45,7 +47,9 @@
     --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
     --platform local
   ```
+
   **Note:**
+
   - See [deploy_cpu.sh](/serverless/deploy_cpu.sh) for more examples.
 
   #### GPU Support
@@ -61,7 +65,7 @@
     --desc "GPU based implementation of Mask RCNN on Python 3, Keras, and TensorFlow." \
     --image cvat/tf.matterport.mask_rcnn_gpu
     --triggers '{"myHttpTrigger": {"maxWorkers": 1}}' \
-    --resource-limit nvidia.com/gpu=1 
+    --resource-limit nvidia.com/gpu=1
   ```
 
   **Note:**

@@ -124,17 +124,26 @@ Cypress.Commands.add('getJobNum', (jobID) => {
         });
 });
 
-Cypress.Commands.add('openJob', (jobID = 0) => {
+Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true) => {
     cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
     cy.get('.cvat-canvas-container').should('exist');
+    if (removeAnnotations) {
+        cy.document().then((doc) => {
+            const objects = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
+            if (typeof objects !== 'undefined' && objects.length > 0) {
+                cy.removeAnnotations();
+                cy.saveJob('PUT');
+            }
+        });
+    }
 });
 
-Cypress.Commands.add('openTaskJob', (taskName, jobID = 0) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true) => {
     cy.openTask(taskName);
-    cy.openJob(jobID);
+    cy.openJob(jobID, removeAnnotations);
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
@@ -339,7 +348,11 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 
         if (multiAttrParams.typeAttribute === 'Text' || multiAttrParams.typeAttribute === 'Number') {
             cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {
-                cy.get('.cvat-attribute-values-input').type(multiAttrParams.additionalValue);
+                if (multiAttrParams.additionalValue !== '') {
+                    cy.get('.cvat-attribute-values-input').type(multiAttrParams.additionalValue);
+                } else {
+                    cy.get('.cvat-attribute-values-input').clear();
+                }
             });
         } else if (multiAttrParams.typeAttribute === 'Radio') {
             cy.get(`[cvat-attribute-id="${minId}"]`).within(() => {

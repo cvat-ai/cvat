@@ -42,8 +42,11 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
+            "env": {
+                "CVAT_SERVERLESS":  "1",
+            },
             "args": [
                 "runserver",
                 "--noreload",
@@ -73,7 +76,7 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
@@ -92,7 +95,7 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqscheduler",
@@ -108,7 +111,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath":"${command:python.interpreterPath}",
+            "python":"${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
@@ -127,7 +130,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "update_git_states"
@@ -143,7 +146,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "migrate"
@@ -159,7 +162,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "test",

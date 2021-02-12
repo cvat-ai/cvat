@@ -97,8 +97,8 @@ spec:
   runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
-  env:	
-    - name: MASK_RCNN_DIR	
+  env:
+    - name: MASK_RCNN_DIR
       value: /opt/nuclio/Mask_RCNN
   build:
     image: cvat/tf.matterport.mask_rcnn
@@ -129,3 +129,4 @@ spec:
       restartPolicy:
         name: always
         maximumRetryCount: 3
+      mountMode: volume
