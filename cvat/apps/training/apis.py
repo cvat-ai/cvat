@@ -1,5 +1,3 @@
-import os
-import os
 import uuid
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -7,182 +5,10 @@ from functools import wraps
 from typing import Callable, List, Union
 
 import requests
-from asgiref.sync import async_to_sync
+
 from cacheops import cache, CacheMiss
-from django_rq import job
 
-from cvat.apps import dataset_manager  as dm
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Project, Task, TrainingProjectImage, Job, ShapeType, Label, Image, \
-    Data, TrainingProjectLabel
-
-
-@job
-def save_prediction_server_status_to_cache_job(cache_key,
-                                               cvat_project_id,
-                                               timeout=60):
-    cvat_project = Project.objects.get(pk=cvat_project_id)
-    api = TrainingServerAPI(host=cvat_project.training_project.host, username=cvat_project.training_project.username,
-                            password=cvat_project.training_project.password)
-    status = api.get_project_status(project_id=cvat_project.training_project.training_id)
-
-    resp = {
-        **status,
-        'status': 'done'
-    }
-    cache.set(cache_key=cache_key, data=resp, timeout=timeout)
-
-
-@job
-def save_frame_prediction_to_cache_job(cache_key: str,
-                                       task_id: int,
-                                       frame: int,
-                                       timeout: int = 60):
-    task = Task.objects.get(pk=task_id)
-    training_project_image = TrainingProjectImage.objects.get(idx=frame, task__project_id=task.project_id)
-    cvat_labels = Label.objects.filter(project__id=task.project_id).all()
-    training_project = Project.objects.get(pk=task.project_id).training_project
-    api = TrainingServerAPI(host=training_project.host,
-                            username=training_project.username,
-                            password=training_project.password)
-    image = Image.objects.get(frame=frame, data=task.data)
-    labels_mapping = {
-        TrainingProjectLabel.objects.get(cvat_label=cvat_label).training_label_id: cvat_label.id
-        for cvat_label in cvat_labels
-    }
-    print(labels_mapping)
-    annotation = api.get_annotation(project_id=training_project.training_id,
-                                    image_id=training_project_image.training_image_id,
-                                    width=image.width,
-                                    height=image.height,
-                                    labels_mapping=labels_mapping,
-                                    frame=frame)
-    resp = {
-        'annotation': annotation,
-        'status': 'done'
-    }
-    cache.set(cache_key=cache_key, data=resp, timeout=timeout)
-
-
-@job
-def create_training_project_job(project_id: int):
-    print(0)
-    os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-    create_training_project_job_async(cvat_project_id=project_id)
-
-
-@job
-def upload_images_job(task_id: int):
-    task = Task.objects.get(pk=task_id)
-    frame_provider = FrameProvider(task.data)
-    frames = frame_provider.get_frames()
-    api = TrainingServerAPI(
-        host=task.project.training_project.host,
-        username=task.project.training_project.username,
-        password=task.project.training_project.password,
-    )
-    for i, (buffer, _) in enumerate(frames):
-        training_image_id = api.upload_image(training_id=task.project.training_project.training_id, buffer=buffer)
-        if training_image_id:
-            TrainingProjectImage.objects.create(task=task, idx=i,
-                                                training_image_id=training_image_id)
-
-
-def __add_fields_to_shape(shape: dict, frame: int, data: Data, labels_mapping: dict) -> dict:
-    image = Image.objects.get(frame=frame, data=data)
-    return {
-        **shape,
-        'height': image.height,
-        'width': image.width,
-        'third_party_label_id': labels_mapping[shape['label_id']],
-    }
-
-
-@job
-def upload_annotation_to_training_project(job_id: int):
-    cvat_job = Job.objects.get(pk=job_id)
-    cvat_project = cvat_job.segment.task.project
-    training_project = cvat_project.training_project
-    start = cvat_job.segment.start_frame
-    stop = cvat_job.segment.stop_frame
-    data = dm.task.get_job_data(job_id)
-    shapes: List[OrderedDict] = data.get('shapes', [])
-    frames_data = []
-    api = TrainingServerAPI(
-        host=cvat_project.training_project.host,
-        username=cvat_project.training_project.username,
-        password=cvat_project.training_project.password,
-    )
-    cvat_labels = Label.objects.filter(project=cvat_project).all()
-    labels_mapping = {
-        cvat_label.id: TrainingProjectLabel.objects.get(cvat_label=cvat_label).training_label_id
-        for cvat_label in cvat_labels
-    }
-
-    for frame in range(start, stop + 1):
-        frame_shapes = list(
-            map(
-                lambda x: __add_fields_to_shape(x, frame, cvat_job.segment.task.data, labels_mapping),
-                filter(
-                    lambda x: x['frame'] == frame and x['type'] == ShapeType.RECTANGLE,
-                    shapes,
-                )
-            )
-        )
-
-        if frame_shapes:
-            training_project_image = TrainingProjectImage.objects.get(task=cvat_job.segment.task, idx=frame)
-            frames_data.append({
-                'third_party_id': training_project_image.training_image_id,
-                'shapes': frame_shapes
-            })
-
-    api.upload_annotations(project_id=training_project.training_id, frames_data=frames_data)
-
-
-@async_to_sync
-async def create_training_project_job_async(cvat_project_id):
-    cvat_project = Project.objects.get(pk=cvat_project_id)
-    if not cvat_project.project_class:
-        cvat_project.project_class = cvat_project.ProjectClass.DETECTION
-    training_project = cvat_project.training_project
-    api = TrainingServerAPI(
-        host=cvat_project.training_project.host,
-        username=cvat_project.training_project.username,
-        password=cvat_project.training_project.password,
-    )
-    training_id = await create_training_project(cvat_project=cvat_project, training_project=training_project,
-                                                api=api)
-
-
-async def create_training_project(cvat_project, training_project, api):
-    labels = cvat_project.label_set.all()
-    training_project_resp = api.create_project(
-        name=f'{cvat_project.name}_cvat',
-        project_class=cvat_project.project_class,
-        labels=[{'name': label.name} for label in labels]
-    )
-    if training_project_resp.get('id'):
-        training_project.training_id = training_project_resp['id']
-        training_project.save()
-
-    for cvat_label in labels:
-        training_label = list(filter(lambda x: x['name'] == cvat_label.name, training_project_resp.get('labels', [])))
-        if training_label:
-            TrainingProjectLabel.objects.create(cvat_label=cvat_label, training_label_id=training_label[0]['id'])
-
-
-async def upload_images(cvat_project_id, training_id, api):
-    project = Project.objects.get(pk=cvat_project_id)
-    tasks: List[Task] = project.tasks.all()
-    for task in tasks:
-        frame_provider = FrameProvider(task)
-        frames = frame_provider.get_frames()
-        for i, (buffer, _) in enumerate(frames):
-            training_image_id = api.upload_image(training_id=training_id, buffer=buffer)
-            if training_image_id:
-                TrainingProjectImage.objects.create(project=project, task=task, idx=i,
-                                                    training_image_id=training_image_id)
+from cvat.apps.engine.models import Project, ShapeType
 
 
 class TrainingServerAPIAbs(ABC):
@@ -229,7 +55,6 @@ def retry(amount: int = 2) -> Callable:
                     result = func(*args, **kwargs)
                     return result
                 except Exception as e:
-                    # TODO: use logging
                     print(e)
 
         return wrapper
@@ -277,7 +102,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
 
     @staticmethod
     def __convert_annotation_to_cvat(annotation: dict, image_width: int, image_height: int, frame: int,
-                                     labels_mapping: dict) -> dict:
+                                     labels_mapping: dict) -> List[OrderedDict]:
         shapes = []
         for i, annotation in enumerate(annotation['data']):
             label_id = annotation['labels'][0]['id']
@@ -308,10 +133,9 @@ class TrainingServerAPI(TrainingServerAPIAbs):
             ]))
         return shapes
 
-
     @retry()
     def __create_project(self, name: str, description: str = None,
-                         labels: dict = None, tasks: List[dict] = None) -> dict:
+                         labels: List[dict] = None, tasks: List[dict] = None) -> dict:
         url = f'{self.host}/v2/projects'
         headers = {
             'Context-Type': 'application/json',
@@ -420,11 +244,9 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         return response
 
     @retry()
-    def __upload_image(self, project_id: str, buffer, image_path: str = '') -> dict:
+    def __upload_image(self, project_id: str, buffer) -> dict:
         url = f'{self.host}/v2/projects/{project_id}/media/images'
-        # print('file_path', image_path, os.path.isfile(image_path))
         files = {'file': buffer}
-        # files = {'file': open(image_path, 'rb')}
         headers = {
             'Authorization': f'bearer_token {self.token}',
         }
@@ -443,8 +265,8 @@ class TrainingServerAPI(TrainingServerAPIAbs):
                 'username': (None, username),
                 'password': (None, password),
             }
-            response = requests.post(url=url, files=data, verify=False)
-            return response.json()
+            r = requests.post(url=url, files=data, verify=False)
+            return r.json()
 
         try:
             token = cache.get(self.token_key)
@@ -469,7 +291,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         print('Resp', result, '\n')
         return result
 
-    def create_project(self, name: str, description: str = '', project_class: str = None,
+    def create_project(self, name: str, description: str = '', project_class: Project.ProjectClass = None,
                        labels: List[dict] = None) -> dict:
         all_tasks = self.__get_tasks()
         task_type = self.TRAINING_CLASS.get(project_class)
@@ -536,14 +358,14 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         return result
 
     def get_annotation(self, project_id: str, image_id: str, width: int, height: int, frame: int,
-                       labels_mapping: dict) -> dict:
+                       labels_mapping: dict) -> List[OrderedDict]:
         annotation = self.__get_annotation(project_id=project_id, image_id=image_id)
         cvat_annotation = self.__convert_annotation_to_cvat(annotation=annotation, image_width=width,
                                                             image_height=height, frame=frame,
                                                             labels_mapping=labels_mapping)
         return cvat_annotation
 
-    def get_labels(self, project_id: str) -> dict:
+    def get_labels(self, project_id: str) -> List[dict]:
         project = self.__get_project(project_id=project_id)
         labels = [{
             'id': label['id'],

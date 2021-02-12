@@ -23,6 +23,13 @@ const { Option } = Select;
 
 function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }): JSX.Element {
     const [trainingEnabled, setTrainingEnabled] = useState(false);
+    const [projectClass, setProjectClass] = useState('');
+
+    useEffect(() => {
+        setTrainingEnabled(false);
+    }, [projectClass])
+
+    const projectClassesForTraining = ['OD']
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
@@ -44,7 +51,7 @@ function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }):
                 hasFeedback
                 label='Class'
             >
-                <Select defaultValue=''>
+                <Select value={projectClass} onChange={(v) => setProjectClass(v)}>
                     <Option value=''>--Not Selected--</Option>
                     <Option value='OD'>Detection</Option>
                 </Select>
@@ -53,9 +60,10 @@ function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }):
             <Form.Item
                 name={['training', 'enabled']}
                 label='Adaptive auto annotation'
-                initialValue={trainingEnabled}
+                initialValue={false}
             >
                 <Switch
+                    disabled={!projectClassesForTraining.includes(projectClass)}
                     checked={trainingEnabled}
                     onClick={() => setTrainingEnabled(!trainingEnabled)}
                 />
