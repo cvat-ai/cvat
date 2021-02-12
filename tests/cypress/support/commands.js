@@ -162,7 +162,6 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
         cy.contains('button', createRectangleParams.type).click();
     });
     cy.get('.cvat-canvas-container')
-        .trigger('mouseover')
         .click(createRectangleParams.firstX, createRectangleParams.firstY)
         .click(createRectangleParams.secondX, createRectangleParams.secondY);
     if (createRectangleParams.points === 'By 4 Points') {
