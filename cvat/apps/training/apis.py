@@ -104,7 +104,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
     def __convert_annotation_to_cvat(annotation: dict, image_width: int, image_height: int, frame: int,
                                      labels_mapping: dict) -> List[OrderedDict]:
         shapes = []
-        for i, annotation in enumerate(annotation['data']):
+        for i, annotation in enumerate(annotation.get('data', [])):
             label_id = annotation['labels'][0]['id']
             if not labels_mapping.get(label_id):
                 continue
@@ -272,8 +272,9 @@ class TrainingServerAPI(TrainingServerAPIAbs):
             token = cache.get(self.token_key)
         except CacheMiss:
             response = get_token(self.host, self.username, self.password)
-            cache.set(cache_key=self.token_key, data=response['secure_token'], timeout=response['expires_in'])
-            token = response['secure_token']
+            token = response.get('secure_token', '')
+            expires_in = response.get('expires_in', 3600)
+            cache.set(cache_key=self.token_key, data=token, timeout=expires_in)
         return token
 
     @property
