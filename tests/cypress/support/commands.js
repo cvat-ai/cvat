@@ -147,7 +147,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
-    cy.get('body').click('top');
+    cy.get('body').focus();
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mouseover');
 });
 
@@ -181,6 +181,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
+    cy.get('.cvat-draw-shape-popover').should('be.hidden');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
