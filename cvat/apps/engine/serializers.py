@@ -410,6 +410,10 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
 
 
 class TrainingProjectSerializer(serializers.ModelSerializer):
+    host = serializers.CharField(max_length=256, required=False)
+    username = serializers.CharField(max_length=256, required=False)
+    password = serializers.CharField(max_length=256, required=False)
+
     class Meta:
         model = TrainingProject
         fields = ('host', 'username', 'password', 'enabled')
@@ -428,7 +432,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
-                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project')
+                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project', 'project_class')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
         ordering = ['-id']
 
@@ -439,7 +443,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         if training_data.get('enabled'):
             tr_p = models.TrainingProject.objects.create(**training_data)
             db_project = models.Project.objects.create(**validated_data,
-                                                       project_class=models.Project.ProjectClass.DETECTION,
                                                        training_project=tr_p)
         else:
             db_project = models.Project.objects.create(**validated_data)

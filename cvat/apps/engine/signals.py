@@ -66,6 +66,7 @@ def upload_images_to_training_project(instance: Task, update_fields, **kwargs):
     if update_fields \
             and 'status' in update_fields \
             and instance.status == StatusChoice.ANNOTATION \
+            and instance.project_id \
             and instance.project.project_class \
             and instance.project.training_project:
         upload_images_job.delay(instance.id)

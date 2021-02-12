@@ -33,6 +33,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 training_project: undefined,
+                project_class: undefined,
             };
 
             for (const property in data) {
@@ -58,7 +59,9 @@
                 }
             }
 
-            data.training_project = JSON.parse(JSON.stringify(initialData.training_project))
+            data.training_project = JSON.parse(JSON.stringify(initialData.training_project));
+
+            // data.project_class = initialData.project_class;
 
             Object.defineProperties(
                 this,
@@ -87,6 +90,13 @@
                                 throw new ArgumentError('Value must not be empty');
                             }
                             data.name = value;
+                        },
+                    },
+
+                    project_class: {
+                        get: () => data.project_class,
+                        set: (value) => {
+                            data.project_class = value;
                         },
                     },
                     /**
@@ -246,6 +256,7 @@
         if (typeof this.id !== 'undefined') {
             const projectData = {
                 name: this.name,
+                project_class: this.project_class,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],
@@ -258,6 +269,7 @@
 
         const projectSpec = {
             name: this.name,
+            project_class: this.project_class,
             labels: [...this.labels.map((el) => el.toJSON())],
             training_project: JSON.parse(JSON.stringify(this.training_project)),
         };
