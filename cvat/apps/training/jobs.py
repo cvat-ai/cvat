@@ -1,3 +1,4 @@
+import os
 from collections import OrderedDict
 from typing import List
 
@@ -70,6 +71,7 @@ def save_frame_prediction_to_cache_job(cache_key: str,
 
 @job
 def create_training_project_job(project_id: int):
+    os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
     create_training_project_job_async(cvat_project_id=project_id)
 
 

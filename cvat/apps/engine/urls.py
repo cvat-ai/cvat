@@ -13,7 +13,7 @@ from django.views.generic import RedirectView
 from django.conf import settings
 from cvat.apps.restrictions.views import RestrictionsViewSet
 from cvat.apps.authentication.decorators import login_required
-from .views import PredictView
+from cvat.apps.training.views import PredictView
 
 schema_view = get_schema_view(
    openapi.Info(

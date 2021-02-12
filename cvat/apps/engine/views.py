@@ -13,7 +13,6 @@ from tempfile import mkstemp
 
 import cv2
 import django_rq
-from cacheops import cache, CacheMiss
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -52,7 +51,6 @@ from cvat.apps.engine.serializers import (
     TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer
 )
-from cvat.apps.engine.training import save_prediction_server_status_to_cache_job, save_frame_prediction_to_cache_job
 from cvat.apps.engine.utils import av_scan_paths
 from . import models, task
 from .log import clogger, slogger
@@ -681,50 +679,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             format_name=format_name,
             filename=request.query_params.get("filename", "").lower(),
         )
-
-
-class PredictView(viewsets.ViewSet):
-    @swagger_auto_schema(method='get', operation_summary='Returns prediction for image')
-    @action(detail=False, methods=['GET'], url_path='frame')
-    def predict_image(self, request):
-        frame = self.request.query_params.get('frame')
-        task_id = self.request.query_params.get('task')
-        if not task_id:
-            return Response(data='query param "task" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
-        if not frame:
-            return Response(data='query param "frame" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
-        cache_key = f'predict_image_{task_id}_{frame}'
-        try:
-            resp = cache.get(cache_key)
-        except CacheMiss:
-            save_frame_prediction_to_cache_job.delay(cache_key, task_id=task_id,
-                                                     frame=frame)
-            resp = {
-                'status': 'queued',
-            }
-            cache.set(cache_key=cache_key, data=resp, timeout=60)
-
-        return Response(resp)
-
-
-    @swagger_auto_schema(method='get',
-                         operation_summary='Returns information of the tasks of the project with the selected id')
-    @action(detail=False, methods=['GET'], url_path='status')
-    def predict_status(self, request):
-        project_id = self.request.query_params.get('project')
-        if not project_id:
-            return Response(data='query param "project" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
-        cache_key = f'predict_status_{project_id}'
-        try:
-            resp = cache.get(cache_key)
-        except CacheMiss:
-            save_prediction_server_status_to_cache_job.delay(cache_key, cvat_project_id=project_id)
-            resp = {
-                'status': 'queued',
-            }
-            cache.set(cache_key=cache_key, data=resp, timeout=60)
-
-        return Response(resp)
 
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))

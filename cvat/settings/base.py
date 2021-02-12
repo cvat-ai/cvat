@@ -109,6 +109,7 @@ INSTALLED_APPS = [
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
+    'cvat.apps.training',
     'django_rq',
     'compressor',
     'cacheops',

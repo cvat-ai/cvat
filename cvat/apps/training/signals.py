@@ -11,7 +11,6 @@ from cvat.apps.training.jobs import (
 
 @receiver(post_save, sender=Project, dispatch_uid="create_training_project")
 def create_training_project(instance: Project, **kwargs):
-    print('create_training_project')
     if instance.project_class and instance.training_project:
         create_training_project_job.delay(instance.id)
 
