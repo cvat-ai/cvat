@@ -7,7 +7,13 @@
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
     const {
-        isBoolean, isInteger, isEnum, isString, checkFilter, checkExclusiveFields,
+        isBoolean,
+        isInteger,
+        isEnum,
+        isString,
+        checkFilter,
+        checkExclusiveFields,
+        camelToSnake,
     } = require('./common');
 
     const { TaskStatus, TaskMode, DimensionType } = require('./enums');
@@ -216,15 +222,15 @@
                 owner: isString,
                 search: isString,
                 status: isEnum.bind(TaskStatus),
-                without_tasks: isBoolean,
+                withoutTasks: isBoolean,
             });
 
-            checkExclusiveFields(filter, ['id', 'search'], ['page', 'without_tasks']);
+            checkExclusiveFields(filter, ['id', 'search'], ['page', 'withoutTasks']);
 
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page', 'without_tasks']) {
+            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page', 'withoutTasks']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(field, filter[field]);
+                    searchParams.set(camelToSnake(field), filter[field]);
                 }
             }
 
