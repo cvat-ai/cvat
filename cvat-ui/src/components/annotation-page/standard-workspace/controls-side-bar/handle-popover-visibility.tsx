@@ -27,13 +27,14 @@ function useCurrentActivePopover(): string | null {
 
     useEffect(() => {
         const listener: PopoverTypeListener = (newActivePopover: string | null) => {
+            // updating the state leads to rerender of dependent components
             setActivePopover(newActivePopover);
         };
 
+        // subscribe on mount and unsubscribe on unmount
         subscribePopoverUpdate(listener);
-
         return () => unsubscribePopoverUpdate(listener);
-    });
+    }, []);
 
     return activePopover;
 }
