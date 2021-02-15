@@ -1,0 +1,37 @@
+name: Linters check
+on: pull_request
+jobs:
+  linters_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+
+      - name: Install node modules and create a report folder
+        run: |
+          npm ci
+          for folders in `find -maxdepth 1 -name "cvat-*" -type d`; do
+            cd $folders && npm ci && cd ..
+          done
+          mkdir -p linter_reports
+
+      - name: ESlint check
+        run: |
+          for files in ${{ steps.files.outputs.added_modified }}; do
+            extension="${files##*.}"
+            if [[ $extension == 'js' || $extension == 'ts' || $extension == 'jsx' || $extension == 'tsx' ]]; then
+              changed_files_eslint+=" ${files}"
+            fi
+          done
+          npx eslint ${changed_files_eslint} --output-file ./linter_reports/eslint_check.html --format html
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: linter_check_reports
+          path: linter_reports
