@@ -220,7 +220,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 try {
                     result = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
-                        points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
+                        pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
+                        neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
                     });
 
                     if (this.interactionIsAborted) {

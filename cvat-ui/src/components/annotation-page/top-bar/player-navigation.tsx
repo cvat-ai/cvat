@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,11 +7,11 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { LinkOutlined } from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
-import Tooltip from 'antd/lib/tooltip';
 import InputNumber from 'antd/lib/input-number';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 
 interface Props {
@@ -63,26 +63,26 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
                 <Row justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
-                        <Tooltip title={frameFilename} mouseLeaveDelay={0}>
+                        <CVATTooltip title={frameFilename}>
                             <Text type='secondary'>{frameFilename}</Text>
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                     <Col offset={1}>
-                        <Tooltip title='Create frame URL' mouseLeaveDelay={0}>
+                        <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                 </Row>
             </Col>
             <Col>
-                <Tooltip title={`Press ${focusFrameInputShortcut} to focus here`} mouseLeaveDelay={0}>
+                <CVATTooltip title={`Press ${focusFrameInputShortcut} to focus here`}>
                     <InputNumber
                         ref={inputFrameRef}
                         className='cvat-player-frame-selector'
                         type='number'
                         value={frameInputValue}
-                        onChange={(value: number | undefined | string) => {
-                            if (typeof value !== 'undefined') {
+                        onChange={(value: number | undefined | string | null) => {
+                            if (typeof value !== 'undefined' && value !== null) {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));
                             }
                         }}
@@ -93,7 +93,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                             onInputChange(frameInputValue);
                         }}
                     />
-                </Tooltip>
+                </CVATTooltip>
             </Col>
         </>
     );

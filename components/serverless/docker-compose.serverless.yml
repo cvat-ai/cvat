@@ -2,7 +2,7 @@ version: '3.3'
 services:
   serverless:
     container_name: nuclio
-    image: quay.io/nuclio/dashboard:1.5.8-amd64
+    image: quay.io/nuclio/dashboard:1.5.16-amd64
     restart: always
     networks:
       default:
@@ -16,6 +16,7 @@ services:
       https_proxy:
       no_proxy: 172.28.0.1,${no_proxy}
       NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: 'true'
+      NUCLIO_DASHBOARD_DEFAULT_FUNCTION_MOUNT_MODE: 'volume'
     ports:
       - '8070:8070'
 

@@ -86,13 +86,14 @@ class LambdaFunction:
         # ID of the function (e.g. omz.public.yolo-v3)
         self.id = data['metadata']['name']
         # type of the function (e.g. detector, interactor)
-        kind = data['metadata']['annotations'].get('type')
+        meta_anno = data['metadata']['annotations']
+        kind = meta_anno.get('type')
         try:
             self.kind = LambdaType(kind)
         except ValueError:
             self.kind = LambdaType.UNKNOWN
         # dictionary of labels for the function (e.g. car, person)
-        spec = json.loads(data['metadata']['annotations'].get('spec') or '[]')
+        spec = json.loads(meta_anno.get('spec') or '[]')
         labels = [item['name'] for item in spec]
         if len(labels) != len(set(labels)):
             raise ValidationError(
@@ -106,10 +107,11 @@ class LambdaFunction:
         # http port to access the serverless function
         self.port = data["status"].get("httpPort")
         # framework which is used for the function (e.g. tensorflow, openvino)
-        self.framework = data['metadata']['annotations'].get('framework')
+        self.framework = meta_anno.get('framework')
         # display name for the function
-        self.name = data['metadata']['annotations'].get('name', self.id)
-        self.min_pos_points = int(data['metadata']['annotations'].get('min_pos_points', 1))
+        self.name = meta_anno.get('name', self.id)
+        self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
+        self.startswith_box = bool(meta_anno.get('startswith_box', False))
         self.gateway = gateway
 
     def to_dict(self):
@@ -117,12 +119,21 @@ class LambdaFunction:
             'id': self.id,
             'kind': str(self.kind),
             'labels': self.labels,
-            'state': self.state,
             'description': self.description,
             'framework': self.framework,
-            'name': self.name,
-            'min_pos_points': self.min_pos_points
+            'name': self.name
         }
+
+        if self.kind is LambdaType.INTERACTOR:
+            response.update({
+                'min_pos_points': self.min_pos_points,
+                'startswith_box': self.startswith_box
+            })
+
+        if self.kind is LambdaType.TRACKER:
+            response.update({
+                'state': self.state
+            })
 
         return response
 
@@ -155,7 +166,8 @@ class LambdaFunction:
             elif self.kind == LambdaType.INTERACTOR:
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
-                    "points": data["points"],
+                    "pos_points": data["pos_points"],
+                    "neg_points": data["neg_points"]
                 })
             elif self.kind == LambdaType.REID:
                 payload.update({

@@ -1362,10 +1362,7 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
-export function interactWithCanvas(
-    activeInteractor: Model | OpenCVTool,
-    activeLabelID: number,
-): AnyAction {
+export function interactWithCanvas(activeInteractor: Model | OpenCVTool, activeLabelID: number): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
         payload: {

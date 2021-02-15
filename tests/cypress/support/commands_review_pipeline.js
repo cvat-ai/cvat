@@ -75,21 +75,17 @@ Cypress.Commands.add('collectIssueRegionId', () => {
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
         for (let i = 0; i < issueRegionList.length; i++) {
-            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\d+$/)));
+            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\-?\d+$/)));
         }
         return issueRegionIdList;
     });
 });
 
-Cypress.Commands.add('checkIssueRegion', (afterSave = false) => {
+Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
     cy.collectIssueRegionId().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        if (!afterSave) {
-            cy.get(`${sccSelectorIssueRegionId}-${maxId}`).trigger('mousemove').should('exist').and('be.visible');
-        } else {
-            cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').should('exist').and('be.visible');
-        }
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').should('exist').and('be.visible');
     });
 });
 
