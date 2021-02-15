@@ -1,0 +1,52 @@
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+/// <reference types="cypress" />
+
+import { taskName, labelName } from '../../support/const';
+
+context('Object propagate.', () => {
+    const caseId = '53';
+    const createCuboidShape2Points = {
+        points: 'From rectangle',
+        type: 'Shape',
+        labelName: labelName,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450,
+    };
+    let maxFrameNumber = 0;
+
+    before(() => {
+        cy.openTaskJob(taskName);
+        cy.get('.cvat-player-last-button').click();
+        cy.get('.cvat-player-frame-selector')
+            .find('input')
+            .then((frameSelector) => {
+                maxFrameNumber = frameSelector.val();
+            });
+        cy.get('.cvat-player-first-button').click();
+        cy.createCuboid(createCuboidShape2Points);
+    });
+
+    describe(`Testing case "${caseId}"`, () => {
+        it('On the first frame propagate object on one frame.', () => {
+            cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
+            cy.get('.cvat-object-item-menu').within(() => {
+                cy.contains('button', 'Propagate').click();
+            });
+            cy.get('.cvat-propagate-confirm-object-on-frames')
+                .find('input')
+                .should('have.attr', 'value', maxFrameNumber)
+                .clear()
+                .type(10) // Checking to specify the number of frames more than in the current job.
+                .tab()
+                .should('have.attr', 'value', maxFrameNumber) //Must be equal to the maximum value of the number of frames
+                .clear()
+                .type(1);
+            cy.get('.cvat-propagate-confirm-object-up-to-frame').find('input').should('have.attr', 'value', 1);
+        });
+    });
+});
