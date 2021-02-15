@@ -24,11 +24,6 @@ context('Export as a dataset.', () => {
         cy.saveJob();
     });
 
-    after('Remove annotations and save job', () => {
-        cy.removeAnnotations();
-        cy.saveJob('PUT');
-    });
-
     describe(`Testing case "${caseId}"`, () => {
         it('Go to Menu. Press "Export as a dataset" -> "CVAT for images".', () => {
             cy.server().route('GET', '/api/v1/tasks/**/dataset**').as('exportDataset');

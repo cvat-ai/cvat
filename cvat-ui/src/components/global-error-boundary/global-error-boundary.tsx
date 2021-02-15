@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,6 @@ import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Collapse from 'antd/lib/collapse';
 import TextArea from 'antd/lib/input/TextArea';
-import Tooltip from 'antd/lib/tooltip';
 import copy from 'copy-to-clipboard';
 import ErrorStackParser from 'error-stack-parser';
 
@@ -18,6 +17,7 @@ import { ThunkDispatch } from 'utils/redux';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers/interfaces';
 import logger, { LogType } from 'cvat-logger';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import consts from 'consts';
 
 interface StateToProps {
@@ -146,7 +146,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             </Paragraph>
                             <ul>
                                 <li>
-                                    <Tooltip title='Copied!' trigger='click' mouseLeaveDelay={0}>
+                                    <CVATTooltip title='Copied!' trigger='click'>
                                         {/* eslint-disable-next-line */}
                                         <a
                                             onClick={() => {
@@ -157,7 +157,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                             Copy
                                             {' '}
                                         </a>
-                                    </Tooltip>
+                                    </CVATTooltip>
                                     the error message to clipboard
                                 </li>
                                 <li>

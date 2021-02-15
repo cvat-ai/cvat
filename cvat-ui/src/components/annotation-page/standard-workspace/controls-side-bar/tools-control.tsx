@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -56,6 +56,7 @@ interface DispatchToProps {
 }
 
 const core = getCore();
+const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { annotation } = state;
@@ -73,7 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
         states: annotation.annotations.states,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         jobInstance,
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
@@ -219,7 +220,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 try {
                     result = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
-                        points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
+                        pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
+                        neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
                     });
 
                     if (this.interactionIsAborted) {
@@ -303,11 +305,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private onTracking = async (e: Event): Promise<void> => {
         const {
-            isActivated,
-            jobInstance,
-            frame,
-            curZOrder,
-            fetchAnnotations,
+            isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
         } = this.props;
 
         if (!isActivated) {
@@ -520,8 +518,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             min={1}
                             precision={0}
                             max={jobInstance.stopFrame - frame}
-                            onChange={(value: number | undefined | string): void => {
-                                if (typeof value !== 'undefined') {
+                            onChange={(value: number | undefined | string | null): void => {
+                                if (typeof value !== 'undefined' && value !== null) {
                                     this.setState({
                                         trackingFrames: +value,
                                     });
@@ -659,19 +657,20 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
                         const result = await core.lambda.call(task, model, { ...body, frame });
-                        const states = result.map((data: any): any => (
-                            new core.classes.ObjectState({
-                                shapeType: data.type,
-                                label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
-                                points: data.points,
-                                objectType: ObjectType.SHAPE,
-                                frame,
-                                occluded: false,
-                                source: 'auto',
-                                attributes: {},
-                                zOrder: curZOrder,
-                            })
-                        ));
+                        const states = result.map(
+                            (data: any): any =>
+                                new core.classes.ObjectState({
+                                    shapeType: data.type,
+                                    label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
+                                    points: data.points,
+                                    objectType: ObjectType.SHAPE,
+                                    frame,
+                                    occluded: false,
+                                    source: 'auto',
+                                    attributes: {},
+                                    zOrder: curZOrder,
+                                }),
+                        );
 
                         await jobInstance.annotations.put(states);
                         fetchAnnotations();
@@ -722,7 +721,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
-        const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
         const dynamcPopoverPros = isActivated ?
             {

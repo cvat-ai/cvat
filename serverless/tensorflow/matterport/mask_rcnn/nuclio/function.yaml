@@ -108,15 +108,16 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libxrender-dev
+          value: apt update && apt install --no-install-recommends -y git curl libsm6 libxext6 libgl1-mesa-glx
         - kind: RUN
           value: git clone https://github.com/matterport/Mask_RCNN.git
         - kind: RUN
           value: curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5
         - kind: RUN
-          value: pip3 install -r Mask_RCNN/requirements.txt
+          value: pip3 install scipy cython matplotlib scikit-image opencv-python-headless h5py \
+            imgaug IPython[all] tensorflow==1.13.1 keras==2.1.0 pillow pyyaml
         - kind: RUN
-          value: pip3 install pycocotools tensorflow==1.13.1 keras==2.1.0 pillow pyyaml
+          value: pip3 install pycocotools
 
   triggers:
     myHttpTrigger:
@@ -131,3 +132,4 @@ spec:
       restartPolicy:
         name: always
         maximumRetryCount: 3
+      mountMode: volume
