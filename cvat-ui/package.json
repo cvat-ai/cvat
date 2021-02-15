@@ -58,7 +58,7 @@
     "@types/react-router-dom": "^5.1.7",
     "@types/react-share": "^3.0.3",
     "@types/redux-logger": "^3.0.8",
-    "antd": "^4.10.3",
+    "antd": "^4.11.1",
     "copy-to-clipboard": "^3.3.1",
     "cvat-canvas3d": "file:../cvat-canvas3d",
     "cvat-canvas": "file:../cvat-canvas",
