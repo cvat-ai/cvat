@@ -336,7 +336,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
+LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
+if not os.path.exists(LOGSTASH_DB):
+    os.mknod(LOGSTASH_DB)
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
@@ -366,6 +369,11 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
+        'logstash': {
+            '()': 'logstash_async.formatter.DjangoLogstashFormatter',
+            'message_type': 'python-logstash',
+            'fqdn': False, # Fully qualified domain name. Default value: false.
+        },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
         }
@@ -386,11 +394,16 @@ LOGGING = {
         },
         'logstash': {
             'level': 'INFO',
-            'class': 'logstash.TCPLogstashHandler',
+            'class': 'logstash_async.handler.AsynchronousLogstashHandler',
+            'formatter': 'logstash',
+            'transport': 'logstash_async.transport.HttpTransport',
+            'ssl_enable': False,
+            'ssl_verify': False,
             'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
-            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 5000),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8080),
             'version': 1,
             'message_type': 'django',
+            'database_path': LOGSTASH_DB,
         }
     },
     'loggers': {

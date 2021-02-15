@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
 - Bumped nuclio version to 1.5.16
 - All methods for interative segmentation accept negative points as well
+- Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
 
 ### Deprecated
 
