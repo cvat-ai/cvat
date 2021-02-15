@@ -34,10 +34,12 @@ RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.
     make -j5 && make install PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
-RUN curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
-    tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
+RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --output - | \
+    tar -jx --strip-components=1 && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-shared --disable-static --prefix="${PREFIX}" && \
-    make -j5 && make install && make distclean
+    # make clean keeps the configuration files that let to know how the original sources were used to create the binary
+    make -j5 && make install && make clean && \
+    tar -zcf "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" . && mv "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" .
 
 # Install requirements
 RUN python3 -m venv /opt/venv
@@ -93,8 +95,17 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
 
-ARG CLAM_AV
-ENV CLAM_AV=${CLAM_AV}
+# Add a non-root user
+ENV USER=${USER}
+ENV HOME /home/${USER}
+RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
+    if [ -z ${socks_proxy} ]; then \
+        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
+    else \
+        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
+    fi
+
+ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
         apt-get update && \
         apt-get --no-install-recommends install -yq \
@@ -104,16 +115,6 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
         freshclam && \
         chown -R ${USER}:${USER} /var/lib/clamav && \
         rm -rf /var/lib/apt/lists/*; \
-    fi
-
-# Add a non-root user
-ENV USER=${USER}
-ENV HOME /home/${USER}
-RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
-    if [ -z ${socks_proxy} ]; then \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
-    else \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
 ARG INSTALL_SOURCES='no'
@@ -131,7 +132,7 @@ RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
             done &&                                           \
         rm -rf /var/lib/apt/lists/*;                          \
     fi
-COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.bz2 ${HOME}/sources/
+COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.gz ${HOME}/sources/
 
 # Copy python virtual enviroment and FFmpeg binaries from build-image
 COPY --from=build-image /opt/venv /opt/venv

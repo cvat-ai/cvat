@@ -26,23 +26,23 @@ function validateParsedAttribute(attr: Attribute): void {
 
     if (!['number', 'undefined'].includes(typeof attr.id)) {
         throw new Error(
-            `Attribute: "${attr.name}". ` + `Type of attribute id must be a number or undefined. Got value ${attr.id}`,
+            `Attribute: "${attr.name}". Type of attribute id must be a number or undefined. Got value ${attr.id}`,
         );
     }
 
     if (!['checkbox', 'number', 'text', 'radio', 'select'].includes((attr.input_type || '').toLowerCase())) {
-        throw new Error(`Attribute: "${attr.name}". ` + `Unknown input type: ${attr.input_type}`);
+        throw new Error(`Attribute: "${attr.name}". Unknown input type: ${attr.input_type}`);
     }
 
     if (typeof attr.mutable !== 'boolean') {
         throw new Error(
-            `Attribute: "${attr.name}". ` + `Mutable flag must be a boolean value. Got value ${attr.mutable}`,
+            `Attribute: "${attr.name}". Mutable flag must be a boolean value. Got value ${attr.mutable}`,
         );
     }
 
     if (!Array.isArray(attr.values)) {
         throw new Error(
-            `Attribute: "${attr.name}". ` + `Attribute values must be an array. Got type ${typeof attr.values}`,
+            `Attribute: "${attr.name}". Attribute values must be an array. Got type ${typeof attr.values}`,
         );
     }
 
@@ -52,7 +52,7 @@ function validateParsedAttribute(attr: Attribute): void {
 
     for (const value of attr.values) {
         if (typeof value !== 'string') {
-            throw new Error(`Attribute: "${attr.name}". ` + `Each value must be a string. Got value ${value}`);
+            throw new Error(`Attribute: "${attr.name}". Each value must be a string. Got value ${value}`);
         }
     }
 }
@@ -64,12 +64,12 @@ export function validateParsedLabel(label: Label): void {
 
     if (!['number', 'undefined'].includes(typeof label.id)) {
         throw new Error(
-            `Label "${label.name}". ` + `Type of label id must be only a number or undefined. Got value ${label.id}`,
+            `Label "${label.name}". Type of label id must be only a number or undefined. Got value ${label.id}`,
         );
     }
 
     if (typeof label.color !== 'string') {
-        throw new Error(`Label "${label.name}". ` + `Label color must be a string. Got ${typeof label.color}`);
+        throw new Error(`Label "${label.name}". Label color must be a string. Got ${typeof label.color}`);
     }
 
     if (!label.color.match(/^#[0-9a-fA-F]{6}$|^$/)) {
@@ -80,7 +80,7 @@ export function validateParsedLabel(label: Label): void {
     }
 
     if (!Array.isArray(label.attributes)) {
-        throw new Error(`Label "${label.name}". ` + `attributes must be an array. Got type ${typeof label.attributes}`);
+        throw new Error(`Label "${label.name}". Attributes must be an array. Got type ${typeof label.attributes}`);
     }
 
     for (const attr of label.attributes) {

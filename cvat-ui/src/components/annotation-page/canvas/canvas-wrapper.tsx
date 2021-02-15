@@ -1,13 +1,12 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
-
-import Tooltip from 'antd/lib/tooltip';
 import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
+import { PlusCircleOutlined } from '@ant-design/icons';
 
 import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
@@ -16,7 +15,7 @@ import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
-import { PlusCircleOutlined } from '@ant-design/icons';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 const cvat = getCore();
 
@@ -908,9 +907,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         defaultValue={0}
                         onChange={(value: number): void => onSwitchZLayer(value as number)}
                     />
-                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`} mouseLeaveDelay={0}>
+                    <CVATTooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
                         <PlusCircleOutlined onClick={onAddZLayer} />
-                    </Tooltip>
+                    </CVATTooltip>
                 </div>
             </Layout.Content>
         );

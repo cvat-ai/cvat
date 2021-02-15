@@ -14,7 +14,7 @@ spec:
   eventTimeout: 30s
   env:
     - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/common/python3
+      value: /opt/nuclio/common/openvino/python3
 
   build:
     image: cvat/openvino.omz.intel.person-reidentification-retail-0300
@@ -46,3 +46,4 @@ spec:
       restartPolicy:
         name: always
         maximumRetryCount: 3
+      mountMode: volume

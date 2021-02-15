@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,10 +9,11 @@ import { Row, Col } from 'antd/lib/grid';
 import { LoadingOutlined, QuestionCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 import getCore from 'cvat-core-wrapper';
 import UserSelector, { User } from './user-selector';
@@ -145,9 +146,9 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 return (
                     <Text strong className={progressColor}>
                         {status}
-                        <Tooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
+                        <CVATTooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
                             <QuestionCircleOutlined />
-                        </Tooltip>
+                        </CVATTooltip>
                     </Text>
                 );
             },
@@ -225,7 +226,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             <Row justify='space-between' align='middle'>
                 <Col>
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
-                    <Tooltip trigger='click' title='Copied to clipboard!' mouseLeaveDelay={0}>
+                    <CVATTooltip trigger='click' title='Copied to clipboard!'>
                         <Button
                             type='link'
                             onClick={(): void => {
@@ -258,13 +259,19 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                             <CopyOutlined />
                             Copy
                         </Button>
-                    </Tooltip>
+                    </CVATTooltip>
                 </Col>
                 <Col>
                     <Text className='cvat-text-color'>{`${completed} of ${data.length} jobs`}</Text>
                 </Col>
             </Row>
-            <Table className='cvat-task-jobs-table' rowClassName={() => 'cvat-task-jobs-table-row'} columns={columns} dataSource={data} size='small' />
+            <Table
+                className='cvat-task-jobs-table'
+                rowClassName={() => 'cvat-task-jobs-table-row'}
+                columns={columns}
+                dataSource={data}
+                size='small'
+            />
         </div>
     );
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,10 +6,10 @@ import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
 import Form, { FormInstance, RuleObject } from 'antd/lib/form';
 import { Store } from 'antd/lib/form/interface';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     Label, Attribute, validateParsedLabel, idGenerator,
 } from './common';
@@ -87,14 +87,14 @@ export default class RawViewer extends React.PureComponent<Props> {
                 </Form.Item>
                 <Row justify='start' align='middle'>
                     <Col>
-                        <Tooltip title='Save labels and return' mouseLeaveDelay={0}>
+                        <CVATTooltip title='Save labels and return'>
                             <Button style={{ width: '150px' }} type='primary' htmlType='submit'>
                                 Done
                             </Button>
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                     <Col offset={1}>
-                        <Tooltip title='Do not save the label and return' mouseLeaveDelay={0}>
+                        <CVATTooltip title='Do not save the label and return'>
                             <Button
                                 type='primary'
                                 danger
@@ -107,7 +107,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                             >
                                 Reset
                             </Button>
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                 </Row>
             </Form>
