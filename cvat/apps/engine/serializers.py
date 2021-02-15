@@ -92,6 +92,7 @@ class LabelSerializer(serializers.ModelSerializer):
             except models.Label.DoesNotExist:
                 raise exceptions.NotFound(detail='Not found label with id #{} to change'.format(validated_data['id']))
             db_label.name = validated_data.get('name', db_label.name)
+            logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
         else:
             db_label = models.Label.objects.create(name=validated_data.get('name'), **instance)
             logger.info("New {} label was created".format(db_label.name))
