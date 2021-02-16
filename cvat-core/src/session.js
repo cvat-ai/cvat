@@ -261,15 +261,11 @@
             predictor: Object.freeze({
                 value: {
                     async status() {
-                        const result = await PluginRegistry.apiWrapper.call(
-                            this, prototype.predictor.status,
-                        );
+                        const result = await PluginRegistry.apiWrapper.call(this, prototype.predictor.status);
                         return result;
                     },
                     async predict(frame) {
-                        const result = await PluginRegistry.apiWrapper.call(
-                            this, prototype.predictor.predict, frame,
-                        );
+                        const result = await PluginRegistry.apiWrapper.call(this, prototype.predictor.predict, frame);
                         return result;
                     },
                 },
@@ -682,7 +678,6 @@
              * @instance
              * @async
              */
-
             /**
              * @typedef {Object} PredictorStatus
              * @property {string} message - message for a user to be displayed somewhere
@@ -1933,7 +1928,7 @@
     };
 
     Job.prototype.predictor.predict.implementation = async function (frame) {
-        const result = await this.task.predictor.predict(frame + this.startFrame);
+        const result = await this.task.predictor.predict(frame);
         return result;
     };
 
