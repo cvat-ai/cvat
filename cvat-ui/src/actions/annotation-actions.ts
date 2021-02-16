@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {ActionCreator, AnyAction, Dispatch, Store,} from 'redux';
-import {ThunkAction} from 'utils/redux';
+import {
+    ActionCreator, AnyAction, Dispatch, Store,
+} from 'redux';
+import { ThunkAction } from 'utils/redux';
 
 import {
     ActiveControl,
@@ -21,10 +23,10 @@ import {
 } from 'reducers/interfaces';
 
 import getCore from 'cvat-core-wrapper';
-import logger, {LogType} from 'cvat-logger';
-import {RectDrawingMethod} from 'cvat-canvas-wrapper';
-import {getCVATStore} from 'cvat-store';
-import {MutableRefObject} from 'react';
+import logger, { LogType } from 'cvat-logger';
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { getCVATStore } from 'cvat-store';
+import { MutableRefObject } from 'react';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -626,14 +628,9 @@ export function getPredictionsAsync(): ThunkAction {
         const {
             annotations: {
                 states: currentStates,
-                zLayer: {
-                    cur: curZOrder,
-                },
+                zLayer: { cur: curZOrder },
             },
-            predictor: {
-                enabled,
-                annotatedFrames,
-            },
+            predictor: { enabled, annotatedFrames },
         } = getStore().getState().annotation;
 
         const {
@@ -1034,9 +1031,11 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
 
             loadJobEvent.close(await jobInfoGenerator(job));
 
+            const openTime = Date.now();
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
                 payload: {
+                    openTime,
                     job,
                     issues,
                     reviews,
@@ -1056,19 +1055,31 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 dispatch(changeWorkspace(workspace));
             }
 
-            // Fetching predictor status
-            try {
-                const status = await job.predictor.status();
-                dispatch({
-                    type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
-                    payload: status,
-                });
-            } catch (error) {
-                dispatch({
-                    type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
-                    payload: { error },
-                });
-            }
+            const updatePredictorStatus = async (): Promise<void> => {
+                // get current job
+                const currentState: CombinedState = getStore().getState();
+                const { openTime: currentOpenTime, instance: currentJob } = currentState.annotation.job;
+                if (currentJob === null || currentJob.id !== job.id || currentOpenTime !== openTime) {
+                    // the job was closed, changed or reopened
+                    return;
+                }
+
+                try {
+                    const status = await job.predictor.status();
+                    dispatch({
+                        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+                        payload: status,
+                    });
+                    setTimeout(updatePredictorStatus, 60 * 1000);
+                } catch (error) {
+                    dispatch({
+                        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+                        payload: { error },
+                    });
+                    setTimeout(updatePredictorStatus, 20 * 1000);
+                }
+            };
+            updatePredictorStatus();
 
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {

@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {ExtendedKeyMapOptions} from 'react-hotkeys';
-import {Canvas, RectDrawingMethod} from 'cvat-canvas-wrapper';
-import {IntelligentScissors} from 'utils/opencv-wrapper/intelligent-scissors';
-import {MutableRefObject} from 'react';
-import {Canvas3d} from 'cvat-canvas3d/src/typescript/canvas3d';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
+import { MutableRefObject } from 'react';
+import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 
 export type StringObject = {
     [index: string]: string;
@@ -402,6 +402,7 @@ export interface AnnotationState {
         activeControl: ActiveControl;
     };
     job: {
+        openTime: null | number;
         labels: any[];
         requestedId: number | null;
         instance: any | null | undefined;

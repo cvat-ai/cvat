@@ -39,6 +39,7 @@ const defaultState: AnnotationState = {
         activeControl: ActiveControl.CURSOR,
     },
     job: {
+        openTime: null,
         labels: [],
         requestedId: null,
         instance: null,
@@ -138,6 +139,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 job,
                 states,
+                openTime,
                 frameNumber: number,
                 frameFilename: filename,
                 colors,
@@ -157,6 +159,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 job: {
                     ...state.job,
+                    openTime,
                     fetching: false,
                     instance: job,
                     labels: job.task.labels,
