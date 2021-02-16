@@ -31,7 +31,7 @@ services:
 
   cvat_kibana_setup:
     container_name: cvat_kibana_setup
-    image: cvat/server
+    image: openvino/cvat_server
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat']
     working_dir: '/home/django'
