@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,9 +34,12 @@ export default function ProjectPageComponent(): JSX.Element {
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
     const tasks = useSelector((state: CombinedState) => state.tasks.current);
+    const projectSubsets = useSelector((state: CombinedState) => {
+        const [project] = state.projects.current.filter((_project) => _project.id === id);
+        return project ? ([...new Set(project.tasks.map((task: any) => task.subset))] as string[]) : [];
+    });
 
-    const filteredProjects = projects.filter((project) => project.id === id);
-    const project = filteredProjects[0];
+    const [project] = projects.filter((_project) => _project.id === id);
     const deleteActivity = project && id in deletes ? deletes[id] : null;
 
     useEffect(() => {
@@ -73,7 +76,7 @@ export default function ProjectPageComponent(): JSX.Element {
                 <DetailsComponent project={project} />
                 <Row justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>
                     <Col>
-                        <Title level={4}>Tasks</Title>
+                        <Title level={3}>Tasks</Title>
                     </Col>
                     <Col>
                         <Button
@@ -87,21 +90,26 @@ export default function ProjectPageComponent(): JSX.Element {
                         </Button>
                     </Col>
                 </Row>
-                {tasks
-                    .filter((task) => task.instance.projectId === project.id)
-                    .map((task: Task) => (
-                        <TaskItem
-                            key={task.instance.id}
-                            deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
-                            hidden={false}
-                            activeInference={tasksActiveInferences[task.instance.id] || null}
-                            cancelAutoAnnotation={() => {
-                                dispatch(cancelInferenceAsync(task.instance.id));
-                            }}
-                            previewImage={task.preview}
-                            taskInstance={task.instance}
-                        />
-                    ))}
+                {projectSubsets.map((subset) => (
+                    <React.Fragment key={subset}>
+                        {subset && <Title level={4}>{subset}</Title>}
+                        {tasks
+                            .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
+                            .map((task: Task) => (
+                                <TaskItem
+                                    key={task.instance.id}
+                                    deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
+                                    hidden={false}
+                                    activeInference={tasksActiveInferences[task.instance.id] || null}
+                                    cancelAutoAnnotation={() => {
+                                        dispatch(cancelInferenceAsync(task.instance.id));
+                                    }}
+                                    previewImage={task.preview}
+                                    taskInstance={task.instance}
+                                />
+                            ))}
+                    </React.Fragment>
+                ))}
             </Col>
         </Row>
     );

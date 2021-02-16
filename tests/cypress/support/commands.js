@@ -146,41 +146,42 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
     cy.openJob(jobID, removeAnnotations);
 });
 
+Cypress.Commands.add('interactControlButton', (objectType) => {
+    cy.get('body').focus();
+    cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+});
+
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
-    cy.get('.cvat-draw-rectangle-control').click();
-    cy.switchLabel(createRectangleParams.labelName, 'rectangle');
-    cy.contains('Draw new rectangle')
-        .parents('.cvat-draw-shape-popover-content')
-        .within(() => {
-            cy.get('.ant-select-selection-item').then(($labelValue) => {
-                selectedValueGlobal = $labelValue.text();
-            });
-            cy.get('.ant-radio-wrapper').contains(createRectangleParams.points).click();
-            cy.get('button').contains(createRectangleParams.type).click({ force: true });
+    cy.interactControlButton('draw-rectangle');
+    cy.switchLabel(createRectangleParams.labelName, 'draw-rectangle');
+    cy.get('.cvat-draw-rectangle-popover-visible').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
         });
-    cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
-    cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
+        cy.contains('.ant-radio-wrapper', createRectangleParams.points).click();
+        cy.contains('button', createRectangleParams.type).click();
+    });
+    cy.get('.cvat-canvas-container')
+        .click(createRectangleParams.firstX, createRectangleParams.firstY)
+        .click(createRectangleParams.secondX, createRectangleParams.secondY);
     if (createRectangleParams.points === 'By 4 Points') {
-        cy.get('.cvat-canvas-container').click(createRectangleParams.thirdX, createRectangleParams.thirdY);
-        cy.get('.cvat-canvas-container').click(createRectangleParams.fourthX, createRectangleParams.fourthY);
+        cy.get('.cvat-canvas-container')
+            .click(createRectangleParams.thirdX, createRectangleParams.thirdY)
+            .click(createRectangleParams.fourthX, createRectangleParams.fourthY);
     }
     cy.checkObjectParameters(createRectangleParams, 'RECTANGLE');
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(
-        objectType === 'tag' ? '.cvat-setup-tag-popover-visible' : `.cvat-draw-${objectType}-popover-visible`,
-    ).within(() => {
-        cy.get('.ant-select-selection-item').click();
-    });
+    cy.get(`.cvat-${objectType}-popover-visible`).find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
-        .within(() => {
-            cy.get(`.ant-select-item-option[title="${labelName}"]`).click();
-        });
+        .find(`.ant-select-item-option[title="${labelName}"]`)
+        .click();
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
+    cy.get('.cvat-draw-shape-popover').should('be.hidden');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -199,20 +200,18 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
 });
 
 Cypress.Commands.add('createPoint', (createPointParams) => {
-    cy.get('.cvat-draw-points-control').click();
-    cy.switchLabel(createPointParams.labelName, 'points');
-    cy.contains('Draw new points')
-        .parents('.cvat-draw-shape-popover-content')
-        .within(() => {
-            cy.get('.ant-select-selection-item').then(($labelValue) => {
-                selectedValueGlobal = $labelValue.text();
-            });
-            if (createPointParams.numberOfPoints) {
-                createPointParams.complete = false;
-                cy.get('.ant-input-number-input').clear().type(createPointParams.numberOfPoints);
-            }
-            cy.get('button').contains(createPointParams.type).click({ force: true });
+    cy.interactControlButton('draw-points');
+    cy.switchLabel(createPointParams.labelName, 'draw-points');
+    cy.get('.cvat-draw-points-popover-visible').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
         });
+        if (createPointParams.numberOfPoints) {
+            createPointParams.complete = false;
+            cy.get('.ant-input-number-input').clear().type(createPointParams.numberOfPoints);
+        }
+        cy.contains('button', createPointParams.type).click();
+    });
     createPointParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
@@ -241,20 +240,18 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
 
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (!createPolygonParams.reDraw) {
-        cy.get('.cvat-draw-polygon-control').click();
-        cy.switchLabel(createPolygonParams.labelName, 'polygon');
-        cy.contains('Draw new polygon')
-            .parents('.cvat-draw-shape-popover-content')
-            .within(() => {
-                cy.get('.ant-select-selection-item').then(($labelValue) => {
-                    selectedValueGlobal = $labelValue.text();
-                });
-                if (createPolygonParams.numberOfPoints) {
-                    createPolygonParams.complete = false;
-                    cy.get('.ant-input-number-input').clear().type(createPolygonParams.numberOfPoints);
-                }
-                cy.get('button').contains(createPolygonParams.type).click({ force: true });
+        cy.interactControlButton('draw-polygon');
+        cy.switchLabel(createPolygonParams.labelName, 'draw-polygon');
+        cy.get('.cvat-draw-polygon-popover-visible').within(() => {
+            cy.get('.ant-select-selection-item').then(($labelValue) => {
+                selectedValueGlobal = $labelValue.text();
             });
+            if (createPolygonParams.numberOfPoints) {
+                createPolygonParams.complete = false;
+                cy.get('.ant-input-number-input').clear().type(createPolygonParams.numberOfPoints);
+            }
+            cy.contains('button', createPolygonParams.type).click();
+        });
     }
     createPolygonParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
@@ -305,17 +302,15 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
 });
 
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {
-    cy.get('.cvat-draw-cuboid-control').click();
-    cy.switchLabel(createCuboidParams.labelName, 'cuboid');
-    cy.contains('Draw new cuboid')
-        .parents('.cvat-draw-shape-popover-content')
-        .within(() => {
-            cy.get('.ant-select-selection-item').then(($labelValue) => {
-                selectedValueGlobal = $labelValue.text();
-            });
-            cy.contains(createCuboidParams.points).click();
-            cy.get('button').contains(createCuboidParams.type).click({ force: true });
+    cy.interactControlButton('draw-cuboid');
+    cy.switchLabel(createCuboidParams.labelName, 'draw-cuboid');
+    cy.get('.cvat-draw-cuboid-popover-visible').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
         });
+        cy.contains(createCuboidParams.points).click();
+        cy.contains('button', createCuboidParams.type).click();
+    });
     cy.get('.cvat-canvas-container').click(createCuboidParams.firstX, createCuboidParams.firstY);
     cy.get('.cvat-canvas-container').click(createCuboidParams.secondX, createCuboidParams.secondY);
     if (createCuboidParams.points === 'By 4 Points') {
@@ -372,20 +367,18 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 });
 
 Cypress.Commands.add('createPolyline', (createPolylineParams) => {
-    cy.get('.cvat-draw-polyline-control').click();
-    cy.switchLabel(createPolylineParams.labelName, 'polyline');
-    cy.contains('Draw new polyline')
-        .parents('.cvat-draw-shape-popover-content')
-        .within(() => {
-            cy.get('.ant-select-selection-item').then(($labelValue) => {
-                selectedValueGlobal = $labelValue.text();
-            });
-            if (createPolylineParams.numberOfPoints) {
-                createPolylineParams.complete = false;
-                cy.get('.ant-input-number-input').clear().type(createPolylineParams.numberOfPoints);
-            }
-            cy.get('button').contains(createPolylineParams.type).click({ force: true });
+    cy.interactControlButton('draw-polyline');
+    cy.switchLabel(createPolylineParams.labelName, 'draw-polyline');
+    cy.get('.cvat-draw-polyline-popover-visible').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
         });
+        if (createPolylineParams.numberOfPoints) {
+            createPolylineParams.complete = false;
+            cy.get('.ant-input-number-input').clear().type(createPolylineParams.numberOfPoints);
+        }
+        cy.contains('button', createPolylineParams.type).click();
+    });
     createPolylineParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
@@ -504,13 +497,11 @@ Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
 });
 
 Cypress.Commands.add('createTag', (labelName) => {
-    cy.get('.cvat-setup-tag-control').click();
-    cy.switchLabel(labelName, 'tag');
-    cy.contains('Setup tag')
-        .parents('.cvat-setup-tag-popover-content')
-        .within(() => {
-            cy.get('button').click();
-        });
+    cy.interactControlButton('setup-tag');
+    cy.switchLabel(labelName, 'setup-tag');
+    cy.get('.cvat-setup-tag-popover-visible').within(() => {
+        cy.get('button').click();
+    });
 });
 
 Cypress.Commands.add('sidebarItemSortBy', (sortBy) => {
