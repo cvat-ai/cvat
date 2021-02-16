@@ -22,7 +22,7 @@ import subprocess
 import mimetypes
 mimetypes.add_type("application/wasm", ".wasm", True)
 
-from pathlib import Path
+from pathlib import Path # test comment
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])

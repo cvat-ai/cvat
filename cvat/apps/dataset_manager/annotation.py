@@ -10,7 +10,7 @@ from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
 from cvat.apps.engine.models import ShapeType
-from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.serializers import LabeledDataSerializer # test comment
 
 
 class AnnotationIR:
