@@ -27,7 +27,11 @@ jobs:
               changed_files_eslint+=" ${files}"
             fi
           done
-          npx eslint ${changed_files_eslint} --output-file ./linter_reports/eslint_check.html --format html
+          if [[ ! -z ${changed_files_eslint} ]]; then
+            npx eslint ${changed_files_eslint} --output-file ./linter_reports/eslint_check.html --format html
+          else
+            echo "No files with the \"js|ts|jsx|tsx\" extension found"
+          fi
 
       - name: Upload artifacts
         if: failure()
