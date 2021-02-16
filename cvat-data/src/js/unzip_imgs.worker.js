@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,9 @@ const JSZip = require('jszip');
 onmessage = (e) => {
     const zip = new JSZip();
     if (e.data) {
-        const { start, end, block, dimension, dimension2D } = e.data;
+        const {
+            start, end, block, dimension, dimension2D,
+        } = e.data;
 
         zip.loadAsync(block).then((_zip) => {
             let index = start;

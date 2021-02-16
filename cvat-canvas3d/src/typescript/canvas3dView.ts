@@ -45,10 +45,10 @@ export interface RenderView {
 }
 
 export interface ViewsDOM {
-    perspective: HTMLDivElement;
-    top: HTMLDivElement;
-    side: HTMLDivElement;
-    front: HTMLDivElement;
+    perspective: HTMLCanvasElement;
+    top: HTMLCanvasElement;
+    side: HTMLCanvasElement;
+    front: HTMLCanvasElement;
 }
 
 export class Canvas3dViewImpl implements Canvas3dView, Listener {
@@ -194,8 +194,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const height = canvas.parentElement.clientHeight;
         const needResize = canvas.clientWidth !== width || canvas.clientHeight !== height;
         if (needResize) {
-            // eslint-disable-next-line no-param-reassign
-            view.camera.aspect = width / height;
+            if (!(view.camera instanceof THREE.OrthographicCamera)) {
+                // eslint-disable-next-line no-param-reassign
+                view.camera.aspect = width / height;
+            }
             view.camera.updateProjectionMatrix();
             view.renderer.setSize(width, height);
         }

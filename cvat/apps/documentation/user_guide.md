@@ -26,6 +26,7 @@
   - [Track mode (advanced)](#track-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
   - [AI Tools](#ai-tools)
+  - [OpenCV Tools](#opencv-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
@@ -321,14 +322,15 @@ Once created, the project will appear on the projects page. To open a project, j
 ![](static/documentation/images/image192_mapillary_vistas.jpg)
 
 Here you can do the following:
-  1. Change the project's title.
-  1. Open the `Actions` menu.
-  1. Change issue tracker or open issue tracker if it is specified.
-  1. Change labels.
-  You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
-  You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
-  1. Assigned to — is used to assign a project to a person. Start typing an assignee's name and/or choose the right person out of the dropdown list.
-  1. `Tasks` — is a list of all tasks for a particular project.
+
+1. Change the project's title.
+1. Open the `Actions` menu.
+1. Change issue tracker or open issue tracker if it is specified.
+1. Change labels.
+   You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
+   You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
+1. Assigned to — is used to assign a project to a person. Start typing an assignee's name and/or choose the right person out of the dropdown list.
+1. `Tasks` — is a list of all tasks for a particular project.
 
 You can remove the project and all related tasks through the Action menu.
 
@@ -755,7 +757,7 @@ Button assignment:
   - [MS COCO](http://cocodataset.org/#format-data)
   - [YOLO](https://pjreddie.com/darknet/yolo/)
 - `Open the task` — opens a page with details about the task.
-- `Request a review` - calls up the form to submit the job for a review, read more in the [review](#review)  section.
+- `Request a review` - calls up the form to submit the job for a review, read more in the [review](#review) section.
 - `Finish the job` - changes the status of the job to `completed` and returns to the task page without review.
 - `Submit the review` - (available during the review) calls up the form to submit a review, read more in the [review](#review) section.
 
@@ -858,6 +860,7 @@ Switching between user interface modes.
 |Icon |Description |Links to section |
 |-- |-- |-- |
 |![](static/documentation/images/image189.jpg)|`AI Tools` |[AI Tools](#ai-tools)|
+|![](static/documentation/images/image201.jpg)|`OpenCV` |[OpenCV](#opencv)|
 |![](static/documentation/images/image167.jpg)|`Rectangle`|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-rectangle-by-4-points)|
 |![](static/documentation/images/image168.jpg)|`Polygon` |[Annotation with polygons](#annotation-with-polygons); [Track mode with polygons](#track-mode-with-polygons) |
 |![](static/documentation/images/image169.jpg)|`Polyline` |[Annotation with polylines](#annotation-with-polylines)|
@@ -1137,6 +1140,42 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 
 - This action will automatically annotates one frame.
   In the [Automatic annotation](#automatic-annotation) section you can read how to make automatic annotation of all frames.
+
+## OpenCV tools
+
+The tool based on [Open CV](https://opencv.org/) Computer Vision library which is an open-source product that includes many CV algorithms. Some of these algorithms can be used to simplify the annotation process.
+
+First step to work with OpenCV is to load it into CVAT. Click on the toolbar icon, then click `Load OpenCV`.
+
+![](static/documentation/images/image198.jpg)
+
+Once it is loaded, the tool's functionality will be available.
+
+### Intelligent scissors
+
+Intelligent scissors is an CV method of creating a polygon by placing points with automatic drawing of a line between them.
+The distance between the adjacent points is limited by the threshold of action,
+displayed as a red square which is tied to the cursor.
+
+
+
+- First, select the label and then click on the `intelligent scissors` button.
+
+  ![](static/documentation/images/image199.jpg)
+
+- Create the first point on the boundary of the allocated object.
+  You will see a line repeating the outline of the object.
+- Place the second point, so that the previous point is within the restrictive threshold.
+  After that a line repeating the object boundary will be automatically created between the points.
+
+  ![](static/documentation/images/image200_detrac.jpg)
+
+  To increase or lower the action threshold, hold `Ctrl` and scroll the mouse wheel.
+  Increasing action threshold will affect the performance.
+  During the drawing process you can remove the last point by clicking on it with the left mouse button.
+
+- Once all the points are placed, you can complete the creation of the object by clicking on the icon or clicking `N`.
+  As a result, a polygon will be created (read more about the polygons in the [annoation with polygons](#annotation-with-polygons)).
 
 ## Annotation with rectangle by 4 points
 
@@ -1438,18 +1477,19 @@ or areas in the frame and describe the problem.
   ![](static/documentation/images/image195.jpg)
 
 - Then click on an object in the frame to highlight the object or highlight the area by holding the left mouse button
-and describe the problem. The object or area will be shaded in red.
+  and describe the problem. The object or area will be shaded in red.
 - The created issue will appear in the workspace and in the `issues` tab on the objects sidebar.
 - After you save the annotation, other users will be able to see the problem, comment on each issue
-and change the status of the problem to `resolved`.
+  and change the status of the problem to `resolved`.
 - You can use the arrows on the issues tab to navigate the frames that contain problems.
 
   ![](static/documentation/images/image196_detrac.jpg)
 
 - Once all the problems are marked, save the annotation, open the menu and select "submit the review". After that you'll see a form containing the verification statistics, here you can give an assessment of the job and choose further actions:
-    - Accept - changes the status of the job to `completed`.
-    - Review next – passes the job to another user for re-review.
-    - Reject - changes the status of the job to `annotation`.
+
+  - Accept - changes the status of the job to `completed`.
+  - Review next – passes the job to another user for re-review.
+  - Reject - changes the status of the job to `annotation`.
 
   ![](static/documentation/images/image197.jpg)
 
@@ -1618,8 +1658,8 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | Shortcut                   | Common                                                                                                   |
 | -------------------------- | -------------------------------------------------------------------------------------------------------- |
 |                            | _Main functions_                                                                                         |
-| `F2`                       | Open/hide the list of available shortcuts                                                                |
-| `F3`                       | Go to the settings page or go back                                                                       |
+| `F1`                       | Open/hide the list of available shortcuts                                                                |
+| `F2`                       | Go to the settings page or go back                                                                       |
 | `Ctrl+S`                   | Go to the settings page or go back                                                                       |
 | `Ctrl+Z`                   | Cancel the latest action related with objects                                                            |
 | `Ctrl+Shift+Z` or `Ctrl+Y` | Cancel undo action                                                                                       |

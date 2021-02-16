@@ -31,10 +31,10 @@ interface Props {
 
 const CanvasWrapperComponent = (props: Props): ReactElement => {
     const animateId = useRef(0);
-    const perspectiveView = useRef();
-    const topView = useRef();
-    const sideView = useRef();
-    const frontView = useRef();
+    const perspectiveView = useRef<HTMLCanvasElement>(null);
+    const topView = useRef<HTMLCanvasElement>(null);
+    const sideView = useRef<HTMLCanvasElement>(null);
+    const frontView = useRef<HTMLCanvasElement>(null);
 
     const {
         frameData, contextImageHide, getContextImage, loaded, data, annotations, curZLayer,
@@ -78,10 +78,21 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
         const canvasInstanceDOM = canvasInstance.html();
 
-        perspectiveView.current.appendChild(canvasInstanceDOM.perspective);
-        topView.current.appendChild(canvasInstanceDOM.top);
-        sideView.current.appendChild(canvasInstanceDOM.side);
-        frontView.current.appendChild(canvasInstanceDOM.front);
+        if (
+            perspectiveView &&
+            perspectiveView.current &&
+            topView &&
+            topView.current &&
+            sideView &&
+            sideView.current &&
+            frontView &&
+            frontView.current
+        ) {
+            perspectiveView.current.appendChild(canvasInstanceDOM.perspective);
+            topView.current.appendChild(canvasInstanceDOM.top);
+            sideView.current.appendChild(canvasInstanceDOM.side);
+            frontView.current.appendChild(canvasInstanceDOM.front);
+        }
 
         document.addEventListener('keydown', keyControls);
 

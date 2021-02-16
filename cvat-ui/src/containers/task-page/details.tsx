@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,7 @@ interface OwnProps {
 interface StateToProps {
     activeInference: ActiveInference | null;
     installedGit: boolean;
+    projectSubsets: string[];
 }
 
 interface DispatchToProps {
@@ -26,10 +27,16 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { list } = state.plugins;
+    const [taskProject] = state.projects.current.filter((project) => project.id === own.task.instance.projectId);
 
     return {
         installedGit: list.GIT_INTEGRATION,
         activeInference: state.models.inferences[own.task.instance.id] || null,
+        projectSubsets: taskProject ?
+            ([
+                ...new Set(taskProject.tasks.map((task: any) => task.subset).filter((subset: string) => subset)),
+            ] as string[]) :
+            [],
     };
 }
 
@@ -46,7 +53,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
 
 function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        task, installedGit, activeInference, cancelAutoAnnotation, onTaskUpdate,
+        task, installedGit, activeInference, projectSubsets, cancelAutoAnnotation, onTaskUpdate,
     } = props;
 
     return (
@@ -55,6 +62,7 @@ function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JS
             taskInstance={task.instance}
             installedGit={installedGit}
             activeInference={activeInference}
+            projectSubsets={projectSubsets}
             onTaskUpdate={onTaskUpdate}
             cancelAutoAnnotation={cancelAutoAnnotation}
         />
