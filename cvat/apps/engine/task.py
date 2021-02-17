@@ -6,7 +6,6 @@
 import itertools
 import os
 import sys
-from re import findall
 import rq
 import shutil
 from traceback import print_exception
@@ -18,7 +17,8 @@ from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkW
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import DimensionType
-from utils.dataset_manifest import prepare_meta, IManifestManager, VManifestManager
+from utils.dataset_manifest import prepare_meta, ImageManifestManager, VideoManifestManager
+from utils.dataset_manifest.core import VideoManifestValidator
 
 import django_rq
 from django.conf import settings
@@ -134,7 +134,7 @@ def _count_files(data, manifest_file=None):
             mime = get_mime(full_path)
             if mime in counter:
                 counter[mime].append(rel_path)
-            elif findall('manifest.jsonl$', rel_path):
+            elif 'manifest.jsonl' == os.path.basename(rel_path):
                 manifest_file.append(rel_path)
             else:
                 slogger.glob.warn("Skip '{}' file (its mime type doesn't "
@@ -252,7 +252,7 @@ def _create_thread(tid, data):
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if media_type in ('archive', 'zip') and db_data.storage == StorageChoice.SHARE:
+            if media_type in {'archive', 'zip'} and db_data.storage == StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()
                 db_data.storage = StorageChoice.LOCAL
@@ -342,12 +342,11 @@ def _create_thread(tid, data):
                 try:
                     if manifest_file:
                         try:
-                            from utils.dataset_manifest.core import VManifestValidator
-                            manifest = VManifestValidator(source_path=os.path.join(upload_dir, media_files[0]),
-                                                          manifest_path=db_data.get_manifest_path())
+                            manifest = VideoManifestValidator(source_path=os.path.join(upload_dir, media_files[0]),
+                                                              manifest_path=db_data.get_manifest_path())
                             manifest.init_index()
                             manifest.validate_seek_key_frames()
-                            manifest.validate_frames_numbers()
+                            manifest.validate_frame_numbers()
                             assert len(manifest) > 0, 'No key frames.'
 
                             all_frames = manifest['properties']['length']
@@ -364,7 +363,7 @@ def _create_thread(tid, data):
                             )
                             assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
                             _update_status('Start prepare a manifest file')
-                            manifest = VManifestManager(db_data.get_manifest_path())
+                            manifest = VideoManifestManager(db_data.get_manifest_path())
                             manifest.create(meta_info)
                             manifest.init_index()
                             _update_status('A manifest had been created')
@@ -380,7 +379,7 @@ def _create_thread(tid, data):
                         )
                         assert smooth_decoding, 'Too few keyframes for smooth video decoding.'
                         _update_status('Start prepare a manifest file')
-                        manifest = VManifestManager(db_data.get_manifest_path())
+                        manifest = VideoManifestManager(db_data.get_manifest_path())
                         manifest.create(meta_info)
                         manifest.init_index()
                         _update_status('A manifest had been created')
@@ -400,7 +399,7 @@ def _create_thread(tid, data):
                     _update_status("{} The task will be created using the old method".format(base_msg))
             else:# images, archive, pdf
                 db_data.size = len(extractor)
-                manifest = IManifestManager(db_data.get_manifest_path())
+                manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
                     meta_info = prepare_meta(
                         data_type='images',

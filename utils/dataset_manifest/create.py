@@ -23,19 +23,20 @@ def main():
             meta_info, smooth_decoding = prepare_meta(
                 data_type=args.type, media_file=args.sources[0], chunk_size=args.chunk_size
             )
-            manifest = VManifestManager(manifest_path=args.manifest_directory)
+            manifest = VideoManifestManager(manifest_path=args.manifest_directory)
             manifest.create(meta_info)
             if smooth_decoding is not None and not smooth_decoding:
                 print('NOTE: prepared manifest file contains too few key frames for smooth decoding.')
         except Exception as ex:
             print(ex)
     else:
-        meta_info = prepare_meta(data_type=args.type, sources=args.sources, is_sorted=False)
-        manifest = IManifestManager(manifest_path=args.manifest_directory)
+        meta_info = prepare_meta(data_type=args.type, sources=args.sources,
+            is_sorted=False, use_image_hash=True)
+        manifest = ImageManifestManager(manifest_path=args.manifest_directory)
         manifest.create(meta_info)
     print('A manifest file had been prepared ')
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(base_dir)
-    from dataset_manifest.core import prepare_meta, VManifestManager, IManifestManager
+    from dataset_manifest.core import prepare_meta, VideoManifestManager, ImageManifestManager
     main()

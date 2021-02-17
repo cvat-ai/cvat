@@ -3,7 +3,7 @@
 from django.db import migrations
 from cvat.apps.engine.models import StorageMethodChoice, StorageChoice
 from django.conf import settings
-from utils.dataset_manifest import prepare_meta, VManifestManager, IManifestManager
+from utils.dataset_manifest import prepare_meta, VideoManifestManager, ImageManifestManager
 import glob
 import os
 
@@ -19,7 +19,7 @@ def migrate_data(apps, shema_editor):
                 data_type='video',
                 media_file=media_file,
             )
-            manifest = VManifestManager(manifest_path=upload_dir)
+            manifest = VideoManifestManager(manifest_path=upload_dir)
             manifest.create(meta_info)
             manifest.init_index()
             if os.path.exists(os.path.join(upload_dir, 'meta_info.txt')):
@@ -28,7 +28,7 @@ def migrate_data(apps, shema_editor):
             sources = [os.path.join(data_dir, db_image.path) for db_image in db_data.images.all().order_by('frame')]
             # or better to get all possible needed info from db?
             meta_info = prepare_meta(data_type='images', sources=sources, data_dir=data_dir)
-            manifest = IManifestManager(manifest_path=upload_dir)
+            manifest = ImageManifestManager(manifest_path=upload_dir)
             manifest.create(meta_info.content)
             manifest.init_index()
             for path in glob.glob(f'{upload_dir}/dummy_*.txt'):

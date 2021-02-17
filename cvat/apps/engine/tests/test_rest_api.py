@@ -34,7 +34,7 @@ from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.models import DimensionType
-from utils.dataset_manifest import prepare_meta, IManifestManager, VManifestManager
+from utils.dataset_manifest import prepare_meta, ImageManifestManager, VideoManifestManager
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1780,10 +1780,10 @@ def generate_manifest_file(data_type, manifest_path, sources):
         **kwargs[data_type]
     )
     if data_type == 'video':
-        manifest = VManifestManager(manifest_path)
+        manifest = VideoManifestManager(manifest_path)
         manifest.create(prepared_meta[0])
     else:
-        manifest = IManifestManager(manifest_path)
+        manifest = ImageManifestManager(manifest_path)
         manifest.create(prepared_meta)
 
 class TaskDataAPITestCase(APITestCase):

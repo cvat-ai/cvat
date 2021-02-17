@@ -8,22 +8,13 @@ import marshal
 import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
+from contextlib import contextmanager, closing
 from PIL import Image
 from .utils import md5_hash, rotate_image
 
 class WorkWithVideo:
-    def __init__(self, **kwargs):
-        if not kwargs.get('source_path'):
-            raise Exception('No sourse path')
-        self.source_path = kwargs.get('source_path')
-
-    @staticmethod
-    def _open_video_container(sourse_path, mode, options=None):
-        return av.open(sourse_path, mode=mode, options=options)
-
-    @staticmethod
-    def _close_video_container(container):
-        container.close()
+    def __init__(self, source_path):
+        self.source_path = source_path
 
     @staticmethod
     def _get_video_stream(container):
@@ -48,46 +39,53 @@ class WorkWithVideo:
 
 class AnalyzeVideo(WorkWithVideo):
     def check_type_first_frame(self):
-        container = self._open_video_container(self.source_path, mode='r')
-        video_stream = self._get_video_stream(container)
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
 
-        for packet in container.demux(video_stream):
-            for frame in packet.decode():
-                self._close_video_container(container)
-                assert frame.pict_type.name == 'I', 'First frame is not key frame'
-                return
+            for packet in container.demux(video_stream):
+                for frame in packet.decode():
+                    assert frame.pict_type.name == 'I', 'First frame is not key frame'
+                    return
 
     def check_video_timestamps_sequences(self):
-        container = self._open_video_container(self.source_path, mode='r')
-        video_stream = self._get_video_stream(container)
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
 
-        frame_pts = -1
-        frame_dts = -1
-        for packet in container.demux(video_stream):
-            for frame in packet.decode():
+            frame_pts = -1
+            frame_dts = -1
+            for packet in container.demux(video_stream):
+                for frame in packet.decode():
 
-                if None not in [frame.pts, frame_pts] and frame.pts <= frame_pts:
-                    self._close_video_container(container)
-                    raise Exception('Invalid pts sequences')
+                    if None not in {frame.pts, frame_pts} and frame.pts <= frame_pts:
+                        raise Exception('Invalid pts sequences')
 
-                if None not in [frame.dts, frame_dts] and frame.dts <= frame_dts:
-                    self._close_video_container(container)
-                    raise Exception('Invalid dts sequences')
+                    if None not in {frame.dts, frame_dts} and frame.dts <= frame_dts:
+                        raise Exception('Invalid dts sequences')
 
-                frame_pts, frame_dts = frame.pts, frame.dts
-        self._close_video_container(container)
+                    frame_pts, frame_dts = frame.pts, frame.dts
 
-class IPrepareInfo:
-    def __init__(self, sources, is_sorted=True, *args, **kwargs):
+class PrepareImageInfo:
+    def __init__(self, sources, is_sorted=True, use_image_hash=False, *args, **kwargs):
         self._sources = sources if is_sorted else sorted(sources)
         self._content = []
         self._data_dir = kwargs.get('data_dir', None)
+        self._use_image_hash = use_image_hash
 
     def __iter__(self):
         for image in self._sources:
             img = Image.open(image, mode='r')
-            img_name = os.path.relpath(image, self._data_dir) if self._data_dir else os.path.basename(image)
-            yield (img_name, img.width, img.height, md5_hash(img))
+            img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
+                else os.path.basename(image)
+            name, extension = os.path.splitext(img_name)
+            image_properties = {
+                'name': name,
+                'extension': extension,
+                'width': img.width,
+                'height': img.height,
+            }
+            if self._use_image_hash:
+                image_properties['checksum'] = md5_hash(img)
+            yield image_properties
 
     def create(self):
         for item in self:
@@ -97,15 +95,14 @@ class IPrepareInfo:
     def content(self):
         return self._content
 
-class VPrepareInfo(WorkWithVideo):
+class PrepareVideoInfo(WorkWithVideo):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._key_frames = OrderedDict()
         self.frames = 0
 
-        container = self._open_video_container(self.source_path, 'r')
-        self.width, self.height = self._get_frame_size(container)
-        self._close_video_container(container)
+        with closing(av.open(self.source_path, mode='r')) as container:
+            self.width, self.height = self._get_frame_size(container)
 
     def get_task_size(self):
         return self.frames
@@ -122,34 +119,32 @@ class VPrepareInfo(WorkWithVideo):
                 return
 
     def validate_seek_key_frames(self):
-        container = self._open_video_container(self.source_path, mode='r')
-        video_stream = self._get_video_stream(container)
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
 
-        key_frames_copy = self._key_frames.copy()
+            key_frames_copy = self._key_frames.copy()
 
-        for key_frame in key_frames_copy.items():
-            container.seek(offset=key_frame[1]['pts'], stream=video_stream)
-            self.validate_key_frame(container, video_stream, key_frame)
+            for key_frame in key_frames_copy.items():
+                container.seek(offset=key_frame[1]['pts'], stream=video_stream)
+                self.validate_key_frame(container, video_stream, key_frame)
 
     def validate_frames_ratio(self, chunk_size):
         return (len(self._key_frames) and (self.frames // len(self._key_frames)) <= 2 * chunk_size)
 
     def save_key_frames(self):
-        container = self._open_video_container(self.source_path, mode='r')
-        video_stream = self._get_video_stream(container)
-        frame_number = 0
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
+            frame_number = 0
 
-        for packet in container.demux(video_stream):
-            for frame in packet.decode():
-                if frame.key_frame:
-                    self._key_frames[frame_number] = {
-                        'pts': frame.pts,
-                        'md5': md5_hash(frame),
-                    }
-                frame_number += 1
-
-        self.frames = frame_number
-        self._close_video_container(container)
+            for packet in container.demux(video_stream):
+                for frame in packet.decode():
+                    if frame.key_frame:
+                        self._key_frames[frame_number] = {
+                            'pts': frame.pts,
+                            'md5': md5_hash(frame),
+                        }
+                    frame_number += 1
+            self.frames = frame_number
 
     @property
     def key_frames(self):
@@ -168,14 +163,14 @@ def _prepare_video_meta(media_file, upload_dir=None, chunk_size=None):
     analyzer.check_type_first_frame()
     analyzer.check_video_timestamps_sequences()
 
-    meta_info = VPrepareInfo(source_path=source_path)
+    meta_info = PrepareVideoInfo(source_path=source_path)
     meta_info.save_key_frames()
     meta_info.validate_seek_key_frames()
     smooth_decoding = meta_info.validate_frames_ratio(chunk_size) if chunk_size else None
     return (meta_info, smooth_decoding)
 
 def _prepare_images_meta(sources, **kwargs):
-    meta_info = IPrepareInfo(sources=sources, **kwargs)
+    meta_info = PrepareImageInfo(sources=sources, **kwargs)
     meta_info.create()
     return meta_info
 
@@ -238,12 +233,13 @@ class _Index:
                 manifest_file.readline()
                 skip -= 1
             image_number = 0
-            self._index[image_number] = manifest_file.tell()
+            position = manifest_file.tell()
             line = manifest_file.readline()
             while line:
                 if line.strip():
+                    self._index[image_number] = position
                     image_number += 1
-                    self._index[image_number] = manifest_file.tell()
+                    position = manifest_file.tell()
                 line = manifest_file.readline()
 
     def partial_update(self, manifest, number):
@@ -333,7 +329,7 @@ class _ManifestManager(ABC):
     def index(self):
         return self._index
 
-class VManifestManager(_ManifestManager):
+class VideoManifestManager(_ManifestManager):
     def __init__(self, manifest_path, *args, **kwargs):
         super().__init__(manifest_path)
         setattr(self._manifest, 'TYPE', 'video')
@@ -342,11 +338,25 @@ class VManifestManager(_ManifestManager):
     def create(self, content, **kwargs):
         """ Creating and saving a manifest file """
         with open(self._manifest.path, 'w') as manifest_file:
-            manifest_file.write(f"{json.dumps({'version': self._manifest.VERSION}, separators=(',', ':'))}\n")
-            manifest_file.write(f"{json.dumps({'type': self._manifest.TYPE},  separators=(',', ':'))}\n")
-            manifest_file.write(f"{json.dumps({'properties':{'name':os.path.basename(content.source_path),'resolution': content.frame_sizes, 'length': content.get_task_size()}})}\n")
+            base_info = {
+                'version': self._manifest.VERSION,
+                'type': self._manifest.TYPE,
+                'properties': {
+                    'name': os.path.basename(content.source_path),
+                    'resolution': content.frame_sizes,
+                    'length': content.get_task_size(),
+                },
+            }
+            for key, value in base_info.items():
+                json_item = json.dumps({key: value}, separators=(',', ':'))
+                manifest_file.write(f'{json_item}\n')
+
             for item in content:
-                json_item = json.dumps({'number': item[0], 'pts': item[1], 'checksum': item[2]}, separators=(',', ':'))
+                json_item = json.dumps({
+                    'number': item[0],
+                    'pts': item[1],
+                    'checksum': item[2]
+                }, separators=(',', ':'))
                 manifest_file.write(f"{json_item}\n")
         self._manifest.is_created = True
 
@@ -361,10 +371,10 @@ class ManifestValidator:
             assert self._manifest.VERSION != json.loads(manifest_file.readline())['version']
             assert self._manifest.TYPE != json.loads(manifest_file.readline())['type']
 
-class VManifestValidator(VManifestManager, WorkWithVideo):
+class VideoManifestValidator(VideoManifestManager, WorkWithVideo):
     def __init__(self, **kwargs):
-        WorkWithVideo.__init__(self, **kwargs)
-        VManifestManager.__init__(self, **kwargs)
+        WorkWithVideo.__init__(self, kwargs.pop('source_path'))
+        VideoManifestManager.__init__(self, **kwargs)
 
     def validate_key_frame(self, container, video_stream, key_frame):
         for packet in container.demux(video_stream):
@@ -373,32 +383,28 @@ class VManifestValidator(VManifestManager, WorkWithVideo):
                 return
 
     def validate_seek_key_frames(self):
-        container = self._open_video_container(self.source_path, mode='r')
-        video_stream = self._get_video_stream(container)
-        last_key_frame = None
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
+            last_key_frame = None
 
-        for _, key_frame in self:
-            # check that key frames sequence sorted
-            if last_key_frame and last_key_frame['number'] >= key_frame['number']:
-                raise AssertionError('Invalid saved key frames sequence in manifest file')
-            container.seek(offset=key_frame['pts'], stream=video_stream)
-            self.validate_key_frame(container, video_stream, key_frame)
-            last_key_frame = key_frame
+            for _, key_frame in self:
+                # check that key frames sequence sorted
+                if last_key_frame and last_key_frame['number'] >= key_frame['number']:
+                    raise AssertionError('Invalid saved key frames sequence in manifest file')
+                container.seek(offset=key_frame['pts'], stream=video_stream)
+                self.validate_key_frame(container, video_stream, key_frame)
+                last_key_frame = key_frame
 
-        self._close_video_container(container)
+    def validate_frame_numbers(self):
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
+            # not all videos contain information about numbers of frames
+            frames = video_stream.frames
+            if frames:
+                assert frames == self['properties']['length'], "The uploaded manifest does not match the video"
+                return
 
-    def validate_frames_numbers(self):
-        container = self._open_video_container(self.source_path, mode='r')
-        video_stream = self._get_video_stream(container)
-        # not all videos contain information about numbers of frames
-        frames = video_stream.frames
-        if frames:
-            self._close_video_container(container)
-            assert frames == self['properties']['length'], "The uploaded manifest does not match the video"
-            return
-        self._close_video_container(container)
-
-class IManifestManager(_ManifestManager):
+class ImageManifestManager(_ManifestManager):
     def __init__(self, manifest_path):
         super().__init__(manifest_path)
         setattr(self._manifest, 'TYPE', 'images')
@@ -406,14 +412,18 @@ class IManifestManager(_ManifestManager):
     def create(self, content, **kwargs):
         """ Creating and saving a manifest file"""
         with open(self._manifest.path, 'w') as manifest_file:
-            manifest_file.write(f"{json.dumps({'version': self._manifest.VERSION})}\n")
-            manifest_file.write(f"{json.dumps({'type': self._manifest.TYPE})}\n")
+            base_info = {
+                'version': self._manifest.VERSION,
+                'type': self._manifest.TYPE,
+            }
+            for key, value in base_info.items():
+                json_item = json.dumps({key: value}, separators=(',', ':'))
+                manifest_file.write(f'{json_item}\n')
 
             for item in content:
-                name, ext = os.path.splitext(item[0])
-                json_item = json.dumps({'name': name, 'extension': ext,
-                    'width': item[1], 'height': item[2],
-                    'checksum': item[3]}, separators=(',', ':'))
+                json_item = json.dumps({
+                    key: value for key, value in item.items()
+                }, separators=(',', ':'))
                 manifest_file.write(f"{json_item}\n")
         self._manifest.is_created = True
 
