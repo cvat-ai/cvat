@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,24 +6,13 @@ import os
 import numpy as np
 import sys
 from skimage.measure import find_contours, approximate_polygon
-
-# workaround for tf.placeholder() is not compatible with eager execution
-# https://github.com/tensorflow/tensorflow/issues/18165
 import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
-#import tensorflow.compat.v1 as tf
-#   tf.disable_v2_behavior()
-
-# The directory should contain a clone of
-# https://github.com/matterport/Mask_RCNN repository and
-# downloaded mask_rcnn_coco.h5 model.
 MASK_RCNN_DIR = os.path.abspath(os.environ.get('MASK_RCNN_DIR'))
 if MASK_RCNN_DIR:
     sys.path.append(MASK_RCNN_DIR)  # To find local version of the library
-    sys.path.append(os.path.join(MASK_RCNN_DIR, 'samples/coco'))
-
 from mrcnn import model as modellib
-import coco
+from mrcnn.config import Config
+
 
 class ModelLoader:
     def __init__(self, labels):
@@ -31,12 +20,21 @@ class ModelLoader:
         if COCO_MODEL_PATH is None:
             raise OSError('Model path env not found in the system.')
 
-        class InferenceConfig(coco.CocoConfig):
-            # Set batch size to 1 since we'll be running inference on
-            # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
+        class InferenceConfig(Config):
+            NAME = "coco"
+            NUM_CLASSES = 1 + 80  # COCO has 80 classes
             GPU_COUNT = 1
             IMAGES_PER_GPU = 1
 
+        # Limit gpu memory to 30% to allow for other nuclio gpu functions. Increase fraction as you like
+        import keras.backend.tensorflow_backend as ktf
+        def get_session(gpu_fraction=0.333):
+            gpu_options = tf.GPUOptions(
+            per_process_gpu_memory_fraction=gpu_fraction,
+            allow_growth=True)
+            return tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
+        ktf.set_session(get_session())
         # Print config details
         self.config = InferenceConfig()
         self.config.display()
@@ -54,7 +52,7 @@ class ModelLoader:
         for i in range(len(output["rois"])):
             score = output["scores"][i]
             class_id = output["class_ids"][i]
-            mask = output["masks"][:,:,i]
+            mask = output["masks"][:, :, i]
             if score >= threshold:
                 mask = mask.astype(np.uint8)
                 contours = find_contours(mask, MASK_THRESHOLD)
@@ -75,5 +73,3 @@ class ModelLoader:
                 })
 
         return results
-
-
