@@ -41,13 +41,13 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                                 dispatch(updateProjectAsync(project));
                             },
                         }}
-                        className='cvat-text-color cvat-item-project-name'
+                        className='cvat-text-color cvat-project-name'
                     >
                         {projectName}
                     </Title>
                 </Col>
             </Row>
-            <Row justify='space-between' className='cvat-project-item-description'>
+            <Row justify='space-between' className='cvat-project-description'>
                 <Col>
                     <Text type='secondary'>{'Project '}</Text>
                     <Text type='secondary' className='cvat-item-project-id'>{`#${project.id}`}</Text>
