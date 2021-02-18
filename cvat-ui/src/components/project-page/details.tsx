@@ -41,7 +41,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                                 dispatch(updateProjectAsync(project));
                             },
                         }}
-                        className='cvat-text-color cvat-item-project-name'
+                        className='cvat-text-color cvat-project-name'
                     >
                         {projectName}
                     </Title>
