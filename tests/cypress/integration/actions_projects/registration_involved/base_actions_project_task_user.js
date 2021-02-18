@@ -53,11 +53,11 @@ context('Base actions on the project', () => {
     let projectID = '';
 
     function getProjectID(projectName) {
-        cy.contains('.cvat-item-project-name', projectName)
+        cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
-            .find('.cvat-item-project-id')
+            .should('have.attr', 'cvat-project-id')
             .then(($projectID) => {
-                projectID = $projectID.text().replace(/[^\d]/g, '');
+                projectID = $projectID;
             });
     }
 

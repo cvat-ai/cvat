@@ -29,7 +29,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const [projectName, setProjectName] = useState(project.name);
 
     return (
-        <div className='cvat-project-details'>
+        <div cvat-project-id={project.id} className='cvat-project-details'>
             <Row>
                 <Col>
                     <Title
@@ -49,10 +49,8 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
             </Row>
             <Row justify='space-between' className='cvat-project-description'>
                 <Col>
-                    <Text type='secondary'>{'Project '}</Text>
-                    <Text type='secondary' className='cvat-item-project-id'>{`#${project.id}`}</Text>
-                    <Text type='secondary'>{' created '}</Text>
                     <Text type='secondary'>
+                        {`Project #${project.id} created`}
                         {project.owner ? ` by ${project.owner.username}` : null}
                         {` on ${moment(project.createdDate).format('MMMM Do YYYY')}`}
                     </Text>
