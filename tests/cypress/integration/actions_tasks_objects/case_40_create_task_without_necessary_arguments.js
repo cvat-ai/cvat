@@ -30,9 +30,7 @@ context('Try to create a task without necessary arguments.', () => {
 
     after(() => {
         cy.goToTaskList();
-        cy.getTaskID(taskName).then(($taskID) => {
-            cy.deleteTask(taskName, $taskID);
-        });
+        cy.deleteTask(taskName);
     });
 
     describe(`Testing "${labelName}"`, () => {

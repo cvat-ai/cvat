@@ -32,15 +32,15 @@ context('Changing a default value for an attribute.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Add a label, add text (leave it’s value empty by default) & checkbox attributes.', () => {
-            cy.server().route('PATCH', '/api/v1/tasks/**').as('patchTask');
-            cy.server().route('GET', '/api/v1/tasks**').as('getTask');
+            cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
+            cy.intercept('GET', '/api/v1/tasks**').as('getTask');
             cy.addNewLabel(additionalLabel, additionalAttrsLabel);
-            cy.wait('@patchTask').its('status').should('equal', 200);
-            cy.wait('@getTask').its('status').should('equal', 200);
+            cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
+            cy.wait('@getTask').its('response.statusCode').should('equal', 200);
         });
 
         it('Open label editor. Change default values for text & checkbox attributes, press Done.', () => {
-            cy.server().route('PATCH', '/api/v1/tasks/**').as('patchTask');
+            cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
             cy.get('.cvat-constructor-viewer').within(() => {
                 cy.contains(new RegExp(`^${additionalLabel}$`))
                     .parents('.cvat-constructor-viewer-item')
@@ -64,7 +64,7 @@ context('Changing a default value for an attribute.', () => {
                 cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
             });
             cy.contains('[type="submit"]', 'Done').click();
-            cy.wait('@patchTask').its('status').should('equal', 200);
+            cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
         });
 
         it('Open a job, create an object. Attribute values are correct.', () => {

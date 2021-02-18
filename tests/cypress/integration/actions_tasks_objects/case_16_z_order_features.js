@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -96,7 +96,7 @@ context('Actions on polygon', () => {
         });
 
         it('Second shape is invisible', () => {
-            cy.get('#cvat_canvas_shape_2').should('not.be.visible');
+            cy.get('#cvat_canvas_shape_2').should('not.exist');
         });
 
         it('Increase z-layer with a special switcher', () => {
