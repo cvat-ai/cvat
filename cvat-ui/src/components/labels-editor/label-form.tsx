@@ -374,7 +374,6 @@ export default class LabelForm extends React.Component<Props> {
     private renderLabelNameInput(): JSX.Element {
         const { label, labelNames } = this.props;
         const value = label ? label.name : '';
-        const locked = label ? label.id >= 0 : false;
 
         return (
             <Form.Item
@@ -399,7 +398,7 @@ export default class LabelForm extends React.Component<Props> {
                     },
                 ]}
             >
-                <Input disabled={locked} placeholder='Label name' />
+                <Input placeholder='Label name' />
             </Form.Item>
         );
     }

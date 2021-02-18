@@ -47,8 +47,8 @@ from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, RqStatusSerializer,
-    TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
+    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
+    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
@@ -229,6 +229,8 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
+        if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
+            return ProjectWithoutTaskSerializer
         else:
             return ProjectSerializer
 
