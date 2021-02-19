@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -93,7 +93,9 @@ export class EditHandlerImpl implements EditHandler {
                     (this.editLine as any).draw('point', e);
                 } else {
                     const deltaTreshold = 15;
-                    const delta = Math.sqrt((e.clientX - lastDrawnPoint.x) ** 2 + (e.clientY - lastDrawnPoint.y) ** 2);
+                    const dxsqr = (e.clientX - lastDrawnPoint.x) ** 2;
+                    const dysqr = (e.clientY - lastDrawnPoint.y) ** 2;
+                    const delta = Math.sqrt(dxsqr + dysqr);
                     if (delta > deltaTreshold) {
                         (this.editLine as any).draw('point', e);
                     }
@@ -103,7 +105,7 @@ export class EditHandlerImpl implements EditHandler {
 
         this.editLine = (this.canvas as any).polyline();
         if (this.editData.state.shapeType === 'polyline') {
-            (this.editLine as any).on('drawpoint', (e: CustomEvent): void => {
+            (this.editLine as any).on('drawupdate', (e: CustomEvent): void => {
                 const circle = (e.target as any).instance.remember('_paintHandler').set.last();
                 if (circle) this.setupTrailingPoint(circle);
             });
@@ -208,11 +210,11 @@ export class EditHandlerImpl implements EditHandler {
         }
 
         const cutIndexes1 = oldPoints.reduce(
-            (acc: string[], _: string, i: number) => (i >= stop || i <= start ? [...acc, i] : acc),
+            (acc: number[], _: string, i: number): number[] => (i >= stop || i <= start ? [...acc, i] : acc),
             [],
         );
         const cutIndexes2 = oldPoints.reduce(
-            (acc: string[], _: string, i: number) => (i <= stop && i >= start ? [...acc, i] : acc),
+            (acc: number[], _: string, i: number): number[] => (i <= stop && i >= start ? [...acc, i] : acc),
             [],
         );
 
@@ -223,7 +225,9 @@ export class EditHandlerImpl implements EditHandler {
                 .map((point: string[]): number[] => [+point[0], +point[1]]);
             let length = 0;
             for (let i = 1; i < points.length; i++) {
-                length += Math.sqrt((points[i][0] - points[i - 1][0]) ** 2 + (points[i][1] - points[i - 1][1]) ** 2);
+                const dxsqr = (points[i][0] - points[i - 1][0]) ** 2;
+                const dysqr = (points[i][1] - points[i - 1][1]) ** 2;
+                length += Math.sqrt(dxsqr + dysqr);
             }
 
             return length;

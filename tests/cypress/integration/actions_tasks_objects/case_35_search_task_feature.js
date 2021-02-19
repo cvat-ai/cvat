@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +10,9 @@ context('Search task feature.', () => {
     const caseId = '35';
 
     function searchTask(option, result) {
-        cy.server().route('GET', '/api/v1/tasks**').as('searchTask');
+        cy.intercept('GET', '/api/v1/tasks**').as('searchTask');
         cy.get('.cvat-task-page-search-task').find('[placeholder="Search"]').clear().type(`${option}{Enter}`);
-        cy.wait('@searchTask').its('status').should('equal', 200);
+        cy.wait('@searchTask').its('response.statusCode').should('equal', 200);
         cy.contains('.cvat-item-task-name', taskName).should(result);
     }
 

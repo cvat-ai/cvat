@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,14 +34,12 @@ context('Create and delete a annotation task', () => {
         it('Create a task', () => {
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         });
+
         it('Delete the created task', () => {
-            cy.getTaskID(taskName).then(($taskID) => {
-                cy.deleteTask(taskName, $taskID);
-                taskID = $taskID;
-            });
+            cy.deleteTask(taskName);
         });
         it('Deleted task not exist', () => {
-            cy.contains('strong', `#${taskID}: `)
+            cy.contains('strong', taskName)
                 .parents('.cvat-tasks-list-item')
                 .should('have.attr', 'style', 'pointer-events: none; opacity: 0.5;');
         });
