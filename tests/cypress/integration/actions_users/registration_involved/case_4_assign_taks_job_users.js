@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -44,9 +44,7 @@ context('Multiple users. Assign task, job.', () => {
 
     after(() => {
         cy.login();
-        cy.getTaskID(taskName).then(($taskID) => {
-            cy.deleteTask(taskName, $taskID);
-        });
+        cy.deleteTask(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -129,9 +127,7 @@ context('Multiple users. Assign task, job.', () => {
         it('Third user login. Tries to delete task. The task can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('exist');
-            cy.getTaskID(taskName).then(($taskID) => {
-                cy.deleteTask(taskName, $taskID);
-            });
+            cy.deleteTask(taskName);
             cy.closeNotification('.cvat-notification-notice-delete-task-failed');
             cy.contains('.cvat-item-task-name', taskName)
                 .parents('.cvat-tasks-list-item')

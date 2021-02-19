@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,6 +6,8 @@
 
 const { imageGenerator } = require('../plugins/imageGenerator/addPlugin');
 const { createZipArchive } = require('../plugins/createZipArchive/addPlugin');
+const fs = require('fs');
+
 module.exports = (on, config) => {
     require('@cypress/code-coverage/task')(on, config);
     on('task', { imageGenerator });
@@ -16,13 +18,20 @@ module.exports = (on, config) => {
             return null;
         },
     });
+    on('task', {
+        listFiles(folderName) {
+            return fs.readdirSync(folderName);
+        },
+    });
     // Try to resolve "Cypress failed to make a connection to the Chrome DevTools Protocol"
     // https://github.com/cypress-io/cypress/issues/7450
     on('before:browser:launch', (browser, launchOptions) => {
-        if (browser.name === 'chrome' && browser.isHeadless) {
-            launchOptions.args.push('--disable-gpu');
-            return launchOptions;
+        if (browser.name === 'chrome') {
+            if (browser.isHeadless) {
+                launchOptions.args.push('--disable-gpu');
+            }
         }
+        return launchOptions;
     });
     return config;
 };
