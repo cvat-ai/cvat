@@ -24,11 +24,12 @@ jobs:
             for package_files in `find -maxdepth 2 -name "package.json" -type f`; do
               cd $(dirname $package_files) && npm ci && cd ${{ github.workspace }}
             done
+            npm install eslint-detailed-reporter --save-dev
             mkdir -p eslint_report
 
             echo "ESLint version: "`npx eslint --version`
             echo "The files will be checked: "`echo ${changed_files_eslint}`
-            npx eslint ${changed_files_eslint} --output-file ./eslint_report/eslint_checks.html --format html
+            npx eslint ${changed_files_eslint} -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
           else
             echo "No files with the \"js|ts|jsx|tsx\" extension found"
           fi
