@@ -1,7 +1,7 @@
-name: Linters check
+name: Linter
 on: pull_request
 jobs:
-  linters_check:
+  ESLint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -11,15 +11,7 @@ jobs:
       - id: files
         uses: jitterbit/get-changed-files@v1
 
-      - name: Install node modules and create a report folder
-        run: |
-          npm ci
-          for folders in `find -maxdepth 1 -name "cvat-*" -type d`; do
-            cd $folders && npm ci && cd ..
-          done
-          mkdir -p linter_reports
-
-      - name: ESlint check
+      - name: Run checks
         run: |
           for files in ${{ steps.files.outputs.added_modified }}; do
             extension="${files##*.}"
@@ -27,10 +19,16 @@ jobs:
               changed_files_eslint+=" ${files}"
             fi
           done
-          echo "ESlint version: "`npx eslint --version`
+
           if [[ ! -z ${changed_files_eslint} ]]; then
+            for package_files in `find -maxdepth 2 -name "package.json" -type f`; do
+              cd $(dirname $package_files) && npm ci && cd ${{ github.workspace }}
+            done
+            mkdir -p eslint_report
+
+            echo "ESLint version: "`npx eslint --version`
             echo "The files will be checked: "`echo ${changed_files_eslint}`
-            npx eslint ${changed_files_eslint} --output-file ./linter_reports/eslint_check.html --format html
+            npx eslint ${changed_files_eslint} --output-file ./eslint_report/eslint_checks.html --format html
           else
             echo "No files with the \"js|ts|jsx|tsx\" extension found"
           fi
@@ -39,5 +37,5 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: linter_check_reports
-          path: linter_reports
+          name: eslint_report
+          path: eslint_report
