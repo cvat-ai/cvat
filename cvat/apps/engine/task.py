@@ -485,6 +485,10 @@ def _create_thread(tid, data):
 
     if db_data.stop_frame == 0:
         db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
+    else:
+        # validate stop_frame
+        db_data.stop_frame = min(db_data.stop_frame, \
+            db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
     preview = extractor.get_preview()
     preview.save(db_data.get_preview_path())
