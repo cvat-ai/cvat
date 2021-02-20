@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Check maintanance of popups visibility.', () => {
+context('Check maintenance of popups visibility.', () => {
     const issueId = '2230';
 
     before(() => {
@@ -14,13 +14,13 @@ context('Check maintanance of popups visibility.', () => {
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Open a popover for draw an object and apply "mouseout" event to it. Popover be visible.', () => {
+        it('Open a popover for draw an object and apply the "mouseout" event to it. The popover be visible.', () => {
             cy.interactControlButton('draw-rectangle');
             cy.get('.cvat-draw-rectangle-popover-visible').trigger('mouseout').wait(500);
             cy.get('.cvat-draw-rectangle-popover-visible').should('exist');
         });
 
-        it('Click to another element. Popover hidden.', () => {
+        it('Click to another element. The popover hidden.', () => {
             cy.get('.cvat-canvas-container').click();
             cy.get('.cvat-draw-rectangle-popover-visible').should('not.exist');
         });
