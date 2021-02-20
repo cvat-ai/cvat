@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,15 +35,11 @@ function validateParsedAttribute(attr: Attribute): void {
     }
 
     if (typeof attr.mutable !== 'boolean') {
-        throw new Error(
-            `Attribute: "${attr.name}". Mutable flag must be a boolean value. Got value ${attr.mutable}`,
-        );
+        throw new Error(`Attribute: "${attr.name}". Mutable flag must be a boolean value. Got value ${attr.mutable}`);
     }
 
     if (!Array.isArray(attr.values)) {
-        throw new Error(
-            `Attribute: "${attr.name}". Attribute values must be an array. Got type ${typeof attr.values}`,
-        );
+        throw new Error(`Attribute: "${attr.name}". Attribute values must be an array. Got type ${typeof attr.values}`);
     }
 
     if (!attr.values.length) {
