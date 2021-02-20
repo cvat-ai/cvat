@@ -8,7 +8,7 @@ import marshal
 import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from contextlib import contextmanager, closing
+from contextlib import closing
 from PIL import Image
 from .utils import md5_hash, rotate_image
 
