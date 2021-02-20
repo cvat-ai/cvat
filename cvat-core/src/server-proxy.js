@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -718,6 +718,29 @@
                 return response.data;
             }
 
+            async function getImageContext(tid, frame) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(
+                        `${backendAPI}/tasks/${tid}/data?quality=original&type=context_image&number=${frame}`,
+                        {
+                            proxy: config.proxy,
+                            responseType: 'blob',
+                        },
+                    );
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not get Image Context of the frame for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
             async function getData(tid, chunk) {
                 const { backendAPI } = config;
 
@@ -1053,6 +1076,7 @@
                             getData,
                             getMeta,
                             getPreview,
+                            getImageContext,
                         }),
                         writable: false,
                     },

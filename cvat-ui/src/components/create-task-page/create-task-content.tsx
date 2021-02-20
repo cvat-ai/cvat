@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,11 +17,13 @@ import LabelsEditor from 'components/labels-editor/labels-editor';
 import { Files } from 'components/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
+import ProjectSubsetField from './project-subset-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
 
 export interface CreateTaskData {
     projectId: number | null;
     basic: BaseConfiguration;
+    subset: string;
     advanced: AdvancedConfiguration;
     labels: any[];
     files: Files;
@@ -43,6 +45,7 @@ const defaultState = {
     basic: {
         name: '',
     },
+    subset: '',
     advanced: {
         lfs: false,
         useZipChunks: true,
@@ -86,6 +89,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             notification.info({
                 message: 'The task has been created',
                 btn,
+                className: 'cvat-notification-create-task-success',
             });
 
             if (this.basicConfigurationComponent.current) {
@@ -119,8 +123,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleProjectIdChange = (value: null | number): void => {
+        const { projectId, subset } = this.state;
+
         this.setState({
             projectId: value,
+            subset: value && value === projectId ? subset : '',
         });
     };
 
@@ -133,6 +140,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): void => {
         this.setState({
             advanced: { ...values },
+        });
+    };
+
+    private handleTaskSubsetChange = (value: string): void => {
+        this.setState({
+            subset: value,
         });
     };
 
@@ -149,6 +162,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one label or belong to some project',
+                className: 'cvat-notification-create-task-fail',
             });
             return;
         }
@@ -157,21 +171,24 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one file',
+                className: 'cvat-notification-create-task-fail',
             });
             return;
         }
 
         if (this.basicConfigurationComponent.current) {
-            this.basicConfigurationComponent.current.submit()
+            this.basicConfigurationComponent.current
+                .submit()
                 .then(() => {
                     if (this.advancedConfigurationComponent.current) {
                         return this.advancedConfigurationComponent.current.submit();
                     }
 
-                    return new Promise((resolve): void => {
+                    return new Promise<void>((resolve): void => {
                         resolve();
                     });
-                }).then((): void => {
+                })
+                .then((): void => {
                     const { onCreate } = this.props;
                     onCreate(this.state);
                 })
@@ -179,6 +196,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     notification.error({
                         message: 'Could not create a task',
                         description: error.toString(),
+                        className: 'cvat-notification-create-task-fail',
                     });
                 });
         }
@@ -208,6 +226,29 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 </Col>
             </>
         );
+    }
+
+    private renderSubsetBlock(): JSX.Element | null {
+        const { projectId, subset } = this.state;
+
+        if (projectId !== null) {
+            return (
+                <>
+                    <Col span={24}>
+                        <Text className='cvat-text-color'>Subset:</Text>
+                    </Col>
+                    <Col span={24}>
+                        <ProjectSubsetField
+                            value={subset}
+                            onChange={this.handleTaskSubsetChange}
+                            projectId={projectId}
+                        />
+                    </Col>
+                </>
+            );
+        }
+
+        return null;
     }
 
     private renderLabelsBlock(): JSX.Element {
@@ -289,6 +330,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
                 {this.renderBasicBlock()}
                 {this.renderProjectBlock()}
+                {this.renderSubsetBlock()}
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}

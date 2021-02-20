@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ import Select, { SelectValue, LabeledValue } from 'antd/lib/select';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import Tooltip from 'antd/lib/tooltip';
 import Modal from 'antd/lib/modal';
 import { FilterOutlined } from '@ant-design/icons';
 
@@ -16,6 +15,7 @@ import {
     changeAnnotationsFilters as changeAnnotationsFiltersAction,
     fetchAnnotationsAsync,
 } from 'actions/annotation-actions';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -53,7 +53,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(fetchAnnotationsAsync());
             } else if (
                 Array.isArray(value) &&
-                value.every((element: string | number | LabeledValue): boolean => typeof element === 'string')
+                !value.some((element: string | number | LabeledValue): boolean => typeof element !== 'string')
             ) {
                 dispatch(changeAnnotationsFiltersAction(value as string[]));
                 dispatch(fetchAnnotationsAsync());
@@ -120,7 +120,8 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
         changeAnnotationsFilters,
     } = props;
 
-    const [underCursor, setUnderCursor] = useState(false);
+    const [underCursor, setUnderCursor] = useState<boolean>(false);
+    const [dropdownVisible, setDropdownVisible] = useState<boolean>(true);
 
     return (
         <Select
@@ -128,22 +129,30 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
             allowClear
             value={annotationsFilters}
             mode='tags'
+            disabled={!dropdownVisible}
             style={{ width: '100%' }}
             placeholder={
                 underCursor ? (
                     <>
-                        <Tooltip title='Click to open help' mouseLeaveDelay={0}>
+                        <CVATTooltip title='Click to open help'>
                             <FilterOutlined
-                                onClick={(e: React.MouseEvent) => {
-                                    e.stopPropagation();
+                                style={{ pointerEvents: 'all' }}
+                                onClick={() => {
+                                    // also opens the select dropdown
+                                    // looks like it is done on capturing state
+                                    // so we cannot cancel it somehow via the event handling
+                                    // to avoid it we use also onMouseEnter, onMouseLeave below
                                     Modal.info({
                                         width: 700,
                                         title: 'How to use filters?',
                                         content: filtersHelpModalContent(searchForwardShortcut, searchBackwardShortcut),
+                                        className: 'cvat-annotations-filters-help-modal-window',
                                     });
                                 }}
+                                onMouseEnter={() => setDropdownVisible(false)}
+                                onMouseLeave={() => setDropdownVisible(true)}
                             />
-                        </Tooltip>
+                        </CVATTooltip>
                     </>
                 ) : (
                     <>
@@ -158,7 +167,11 @@ function AnnotationsFiltersInput(props: StateToProps & DispatchToProps): JSX.Ele
         >
             {annotationsFiltersHistory.map(
                 (element: string): JSX.Element => (
-                    <Select.Option key={element} value={element} className='cvat-annotations-filters-input-history-element'>
+                    <Select.Option
+                        key={element}
+                        value={element}
+                        className='cvat-annotations-filters-input-history-element'
+                    >
                         {element}
                     </Select.Option>
                 ),

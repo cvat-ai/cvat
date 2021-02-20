@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -66,7 +66,7 @@ export class RegionSelectorImpl implements RegionSelector {
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 })
                 .addClass('cvat_canvas_shape_region_selection');
-            this.selectionRect.attr({ ...this.startSelectionPoint });
+            this.selectionRect.attr({ ...this.startSelectionPoint, width: 1, height: 1 });
         }
     };
 
@@ -78,7 +78,7 @@ export class RegionSelectorImpl implements RegionSelector {
             } = this.selectionRect.bbox();
             this.selectionRect.remove();
             this.selectionRect = null;
-            if (w === 0 && h === 0) {
+            if (w <= 1 && h <= 1) {
                 this.onRegionSelected([x - offset, y - offset]);
             } else {
                 this.onRegionSelected([x - offset, y - offset, x2 - offset, y2 - offset]);

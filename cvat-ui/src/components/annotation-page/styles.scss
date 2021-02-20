@@ -9,6 +9,10 @@
     overflow: hidden;
 }
 
+.cvat-annotation-layout-content {
+    height: 100%;
+}
+
 .ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
     border-bottom: 1px solid $border-color-1;
@@ -280,15 +284,14 @@
     }
 }
 
-.cvat-annotations-filters-input.ant-select > div {
-    height: 32px;
-
-    > div {
+.cvat-annotations-filters-input.ant-select {
+    > .ant-select-selector {
         height: 32px;
+        overflow: auto;
+    }
 
-        ul {
-            display: flex;
-        }
+    > .ant-select-clear {
+        right: 20px;
     }
 }
 

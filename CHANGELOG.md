@@ -8,25 +8,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.0-alpha] - Unreleased
 
 ### Added
+
 - CVAT-3D: support lidar data on the server side (<https://github.com/openvinotoolkit/cvat/pull/2534>)
+- GPU support for Mask-RCNN and improvement in its deployment time (<https://github.com/openvinotoolkit/cvat/pull/2714>)
+- CVAT-3D: Load all frames corresponding to the job instance
+  (<https://github.com/openvinotoolkit/cvat/pull/2645>)
+- Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
+- [Inside Outside Guidence](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
+  function for interative segmentation
+- Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
+  [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) images were published on DockerHub (<https://github.com/openvinotoolkit/cvat/pull/2766>)
+- Project task subsets (<https://github.com/openvinotoolkit/cvat/pull/2774>)
 
 ### Changed
--
+
+- Updated HTTPS install README section (cleanup and described more robust deploy)
+- Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
+- Bumped nuclio version to 1.5.16 (<https://github.com/openvinotoolkit/cvat/pull/2578>)
+- All methods for interative segmentation accept negative points as well
+- Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
 
 ### Deprecated
+
 -
 
 ### Removed
+
 -
 
 ### Fixed
+- More robust execution of nuclio GPU functions by limiting the GPU memory consumption per worker (<https://github.com/openvinotoolkit/cvat/pull/2714>)
 - Kibana startup initialization (<https://github.com/openvinotoolkit/cvat/pull/2659>)
 - The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
+- SSLCertVerificationError when remote source is used (<https://github.com/openvinotoolkit/cvat/pull/2683>)
+- Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
+- Fixed tasks in project autoannotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
+- Cuboids are missed in annotations statistics (<https://github.com/openvinotoolkit/cvat/pull/2704>)
+- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pul
+- A couple of css-related issues (top bar disappear, wrong arrow position on collapse elements) (<https://github.com/openvinotoolkit/cvat/pull/2736>)
+- Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
+- Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
+- Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
+- Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
 
 ### Security
+
 -
 
-## [1.2.0] - 2020-01-08
+## [1.2.0] - 2021-01-08
 
 ### Fixed
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,6 +53,8 @@ interface Props {
     onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
+    jobInstance: any;
+    hideShowContextImage(): any;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -96,6 +98,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onURLIconClick,
         onUndoClick,
         onRedoClick,
+        jobInstance,
     } = props;
 
     return (
@@ -146,7 +149,12 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     />
                 </Row>
             </Col>
-            <RightGroup workspace={workspace} changeWorkspace={changeWorkspace} showStatistics={showStatistics} />
+            <RightGroup
+                jobInstance={jobInstance}
+                workspace={workspace}
+                changeWorkspace={changeWorkspace}
+                showStatistics={showStatistics}
+            />
         </Row>
     );
 }
