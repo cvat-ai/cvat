@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -45,6 +45,7 @@ const defaultState: NotificationsState = {
             exporting: null,
             deleting: null,
             creating: null,
+            moving: null,
         },
         formats: {
             fetching: null,
@@ -377,6 +378,24 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-update-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.MOVE_TASK_TO_PROJECT_FAILED: {
+            const taskID = action.payload.task.id;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        moving: {
+                            message:
+                                'Could not move ' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a> to project`,
+                            reason: action.payload.error.toString(),
                         },
                     },
                 },
