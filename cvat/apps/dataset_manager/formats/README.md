@@ -896,13 +896,15 @@ taskname.zip/
     └── wider_face_<any_subset_name>_bbx_gt.txt
 ```
 
-- supported annotations: Rectangles, Labels
+- supported annotations: Rectangles (with attributes), Labels
+- supported attributes: `blur`, `expression`, `illumination`, `occlused`, `pose`, `invalid`
 
 #### WIDER Face Loader
 
 Uploaded file: a zip archive of the structure above
 
-- supported annotations: Rectangles, Labels
+- supported annotations: Rectangles (with attributes), Labels
+- supported attributes: `blur`, `expression`, `illumination`, `occlused`, `pose`, `invalid`
 
 ### [VGGFace2](https://github.com/ox-vgg/vgg_face2)<a id="vggface2" />
 
