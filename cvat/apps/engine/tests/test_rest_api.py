@@ -2597,6 +2597,32 @@ class JobAnnotationAPITestCase(APITestCase):
                     ]
                 },
                 {"name": "person"},
+                {
+                    "name": "widerface",
+                    "attributes": [
+                        {
+                            "name": "blur",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1", "2"]
+                        },
+                        {
+                            "name": "expression",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                        {
+                            "name": "illumination",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                    ]
+                },
             ]
         }
 
@@ -3718,6 +3744,30 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "occluded": False,
             }]
 
+            rectangle_shapes_with_wider_attrs = [{
+                "frame": 0,
+                "label_id": task["labels"][2]["id"],
+                "group": 0,
+                "source": "manual",
+                "attributes": [
+                    {
+                        "spec_id": task["labels"][2]["attributes"][0]["id"],
+                        "value": task["labels"][2]["attributes"][0]["default_value"]
+                    },
+                    {
+                        "spec_id": task["labels"][2]["attributes"][1]["id"],
+                        "value": task["labels"][2]["attributes"][1]["values"][1]
+                    },
+                    {
+                        "spec_id": task["labels"][2]["attributes"][2]["id"],
+                        "value": task["labels"][2]["attributes"][2]["default_value"]
+                    }
+                ],
+                "points": [1.0, 2.1, 10.6, 53.22],
+                "type": "rectangle",
+                "occluded": False,
+            }]
+
             rectangle_shapes_wo_attrs = [{
                 "frame": 1,
                 "label_id": task["labels"][1]["id"],
@@ -3773,7 +3823,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             points_wo_attrs = [{
                 "frame": 1,
                 "label_id": task["labels"][1]["id"],
-                "group": 1,
+                "group": 0,
                 "source": "manual",
                 "attributes": [],
                 "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
@@ -3868,11 +3918,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
             elif annotation_format == "WiderFace 1.0":
                 annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = rectangle_shapes_with_wider_attrs
 
             elif annotation_format == "VggFace2 1.0":
                 annotations["tags"] = tags_wo_attrs
-                annotations["shapes"] = rectangle_shapes_wo_attrs \
-                                      + points_wo_attrs
+                annotations["shapes"] = points_wo_attrs \
+                                      + rectangle_shapes_wo_attrs
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
@@ -3970,8 +4021,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 # 7. check annotation
-                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
-                        "CamVid 1.0", "VggFace2 1.0"}:
+                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0", "CamVid 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)

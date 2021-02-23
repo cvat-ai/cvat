@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - CVAT-3D: support lidar data on the server side (<https://github.com/openvinotoolkit/cvat/pull/2534>)
-- Support for [WIDER Face](http://shuoyang1213.me/WIDERFACE/), [VGGFace2](https://github.com/ox-vgg/vgg_face2) formats (<https://github.com/openvinotoolkit/cvat/pull/2731>)
 
 ### Changed
 
