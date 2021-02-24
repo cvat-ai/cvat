@@ -241,7 +241,7 @@ class LambdaQueue:
 
         return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
 
-    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup):
+    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup, max_distance):
         jobs = self.get_jobs()
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
@@ -264,7 +264,8 @@ class LambdaQueue:
                 "task": task,
                 "quality": quality,
                 "cleanup": cleanup,
-                "mapping": mapping
+                "mapping": mapping,
+                "max_distance": max_distance
             })
 
         queue.enqueue_job(job)
@@ -596,6 +597,7 @@ class RequestViewSet(viewsets.ViewSet):
             quality = request.data.get("quality")
             cleanup = request.data.get('cleanup', False)
             mapping = request.data.get('mapping')
+            max_distance = request.data.get('max_distance')
 
             db_task = TaskModel.objects.get(pk=task)
             # Check that the user has enough permissions to modify
@@ -611,7 +613,7 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
         job = queue.enqueue(lambda_func, threshold, task, quality,
-            mapping, cleanup)
+            mapping, cleanup, max_distance)
 
         return job.to_dict()
 
