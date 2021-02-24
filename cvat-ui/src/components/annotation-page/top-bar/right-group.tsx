@@ -17,6 +17,7 @@ import {BrainIcon, FullscreenIcon, InfoIcon} from 'icons';
 interface Props {
     workspace: Workspace;
     predictor: PredictorState;
+    isTrainingActive: boolean;
 
     showStatistics(): void;
 
@@ -29,7 +30,7 @@ interface Props {
 
 function RightGroup(props: Props): JSX.Element {
     const {
-        showStatistics, changeWorkspace, switchPredictor, workspace, predictor, jobInstance,
+        showStatistics, changeWorkspace, switchPredictor, workspace, predictor, jobInstance, isTrainingActive
     } = props;
 
     const formattedScore = `${(predictor.projectScore * 100).toFixed(0)}%`;
@@ -77,18 +78,20 @@ function RightGroup(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-annotation-header-right-group'>
-            <Button
-                type='link'
-                className={predictorClassName}
-                onClick={() => {
-                    switchPredictor(!predictor.enabled);
-                }}
-            >
-                <Tooltip title={predictorTooltip}>
-                    <Icon component={BrainIcon} />
-                </Tooltip>
-                {`mAp ${formattedScore}`}
-            </Button>
+            {isTrainingActive && (
+                <Button
+                    type='link'
+                    className={predictorClassName}
+                    onClick={() => {
+                        switchPredictor(!predictor.enabled);
+                    }}
+                >
+                    <Tooltip title={predictorTooltip}>
+                        <Icon component={BrainIcon}/>
+                    </Tooltip>
+                    {`mAp ${formattedScore}`}
+                </Button>
+            )}
             <Button
                 type='link'
                 className='cvat-annotation-header-button'

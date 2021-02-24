@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {RefObject, useEffect, useRef, useState,} from 'react';
+import React, {RefObject, useContext, useEffect, useRef, useState,} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useHistory} from 'react-router';
 import {Col, Row} from 'antd/lib/grid';
@@ -17,19 +17,18 @@ import {CombinedState} from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import {createProjectAsync} from 'actions/projects-actions';
 import {Switch, Select} from "antd";
+import {CreateProjectContext} from "./create-project-page";
 
 const { Option } = Select;
 
 
 function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }): JSX.Element {
-    const [trainingEnabled, setTrainingEnabled] = useState(false);
-    const [projectClass, setProjectClass] = useState('');
+    const {projectClass, trainingEnabled} = useContext(CreateProjectContext);
 
     useEffect(() => {
-        setTrainingEnabled(false);
-    }, [projectClass])
+        trainingEnabled.set(false);
+    }, [projectClass.value])
 
-    const projectClassesForTraining = ['OD']
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
@@ -51,21 +50,31 @@ function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }):
                 hasFeedback
                 label='Class'
             >
-                <Select value={projectClass} onChange={(v) => setProjectClass(v)}>
+                <Select value={projectClass.value} onChange={(v) => projectClass.set(v)}>
                     <Option value=''>--Not Selected--</Option>
                     <Option value='OD'>Detection</Option>
                 </Select>
             </Form.Item>
 
+
+        </Form>
+    );
+}
+
+function AdaptiveAutoAnnotationForm({formRef}: { formRef: RefObject<FormInstance> }): JSX.Element {
+    const {projectClass, trainingEnabled} = useContext(CreateProjectContext);
+    const projectClassesForTraining = ['OD'];
+    return (
+        <Form layout='vertical' ref={formRef}>
             <Form.Item
                 name={['training', 'enabled']}
                 label='Adaptive auto annotation'
                 initialValue={false}
             >
                 <Switch
-                    disabled={!projectClassesForTraining.includes(projectClass)}
-                    checked={trainingEnabled}
-                    onClick={() => setTrainingEnabled(!trainingEnabled)}
+                    disabled={!projectClassesForTraining.includes(projectClass.value)}
+                    checked={trainingEnabled.value}
+                    onClick={() => trainingEnabled.set(!trainingEnabled.value)}
                 />
             </Form.Item>
             <Form.Item
@@ -85,7 +94,7 @@ function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }):
             >
                 <Input
                     placeholder={'https://example.host'}
-                    disabled={!trainingEnabled}
+                    disabled={!trainingEnabled.value}
                 />
             </Form.Item>
             <Row gutter={16}>
@@ -96,7 +105,7 @@ function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }):
                     >
                         <Input
                             placeholder={'UserName'}
-                            disabled={!trainingEnabled}
+                            disabled={!trainingEnabled.value}
                         />
                     </Form.Item>
                 </Col>
@@ -107,14 +116,13 @@ function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }):
                     >
                         <Input.Password
                             placeholder={'Pa$$w0rd'}
-                            disabled={!trainingEnabled}
+                            disabled={!trainingEnabled.value}
                         />
                     </Form.Item>
                 </Col>
             </Row>
-
         </Form>
-    );
+    )
 }
 
 function AdvanvedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
@@ -147,11 +155,14 @@ export default function CreateProjectContent(): JSX.Element {
     const [projectLabels, setProjectLabels] = useState<any[]>([]);
     const shouldShowNotification = useRef(false);
     const nameFormRef = useRef<FormInstance>(null);
+    const adaptiveAutoAnnotationFormRef = useRef<FormInstance>(null);
     const advancedFormRef = useRef<FormInstance>(null);
     const dispatch = useDispatch();
     const history = useHistory();
 
     const newProjectId = useSelector((state: CombinedState) => state.projects.activities.creates.id);
+
+    const {isTrainingActive} = useContext(CreateProjectContext);
 
     useEffect(() => {
         if (Number.isInteger(newProjectId) && shouldShowNotification.current) {
@@ -198,12 +209,18 @@ export default function CreateProjectContent(): JSX.Element {
 
         dispatch(createProjectAsync(projectData));
     };
+    console.log('isTatiningActive', isTrainingActive.value)
 
     return (
         <Row justify='start' align='middle' className='cvat-create-project-content'>
             <Col span={24}>
                 <NameConfigurationForm formRef={nameFormRef} />
             </Col>
+            {isTrainingActive.value && (
+                <Col span={24}>
+                    <AdaptiveAutoAnnotationForm formRef={adaptiveAutoAnnotationFormRef} />
+                </Col>
+            )}
             <Col span={24}>
                 <Text className='cvat-text-color'>Labels:</Text>
                 <LabelsEditor

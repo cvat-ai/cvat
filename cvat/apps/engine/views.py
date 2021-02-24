@@ -186,6 +186,7 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS':       False,
             'MODELS':          False,
+            'PREDICT':         apps.is_installed('cvat.apps.training')
         }
         if strtobool(os.environ.get("CVAT_ANALYTICS", '0')):
             response['ANALYTICS'] = True

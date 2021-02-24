@@ -54,6 +54,7 @@ interface StateToProps {
     canvasInstance: Canvas;
     forceExit: boolean;
     predictor: PredictorState;
+    isTrainingActive: boolean;
 }
 
 interface DispatchToProps {
@@ -91,6 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             workspace: { autoSave, autoSaveInterval },
         },
         shortcuts: { keyMap, normalizedKeyMap },
+        plugins: {list}
     } = state;
 
     return {
@@ -114,6 +116,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         forceExit,
         predictor,
+        isTrainingActive: list.PREDICT,
     };
 }
 
@@ -509,6 +512,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             searchAnnotations,
             changeWorkspace,
             switchPredictor,
+            isTrainingActive,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -644,6 +648,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                     jobInstance={jobInstance}
+                    isTrainingActive={isTrainingActive}
                 />
             </>
         );

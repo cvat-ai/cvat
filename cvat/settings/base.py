@@ -109,7 +109,6 @@ INSTALLED_APPS = [
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
-    'cvat.apps.training',
     'django_rq',
     'compressor',
     'cacheops',
@@ -129,6 +128,9 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'rest_auth.registration'
 ]
+
+if os.environ.get('ADAPTIVE_AUTO_ANNOTATION', '0') != '0':
+    INSTALLED_APPS.append('cvat.apps.training')
 
 SITE_ID = 1
 

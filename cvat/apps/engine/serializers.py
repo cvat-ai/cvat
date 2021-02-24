@@ -515,6 +515,7 @@ class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
     ANALYTICS = serializers.BooleanField()
     MODELS = serializers.BooleanField()
+    TRAINING = serializers.BooleanField()
 
 class DataMetaSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)

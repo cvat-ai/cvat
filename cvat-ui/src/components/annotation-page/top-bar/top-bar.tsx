@@ -37,6 +37,7 @@ interface Props {
     nextButtonType: string;
     focusFrameInputShortcut: string;
     predictor: PredictorState;
+    isTrainingActive: boolean;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
     showStatistics(): void;
@@ -103,6 +104,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onUndoClick,
         onRedoClick,
         jobInstance,
+        isTrainingActive,
     } = props;
 
     return (
@@ -160,6 +162,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 jobInstance={jobInstance}
                 changeWorkspace={changeWorkspace}
                 showStatistics={showStatistics}
+                isTrainingActive={isTrainingActive}
             />
         </Row>
     );
