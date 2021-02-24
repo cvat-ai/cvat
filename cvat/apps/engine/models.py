@@ -141,7 +141,7 @@ class Data(models.Model):
     def get_manifest_path(self):
         return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
     def get_index_path(self):
-        return os.path.join(self.get_upload_dirname(), 'index')
+        return os.path.join(self.get_upload_dirname(), 'index.json')
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
