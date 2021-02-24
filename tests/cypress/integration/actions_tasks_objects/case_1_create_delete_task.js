@@ -21,7 +21,6 @@ context('Create and delete a annotation task', () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    let taskID = '';
 
     before(() => {
         cy.visit('auth/login');
@@ -41,7 +40,8 @@ context('Create and delete a annotation task', () => {
         it('Deleted task not exist', () => {
             cy.contains('strong', taskName)
                 .parents('.cvat-tasks-list-item')
-                .should('have.attr', 'style', 'pointer-events: none; opacity: 0.5;');
+                .should('have.attr', 'style')
+                .and('contain', 'pointer-events: none; opacity: 0.5;');
         });
     });
 });
