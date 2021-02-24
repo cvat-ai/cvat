@@ -47,14 +47,12 @@ class CLI():
         page = 1
         while True:
             response_json = response.json()
-            output+= response_json['results']
+            output += response_json['results']
             for r in response_json['results']:
                 if use_json_output:
                     log.info(json.dumps(r, indent=4))
                 else:
                     log.info('{id},{name},{status}'.format(**r))
-
-                
             if not response_json['next']:
                 return output
             page += 1
