@@ -129,9 +129,6 @@ context('Multiple users. Assign task, job.', () => {
             cy.contains('strong', taskName).should('exist');
             cy.deleteTask(taskName);
             cy.closeNotification('.cvat-notification-notice-delete-task-failed');
-            cy.contains('.cvat-item-task-name', taskName)
-                .parents('.cvat-tasks-list-item')
-                .should('not.have.attr', 'style');
             cy.openTask(taskName);
             cy.logout(thirdUserName);
         });
