@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CVAT-3D: Load all frames corresponding to the job instance
   (<https://github.com/openvinotoolkit/cvat/pull/2645>)
 - Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
+- CVAT-3D: Visualize 3D point cloud spaces in 3D View, Top View Side View and Front View (<https://github.com/openvinotoolkit/cvat/pull/2768>)
 - [Inside Outside Guidence](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
   function for interative segmentation
 - Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped nuclio version to 1.5.16 (<https://github.com/openvinotoolkit/cvat/pull/2578>)
 - All methods for interative segmentation accept negative points as well
 - Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
+- Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
 
 ### Deprecated
 

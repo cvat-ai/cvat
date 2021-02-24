@@ -45,27 +45,26 @@ export enum Mode {
     INTERACT = 'interact',
 }
 
+export interface Canvas3dDataModel {
+    canvasSize: Size;
+    image: Image | null;
+    imageID: number | null;
+    imageOffset: number;
+    imageSize: Size;
+    drawData: DrawData;
+    mode: Mode;
+    exception: Error | null;
+}
+
 export interface Canvas3dModel {
     mode: Mode;
-
+    data: Canvas3dDataModel;
     setup(frameData: any): void;
-
     isAbleToChangeFrame(): boolean;
-
-    fitCanvas(width: number, height: number): void;
 }
 
 export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
-    private data: {
-        canvasSize: Size;
-        image: Image | null;
-        imageID: number | null;
-        imageOffset: number;
-        imageSize: Size;
-        drawData: DrawData;
-        mode: Mode;
-        exception: Error | null;
-    };
+    public data: Canvas3dDataModel;
 
     public constructor() {
         super();
@@ -92,36 +91,32 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public setup(frameData: any): void {
         if (this.data.imageID !== frameData.number) {
-            if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
-                throw Error(`Canvas is busy. Action: ${this.data.mode}`);
-            }
+            this.data.imageID = frameData.number;
+            frameData
+                .data((): void => {
+                    this.data.image = null;
+                    this.notify(UpdateReasons.IMAGE_CHANGED);
+                })
+                .then((data: Image): void => {
+                    if (frameData.number !== this.data.imageID) {
+                        // already another image
+                        return;
+                    }
+
+                    this.data.imageSize = {
+                        height: frameData.height as number,
+                        width: frameData.width as number,
+                    };
+
+                    this.data.image = data;
+                    this.notify(UpdateReasons.IMAGE_CHANGED);
+                })
+                .catch((exception: any): void => {
+                    this.data.exception = exception;
+                    this.notify(UpdateReasons.DATA_FAILED);
+                    throw exception;
+                });
         }
-
-        this.data.imageID = frameData.number;
-        frameData
-            .data((): void => {
-                this.data.image = null;
-                this.notify(UpdateReasons.IMAGE_CHANGED);
-            })
-            .then((data: Image): void => {
-                if (frameData.number !== this.data.imageID) {
-                    // already another image
-                    return;
-                }
-
-                this.data.imageSize = {
-                    height: frameData.height as number,
-                    width: frameData.width as number,
-                };
-
-                this.data.image = data;
-                this.notify(UpdateReasons.IMAGE_CHANGED);
-            })
-            .catch((exception: any): void => {
-                this.data.exception = exception;
-                this.notify(UpdateReasons.DATA_FAILED);
-                throw exception;
-            });
     }
 
     public set mode(value: Mode) {
@@ -137,17 +132,5 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
-    }
-
-    public fitCanvas(width: number, height: number): void {
-        this.data.canvasSize.height = height;
-        this.data.canvasSize.width = width;
-
-        this.data.imageOffset = Math.floor(
-            Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
-        );
-
-        this.notify(UpdateReasons.FITTED_CANVAS);
-        this.notify(UpdateReasons.OBJECTS_UPDATED);
     }
 }
