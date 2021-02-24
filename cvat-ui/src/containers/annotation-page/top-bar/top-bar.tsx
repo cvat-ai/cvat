@@ -92,7 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             workspace: { autoSave, autoSaveInterval },
         },
         shortcuts: { keyMap, normalizedKeyMap },
-        plugins: {list}
+        plugins: { list },
     } = state;
 
     return {

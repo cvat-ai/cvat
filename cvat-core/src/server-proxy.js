@@ -1024,7 +1024,7 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.get(`${backendAPI}/predict/status?project=${projectId}`)
+                            const response = await Axios.get(`${backendAPI}/predict/status?project=${projectId}`);
                             return response.data;
                         } catch (errorData) {
                             throw generateError(errorData);
@@ -1057,8 +1057,9 @@
 
                     async function request() {
                         try {
-                            const response = await Axios
-                                .get(`${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`);
+                            const response = await Axios.get(
+                                `${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`,
+                            );
                             return response.data;
                         } catch (errorData) {
                             throw generateError(errorData);
@@ -1085,8 +1086,7 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => (!predictAnnotations.latestRequest.fetching ||
-                        predictAnnotations.latestRequest.id !== closureId);
+                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {

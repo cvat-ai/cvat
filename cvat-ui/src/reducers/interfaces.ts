@@ -111,7 +111,7 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
-    PREDICT = 'PREDICT'
+    PREDICT = 'PREDICT',
 }
 
 export type PluginsList = {

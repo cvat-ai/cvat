@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -152,7 +152,14 @@ function AppearanceBlock(props: Props): JSX.Element {
             activeKey={appearanceCollapsed ? [] : ['appearance']}
             className='cvat-objects-appearance-collapse'
         >
-            <Collapse.Panel header={<Text strong className='cvat-objects-appearance-collapse-header'>Appearance</Text>} key='appearance'>
+            <Collapse.Panel
+                header={(
+                    <Text strong className='cvat-objects-appearance-collapse-header'>
+                        Appearance
+                    </Text>
+                )}
+                key='appearance'
+            >
                 <div className='cvat-objects-appearance-content'>
                     <Text type='secondary'>Color by</Text>
                     <Radio.Group

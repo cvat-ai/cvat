@@ -228,7 +228,7 @@
                     training_project: {
                         get: () => data.training_project,
                         set: (training) => {
-                            data.training_project = JSON.parse(JSON.stringify(training))
+                            data.training_project = JSON.parse(JSON.stringify(training));
                         },
                     },
                 }),

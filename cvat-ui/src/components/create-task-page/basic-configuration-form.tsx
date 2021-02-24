@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,10 +26,12 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
     public submit(): Promise<void> {
         const { onSubmit } = this.props;
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then((values: Store): Promise<void> => {
-                onSubmit({ name: values.name });
-                return Promise.resolve();
-            });
+            return this.formRef.current.validateFields().then(
+                (values: Store): Promise<void> => {
+                    onSubmit({ name: values.name });
+                    return Promise.resolve();
+                },
+            );
         }
 
         return Promise.reject(new Error('Form ref is empty'));

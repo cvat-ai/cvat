@@ -1,46 +1,24 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, {createContext, Dispatch, SetStateAction, useState} from 'react';
+import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
+import { connect } from 'react-redux';
 import CreateProjectContent from './create-project-content';
-import {connect} from "react-redux";
-import {CombinedState} from "../../reducers/interfaces";
-
-interface IState<T> {
-    value: T;
-    set?: Dispatch<SetStateAction<T>>;
-}
-function getDefaultState<T>(value: T) {
-    return {
-        value,
-    }
-}
-
-interface ICreateProjectContext {
-    projectClass: IState<string>;
-    trainingEnabled: IState<boolean>;
-    isTrainingActive: IState<boolean>;
-}
-
-const defaultState: ICreateProjectContext = {
-    projectClass: getDefaultState<string>(''),
-    trainingEnabled: getDefaultState<boolean>(false),
-    isTrainingActive: getDefaultState<boolean>(false),
-}
-
-export const CreateProjectContext = createContext<ICreateProjectContext>(defaultState);
+import { CombinedState } from '../../reducers/interfaces';
+import CreateProjectContext, { ICreateProjectContext } from './create-project.context';
 
 function CreateProjectPageComponent(props: StateToProps): JSX.Element {
-    const [projectClass , setProjectClass] = useState('');
+    const { isTrainingActive } = props;
+    const [projectClass, setProjectClass] = useState('');
     const [trainingEnabled, setTrainingEnabled] = useState(false);
-    const [isTrainingActive, _] = useState(props.isTrainingActive);
+    const [isTrainingActiveState] = useState(isTrainingActive);
 
-    const defaultContext:ICreateProjectContext = {
+    const defaultContext: ICreateProjectContext = {
         projectClass: {
             value: projectClass,
             set: setProjectClass,
@@ -50,11 +28,9 @@ function CreateProjectPageComponent(props: StateToProps): JSX.Element {
             set: setTrainingEnabled,
         },
         isTrainingActive: {
-            value: isTrainingActive,
-        }
+            value: isTrainingActiveState,
+        },
     };
-    console.log(props.isTrainingActive)
-
     return (
         <CreateProjectContext.Provider value={defaultContext}>
             <Row justify='center' align='top' className='cvat-create-task-form-wrapper'>
@@ -64,7 +40,6 @@ function CreateProjectPageComponent(props: StateToProps): JSX.Element {
                 </Col>
             </Row>
         </CreateProjectContext.Provider>
-
     );
 }
 
@@ -73,10 +48,9 @@ interface StateToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    console.log(state.plugins.list)
     return {
         isTrainingActive: state.plugins.list.PREDICT,
-    }
+    };
 }
 
 export default connect(mapStateToProps)(CreateProjectPageComponent);

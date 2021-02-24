@@ -1,33 +1,34 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, {RefObject, useContext, useEffect, useRef, useState,} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {useHistory} from 'react-router';
-import {Col, Row} from 'antd/lib/grid';
+import React, {
+    RefObject, useContext, useEffect, useRef, useState,
+} from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
+import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import Form, {FormInstance} from 'antd/lib/form';
+import Form, { FormInstance } from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
 import patterns from 'utils/validation-patterns';
-import {CombinedState} from 'reducers/interfaces';
+import { CombinedState } from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
-import {createProjectAsync} from 'actions/projects-actions';
-import {Switch, Select} from "antd";
-import {CreateProjectContext} from "./create-project-page";
+import { createProjectAsync } from 'actions/projects-actions';
+import { Switch, Select } from 'antd';
+import CreateProjectContext, { ICreateProjectContext } from './create-project.context';
 
 const { Option } = Select;
 
-
-function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }): JSX.Element {
-    const {projectClass, trainingEnabled} = useContext(CreateProjectContext);
+function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
+    const { projectClass, trainingEnabled } = useContext<ICreateProjectContext>(CreateProjectContext);
 
     useEffect(() => {
         trainingEnabled.set(false);
-    }, [projectClass.value])
+    }, [projectClass.value]);
 
     return (
         <Form layout='vertical' ref={formRef}>
@@ -42,35 +43,25 @@ function NameConfigurationForm({formRef}: { formRef: RefObject<FormInstance> }):
                     },
                 ]}
             >
-                <Input/>
+                <Input />
             </Form.Item>
 
-            <Form.Item
-                name='project_class'
-                hasFeedback
-                label='Class'
-            >
+            <Form.Item name='project_class' hasFeedback label='Class'>
                 <Select value={projectClass.value} onChange={(v) => projectClass.set(v)}>
                     <Option value=''>--Not Selected--</Option>
                     <Option value='OD'>Detection</Option>
                 </Select>
             </Form.Item>
-
-
         </Form>
     );
 }
 
-function AdaptiveAutoAnnotationForm({formRef}: { formRef: RefObject<FormInstance> }): JSX.Element {
-    const {projectClass, trainingEnabled} = useContext(CreateProjectContext);
+function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
+    const { projectClass, trainingEnabled } = useContext(CreateProjectContext);
     const projectClassesForTraining = ['OD'];
     return (
         <Form layout='vertical' ref={formRef}>
-            <Form.Item
-                name={['training', 'enabled']}
-                label='Adaptive auto annotation'
-                initialValue={false}
-            >
+            <Form.Item name={['training', 'enabled']} label='Adaptive auto annotation' initialValue={false}>
                 <Switch
                     disabled={!projectClassesForTraining.includes(projectClass.value)}
                     checked={trainingEnabled.value}
@@ -92,37 +83,22 @@ function AdaptiveAutoAnnotationForm({formRef}: { formRef: RefObject<FormInstance
                     },
                 ]}
             >
-                <Input
-                    placeholder={'https://example.host'}
-                    disabled={!trainingEnabled.value}
-                />
+                <Input placeholder='https://example.host' disabled={!trainingEnabled.value} />
             </Form.Item>
             <Row gutter={16}>
                 <Col span={12}>
-                    <Form.Item
-                        name={['training', 'username']}
-                        label='Username'
-                    >
-                        <Input
-                            placeholder={'UserName'}
-                            disabled={!trainingEnabled.value}
-                        />
+                    <Form.Item name={['training', 'username']} label='Username'>
+                        <Input placeholder='UserName' disabled={!trainingEnabled.value} />
                     </Form.Item>
                 </Col>
                 <Col span={12}>
-                    <Form.Item
-                        name={['training', 'password']}
-                        label='Password'
-                    >
-                        <Input.Password
-                            placeholder={'Pa$$w0rd'}
-                            disabled={!trainingEnabled.value}
-                        />
+                    <Form.Item name={['training', 'password']} label='Password'>
+                        <Input.Password placeholder='Pa$$w0rd' disabled={!trainingEnabled.value} />
                     </Form.Item>
                 </Col>
             </Row>
         </Form>
-    )
+    );
 }
 
 function AdvanvedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
@@ -162,7 +138,7 @@ export default function CreateProjectContent(): JSX.Element {
 
     const newProjectId = useSelector((state: CombinedState) => state.projects.activities.creates.id);
 
-    const {isTrainingActive} = useContext(CreateProjectContext);
+    const { isTrainingActive } = useContext(CreateProjectContext);
 
     useEffect(() => {
         if (Number.isInteger(newProjectId) && shouldShowNotification.current) {
@@ -195,7 +171,6 @@ export default function CreateProjectContent(): JSX.Element {
             projectData.project_class = basicValues.project_class;
             projectData.training_project = {};
             for (const [field, value] of Object.entries(basicValues.training)) {
-                console.log(field, value)
                 projectData.training_project[field] = value;
             }
             for (const [field, value] of Object.entries(advancedValues)) {
@@ -209,7 +184,6 @@ export default function CreateProjectContent(): JSX.Element {
 
         dispatch(createProjectAsync(projectData));
     };
-    console.log('isTatiningActive', isTrainingActive.value)
 
     return (
         <Row justify='start' align='middle' className='cvat-create-project-content'>
