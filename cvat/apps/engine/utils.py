@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -74,7 +74,7 @@ def av_scan_paths(*paths):
     if 'yes' == os.environ.get('CLAM_AV'):
         command = ['clamscan', '--no-summary', '-i', '-o']
         command.extend(paths)
-        res = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # nosec
         if res.returncode:
             raise ValidationError(res.stdout)
 
@@ -94,4 +94,4 @@ def rotate_image(image, angle):
 def md5_hash(frame):
     if isinstance(frame, VideoFrame):
         frame = frame.to_image()
-    return hashlib.md5(frame.tobytes()).hexdigest()
+    return hashlib.md5(frame.tobytes()).hexdigest() # nosec

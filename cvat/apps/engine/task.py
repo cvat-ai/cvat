@@ -197,7 +197,7 @@ def _download_data(urls, upload_dir):
 
         req = urlrequest.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         try:
-            with urlrequest.urlopen(req) as fp, open(os.path.join(upload_dir, name), 'wb') as tfp:
+            with urlrequest.urlopen(req) as fp, open(os.path.join(upload_dir, name), 'wb') as tfp: # nosec
                 while True:
                     block = fp.read(8192)
                     if not block:

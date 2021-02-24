@@ -4,7 +4,6 @@
 
 import av
 import json
-import marshal
 import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -207,7 +206,7 @@ class _Manifest:
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
 class _Index:
-    FILE_NAME = 'index'
+    FILE_NAME = 'index.json'
 
     def __init__(self, path):
         assert path and os.path.isdir(path), 'No index directory path'
@@ -219,12 +218,13 @@ class _Index:
         return self._path
 
     def dump(self):
-        with open(self._path, 'wb') as index_file:
-            marshal.dump(self._index, index_file, 4)
+        with open(self._path, 'w') as index_file:
+            json.dump(self._index, index_file,  separators=(',', ':'))
 
     def load(self):
-        with open(self._path, 'rb') as index_file:
-            self._index = marshal.load(index_file)
+        with open(self._path, 'r') as index_file:
+            self._index = json.load(index_file,
+                object_hook=lambda d: {int(k): v for k, v in d.items()})
 
     def create(self, manifest, skip):
         assert os.path.exists(manifest), 'A manifest file not exists, index cannot be created'
