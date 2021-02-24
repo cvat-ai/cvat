@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -396,6 +396,9 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
         }
         if (data.advanced.copyData) {
             description.copy_data = data.advanced.copyData;
+        }
+        if (data.subset) {
+            description.subset = data.subset;
         }
 
         const taskInstance = new cvat.classes.Task(description);

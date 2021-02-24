@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import CameraIcon from '@ant-design/icons/CameraOutlined';
-import Tooltip from 'antd/lib/tooltip';
-import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 import React from 'react';
+import CameraIcon from '@ant-design/icons/CameraOutlined';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
+import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 
 interface Props {
@@ -19,7 +20,7 @@ function PhotoContextControl(props: Props): JSX.Element {
     const { activeControl, contextImageHide, hideShowContextImage } = props;
 
     return (
-        <Tooltip title='Photo context show/hide' placement='right' mouseLeaveDelay={0}>
+        <CVATTooltip title='Photo context show/hide' placement='right'>
             <CameraIcon
                 className={`cvat-move-control
     cvat-control-side-bar-icon-size ${
@@ -29,7 +30,7 @@ function PhotoContextControl(props: Props): JSX.Element {
                     hideShowContextImage(!contextImageHide);
                 }}
             />
-        </Tooltip>
+        </CVATTooltip>
     );
 }
 

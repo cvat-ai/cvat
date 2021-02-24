@@ -5,18 +5,18 @@
 import pjson from '../../package.json';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
 import { Canvas3dModel, Canvas3dModelImpl, Mode } from './canvas3dModel';
-import { Canvas3dView, Canvas3dViewImpl } from './canvas3dView';
+import { Canvas3dView, Canvas3dViewImpl, ViewsDOM } from './canvas3dView';
 import { Master } from './master';
 
 const Canvas3dVersion = pjson.version;
 
 interface Canvas3d {
-    html(): any;
+    html(): ViewsDOM;
     setup(frameData: any): void;
     isAbleToChangeFrame(): boolean;
-    fitCanvas(): void;
     mode(): Mode;
     render(): void;
+    keyControls(keys: KeyboardEvent): void;
 }
 
 class Canvas3dImpl implements Canvas3d {
@@ -30,8 +30,12 @@ class Canvas3dImpl implements Canvas3d {
         this.view = new Canvas3dViewImpl(this.model, this.controller);
     }
 
-    public html(): any {
+    public html(): ViewsDOM {
         return this.view.html();
+    }
+
+    public keyControls(keys: KeyboardEvent): void {
+        this.view.keyControls(keys);
     }
 
     public render(): void {
@@ -48,10 +52,6 @@ class Canvas3dImpl implements Canvas3d {
 
     public isAbleToChangeFrame(): boolean {
         return this.model.isAbleToChangeFrame();
-    }
-
-    public fitCanvas(): void {
-        this.model.fitCanvas(this.view.html().clientWidth, this.view.html().clientHeight);
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,6 +32,7 @@
                 bug_tracker: undefined,
                 created_date: undefined,
                 updated_date: undefined,
+                task_subsets: undefined,
                 training_project: undefined,
                 project_class: undefined,
             };
@@ -57,6 +58,13 @@
                     const taskInstance = new Task(task);
                     data.tasks.push(taskInstance);
                 }
+            }
+            if (!data.task_subsets && data.tasks.length) {
+                const subsetsSet = new Set();
+                for (const task in data.tasks) {
+                    if (task.subset) subsetsSet.add(task.subset);
+                }
+                data.task_subsets = Array.from(subsetsSet);
             }
 
             data.training_project = JSON.parse(JSON.stringify(initialData.training_project));
@@ -204,6 +212,17 @@
                      */
                     tasks: {
                         get: () => [...data.tasks],
+                    },
+                    /**
+                     * Subsets array for linked tasks
+                     * @name subsets
+                     * @type {string[]}
+                     * @memberof module:API.cvat.classes.Project
+                     * @readonly
+                     * @instance
+                     */
+                    subsets: {
+                        get: () => [...data.task_subsets],
                     },
 
                     training_project: {

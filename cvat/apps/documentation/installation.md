@@ -17,6 +17,7 @@
         - [1. Make the proxy listen on 80 and 443 ports](#1-make-the-proxy-listen-on-80-and-443-ports)
         - [2. Issue a certificate and run HTTPS versions with `acme.sh` helper](#2-issue-a-certificate-and-run-https-versions-with-acmesh-helper)
           - [Create certificate files using an ACME challenge on docker host](#create-certificate-files-using-an-acme-challenge-on-docker-host)
+
 # Quick installation guide
 
 Before you can use CVAT, you’ll need to get it installed. The document below
@@ -81,18 +82,18 @@ server. Proxy is an advanced topic and it is not covered by the guide.
   cd cvat
   ```
 
-- Build docker images by default. It will take some time to download public
-  docker image ubuntu:16.04 and install all necessary ubuntu packages to run
-  CVAT server.
-
-  ```bash
-  docker-compose build
-  ```
-
-- Run docker containers. It will take some time to download public docker
-  images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
+- Run docker containers. It will take some time to download the latest CVAT
+  release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```sh
+  docker-compose up -d
+  ```
+
+- Alternative: if you want to build the images locally with unreleased changes
+  run the following command. It will take some time to build CVAT images.
+
+  ```bash
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
 
@@ -149,23 +150,23 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
 
-  ```bash
+  ```sh
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
 
-- Build docker images by default. It will take some time to download public
-  docker image ubuntu:16.04 and install all necessary ubuntu packages to run
-  CVAT server.
-
-  ```bash
-  docker-compose build
-  ```
-
-- Run docker containers. It will take some time to download public docker
-  images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
+- Run docker containers. It will take some time to download the latest CVAT
+  release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```sh
+  docker-compose up -d
+  ```
+
+- Alternative: if you want to build the images locally with unreleased changes
+  run the following command. It will take some time to build CVAT images.
+
+  ```sh
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
 
@@ -221,18 +222,18 @@ server. Proxy is an advanced topic and it is not covered by the guide.
   cd cvat
   ```
 
-- Build docker images by default. It will take some time to download public
-  docker image ubuntu:16.04 and install all necessary ubuntu packages to run
-  CVAT server.
-
-  ```bash
-  docker-compose build
-  ```
-
-- Run docker containers. It will take some time to download public docker
-  images like postgres:10.3-alpine, redis:4.0.5-alpine and create containers.
+- Run docker containers. It will take some time to download the latest CVAT
+  release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```sh
+  docker-compose up -d
+  ```
+
+- Alternative: if you want to build the images locally with unreleased changes
+  run the following command. It will take some time to build CVAT images.
+
+  ```sh
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
 
@@ -290,7 +291,7 @@ docker-compose -f docker-compose.yml \
 
 ### Semi-automatic and automatic annotation
 
-Please follow [instructions](/cvat/apps/documentation/installation_automatic_annotation.md)
+Please follow this [guide](/cvat/apps/documentation/installation_automatic_annotation.md).
 
 ### Stop all containers
 
@@ -510,6 +511,7 @@ rm -r /root/.acme.sh/CVAT.example.com
 ```
 
 ####### Issue a production certificate
+
 ```
 ~/.acme.sh/acme.sh --issue -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
 ```

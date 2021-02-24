@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Label constructor. Color label.', () => {
+context('Label constructor. Color label. Label name editing', () => {
     const caseId = '31';
     const labelColor = {
         redHex: 'ff0000',
@@ -21,6 +21,7 @@ context('Label constructor. Color label.', () => {
     const colorRed = 'Color red';
     const colorGreen = 'Color green';
     const colorBlue = 'Color blue';
+    const colorYellow = 'Color yellow';
     const labelAdditionalAttrs = false;
 
     const createRectangleShape2Points = {
@@ -99,7 +100,7 @@ context('Label constructor. Color label.', () => {
                 .and('contain', `background-color: rgba(${labelColor.blueRgb}`);
         });
 
-        it('Save job and change color for a label.', () => {
+        it('Save job and change color and name for a label.', () => {
             cy.saveJob();
             cy.goToTaskList();
             cy.openTask(taskName);
@@ -108,16 +109,20 @@ context('Label constructor. Color label.', () => {
             });
             cy.get('.cvat-change-task-label-color-button').click();
             cy.changeColorViaBadge(labelColor.yellowHex);
+            cy.get('[placeholder="Label name"]').clear().type(colorYellow); // Check PR 2806
             cy.contains('button', 'Done').click();
         });
 
-        it('Open the job. Existing objects with this label have changed their color.', () => {
+        it('Open the job. Existing objects with this label have changed their color and name.', () => {
             cy.openJob(0, false);
-            cy.getObjectIdNumberByLabelName(colorRed).then((objectId) => {
+            cy.getObjectIdNumberByLabelName(colorYellow).then((objectId) => {
                 cy.get(`#cvat_canvas_shape_${objectId}`).should('have.attr', 'stroke', `#${labelColor.yellowHex}`);
                 cy.get(`#cvat-objects-sidebar-state-item-${objectId}`)
                     .should('have.attr', 'style')
                     .and('contain', `background-color: rgba(${labelColor.yellowRgb}`);
+                cy.get(`#cvat-objects-sidebar-state-item-${objectId}`).within(() => {
+                    cy.get('.cvat-objects-sidebar-state-item-label-selector').should('have.text', colorYellow);
+                });
             });
         });
     });

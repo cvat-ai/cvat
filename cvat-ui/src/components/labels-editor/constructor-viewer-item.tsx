@@ -1,12 +1,12 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { EditOutlined, CloseOutlined } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import consts from 'consts';
 import { Label } from './common';
 
@@ -25,7 +25,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
     return (
         <div style={{ background: color || consts.NEW_LABEL_COLOR }} className='cvat-constructor-viewer-item'>
             <Text>{label.name}</Text>
-            <Tooltip title='Update attributes' mouseLeaveDelay={0}>
+            <CVATTooltip title='Update attributes'>
                 <span
                     role='button'
                     tabIndex={0}
@@ -34,9 +34,9 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                 >
                     <EditOutlined />
                 </span>
-            </Tooltip>
+            </CVATTooltip>
             {label.id < 0 && (
-                <Tooltip title='Delete label' mouseLeaveDelay={0}>
+                <CVATTooltip title='Delete label'>
                     <span
                         role='button'
                         tabIndex={0}
@@ -45,7 +45,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     >
                         <CloseOutlined />
                     </span>
-                </Tooltip>
+                </CVATTooltip>
             )}
         </div>
     );

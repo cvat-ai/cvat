@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -47,7 +47,7 @@ export default function LoadSubmenu(props: Props): JSX.Element {
                                         return false;
                                     }}
                                 >
-                                    <Button block type='link' disabled={disabled}>
+                                    <Button block type='link' disabled={disabled} className='cvat-menu-load-submenu-item-button'>
                                         <UploadOutlined />
                                         <Text>{loader.name}</Text>
                                         {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
