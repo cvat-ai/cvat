@@ -62,6 +62,7 @@ For more information about supported formats look at the
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
 | [ImageNet](http://www.image-net.org)                                          | X      | X      |
 | [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
+| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                    | X      | X      |
 
 ## Deep learning serverless functions for automatic labeling
 
