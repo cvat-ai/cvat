@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,12 +9,14 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
     return (props: PopoverProps): JSX.Element => {
         const [initialized, setInitialized] = useState<boolean>(false);
         const [visible, setVisible] = useState<boolean>(false);
-        let { overlayClassName } = props;
-        if (typeof overlayClassName !== 'string') overlayClassName = '';
+        const { overlayClassName, ...rest } = props;
+        const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
 
-        overlayClassName += ` cvat-${popoverType}-popover`;
+        const popoverClassName = `cvat-${popoverType}-popover`;
+        overlayClassNames.push(popoverClassName);
         if (visible) {
-            overlayClassName += ` cvat-${popoverType}-popover-visible`;
+            const visiblePopoverClassName = `cvat-${popoverType}-popover-visible`;
+            overlayClassNames.push(visiblePopoverClassName);
         }
 
         const callback = (event: Event): void => {
@@ -25,10 +27,19 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
 
         return (
             <WrappedComponent
-                {...props}
-                overlayClassName={overlayClassName.trim()}
+                {...rest}
+                trigger={visible ? 'click' : 'hover'}
+                overlayClassName={overlayClassNames.join(' ').trim()}
                 onVisibleChange={(_visible: boolean) => {
-                    if (!_visible) setVisible(false);
+                    if (!_visible) {
+                        setVisible(false);
+                    } else {
+                        // Hide other popovers
+                        const element = window.document.getElementsByClassName(`${popoverClassName}`)[0];
+                        if (element) {
+                            element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                        }
+                    }
                     if (!initialized) {
                         const self = window.document.getElementsByClassName(`cvat-${popoverType}-popover`)[0];
                         self?.addEventListener('animationend', callback);

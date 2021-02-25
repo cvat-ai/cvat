@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,6 +21,7 @@ const NEW_LABEL_COLOR = '#b3b3b3';
 const LATEST_COMMENTS_SHOWN_QUICK_ISSUE = 3;
 const QUICK_ISSUE_INCORRECT_POSITION_TEXT = 'Wrong position';
 const QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT = 'Wrong attribute';
+const DEFAULT_PROJECT_SUBSETS = ['Train', 'Test', 'Validation'];
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -39,4 +40,5 @@ export default {
     LATEST_COMMENTS_SHOWN_QUICK_ISSUE,
     QUICK_ISSUE_INCORRECT_POSITION_TEXT,
     QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
+    DEFAULT_PROJECT_SUBSETS,
 };

@@ -122,10 +122,10 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
 ### DL models as serverless functions
 
-Install [nuclio platform](https://github.com/nuclio/nuclio):
+Follow this [guide](/cvat/apps/documentation/installation_automatic_annotation.md) to install Nuclio:
 
 - You have to install `nuctl` command line tool to build and deploy serverless
-  functions. Download [the latest release](https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md#download).
+  functions.
 - The simplest way to explore Nuclio is to run its graphical user interface (GUI)
   of the Nuclio dashboard. All you need in order to run the dashboard is Docker. See
   [nuclio documentation](https://github.com/nuclio/nuclio#quick-start-steps)

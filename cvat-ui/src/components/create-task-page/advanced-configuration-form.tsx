@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,12 +7,12 @@ import { Row, Col } from 'antd/lib/grid';
 import { PercentageOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Checkbox from 'antd/lib/checkbox';
-import Tooltip from 'antd/lib/tooltip';
 import Form, { FormInstance, RuleObject, RuleRender } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
-
-import patterns from 'utils/validation-patterns';
 import { Store } from 'antd/lib/form/interface';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
+import patterns from 'utils/validation-patterns';
 
 export interface AdvancedConfiguration {
     bugTracker?: string;
@@ -176,7 +176,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderImageQuality(): JSX.Element {
         return (
-            <Tooltip title='Defines images compression level' mouseLeaveDelay={0}>
+            <CVATTooltip title='Defines images compression level'>
                 <Form.Item
                     label='Image quality'
                     name='imageQuality'
@@ -190,13 +190,13 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 >
                     <Input size='large' type='number' min={5} max={100} suffix={<PercentageOutlined />} />
                 </Form.Item>
-            </Tooltip>
+            </CVATTooltip>
         );
     }
 
     private renderOverlap(): JSX.Element {
         return (
-            <Tooltip title='Defines a number of intersected frames between different segments' mouseLeaveDelay={0}>
+            <CVATTooltip title='Defines a number of intersected frames between different segments'>
                 <Form.Item
                     label='Overlap size'
                     name='overlapSize'
@@ -205,17 +205,17 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 >
                     <Input size='large' type='number' min={0} />
                 </Form.Item>
-            </Tooltip>
+            </CVATTooltip>
         );
     }
 
     private renderSegmentSize(): JSX.Element {
         return (
-            <Tooltip title='Defines a number of frames in a segment' mouseLeaveDelay={0}>
+            <CVATTooltip title='Defines a number of frames in a segment'>
                 <Form.Item label='Segment size' name='segmentSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
                     <Input size='large' type='number' min={1} />
                 </Form.Item>
-            </Tooltip>
+            </CVATTooltip>
         );
     }
 
@@ -329,7 +329,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderChunkSize(): JSX.Element {
         return (
-            <Tooltip
+            <CVATTooltip
                 title={(
                     <>
                         Defines a number of frames to be packed in a chunk when send from client to server. Server
@@ -346,12 +346,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         More: 1 - 4
                     </>
                 )}
-                mouseLeaveDelay={0}
             >
                 <Form.Item label='Chunk size' name='dataChunkSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
                     <Input size='large' type='number' />
                 </Form.Item>
-            </Tooltip>
+            </CVATTooltip>
         );
     }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -326,7 +326,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
-                                <a id='downloadAnchor' style={{ display: 'none' }} download />
+                                <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                             </Layout.Content>
                         </Layout>
                     </GlobalErrorBoundary>

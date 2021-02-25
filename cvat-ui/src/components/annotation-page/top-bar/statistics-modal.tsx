@@ -5,11 +5,12 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { QuestionCircleOutlined } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     collecting: boolean;
@@ -76,12 +77,12 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     });
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
-        <Tooltip title='Shapes / Tracks' mouseLeaveDelay={0}>
+        <CVATTooltip title='Shapes / Tracks'>
             <Text strong style={{ marginRight: 5 }}>
                 {title}
             </Text>
             <QuestionCircleOutlined className='cvat-info-circle-icon' />
-        </Tooltip>
+        </CVATTooltip>
     );
 
     const columns = [
