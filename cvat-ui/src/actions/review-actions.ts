@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -97,6 +97,12 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
         },
         review: { activeReview, newIssuePosition },
     } = state;
+
+    if (!newIssuePosition) {
+        // do not create issue if position was not specified
+        // for example in cases when we try to create several issues for one object
+        return;
+    }
 
     try {
         const issue = await activeReview.openIssue({

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -97,6 +97,20 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case ReviewActionTypes.START_ISSUE: {
             const { position } = action.payload;
+            const { frameIssues } = state;
+
+            const epsilon = 5; // px
+            for (const issue of frameIssues) {
+                if (
+                    issue.position.length === position.length &&
+                    issue.position.every((val: number, index: number) => Math.abs(val - position[index]) < epsilon)
+                ) {
+                    return {
+                        ...state,
+                    };
+                }
+            }
+
             return {
                 ...state,
                 newIssuePosition: position,
