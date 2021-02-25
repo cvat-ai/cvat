@@ -1603,7 +1603,7 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
         self.assertEqual(response.data["overlap"], data.get("overlap", None))
         self.assertEqual(response.data["segment_size"], data.get("segment_size", 0))
-        self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
+        self.assertEqual(response.data["status"], StatusChoice.PREPROCESSING)
         self.assertListEqual(
             [label["name"] for label in data.get("labels")],
             [label["name"] for label in response.data["labels"]]
