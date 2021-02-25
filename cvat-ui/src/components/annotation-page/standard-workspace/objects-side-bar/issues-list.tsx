@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,12 +8,12 @@ import { CombinedState } from 'reducers/interfaces';
 import {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
 } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 import Alert from 'antd/lib/alert';
 import { Row, Col } from 'antd/lib/grid';
 
 import { changeFrameAsync } from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -54,17 +54,17 @@ export default function LabelsListComponent(): JSX.Element {
             <div className='cvat-objects-sidebar-issues-list-header'>
                 <Row justify='start' align='middle'>
                     <Col>
-                        <Tooltip title='Find the previous frame with issues'>
+                        <CVATTooltip title='Find the previous frame with issues'>
                             <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dinamicLeftProps} />
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                     <Col offset={1}>
-                        <Tooltip title='Find the next frame with issues'>
+                        <CVATTooltip title='Find the next frame with issues'>
                             <RightOutlined className='cvat-issues-sidebar-next-frame' {...dinamicRightProps} />
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                     <Col offset={3}>
-                        <Tooltip title='Show/hide all the issues'>
+                        <CVATTooltip title='Show/hide all the issues'>
                             {issuesHidden ? (
                                 <EyeInvisibleFilled
                                     className='cvat-issues-sidebar-hidden-issues'
@@ -76,7 +76,7 @@ export default function LabelsListComponent(): JSX.Element {
                                     onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))}
                                 />
                             )}
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                 </Row>
             </div>
@@ -84,6 +84,7 @@ export default function LabelsListComponent(): JSX.Element {
                 {frameIssues.map(
                     (frameIssue: any): JSX.Element => (
                         <div
+                            id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
                             className='cvat-objects-sidebar-issue-item'
                             onMouseEnter={() => {
                                 const element = window.document.getElementById(

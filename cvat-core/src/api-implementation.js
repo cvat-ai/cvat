@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,10 +7,16 @@
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
     const {
-        isBoolean, isInteger, isEnum, isString, checkFilter,
+        isBoolean,
+        isInteger,
+        isEnum,
+        isString,
+        checkFilter,
+        checkExclusiveFields,
+        camelToSnake,
     } = require('./common');
 
-    const { TaskStatus, TaskMode } = require('./enums');
+    const { TaskStatus, TaskMode, DimensionType } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
@@ -176,29 +182,24 @@
                 search: isString,
                 status: isEnum.bind(TaskStatus),
                 mode: isEnum.bind(TaskMode),
+                dimension: isEnum.bind(DimensionType),
             });
 
-            if ('search' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "search" with others');
-                }
-            }
-
-            if ('id' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "id" with others');
-                }
-            }
-
-            if (
-                'projectId' in filter
-                && (('page' in filter && Object.keys(filter).length > 2) || Object.keys(filter).length > 2)
-            ) {
-                throw new ArgumentError('Do not use the filter field "projectId" with other');
-            }
+            checkExclusiveFields(filter, ['id', 'search', 'projectId'], ['page']);
 
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId']) {
+            for (const field of [
+                'name',
+                'owner',
+                'assignee',
+                'search',
+                'status',
+                'mode',
+                'id',
+                'page',
+                'projectId',
+                'dimension',
+            ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }
@@ -221,30 +222,26 @@
                 owner: isString,
                 search: isString,
                 status: isEnum.bind(TaskStatus),
+                withoutTasks: isBoolean,
             });
 
-            if ('search' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "search" with others');
-                }
-            }
-
-            if ('id' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "id" with others');
-                }
-            }
+            checkExclusiveFields(filter, ['id', 'search'], ['page', 'withoutTasks']);
 
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
+            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page', 'withoutTasks']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(field, filter[field]);
+                    searchParams.set(camelToSnake(field), filter[field]);
                 }
             }
 
             const projectsData = await serverProxy.projects.get(searchParams.toString());
             // prettier-ignore
-            const projects = projectsData.map((project) => new Project(project));
+            const projects = projectsData.map((project) => {
+                if (filter.withoutTasks) {
+                    project.tasks = [];
+                }
+                return project;
+            }).map((project) => new Project(project));
 
             projects.count = projectsData.count;
 

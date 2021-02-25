@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,6 +24,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private interactionShapes: SVG.Shape[];
     private currentInteractionShape: SVG.Shape | null;
     private crosshair: Crosshair;
+    private threshold: SVG.Rect | null;
+    private thresholdRectSize: number;
 
     private prepareResult(): InteractionResult[] {
         return this.interactionShapes.map(
@@ -63,10 +65,19 @@ export class InteractionHandlerImpl implements InteractionHandler {
             return enabled && !ctrlKey && !!interactionShapes.length;
         }
 
-        const minimumVerticesAchieved =
-            (typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length) &&
-            (typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length);
+        const minPosVerticesAchieved = typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length;
+        const minNegVerticesAchieved = typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length;
+        const minimumVerticesAchieved = minPosVerticesAchieved && minNegVerticesAchieved;
         return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
+    }
+
+    private addThreshold(): void {
+        const { x, y } = this.cursorPosition;
+        this.threshold = this.canvas
+            .rect(this.thresholdRectSize, this.thresholdRectSize)
+            .fill('none')
+            .addClass('cvat_canvas_threshold');
+        this.threshold.center(x, y);
     }
 
     private addCrosshair(): void {
@@ -80,9 +91,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private interactPoints(): void {
         const eventListener = (e: MouseEvent): void => {
-            if ((e.button === 0 || e.button === 2) && !e.altKey) {
+            if ((e.button === 0 || (e.button === 2 && this.interactionData.enableNegVertices)) && !e.altKey) {
                 e.preventDefault();
                 const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
+                if (!this.isWithingFrame(cx, cy)) return;
+                if (!this.isWithinThreshold(cx, cy)) return;
+
                 this.currentInteractionShape = this.canvas
                     .circle((consts.BASE_POINT_SIZE * 2) / this.geometry.scale)
                     .center(cx, cy)
@@ -101,6 +115,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
                 const self = this.currentInteractionShape;
                 self.on('mouseenter', (): void => {
+                    if (this.interactionData.allowRemoveOnlyLast) {
+                        if (this.interactionShapes.indexOf(self) !== this.interactionShapes.length - 1) {
+                            return;
+                        }
+                    }
+
                     self.attr({
                         'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
                     });
@@ -166,6 +186,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (this.interactionData.crosshair) {
             this.addCrosshair();
         }
+
+        if (this.interactionData.enableThreshold) {
+            this.addThreshold();
+        }
     }
 
     private startInteraction(): void {
@@ -183,6 +207,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.removeCrosshair();
         }
 
+        if (this.threshold) {
+            this.threshold.remove();
+            this.threshold = null;
+        }
+
         this.canvas.off('mousedown.interaction');
         this.interactionShapes.forEach((shape: SVG.Shape): SVG.Shape => shape.remove());
         this.interactionShapes = [];
@@ -192,14 +221,39 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
     }
 
+    private isWithinThreshold(x: number, y: number): boolean {
+        const [prev] = this.interactionShapes.slice(-1);
+        if (!this.interactionData.enableThreshold || !prev) {
+            return true;
+        }
+
+        const [prevCx, prevCy] = [(prev as SVG.Circle).cx(), (prev as SVG.Circle).cy()];
+        const xDiff = Math.abs(prevCx - x);
+        const yDiff = Math.abs(prevCy - y);
+
+        return xDiff < this.thresholdRectSize / 2 && yDiff < this.thresholdRectSize / 2;
+    }
+
+    private isWithingFrame(x: number, y: number): boolean {
+        const { offset, image } = this.geometry;
+        const { width, height } = image;
+        const [imageX, imageY] = [Math.round(x - offset), Math.round(y - offset)];
+        return imageX >= 0 && imageX < width && imageY >= 0 && imageY < height;
+    }
+
     public constructor(
-        onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void,
+        onInteraction: (
+            shapes: InteractionResult[] | null,
+            shapesUpdated?: boolean,
+            isDone?: boolean,
+            threshold?: number,
+        ) => void,
         canvas: SVG.Container,
         geometry: Geometry,
     ) {
         this.onInteraction = (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean): void => {
             this.shapesWereUpdated = false;
-            onInteraction(shapes, shapesUpdated, isDone);
+            onInteraction(shapes, shapesUpdated, isDone, this.threshold ? this.thresholdRectSize / 2 : null);
         };
         this.canvas = canvas;
         this.geometry = geometry;
@@ -208,6 +262,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.interactionData = { enabled: false };
         this.currentInteractionShape = null;
         this.crosshair = new Crosshair();
+        this.threshold = null;
+        this.thresholdRectSize = 300;
         this.cursorPosition = {
             x: 0,
             y: 0,
@@ -218,6 +274,43 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.cursorPosition = { x, y };
             if (this.crosshair) {
                 this.crosshair.move(x, y);
+            }
+            if (this.threshold) {
+                this.threshold.center(x, y);
+            }
+
+            if (this.interactionData.enableSliding && this.interactionShapes.length) {
+                if (this.isWithingFrame(x, y)) {
+                    if (this.interactionData.enableThreshold && !this.isWithinThreshold(x, y)) return;
+                    this.onInteraction(
+                        [
+                            ...this.prepareResult(),
+                            {
+                                points: [x - this.geometry.offset, y - this.geometry.offset],
+                                shapeType: 'points',
+                                button: 0,
+                            },
+                        ],
+                        true,
+                        false,
+                    );
+                }
+            }
+        });
+
+        this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
+            if (e.ctrlKey) {
+                if (this.threshold) {
+                    const { x, y } = this.cursorPosition;
+                    e.preventDefault();
+                    if (e.deltaY > 0) {
+                        this.thresholdRectSize *= 6 / 5;
+                    } else {
+                        this.thresholdRectSize *= 5 / 6;
+                    }
+                    this.threshold.size(this.thresholdRectSize, this.thresholdRectSize);
+                    this.threshold.center(x, y);
+                }
             }
         });
 

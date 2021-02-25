@@ -1,15 +1,16 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { QuestionCircleOutlined } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     collecting: boolean;
@@ -34,7 +35,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         cancelButtonProps: { style: { display: 'none' } },
         okButtonProps: { style: { width: 100 } },
         onOk: closeStatistics,
-        width: 1000,
+        width: 1024,
         visible,
         closable: false,
     };
@@ -54,6 +55,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         polygon: `${data.label[key].polygon.shape} / ${data.label[key].polygon.track}`,
         polyline: `${data.label[key].polyline.shape} / ${data.label[key].polyline.track}`,
         points: `${data.label[key].points.shape} / ${data.label[key].points.track}`,
+        cuboid: `${data.label[key].cuboid.shape} / ${data.label[key].cuboid.track}`,
         tags: data.label[key].tags,
         manually: data.label[key].manually,
         interpolated: data.label[key].interpolated,
@@ -67,6 +69,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         polygon: `${data.total.polygon.shape} / ${data.total.polygon.track}`,
         polyline: `${data.total.polyline.shape} / ${data.total.polyline.track}`,
         points: `${data.total.points.shape} / ${data.total.points.track}`,
+        cuboid: `${data.total.cuboid.shape} / ${data.total.cuboid.track}`,
         tags: data.total.tags,
         manually: data.total.manually,
         interpolated: data.total.interpolated,
@@ -74,12 +77,12 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     });
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
-        <Tooltip title='Shapes / Tracks' mouseLeaveDelay={0}>
+        <CVATTooltip title='Shapes / Tracks'>
             <Text strong style={{ marginRight: 5 }}>
                 {title}
             </Text>
             <QuestionCircleOutlined className='cvat-info-circle-icon' />
-        </Tooltip>
+        </CVATTooltip>
     );
 
     const columns = [
@@ -107,6 +110,11 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
             title: makeShapesTracksTitle('Points'),
             dataIndex: 'points',
             key: 'points',
+        },
+        {
+            title: makeShapesTracksTitle('Cuboids'),
+            dataIndex: 'cuboid',
+            key: 'cuboid',
         },
         {
             title: <Text strong> Tags </Text>,
