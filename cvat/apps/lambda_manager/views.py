@@ -605,7 +605,7 @@ class RequestViewSet(viewsets.ViewSet):
             self.check_object_permissions(self.request, db_task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
-                '`{}` lambda function was run '.format(function) +
+                '`{}` lambda function was run '.format(request.data.get('function', 'undefined')) +
                 'with wrong arguments ({})'.format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
