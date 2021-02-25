@@ -23,15 +23,12 @@ class TrainingServerAPIAbs(ABC):
         pass
 
     @abstractmethod
-    def create_project(self, name: str, description: str = ''):
+    def create_project(self, name: str, description: str = '', project_class: Project.ProjectClass = None,
+                       labels: List[dict] = None):
         pass
 
     @abstractmethod
-    def upload_images(self, project_id: str, images: List[dict] = None) -> list:
-        pass
-
-    @abstractmethod
-    def upload_annotations(self, project_id: str, annotations: dict):
+    def upload_annotations(self, project_id: str, frames_data: List[dict]):
         pass
 
     @abstractmethod
@@ -318,17 +315,6 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         for frame in frames_data:
             annotation = self.__convert_annotation_from_cvat(frame['shapes'])
             self.__upload_annotation(project_id=project_id, image_id=frame['third_party_id'], annotation=annotation)
-
-    def upload_images(self, project_id: str, images: List[dict] = None) -> list:
-        images_list = []
-        for image in images:
-            response = self.__upload_image(project_id=project_id, image_path=image['path'])
-            images_list.append({
-                'id': image['id'],
-                'path': image['path'],
-                'third_party_id': response['id']
-            })
-        return images_list
 
     def upload_image(self, training_id: str, buffer):
         response = self.__upload_image(project_id=training_id, buffer=buffer)
