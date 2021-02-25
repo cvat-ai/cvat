@@ -20,6 +20,10 @@ import logger, { LogType } from 'cvat-logger';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import consts from 'consts';
 
+interface OwnProps {
+    children: JSX.Element;
+}
+
 interface StateToProps {
     job: any | null;
     serverVersion: string;
@@ -62,7 +66,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & OwnProps;
 class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);

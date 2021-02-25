@@ -129,9 +129,7 @@ context('Review pipeline feature', () => {
 
     after(() => {
         cy.goToTaskList();
-        cy.getTaskID(taskName).then(($taskID) => {
-            cy.deleteTask(taskName, $taskID);
-        });
+        cy.deleteTask(taskName);
     });
 
     describe(`Testing "${labelName}"`, () => {
@@ -198,14 +196,14 @@ context('Review pipeline feature', () => {
         });
 
         it('Second user sends the job to review.', () => {
-            cy.server().route('POST', '/api/v1/server/logs').as('sendLogs');
+            cy.intercept('POST', '/api/v1/server/logs').as('sendLogs');
             cy.interactMenu('Request a review');
             cy.contains('.cvat-modal-content-save-job', 'The job has unsaved annotations')
                 .should('exist')
                 .within(() => {
                     cy.contains('[type="button"]', 'OK').click();
                 });
-            cy.wait('@sendLogs').its('status').should('equal', 201);
+            cy.wait('@sendLogs').its('response.statusCode').should('equal', 201);
             cy.get('.cvat-request-review-dialog')
                 .should('exist')
                 .within(() => {
