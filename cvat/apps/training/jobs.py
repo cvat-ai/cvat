@@ -1,8 +1,6 @@
-import os
 from collections import OrderedDict
 from typing import List
 
-from asgiref.sync import async_to_sync
 from cacheops import cache
 from django_rq import job
 
@@ -55,7 +53,6 @@ def save_frame_prediction_to_cache_job(cache_key: str,
         TrainingProjectLabel.objects.get(cvat_label=cvat_label).training_label_id: cvat_label.id
         for cvat_label in cvat_labels
     }
-    print(labels_mapping)
     annotation = api.get_annotation(project_id=training_project.training_id,
                                     image_id=training_project_image.training_image_id,
                                     width=image.width,
@@ -67,12 +64,6 @@ def save_frame_prediction_to_cache_job(cache_key: str,
         'status': 'done'
     }
     cache.set(cache_key=cache_key, data=resp, timeout=timeout)
-
-
-@job
-def create_training_project_job(project_id: int):
-    os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-    create_training_project_job_async(cvat_project_id=project_id)
 
 
 @job
@@ -144,9 +135,9 @@ def upload_annotation_to_training_project_job(job_id: int):
     api.upload_annotations(project_id=training_project.training_id, frames_data=frames_data)
 
 
-@async_to_sync
-async def create_training_project_job_async(cvat_project_id):
-    cvat_project = Project.objects.get(pk=cvat_project_id)
+@job
+def create_training_project_job(project_id: int):
+    cvat_project = Project.objects.get(pk=project_id)
     if not cvat_project.project_class:
         cvat_project.project_class = cvat_project.ProjectClass.DETECTION
     training_project = cvat_project.training_project
@@ -155,10 +146,10 @@ async def create_training_project_job_async(cvat_project_id):
         username=cvat_project.training_project.username,
         password=cvat_project.training_project.password,
     )
-    await create_training_project(cvat_project=cvat_project, training_project=training_project, api=api)
+    create_training_project(cvat_project=cvat_project, training_project=training_project, api=api)
 
 
-async def create_training_project(cvat_project, training_project, api):
+def create_training_project(cvat_project, training_project, api):
     labels = cvat_project.label_set.all()
     training_project_resp = api.create_project(
         name=f'{cvat_project.name}_cvat',
