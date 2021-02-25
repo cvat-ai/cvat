@@ -10,17 +10,15 @@ context('Check if the image is rotated', () => {
     const caseId = '5';
 
     function imageRotate(direction = 'anticlockwise') {
-        if (Cypress.browser.family !== 'chromium') {
-            cy.get('.cvat-rotate-canvas-control').trigger('mouseover').wait(300); // Wait for the popover transition in Firefox browser
-        } else {
-            cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
-        }
+        cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
         cy.get('.cvat-rotate-canvas-popover-visible').should('exist');
         if (direction === 'clockwise') {
             cy.get('.cvat-rotate-canvas-controls-right').click();
         } else {
             cy.get('.cvat-rotate-canvas-controls-left').click();
         }
+        cy.get('.cvat-canvas-container').click(); // Hide popover
+        cy.get('.cvat-rotate-canvas-popover-visible').should('not.exist');
     }
 
     function scaleFitImage() {
@@ -36,11 +34,7 @@ context('Check if the image is rotated', () => {
             .then(($styles) => {
                 scaleAfter = Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
                 cy.expect(scaleBefore).to.be.greaterThan(scaleAfter);
-                if (Cypress.browser.family !== 'chromium') {
-                    cy.get('#cvat_canvas_content').dblclick().wait(300); // Wait for the popover transition in Firefox browser
-                } else {
-                    cy.get('#cvat_canvas_content').dblclick();
-                }
+                cy.get('#cvat_canvas_content').dblclick();
                 cy.get('.cvat-rotate-canvas-popover-visible').should('not.exist');
                 cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', scaleBefore);
             });
