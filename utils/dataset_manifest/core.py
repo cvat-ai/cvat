@@ -361,7 +361,6 @@ class VideoManifestManager(_ManifestManager):
         self._manifest.is_created = True
 
     def partial_update(self, number, properties):
-        """ Updating a part of a manifest file """
         pass
 
 #TODO:
@@ -428,5 +427,4 @@ class ImageManifestManager(_ManifestManager):
         self._manifest.is_created = True
 
     def partial_update(self, number, properties):
-        """ Updating a part of a manifest file """
         pass

@@ -53,6 +53,7 @@ class InterpreterError(Exception):
 
 def execute_python_code(source_code, global_vars=None, local_vars=None):
     try:
+        # pylint: disable=exec-used
         exec(source_code, global_vars, local_vars)
     except SyntaxError as err:
         error_class = err.__class__.__name__
