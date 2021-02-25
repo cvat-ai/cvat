@@ -3770,6 +3770,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "occluded": False,
             }]
 
+            points_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
+                    "type": "points",
+                    "occluded": False,
+                }]
+
             tags_wo_attrs = [{
                 "frame": 2,
                 "label_id": task["labels"][1]["id"],
@@ -3854,6 +3865,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "CamVid 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
+
+            elif annotation_format == "VGGFace2 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = points_wo_attrs \
+                                      + rectangle_shapes_wo_attrs
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
