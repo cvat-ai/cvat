@@ -1,15 +1,14 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
-
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
+import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ShortcutsState } from './interfaces';
 
-function formatShortcuts(shortcuts: ExtendedKeyMapOptions): string {
+function formatShortcuts(shortcuts: KeyMapItem): string {
     const list: string[] = shortcuts.sequences as string[];
     return `[${list
         .map((shortcut: string): string => {
@@ -341,7 +340,13 @@ const defaultKeyMap = ({
         sequences: ['Enter'],
         action: 'keydown',
     },
-} as any) as Record<string, ExtendedKeyMapOptions>;
+    TOGGLE_LAYOUT_GRID: {
+        name: 'Toggle layout grid',
+        description: 'Is used in development',
+        sequences: ['ctrl+alt+enter'],
+        action: 'keydown',
+    },
+} as any) as KeyMap;
 
 const defaultState: ShortcutsState = {
     visibleShortcutsHelp: false,

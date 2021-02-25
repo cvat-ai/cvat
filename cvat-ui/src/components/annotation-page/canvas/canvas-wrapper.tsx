@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
 import { PlusCircleOutlined } from '@ant-design/icons';
@@ -59,7 +59,7 @@ interface Props {
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
     onSetupCanvas: () => void;
@@ -882,7 +882,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         return (
             <Layout.Content style={{ position: 'relative' }}>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 {/*
                     This element doesn't have any props
                     So, React isn't going to rerender it
