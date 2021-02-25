@@ -24,7 +24,7 @@ jobs:
             pip install -U pip wheel setuptools
             pip install pylint-json2html
             pip install $(egrep "pylint.*" ./cvat/requirements/development.txt)
-            pip install $(egrep "(d|D)jango.*" ./cvat/requirements/base.txt)
+            pip install $(egrep "Django.*" ./cvat/requirements/base.txt)
             mkdir -p pylint_report
 
             echo "Pylint version: "`pylint --version | head -1`
