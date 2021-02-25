@@ -262,7 +262,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
                 'username': (None, username),
                 'password': (None, password),
             }
-            r = requests.post(url=url, files=data, verify=False)
+            r = requests.post(url=url, files=data, verify=False)  # nosec
             return r.json()
 
         try:
