@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CLI - task list now returns a list of current tasks. (<https://github.com/openvinotoolkit/cvat/pull/2863>)
 - Updated HTTPS install README section (cleanup and described more robust deploy)
 - Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
 - Bumped nuclio version to 1.5.16 (<https://github.com/openvinotoolkit/cvat/pull/2578>)
@@ -39,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
+
 - More robust execution of nuclio GPU functions by limiting the GPU memory consumption per worker (<https://github.com/openvinotoolkit/cvat/pull/2714>)
 - Kibana startup initialization (<https://github.com/openvinotoolkit/cvat/pull/2659>)
 - The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
@@ -52,7 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
 - Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
 - Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
-- Cannot find Python when deploying models through nuclio if steps are strictly followed in Installation_Automatic_Annotation.md
+- Cannot find Python when deploying models through nuclio if steps are strictly followed in Installation_Automatic_Annotation.md (<https://github.com/openvinotoolkit/cvat/pull/2847>)
+- Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
+
 
 ### Security
 
