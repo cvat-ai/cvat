@@ -57,7 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cannot find Python when deploying models through nuclio if steps are strictly followed in Installation_Automatic_Annotation.md (<https://github.com/openvinotoolkit/cvat/pull/2847>)
 - Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
 
-
 ### Security
 
 -
