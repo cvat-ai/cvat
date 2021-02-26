@@ -123,7 +123,7 @@ export default function ImageSetupsContent(): JSX.Element {
             <hr />
             <Row justify='space-around'>
                 <Col span={24}>
-                    <Row className='cvat-player-settings-brightness'>
+                    <Row className='cvat-image-setups-brightness'>
                         <Col span={6}>
                             <Text className='cvat-text-color'> Brightness </Text>
                         </Col>
@@ -138,7 +138,7 @@ export default function ImageSetupsContent(): JSX.Element {
                             />
                         </Col>
                     </Row>
-                    <Row className='cvat-player-settings-contrast'>
+                    <Row className='cvat-image-setups-contrast'>
                         <Col span={6}>
                             <Text className='cvat-text-color'> Contrast </Text>
                         </Col>

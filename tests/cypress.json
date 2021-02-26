@@ -1,6 +1,6 @@
 {
   "video": false,
-  "baseUrl": "http://localhost:8080",
+  "baseUrl": "http://localhost:3000",
   "viewportWidth": 1300,
   "viewportHeight": 960,
   "defaultCommandTimeout": 25000,
@@ -8,7 +8,7 @@
   "env": {
     "user": "admin",
     "email": "admin@localhost.company",
-    "password": "12qwaszx"
+    "password": "nimda760"
   },
   "testFiles": [
     "auth_page.js",
