@@ -123,13 +123,13 @@ const defaultKeyMap = ({
     NEXT_ATTRIBUTE: {
         name: 'Next attribute',
         description: 'Go to the next attribute',
-        sequences: ['ArrowDown'],
+        sequences: ['down'],
         action: 'keydown',
     },
     PREVIOUS_ATTRIBUTE: {
         name: 'Previous attribute',
         description: 'Go to the previous attribute',
-        sequences: ['ArrowUp'],
+        sequences: ['up'],
         action: 'keydown',
     },
     NEXT_OBJECT: {
