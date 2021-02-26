@@ -17,9 +17,8 @@ context('Object propagate.', () => {
         secondX: 350,
         secondY: 450,
     };
-    let maxFrameNumber = 0;
     const propagateOnOneFrame = 1;
-    const propagateOnTwoFrame = 2;
+    const propagateOnTwoFrames = 2;
 
     function startPropagation() {
         cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
@@ -30,29 +29,17 @@ context('Object propagate.', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
-        cy.get('.cvat-player-last-button').click();
-        cy.get('.cvat-player-frame-selector')
-            .find('input')
-            .then((frameSelector) => {
-                maxFrameNumber = Number(frameSelector.val());
-            });
-        cy.get('.cvat-player-first-button').click();
         cy.createCuboid(createCuboidShape2Points);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('On the 1st frame propagate object on 1 frame.', () => {
             startPropagation();
-            cy.get('.cvat-propagate-confirm-object-on-frames')
+            cy.get('.cvat-propagate-confirm-object-on-frames') // Change value in the "copy of the object on frame" field
                 .find('input')
-                .should('have.attr', 'value', maxFrameNumber)
-                .clear()
-                .type(maxFrameNumber + 1) // Checking to specify the number of frames more than in the current job.
-                .tab()
-                .should('have.attr', 'value', maxFrameNumber) //Must be equal to the maximum value of the number of frames
                 .clear()
                 .type(propagateOnOneFrame);
-            cy.get('.cvat-propagate-confirm-object-up-to-frame')
+            cy.get('.cvat-propagate-confirm-object-up-to-frame') // Value of "up to the frame" field should be same
                 .find('input')
                 .should('have.attr', 'value', propagateOnOneFrame);
             cy.contains('button', 'Yes').click();
@@ -72,16 +59,14 @@ context('Object propagate.', () => {
 
         it('From the 1st frame propagate again on 2 frames.', () => {
             startPropagation();
-            cy.get('.cvat-propagate-confirm-object-on-frames')
+            cy.get('.cvat-propagate-confirm-object-up-to-frame') // Change value in the "up to the frame" field
                 .find('input')
-                .should('have.attr', 'value', propagateOnOneFrame)
                 .clear()
-                .type(propagateOnTwoFrame)
-                .tab()
-                .should('have.attr', 'value', propagateOnTwoFrame);
-            cy.get('.cvat-propagate-confirm-object-up-to-frame')
+                .type(propagateOnTwoFrames)
+                .should('have.attr', 'value', propagateOnTwoFrames);
+            cy.get('.cvat-propagate-confirm-object-on-frames') // Value of "copy of the object on frames" field should be same
                 .find('input')
-                .should('have.attr', 'value', propagateOnTwoFrame);
+                .should('have.attr', 'value', propagateOnTwoFrames);
             cy.contains('button', 'Yes').click();
         });
 
