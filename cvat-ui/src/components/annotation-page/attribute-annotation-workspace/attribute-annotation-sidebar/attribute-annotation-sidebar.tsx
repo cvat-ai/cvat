@@ -1,33 +1,29 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
-import { connect } from 'react-redux';
-import Layout, { SiderProps } from 'antd/lib/layout';
-import { SelectValue } from 'antd/lib/select';
-import { Row, Col } from 'antd/lib/grid';
-import Text from 'antd/lib/typography/Text';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
-
-import { ThunkDispatch } from 'utils/redux';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
-    updateAnnotationsAsync,
     changeFrameAsync,
+    updateAnnotationsAsync,
 } from 'actions/annotation-actions';
-import { CombinedState, ObjectType } from 'reducers/interfaces';
-import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
+import Layout, { SiderProps } from 'antd/lib/layout';
+import { SelectValue } from 'antd/lib/select';
+import Text from 'antd/lib/typography/Text';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
-
-import ObjectSwitcher from './object-switcher';
+import { Canvas } from 'cvat-canvas-wrapper';
+import { LogType } from 'cvat-logger';
+import React, { useEffect, useState } from 'react';
+import { ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
+import { connect } from 'react-redux';
+import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { ThunkDispatch } from 'utils/redux';
+import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
-import AttributeEditor from './attribute-editor';
+import ObjectSwitcher from './object-switcher';
 
 interface StateToProps {
     activatedStateID: number | null;
@@ -296,11 +292,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
-                <Row>
-                    <Col span={24}>
-                        <AnnotationsFiltersInput />
-                    </Col>
-                </Row>
                 <ObjectSwitcher
                     currentLabel={activeObjectState.label.name}
                     clientID={activeObjectState.clientID}
@@ -375,11 +366,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <Row>
-                <Col span={24}>
-                    <AnnotationsFiltersInput />
-                </Col>
-            </Row>
             <div className='attribute-annotations-sidebar-not-found-wrapper'>
                 <Text strong>No objects found</Text>
             </div>

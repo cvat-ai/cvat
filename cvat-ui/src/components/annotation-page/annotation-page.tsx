@@ -2,23 +2,23 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
+import Layout from 'antd/lib/layout';
+import Result from 'antd/lib/result';
+import Spin from 'antd/lib/spin';
+import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
+import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
+import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
+import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
+import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
+import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
+import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
+import FiltersModalContainer from 'containers/annotation-page/top-bar/filters-modal';
+import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
+import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
-import Layout from 'antd/lib/layout';
-import Spin from 'antd/lib/spin';
-import Result from 'antd/lib/result';
-
 import { Workspace } from 'reducers/interfaces';
-import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
-import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
-import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
-import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
-import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
-import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
-import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
-import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
-import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
+import './styles.scss';
 
 interface Props {
     job: any | null | undefined;
@@ -105,6 +105,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                     <ReviewAnnotationsWorkspace />
                 </Layout.Content>
             )}
+            <FiltersModalContainer visible={false} />
             <StatisticsModalContainer />
             <SubmitAnnotationsModal />
             <SubmitReviewModal />

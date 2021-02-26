@@ -2,20 +2,18 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import { Row, Col } from 'antd/lib/grid';
 import {
-    LockFilled,
-    UnlockOutlined,
-    EyeInvisibleFilled,
-    EyeOutlined,
     CaretDownOutlined,
     CaretUpFilled,
+    EyeInvisibleFilled,
+    EyeOutlined,
+    LockFilled,
+    UnlockOutlined,
 } from '@ant-design/icons';
-
-import CVATTooltip from 'components/common/cvat-tooltip';
-import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
+import { Col, Row } from 'antd/lib/grid';
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import React from 'react';
 import { StatesOrdering } from 'reducers/interfaces';
 
 interface Props {
@@ -85,11 +83,6 @@ function ObjectListHeader(props: Props): JSX.Element {
 
     return (
         <div className='cvat-objects-sidebar-states-header'>
-            <Row>
-                <Col span={24}>
-                    <AnnotationsFiltersInput />
-                </Col>
-            </Row>
             <Row justify='space-between' align='middle'>
                 {!readonly && (
                     <>

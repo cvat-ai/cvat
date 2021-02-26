@@ -2,31 +2,30 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import {
+    activateObject,
+    changeFrameAsync,
+    changeWorkspace as changeWorkspaceAction,
+    collectStatisticsAsync,
+    redoActionAsync,
+    saveAnnotationsAsync,
+    searchAnnotationsAsync,
+    searchEmptyFrameAsync,
+    setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
+    showFilters as showFiltersAction,
+    showStatistics as showStatisticsAction,
+    switchPlay,
+    undoActionAsync,
+} from 'actions/annotation-actions';
+import Input from 'antd/lib/input';
+import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import copy from 'copy-to-clipboard';
+import { Canvas } from 'cvat-canvas-wrapper';
+import React from 'react';
+import { ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
-import Input from 'antd/lib/input';
-
-import {
-    changeFrameAsync,
-    switchPlay,
-    saveAnnotationsAsync,
-    collectStatisticsAsync,
-    showStatistics as showStatisticsAction,
-    undoActionAsync,
-    redoActionAsync,
-    searchAnnotationsAsync,
-    searchEmptyFrameAsync,
-    changeWorkspace as changeWorkspaceAction,
-    activateObject,
-    setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
-} from 'actions/annotation-actions';
-import { Canvas } from 'cvat-canvas-wrapper';
-
-import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -56,6 +55,7 @@ interface DispatchToProps {
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(sessionInstance: any): void;
     showStatistics(sessionInstance: any): void;
+    showFilters(sessionInstance: any): void;
     undo(sessionInstance: any, frameNumber: any): void;
     redo(sessionInstance: any, frameNumber: any): void;
     searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number): void;
@@ -123,6 +123,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         showStatistics(sessionInstance: any): void {
             dispatch(collectStatisticsAsync(sessionInstance));
             dispatch(showStatisticsAction(true));
+        },
+        showFilters(): void {
+            dispatch(showFiltersAction(true));
         },
         undo(sessionInstance: any, frameNumber: any): void {
             dispatch(undoActionAsync(sessionInstance, frameNumber));
@@ -272,6 +275,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         const { jobInstance, showStatistics } = this.props;
 
         showStatistics(jobInstance);
+    };
+
+    private showFilters = (): void => {
+        const { jobInstance, showFilters } = this.props;
+
+        showFilters(jobInstance);
     };
 
     private onSwitchPlay = (): void => {
@@ -587,6 +596,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
                 <AnnotationTopBarComponent
                     showStatistics={this.showStatistics}
+                    showFilters={this.showFilters}
                     onSwitchPlay={this.onSwitchPlay}
                     onSaveAnnotation={this.onSaveAnnotation}
                     onPrevFrame={this.onPrevFrame}

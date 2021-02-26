@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,6 +50,7 @@
                 stopFrame,
                 frameMeta,
             });
+            // eslint-disable-next-line no-unsanitized/method
             collection.import(rawAnnotations);
 
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
@@ -253,6 +254,7 @@
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
+            // eslint-disable-next-line no-unsanitized/method
             return cache.get(session).collection.import(data);
         }
 

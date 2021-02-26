@@ -1,24 +1,23 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import { connect } from 'react-redux';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
-
-import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
-    updateAnnotationsAsync,
-    removeObjectAsync,
     changeFrameAsync,
-    collapseObjectItems,
     changeGroupColorAsync,
+    collapseObjectItems,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
+    removeObjectAsync,
+    updateAnnotationsAsync,
 } from 'actions/annotation-actions';
+import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import { Canvas } from 'cvat-canvas-wrapper';
+import React from 'react';
+import { ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
+import { connect } from 'react-redux';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy,
+    ColorBy, CombinedState, ObjectType, StatesOrdering,
 } from 'reducers/interfaces';
 
 interface OwnProps {
@@ -34,13 +33,12 @@ interface StateToProps {
     statesCollapsedAll: boolean;
     collapsedStates: Record<number, boolean>;
     objectStates: any[];
-    annotationsFilters: string[];
+    annotationsFilters: any[];
     colors: string[];
     colorBy: ColorBy;
     activatedStateID: number | null;
     minZLayer: number;
     maxZLayer: number;
-    annotationsFiltersHistory: string[];
     keyMap: Record<string, ExtendedKeyMapOptions>;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
@@ -62,7 +60,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: objectStates,
                 filters: annotationsFilters,
-                filtersHistory: annotationsFiltersHistory,
                 collapsed,
                 collapsedAll,
                 activatedStateID,
@@ -110,7 +107,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         minZLayer,
         maxZLayer,
-        annotationsFiltersHistory,
         keyMap,
         normalizedKeyMap,
         canvasInstance,

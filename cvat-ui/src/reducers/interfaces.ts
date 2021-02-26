@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
-import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { MutableRefObject } from 'react';
+import { ExtendedKeyMapOptions } from 'react-hotkeys';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 
 export type StringObject = {
     [index: string]: string;
@@ -428,8 +428,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
-        filters: string[];
-        filtersHistory: string[];
+        filters: any[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];
@@ -456,6 +455,7 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
+    filtersPanelVisible: boolean;
     requestReviewDialogVisible: boolean;
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;

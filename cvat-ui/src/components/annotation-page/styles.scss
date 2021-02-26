@@ -64,6 +64,14 @@
         display: block;
         line-height: 0;
     }
+
+    &.filters-armed {
+        color: red;
+
+        path {
+            fill: red;
+        }
+    }
 }
 
 .cvat-annotation-disabled-header-button {
@@ -332,6 +340,27 @@
                     margin-top: $grid-unit-size * 2;
                     margin-bottom: $grid-unit-size * 2;
                 }
+            }
+        }
+    }
+}
+
+.cvat-filters-modal {
+    .ant-modal-body {
+        padding: 1px;
+
+        .query-builder-container {
+            .query-builder > :first-child {
+                padding-right: 0;
+            }
+
+            .group-or-rule {
+                border-radius: $grid-unit-size / 4;
+            }
+
+            .group {
+                background: rgba(216, 233, 250, 0.5);
+                border: 1px solid #d3e0ec;
             }
         }
     }
