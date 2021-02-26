@@ -38,7 +38,7 @@ const defaultKeyMap = ({
     SWITCH_ALL_LOCK: {
         name: 'Lock/unlock all objects',
         description: 'Change locked state for all objects in the side bar',
-        sequences: ['t+l'],
+        sequences: ['t l'],
         action: 'keydown',
     },
     SWITCH_LOCK: {
@@ -50,7 +50,7 @@ const defaultKeyMap = ({
     SWITCH_ALL_HIDDEN: {
         name: 'Hide/show all objects',
         description: 'Change hidden state for objects in the side bar',
-        sequences: ['t+h'],
+        sequences: ['t h'],
         action: 'keydown',
     },
     SWITCH_HIDDEN: {
@@ -135,68 +135,13 @@ const defaultKeyMap = ({
     NEXT_OBJECT: {
         name: 'Next object',
         description: 'Go to the next object',
-        sequences: ['Tab'],
+        sequences: ['tab'],
         action: 'keydown',
     },
     PREVIOUS_OBJECT: {
         name: 'Previous object',
         description: 'Go to the previous object',
-        sequences: ['Shift+Tab'],
-        action: 'keydown',
-    },
-
-    INCREASE_BRIGHTNESS: {
-        name: 'Brightness+',
-        description: 'Increase brightness level for the image',
-        sequences: ['shift+b+='],
-        action: 'keypress',
-    },
-    DECREASE_BRIGHTNESS: {
-        name: 'Brightness-',
-        description: 'Decrease brightness level for the image',
-        sequences: ['shift+b+-'],
-        action: 'keydown',
-    },
-    INCREASE_CONTRAST: {
-        name: 'Contrast+',
-        description: 'Increase contrast level for the image',
-        sequences: ['shift+c+='],
-        action: 'keydown',
-    },
-    DECREASE_CONTRAST: {
-        name: 'Contrast-',
-        description: 'Decrease contrast level for the image',
-        sequences: ['shift+c+-'],
-        action: 'keydown',
-    },
-    INCREASE_SATURATION: {
-        name: 'Saturation+',
-        description: 'Increase saturation level for the image',
-        sequences: ['shift+s+='],
-        action: 'keydown',
-    },
-    DECREASE_SATURATION: {
-        name: 'Saturation-',
-        description: 'Increase contrast level for the image',
-        sequences: ['shift+s+-'],
-        action: 'keydown',
-    },
-    INCREASE_GRID_OPACITY: {
-        name: 'Grid opacity+',
-        description: 'Make the grid more visible',
-        sequences: ['shift+g+='],
-        action: 'keydown',
-    },
-    DECREASE_GRID_OPACITY: {
-        name: 'Grid opacity-',
-        description: 'Make the grid less visible',
-        sequences: ['shift+g+-'],
-        action: 'keydown',
-    },
-    CHANGE_GRID_COLOR: {
-        name: 'Grid color',
-        description: 'Set another color for the image grid',
-        sequences: ['shift+g+enter'],
+        sequences: ['shift+tab'],
         action: 'keydown',
     },
 
@@ -325,19 +270,19 @@ const defaultKeyMap = ({
     FOCUS_INPUT_FRAME: {
         name: 'Focus input frame',
         description: 'Focus on the element to change the current frame',
-        sequences: ['`', '~'],
+        sequences: ['~'],
         action: 'keydown',
     },
     SWITCH_AUTOMATIC_BORDERING: {
         name: 'Switch automatic bordering',
         description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
-        sequences: ['Control'],
+        sequences: ['ctrl'],
         action: 'keydown',
     },
     CHANGE_OBJECT_COLOR: {
         name: 'Change color',
         description: 'Set the next color for an activated shape',
-        sequences: ['Enter'],
+        sequences: ['enter'],
         action: 'keydown',
     },
     TOGGLE_LAYOUT_GRID: {

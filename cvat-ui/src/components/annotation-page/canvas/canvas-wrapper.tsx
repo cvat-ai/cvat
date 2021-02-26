@@ -6,7 +6,8 @@ import React from 'react';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
-import { PlusCircleOutlined } from '@ant-design/icons';
+import Dropdown from 'antd/lib/dropdown';
+import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 
 import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
@@ -16,6 +17,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import ImageSetupsContent from './image-setups-content';
 
 const cvat = getCore();
 
@@ -787,15 +789,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         };
 
         const subKeyMap = {
-            INCREASE_BRIGHTNESS: keyMap.INCREASE_BRIGHTNESS,
-            DECREASE_BRIGHTNESS: keyMap.DECREASE_BRIGHTNESS,
-            INCREASE_CONTRAST: keyMap.INCREASE_CONTRAST,
-            DECREASE_CONTRAST: keyMap.DECREASE_CONTRAST,
-            INCREASE_SATURATION: keyMap.INCREASE_SATURATION,
-            DECREASE_SATURATION: keyMap.DECREASE_SATURATION,
-            INCREASE_GRID_OPACITY: keyMap.INCREASE_GRID_OPACITY,
-            DECREASE_GRID_OPACITY: keyMap.DECREASE_GRID_OPACITY,
-            CHANGE_GRID_COLOR: keyMap.CHANGE_GRID_COLOR,
+            // INCREASE_BRIGHTNESS: keyMap.INCREASE_BRIGHTNESS,
+            // DECREASE_BRIGHTNESS: keyMap.DECREASE_BRIGHTNESS,
+            // INCREASE_CONTRAST: keyMap.INCREASE_CONTRAST,
+            // DECREASE_CONTRAST: keyMap.DECREASE_CONTRAST,
+            // INCREASE_SATURATION: keyMap.INCREASE_SATURATION,
+            // DECREASE_SATURATION: keyMap.DECREASE_SATURATION,
+            // INCREASE_GRID_OPACITY: keyMap.INCREASE_GRID_OPACITY,
+            // DECREASE_GRID_OPACITY: keyMap.DECREASE_GRID_OPACITY,
+            // CHANGE_GRID_COLOR: keyMap.CHANGE_GRID_COLOR,
             SWITCH_AUTOMATIC_BORDERING: keyMap.SWITCH_AUTOMATIC_BORDERING,
         };
 
@@ -896,6 +898,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         height: '100%',
                     }}
                 />
+
+                <Dropdown trigger='click' placement='topCenter' overlay={<ImageSetupsContent />}>
+                    <UpOutlined className='cvat-canvas-image-setups-trigger' />
+                </Dropdown>
+
                 <div className='cvat-canvas-z-axis-wrapper'>
                     <Slider
                         disabled={minZLayer === maxZLayer}

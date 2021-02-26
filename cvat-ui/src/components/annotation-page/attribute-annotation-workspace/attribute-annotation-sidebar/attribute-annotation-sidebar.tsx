@@ -295,7 +295,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                 >
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 <Row>
                     <Col span={24}>
                         <AnnotationsFiltersInput />
