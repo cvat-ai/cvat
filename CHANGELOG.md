@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CVAT-3D: Load all frames corresponding to the job instance
   (<https://github.com/openvinotoolkit/cvat/pull/2645>)
 - Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
+- CVAT-3D: Visualize 3D point cloud spaces in 3D View, Top View Side View and Front View (<https://github.com/openvinotoolkit/cvat/pull/2768>)
 - [Inside Outside Guidence](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
   function for interative segmentation
 - Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
@@ -22,11 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CLI - task list now returns a list of current tasks. (<https://github.com/openvinotoolkit/cvat/pull/2863>)
 - Updated HTTPS install README section (cleanup and described more robust deploy)
 - Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
 - Bumped nuclio version to 1.5.16 (<https://github.com/openvinotoolkit/cvat/pull/2578>)
 - All methods for interative segmentation accept negative points as well
 - Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
+- Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
 
 ### Deprecated
 
@@ -37,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
+
 - More robust execution of nuclio GPU functions by limiting the GPU memory consumption per worker (<https://github.com/openvinotoolkit/cvat/pull/2714>)
 - Kibana startup initialization (<https://github.com/openvinotoolkit/cvat/pull/2659>)
 - The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
@@ -50,6 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
 - Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
 - Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
+- Updated the path to python for DL models inside automatic annotation documentation (<https://github.com/openvinotoolkit/cvat/pull/2847>)
+- Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
 
 ### Security
 
