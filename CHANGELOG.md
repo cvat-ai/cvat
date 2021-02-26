@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
 - Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
 - Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
-- Cannot find Python when deploying models through nuclio if steps are strictly followed in Installation_Automatic_Annotation.md (<https://github.com/openvinotoolkit/cvat/pull/2847>)
+- Updated the path to python for DL models inside automatic annotation documentation (<https://github.com/openvinotoolkit/cvat/pull/2847>)
 - Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
 
 ### Security
