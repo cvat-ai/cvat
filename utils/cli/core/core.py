@@ -43,20 +43,23 @@ class CLI():
         url = self.api.tasks
         response = self.session.get(url)
         response.raise_for_status()
+        output = []
         page = 1
         while True:
             response_json = response.json()
+            output += response_json['results']
             for r in response_json['results']:
                 if use_json_output:
                     log.info(json.dumps(r, indent=4))
                 else:
                     log.info('{id},{name},{status}'.format(**r))
             if not response_json['next']:
-                return
+                return output
             page += 1
             url = self.api.tasks_page(page)
             response = self.session.get(url)
             response.raise_for_status()
+        return output
 
     def tasks_create(self, name, labels, overlap, segment_size, bug, resource_type, resources,
                      annotation_path='', annotation_format='CVAT XML 1.1',
