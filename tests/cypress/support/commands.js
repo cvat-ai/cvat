@@ -217,7 +217,9 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     });
     if (createPointParams.complete) {
         const keyCodeN = 78;
-        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN });
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPointParams, 'POINTS');
 });
@@ -260,7 +262,9 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     });
     if (createPolygonParams.complete) {
         const keyCodeN = 78;
-        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN });
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
@@ -387,7 +391,9 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     });
     if (createPolylineParams.complete) {
         const keyCodeN = 78;
-        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN });
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
 });
