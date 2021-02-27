@@ -6,6 +6,8 @@
 
 // import { taskName } from '../../support/const';
 
+// TODO: Update with new filters UI
+
 // context('Filters functionality.', () => {
 //     const caseId = '18';
 //     const labelShape = 'shape 3 points';
