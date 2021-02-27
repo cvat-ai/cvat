@@ -8,8 +8,8 @@
     "start": "REACT_APP_API_URL=http://localhost:7000 webpack-dev-server --config ./webpack.config.js --mode=development",
     "type-check": "tsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch",
-    "lint": "eslint './src/**/*.{ts,tsx}' --no-error-on-unmatched-pattern",
-    "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix --no-error-on-unmatched-pattern"
+    "lint": "eslint './src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
   },
   "author": "Intel",
   "license": "MIT",
