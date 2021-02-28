@@ -3,30 +3,31 @@
 This guide will focus on how to deploy cvat in an kubernetes environment.
 It was tested on Kubernetes v1.19.3 but should work for >=v1.9, eventhough it is untested.
 
-## Building the container [optional]
+## Building the container - optional
 Since prebuild container images are now available [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
 [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) this steps becomes optional.
 
 If you would like to build your one image the following steps need to be followd.
 1. Build the cvat backend and frontend images and push them to a registry that you can pull from within the cluster.
-    ```
-    export CI_REGISTRY_IMAGE="your.private.registry"
-
-    echo "Building backend"
-    docker build --cache-from $CI_REGISTRY_IMAGE/backend:release-1.1.0 \
-      --build-arg TF_ANNOTATION=no --build-arg AUTO_SEGMENTATION=no \
-      --build-arg WITH_TESTS=no --build-arg TZ="Etc/UTC" --build-arg OPENVINO_TOOLKIT=no \
-      --build-arg USER=django --build-arg DJANGO_CONFIGURATION=production \
-      --build-arg TZ="Etc/UTC" .
-    docker push $CI_REGISTRY_IMAGE/backend:release-1.1.0
-
-    echo "Building frontend"
-    docker build --file Dockerfile.ui \
-      --tag $CI_REGISTRY_IMAGE/frontend:release-1.1.0 - .
-    docker push $CI_REGISTRY_IMAGE/frontend:release-1.1.0
-    ```
 1. Replace the `openvino/...` image source in
     `04_cvat_backend_deployment.yml` and `04_cvat_frontend_deployment.yml` with your newly build image.
+
+```bash
+export CI_REGISTRY_IMAGE="your.private.registry"
+
+echo "Building backend"
+docker build --cache-from $CI_REGISTRY_IMAGE/backend:release-1.1.0 \
+  --build-arg TF_ANNOTATION=no --build-arg AUTO_SEGMENTATION=no \
+  --build-arg WITH_TESTS=no --build-arg TZ="Etc/UTC" --build-arg OPENVINO_TOOLKIT=no \
+  --build-arg USER=django --build-arg DJANGO_CONFIGURATION=production \
+  --build-arg TZ="Etc/UTC" .
+docker push $CI_REGISTRY_IMAGE/backend:release-1.1.0
+
+echo "Building frontend"
+docker build --file Dockerfile.ui \
+  --tag $CI_REGISTRY_IMAGE/frontend:release-1.1.0 - .
+docker push $CI_REGISTRY_IMAGE/frontend:release-1.1.0
+```
 
 ## Adjusting the kubernetes templates
 
