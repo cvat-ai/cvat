@@ -162,6 +162,13 @@ task_create_parser.add_argument(
     help='''number of seconds to wait until checking
             if data compression finished (necessary before uploading annotations)'''
 )
+task_create_parser.add_argument(
+    '--project_id',
+    default=None,
+    type=int,
+    help='''project ID
+            if project exists'''
+)
 
 #######################################################################
 # Delete
