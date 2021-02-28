@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
@@ -60,7 +60,7 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
             keyMap[key] = {
                 name: `Setup ${label.name} tag`,
                 description: `Setup tag with "${label.name}" label`,
-                sequence: `${id}`,
+                sequences: [`${id}`],
                 action: 'keydown',
             };
 
@@ -81,7 +81,7 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
 
     return (
         <div className='cvat-tag-annotation-label-selects'>
-            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} allowChanges />
+            <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} />
             <Row>
                 <Col>
                     <Text strong>Shortcuts for labels:</Text>

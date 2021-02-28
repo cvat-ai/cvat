@@ -5,12 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - id: files
-        uses: jitterbit/get-changed-files@v1
 
       - name: Run checks
         run: |
-          for files in ${{ steps.files.outputs.added_modified }}; do
+          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
+          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | .filename')
+          for files in $PR_FILES; do
             extension="${files##*.}"
             if [[ $extension == 'py' ]]; then
               changed_files_bandit+=" ${files}"
