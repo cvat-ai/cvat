@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: cvat-backend-app-container
-          image: openvino/cvat_server
+          image: openvino/cvat_server:v1.2.0
           imagePullPolicy: Always
           resources:
             requests:
