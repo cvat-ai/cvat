@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: cvat-frontend-app-container
-          image: {my.registry.fronend.image:develop}
-          imagePullPolicy: always
+          image: openvino/cvat_ui
+          imagePullPolicy: Always
           env:
           - name: REACT_APP_API_PROTOCOL
             value: "http"

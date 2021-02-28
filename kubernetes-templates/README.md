@@ -24,13 +24,9 @@ docker push $CI_REGISTRY_IMAGE/frontend:release-1.1.0
 
 ## Adjusting the kubernetes templates
 
-1. Replace the URL pointing to the backend and fronend image in
-   `kubernetes-templates/04_cvat_backend_deployment.yml` and `kubernetes-templates/04_cvat_frontend_deployment.yml`.
-  Furthermore adjusting their pull secrets
+1. Replacing the domain dummy with your real domain name `cvat.my.cool.domain.com`. Replace `{MY_SERVER_URL_COM}` in `kubernetes-templates/04_cvat_frontend_deployment.yml` and `kubernetes-templates/05_cvat_proxy_configmap.yml`.
 
-2. Replacing the domain dummy with your real domain name `cvat.my.cool.domain.com`. Replace `{MY_SERVER_URL_COM}` in `kubernetes-templates/04_cvat_frontend_deployment.yml` and `kubernetes-templates/05_cvat_proxy_configmap.yml`.
-
-3. Insert your choosen database password the `kubernetes-templates/02_database_secrets.yml`
+1. Insert your choosen database password the `kubernetes-templates/02_database_secrets.yml`
 
 ## Deploying to the cluster
 Deploy everything to your cluster with `kubectl apply -f kubernetes-templates/`
