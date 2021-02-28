@@ -63,16 +63,19 @@ class CLI():
 
     def tasks_create(self, name, labels, overlap, segment_size, bug, resource_type, resources,
                      annotation_path='', annotation_format='CVAT XML 1.1',
-                     completion_verification_period=20, **kwargs):
+                     completion_verification_period=20, project_id=None, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
         url = self.api.tasks
+        labels = [] if project_id is not None else labels
         data = {'name': name,
                 'labels': labels,
                 'overlap': overlap,
                 'segment_size': segment_size,
                 'bug_tracker': bug,
         }
+        if project_id:
+            data.update({'project_id': project_id})
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
