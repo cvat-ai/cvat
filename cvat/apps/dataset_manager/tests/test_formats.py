@@ -347,7 +347,7 @@ class TaskExportTest(_DbTestBase):
 
                             return project.make_dataset()
                         return datumaro.components.dataset. \
-                            Dataset.import_from(src, importer_name)
+                            Dataset.import_from(src, importer_name, env=dm_env)
 
                     if zipfile.is_zipfile(file_path):
                         with tempfile.TemporaryDirectory() as tmp_dir:

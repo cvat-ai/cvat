@@ -44,7 +44,7 @@ def _import(src_file, task_data):
                     root_hint=root_hint)
                 frame_info = task_data.frame_info[frame_id]
             except Exception:
-                pass
+                pass # nosec
             if frame_info is not None:
                 image_info[frame] = (frame_info['height'], frame_info['width'])
 
