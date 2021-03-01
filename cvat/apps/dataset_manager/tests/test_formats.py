@@ -71,6 +71,13 @@ class _DbTestBase(APITestCase):
 
         return response
 
+    def _put_api_v1_job_id_annotations(self, jid, data):
+        with ForceLogin(self.user, self.client):
+            response = self.client.put("/api/v1/jobs/%s/annotations" % jid,
+                data=data, format="json")
+
+        return response
+
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
             response = self.client.post('/api/v1/tasks', data=data, format="json")
@@ -87,6 +94,10 @@ class _DbTestBase(APITestCase):
         return task
 
 class TaskExportTest(_DbTestBase):
+    def _generate_custom_annotations(self, annotations, task):
+        self._put_api_v1_task_id_annotations(task["id"], annotations)
+        return annotations
+
     def _generate_annotations(self, task):
         annotations = {
             "version": 0,
@@ -204,8 +215,7 @@ class TaskExportTest(_DbTestBase):
                 },
             ]
         }
-        self._put_api_v1_task_id_annotations(task["id"], annotations)
-        return annotations
+        return self._generate_custom_annotations(annotations, task)
 
     def _generate_task_images(self, count): # pylint: disable=no-self-use
         images = {
@@ -215,7 +225,7 @@ class TaskExportTest(_DbTestBase):
         images["image_quality"] = 75
         return images
 
-    def _generate_task(self, images):
+    def _generate_task(self, images, **overrides):
         task = {
             "name": "my task #1",
             "overlap": 0,
@@ -242,6 +252,7 @@ class TaskExportTest(_DbTestBase):
                 {"name": "person"},
             ]
         }
+        task.update(overrides)
         return self._create_task(task, images)
 
     @staticmethod
@@ -421,6 +432,47 @@ class TaskExportTest(_DbTestBase):
         task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
 
         self.assertEqual(5, task_data.abs_frame_id(2))
+
+    def test_frames_outside_are_not_generated(self):
+        # https://github.com/openvinotoolkit/cvat/issues/2827
+        images = self._generate_task_images(10)
+        images['start_frame'] = 0
+        task = self._generate_task(images, overlap=3, segment_size=6)
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 6,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 6,
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [],
+                        },
+                    ]
+                },
+            ]
+        }
+        self._put_api_v1_job_id_annotations(
+            task["segments"][2]["jobs"][0]["id"], annotations)
+
+        task_ann = TaskAnnotation(task["id"])
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task['id']))
+
+        i = -1
+        for i, frame in enumerate(task_data.group_by_frame()):
+            self.assertTrue(frame.frame in range(6, 10))
+        self.assertEqual(i + 1, 4)
 
 class FrameMatchingTest(_DbTestBase):
     def _generate_task_images(self, paths): # pylint: disable=no-self-use
