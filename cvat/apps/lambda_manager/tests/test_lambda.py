@@ -32,7 +32,9 @@ id_function_non_unique_labels = "test-model-has-non-unique-labels"
 id_function_state_building = "test-model-has-state-building"
 id_function_state_error = "test-model-has-state-error"
 
-expected_keys_in_response_functions = ["id", "kind", "labels", "state", "description", "framework", "name", "min_pos_points"]
+expected_keys_in_response_all_functions = ["id", "kind", "labels", "description", "framework", "name"]
+expected_keys_in_response_function_interactor = expected_keys_in_response_all_functions + ["min_pos_points", "startswith_box"]
+expected_keys_in_response_function_tracker = expected_keys_in_response_all_functions + ["state"]
 expected_keys_in_response_requests = ["id", "function", "status", "progress", "enqueued", "started", "ended", "exc_info"]
 
 path = os.path.join(os.path.dirname(__file__), 'assets', 'tasks.json')
@@ -199,16 +201,29 @@ class LambdaTestCase(APITestCase):
         return response
 
 
+    def __check_expected_keys_in_response_function(self, data):
+        kind = data["kind"]
+        if kind == "interactor":
+            for key in expected_keys_in_response_function_interactor:
+                self.assertIn(key, data)
+        elif kind == "tracker":
+            for key in expected_keys_in_response_function_tracker:
+                self.assertIn(key, data)
+        else:
+            for key in expected_keys_in_response_all_functions:
+                self.assertIn(key, data)
+
+
     def test_api_v1_lambda_functions_list(self):
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_functions:
-            self.assertIn(key, response.data[0])
+        for data in response.data:
+            self.__check_expected_keys_in_response_function(data)
 
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for key in expected_keys_in_response_functions:
-            self.assertIn(key, response.data[0])
+        for data in response.data:
+            self.__check_expected_keys_in_response_function(data)
 
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -244,13 +259,11 @@ class LambdaTestCase(APITestCase):
 
             response = self._get_request(path, self.admin)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            for key in expected_keys_in_response_functions:
-                self.assertIn(key, response.data)
+            self.__check_expected_keys_in_response_function(response.data)
 
             response = self._get_request(path, self.user)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            for key in expected_keys_in_response_functions:
-                self.assertIn(key, response.data)
+            self.__check_expected_keys_in_response_function(response.data)
 
             response = self._get_request(path, None)
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -438,14 +451,12 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-    @skip("Fail: expected result != actual result")
     def test_api_v1_lambda_requests_create_empty_data(self):
         data = {}
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    @skip("Fail: expected result != actual result")
     def test_api_v1_lambda_requests_create_without_function(self):
         data = {
             "task": self.main_task["id"],
@@ -613,22 +624,34 @@ class LambdaTestCase(APITestCase):
         data_main_task = {
             "task": self.main_task["id"],
             "frame": 0,
-            "points": [
+            "pos_points": [
 				[3.45, 6.78],
 				[12.1, 12.1],
-				[34.1, 41.0],
+                [34.1, 41.0],
 				[43.01, 43.99],
+            ],
+            "neg_points": [
+				[3.25, 6.58],
+				[11.1, 11.0],
+				[35.5, 44.44],
+				[45.01, 45.99],
 			],
         }
         data_assigneed_to_user_task = {
             "task": self.assigneed_to_user_task["id"],
             "frame": 0,
             "threshold": 0.1,
-            "points": [
+            "pos_points": [
 				[3.45, 6.78],
 				[12.1, 12.1],
-				[34.1, 41.0],
+                [34.1, 41.0],
 				[43.01, 43.99],
+            ],
+            "neg_points": [
+				[3.25, 6.58],
+				[11.1, 11.0],
+				[35.5, 44.44],
+				[45.01, 45.99],
 			],
         }
 
@@ -902,7 +925,7 @@ class LambdaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    @skip("Fail: expected result != actual result")
+    @skip("Fail: expected result != actual result, issue #2770")
     def test_api_v1_lambda_functions_create_detector_wrong_id_frame(self):
         data = {
             "task": self.main_task["id"],
@@ -945,4 +968,3 @@ class LambdaTestCase(APITestCase):
 
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_error}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
