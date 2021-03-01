@@ -66,7 +66,7 @@ patches and features.
 - Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
 
   ```sh
-  npm ci
+  npm ci && cd cvat-ui && npm start
   ```
 
   > Note for Mac users
