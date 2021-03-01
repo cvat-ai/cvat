@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
 - Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
 - Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
+- Fixed export error when invalid polygons are present in overlapping frames (<https://github.com/openvinotoolkit/cvat/pull/2852>)
 
 ### Security
 
