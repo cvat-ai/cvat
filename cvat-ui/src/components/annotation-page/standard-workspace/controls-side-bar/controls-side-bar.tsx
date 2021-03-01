@@ -43,6 +43,25 @@ interface Props {
     redrawShape(): void;
 }
 
+// We use the observer to see if these controls are in the viewport
+// They automatically put to extra if not
+const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
+const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
+const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl);
+const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl);
+const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl);
+const ObservedToolsControl = ControlVisibilityObserver(ToolsControl);
+const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl);
+const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl);
+const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl);
+const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl);
+const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
+const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
+const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
+const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
+const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
+const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
+
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
         canvasInstance,
@@ -167,25 +186,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             rotateFrame(Rotation.ANTICLOCKWISE90);
         },
     };
-
-    // We use the observer to see if these controls are in the viewport
-    // They automatically put to extra if not
-    const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
-    const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
-    const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl);
-    const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl);
-    const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl);
-    const ObservedToolsControl = ControlVisibilityObserver(ToolsControl);
-    const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl);
-    const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl);
-    const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl);
-    const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl);
-    const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
-    const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
-    const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
-    const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
-    const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
-    const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>

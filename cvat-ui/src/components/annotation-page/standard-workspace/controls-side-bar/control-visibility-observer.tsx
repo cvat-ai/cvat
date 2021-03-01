@@ -6,9 +6,7 @@
 
 import { SmallDashOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
-import React, {
-    useEffect, useLayoutEffect, useRef, useState,
-} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 
 const extraControlsContentClassName = 'cvat-extra-controls-control-content';
@@ -60,7 +58,7 @@ export default function ControlVisibilityObserver<P = {}>(
                 const wrapper = ref.current;
                 const parentElement = ref.current.parentElement as HTMLElement;
 
-                const reservedHeight = 60; // for itself
+                const reservedHeight = 45; // for itself
                 const observer = new ResizeObserver(() => {
                     const availableHeight = parentElement.offsetHeight;
                     setVisible(availableHeight - reservedHeight >= visibilityHeightThreshold);
@@ -81,7 +79,7 @@ export default function ControlVisibilityObserver<P = {}>(
             return () => {};
         }, []);
 
-        useLayoutEffect(() => {
+        useEffect(() => {
             if (onUpdateChildren) {
                 onUpdateChildren();
             }
