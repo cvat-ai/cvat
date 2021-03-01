@@ -22,11 +22,11 @@ import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-ba
 import copy from 'copy-to-clipboard';
 import { Canvas } from 'cvat-canvas-wrapper';
 import React from 'react';
-import { ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 interface StateToProps {
     jobInstance: any;
@@ -44,7 +44,7 @@ interface StateToProps {
     autoSave: boolean;
     autoSaveInterval: number;
     workspace: Workspace;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     forceExit: boolean;
@@ -593,7 +593,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 <AnnotationTopBarComponent
                     showStatistics={this.showStatistics}
                     showFilters={this.showFilters}
