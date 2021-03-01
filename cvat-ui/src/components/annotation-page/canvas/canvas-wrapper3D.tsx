@@ -10,9 +10,9 @@ import Layout from 'antd/lib/layout/layout';
 import {
     ArrowUpOutlined, ArrowRightOutlined, ArrowLeftOutlined, ArrowDownOutlined,
 } from '@ant-design/icons';
+import { ResizableBox } from 'react-resizable';
 import { Workspace } from 'reducers/interfaces';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ResizableBox } from 'react-resizable';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
 import { ViewType } from '../../../reducers/interfaces';
 

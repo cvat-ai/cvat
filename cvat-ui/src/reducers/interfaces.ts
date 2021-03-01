@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { MutableRefObject } from 'react';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 
