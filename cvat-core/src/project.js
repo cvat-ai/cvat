@@ -43,6 +43,7 @@
 
             data.labels = [];
             data.tasks = [];
+            data.deleted_labels = [];
 
             if (Array.isArray(initialData.labels)) {
                 for (const label of initialData.labels) {
@@ -186,6 +187,12 @@
                                 );
                             }
 
+                            for (const label of data.labels) {
+                                if (!labels.filter((_label) => _label.id === label.id).length) {
+                                    data.deleted_labels.push(label);
+                                }
+                            }
+
                             data.labels = [...labels];
                         },
                     },
@@ -210,6 +217,9 @@
                      */
                     subsets: {
                         get: () => [...data.task_subsets],
+                    },
+                    _deletedLabels: {
+                        get: () => [...data.deleted_labels],
                     },
                 }),
             );
@@ -257,7 +267,14 @@
                 name: this.name,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
-                labels: [...this.labels.map((el) => el.toJSON())],
+                labels: [
+                    ...this.labels.map((el) => el.toJSON()),
+                    ...this._deletedLabels.map((label) => {
+                        const labelJSON = label.toJSON();
+                        labelJSON.deleted = true;
+                        return labelJSON;
+                    }),
+                ],
             };
 
             await serverProxy.projects.save(this.id, projectData);

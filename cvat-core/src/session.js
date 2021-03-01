@@ -1006,6 +1006,7 @@
             if (data.owner) data.owner = new User(data.owner);
 
             data.labels = [];
+            data.deleted_labels = [];
             data.jobs = [];
             data.files = Object.freeze({
                 server_files: [],
@@ -1318,6 +1319,12 @@
                                 }
                             }
 
+                            for (const label of data.labels) {
+                                if (!labels.filter((_label) => _label.id === label.id).length) {
+                                    data.deleted_labels.push(label);
+                                }
+                            }
+
                             updatedFields.labels = true;
                             data.labels = [...labels];
                         },
@@ -1485,12 +1492,6 @@
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
-                    __updatedFields: {
-                        get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
-                    },
                     dimension: {
                         /**
                          * @name enabled
@@ -1500,6 +1501,15 @@
                          * @instance
                          */
                         get: () => data.dimension,
+                    },
+                    __updatedFields: {
+                        get: () => updatedFields,
+                        set: (fields) => {
+                            updatedFields = fields;
+                        },
+                    },
+                    _deletedLabels: {
+                        get: () => [...data.deleted_labels],
                     },
                 }),
             );
@@ -1920,7 +1930,14 @@
                         taskData.subset = this.subset;
                         break;
                     case 'labels':
-                        taskData.labels = [...this.labels.map((el) => el.toJSON())];
+                        taskData.labels = [
+                            ...this.labels.map((el) => el.toJSON()),
+                            ...this._deletedLabels.map((label) => {
+                                const labelJSON = label.toJSON();
+                                labelJSON.deleted = true;
+                                return labelJSON;
+                            }),
+                        ];
                         break;
                     default:
                         break;

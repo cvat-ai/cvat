@@ -6,10 +6,12 @@ import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
-import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
+import ModalConfirm from 'antd/lib/modal/confirm';
 import copy from 'copy-to-clipboard';
-import { CopyOutlined, EditOutlined, BuildOutlined } from '@ant-design/icons';
+import {
+    CopyOutlined, EditOutlined, BuildOutlined, ExclamationCircleOutlined,
+} from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import RawViewer from './raw-viewer';
@@ -144,20 +146,30 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
     };
 
     private handleDelete = (label: Label): void => {
-        // the label is saved on the server, cannot delete it
+        const deleteLabel = (): void => {
+            const { unsavedLabels, savedLabels } = this.state;
+
+            const filteredUnsavedLabels = unsavedLabels.filter((_label: Label): boolean => _label.id !== label.id);
+            const filteredSavedLabels = savedLabels.filter((_label: Label): boolean => _label.id !== label.id);
+
+            this.setState({ savedLabels: filteredSavedLabels, unsavedLabels: filteredUnsavedLabels });
+            this.handleSubmit(filteredSavedLabels, filteredUnsavedLabels);
+        };
+
         if (typeof label.id !== 'undefined' && label.id >= 0) {
-            notification.error({
-                message: 'Could not delete the label',
-                description: 'It has been already saved on the server',
+            ModalConfirm({
+                title: `Do you want to delete "${label.name}" label?`,
+                icon: <ExclamationCircleOutlined />,
+                content: 'This action is irreversible. Annotation corresponding with this label will be deleted.',
+                type: 'warning',
+                okType: 'danger',
+                onOk() {
+                    deleteLabel();
+                },
             });
+        } else {
+            deleteLabel();
         }
-
-        const { unsavedLabels, savedLabels } = this.state;
-
-        const filteredUnsavedLabels = unsavedLabels.filter((_label: Label): boolean => _label.id !== label.id);
-
-        this.setState({ unsavedLabels: filteredUnsavedLabels });
-        this.handleSubmit(savedLabels, filteredUnsavedLabels);
     };
 
     private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]): void {
