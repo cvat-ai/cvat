@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -69,9 +69,9 @@ export const validatePassword: RuleRender = (): RuleObject => ({
     },
 });
 
-export const validateConfirmation: (firstFieldName: string) => RuleRender = (firstFieldName: string): RuleRender => ({
-    getFieldValue,
-}): RuleObject => ({
+export const validateConfirmation: ((firstFieldName: string) => RuleRender) = (
+    firstFieldName: string,
+): RuleRender => ({ getFieldValue }): RuleObject => ({
     validator(_: RuleObject, value: string): Promise<void> {
         if (value && value !== getFieldValue(firstFieldName)) {
             return Promise.reject(new Error('Two passwords that you enter is inconsistent!'));
@@ -81,14 +81,13 @@ export const validateConfirmation: (firstFieldName: string) => RuleRender = (fir
     },
 });
 
-const validateAgreement: (userAgreements: UserAgreement[]) => RuleRender = (
+const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
     userAgreements: UserAgreement[],
 ): RuleRender => () => ({
     validator(rule: any, value: boolean): Promise<void> {
         const [, name] = rule.field.split(':');
-        const [agreement] = userAgreements.filter(
-            (userAgreement: UserAgreement): boolean => userAgreement.name === name,
-        );
+        const [agreement] = userAgreements
+            .filter((userAgreement: UserAgreement): boolean => userAgreement.name === name);
         if (agreement.required && !value) {
             return Promise.reject(new Error(`You must accept ${agreement.displayText} to continue!`));
         }
@@ -102,16 +101,15 @@ function RegisterFormComponent(props: Props): JSX.Element {
     return (
         <Form
             onFinish={(values: Record<string, string | boolean>) => {
-                const agreements = Object.keys(values).filter((key: string): boolean => key.startsWith('agreement:'));
-                const confirmations = agreements.map(
-                    (key: string): UserConfirmation => ({ name: key.split(':')[1], value: values[key] as boolean }),
-                );
-                const rest = Object.entries(values).filter(
-                    (entry: (string | boolean)[]) => !agreements.includes(entry[0] as string),
-                );
+                const agreements = Object.keys(values)
+                    .filter((key: string):boolean => key.startsWith('agreement:'));
+                const confirmations = agreements
+                    .map((key: string): UserConfirmation => ({ name: key.split(':')[1], value: (values[key] as boolean) }));
+                const rest = Object.entries(values)
+                    .filter((entry: (string | boolean)[]) => !agreements.includes(entry[0] as string));
 
                 onSubmit({
-                    ...((Object.fromEntries(rest) as any) as RegisterData),
+                    ...(Object.fromEntries(rest) as any as RegisterData),
                     confirmations,
                 });
             }}
@@ -168,7 +166,10 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     },
                 ]}
             >
-                <Input prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />} placeholder='Username' />
+                <Input
+                    prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    placeholder='Username'
+                />
             </Form.Item>
 
             <Form.Item
@@ -199,8 +200,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     {
                         required: true,
                         message: 'Please input your password!',
-                    },
-                    validatePassword,
+                    }, validatePassword,
                 ]}
             >
                 <Input.Password
@@ -218,8 +218,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     {
                         required: true,
                         message: 'Please confirm your password!',
-                    },
-                    validateConfirmation('password1'),
+                    }, validateConfirmation('password1'),
                 ]}
             >
                 <Input.Password
@@ -229,30 +228,27 @@ function RegisterFormComponent(props: Props): JSX.Element {
                 />
             </Form.Item>
 
-            {userAgreements.map(
-                (userAgreement: UserAgreement): JSX.Element => (
-                    <Form.Item
-                        name={`agreement:${userAgreement.name}`}
-                        key={userAgreement.name}
-                        initialValue={false}
-                        valuePropName='checked'
-                        rules={[
-                            {
-                                required: true,
-                                message: 'You must accept to continue!',
-                            },
-                            validateAgreement(userAgreements),
-                        ]}
-                    >
-                        <Checkbox>
-                            I read and accept the
-                            <a rel='noopener noreferrer' target='_blank' href={userAgreement.url}>
-                                {` ${userAgreement.displayText}`}
-                            </a>
-                        </Checkbox>
-                    </Form.Item>
-                ),
-            )}
+            {userAgreements.map((userAgreement: UserAgreement): JSX.Element => (
+                <Form.Item
+                    name={`agreement:${userAgreement.name}`}
+                    key={userAgreement.name}
+                    initialValue={false}
+                    valuePropName='checked'
+                    rules={[
+                        {
+                            required: true,
+                            message: 'You must accept to continue!',
+                        }, validateAgreement(userAgreements),
+                    ]}
+                >
+                    <Checkbox>
+                        I read and accept the
+                        <a rel='noopener noreferrer' target='_blank' href={userAgreement.url}>
+                            {` ${userAgreement.displayText}`}
+                        </a>
+                    </Checkbox>
+                </Form.Item>
+            ))}
 
             <Form.Item>
                 <Button

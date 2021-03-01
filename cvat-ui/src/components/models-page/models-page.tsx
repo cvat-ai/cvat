@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,9 +19,7 @@ interface Props {
 }
 
 export default function ModelsPageComponent(props: Props): JSX.Element {
-    const {
-        interactors, detectors, trackers, reid,
-    } = props;
+    const { interactors, detectors, trackers, reid } = props;
 
     const deployedModels = [...detectors, ...interactors, ...trackers, ...reid];
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,10 +37,7 @@ export default function ProjectSearchField(): JSX.Element {
 
     const handleSearch = (value: string): void => {
         const query = { ...gettingQuery };
-        const search = value
-            .replace(/\s+/g, ' ')
-            .replace(/\s*:+\s*/g, ':')
-            .trim();
+        const search = value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
 
         const fields = Object.keys(query).filter((key) => key !== 'page');
         for (const field of fields) {
@@ -74,6 +71,11 @@ export default function ProjectSearchField(): JSX.Element {
     };
 
     return (
-        <Search defaultValue={getSearchField(gettingQuery)} onSearch={handleSearch} size='large' placeholder='Search' />
+        <Search
+            defaultValue={getSearchField(gettingQuery)}
+            onSearch={handleSearch}
+            size='large'
+            placeholder='Search'
+        />
     );
 }

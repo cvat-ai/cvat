@@ -1,11 +1,9 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import thunk from 'redux-thunk';
-import {
-    createStore, applyMiddleware, Store, Reducer,
-} from 'redux';
+import { createStore, applyMiddleware, Store, Reducer } from 'redux';
 import { createLogger } from 'redux-logger';
 import { isDev } from 'utils/enviroment';
 
