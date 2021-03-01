@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,11 +22,12 @@ context('Check if the UI not to crash after remove a tag', () => {
             cy.changeWorkspace('Standard');
         });
         it('Remove the tag', () => {
+            const keyCodeDel = 46;
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .should('contain', '1')
                 .and('contain', 'TAG')
                 .trigger('mouseover')
-                .trigger('keydown', { key: 'Delete' });
+                .trigger('keydown', { keyCode: keyCodeDel });
         });
         it('Page with the error is missing', () => {
             cy.contains('Oops, something went wrong').should('not.exist');

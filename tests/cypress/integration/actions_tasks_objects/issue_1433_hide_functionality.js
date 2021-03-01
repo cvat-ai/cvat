@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,11 +24,12 @@ context('Check hide functionality (H)', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Object is hidden', () => {
+            const keyCodeH = 72;
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove')
                 .trigger('mouseover')
-                .trigger('keydown', { key: 'h' })
+                .trigger('keydown', { keyCode: keyCodeH })
                 .should('be.hidden');
         });
     });

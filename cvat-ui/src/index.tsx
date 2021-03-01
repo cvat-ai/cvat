@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
+import { KeyMap } from 'utils/mousetrap-react';
 import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import createRootReducer from 'reducers/root-reducer';
@@ -45,7 +45,7 @@ interface StateToProps {
     allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     isModelPluginActive: boolean;
 }
 

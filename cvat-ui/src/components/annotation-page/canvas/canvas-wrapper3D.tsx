@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { ReactElement, useEffect, useRef } from 'react';
-import { GlobalHotKeys } from 'react-hotkeys';
 import Layout from 'antd/lib/layout/layout';
 import {
     ArrowUpOutlined, ArrowRightOutlined, ArrowLeftOutlined, ArrowDownOutlined,
@@ -155,8 +154,6 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
     return (
         <Layout.Content className='cvat-canvas3d-fullsize'>
-            <GlobalHotKeys />
-
             <ContextImage
                 frame={frameData}
                 contextImageHide={contextImageHide}
