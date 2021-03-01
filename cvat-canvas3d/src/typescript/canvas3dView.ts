@@ -231,18 +231,34 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             && radius > this.views.perspective.camera.position.x - sphereCenter.x;
         const yRange = -radius < this.views.perspective.camera.position.y - sphereCenter.y
             && radius > this.views.perspective.camera.position.y - sphereCenter.y;
+        const zRange = -radius < this.views.perspective.camera.position.z - sphereCenter.z
+            && radius > this.views.perspective.camera.position.z - sphereCenter.z;
+        let newX = 0;
+        let newY = 0;
+        let newZ = 0;
         if (!xRange) {
-            // eslint-disable-next-line no-param-reassign
-            points.position.x = -sphereCenter.x;
+            newX = sphereCenter.x;
         }
         if (!yRange) {
-            // eslint-disable-next-line no-param-reassign
-            points.position.y = -sphereCenter.y;
+            newY = sphereCenter.y;
+        }
+        if (!zRange) {
+            newZ = sphereCenter.z;
+        }
+        if (newX || newY || newZ) {
+            this.positionAllViews(newX, newY, newZ);
         }
         this.views.perspective.scene.add(points);
         this.views.top.scene.add(points.clone());
         this.views.side.scene.add(points.clone());
         this.views.front.scene.add(points.clone());
+    }
+
+    private positionAllViews(x: number, y: number, z: number): void {
+        this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, false);
+        this.views.top.controls.setLookAt(x, y, z + 10, x, y, z, false);
+        this.views.side.controls.setLookAt(x, y + 8, z, x, y, z, false);
+        this.views.front.controls.setLookAt(x + 8, y, z, x, y, z, false);
     }
 
     private static resizeRendererToDisplaySize(viewName: string, view: RenderView): void {
