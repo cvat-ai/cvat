@@ -25,13 +25,16 @@ export function ExtraControlsControl(): JSX.Element {
     }, []);
 
     onUpdateChildren = () => {
-        setHasChildren(window.document.getElementsByClassName(extraControlsContentClassName)[0].children.length > 0);
+        const contentElement = window.document.getElementsByClassName(extraControlsContentClassName)[0];
+        if (contentElement) {
+            setHasChildren(contentElement.children.length > 0);
+        }
     };
 
     return (
         <Popover
-            defaultVisible
-            trigger={initialized ? 'hover' : 'click'}
+            defaultVisible // we must render it at least one between using
+            trigger={initialized ? 'hover' : 'click'} // trigger='hover' allows to close the popover by body click
             placement='right'
             overlayStyle={{ display: initialized ? '' : 'none' }}
             content={<div className={extraControlsContentClassName} />}
@@ -60,14 +63,20 @@ export default function ControlVisibilityObserver<P = {}>(
 
                 const reservedHeight = 45; // for itself
                 const observer = new ResizeObserver(() => {
+                    // when parent size was changed, check again can we put the control
+                    // into the side panel or not
                     const availableHeight = parentElement.offsetHeight;
                     setVisible(availableHeight - reservedHeight >= visibilityHeightThreshold);
                 });
 
                 if (ref && ref.current) {
                     const availableHeight = parentElement.offsetHeight;
+                    // when first mount, remember bottom coordinate which equal to minimum parent width
+                    // to put the control into side panel
                     visibilityHeightThreshold = wrapper.offsetTop + wrapper.offsetHeight;
+                    // start observing parent size
                     observer.observe(ref.current.parentElement as HTMLElement);
+                    // then put it to extra controls if parent height is not enought
                     setVisible(availableHeight - reservedHeight >= visibilityHeightThreshold);
                 }
 
@@ -80,6 +89,7 @@ export default function ControlVisibilityObserver<P = {}>(
         }, []);
 
         useEffect(() => {
+            // when visibility changed, we notify extra content element because now its children changed
             if (onUpdateChildren) {
                 onUpdateChildren();
             }
@@ -94,6 +104,7 @@ export default function ControlVisibilityObserver<P = {}>(
             return null;
         }
 
+        // first mount always to side panel
         return (
             <div ref={ref}>
                 <ControlComponent {...props} />
