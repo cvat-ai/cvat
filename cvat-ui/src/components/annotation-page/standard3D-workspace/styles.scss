@@ -173,7 +173,7 @@
 }
 
 .cvat-canvas3d-perspective {
-    height: 50%;
+    height: 100%;
     width: 100%;
     position: relative;
     padding: $grid-unit-size/2;
@@ -219,7 +219,7 @@
 }
 
 .cvat-canvas3d-orthographic-view {
-    width: 33.333%;
+    width: 100%;
     height: 100%;
     padding-top: $grid-unit-size/2;
     padding-bottom: $grid-unit-size/2;
@@ -227,10 +227,10 @@
 
 .cvat-canvas3d-topview {
     padding-left: $grid-unit-size/2;
+    padding-right: $grid-unit-size/2;
 }
 
 .cvat-canvas3d-sideview {
-    padding-left: $grid-unit-size/2;
     padding-right: $grid-unit-size/2;
 }
 
@@ -262,4 +262,45 @@
     background-color: $background-color-2;
     text-align: center;
     vertical-align: middle;
+}
+
+.react-resizable {
+    position: relative;
+}
+
+.react-resizable-handle-horizontal {
+    position: absolute;
+    margin-left: auto;
+    width: $grid-unit-size * 10;
+    margin-right: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: grey;
+    height: $grid-unit-size/2;
+    cursor: pointer;
+}
+
+.react-resizable-handle-vertical-side {
+    position: absolute;
+    width: $grid-unit-size/2;
+    margin-right: auto;
+    top: 50%;
+    right: 0;
+    bottom: 0;
+    background-color: grey;
+    height: $grid-unit-size * 10;
+    cursor: pointer;
+}
+
+.react-resizable-handle-vertical-top {
+    position: absolute;
+    width: $grid-unit-size/2;
+    margin-right: auto;
+    top: 50%;
+    right: 0;
+    bottom: 0;
+    background-color: grey;
+    height: $grid-unit-size * 10;
+    cursor: pointer;
 }

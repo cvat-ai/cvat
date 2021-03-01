@@ -584,3 +584,10 @@ export enum DimensionType {
     DIM_3D = '3d',
     DIM_2D = '2d',
 }
+
+export enum ViewType {
+    PERSPECTIVE = 'perspective',
+    TOP = 'top',
+    SIDE = 'side',
+    FRONT = 'front',
+}

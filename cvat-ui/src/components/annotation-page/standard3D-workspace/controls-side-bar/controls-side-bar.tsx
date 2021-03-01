@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { GlobalHotKeys } from 'react-hotkeys';
 import Layout from 'antd/lib/layout';
 
 import { ActiveControl } from 'reducers/interfaces';
@@ -30,6 +31,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
+            <GlobalHotKeys />
+
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <CursorControl

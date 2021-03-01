@@ -26,6 +26,13 @@ export enum FrameZoom {
     MAX = 10,
 }
 
+export enum ViewType {
+    PERSPECTIVE = 'perspective',
+    TOP = 'top',
+    SIDE = 'side',
+    FRONT = 'front',
+}
+
 export enum UpdateReasons {
     IMAGE_CHANGED = 'image_changed',
     OBJECTS_UPDATED = 'objects_updated',
@@ -39,6 +46,7 @@ export enum UpdateReasons {
 export enum Mode {
     IDLE = 'idle',
     DRAG = 'drag',
+    CREATE = 'create',
     RESIZE = 'resize',
     DRAW = 'draw',
     EDIT = 'edit',
@@ -61,6 +69,8 @@ export interface Canvas3dModel {
     data: Canvas3dDataModel;
     setup(frameData: any): void;
     isAbleToChangeFrame(): boolean;
+    draw(drawData: DrawData): void;
+    cancel(): void;
 }
 
 export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
@@ -132,5 +142,19 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
+    }
+
+    public draw(drawData: DrawData): void {
+        if (drawData.enabled && this.data.drawData.enabled) {
+            throw new Error('Drawing has been already started');
+        }
+        this.data.drawData.enabled = drawData.enabled;
+        this.data.mode = Mode.DRAW;
+
+        this.notify(UpdateReasons.DRAW);
+    }
+
+    public cancel(): void {
+        this.notify(UpdateReasons.CANCEL);
     }
 }

@@ -40,6 +40,12 @@ def delete_tmp_dir(tmp_dir):
     if tmp_dir:
         shutil.rmtree(tmp_dir)
 
+def files_to_ignore(directory):
+    ignore_files = ('__MSOSX', '._.DS_Store', '__MACOSX', '.DS_Store')
+    if not any(ignore_file in directory for ignore_file in ignore_files):
+        return True
+    return False
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop):
         self._source_path = sorted(source_path)
@@ -186,7 +192,7 @@ class ZipReader(ImageListReader):
         self._dimension = DimensionType.DIM_2D
         self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
-        file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
+        file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
         super().__init__(file_list, step, start, stop)
 
     def __del__(self):
@@ -706,6 +712,8 @@ class ValidateDimension:
             return
         actual_path = self.path
         for root, _, files in os.walk(actual_path):
+            if not files_to_ignore(root):
+                continue
 
             if root.endswith("data"):
                 if os.path.split(os.path.split(root)[0])[1] == "velodyne_points":
