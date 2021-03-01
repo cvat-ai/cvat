@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
 - Updated the path to python for DL models inside automatic annotation documentation (<https://github.com/openvinotoolkit/cvat/pull/2847>)
 - Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
+- An error about track shapes outside of the task frames during export (<https://github.com/openvinotoolkit/cvat/issues/2827>)
 
 ### Security
 
