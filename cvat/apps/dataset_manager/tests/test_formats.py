@@ -353,10 +353,11 @@ class TaskExportTest(_DbTestBase):
                         with tempfile.TemporaryDirectory() as tmp_dir:
                             zipfile.ZipFile(file_path).extractall(tmp_dir)
                             dataset = load_dataset(tmp_dir)
+                            self.assertEqual(len(dataset), task["size"])
                     else:
                         dataset = load_dataset(file_path)
+                        self.assertEqual(len(dataset), task["size"])
 
-                    self.assertEqual(len(dataset), task["size"])
                 self._test_export(check, task, format_name, save_images=False)
 
     def test_can_skip_outside(self):
