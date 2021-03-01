@@ -68,7 +68,7 @@ function RightGroup(props: Props): JSX.Element {
                     Time Remaining:
                     {' '}
                     <Moment toNow unix>
-                        {Date.now() + Math.trunc(predictor.timeRemaining)}
+                        timeNow + Math.trunc(predictor.timeRemaining)
                     </Moment>
                 </span>
             ) : null}
