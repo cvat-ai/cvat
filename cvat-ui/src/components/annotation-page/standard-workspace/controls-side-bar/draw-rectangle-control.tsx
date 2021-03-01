@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,15 +11,16 @@ import { RectangleIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     canvasInstance: Canvas;
     isDrawing: boolean;
 }
 
+const CustomPopover = withVisibilityHandling(Popover, 'draw-rectangle');
 function DrawRectangleControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing } = props;
-
     const dynamcPopoverPros = isDrawing ?
         {
             overlayStyle: {
@@ -40,14 +41,14 @@ function DrawRectangleControl(props: Props): JSX.Element {
         };
 
     return (
-        <Popover
+        <CustomPopover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.RECTANGLE} />}
         >
             <Icon {...dynamicIconProps} component={RectangleIcon} />
-        </Popover>
+        </CustomPopover>
     );
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,12 +6,12 @@ import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import copy from 'copy-to-clipboard';
 import { CopyOutlined, EditOutlined, BuildOutlined } from '@ant-design/icons';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import RawViewer from './raw-viewer';
 import ConstructorViewer from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
@@ -195,7 +195,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
                 type='card'
                 tabBarStyle={{ marginBottom: '0px' }}
                 tabBarExtraContent={(
-                    <Tooltip title='Copied to clipboard!' trigger='click' mouseLeaveDelay={0}>
+                    <CVATTooltip title='Copied to clipboard!' trigger='click'>
                         <Button
                             type='link'
                             icon={<CopyOutlined />}
@@ -218,7 +218,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
                         >
                             Copy
                         </Button>
-                    </Tooltip>
+                    </CVATTooltip>
                 )}
             >
                 <Tabs.TabPane

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,30 +10,28 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { TagIcon } from 'icons';
 
 import SetupTagPopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
+import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
     canvasInstance: Canvas;
     isDrawing: boolean;
 }
 
+const CustomPopover = withVisibilityHandling(Popover, 'setup-tag');
 function SetupTagControl(props: Props): JSX.Element {
     const { isDrawing } = props;
-
-    const dynamcPopoverPros = isDrawing ? {
-        overlayStyle: {
-            display: 'none',
-        },
-    } : {};
+    const dynamcPopoverPros = isDrawing ?
+        {
+            overlayStyle: {
+                display: 'none',
+            },
+        } :
+        {};
 
     return (
-        <Popover
-            {...dynamcPopoverPros}
-            placement='right'
-            overlayClassName='cvat-draw-shape-popover'
-            content={<SetupTagPopoverContainer />}
-        >
+        <CustomPopover {...dynamcPopoverPros} placement='right' content={<SetupTagPopoverContainer />}>
             <Icon className='cvat-setup-tag-control' component={TagIcon} />
-        </Popover>
+        </CustomPopover>
     );
 }
 

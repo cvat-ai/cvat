@@ -1,10 +1,12 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { MutableRefObject } from 'react';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
+import { KeyMap } from 'utils/mousetrap-react';
 
 export type StringObject = {
     [index: string]: string;
@@ -105,7 +107,6 @@ export interface FormatsState {
     initialized: boolean;
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
@@ -174,6 +175,7 @@ export interface Model {
     };
 }
 
+export type OpenCVTool = IntelligentScissors;
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',
@@ -331,6 +333,8 @@ export enum ActiveControl {
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
+    PHOTO_CONTEXT = 'PHOTO_CONTEXT',
+    OPENCV_TOOLS = 'opencv_tools',
 }
 
 export enum ShapeType {
@@ -379,7 +383,7 @@ export interface AnnotationState {
             pointID: number | null;
             clientID: number | null;
         };
-        instance: Canvas;
+        instance: Canvas | Canvas3d;
         ready: boolean;
         activeControl: ActiveControl;
     };
@@ -402,9 +406,14 @@ export interface AnnotationState {
         };
         playing: boolean;
         frameAngles: number[];
+        contextImage: {
+            loaded: boolean;
+            data: string;
+            hidden: boolean;
+        };
     };
     drawing: {
-        activeInteractor?: Model;
+        activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;
@@ -457,6 +466,7 @@ export interface AnnotationState {
 }
 
 export enum Workspace {
+    STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
     TAG_ANNOTATION = 'Tag annotation',
@@ -529,7 +539,7 @@ export interface SettingsState {
 
 export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 
@@ -568,4 +578,9 @@ export interface CombinedState {
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;
+}
+
+export enum DimensionType {
+    DIM_3D = '3d',
+    DIM_2D = '2d',
 }

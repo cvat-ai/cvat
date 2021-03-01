@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,6 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Button from 'antd/lib/button';
-import Slider from 'antd/lib/slider';
 import Select from 'antd/lib/select';
 import Popover from 'antd/lib/popover';
 import InputNumber from 'antd/lib/input-number';
@@ -17,7 +16,7 @@ import { CompactPicker } from 'react-color';
 
 import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
-import { FrameSpeed, GridColor } from 'reducers/interfaces';
+import { FrameSpeed } from 'reducers/interfaces';
 import consts from 'consts';
 
 interface Props {
@@ -25,25 +24,11 @@ interface Props {
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
     rotateAll: boolean;
-    grid: boolean;
-    gridSize: number;
-    gridColor: GridColor;
-    gridOpacity: number;
-    brightnessLevel: number;
-    contrastLevel: number;
-    saturationLevel: number;
     canvasBackgroundColor: string;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
     onSwitchRotateAll(rotateAll: boolean): void;
-    onSwitchGrid(grid: boolean): void;
-    onChangeGridSize(gridSize: number): void;
-    onChangeGridColor(gridColor: GridColor): void;
-    onChangeGridOpacity(gridOpacity: number): void;
-    onChangeBrightnessLevel(level: number): void;
-    onChangeContrastLevel(level: number): void;
-    onChangeSaturationLevel(level: number): void;
     onChangeCanvasBackgroundColor(color: string): void;
 }
 
@@ -53,32 +38,16 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         frameSpeed,
         resetZoom,
         rotateAll,
-        grid,
-        gridSize,
-        gridColor,
-        gridOpacity,
-        brightnessLevel,
-        contrastLevel,
-        saturationLevel,
         canvasBackgroundColor,
         onChangeFrameStep,
         onChangeFrameSpeed,
         onSwitchResetZoom,
         onSwitchRotateAll,
-        onSwitchGrid,
-        onChangeGridSize,
-        onChangeGridColor,
-        onChangeGridOpacity,
-        onChangeBrightnessLevel,
-        onChangeContrastLevel,
-        onChangeSaturationLevel,
         onChangeCanvasBackgroundColor,
     } = props;
 
     const minFrameStep = 2;
     const maxFrameStep = 1000;
-    const minGridSize = 5;
-    const maxGridSize = 1000;
 
     return (
         <div className='cvat-player-settings'>
@@ -89,8 +58,8 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         min={minFrameStep}
                         max={maxFrameStep}
                         value={frameStep}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
+                        onChange={(value: number | undefined | string | null): void => {
+                            if (typeof value !== 'undefined' && value !== null) {
                                 onChangeFrameStep(Math.floor(clamp(+value, minFrameStep, maxFrameStep)));
                             }
                         }}
@@ -109,27 +78,44 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col>
                     <Text className='cvat-text-color'> Player speed </Text>
                     <Select
+                        className='cvat-player-settings-speed-select'
                         value={frameSpeed}
                         onChange={(speed: FrameSpeed): void => {
                             onChangeFrameSpeed(speed);
                         }}
                     >
-                        <Select.Option key='fastest' value={FrameSpeed.Fastest}>
+                        <Select.Option
+                            key='fastest'
+                            value={FrameSpeed.Fastest}
+                            className='cvat-player-settings-speed-fastest'
+                        >
                             Fastest
                         </Select.Option>
-                        <Select.Option key='fast' value={FrameSpeed.Fast}>
+                        <Select.Option key='fast' value={FrameSpeed.Fast} className='cvat-player-settings-speed-fast'>
                             Fast
                         </Select.Option>
-                        <Select.Option key='usual' value={FrameSpeed.Usual}>
+                        <Select.Option
+                            key='usual'
+                            value={FrameSpeed.Usual}
+                            className='cvat-player-settings-speed-usual'
+                        >
                             Usual
                         </Select.Option>
-                        <Select.Option key='slow' value={FrameSpeed.Slow}>
+                        <Select.Option key='slow' value={FrameSpeed.Slow} className='cvat-player-settings-speed-slow'>
                             Slow
                         </Select.Option>
-                        <Select.Option key='slower' value={FrameSpeed.Slower}>
+                        <Select.Option
+                            key='slower'
+                            value={FrameSpeed.Slower}
+                            className='cvat-player-settings-speed-slower'
+                        >
                             Slower
                         </Select.Option>
-                        <Select.Option key='slowest' value={FrameSpeed.Slowest}>
+                        <Select.Option
+                            key='slowest'
+                            value={FrameSpeed.Slowest}
+                            className='cvat-player-settings-speed-slowest'
+                        >
                             Slowest
                         </Select.Option>
                     </Select>
@@ -150,77 +136,6 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     >
                         <Button type='default'>Select canvas background color</Button>
                     </Popover>
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <Checkbox
-                        className='cvat-text-color cvat-player-settings-grid'
-                        checked={grid}
-                        onChange={(event: CheckboxChangeEvent): void => {
-                            onSwitchGrid(event.target.checked);
-                        }}
-                    >
-                        Show grid
-                    </Checkbox>
-                </Col>
-            </Row>
-            <Row justify='space-between'>
-                <Col span={8} className='cvat-player-settings-grid-size'>
-                    <Text className='cvat-text-color'> Grid size </Text>
-                    <InputNumber
-                        className='cvat-player-settings-grid-size-input'
-                        min={minGridSize}
-                        max={maxGridSize}
-                        value={gridSize}
-                        disabled={!grid}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
-                                onChangeGridSize(Math.floor(clamp(+value, minGridSize, maxGridSize)));
-                            }
-                        }}
-                    />
-                </Col>
-                <Col span={8} className='cvat-player-settings-grid-color'>
-                    <Text className='cvat-text-color'> Grid color </Text>
-                    <Select
-                        className='cvat-player-settings-grid-color-input'
-                        value={gridColor}
-                        disabled={!grid}
-                        onChange={(color: GridColor): void => {
-                            onChangeGridColor(color);
-                        }}
-                    >
-                        <Select.Option key='white' value={GridColor.White}>
-                            White
-                        </Select.Option>
-                        <Select.Option key='black' value={GridColor.Black}>
-                            Black
-                        </Select.Option>
-                        <Select.Option key='red' value={GridColor.Red}>
-                            Red
-                        </Select.Option>
-                        <Select.Option key='green' value={GridColor.Green}>
-                            Green
-                        </Select.Option>
-                        <Select.Option key='blue' value={GridColor.Blue}>
-                            Blue
-                        </Select.Option>
-                    </Select>
-                </Col>
-                <Col span={8} className='cvat-player-settings-grid-opacity'>
-                    <Text className='cvat-text-color'> Grid opacity </Text>
-                    <Slider
-                        className='cvat-player-settings-grid-opacity-input'
-                        min={0}
-                        max={100}
-                        value={gridOpacity}
-                        disabled={!grid}
-                        onChange={(value: number | [number, number]): void => {
-                            onChangeGridOpacity(value as number);
-                        }}
-                    />
-                    <Text className='cvat-text-color'>{`${gridOpacity} %`}</Text>
                 </Col>
             </Row>
             <Row justify='start'>
@@ -257,68 +172,6 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                         <Col span={24}>
                             <Text type='secondary'> Rotate all images simultaneously </Text>
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
-            <Row>
-                <Col span={12}>
-                    <Row className='cvat-player-settings-brightness'>
-                        <Col span={24} className='cvat-text-color'>
-                            Brightness
-                        </Col>
-                        <Col span={24}>
-                            <Slider
-                                min={50}
-                                max={200}
-                                value={brightnessLevel}
-                                onChange={(value: number | [number, number]): void => {
-                                    onChangeBrightnessLevel(value as number);
-                                }}
-                            />
-                        </Col>
-                    </Row>
-                    <Row className='cvat-player-settings-contrast'>
-                        <Col span={24} className='cvat-text-color'>
-                            Contrast
-                        </Col>
-                        <Col span={24}>
-                            <Slider
-                                min={50}
-                                max={200}
-                                value={contrastLevel}
-                                onChange={(value: number | [number, number]): void => {
-                                    onChangeContrastLevel(value as number);
-                                }}
-                            />
-                        </Col>
-                    </Row>
-                    <Row className='cvat-player-settings-saturation'>
-                        <Col span={24} className='cvat-text-color'>
-                            Saturation
-                        </Col>
-                        <Col span={24}>
-                            <Slider
-                                min={0}
-                                max={300}
-                                value={saturationLevel}
-                                onChange={(value: number | [number, number]): void => {
-                                    onChangeSaturationLevel(value as number);
-                                }}
-                            />
-                        </Col>
-                    </Row>
-                    <Row className='cvat-player-reset-color-settings'>
-                        <Col>
-                            <Button
-                                onClick={() => {
-                                    onChangeBrightnessLevel(100);
-                                    onChangeContrastLevel(100);
-                                    onChangeSaturationLevel(100);
-                                }}
-                            >
-                                Reset color settings
-                            </Button>
                         </Col>
                     </Row>
                 </Col>

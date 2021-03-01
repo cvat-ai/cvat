@@ -1,9 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Layout from 'antd/lib/layout';
 
 import { ActiveControl, Rotation } from 'reducers/interfaces';
@@ -15,6 +15,7 @@ import MoveControl from './move-control';
 import FitControl from './fit-control';
 import ResizeControl from './resize-control';
 import ToolsControl from './tools-control';
+import OpenCVControl from './opencv-control';
 import DrawRectangleControl from './draw-rectangle-control';
 import DrawPolygonControl from './draw-polygon-control';
 import DrawPolylineControl from './draw-polyline-control';
@@ -28,7 +29,7 @@ import SplitControl from './split-control';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 
     mergeObjects(enabled: boolean): void;
@@ -90,6 +91,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 ActiveControl.DRAW_RECTANGLE,
                 ActiveControl.DRAW_CUBOID,
                 ActiveControl.AI_TOOLS,
+                ActiveControl.OPENCV_TOOLS,
             ].includes(activeControl);
 
             if (!drawing) {
@@ -103,7 +105,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     repeatDrawShape();
                 }
             } else {
-                if (activeControl === ActiveControl.AI_TOOLS) {
+                if ([ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl)) {
                     // separated API method
                     canvasInstance.interact({ enabled: false });
                     return;
@@ -167,7 +169,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <CursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
@@ -187,6 +189,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
             <ToolsControl />
+            <OpenCVControl />
             <DrawRectangleControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}

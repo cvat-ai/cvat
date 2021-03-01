@@ -12,11 +12,13 @@ from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.prepare import PrepareInfo, md5_hash, ParsingMeta
+from cvat.apps.engine.models import DimensionType
 
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 class CacheInteraction:
-    def __init__(self):
+    def __init__(self, dimension=DimensionType.DIM_2D):
         self._cache = Cache(settings.CACHE_ROOT)
+        self._dimension = dimension
 
     def __del__(self):
         self._cache.close()
@@ -39,7 +41,10 @@ class CacheInteraction:
         image_quality = 100 if writer_classes[quality] in [Mpeg4ChunkWriter, ZipChunkWriter] else db_data.image_quality
         mime_type = 'video/mp4' if writer_classes[quality] in [Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter] else 'application/zip'
 
-        writer = writer_classes[quality](image_quality)
+        kwargs = {}
+        if self._dimension == DimensionType.DIM_3D:
+            kwargs["dimension"] = DimensionType.DIM_3D
+        writer = writer_classes[quality](image_quality, **kwargs)
 
         images = []
         buff = BytesIO()

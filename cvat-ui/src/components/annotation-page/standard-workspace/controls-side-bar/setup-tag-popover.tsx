@@ -1,13 +1,14 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
+
 import LabelSelector from 'components/label-selector/label-selector';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     labels: any[];
@@ -23,7 +24,7 @@ function SetupTagPopover(props: Props): JSX.Element {
     } = props;
 
     return (
-        <div className='cvat-draw-shape-popover-content'>
+        <div className='cvat-setup-tag-popover-content'>
             <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color' strong>
@@ -48,9 +49,9 @@ function SetupTagPopover(props: Props): JSX.Element {
             </Row>
             <Row justify='space-around'>
                 <Col span={24}>
-                    <Tooltip title={`Press ${repeatShapeShortcut} to add a tag again`} mouseLeaveDelay={0}>
+                    <CVATTooltip title={`Press ${repeatShapeShortcut} to add a tag again`}>
                         <Button onClick={() => onSetup(selectedLabelID)}>Tag</Button>
-                    </Tooltip>
+                    </CVATTooltip>
                 </Col>
             </Row>
         </div>

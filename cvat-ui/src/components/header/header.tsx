@@ -232,7 +232,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 About
             </Menu.Item>
             {renderChangePasswordItem && (
-                <Menu.Item onClick={(): void => switchChangePasswordDialog(true)} disabled={changePasswordFetching}>
+                <Menu.Item className='cvat-header-menu-change-password' onClick={(): void => switchChangePasswordDialog(true)} disabled={changePasswordFetching}>
                     {changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
                     Change password
                 </Menu.Item>

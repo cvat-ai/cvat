@@ -22,6 +22,7 @@ module.exports = (stagedFiles) => {
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
     const cvatCore = containsInPath('/cvat-core/', eslintFiles);
     const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
+    const cvatCanvas3d = containsInPath('/cvat-canvas3d/', eslintFiles);
     const cvatUI = containsInPath('/cvat-ui/', eslintFiles);
 
     const mapping = {};
@@ -31,6 +32,7 @@ module.exports = (stagedFiles) => {
     mapping['npm run precommit:cvat-data -- '] = cvatData.join(' ');
     mapping['npm run precommit:cvat-core -- '] = cvatCore.join(' ');
     mapping['npm run precommit:cvat-canvas -- '] = cvatCanvas.join(' ');
+    mapping['npm run precommit:cvat-canvas3d -- '] = cvatCanvas3d.join(' ');
 
     for (const command of Object.keys(mapping)) {
         const files = mapping[command];
