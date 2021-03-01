@@ -106,10 +106,10 @@ Cypress.Commands.add('openTask', (taskName) => {
     cy.get('.cvat-task-details').should('exist');
 });
 
-Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200) => {
-    cy.server().route(method, '/api/v1/jobs/**').as('saveJob');
+Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
+    cy.intercept(method, '/api/v1/jobs/**').as(as);
     cy.get('button').contains('Save').click({ force: true });
-    cy.wait('@saveJob').its('status').should('equal', status);
+    cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
 Cypress.Commands.add('getJobNum', (jobID) => {
@@ -216,7 +216,10 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
     if (createPointParams.complete) {
-        cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPointParams, 'POINTS');
 });
@@ -228,14 +231,15 @@ Cypress.Commands.add('changeAppearance', (colorBy) => {
 });
 
 Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
+    const keyCodeG = 71;
     cy.get('.cvat-canvas-container')
-        .trigger('keydown', { key: 'g' })
-        .trigger('keyup', { key: 'g' })
+        .trigger('keydown', { keyCode: keyCodeG })
+        .trigger('keyup', { keyCode: keyCodeG })
         .trigger('mousedown', firstX, firstY, { which: 1 })
         .trigger('mousemove', lastX, lastY)
         .trigger('mouseup', lastX, lastY)
-        .trigger('keydown', { key: 'g' })
-        .trigger('keyup', { key: 'g' });
+        .trigger('keydown', { keyCode: keyCodeG })
+        .trigger('keyup', { keyCode: keyCodeG });
 });
 
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
@@ -257,7 +261,10 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
     if (createPolygonParams.complete) {
-        cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
@@ -383,30 +390,31 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
     if (createPolylineParams.complete) {
-        cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
 });
 
-Cypress.Commands.add('getTaskID', (taskName) => {
-    cy.contains('strong', taskName)
-        .parents('.cvat-tasks-list-item')
-        .within(() => {
-            cy.get('span')
-                .invoke('text')
-                .then((text) => {
-                    return String(text.match(/^#\d+\:/g)).replace(/[^\d]/g, '');
+Cypress.Commands.add('deleteTask', (taskName) => {
+    let taskId = '';
+    cy.contains('.cvat-item-task-name', taskName)
+        .parents('.cvat-task-item-description')
+        .find('.cvat-item-task-id')
+        .then(($taskId) => {
+            taskId = $taskId.text().replace(/[^\d]/g, '');
+            cy.contains('.cvat-item-task-name', taskName)
+                .parents('.cvat-tasks-list-item')
+                .find('.cvat-menu-icon')
+                .trigger('mouseover');
+            cy.get('.cvat-actions-menu').contains('Delete').click();
+            cy.get('.cvat-modal-confirm-delete-task')
+                .should('contain', `The task ${taskId} will be deleted`)
+                .within(() => {
+                    cy.contains('button', 'Delete').click();
                 });
-        });
-});
-
-Cypress.Commands.add('deleteTask', (taskName, taskID) => {
-    cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').trigger('mouseover');
-    cy.get('.cvat-actions-menu').contains('Delete').click();
-    cy.get('.cvat-modal-confirm-delete-task')
-        .should('contain', `The task ${taskID} will be deleted`)
-        .within(() => {
-            cy.contains('button', 'Delete').click();
         });
 });
 

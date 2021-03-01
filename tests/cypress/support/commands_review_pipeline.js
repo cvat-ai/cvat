@@ -140,10 +140,10 @@ Cypress.Commands.add('submitReview', (decision, user) => {
     cy.get('.cvat-submit-review-dialog').within(() => {
         cy.contains(new RegExp(`^${decision}$`, 'g')).click();
         if (decision === 'Review next') {
-            cy.server().route('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
+            cy.intercept('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {
                 cy.get('input[type="search"]').clear().type(`${user}`);
-                cy.wait('@searchUsers').its('status').should('equal', 200);
+                cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
                 cy.get('input[type="search"]').type('{Enter}');
             });
         }

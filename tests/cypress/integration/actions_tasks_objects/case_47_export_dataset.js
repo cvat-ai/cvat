@@ -26,13 +26,13 @@ context('Export as a dataset.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Go to Menu. Press "Export as a dataset" -> "CVAT for images".', () => {
-            cy.server().route('GET', '/api/v1/tasks/**/dataset**').as('exportDataset');
+            cy.intercept('GET', '/api/v1/tasks/**/dataset**').as('exportDataset');
             cy.interactMenu('Export as a dataset');
             cy.get('.cvat-menu-export-submenu-item').within(() => {
                 cy.contains('CVAT for images').click();
             });
-            cy.wait('@exportDataset', { timeout: 5000 }).its('status').should('equal', 202);
-            cy.wait('@exportDataset').its('status').should('equal', 201);
+            cy.wait('@exportDataset', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
+            cy.wait('@exportDataset').its('response.statusCode').should('equal', 201);
         });
     });
 });

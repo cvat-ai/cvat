@@ -48,9 +48,7 @@ context('Rename a task.', () => {
 
     after(() => {
         cy.login();
-        cy.getTaskID(newNaskName).then(($taskID) => {
-            cy.deleteTask(newNaskName, $taskID);
-        });
+        cy.deleteTask(newNaskName);
     });
 
     describe(`Testing "${labelName}". Issue 2572.`, () => {

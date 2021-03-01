@@ -1,8 +1,8 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
+import { KeyMap } from 'utils/mousetrap-react';
 import { connect } from 'react-redux';
 
 import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper';
@@ -90,7 +90,7 @@ interface StateToProps {
     curZLayer: number;
     automaticBordering: boolean;
     switchableAutomaticBordering: boolean;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     canvasBackgroundColor: string;
 }
 

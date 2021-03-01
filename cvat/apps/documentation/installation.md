@@ -17,6 +17,7 @@
         - [1. Make the proxy listen on 80 and 443 ports](#1-make-the-proxy-listen-on-80-and-443-ports)
         - [2. Issue a certificate and run HTTPS versions with `acme.sh` helper](#2-issue-a-certificate-and-run-https-versions-with-acmesh-helper)
           - [Create certificate files using an ACME challenge on docker host](#create-certificate-files-using-an-acme-challenge-on-docker-host)
+
 # Quick installation guide
 
 Before you can use CVAT, you’ll need to get it installed. The document below
@@ -510,6 +511,7 @@ rm -r /root/.acme.sh/CVAT.example.com
 ```
 
 ####### Issue a production certificate
+
 ```
 ~/.acme.sh/acme.sh --issue -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
 ```

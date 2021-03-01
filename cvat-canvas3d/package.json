@@ -38,6 +38,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "three": "^0.125.0"
+    "three": "^0.125.0",
+    "camera-controls": "^1.25.3"
   }
 }
