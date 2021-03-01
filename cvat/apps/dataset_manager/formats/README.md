@@ -885,22 +885,23 @@ Downloaded file: a zip archive of the following structure:
 ```bash
 taskname.zip/
 ├── labels.txt # optional
-└── WIDER_<any_subset_name>/
-    └── images
-        ├── 0--label0/
-            └── 0_label0_image1.jpg
-        └── 1--label1/
-            └── 1_label1_image2.jpg
+├── WIDER_<any_subset_name>/
+|   └── images
+|       ├── 0--label0/
+|       |   └── 0_label0_image1.jpg
+|       └── 1--label1/
+|           └── 1_label1_image2.jpg
 └── wider_face_split/
     └── wider_face_<any_subset_name>_bbx_gt.txt
 ```
 
 - supported annotations: Rectangles (with attributes), Labels
-- supported attributes: `blur`, `expression`, `illumination`, `occlused`, `pose`, `invalid`
+- supported attributes: `blur`, `expression`, `illumination`,
+  `occluded` (both the annotation property & an attribute), `pose`, `invalid`
 
 #### WIDER Face Loader
 
 Uploaded file: a zip archive of the structure above
 
 - supported annotations: Rectangles (with attributes), Labels
-- supported attributes: `blur`, `expression`, `illumination`, `occlused`, `pose`, `invalid`
+- supported attributes: `blur`, `expression`, `illumination`, `occluded`, `pose`, `invalid`
