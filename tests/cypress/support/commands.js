@@ -216,7 +216,10 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
     if (createPointParams.complete) {
-        cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPointParams, 'POINTS');
 });
@@ -228,14 +231,15 @@ Cypress.Commands.add('changeAppearance', (colorBy) => {
 });
 
 Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
+    const keyCodeG = 71;
     cy.get('.cvat-canvas-container')
-        .trigger('keydown', { key: 'g' })
-        .trigger('keyup', { key: 'g' })
+        .trigger('keydown', { keyCode: keyCodeG })
+        .trigger('keyup', { keyCode: keyCodeG })
         .trigger('mousedown', firstX, firstY, { which: 1 })
         .trigger('mousemove', lastX, lastY)
         .trigger('mouseup', lastX, lastY)
-        .trigger('keydown', { key: 'g' })
-        .trigger('keyup', { key: 'g' });
+        .trigger('keydown', { keyCode: keyCodeG })
+        .trigger('keyup', { keyCode: keyCodeG });
 });
 
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
@@ -257,7 +261,10 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
     if (createPolygonParams.complete) {
-        cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
@@ -383,7 +390,10 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
     if (createPolylineParams.complete) {
-        cy.get('.cvat-canvas-container').trigger('keydown', { key: 'n' }).trigger('keyup', { key: 'n' });
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
 });

@@ -36,8 +36,7 @@
 .cvat-canvas-controls-sidebar {
     background-color: $background-color-2;
     border-right: 1px solid $border-color-1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 .cvat-cursor-control,
@@ -56,6 +55,7 @@
 .cvat-split-track-control,
 .cvat-issue-control,
 .cvat-tools-control,
+.cvat-extra-controls-control,
 .cvat-opencv-control {
     border-radius: 3.3px;
     transform: scale(0.65);
@@ -72,6 +72,13 @@
 
     > svg {
         transform: scale(0.8);
+    }
+}
+
+.cvat-extra-controls-control {
+    > svg {
+        width: 40px;
+        height: 40px;
     }
 }
 

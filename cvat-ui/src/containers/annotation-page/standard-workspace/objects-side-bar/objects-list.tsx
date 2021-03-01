@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
@@ -41,7 +41,7 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     annotationsFiltersHistory: string[];
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
 }
@@ -442,7 +442,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 <ObjectsListComponent
                     listHeight={listHeight}
                     statesHidden={statesHidden}
