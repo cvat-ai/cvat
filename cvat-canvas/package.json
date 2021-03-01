@@ -5,7 +5,7 @@
   "main": "src/canvas.ts",
   "scripts": {
     "build": "tsc && webpack --config ./webpack.config.js",
-    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+    "server": "webpack serve --config ./webpack.config.js --mode=development"
   },
   "author": "Intel",
   "license": "MIT",
@@ -20,8 +20,6 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^1.13.0",
     "@typescript-eslint/parser": "^1.13.0",
-    "dts-bundle-webpack": "^1.0.2",
-    "eslint-config-airbnb-typescript": "^4.0.1",
-    "eslint-plugin-import": "^2.18.2"
+    "dts-bundle-webpack": "^1.0.2"
   }
 }
