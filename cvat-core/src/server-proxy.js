@@ -7,7 +7,7 @@
     const { ServerError } = require('./exceptions');
     const store = require('store');
     const config = require('./config');
-    const DownloadWorker = require('./download.worker');
+    const DownloadWorker = require('./download.worker').default;
 
     function generateError(errorData) {
         if (errorData.response) {

@@ -21,6 +21,11 @@ const cvatData = {
         library: 'cvatData',
         libraryTarget: 'window',
     },
+    resolve: {
+        fallback: {
+            stream: false,
+        },
+    },
     module: {
         rules: [
             {

@@ -5,8 +5,8 @@
 const { Mutex } = require('async-mutex');
 // eslint-disable-next-line max-classes-per-file
 const { MP4Reader, Bytestream } = require('./3rdparty/mp4');
-const ZipDecoder = require('./unzip_imgs.worker');
-const H264Decoder = require('./3rdparty/Decoder.worker');
+const ZipDecoder = require('./unzip_imgs.worker').default;
+const H264Decoder = require('./3rdparty/Decoder.worker').default;
 
 const BlockType = Object.freeze({
     MP4VIDEO: 'mp4video',

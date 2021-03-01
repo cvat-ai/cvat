@@ -19,6 +19,9 @@ module.exports = {
     entry: {
         'cvat-ui': './src/index.tsx',
     },
+    stats: {
+        children: true,
+    },
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: '[name].[contenthash].min.js',
@@ -87,7 +90,7 @@ module.exports = {
                     'babel-loader',
                     {
                         loader: 'react-svg-loader',
-                        query: {
+                        options: {
                             svgo: {
                                 plugins: [{ pretty: true }, { cleanupIDs: false }],
                             },
@@ -101,7 +104,7 @@ module.exports = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '3rdparty/[name].[contenthash].js',
+                        filename: '3rdparty/[name].[contenthash].js',
                     },
                 },
             },
@@ -112,7 +115,7 @@ module.exports = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '[name].[contenthash].js',
+                        filename: '[name].[contenthash].js',
                     },
                 },
             },
@@ -126,12 +129,13 @@ module.exports = {
         new Dotenv({
             systemvars: true,
         }),
-        new CopyPlugin([
-            {
-                from: '../cvat-data/src/js/3rdparty/avc.wasm',
-                to: '3rdparty/',
-            },
-        ]),
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: '../cvat-data/src/js/3rdparty/avc.wasm',
+                    to: '3rdparty/',
+                },
+            ],
+        }),
     ],
-    node: { fs: 'empty' },
 };
