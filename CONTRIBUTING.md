@@ -19,8 +19,7 @@ patches and features.
   ```
 
   ```sh
-  # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
-  curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+  curl -sL https://deb.nodesource.com/setup_15.x | sudo -E bash -
   sudo apt-get install -y nodejs
   ```
 
