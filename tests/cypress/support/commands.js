@@ -274,6 +274,7 @@ Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
+
     cy.get('.cvat-workspace-selector').then((value) => {
         const cvatWorkspaceSelectorValue = value.text();
         if (cvatWorkspaceSelectorValue.includes('Attribute annotation')) {
@@ -419,7 +420,7 @@ Cypress.Commands.add('removeAnnotations', () => {
         cy.contains('Remove annotations').click();
     });
     cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
-        cy.contains('button', 'Delete').click();
+        cy.contains('button','Delete').click();
     });
 });
 
@@ -575,15 +576,12 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
 
 Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
     cy.document().then((doc) => {
-        const stateItemLabelSelectorList = Array.from(
-            doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'),
-        );
+        const stateItemLabelSelectorList = Array.from(doc.querySelectorAll('.cvat-objects-sidebar-state-item-label-selector'));
         for (let i = 0; i < stateItemLabelSelectorList.length; i++) {
             if (stateItemLabelSelectorList[i].textContent === labelName) {
                 cy.get(stateItemLabelSelectorList[i])
                     .parents('.cvat-objects-sidebar-state-item')
-                    .should('have.attr', 'id')
-                    .then((id) => {
+                    .should('have.attr', 'id').then((id) => {
                         return Number(id.match(/\d+$/));
                     });
             }

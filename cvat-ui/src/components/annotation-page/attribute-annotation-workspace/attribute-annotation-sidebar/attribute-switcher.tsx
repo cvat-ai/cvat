@@ -25,11 +25,7 @@ function AttributeSwitcher(props: Props): JSX.Element {
     return (
         <div className='cvat-attribute-annotation-sidebar-attribute-switcher'>
             <Tooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`} mouseLeaveDelay={0}>
-                <Button
-                    className='cvat-attribute-annotation-sidebar-attribute-switcher-left'
-                    disabled={attributesCount <= 1}
-                    onClick={() => nextAttribute(-1)}
-                >
+                <Button className='cvat-attribute-annotation-sidebar-attribute-switcher-left' disabled={attributesCount <= 1} onClick={() => nextAttribute(-1)}>
                     <LeftOutlined />
                 </Button>
             </Tooltip>
@@ -38,11 +34,7 @@ function AttributeSwitcher(props: Props): JSX.Element {
                 <Text strong>{` [${currentIndex + 1}/${attributesCount}]`}</Text>
             </Tooltip>
             <Tooltip title={`Next attribute ${normalizedKeyMap.NEXT_ATTRIBUTE}`} mouseLeaveDelay={0}>
-                <Button
-                    className='cvat-attribute-annotation-sidebar-attribute-switcher-right'
-                    disabled={attributesCount <= 1}
-                    onClick={() => nextAttribute(1)}
-                >
+                <Button className='cvat-attribute-annotation-sidebar-attribute-switcher-right' disabled={attributesCount <= 1} onClick={() => nextAttribute(1)}>
                     <RightOutlined />
                 </Button>
             </Tooltip>
