@@ -166,7 +166,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.front.camera.up.set(0, 0, 1);
         this.views.front.camera.lookAt(0, 0, 0);
 
-        Object.keys(this.views).forEach((view: string) => {
+        Object.keys(this.views).forEach((view: string): void => {
             const viewType = this.views[view as keyof Views];
             viewType.renderer.setSize(width, height);
             if (view !== ViewType.PERSPECTIVE) {
@@ -272,7 +272,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private renderRayCaster = (viewType: RenderView) => {
+    private renderRayCaster = (viewType: RenderView): void => {
         viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
         if (this.mode === Mode.DRAW) {
             const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
@@ -291,7 +291,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 true,
             );
             if (intersects.length !== 0) {
-                this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh) => {
+                this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh): void => {
                     if (this.selected.perspective !== sceneItem) {
                         // eslint-disable-next-line no-param-reassign
                         sceneItem.material.color = new THREE.Color(0xff0000);
@@ -304,7 +304,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             } else {
                 if (this.highlighted) {
-                    this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh) => {
+                    this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh): void => {
                         if (this.selected.perspective !== sceneItem) {
                             // eslint-disable-next-line no-param-reassign
                             sceneItem.material.color = new THREE.Color(0xff0000);
@@ -317,7 +317,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     };
 
     public render(): void {
-        Object.keys(this.views).forEach((view: string) => {
+        Object.keys(this.views).forEach((view: string): void => {
             const viewType = this.views[view as keyof Views];
             Canvas3dViewImpl.resizeRendererToDisplaySize(view, viewType);
             viewType.controls.update(this.clock.getDelta());
@@ -392,7 +392,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     true,
                 );
                 if (intersects.length !== 0) {
-                    this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh) => {
+                    this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh): void => {
                         // eslint-disable-next-line no-param-reassign
                         sceneItem.material.color = new THREE.Color(0xff0000);
                     });
