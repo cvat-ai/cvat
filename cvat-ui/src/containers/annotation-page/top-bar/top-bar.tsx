@@ -7,7 +7,7 @@ import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Input from 'antd/lib/input';
 
 import {
@@ -45,7 +45,7 @@ interface StateToProps {
     autoSave: boolean;
     autoSaveInterval: number;
     workspace: Workspace;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     forceExit: boolean;
@@ -584,7 +584,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 <AnnotationTopBarComponent
                     showStatistics={this.showStatistics}
                     onSwitchPlay={this.onSwitchPlay}
