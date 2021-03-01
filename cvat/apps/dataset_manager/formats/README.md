@@ -885,11 +885,11 @@ Downloaded file: a zip archive of the following structure:
 ```bash
 taskname.zip/
 ├── labels.txt # optional
-└── <any_subset_name>/
-    ├── label0/
-        └── image1.jpg
-    └── label1/
-        └── image2.jpg
+├── <any_subset_name>/
+|   ├── label0/
+|   |   └── image1.jpg
+|   └── label1/
+|       └── image2.jpg
 └── bb_landmark/
     ├── loose_bb_<any_subset_name>.csv
     └── loose_landmark_<any_subset_name>.csv
@@ -899,10 +899,10 @@ label0 <class0>
 label1 <class1>
 ```
 
-- supported annotations: Rectangles, Points(landmarks, five points)
+- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
 
 #### VGGFace2 Loader
 
 Uploaded file: a zip archive of the structure above
 
-- supported annotations: Rectangles, Points(landmarks, five points)
+- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
