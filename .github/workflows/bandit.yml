@@ -9,7 +9,7 @@ jobs:
       - name: Run checks
         run: |
           URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
-          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | .filename')
+          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
           for files in $PR_FILES; do
             extension="${files##*.}"
             if [[ $extension == 'py' ]]; then
