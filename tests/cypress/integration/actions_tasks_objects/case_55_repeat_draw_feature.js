@@ -58,105 +58,92 @@ context('Repeat draw feature.', () => {
     };
     const keyCodeN = 78;
 
+    function checkCountShapes(expectedCount) {
+        cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
+            expect($sidebarItem.length).to.be.equal(expectedCount);
+        });
+    }
+
+    function checkShapeType(id, expectedType) {
+        cy.get(id).find('.cvat-objects-sidebar-state-item-object-type-text').should('have.text', expectedType);
+    }
+
+    function repeatDrawningStart() {
+        cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+    }
+
+    function repeatDrawningFinish() {
+        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+    }
+
     before(() => {
         cy.openTaskJob(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Draw and repeat draw a rectangle.', () => {
+        it('Draw and repeat the drawing of the rectangle.', () => {
             cy.createRectangle(createRectangleShape2Points);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400);
-            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+            repeatDrawningStart(); // Repeat the drawing the rectangle
             cy.get('.cvat-canvas-container')
                 .click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY - 200)
                 .click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_2').should('exist');
-            cy.get('.cvat_canvas_shape').then(($shape) => {
-                expect($shape.length).to.be.equal(2);
-            });
-            cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-                expect($sidebarItem.length).to.be.equal(2);
-            });
+            checkCountShapes(2);
+            checkShapeType('#cvat-objects-sidebar-state-item-2', 'RECTANGLE SHAPE');
         });
 
-        it('Draw and repeat draw a polygon.', () => {
+        it('Draw and repeat the drawing of the polygon.', () => {
             cy.createPolygon(createPolygonShape);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 520, 400);
-            cy.get('#cvat_canvas_shape_3').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+            repeatDrawningStart(); // Repeat the drawing the polygon
             createPolygonShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 200);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+            repeatDrawningFinish();
             cy.get('#cvat_canvas_shape_4').should('exist');
-            cy.get('.cvat_canvas_shape').then(($shape) => {
-                expect($shape.length).to.be.equal(4);
-            });
-            cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-                expect($sidebarItem.length).to.be.equal(4);
-            });
+            checkCountShapes(4);
+            checkShapeType('#cvat-objects-sidebar-state-item-4', 'POLYGON SHAPE');
         });
 
-        it('Draw and repeat draw a polyline.', () => {
+        it('Draw and repeat the drawing of the polyline.', () => {
             cy.createPolyline(createPolylinesShape);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 700, 400);
-            cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+            repeatDrawningStart(); // Repeat the drawing the polyline
             createPolylinesShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 200);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+            repeatDrawningFinish();
             cy.get('#cvat_canvas_shape_6').should('exist');
-            cy.get('.cvat_canvas_shape').then(($shape) => {
-                expect($shape.length).to.be.equal(6);
-            });
-            cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-                expect($sidebarItem.length).to.be.equal(6);
-            });
+            checkCountShapes(6);
+            checkShapeType('#cvat-objects-sidebar-state-item-6', 'POLYLINE SHAPE');
         });
 
-        it('Draw and repeat draw a point.', () => {
+        it('Draw and repeat the drawing of the point.', () => {
             cy.createPoint(createPointsShape);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 750, 400);
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+            repeatDrawningStart(); // Repeat the drawing the point
             createPointsShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 200);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+            repeatDrawningFinish();
             cy.get('#cvat_canvas_shape_8').should('exist');
-            cy.get('.cvat_canvas_shape').then(($shape) => {
-                expect($shape.length).to.be.equal(8);
-            });
-            cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-                expect($sidebarItem.length).to.be.equal(8);
-            });
+            checkCountShapes(8);
+            checkShapeType('#cvat-objects-sidebar-state-item-8', 'POINTS SHAPE');
         });
 
-        it('Draw and repeat draw a cuboid.', () => {
+        it('Draw and repeat the drawing of the cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 300, 400);
-            cy.get('#cvat_canvas_shape_9').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+            repeatDrawningStart(); // Repeat the drawing the cuboid
             cy.get('.cvat-canvas-container')
                 .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 200)
                 .click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_10').should('exist');
-            cy.get('.cvat_canvas_shape').then(($shape) => {
-                expect($shape.length).to.be.equal(10);
-            });
-            cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-                expect($sidebarItem.length).to.be.equal(10);
-            });
+            checkCountShapes(10);
+            checkShapeType('#cvat-objects-sidebar-state-item-10', 'CUBOID SHAPE');
         });
 
-        it('Draw and repeat draw a tag.', () => {
+        it('Cteate and repeat the creating of the tag.', () => {
             cy.createTag(labelName);
-            cy.get('#cvat-objects-sidebar-state-item-11').trigger('keydown', { keyCode: keyCodeN });
+            repeatDrawningStart(); // Repeat the creating the tag
             cy.get('#cvat-objects-sidebar-state-item-12').should('exist');
-            cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-                expect($sidebarItem.length).to.be.equal(12);
-            });
+            checkShapeType('#cvat-objects-sidebar-state-item-12', 'TAG');
         });
     });
 });
