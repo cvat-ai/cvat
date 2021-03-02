@@ -84,6 +84,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                     listValues: [
                         { value: 'shape', title: 'Shape' },
                         { value: 'track', title: 'Track' },
+                        { value: 'tag', title: 'Tag' },
                     ],
                 },
             },
@@ -97,7 +98,6 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                         { value: 'polyline', title: 'Polyline' },
                         { value: 'polygon', title: 'Polygon' },
                         { value: 'cuboids', title: 'Cuboids' },
-                        { value: 'tag', title: 'Tag' },
                     ],
                 },
             },

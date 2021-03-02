@@ -74,10 +74,10 @@
     }
 
     &.filters-armed {
-        color: red;
+        color: $info-icon-color;
 
         path {
-            fill: red;
+            fill: $info-icon-color;
         }
     }
 }
