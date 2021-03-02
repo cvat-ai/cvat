@@ -49,7 +49,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             });
         });
 
-        it('Upload annotation.', () => {
+        it('Upload annotation for job.', () => {
             cy.interactMenu('Upload annotations');
             cy.contains('.cvat-menu-load-submenu-item', dumpType.split(' ')[0])
                 .should('be.visible')
@@ -69,6 +69,28 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
+            cy.removeAnnotations();
+        });
+
+        it('Upload annotation for task.', () => {
+            cy.goToTaskList();
+            cy.contains('.cvat-item-task-name', taskName)
+                .parents('.cvat-tasks-list-item')
+                .find('.cvat-menu-icon')
+                .trigger('mouseover');
+            cy.contains('Upload annotations').trigger('mouseover');
+            cy.contains('.cvat-menu-load-submenu-item', dumpType.split(' ')[0])
+                .should('be.visible')
+                .within(() => {
+                    cy.get('.cvat-menu-load-submenu-item-button')
+                        .click()
+                        .get('input[type=file]')
+                        .attachFile(annotationArchiveName);
+                });
+            cy.get('.cvat-modal-content-load-task-annotation').within(() => {
+                cy.contains('button', 'Update').click();
+            });
+            cy.contains('Annotations have been loaded').should('be.visible');
         });
     });
 });
