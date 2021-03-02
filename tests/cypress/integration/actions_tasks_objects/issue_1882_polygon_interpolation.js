@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,10 +43,11 @@ context("The points of the previous polygon mustn't appear while polygon's inter
             cy.get('#cvat-objects-sidebar-state-item-1').should('contain', '1').and('contain', 'POLYGON TRACK');
         });
         it('Redraw the polygon', () => {
+            const keyCodeN = 78;
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove', { force: true })
-                .trigger('keydown', { key: 'n', shiftKey: true })
-                .trigger('keyup', { force: true }, { key: 'n', shiftKey: true });
+                .trigger('keydown', { keyCode: keyCodeN, shiftKey: true })
+                .trigger('keyup', { force: true }, { keyCode: keyCodeN, shiftKey: true });
             cy.createPolygon(reDrawPolygonTrack);
         });
         it('Activate auto bordering mode', () => {
