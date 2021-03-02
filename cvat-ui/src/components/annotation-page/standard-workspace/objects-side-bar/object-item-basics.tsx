@@ -98,7 +98,11 @@ function ItemTopComponent(props: Props): JSX.Element {
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
-                <Text type='secondary' style={{ fontSize: 10 }}>
+                <Text
+                    type='secondary'
+                    style={{ fontSize: 10 }}
+                    className='cvat-objects-sidebar-state-item-object-type-text'
+                >
                     {type}
                 </Text>
             </Col>
