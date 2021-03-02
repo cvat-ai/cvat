@@ -129,14 +129,6 @@ context('Redraw feature.', () => {
             });
         });
 
-        it('Draw and redraw a tag.', () => {
-            cy.createTag(labelName);
-            cy.get('#cvat-objects-sidebar-state-item-5').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the tag
-            cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-                expect($sidebarItem.length).to.be.equal(5);
-            });
-        });
-
         it.skip('Draw and redraw a cuboid.', () => {
             // Need to fix issue https://github.com/openvinotoolkit/cvat/issues/2873
             cy.createCuboid(createCuboidShape2Points);
