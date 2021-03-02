@@ -17,13 +17,15 @@ def get_args():
 def main():
     args = get_args()
 
+    manifest_directory = os.path.abspath(args.manifest_directory)
+    os.makedirs(manifest_directory, exist_ok=True)
     if args.type == 'video':
         try:
             assert len(args.sources) == 1, 'Unsupporting prepare manifest file for several video files'
             meta_info, smooth_decoding = prepare_meta(
                 data_type=args.type, media_file=args.sources[0], chunk_size=args.chunk_size
             )
-            manifest = VideoManifestManager(manifest_path=args.manifest_directory)
+            manifest = VideoManifestManager(manifest_path=manifest_directory)
             manifest.create(meta_info)
             if smooth_decoding is not None and not smooth_decoding:
                 print('NOTE: prepared manifest file contains too few key frames for smooth decoding.')
@@ -32,7 +34,7 @@ def main():
     else:
         meta_info = prepare_meta(data_type=args.type, sources=args.sources,
             is_sorted=False, use_image_hash=True)
-        manifest = ImageManifestManager(manifest_path=args.manifest_directory)
+        manifest = ImageManifestManager(manifest_path=manifest_directory)
         manifest.create(meta_info)
     print('A manifest file had been prepared ')
 if __name__ == "__main__":

@@ -254,7 +254,8 @@ class _Index:
                 line = manifest_file.readline()
 
     def __getitem__(self, number):
-        assert 0 <= number < len(self), 'A invalid index number'
+        assert 0 <= number < len(self), \
+            'A invalid index number: {}\nMax: {}'.format(number, len(self))
         return self._index[number]
 
     def __len__(self):

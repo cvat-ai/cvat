@@ -325,10 +325,8 @@ class FragmentMediaReader:
         self._step = step
         self._chunk_number = chunk_number
         self._chunk_size = chunk_size
-        self._start_chunk_frame_number = (self._start
-                                         + self._chunk_number
-                                         * self._chunk_size
-                                         * self._step)
+        self._start_chunk_frame_number = \
+            self._start + self._chunk_number * self._chunk_size * self._step
         self._end_chunk_frame_number = min(self._start_chunk_frame_number \
             + (self._chunk_size - 1) * self._step + 1, self._stop)
         self._frame_range = self._get_frame_range()
@@ -369,19 +367,23 @@ class VideoDatasetManifestReader(WorkWithVideo, FragmentMediaReader):
         self._manifest.init_index()
 
     def _get_nearest_left_key_frame(self):
-        left_border = 0
-        delta = len(self._manifest)
-        while delta:
-            step = delta // 2
-            cur_position = left_border + step
-            if self._manifest[cur_position].get('number') < self._start_chunk_frame_number:
-                cur_position += 1
-                left_border = cur_position
-                delta -= step + 1
-            else:
-                delta = step
-        if self._manifest[cur_position].get('number') > self._start_chunk_frame_number:
-            left_border -= 1
+        if self._start_chunk_frame_number >= \
+                self._manifest[len(self._manifest) - 1].get('number'):
+            left_border = len(self._manifest) - 1
+        else:
+            left_border = 0
+            delta = len(self._manifest)
+            while delta:
+                step = delta // 2
+                cur_position = left_border + step
+                if self._manifest[cur_position].get('number') < self._start_chunk_frame_number:
+                    cur_position += 1
+                    left_border = cur_position
+                    delta -= step + 1
+                else:
+                    delta = step
+            if self._manifest[cur_position].get('number') > self._start_chunk_frame_number:
+                left_border -= 1
         frame_number = self._manifest[left_border].get('number')
         timestamp = self._manifest[left_border].get('pts')
         return frame_number, timestamp

@@ -340,6 +340,7 @@ def _create_thread(tid, data):
 
             if task_mode == MEDIA_TYPES['video']['mode']:
                 try:
+                    manifest_is_prepared = False
                     if manifest_file:
                         try:
                             manifest = VideoManifestValidator(source_path=os.path.join(upload_dir, media_files[0]),
@@ -351,33 +352,25 @@ def _create_thread(tid, data):
 
                             all_frames = manifest['properties']['length']
                             video_size = manifest['properties']['resolution']
+                            manifest_is_prepared = True
                         except Exception as ex:
-                            base_msg = str(ex) if isinstance(ex, AssertionError) else \
-                                'Invalid meta information was upload.'
-                            _update_status('{} Start prepare valid meta information.'.format(base_msg))
-                            meta_info, smooth_decoding = prepare_meta(
-                                data_type='video',
-                                media_file=media_files[0],
-                                upload_dir=upload_dir,
-                                chunk_size=db_data.chunk_size
-                            )
-                            assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
-                            _update_status('Start prepare a manifest file')
-                            manifest = VideoManifestManager(db_data.get_manifest_path())
-                            manifest.create(meta_info)
-                            manifest.init_index()
-                            _update_status('A manifest had been created')
+                            if os.path.exists(db_data.get_index_path()):
+                                os.remove(db_data.get_index_path())
+                            if isinstance(ex, AssertionError):
+                                base_msg = str(ex)
+                            else:
+                                base_msg = 'Invalid manifest file was upload.'
+                                slogger.glob.warning(str(ex))
+                            _update_status('{} Start prepare a valid manifest file.'.format(base_msg))
 
-                            all_frames = meta_info.get_task_size()
-                            video_size = meta_info.frame_sizes
-                    else:
+                    if not manifest_is_prepared:
                         meta_info, smooth_decoding = prepare_meta(
                             data_type='video',
                             media_file=media_files[0],
                             upload_dir=upload_dir,
                             chunk_size=db_data.chunk_size
                         )
-                        assert smooth_decoding, 'Too few keyframes for smooth video decoding.'
+                        assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
                         _update_status('Start prepare a manifest file')
                         manifest = VideoManifestManager(db_data.get_manifest_path())
                         manifest.create(meta_info)
@@ -386,8 +379,10 @@ def _create_thread(tid, data):
 
                         all_frames = meta_info.get_task_size()
                         video_size = meta_info.frame_sizes
+                        manifest_is_prepared = True
 
-                    db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
+                    db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 \
+                        if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
                     video_path = os.path.join(upload_dir, media_files[0])
                 except Exception as ex:
                     db_data.storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -395,7 +390,8 @@ def _create_thread(tid, data):
                         os.remove(db_data.get_manifest_path())
                     if os.path.exists(db_data.get_index_path()):
                         os.remove(db_data.get_index_path())
-                    base_msg = str(ex) if isinstance(ex, AssertionError) else "Uploaded video does not support a quick way of task creating."
+                    base_msg = str(ex) if isinstance(ex, AssertionError) \
+                        else "Uploaded video does not support a quick way of task creating."
                     _update_status("{} The task will be created using the old method".format(base_msg))
             else:# images, archive, pdf
                 db_data.size = len(extractor)

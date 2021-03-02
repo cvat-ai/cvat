@@ -1,5 +1,16 @@
 ## Simple command line for prepare dataset manifest file
 
+### Steps bufore using
+
+When used separately from Computer Vision Annotation Tool(CVAT), the required modules must be installed
+
+```bash
+python3 -m venv .env
+. .env/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+```
+
 ### **Usage**
 
 ```bash
@@ -18,7 +29,7 @@ optional arguments:
 ```
 
 **NOTE**: If ratio of number of frames to number of key frames is small compared to the `chunk size`,
-then when creating a task with prepared meta information, you should expect that the waiting time for some chunks
+then when creating a task with prepared manifest file, you should expect that the waiting time for some chunks
 will be longer than the waiting time for other chunks. (At the first iteration, when there is no chunk in the cache)
 
 ### **Examples**
