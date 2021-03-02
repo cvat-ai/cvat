@@ -55,6 +55,12 @@ module.exports = {
                 },
             },
         ],
+        'import/order': [
+            'error',
+            {
+                'groups': ['builtin', 'external', 'internal'],
+            }
+        ]
     },
     settings: {
         'import/resolver': {

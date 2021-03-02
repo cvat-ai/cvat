@@ -12,7 +12,7 @@ import { TagIcon } from 'icons';
 import SetupTagPopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 import withVisibilityHandling from './handle-popover-visibility';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     isDrawing: boolean;
 }
