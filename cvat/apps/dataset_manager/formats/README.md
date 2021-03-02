@@ -896,11 +896,12 @@ taskname.zip/
 ```
 
 - supported annotations: Rectangles (with attributes), Labels
-- supported attributes: `blur`, `expression`, `illumination`, `occlused`, `pose`, `invalid`
+- supported attributes: `blur`, `expression`, `illumination`,
+  `occluded` (both the annotation property & an attribute), `pose`, `invalid`
 
 #### WIDER Face Loader
 
 Uploaded file: a zip archive of the structure above
 
 - supported annotations: Rectangles (with attributes), Labels
-- supported attributes: `blur`, `expression`, `illumination`, `occlused`, `pose`, `invalid`
+- supported attributes: `blur`, `expression`, `illumination`, `occluded`, `pose`, `invalid`
