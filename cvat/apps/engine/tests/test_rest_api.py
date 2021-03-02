@@ -2599,7 +2599,19 @@ class JobAnnotationAPITestCase(APITestCase):
                 {"name": "person"},
             ]
         }
-        if annotation_format == "ICDAR 1.0":
+        if annotation_format == "ICDAR Localization 1.0":
+            data["labels"] = [{
+                "name": "icdar",
+                "attributes": [
+                    {
+                        "name": "text",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["word_1", "word_2", "word_3"]
+                    },
+                ]
+            }]
+        elif annotation_format == "ICDAR Segmentation 1.0":
             data["labels"] = [{
                 "name": "icdar",
                 "attributes": [
@@ -3608,7 +3620,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
-            if annotation_format != "ICDAR 1.0":
+            if annotation_format not in ["ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -3886,7 +3898,42 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
 
-            elif annotation_format == "ICDAR 1.0":
+            elif annotation_format == "ICDAR Localization 1.0":
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + polygon_shapes_with_attrs
+
+            elif annotation_format == "ICDAR Segmentation 1.0":
                 rectangle_shapes_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -3971,6 +4018,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 formats['CVAT for video 1.1'] = 'CVAT 1.1'
             if 'CVAT for images 1.1' in export_formats:
                 formats['CVAT for images 1.1'] = 'CVAT 1.1'
+        if 'ICDAR 1.0' in import_formats:
+            if 'ICDAR Localization 1.0' in export_formats:
+                formats['ICDAR Localization 1.0'] = 'ICDAR 1.0'
+            if 'ICDAR Segmentation 1.0' in export_formats:
+                formats['ICDAR Segmentation 1.0'] = 'ICDAR 1.0'
         if set(import_formats) ^ set(export_formats):
             # NOTE: this may not be an error, so we should not fail
             print("The following import formats have no pair:",
@@ -3982,7 +4034,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             with self.subTest(export_format=export_format,
                     import_format=import_format):
                 # 1. create task
-                task, jobs = self._create_task(owner, assignee, import_format)
+                task, jobs = self._create_task(owner, assignee, export_format)
 
                 # 2. add annotation
                 data = _get_initial_annotation(export_format)
@@ -4042,8 +4094,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 # 7. check annotation
-                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
-                        "CamVid 1.0", "ICDAR 1.0"}:
+                if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
+                        "CamVid 1.0", "ICDAR Segmentation 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)
