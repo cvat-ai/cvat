@@ -34,3 +34,6 @@ yarn-error.log*
 #Ignore Cypress tests temp files
 /tests/cypress/fixtures
 /tests/cypress/screenshots
+
+# Ignore editors configs
+.idea

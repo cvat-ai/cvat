@@ -152,6 +152,11 @@ def _count_files(data, meta_info_file=None):
         counter=counter,
     )
 
+    count_files(
+        file_mapping={ f['name']:os.path.abspath(os.path.join(share_root, f['name'])) for f in data['clowder_files']},
+        counter=counter,
+    )
+
     return counter
 
 def _validate_data(counter, meta_info_file=None):
@@ -183,6 +188,30 @@ def _validate_data(counter, meta_info_file=None):
         raise Exception('Could not combine different task modes for data')
 
     return counter, task_modes[0]
+
+def _copy_data_from_clowder(api_key, file_info, upload_dir):
+    from cvat.apps.engine.clowder_api import ClowderApi
+
+    job = rq.get_current_job()
+    local_files = {}
+    for file in file_info:
+        if file['name'] in local_files:
+            raise Exception("filename collision: {}".format(file['name']))
+        slogger.glob.info("Downloading: {} (file id {})".format(file['name'], file['clowderid']))
+        job.meta['status'] = '{} (file id {}) is being downloaded from Clowder..'.format(file['name'], file['clowderid'])
+        job.save_meta()
+
+        try:
+            with ClowderApi(api_key) as clowder:
+                clowder.get_fileblob(file['clowderid'], os.path.join(upload_dir, file['name']))
+        except urlerror.HTTPError as err:
+            raise Exception("Failed to download {} (file id {})".format(file['name'], file['clowderid']) +
+            ". " + str(err.code) + ' - ' + err.reason)
+        except urlerror.URLError as err:
+            raise Exception("Invalid URL: {} (file id {})".format(file['name'], file['clowderid']) + ". " + err.reason)
+
+        local_files[file['name']] = True
+    return list(local_files.keys())
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
@@ -237,6 +266,9 @@ def _create_thread(tid, data):
             _copy_data_from_share(data['server_files'], upload_dir)
         else:
             upload_dir = settings.SHARE_ROOT
+
+    if data['clowder_files']:
+        _copy_data_from_clowder(data['clowder_api_key'], data['clowder_files'], upload_dir)
 
     av_scan_paths(upload_dir)
 

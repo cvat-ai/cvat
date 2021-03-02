@@ -30,9 +30,7 @@ interface Props {
 }
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
-    const {
-        job, fetching, getJob, closeJob, saveLogs, workspace,
-    } = props;
+    const { job, fetching, getJob, closeJob, saveLogs, workspace } = props;
 
     const history = useHistory();
     useEffect(() => {
@@ -61,6 +59,10 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     }, [job, fetching]);
 
     if (job === null) {
+        return <Spin size='large' className='cvat-spinner' />;
+    }
+
+    if (job && fetching) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 

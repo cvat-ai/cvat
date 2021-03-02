@@ -19,6 +19,7 @@ import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
+import ClowderLimitationsExpand from './clowder-limitations-expand';
 
 export interface CreateTaskData {
     projectId: number | null;
@@ -36,6 +37,7 @@ interface Props {
     taskId: number | null;
     projectId: number | null;
     installedGit: boolean;
+    clowderSyncing: boolean;
 }
 
 type State = CreateTaskData;
@@ -56,6 +58,7 @@ const defaultState = {
         local: [],
         share: [],
         remote: [],
+        clowder: [],
     },
     activeFileManagerTab: 'local',
 };
@@ -288,6 +291,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             <Col span={24}>
                 <Text type='danger'>* </Text>
                 <Text className='cvat-text-color'>Select files:</Text>
+
+                <ClowderLimitationsExpand />
+
                 <ConnectedFileManager
                     onChangeActiveKey={this.changeFileManagerTab}
                     ref={(container: any): void => {
@@ -319,7 +325,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     public render(): JSX.Element {
-        const { status } = this.props;
+        const { status, clowderSyncing } = this.props;
         const loading = !!status && status !== 'CREATED' && status !== 'FAILED';
 
         return (
@@ -337,7 +343,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
                 <Col span={18}>{loading ? <Alert message={status} /> : null}</Col>
                 <Col span={6} className='cvat-create-task-submit-section'>
-                    <Button loading={loading} disabled={loading} type='primary' onClick={this.handleSubmitClick}>
+                    <Button
+                        loading={loading}
+                        disabled={loading || clowderSyncing}
+                        type='primary'
+                        onClick={this.handleSubmitClick}
+                    >
                         Submit
                     </Button>
                 </Col>
