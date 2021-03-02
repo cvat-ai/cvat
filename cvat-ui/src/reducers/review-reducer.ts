@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -97,19 +97,6 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case ReviewActionTypes.START_ISSUE: {
             const { position } = action.payload;
-            const { frameIssues } = state;
-
-            const epsilon = 5; // px
-            for (const issue of frameIssues) {
-                if (
-                    issue.position.length === position.length &&
-                    issue.position.every((val: number, index: number) => Math.abs(val - position[index]) < epsilon)
-                ) {
-                    return {
-                        ...state,
-                    };
-                }
-            }
 
             return {
                 ...state,
@@ -122,19 +109,19 @@ export default function (state: ReviewState = defaultState, action: any): Review
 
             return {
                 ...state,
-                latestComments: state.latestComments.includes(issue.comments[0].message) ?
-                    state.latestComments :
-                    Array.from(
-                        new Set(
-                            [...state.latestComments, issue.comments[0].message].filter(
-                                (message: string): boolean =>
-                                    ![
-                                        consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
-                                        consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
-                                    ].includes(message),
-                            ),
-                        ),
-                    ).slice(-consts.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
+                latestComments: state.latestComments.includes(issue.comments[0].message)
+                    ? state.latestComments
+                    : Array.from(
+                          new Set(
+                              [...state.latestComments, issue.comments[0].message].filter(
+                                  (message: string): boolean =>
+                                      ![
+                                          consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
+                                          consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
+                                      ].includes(message),
+                              ),
+                          ),
+                      ).slice(-consts.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
                 newIssuePosition: null,
             };
