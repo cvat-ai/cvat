@@ -303,6 +303,9 @@ class TaskExportTest(_DbTestBase):
                 self.skipTest("Format is disabled")
 
             format_name = f.DISPLAY_NAME
+            if format_name == "VGGFace2 1.0":
+                self.skipTest("Format does not support multiple shapes for one item")
+
             for save_images in { True, False }:
                 images = self._generate_task_images(3)
                 task = self._generate_task(images)
