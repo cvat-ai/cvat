@@ -14,7 +14,7 @@ import { CubeIcon } from 'icons';
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     isDrawing: boolean;
 }
