@@ -2599,7 +2599,8 @@ class JobAnnotationAPITestCase(APITestCase):
                 {"name": "person"},
             ]
         }
-        if annotation_format == "ICDAR Localization 1.0":
+        if annotation_format in ["ICDAR Recognition 1.0",
+                "ICDAR Localization 1.0"]:
             data["labels"] = [{
                 "name": "icdar",
                 "attributes": [
@@ -3620,7 +3621,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
-            if annotation_format not in ["ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
+            if annotation_format not in ["ICDAR Recognition 1.0",
+                    "ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -3898,6 +3900,22 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
 
+            elif annotation_format == "ICDAR Recognition 1.0":
+                tags_with_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        }
+                    ],
+                }]
+
+                annotations["tags"] = tags_with_attrs
+
             elif annotation_format == "ICDAR Localization 1.0":
                 rectangle_shapes_with_attrs = [{
                     "frame": 0,
@@ -4019,6 +4037,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             if 'CVAT for images 1.1' in export_formats:
                 formats['CVAT for images 1.1'] = 'CVAT 1.1'
         if 'ICDAR 1.0' in import_formats:
+            if 'ICDAR Recognition 1.0' in export_formats:
+                formats['ICDAR Recognition 1.0'] = 'ICDAR 1.0'
             if 'ICDAR Localization 1.0' in export_formats:
                 formats['ICDAR Localization 1.0'] = 'ICDAR 1.0'
             if 'ICDAR Segmentation 1.0' in export_formats:

@@ -271,6 +271,7 @@ class TaskExportTest(_DbTestBase):
             'YOLO 1.1',
             'ImageNet 1.0',
             'CamVid 1.0',
+            'ICDAR Recognition 1.0',
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
         })
@@ -331,6 +332,7 @@ class TaskExportTest(_DbTestBase):
             ('YOLO 1.1', 'yolo'),
             ('ImageNet 1.0', 'imagenet_txt'),
             ('CamVid 1.0', 'camvid'),
+            ('ICDAR Recognition 1.0', 'icdar'),
             ('ICDAR Localization 1.0', 'icdar'),
             # ('ICDAR Segmentation 1.0', 'icdar'), # does not support
         ]:
