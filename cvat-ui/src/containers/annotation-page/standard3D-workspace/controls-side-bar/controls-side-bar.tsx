@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
+import { KeyMap } from 'utils/mousetrap-react';
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -13,7 +13,7 @@ import { ActiveControl, CombinedState } from 'reducers/interfaces';
 interface StateToProps {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     contextImageHide: boolean;
     loaded: boolean;
