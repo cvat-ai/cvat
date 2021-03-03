@@ -20,7 +20,7 @@ def _export(dst_file, task_data, save_images=False):
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
         task_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
-        for item in dataset._data._source:
+        for item in dataset:
             anns = [p for p in item.annotations
                 if p.type == AnnotationType.label]
             if len(anns) == 1:
@@ -34,12 +34,12 @@ def _import(src_file, task_data):
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'market1501', env=dm_env)
-        for item in dataset._data._source:
+        for item in dataset:
             if item.attributes:
                 item.annotations.append(Label(label=0,
                     attributes=item.attributes))
                 item.attributes = {}
         label_cat = LabelCategories()
         label_cat.add('market-1501')
-        dataset._data._source._categories[AnnotationType.label] = label_cat
+        dataset.categories()[AnnotationType.label] = label_cat
         import_dm_annotations(dataset, task_data)
