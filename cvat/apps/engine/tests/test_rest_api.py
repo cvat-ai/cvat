@@ -16,8 +16,6 @@ from enum import Enum
 from glob import glob
 from io import BytesIO
 from unittest import mock
-import open3d as o3d
-import struct
 
 import av
 import numpy as np
@@ -739,7 +737,7 @@ class UserListAPITestCase(UserAPITestCase):
 
         return response
 
-    def _check_response(self, user, response, is_full):
+    def _check_response(self, user, response, is_full=True):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for user_info in response.data['results']:
             db_user = getattr(self, user_info['username'])
