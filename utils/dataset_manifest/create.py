@@ -19,6 +19,11 @@ def main():
 
     manifest_directory = os.path.abspath(args.manifest_directory)
     os.makedirs(manifest_directory, exist_ok=True)
+    try:
+        for source in args.sources:
+            assert os.path.exists(source), 'A file {} not found'.format(source)
+    except AssertionError as ex:
+        sys.exit(str(ex))
     if args.type == 'video':
         try:
             assert len(args.sources) == 1, 'Unsupporting prepare manifest file for several video files'
@@ -36,7 +41,7 @@ def main():
             is_sorted=False, use_image_hash=True)
         manifest = ImageManifestManager(manifest_path=manifest_directory)
         manifest.create(meta_info)
-    print('A manifest file had been prepared ')
+    print('A manifest file has been prepared ')
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(base_dir)

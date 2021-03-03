@@ -14,7 +14,7 @@ pip install -r requirements.txt
 ### Using
 
 ```bash
-usage: create.py [-h] --type {video,images} [--chunk_size CHUNK_SIZE] manifest_directory sources [sources ...]
+usage: python create.py [-h] --type {video,images} [--chunk_size CHUNK_SIZE] manifest_directory sources [sources ...]
 
 positional arguments:
   manifest_directory    Directory where the manifest file will be saved
