@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-// Copyright (C) 2021 Intel Corporation
-=======
 // Copyright (C) 2020-2021 Intel Corporation
->>>>>>> develop
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,9 +17,7 @@ import {
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
-import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy,
-} from 'reducers/interfaces';
+import { CombinedState, StatesOrdering, ObjectType, ColorBy } from 'reducers/interfaces';
 
 interface OwnProps {
     readonly: boolean;
