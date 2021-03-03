@@ -815,9 +815,9 @@ Downloaded file: a zip archive of the following structure:
 ```bash
 # if we save images:
 taskname.zip/
-└── label1/
-    ├── label1_image1.jpg
-    └── label1_image2.jpg
+├── label1/
+|   ├── label1_image1.jpg
+|   └── label1_image2.jpg
 └── label2/
     ├── label2_image1.jpg
     ├── label2_image3.jpg
@@ -825,7 +825,7 @@ taskname.zip/
 
 # if we keep only annotation:
 taskname.zip/
-└── <any_subset_name>.txt
+├── <any_subset_name>.txt
 └── synsets.txt
 
 ```
@@ -847,12 +847,12 @@ Downloaded file: a zip archive of the following structure:
 ```bash
 taskname.zip/
 ├── labelmap.txt # optional, required for non-CamVid labels
-└── <any_subset_name>/
-    ├── image1.png
-    └── image2.png
-└── <any_subset_name>annot/
-    ├── image1.png
-    └── image2.png
+├── <any_subset_name>/
+|   ├── image1.png
+|   └── image2.png
+├── <any_subset_name>annot/
+|   ├── image1.png
+|   └── image2.png
 └── <any_subset_name>.txt
 
 # labelmap.txt
@@ -887,18 +887,18 @@ Downloaded file: a zip archive of the following structure:
 taskname.zip/
 └── word_recognition/
     └── <any_subset_name>/
-        └── images
-            ├── word1.png
-            └── word2.png
+        ├── images
+        |   ├── word1.png
+        |   └── word2.png
         └── gt.txt
 
 # text localization task
 taskname.zip/
 └── text_localization/
     └── <any_subset_name>/
-        └── images
-            ├── img_1.png
-            └── img_2.png
+        ├── images
+        |   ├── img_1.png
+        |   └── img_2.png
         ├── gt_img_1.txt
         └── gt_img_1.txt
 
@@ -906,31 +906,37 @@ taskname.zip/
 taskname.zip/
 └── text_localization/
     └── <any_subset_name>/
-        └── images
-            ├── 1.png
-            └── 2.png
+        ├── images
+        |   ├── 1.png
+        |   └── 2.png
         ├── 1_GT.bmp
         ├── 1_GT.txt
         ├── 2_GT.bmp
         └── 2_GT.txt
 ```
 
-Word recognition task
+**Word recognition task**:
+- supported annotations: Label `icdar` with attribute `caption`
 
-- supported annotations: Label `icdar` with attribute (`caption`)
-  Text localization task
-- supported annotations: Rectangles and Polygons with label `icdar` and attribute (`text`)
-  Text segmentation task
-- supported annotations: Rectangles and Polygons with label `icdar` and attributes (`index`, `text`, `color`, `center`)
+**Text localization task**:
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attribute `text`
+
+**Text segmentation task**:
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attributes `index`, `text`, `color`, `center`
 
 #### ICDAR13/15 Loader
 
 Uploaded file: a zip archive of the structure above
 
-Word recognition task
+**Word recognition task**:
+- supported annotations: Label `icdar` with attribute `caption`
 
-- supported annotations: Label `icdar` with attribute (`caption`)
-  Text localization task
-- supported annotations: Rectangles and Polygons with label `icdar` and attribute (`text`)
-  Text segmentation task
-- supported annotations: Rectangles and Polygons with label `icdar` and attributes (`index`, `text`, `color`, `center`)
+**Text localization task**:
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attribute `text`
+
+**Text segmentation task**:
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attributes `index`, `text`, `color`, `center`
