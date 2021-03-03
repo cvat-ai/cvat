@@ -357,17 +357,18 @@ class TaskExportTest(_DbTestBase):
                             project.config.remove('sources')
 
                             return project.make_dataset()
-                        return dm_env.make_importer(importer_name)(src) \
-                            .make_dataset()
+                        return datumaro.components.dataset. \
+                            Dataset.import_from(src, importer_name, env=dm_env)
 
                     if zipfile.is_zipfile(file_path):
                         with tempfile.TemporaryDirectory() as tmp_dir:
                             zipfile.ZipFile(file_path).extractall(tmp_dir)
                             dataset = load_dataset(tmp_dir)
+                            self.assertEqual(len(dataset), task["size"])
                     else:
                         dataset = load_dataset(file_path)
+                        self.assertEqual(len(dataset), task["size"])
 
-                    self.assertEqual(len(dataset), task["size"])
                 self._test_export(check, task, format_name, save_images=False)
 
     def test_can_skip_outside(self):

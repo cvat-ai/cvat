@@ -45,5 +45,9 @@ tensorflow==2.4.1 # Optional requirement of Datumaro
 patool==1.12
 diskcache==5.0.2
 open3d==0.11.2
-# workaround for binary incompatibility with numpy when pycocotools is installed by wheel
-datumaro==0.1.5.1 --no-binary=datumaro --no-binary=pycocotools
+# --no-binary=datumaro: workaround for pip to install
+# opencv-headless instead of regular opencv, to actually run setup script
+# --no-binary=pycocotools: workaround for binary incompatibility on numpy 1.20
+# of pycocotools and tensorflow 2.4.1
+# when pycocotools is installed by wheel in python 3.8+
+datumaro==0.1.6.1 --no-binary=datumaro --no-binary=pycocotools
