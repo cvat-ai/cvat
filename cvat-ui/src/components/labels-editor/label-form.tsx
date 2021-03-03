@@ -390,10 +390,11 @@ export default class LabelForm extends React.Component<Props> {
                         message: patterns.validateAttributeName.message,
                     },
                     {
-                        validator: async (_rule: any, labelName: string, callback: Function) => {
+                        validator: (_rule: any, labelName: string) => {
                             if (labelNames && labelNames.includes(labelName)) {
-                                callback('Label name must be unique for the task');
+                                return Promise.reject(new Error('Label name must be unique for the task'));
                             }
+                            return Promise.resolve();
                         },
                     },
                 ]}
@@ -522,7 +523,7 @@ export default class LabelForm extends React.Component<Props> {
     public render(): JSX.Element {
         return (
             <Form onFinish={this.handleSubmit} layout='vertical' ref={this.formRef}>
-                <Row justify='start' align='middle'>
+                <Row justify='start' align='top'>
                     <Col span={10}>{this.renderLabelNameInput()}</Col>
                     <Col span={3} offset={1}>
                         {this.renderChangeColorButton()}
@@ -531,7 +532,7 @@ export default class LabelForm extends React.Component<Props> {
                         {this.renderNewAttributeButton()}
                     </Col>
                 </Row>
-                <Row justify='start' align='middle'>
+                <Row justify='start' align='top'>
                     <Col span={24}>
                         <Form.List name='attributes'>{this.renderAttributes()}</Form.List>
                     </Col>

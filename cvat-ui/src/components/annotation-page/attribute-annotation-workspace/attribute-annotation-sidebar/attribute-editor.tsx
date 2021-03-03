@@ -1,9 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, KeyMap } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Select, { SelectValue } from 'antd/lib/select';
@@ -150,7 +150,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
             keyMap[key] = {
                 name: `Set value "${value}"`,
                 description: `Change current value for the attribute to "${value}"`,
-                sequence: `${index}`,
+                sequences: [`${index}`],
                 action: 'keydown',
             };
 
@@ -165,7 +165,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
 
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>
-                <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
                 <div>
                     <Text strong>0:</Text>
                     <Text>{` ${sortedValues[0]}`}</Text>
@@ -190,7 +190,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
             keyMap[key] = {
                 name: `Set value "${value}"`,
                 description: `Change current value for the attribute to "${value}"`,
-                sequence: `${index}`,
+                sequences: [`${index}`],
                 action: 'keydown',
             };
 
@@ -205,7 +205,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
 
         return (
             <div className='attribute-annotation-sidebar-attr-list-wrapper'>
-                <GlobalHotKeys keyMap={keyMap as KeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={keyMap} handlers={handlers} />
                 {filteredValues.map(
                     (value: string, index: number): JSX.Element => (
                         <div key={value}>

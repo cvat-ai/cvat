@@ -11,7 +11,7 @@ import { Rotation } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import withVisibilityHandling from './handle-popover-visibility';
 
-interface Props {
+export interface Props {
     clockwiseShortcut: string;
     anticlockwiseShortcut: string;
     rotateFrame(rotation: Rotation): void;
