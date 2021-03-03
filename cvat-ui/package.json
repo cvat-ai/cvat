@@ -76,6 +76,7 @@
     "react-color": "^2.19.3",
     "react-cookie": "^4.0.3",
     "react-dom": "^16.14.0",
+    "react-moment": "^1.1.1",
     "react-redux": "^7.2.2",
     "react-router": "^5.1.0",
     "react-router-dom": "^5.1.0",
