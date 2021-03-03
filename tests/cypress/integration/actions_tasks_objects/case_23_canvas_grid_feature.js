@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,22 +22,20 @@ context('Canvas grid feature', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
+        cy.get('.cvat-canvas-image-setups-trigger').click();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Go to settings.', () => {
-            cy.openSettings();
-        });
         it('Set "Show grid" to true.', () => {
-            cy.get('.cvat-player-settings-grid').click();
+            cy.get('.cvat-image-setups-grid').click();
         });
         it('Set "Grid size" to 50.', () => {
-            cy.get('.cvat-player-settings-grid-size-input').within(() => {
+            cy.get('.cvat-image-setups-grid-size-input').within(() => {
                 cy.get('[role="spinbutton"]').clear().type(settingsGridSize);
             });
         });
         it('Set "Grid color" to black.', () => {
-            cy.get('.cvat-player-settings-grid-color-input').click();
+            cy.get('.cvat-image-setups-grid-color-input').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
@@ -45,7 +43,7 @@ context('Canvas grid feature', () => {
                 });
         });
         it('Set "Grid opacity" to 80%.', () => {
-            cy.get('.cvat-player-settings-grid-opacity-input').within(() => {
+            cy.get('.cvat-image-setups-grid-opacity-input').within(() => {
                 cy.get('[role="slider"]').type(generateString(20)); // Moving the slider to the left up to 80.
                 cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', gridOpacity);
             });
