@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -66,6 +66,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     Modal.confirm({
                         title: 'Current annotation will be lost',
                         content: 'You are going to upload new annotations to this task. Continue?',
+                        className: 'cvat-modal-content-load-task-annotation',
                         onOk: () => {
                             onClickMenu(copyParams, file);
                         },
