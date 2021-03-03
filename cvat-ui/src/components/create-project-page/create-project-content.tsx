@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
+import { Switch, Select } from 'antd';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Form, { FormInstance } from 'antd/lib/form';
@@ -18,7 +19,6 @@ import patterns from 'utils/validation-patterns';
 import { CombinedState } from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
-import { Switch, Select } from 'antd';
 import CreateProjectContext, { ICreateProjectContext } from './create-project.context';
 
 const { Option } = Select;
