@@ -1,10 +1,9 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Row, Col } from 'antd/lib/grid';
@@ -25,6 +24,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
 import LabelSelector from 'components/label-selector/label-selector';
 import getCore from 'cvat-core-wrapper';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ShortcutsSelect from './shortcuts-select';
 
 const cvat = getCore();
@@ -35,7 +35,7 @@ interface StateToProps {
     jobInstance: any;
     canvasInstance: Canvas;
     frameNumber: number;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 
@@ -198,7 +198,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
 
     return (
         <>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <Layout.Sider {...siderProps}>
                 {/* eslint-disable-next-line */}
                 <span
