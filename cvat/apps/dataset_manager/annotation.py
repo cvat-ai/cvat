@@ -110,7 +110,7 @@ class AnnotationIR:
             # Track and TrackedShape models don't expect these fields
             del track['interpolated_shapes']
             for shape in segment_shapes:
-                del shape['keyframe']
+                shape.pop('keyframe', None)
 
         track['shapes'] = segment_shapes
         track['frame'] = track['shapes'][0]['frame']
@@ -745,6 +745,10 @@ class TrackManager(ObjectManager):
             shapes.append(shape)
             curr_frame = shape["frame"]
             prev_shape = shape
+
+            # keep at least 1 shape
+            if end_frame <= curr_frame:
+                break
 
         if not prev_shape["outside"]:
             shape = copy(prev_shape)
