@@ -165,6 +165,7 @@
 .cvat-annotation-header-right-group {
     display: flex;
     flex: 1;
+    justify-content: flex-end;
 
     > div {
         display: block;
