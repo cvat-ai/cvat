@@ -397,12 +397,22 @@ def _create_thread(tid, data):
                 db_data.size = len(extractor)
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
-                    meta_info = prepare_meta(
-                        data_type='images',
-                        sources=extractor.absolute_source_paths,
-                        data_dir=upload_dir
-                    )
-                    manifest.create(meta_info.content)
+                    if db_task.dimension == DimensionType.DIM_2D:
+                        meta_info = prepare_meta(
+                            data_type='images',
+                            sources=extractor.absolute_source_paths,
+                            data_dir=upload_dir
+                        )
+                        content = meta_info.content
+                    else:
+                        content = []
+                        for source in extractor.absolute_source_paths:
+                            name, ext = os.path.splitext(os.path.relpath(source, upload_dir))
+                            content.append({
+                                'name': name,
+                                'extension': ext
+                            })
+                    manifest.create(content)
                 manifest.init_index()
                 counter = itertools.count()
                 for _, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
@@ -411,7 +421,11 @@ def _create_thread(tid, data):
 
                     for _, frame_id in chunk_paths:
                         properties = manifest[frame_id]
-                        img_sizes.append((properties['width'], properties['height']))
+                        if db_task.dimension == DimensionType.DIM_2D:
+                            resolution = (properties['width'], properties['height'])
+                        else:
+                            resolution = extractor.get_image_size(frame_id)
+                        img_sizes.append(resolution)
 
                     db_images.extend([
                         models.Image(data=db_data,
