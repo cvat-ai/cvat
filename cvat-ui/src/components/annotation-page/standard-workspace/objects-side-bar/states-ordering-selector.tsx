@@ -1,12 +1,11 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
-
+import React from 'react';
 import { StatesOrdering } from 'reducers/interfaces';
 
 interface StatesOrderingSelectorComponentProps {
@@ -18,8 +17,8 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
     const { statesOrdering, changeStatesOrdering } = props;
 
     return (
-        <Col span={16}>
-            <Text strong>Sort by</Text>
+        <Col>
+            <Text strong>Sort by &nbsp;</Text>
             <Select
                 className='cvat-objects-sidebar-ordering-selector'
                 dropdownClassName='cvat-objects-sidebar-ordering-dropdown'
