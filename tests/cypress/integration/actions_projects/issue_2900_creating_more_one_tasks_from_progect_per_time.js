@@ -24,11 +24,25 @@ context('Delete a project via actions.', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
 
-    function createTask(nameTaskToCreate) {
+    function createTask(nameTaskToCreate, repeatCreation) {
+        let projectSearchField;
+        if (!repeatCreation) {
+            projectSearchField = projectName;
+        } else {
+            projectSearchField = '';
+        }
         cy.get('[id="name"]').clear().type(nameTaskToCreate);
         cy.get('.cvat-project-search-field').within(() => {
-            cy.get('[type="search"]').should('have.value', projectName);
+            cy.get('[type="search"]').should('have.value', projectSearchField);
         });
+        if (repeatCreation) {
+            cy.get('.cvat-project-search-field').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    cy.get(`.ant-select-item-option[title="${projectName}"]`).click();
+                });
+        }
         cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
         cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
         cy.contains('button', 'Submit').click();
@@ -45,8 +59,8 @@ context('Delete a project via actions.', () => {
     describe(`Testing "Issue ${issueID}"`, () => {
         it('Create more than one task per time from project.', () => {
             cy.get('#cvat-create-task-button').click();
-            createTask(taskName.firstTask);
-            createTask(taskName.secondTask);
+            createTask(taskName.firstTask, false);
+            createTask(taskName.secondTask, true);
         });
 
         it('The tasks successfully created. Remove the project.', () => {
