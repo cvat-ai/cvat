@@ -6,7 +6,7 @@
 
 import { projectName, labelName } from '../../support/const_project';
 
-context('Delete a project via actions.', () => {
+context('Create more than one task per time when create from project.', () => {
     const issueID = 2900;
     const taskName = {
         firstTask: `First task for ${projectName}`,
