@@ -10,7 +10,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     switchSplitShortcut: string;

@@ -24,11 +24,10 @@ context('Creating a label with existing label name.', () => {
                     // Try to create a label with existing label name
                     cy.get('.cvat-constructor-viewer-new-item').click();
                     cy.get('[placeholder="Label name"]').type(firstLabelName);
-                    cy.contains('[type="submit"]', 'Done').click();
+                    cy.contains('[role="alert"]', 'Label name must be unique for the task') // Checking alert visibility
+                        .should('exist')
+                        .and('be.visible');
                 });
-            cy.get('.cvat-notification-notice-update-task-failed')
-                .should('exist')
-                .and('contain.text', 'label names must be unique');
         });
     });
 });

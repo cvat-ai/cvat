@@ -9,22 +9,23 @@ import Layout from 'antd/lib/layout';
 import { ActiveControl, Rotation } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas-wrapper';
 
-import RotateControl from './rotate-control';
-import CursorControl from './cursor-control';
-import MoveControl from './move-control';
-import FitControl from './fit-control';
-import ResizeControl from './resize-control';
+import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
+import RotateControl, { Props as RotateControlProps } from './rotate-control';
+import CursorControl, { Props as CursorControlProps } from './cursor-control';
+import MoveControl, { Props as MoveControlProps } from './move-control';
+import FitControl, { Props as FitControlProps } from './fit-control';
+import ResizeControl, { Props as ResizeControlProps } from './resize-control';
 import ToolsControl from './tools-control';
 import OpenCVControl from './opencv-control';
-import DrawRectangleControl from './draw-rectangle-control';
-import DrawPolygonControl from './draw-polygon-control';
-import DrawPolylineControl from './draw-polyline-control';
-import DrawPointsControl from './draw-points-control';
-import DrawCuboidControl from './draw-cuboid-control';
-import SetupTagControl from './setup-tag-control';
-import MergeControl from './merge-control';
-import GroupControl from './group-control';
-import SplitControl from './split-control';
+import DrawRectangleControl, { Props as DrawRectangleControlProps } from './draw-rectangle-control';
+import DrawPolygonControl, { Props as DrawPolygonControlProps } from './draw-polygon-control';
+import DrawPolylineControl, { Props as DrawPolylineControlProps } from './draw-polyline-control';
+import DrawPointsControl, { Props as DrawPointsControlProps } from './draw-points-control';
+import DrawCuboidControl, { Props as DrawCuboidControlProps } from './draw-cuboid-control';
+import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
+import MergeControl, { Props as MergeControlProps } from './merge-control';
+import GroupControl, { Props as GroupControlProps } from './group-control';
+import SplitControl, { Props as SplitControlProps } from './split-control';
 
 interface Props {
     canvasInstance: Canvas;
@@ -41,6 +42,25 @@ interface Props {
     resetGroup(): void;
     redrawShape(): void;
 }
+
+// We use the observer to see if these controls are in the viewport
+// They automatically put to extra if not
+const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
+const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
+const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl);
+const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl);
+const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl);
+const ObservedToolsControl = ControlVisibilityObserver(ToolsControl);
+const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl);
+const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl);
+const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl);
+const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl);
+const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
+const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
+const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
+const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
+const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
+const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -170,13 +190,13 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-            <CursorControl
+            <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
             />
-            <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <RotateControl
+            <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <ObservedRotateControl
                 anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION}
                 clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION}
                 rotateFrame={rotateFrame}
@@ -184,55 +204,57 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
             <hr />
 
-            <FitControl canvasInstance={canvasInstance} />
-            <ResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
+            <ObservedFitControl canvasInstance={canvasInstance} />
+            <ObservedResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <hr />
-            <ToolsControl />
-            <OpenCVControl />
-            <DrawRectangleControl
+            <ObservedToolsControl />
+            <ObservedOpenCVControl />
+            <ObservedDrawRectangleControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
             />
-            <DrawPolygonControl
+            <ObservedDrawPolygonControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
             />
-            <DrawPolylineControl
+            <ObservedDrawPolylineControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
             />
-            <DrawPointsControl
+            <ObservedDrawPointsControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POINTS}
             />
-            <DrawCuboidControl
+            <ObservedDrawCuboidControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
             />
-            <SetupTagControl canvasInstance={canvasInstance} isDrawing={false} />
+            <ObservedSetupTagControl canvasInstance={canvasInstance} isDrawing={false} />
 
             <hr />
 
-            <MergeControl
+            <ObservedMergeControl
                 switchMergeShortcut={normalizedKeyMap.SWITCH_MERGE_MODE}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 mergeObjects={mergeObjects}
             />
-            <GroupControl
+            <ObservedGroupControl
                 switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
                 resetGroupShortcut={normalizedKeyMap.RESET_GROUP}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 groupObjects={groupObjects}
             />
-            <SplitControl
+            <ObservedSplitControl
                 canvasInstance={canvasInstance}
                 switchSplitShortcut={normalizedKeyMap.SWITCH_SPLIT_MODE}
                 activeControl={activeControl}
                 splitTrack={splitTrack}
             />
+
+            <ExtraControlsControl />
         </Layout.Sider>
     );
 }
