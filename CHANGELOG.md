@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
 - Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
 - Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
+- Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
 
 ### Deprecated
 
@@ -59,6 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the path to python for DL models inside automatic annotation documentation (<https://github.com/openvinotoolkit/cvat/pull/2847>)
 - Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
 - Shortcuts with CAPSLOCK enabled and with non-US languages activated (<https://github.com/openvinotoolkit/cvat/pull/2872>)
+- Prevented creating several issues for the same object (<https://github.com/openvinotoolkit/cvat/pull/2868>)
+- Fixed label editor name field validator (<https://github.com/openvinotoolkit/cvat/pull/2879>)
+- An error about track shapes outside of the task frames during export (<https://github.com/openvinotoolkit/cvat/pull/2890>)
+- Fixed project search field updating (<https://github.com/openvinotoolkit/cvat/pull/2901>)
 
 ### Security
 
