@@ -301,10 +301,14 @@ export interface NotificationsState {
             commentingIssue: null | ErrorState;
             submittingReview: null | ErrorState;
         };
+        clowder: {
+            fetching: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
             loadingDone: string;
+            clowderSyncingDone: string;
         };
         models: {
             inferenceDone: string;

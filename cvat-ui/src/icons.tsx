@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,6 +23,7 @@ import SVGGroupIcon from './assets/group-icon.svg';
 import SVGSplitIcon from './assets/split-icon.svg';
 import SVGMainMenuIcon from './assets/main-menu-icon.svg';
 import SVGSaveIcon from './assets/save-icon.svg';
+import SVGClowderSyncIcon from './assets/clowder-sync-icon.svg';
 import SVGUndoIcon from './assets/undo-icon.svg';
 import SVGRedoIcon from './assets/redo-icon.svg';
 import SVGFirstIcon from './assets/first-icon.svg';
@@ -68,6 +69,7 @@ export const GroupIcon = React.memo((): JSX.Element => <SVGGroupIcon />);
 export const SplitIcon = React.memo((): JSX.Element => <SVGSplitIcon />);
 export const MainMenuIcon = React.memo((): JSX.Element => <SVGMainMenuIcon />);
 export const SaveIcon = React.memo((): JSX.Element => <SVGSaveIcon />);
+export const ClowderSyncIcon = React.memo((): JSX.Element => <SVGClowderSyncIcon />);
 export const UndoIcon = React.memo((): JSX.Element => <SVGUndoIcon />);
 export const RedoIcon = React.memo((): JSX.Element => <SVGRedoIcon />);
 export const FirstIcon = React.memo((): JSX.Element => <SVGFirstIcon />);

@@ -164,7 +164,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         }}
                     />
                 ),
-                duration: null,
             });
         }
 
@@ -270,9 +269,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (showPlatformNotification()) {
             stopNotifications(false);
-            const {
-                name, version, engine, os,
-            } = platformInfo();
+            const { name, version, engine, os } = platformInfo();
 
             Modal.warning({
                 title: 'Unsupported platform detected',
