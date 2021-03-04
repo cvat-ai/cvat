@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import Icon from '@ant-design/icons';
-import { changeAnnotationsFilters, fetchAnnotationsAsync } from 'actions/annotation-actions';
 import Button from 'antd/lib/button';
 import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
-import { FilterIcon, FullscreenIcon, InfoIcon } from 'icons';
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { FilterIcon, FullscreenIcon, InfoIcon } from 'icons';
 import { CombinedState, DimensionType, Workspace } from 'reducers/interfaces';
 
 interface Props {
@@ -26,15 +25,6 @@ function RightGroup(props: Props): JSX.Element {
     } = props;
 
     const filters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
-    const dispatch = useDispatch();
-    const filtersClickHandler = (e: React.MouseEvent<HTMLElement, MouseEvent>): void => {
-        if (e.altKey) {
-            dispatch(changeAnnotationsFilters([]));
-            dispatch(fetchAnnotationsAsync());
-        } else {
-            showFilters();
-        }
-    };
 
     return (
         <Col className='cvat-annotation-header-right-group'>
@@ -61,7 +51,7 @@ function RightGroup(props: Props): JSX.Element {
             <Button
                 type='link'
                 className={`cvat-annotation-header-button ${filters.length ? 'filters-armed' : ''}`}
-                onClick={(e: React.MouseEvent<HTMLElement, MouseEvent>) => filtersClickHandler(e)}
+                onClick={showFilters}
             >
                 <Icon component={FilterIcon} />
                 Filters

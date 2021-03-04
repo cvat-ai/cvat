@@ -2,19 +2,19 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { DownOutlined } from '@ant-design/icons';
-import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
-import { Dropdown, Menu } from 'antd';
-import Button from 'antd/lib/button';
-import Modal from 'antd/lib/modal';
 import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
     Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils,
 } from 'react-awesome-query-builder';
 import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 import 'react-awesome-query-builder/lib/css/styles.css';
-import { useDispatch, useSelector } from 'react-redux';
+import { DownOutlined } from '@ant-design/icons';
+import { Dropdown, Menu } from 'antd';
+import Button from 'antd/lib/button';
+import Modal from 'antd/lib/modal';
 import { CombinedState } from 'reducers/interfaces';
+import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
 
 const FILTERS_HISTORY = 'filtersHistory';
 
@@ -251,9 +251,13 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                 </Button>,
             ]}
         >
-            <div key='used' style={{ display: filters.length ? 'inline-block' : 'none' }}>
+            <div
+                key='used'
+                className='recently-used-wrapper'
+                style={{ display: filters.length ? 'inline-block' : 'none' }}
+            >
                 <Dropdown overlay={menu}>
-                    <Button type='link'>
+                    <Button type='text'>
                         Recently used
                         {' '}
                         <DownOutlined />

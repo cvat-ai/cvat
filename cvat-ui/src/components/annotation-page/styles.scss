@@ -430,6 +430,10 @@
     .ant-modal-body {
         padding: 1px;
 
+        .recently-used-wrapper {
+            padding-top: $grid-unit-size * 2;
+        }
+
         .query-builder-container {
             .query-builder > :first-child {
                 padding-right: 0;
