@@ -28,7 +28,6 @@
 
 .cvat-annotation-header-left-group {
     display: flex;
-    flex: 1;
 
     > button:first-child {
         filter: invert(0.9);
@@ -164,7 +163,6 @@
 
 .cvat-annotation-header-right-group {
     display: flex;
-    flex: 1;
     justify-content: flex-end;
 
     > div {
