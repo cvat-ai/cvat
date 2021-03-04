@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -129,6 +129,7 @@ context('Merge/split features', () => {
             cy.get('.cvat-split-track-control').click();
             // A single click does not reproduce the split a track scenario in cypress test.
             cy.get('#cvat_canvas_shape_3').click().click();
+            cy.get('#cvat_canvas_shape_3').click(); // TODO: workaraund. Need to figure out and make it work with just single click
             cy.get('#cvat_canvas_shape_4').should('exist').and('be.hidden');
             cy.get('#cvat-objects-sidebar-state-item-4')
                 .should('contain', '4')
