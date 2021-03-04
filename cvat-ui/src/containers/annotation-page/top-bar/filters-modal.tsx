@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
 import React from 'react';
 import { connect } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
+import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
 
 interface StateToProps {
     visible: boolean;

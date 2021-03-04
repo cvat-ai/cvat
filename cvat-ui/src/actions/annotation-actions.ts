@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { MutableRefObject } from 'react';
+import {
+    ActionCreator, AnyAction, Dispatch, Store,
+} from 'redux';
+import { ThunkAction } from 'utils/redux';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
-import { MutableRefObject } from 'react';
 import {
     ActiveControl,
     CombinedState,
@@ -21,10 +25,6 @@ import {
     Task,
     Workspace,
 } from 'reducers/interfaces';
-import {
-    ActionCreator, AnyAction, Dispatch, Store,
-} from 'redux';
-import { ThunkAction } from 'utils/redux';
 
 interface AnnotationsParameters {
     filters: string[];

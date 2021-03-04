@@ -2,6 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
+import { connect } from 'react-redux';
+import { withRouter } from 'react-router';
+import { RouteComponentProps } from 'react-router-dom';
+import Input from 'antd/lib/input';
+import copy from 'copy-to-clipboard';
 import {
     activateObject,
     changeFrameAsync,
@@ -17,14 +23,8 @@ import {
     switchPlay,
     undoActionAsync,
 } from 'actions/annotation-actions';
-import Input from 'antd/lib/input';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import copy from 'copy-to-clipboard';
 import { Canvas } from 'cvat-canvas-wrapper';
-import React from 'react';
-import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { RouteComponentProps } from 'react-router-dom';
 import { CombinedState, FrameSpeed, Workspace } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 

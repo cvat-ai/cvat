@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React, { useEffect } from 'react';
+import { useHistory } from 'react-router';
 import Layout from 'antd/lib/layout';
 import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
@@ -15,8 +17,6 @@ import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-wo
 import FiltersModalContainer from 'containers/annotation-page/top-bar/filters-modal';
 import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
-import React, { useEffect } from 'react';
-import { useHistory } from 'react-router';
 import { Workspace } from 'reducers/interfaces';
 import './styles.scss';
 

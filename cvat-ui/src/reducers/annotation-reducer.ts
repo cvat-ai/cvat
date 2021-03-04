@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
+import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import React from 'react';
-import { AnyAction } from 'redux';
 import {
     ActiveControl,
     AnnotationState,
