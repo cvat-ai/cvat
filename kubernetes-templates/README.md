@@ -39,6 +39,21 @@ docker push $CI_REGISTRY_IMAGE/frontend:release-1.1.0
 ## Deploying to the cluster
 Deploy everything to your cluster with `kubectl apply -f kubernetes-templates/`
 
+### Expose the deployment
+The service `cvat-proxy-service` is the accesspoint to the deployment.
+In order to expose this resource an ingress might be handy [kubernetes ingress documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/).
+
+For debugging puposes it is usefull to forward this service to a port on your localhost.
+In the following example `8080` will be used for this purpose [localhost:8080](http://localhost:8080).
+
+```bash
+kubectl port-forward service/cvat-proxy-service -n cvat 8080:80
+```
+
+**Hint:**
+If you are developing locally it might be usefull to replace `{MY_SERVER_URL_COM}` with `localhost`,
+such that `/etc/hosts` does not need to override the DNS.
+
 ## Create the django super user
 
 ```
