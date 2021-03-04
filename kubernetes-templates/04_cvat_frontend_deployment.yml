@@ -24,13 +24,6 @@ spec:
         - name: cvat-frontend-app-container
           image: openvino/cvat_ui:v1.2.0
           imagePullPolicy: Always
-          env:
-          - name: REACT_APP_API_PROTOCOL
-            value: "http"
-          - name: REACT_APP_API_HOST
-            value: "{MY_SERVER_URL_COM}"
-          - name: REACT_APP_API_PORT
-            value: "8080"
           ports:
           - containerPort: 80
           resources: {}

@@ -36,7 +36,7 @@ spec:
           - name: UI_HOST
             value: "cvat-frontend-service"
           - name: ALLOWED_HOSTS
-            value: "{MY_SERVER_URL_COM}"
+            value: "*"
           - name: CVAT_REDIS_HOST
             value: "cvat-redis-service"
           - name: CVAT_POSTGRES_HOST
