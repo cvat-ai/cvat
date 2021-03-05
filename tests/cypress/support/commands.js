@@ -44,7 +44,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
 Cypress.Commands.add(
     'createAnnotationTask',
     (
-        taksName = 'New annotation task',
+        taskName = 'New annotation task',
         labelName = 'Some label',
         attrName = 'Some attr name',
         textDefaultValue = 'Some default value for type Text',
@@ -58,7 +58,7 @@ Cypress.Commands.add(
     ) => {
         cy.get('#cvat-create-task-button').click({ force: true });
         cy.url().should('include', '/tasks/create');
-        cy.get('[id="name"]').type(taksName);
+        cy.get('[id="name"]').type(taskName);
         if (!forProject) {
             cy.get('.cvat-constructor-viewer-new-item').click();
             cy.get('[placeholder="Label name"]').type(labelName);
