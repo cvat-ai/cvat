@@ -24,7 +24,7 @@ interface Props {
 
 interface StoredFilter {
     id: string;
-    logic?: JsonLogicTree;
+    logic: JsonLogicTree;
 }
 
 export default function FiltersModalComponent(props: Props): JSX.Element {
@@ -184,7 +184,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
     const confirmModal = (): void => {
         const currentFilter: StoredFilter = {
             id: QbUtils.uuid(),
-            logic: QbUtils.jsonLogicFormat(state.tree, config).logic,
+            logic: QbUtils.jsonLogicFormat(state.tree, config).logic || {},
         };
         const updatedFilters = filters.filter(
             (filter) => JSON.stringify(filter.logic) !== JSON.stringify(currentFilter.logic),
@@ -210,24 +210,19 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
 
     const menu = (
         <Menu>
-            {filters.map((filter: StoredFilter) => {
-                const treeFromFilter = QbUtils.loadFromJsonLogic(filter.logic || {}, config);
-                return (
-                    <Menu.Item
-                        key={filter.id}
-                        onClick={() =>
-                            setState({
-                                tree: QbUtils.checkTree(
-                                    QbUtils.loadFromJsonLogic(filter.logic || {}, config),
-                                    config as Config,
-                                ) as ImmutableTree,
-                                config,
-                            })}
-                    >
-                        {QbUtils.queryString(treeFromFilter, config)}
-                    </Menu.Item>
-                );
-            })}
+            {filters
+                .filter((filter: StoredFilter) => {
+                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
+                    return !!QbUtils.queryString(tree, config);
+                })
+                .map((filter: StoredFilter) => {
+                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
+                    return (
+                        <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
+                            {QbUtils.queryString(tree, config)}
+                        </Menu.Item>
+                    );
+                })}
         </Menu>
     );
 
