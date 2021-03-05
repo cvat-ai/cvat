@@ -39,13 +39,18 @@ context('Canvas 3D functionality. Basic actions.', () => {
         cy.get(element)
             .screenshot(screenshotNameBefore)
             .trigger('wheel', { deltaY: deltaY })
-            .wait(300) // Wait change points cloud perspective
+            .wait(300) // Wait change points cloud position
             .screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
     before(() => {
         cy.openTaskJob(taskName);
+    });
+
+    after(() => {
+        cy.goToTaskList();
+        cy.deleteTask(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
