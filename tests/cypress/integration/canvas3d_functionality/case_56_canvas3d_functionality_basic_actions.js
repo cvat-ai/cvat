@@ -5,8 +5,8 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const_canvas3d';
-// Firefox does not yet support WebGL in headless mode: https://bugzilla.mozilla.org/show_bug.cgi?id=1375585
-context('Canvas 3D functionality. Basic actions.', { browser: '!firefox' }, () => {
+// Firefox does not yet support WebGL in headless mode: https://bugzilla.mozilla.org/show_bug.cgi?id=1375585 (disabled in the cypress_cron_type.json)
+context('Canvas 3D functionality. Basic actions.', () => {
     const caseId = '56';
     const screenshotsPath =
         'cypress/screenshots/canvas3d_functionality/case_56_canvas3d_functionality_basic_actions.js';

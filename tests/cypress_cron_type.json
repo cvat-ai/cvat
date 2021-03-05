@@ -15,7 +15,6 @@
     "actions_projects/*",
     "actions_users/*",
     "email_system/*",
-    "canvas3d_functionality/*",
     "remove_users_tasks_projects.js"
   ]
 }
