@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,14 +15,7 @@ context('Delete a project via actions.', () => {
 
     describe(`Testing "Issue ${issueID}"`, () => {
         it('Delete a project via actions.', () => {
-            cy.get('.cvat-project-top-bar-actions').trigger('mouseover');
-            cy.get('.cvat-project-actions-menu').within(() => {
-                cy.contains('[role="menuitem"]', 'Delete').click();
-            });
-            cy.get('.cvat-modal-confirm-remove-project').within(() => {
-                cy.contains('button', 'Delete').click();
-            });
-            cy.contains('.cvat-projects-project-item-title', projectName).should('not.exist');
+            cy.deleteProjectViaActions(projectName);
         });
     });
 });
