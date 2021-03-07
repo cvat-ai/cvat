@@ -42,7 +42,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                             </Col>
                         </Row>
                     )}
-                    {renderResetPassword && (
+                    {allowLogin && (
                         <>
                             <Title level={2}> Login </Title>
                             <LoginForm
@@ -59,13 +59,15 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                     </Text>
                                 </Col>
                             </Row>
-                            <Row justify='start' align='top'>
-                                <Col>
-                                    <Text strong>
-                                        <Link to='/auth/password/reset'>Forgot your password?</Link>
-                                    </Text>
-                                </Col>
-                            </Row>
+                            {renderResetPassword && (
+                                <Row justify='start' align='top'>
+                                    <Col>
+                                        <Text strong>
+                                            <Link to='/auth/password/reset'>Forgot your password?</Link>
+                                        </Text>
+                                    </Col>
+                                </Row>
+                            )}
                         </>
                     )}
                 </Col>
