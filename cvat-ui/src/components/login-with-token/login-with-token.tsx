@@ -15,10 +15,8 @@ export default function LoginWithTokenComponent(): JSX.Element {
     const expires2w = new Date(new Date().setDate(new Date().getDate() + 13));
     const search = new URLSearchParams(location.search);
 
-    setCookie('sessionid', sessionId, { path: '/' });
-    setCookie('csrftoken', token, { path: '/' });
-    setCookie('sessionid', sessionId, { domain: 'localhost', path: '/' });
-    setCookie('csrftoken', token, { domain: 'localhost', path: '/' });
+    setCookie('sessionid', sessionId, { path: '/', sameSite: 'Lax' });
+    setCookie('csrftoken', token, { path: '/', sameSite: 'Lax' });
 
     useEffect(
         () => () => {
@@ -28,7 +26,7 @@ export default function LoginWithTokenComponent(): JSX.Element {
     );
 
     if (cookies.sessionid && cookies.csrftoken) {
-        return <Redirect to={search.get('next') || '/tasks'} />;
+        return <Redirect to={'/tasks'} />;
     }
     return <Redirect to={'/auth/login'} />;
 }
