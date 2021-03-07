@@ -15,8 +15,8 @@ export default function LoginWithTokenComponent(): JSX.Element {
     const expires2w = new Date(new Date().setDate(new Date().getDate() + 13));
     const search = new URLSearchParams(location.search);
 
-    setCookie('sessionid', sessionId, { path: '/', sameSite: 'none', secure: false });
-    setCookie('csrftoken', token, { path: '/', sameSite: 'none', secure: false });
+    setCookie('sessionid', sessionId, { path: '/' });
+    setCookie('csrftoken', token, { path: '/' });
 
     useEffect(
         () => () => {
