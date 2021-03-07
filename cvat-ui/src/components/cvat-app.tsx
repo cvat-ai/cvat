@@ -338,7 +338,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/login'>
-                            <LoginPageContainer allowLogin={false} />
+                            <LoginPageContainer allowLogin={true} />
                         </Route>
                         <Route
                             exact
