@@ -17,6 +17,8 @@ export default function LoginWithTokenComponent(): JSX.Element {
 
     setCookie('sessionid', sessionId, { path: '/' });
     setCookie('csrftoken', token, { path: '/' });
+    setCookie('sessionid', sessionId, { domain: 'localhost', path: '/' });
+    setCookie('csrftoken', token, { domain: 'localhost', path: '/' });
 
     useEffect(
         () => () => {
