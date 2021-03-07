@@ -32,7 +32,7 @@ services:
 
   cvat:
     container_name: cvat
-    image: openvino/cvat_server
+    image: tomercnvrg/cvat:be-release-1.1.0
     restart: always
     depends_on:
       - cvat_redis
@@ -50,7 +50,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: openvino/cvat_ui
+    image: tomercnvrg/cvat:fe-release-1.1.0
     restart: always
     networks:
       default:

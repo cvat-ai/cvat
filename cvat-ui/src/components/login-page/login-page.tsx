@@ -27,35 +27,46 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
         xl: { span: 4 },
     };
 
-    const { fetching, onLogin, renderResetPassword } = props;
+    const { fetching, onLogin, renderResetPassword, allowLogin } = props;
 
     return (
         <>
             <Row justify='center' align='middle'>
                 <Col {...sizes}>
-                    <Title level={2}> Login </Title>
-                    <LoginForm
-                        fetching={fetching}
-                        onSubmit={(loginData: LoginData): void => {
-                            onLogin(loginData.username, loginData.password);
-                        }}
-                    />
-                    <Row justify='start' align='top'>
-                        <Col>
-                            <Text strong>
-                                New to CVAT? Create
-                                <Link to='/auth/register'> an account</Link>
-                            </Text>
-                        </Col>
-                    </Row>
-                    {renderResetPassword && (
+                    {!allowLogin && !renderResetPassword && (
                         <Row justify='start' align='top'>
                             <Col>
                                 <Text strong>
-                                    <Link to='/auth/password/reset'>Forgot your password?</Link>
+                                    Login disabled. please contact support
                                 </Text>
                             </Col>
                         </Row>
+                    )}
+                    {renderResetPassword && (
+                        <>
+                            <Title level={2}> Login </Title>
+                            <LoginForm
+                                fetching={fetching}
+                                onSubmit={(loginData: LoginData): void => {
+                                    onLogin(loginData.username, loginData.password);
+                                }}
+                            />
+                            <Row justify='start' align='top'>
+                                <Col>
+                                    <Text strong>
+                                        New to CVAT? Create
+                                        <Link to='/auth/register'> an account</Link>
+                                    </Text>
+                                </Col>
+                            </Row>
+                            <Row justify='start' align='top'>
+                                <Col>
+                                    <Text strong>
+                                        <Link to='/auth/password/reset'>Forgot your password?</Link>
+                                    </Text>
+                                </Col>
+                            </Row>
+                        </>
                     )}
                 </Col>
             </Row>
