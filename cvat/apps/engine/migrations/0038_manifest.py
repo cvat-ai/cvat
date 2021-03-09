@@ -13,6 +13,14 @@ def migrate_data(apps, shema_editor):
     for db_data in query_set:
         try:
             upload_dir = '{}/{}/raw'.format(settings.MEDIA_DATA_ROOT, db_data.id)
+            if os.path.exists(os.path.join(upload_dir, 'meta_info.txt')):
+                    os.remove(os.path.join(upload_dir, 'meta_info.txt'))
+            else:
+                for path in glob.glob(f'{upload_dir}/dummy_*.txt'):
+                    os.remove(path)
+            # it's necessary for case with long data migration
+            if os.path.exists(os.path.join(upload_dir, 'manifest.jsonl')):
+                continue
             data_dir = upload_dir if db_data.storage == StorageChoice.LOCAL else settings.SHARE_ROOT
             if hasattr(db_data, 'video'):
                 media_file = os.path.join(data_dir, db_data.video.path)
@@ -23,8 +31,6 @@ def migrate_data(apps, shema_editor):
                 manifest = VideoManifestManager(manifest_path=upload_dir)
                 manifest.create(meta_info)
                 manifest.init_index()
-                if os.path.exists(os.path.join(upload_dir, 'meta_info.txt')):
-                    os.remove(os.path.join(upload_dir, 'meta_info.txt'))
             else:
                 sources = [os.path.join(data_dir, db_image.path) for db_image in db_data.images.all().order_by('frame')]
                 if any(list(filter(lambda x: x.dimension==DimensionType.DIM_3D, db_data.tasks.all()))):
@@ -41,8 +47,6 @@ def migrate_data(apps, shema_editor):
                 manifest = ImageManifestManager(manifest_path=upload_dir)
                 manifest.create(content)
                 manifest.init_index()
-                for path in glob.glob(f'{upload_dir}/dummy_*.txt'):
-                    os.remove(path)
         except Exception as ex:
             print(str(ex))
 
