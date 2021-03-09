@@ -282,6 +282,7 @@ class TaskExportTest(_DbTestBase):
             'YOLO 1.1',
             'ImageNet 1.0',
             'CamVid 1.0',
+            'VGGFace2 1.0',
         })
 
     def test_import_formats_query(self):
@@ -300,6 +301,7 @@ class TaskExportTest(_DbTestBase):
             'YOLO 1.1',
             'ImageNet 1.0',
             'CamVid 1.0',
+            'VGGFace2 1.0',
         })
 
     def test_exports(self):
@@ -312,6 +314,9 @@ class TaskExportTest(_DbTestBase):
                 self.skipTest("Format is disabled")
 
             format_name = f.DISPLAY_NAME
+            if format_name == "VGGFace2 1.0":
+                self.skipTest("Format does not support multiple shapes for one item")
+
             for save_images in { True, False }:
                 images = self._generate_task_images(3)
                 task = self._generate_task(images)
@@ -337,6 +342,7 @@ class TaskExportTest(_DbTestBase):
             ('YOLO 1.1', 'yolo'),
             ('ImageNet 1.0', 'imagenet_txt'),
             ('CamVid 1.0', 'camvid'),
+            ('VGGFace2 1.0', 'vgg_face2'),
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:

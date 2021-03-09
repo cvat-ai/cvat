@@ -16,8 +16,6 @@ from enum import Enum
 from glob import glob
 from io import BytesIO
 from unittest import mock
-import open3d as o3d
-import struct
 
 import av
 import numpy as np
@@ -739,7 +737,7 @@ class UserListAPITestCase(UserAPITestCase):
 
         return response
 
-    def _check_response(self, user, response, is_full):
+    def _check_response(self, user, response, is_full=True):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for user_info in response.data['results']:
             db_user = getattr(self, user_info['username'])
@@ -3770,6 +3768,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "occluded": False,
             }]
 
+            points_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
+                    "type": "points",
+                    "occluded": False,
+                }]
+
             tags_wo_attrs = [{
                 "frame": 2,
                 "label_id": task["labels"][1]["id"],
@@ -3854,6 +3863,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "CamVid 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
+
+            elif annotation_format == "VGGFace2 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = points_wo_attrs \
+                                      + rectangle_shapes_wo_attrs
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
