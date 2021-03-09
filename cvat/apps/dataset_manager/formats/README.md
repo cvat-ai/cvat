@@ -20,7 +20,10 @@
   - [TF detection API](#tfrecord)
   - [ImageNet](#imagenet)
   - [CamVid](#camvid)
-  - [WIDER Face](#widerface)
+    <<<<<<< HEAD
+  - # [WIDER Face](#widerface)
+  - [VGGFace2](#vggface2)
+    > > > > > > > develop
 
 ## How to add a new annotation format support<a id="how-to-add"></a>
 
@@ -886,11 +889,11 @@ Downloaded file: a zip archive of the following structure:
 taskname.zip/
 ├── labels.txt # optional
 ├── wider_face_split/
-│   └── wider_face_<any_subset_name>_bbx_gt.txt
+│   └── wider_face_<any_subset_name>_bbx_gt.txt
 └── WIDER_<any_subset_name>/
     └── images/
         ├── 0--label0/
-        │   └── 0_label0_image1.jpg
+        │   └── 0_label0_image1.jpg
         └── 1--label1/
             └── 1_label1_image2.jpg
 ```
@@ -905,3 +908,34 @@ Uploaded file: a zip archive of the structure above
 
 - supported annotations: Rectangles (with attributes), Labels
 - supported attributes: `blur`, `expression`, `illumination`, `occluded`, `pose`, `invalid`
+
+### [VGGFace2](https://github.com/ox-vgg/vgg_face2)<a id="vggface2" />
+
+#### VGGFace2 Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+taskname.zip/
+├── labels.txt # optional
+├── <any_subset_name>/
+|   ├── label0/
+|   |   └── image1.jpg
+|   └── label1/
+|       └── image2.jpg
+└── bb_landmark/
+    ├── loose_bb_<any_subset_name>.csv
+    └── loose_landmark_<any_subset_name>.csv
+# labels.txt
+# n000001 car
+label0 <class0>
+label1 <class1>
+```
+
+- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
+
+#### VGGFace2 Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
