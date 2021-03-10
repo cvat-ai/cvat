@@ -626,6 +626,8 @@ def find_dataset_root(dm_dataset, task_data):
         prefix = prefix[:-1]
     return prefix
 
+class CvatImportError(Exception):
+    pass
 
 def import_dm_annotations(dm_dataset, task_data):
     shapes = {
@@ -662,26 +664,32 @@ def import_dm_annotations(dm_dataset, task_data):
             if 1 < s and group_map[g]}
         group_map = {g: i for i, g in enumerate([0] + sorted(group_map))}
 
-        for ann in item.annotations:
-            if ann.type in shapes:
-                task_data.add_shape(task_data.LabeledShape(
-                    type=shapes[ann.type],
-                    frame=frame_number,
-                    label=label_cat.items[ann.label].name,
-                    points=ann.points,
-                    occluded=ann.attributes.get('occluded') == True,
-                    z_order=ann.z_order,
-                    group=group_map.get(ann.group, 0),
-                    source='manual',
-                    attributes=[task_data.Attribute(name=n, value=str(v))
-                        for n, v in ann.attributes.items()],
-                ))
-            elif ann.type == datumaro.AnnotationType.label:
-                task_data.add_tag(task_data.Tag(
-                    frame=frame_number,
-                    label=label_cat.items[ann.label].name,
-                    group=group_map.get(ann.group, 0),
-                    source='manual',
-                    attributes=[task_data.Attribute(name=n, value=str(v))
-                        for n, v in ann.attributes.items()],
-                ))
+        for idx, ann in enumerate(item.annotations):
+            try:
+                if hasattr(ann, 'label') and ann.label is None:
+                    raise CvatImportError("annotation has no label")
+                if ann.type in shapes:
+                    task_data.add_shape(task_data.LabeledShape(
+                        type=shapes[ann.type],
+                        frame=frame_number,
+                        label=label_cat.items[ann.label].name,
+                        points=ann.points,
+                        occluded=ann.attributes.get('occluded') == True,
+                        z_order=ann.z_order,
+                        group=group_map.get(ann.group, 0),
+                        source='manual',
+                        attributes=[task_data.Attribute(name=n, value=str(v))
+                            for n, v in ann.attributes.items()],
+                    ))
+                elif ann.type == datumaro.AnnotationType.label:
+                    task_data.add_tag(task_data.Tag(
+                        frame=frame_number,
+                        label=label_cat.items[ann.label].name,
+                        group=group_map.get(ann.group, 0),
+                        source='manual',
+                        attributes=[task_data.Attribute(name=n, value=str(v))
+                            for n, v in ann.attributes.items()],
+                    ))
+            except Exception as e:
+                raise CvatImportError("Image {}: can't import annotation "
+                    "#{}: {}".format(item.id, idx, e))
