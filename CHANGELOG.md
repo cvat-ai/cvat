@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All methods for interative segmentation accept negative points as well
 - Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
 - Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
+- Improved error messages for annotation import (<https://github.com/openvinotoolkit/cvat/pull/2935>)
 
 ### Deprecated
 
