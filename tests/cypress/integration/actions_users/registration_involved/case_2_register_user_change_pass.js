@@ -34,6 +34,12 @@ context('Register user, change password, login with new password', () => {
         cy.url().should('include', '/auth/register');
     });
 
+    after(() => {
+        cy.get('.cvat-modal-change-password').find('[aria-label="Close"]').click();
+        cy.logout(userName);
+        cy.deletingRegisteredUsers();
+    });
+
     describe(`Testing "Case ${caseId}"`, () => {
         it('Register user, change password', () => {
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);

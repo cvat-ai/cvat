@@ -130,6 +130,8 @@ context('Review pipeline feature', () => {
     after(() => {
         cy.goToTaskList();
         cy.deleteTask(taskName);
+        cy.logout();
+        cy.deletingRegisteredUsers();
     });
 
     describe(`Testing "${labelName}"`, () => {
