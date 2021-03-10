@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,41 +12,45 @@ context('Canvas brightness/contrast/saturation feature', () => {
     const defaultValueInSidebar = 100;
     const expectedResultInSetting = defaultValueInSidebar + countActionMoveSlider;
     const classNameSliders = [
-        '.cvat-player-settings-brightness',
-        '.cvat-player-settings-contrast',
-        '.cvat-player-settings-saturation',
+        '.cvat-image-setups-brightness',
+        '.cvat-image-setups-contrast',
+        '.cvat-image-setups-saturation',
     ];
 
     function generateStringCountAction(countAction) {
         let stringAction = '';
         for (let i = 0; i < countAction; i++) {
             stringAction += '{rightarrow}';
-        };
+        }
         return stringAction;
-    };
+    }
 
     function checkStateValuesInBackground(expectedValue) {
         cy.get('#cvat_canvas_background')
             .should('have.attr', 'style')
-            .and('contain', `filter: brightness(${expectedValue}) contrast(${expectedValue}) saturate(${expectedValue})`);
-    };
+            .and(
+                'contain',
+                `filter: brightness(${expectedValue}) contrast(${expectedValue}) saturate(${expectedValue})`,
+            );
+    }
 
     before(() => {
         cy.openTaskJob(taskName);
+        cy.get('.cvat-canvas-image-setups-trigger').click();
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check apply of settings', () => {
             let stringAction = generateStringCountAction(countActionMoveSlider);
-            cy.openSettings();
-            cy.get('.cvat-settings-modal').within(() => {
-                cy.contains('Player').click();
+            cy.get('.cvat-canvas-image-setups-content').within(() => {
                 cy.wrap(classNameSliders).each(($el) => {
-                    cy.wrap($el).get($el).within(() => {
-                        cy.get('[role=slider]')
-                            .type(stringAction)
-                            .should('have.attr', 'aria-valuenow', expectedResultInSetting);
-                    });
+                    cy.wrap($el)
+                        .get($el)
+                        .within(() => {
+                            cy.get('[role=slider]')
+                                .type(stringAction)
+                                .should('have.attr', 'aria-valuenow', expectedResultInSetting);
+                        });
                 });
             });
             const expectedResultInBackground = (defaultValueInSidebar + countActionMoveSlider) / 100;
@@ -54,7 +58,7 @@ context('Canvas brightness/contrast/saturation feature', () => {
         });
 
         it('Check reset of settings', () => {
-            cy.get('.cvat-player-reset-color-settings').click();
+            cy.get('.cvat-image-setups-reset-color-settings').find('button').click();
             const expectedResultInBackground = defaultValueInSidebar / 100;
             checkStateValuesInBackground(expectedResultInBackground);
         });

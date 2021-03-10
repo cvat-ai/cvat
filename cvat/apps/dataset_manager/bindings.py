@@ -267,6 +267,11 @@ class TaskData:
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
+            if shape['frame'] not in self._frame_info:
+                # After interpolation there can be a finishing frame
+                # outside of the task boundaries. Filter it out to avoid errors.
+                # https://github.com/openvinotoolkit/cvat/issues/2827
+                continue
             if 'track_id' in shape:
                 if shape['outside']:
                     continue
