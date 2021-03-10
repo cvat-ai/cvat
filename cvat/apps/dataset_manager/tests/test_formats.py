@@ -322,6 +322,7 @@ class TaskExportTest(_DbTestBase):
             format_name = f.DISPLAY_NAME
             if format_name in ["VGGFace2 1.0", "ICDAR Segmentation 1.0"]:
                 self.skipTest("Format is disabled")
+
             for save_images in { True, False }:
                 images = self._generate_task_images(3)
                 task = self._generate_task(images)

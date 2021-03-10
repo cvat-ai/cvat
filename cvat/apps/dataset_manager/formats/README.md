@@ -954,6 +954,7 @@ taskname.zip/
         |   ├── word1.png
         |   └── word2.png
         └── gt.txt
+
 # text localization task
 taskname.zip/
 └── text_localization/
@@ -963,6 +964,7 @@ taskname.zip/
         |   └── img_2.png
         ├── gt_img_1.txt
         └── gt_img_1.txt
+
 #text segmentation task
 taskname.zip/
 └── text_localization/
