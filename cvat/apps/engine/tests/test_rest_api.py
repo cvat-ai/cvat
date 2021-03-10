@@ -2595,6 +2595,32 @@ class JobAnnotationAPITestCase(APITestCase):
                     ]
                 },
                 {"name": "person"},
+                {
+                    "name": "widerface",
+                    "attributes": [
+                        {
+                            "name": "blur",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1", "2"]
+                        },
+                        {
+                            "name": "expression",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                        {
+                            "name": "illumination",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                    ]
+                },
             ]
         }
         if annotation_format in ["ICDAR Recognition 1.0",
@@ -3772,6 +3798,41 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "occluded": False,
                 }]
 
+                rectangle_shapes_with_wider_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][2]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][2]["attributes"][0]["id"],
+                            "value": task["labels"][2]["attributes"][0]["default_value"]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][1]["id"],
+                            "value": task["labels"][2]["attributes"][1]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][2]["id"],
+                            "value": task["labels"][2]["attributes"][2]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+
+                rectangle_shapes_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [2.0, 2.1, 40, 50.7],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+
                 polygon_shapes_wo_attrs = [{
                     "frame": 1,
                     "label_id": task["labels"][1]["id"],
@@ -3810,6 +3871,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "attributes": [],
                     "points": [4, 7, 10, 30, 4, 5.55],
                     "type": "polygon",
+                    "occluded": False,
+                }]
+
+                points_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
+                    "type": "points",
                     "occluded": False,
                 }]
 
@@ -3897,6 +3969,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "CamVid 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
+
+            elif annotation_format == "WiderFace 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = rectangle_shapes_with_wider_attrs
+
+            elif annotation_format == "VGGFace2 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = points_wo_attrs \
+                                      + rectangle_shapes_wo_attrs
 
             elif annotation_format == "ICDAR Recognition 1.0":
                 tags_with_attrs = [{
@@ -4007,7 +4088,6 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
                 annotations["shapes"] = rectangle_shapes_with_attrs \
                                       + polygon_shapes_with_attrs
-
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
