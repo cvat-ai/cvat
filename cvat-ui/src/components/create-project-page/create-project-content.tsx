@@ -61,7 +61,7 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     const projectClassesForTraining = ['OD'];
     return (
         <Form layout='vertical' ref={formRef}>
-            <Form.Item name={['training', 'enabled']} label='Adaptive auto annotation' initialValue={false}>
+            <Form.Item name='enabled' label='Adaptive auto annotation' initialValue={false}>
                 <Switch
                     disabled={!projectClassesForTraining.includes(projectClass.value)}
                     checked={trainingEnabled.value}
@@ -69,7 +69,7 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
                 />
             </Form.Item>
             <Form.Item
-                name={['training', 'host']}
+                name='host'
                 label='Host'
                 rules={[
                     {
@@ -87,12 +87,12 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
             </Form.Item>
             <Row gutter={16}>
                 <Col span={12}>
-                    <Form.Item name={['training', 'username']} label='Username'>
+                    <Form.Item name='username' label='Username'>
                         <Input placeholder='UserName' disabled={!trainingEnabled.value} />
                     </Form.Item>
                 </Col>
                 <Col span={12}>
-                    <Form.Item name={['training', 'password']} label='Password'>
+                    <Form.Item name='password' label='Password'>
                         <Input.Password placeholder='Pa$$w0rd' disabled={!trainingEnabled.value} />
                     </Form.Item>
                 </Col>
@@ -167,10 +167,11 @@ export default function CreateProjectContent(): JSX.Element {
         if (nameFormRef.current && advancedFormRef.current) {
             const basicValues = await nameFormRef.current.validateFields();
             const advancedValues = await advancedFormRef.current.validateFields();
+            const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
             projectData.name = basicValues.name;
             projectData.project_class = basicValues.project_class;
             projectData.training_project = {};
-            for (const [field, value] of Object.entries(basicValues.training || {})) {
+            for (const [field, value] of Object.entries(adaptiveAutoAnnotationValues || {})) {
                 projectData.training_project[field] = value;
             }
             for (const [field, value] of Object.entries(advancedValues)) {

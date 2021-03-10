@@ -322,26 +322,26 @@ class TrainingServerAPI(TrainingServerAPIAbs):
 
     def get_project_status(self, project_id) -> dict:
         summary = self.__get_project_summary(project_id=project_id)
-        if summary.get('error_code') == 'endpoint_not_found_response':
-            return {'status': 'Not available'}
+        if not summary or summary.get('error_code') == 'endpoint_not_found_response':
+            return {'message': 'Not available'}
         jobs = self.__get_job_status(project_id=project_id)
         media_amount = next(item.get('value', 0) for item in summary if item.get('key') == 'Media')
         annotation_amount = next(item.get('value', 0) for item in summary if item.get('key') == 'Annotation')
         score = next(item.get('value', 0) for item in summary if item.get('key') == 'Score')
         job_items = jobs.get('items', 0)
         if len(job_items) == 0 and score == 0:
-            status = 'Not started'
+            message = 'Not started'
         elif len(job_items) == 0 and score > 0:
-            status = 'Finished'
+            message = 'Finished'
         else:
-            status = 'In progress'
+            message = 'In progress'
         progress = 0 if len(job_items) == 0 else job_items[0]["status"]["progress"]
         time_remaining = 0 if len(job_items) == 0 else job_items[0]["status"]['time_remaining']
         result = {
             'media_amount': media_amount if media_amount else 0,
             'annotation_amount': annotation_amount,
             'score': score,
-            'status': status,
+            'message': message,
             'progress': progress,
             'time_remaining': time_remaining,
         }

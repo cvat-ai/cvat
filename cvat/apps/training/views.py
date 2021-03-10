@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
 from cvat.apps.authentication import auth
+from cvat.apps.engine.models import Project
 from cvat.apps.training.jobs import save_frame_prediction_to_cache_job, save_prediction_server_status_to_cache_job
 
 
@@ -50,6 +51,10 @@ class PredictView(viewsets.ViewSet):
         project_id = self.request.query_params.get('project')
         if not project_id:
             return Response(data='query param "project" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
+        project = Project.objects.get(pk=project_id)
+        if not project.training_project:
+            Response({'status': 'done'})
+
         cache_key = f'predict_status_{project_id}'
         try:
             resp = cache.get(cache_key)
