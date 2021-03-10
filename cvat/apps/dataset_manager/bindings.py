@@ -596,6 +596,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
         return item_anno
 
+class CvatImportError(Exception):
+    pass
+
 def match_dm_item(item, task_data, root_hint=None):
     is_video = task_data.meta['task']['mode'] == 'interpolation'
 
@@ -610,8 +613,8 @@ def match_dm_item(item, task_data, root_hint=None):
         frame_number = cast(osp.basename(item.id)[len('frame_'):], int)
 
     if not frame_number in task_data.frame_info:
-        raise Exception("Could not match item id: '%s' with any task frame" %
-            item.id)
+        raise CvatImportError("Could not match item id: "
+            "'%s' with any task frame" % item.id)
     return frame_number
 
 def find_dataset_root(dm_dataset, task_data):
@@ -625,9 +628,6 @@ def find_dataset_root(dm_dataset, task_data):
     if prefix.endswith('/'):
         prefix = prefix[:-1]
     return prefix
-
-class CvatImportError(Exception):
-    pass
 
 def import_dm_annotations(dm_dataset, task_data):
     shapes = {
@@ -692,4 +692,4 @@ def import_dm_annotations(dm_dataset, task_data):
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
-                    "#{} ({}): {}".format(item.id, idx, type(ann), e))
+                    "#{} ({}): {}".format(item.id, idx, ann.type.name, e))
