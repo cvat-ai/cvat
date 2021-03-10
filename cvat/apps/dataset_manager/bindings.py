@@ -692,4 +692,4 @@ def import_dm_annotations(dm_dataset, task_data):
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
-                    "#{}: {}".format(item.id, idx, e))
+                    "#{} ({}): {}".format(item.id, idx, type(ann), e))
