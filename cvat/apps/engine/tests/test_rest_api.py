@@ -2595,6 +2595,32 @@ class JobAnnotationAPITestCase(APITestCase):
                     ]
                 },
                 {"name": "person"},
+                {
+                    "name": "widerface",
+                    "attributes": [
+                        {
+                            "name": "blur",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1", "2"]
+                        },
+                        {
+                            "name": "expression",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                        {
+                            "name": "illumination",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                    ]
+                },
             ]
         }
 
@@ -3716,6 +3742,30 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "occluded": False,
             }]
 
+            rectangle_shapes_with_wider_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][2]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][2]["attributes"][0]["id"],
+                            "value": task["labels"][2]["attributes"][0]["default_value"]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][1]["id"],
+                            "value": task["labels"][2]["attributes"][1]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][2]["id"],
+                            "value": task["labels"][2]["attributes"][2]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+
             rectangle_shapes_wo_attrs = [{
                 "frame": 1,
                 "label_id": task["labels"][1]["id"],
@@ -3863,6 +3913,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "CamVid 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
+
+            elif annotation_format == "WiderFace 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = rectangle_shapes_with_wider_attrs
 
             elif annotation_format == "VGGFace2 1.0":
                 annotations["tags"] = tags_wo_attrs
