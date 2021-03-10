@@ -41,6 +41,40 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     }
 });
 
+Cypress.Commands.add('deletingRegisteredUsers', () => {
+    cy.request({
+        method: 'POST',
+        url: '/api/v1/auth/login',
+        body: {
+            username: Cypress.env('user'),
+            email: Cypress.env('email'),
+            password: Cypress.env('password'),
+        },
+    }).then(async (responce) => {
+        const authKey = await responce['body']['key'];
+        cy.request({
+            url: '/api/v1/users',
+            headers: {
+                Authorization: `Token ${authKey}`,
+            },
+        }).then(async (responce) => {
+            const responceResult = await responce['body']['results'];
+            for (let user of responceResult) {
+                let userId = user['id'];
+                if (userId !== 1) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/users/${userId}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
+                }
+            }
+        });
+    });
+});
+
 Cypress.Commands.add(
     'createAnnotationTask',
     (
