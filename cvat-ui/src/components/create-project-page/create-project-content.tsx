@@ -170,7 +170,7 @@ export default function CreateProjectContent(): JSX.Element {
             projectData.name = basicValues.name;
             projectData.project_class = basicValues.project_class;
             projectData.training_project = {};
-            for (const [field, value] of Object.entries(basicValues.training)) {
+            for (const [field, value] of Object.entries(basicValues.training || {})) {
                 projectData.training_project[field] = value;
             }
             for (const [field, value] of Object.entries(advancedValues)) {

@@ -434,6 +434,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    training_project = TrainingProjectSerializer(required=True)
 
     class Meta:
         model = models.Project
