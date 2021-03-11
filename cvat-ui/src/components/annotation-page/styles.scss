@@ -238,6 +238,77 @@
     }
 }
 
+.cvat-canvas-image-setups-trigger {
+    position: absolute;
+    background: $background-color-2;
+    bottom: 0;
+    left: 50%;
+    opacity: 0.5;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid $border-color-3;
+    z-index: 100;
+    padding: 4px 12px;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    &:active {
+        opacity: 0.75;
+    }
+}
+
+.cvat-canvas-image-setups-content {
+    background: $background-color-2;
+    padding: 8px;
+    border-radius: 6px;
+    opacity: 0.9;
+}
+
+.cvat-image-setups-grid {
+    margin-bottom: 25px;
+
+    > div:first-child {
+        margin-bottom: 10px;
+    }
+}
+
+.cvat-image-setups-grid-size,
+.cvat-image-setups-grid-color,
+.cvat-image-setups-opacity {
+    margin-bottom: 25px;
+}
+
+.cvat-image-setups-grid-size,
+.cvat-image-setups-grid-color,
+.cvat-image-setups-grid-opacity {
+    display: flex;
+    justify-items: start;
+}
+
+.cvat-image-setups-grid-size-input {
+    height: fit-content;
+}
+
+.cvat-image-setups-grid-color {
+    > .ant-select {
+        width: 150px;
+    }
+}
+
+.cvat-image-setups-grid-opacity {
+    > .ant-slider {
+        width: 150px;
+    }
+}
+
+.cvat-image-setups-reset-color-settings,
+.cvat-image-setups-brightness,
+.cvat-image-setups-contrast,
+.cvat-image-setups-saturation {
+    width: 100%;
+}
+
 .cvat-canvas-z-axis-wrapper {
     position: absolute;
     background: $background-color-2;

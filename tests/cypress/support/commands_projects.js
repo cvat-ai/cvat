@@ -63,6 +63,17 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
     }
 });
 
+Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
+    cy.get('.cvat-project-top-bar-actions').trigger('mouseover');
+    cy.get('.cvat-project-actions-menu').within(() => {
+        cy.contains('[role="menuitem"]', 'Delete').click();
+    });
+    cy.get('.cvat-modal-confirm-remove-project').within(() => {
+        cy.contains('button', 'Delete').click();
+    });
+    cy.contains('.cvat-projects-project-item-title', projectName).should('not.exist');
+});
+
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click().type(user);

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) images were published on DockerHub (<https://github.com/openvinotoolkit/cvat/pull/2766>)
 - Project task subsets (<https://github.com/openvinotoolkit/cvat/pull/2774>)
 - Kubernetes templates and guide for their deployment (<https://github.com/openvinotoolkit/cvat/pull/1962>)
+- [WiderFace](http://shuoyang1213.me/WIDERFACE/) format support (<https://github.com/openvinotoolkit/cvat/pull/2864>)
+- [VGGFace2](https://github.com/ox-vgg/vgg_face2) format support (<https://github.com/openvinotoolkit/cvat/pull/2865>)
 
 ### Changed
 
@@ -31,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All methods for interative segmentation accept negative points as well
 - Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
 - Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
+- Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
+- Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
 
 ### Deprecated
 
@@ -57,6 +61,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
 - Updated the path to python for DL models inside automatic annotation documentation (<https://github.com/openvinotoolkit/cvat/pull/2847>)
 - Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
+- Shortcuts with CAPSLOCK enabled and with non-US languages activated (<https://github.com/openvinotoolkit/cvat/pull/2872>)
+- Prevented creating several issues for the same object (<https://github.com/openvinotoolkit/cvat/pull/2868>)
+- Fixed label editor name field validator (<https://github.com/openvinotoolkit/cvat/pull/2879>)
+- An error about track shapes outside of the task frames during export (<https://github.com/openvinotoolkit/cvat/pull/2890>)
+- Fixed project search field updating (<https://github.com/openvinotoolkit/cvat/pull/2901>)
+- Fixed export error when invalid polygons are present in overlapping frames (<https://github.com/openvinotoolkit/cvat/pull/2852>)
 
 ### Security
 
