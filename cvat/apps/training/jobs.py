@@ -42,7 +42,14 @@ def save_frame_prediction_to_cache_job(cache_key: str,
                                        frame: int,
                                        timeout: int = 60):
     task = Task.objects.get(pk=task_id)
-    training_project_image = TrainingProjectImage.objects.get(idx=frame, task=task)
+    training_project_image = TrainingProjectImage.objects.filter(idx=frame, task=task).first()
+    if not training_project_image:
+        cache.set(cache_key=cache_key, data={
+            'annotation': [],
+            'status': 'done'
+        }, timeout=timeout)
+        return
+
     cvat_labels = Label.objects.filter(project__id=task.project_id).all()
     training_project = Project.objects.get(pk=task.project_id).training_project
     api = TrainingServerAPI(host=training_project.host,
