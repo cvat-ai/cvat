@@ -73,6 +73,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
             label: {
                 label: 'Label',
                 type: 'select',
+                valueSources: ['value'],
                 fieldSettings: {
                     listValues: jobLabels,
                 },
@@ -118,6 +119,8 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
             clientID: {
                 label: 'ClientID',
                 type: 'select',
+                hideForCompare: true,
+                valueSources: ['value'],
                 fieldSettings: {
                     listValues: clientIds,
                 },
@@ -125,6 +128,8 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
             serverID: {
                 label: 'ServerID',
                 type: 'select',
+                hideForCompare: true,
+                valueSources: ['value'],
                 fieldSettings: {
                     listValues: serverIds,
                 },
