@@ -322,7 +322,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
 
     def get_project_status(self, project_id) -> dict:
         summary = self.__get_project_summary(project_id=project_id)
-        if not summary or summary.get('error_code') == 'endpoint_not_found_response':
+        if not summary or not isinstance(summary, list):
             return {'message': 'Not available'}
         jobs = self.__get_job_status(project_id=project_id)
         media_amount = next(item.get('value', 0) for item in summary if item.get('key') == 'Media')

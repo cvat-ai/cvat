@@ -379,7 +379,7 @@ export interface PredictorState {
     error: Error | null;
     enabled: boolean;
     fetching: boolean;
-    annotatedFrames: number[];
+    annotationsAmount: number;
 }
 
 export interface AnnotationState {

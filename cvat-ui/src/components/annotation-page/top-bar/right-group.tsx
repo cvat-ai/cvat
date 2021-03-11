@@ -53,9 +53,13 @@ function RightGroup(props: Props): JSX.Element {
                 </Text>
             )}
             <br />
-            <span>Model mAp is</span>
-            <span>{` ${formattedScore}`}</span>
-            <br />
+            {predictor.annotationsAmount > 0 ? (
+                <Text>
+                    <span>Model mAp is</span>
+                    <span>{` ${formattedScore}`}</span>
+                    <br />
+                </Text>
+            ) : null}
             {predictor.error ? (
                 <Text type='danger'>
                     {predictor.error.toString()}
@@ -106,7 +110,8 @@ function RightGroup(props: Props): JSX.Element {
                     <Tooltip title={predictorTooltip}>
                         <Icon component={BrainIcon} />
                     </Tooltip>
-                    {`mAp ${formattedScore}`}
+                    {predictor.annotationsAmount ?
+                        `mAP ${formattedScore}` : null}
                 </Button>
             )}
             <Button
