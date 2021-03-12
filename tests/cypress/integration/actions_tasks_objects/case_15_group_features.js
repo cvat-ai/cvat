@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -123,7 +123,9 @@ context('Group features', () => {
         });
 
         it('With group button unite two shapes. They have corresponding colors.', () => {
-            groupObjects(shapeArray);
+            groupObjects(shapeArray); // Group
+            groupObjects(shapeArray); // Ungroup
+            groupObjects(shapeArray); // Group again
             for (const groupedShape of shapeArray) {
                 cy.get(groupedShape)
                     .should('have.css', 'fill')
