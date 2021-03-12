@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "C:\\Users\\doparinx\\AppData\\Local\\Programs\\Python\\Python38\\python.exe",
+    "python.pythonPath": ".env/bin/python",
     "eslint.enable": true,
     "eslint.probe": [
         "javascript",
