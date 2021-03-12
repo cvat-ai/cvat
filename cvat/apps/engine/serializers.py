@@ -464,7 +464,11 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
         labels = validated_data.pop('label_set')
         training_data = validated_data.pop('training_project', {})
         if training_data.get('enabled'):
-            tr_p = models.TrainingProject.objects.create(**training_data)
+            host = training_data.pop('host').strip('/')
+            username = training_data.pop('username').strip()
+            password = training_data.pop('password').strip()
+            tr_p = models.TrainingProject.objects.create(**training_data,
+                                                         host=host, username=username, password=password)
             db_project = models.Project.objects.create(**validated_data,
                                                        training_project=tr_p)
         else:

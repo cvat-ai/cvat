@@ -13,6 +13,7 @@ import Moment from 'react-moment';
 
 import { DimensionType, PredictorState, Workspace } from 'reducers/interfaces';
 import { BrainIcon, FullscreenIcon, InfoIcon } from 'icons';
+import moment from "moment";
 
 interface Props {
     workspace: Workspace;
@@ -66,15 +67,20 @@ function RightGroup(props: Props): JSX.Element {
                     <br />
                 </Text>
             ) : null}
-            {predictor.message ? <span>{`Message: ${predictor.message}`}</span> : null}
+            {predictor.message ? <span>{`Message: ${predictor.message}`}<br /></span> : null}
             {predictor.timeRemaining > 0 ? (
                 <span>
                     Time Remaining:
                     {' '}
-                    <Moment toNow unix>
-                        timeNow + Math.trunc(predictor.timeRemaining)
-                    </Moment>
+                    <Moment
+                        date={moment().add(-predictor.timeRemaining, 's')}
+                        format="hh:mm:ss"
+                        trim
+                        durationFromNow
+                    ></Moment>
+                    <br />
                 </span>
+
             ) : null}
             {predictor.progress > 0 ? (
                 <span>
