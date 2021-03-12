@@ -110,7 +110,7 @@ class AnnotationIR:
             # Track and TrackedShape models don't expect these fields
             del track['interpolated_shapes']
             for shape in segment_shapes:
-                del shape['keyframe']
+                shape.pop('keyframe', None)
 
         track['shapes'] = segment_shapes
         track['frame'] = track['shapes'][0]['frame']
@@ -315,11 +315,14 @@ class ShapeManager(ObjectManager):
     @staticmethod
     def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
         def _calc_polygons_similarity(p0, p1):
-            overlap_area = p0.intersection(p1).area
-            if p0.area == 0 or p1.area == 0: # a line with many points
-                return 0
+            if p0.is_valid and p1.is_valid: # check validity of polygons
+                overlap_area = p0.intersection(p1).area
+                if p0.area == 0 or p1.area == 0: # a line with many points
+                    return 0
+                else:
+                    return overlap_area / (p0.area + p1.area - overlap_area)
             else:
-                return overlap_area / (p0.area + p1.area - overlap_area)
+                return 0 # if there's invalid polygon, assume similarity is 0
 
         has_same_type  = obj0["type"] == obj1["type"]
         has_same_label = obj0.get("label_id") == obj1.get("label_id")
@@ -745,6 +748,10 @@ class TrackManager(ObjectManager):
             shapes.append(shape)
             curr_frame = shape["frame"]
             prev_shape = shape
+
+            # keep at least 1 shape
+            if end_frame <= curr_frame:
+                break
 
         if not prev_shape["outside"]:
             shape = copy(prev_shape)
