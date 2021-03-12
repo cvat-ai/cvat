@@ -55,7 +55,7 @@ context('Edit handler.', () => {
             cy.get('.cvat_canvas_shape_drawing').should('not.exist');
         });
 
-        it('Edit handler for the polygon.', () => {
+        it('Edit handler for the polygon. Splitting.', () => {
             cy.get('.cvat-canvas-container').trigger('mousemove', 520, 400);
             cy.get('#cvat_canvas_shape_1')
                 .should('have.class', 'cvat_canvas_shape_activated')
@@ -82,6 +82,26 @@ context('Edit handler.', () => {
                             }).length;
                             expect(pointsCountBefore).not.equal(pointsCountAfter); // expected 3 to not equal 4
                         });
+                    // Splitting polygon
+                    cy.get('.cvat-canvas-container').trigger('mousemove', 520, 400);
+                    cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+                    cy.get('.cvat-canvas-container')
+                        .click(650, 300, { shiftKey: true })
+                        .click(450, 350)
+                        .trigger('mouseenter', 530, 340);
+                    cy.get('.cvat_canvas_shape_splitting').should('exist');
+                    cy.get('.cvat-canvas-container').trigger('mouseleave', 530, 340);
+                    cy.get('.cvat_canvas_shape_splitting').should('not.exist');
+                    cy.get('.cvat-canvas-container').click(530, 340);
+                    cy.get('#cvat_canvas_shape_1')
+                        .invoke('attr', 'points')
+                        .then(($points) => {
+                            const pointsCountAfterSplitting = $points.split(' ').filter(function (el) {
+                                return el.length != 0;
+                            }).length;
+                            expect(pointsCountAfterSplitting).to.be.equal(pointsCountBefore); // expected 3 to equal 3
+                        });
+                    expect();
                 });
         });
 
