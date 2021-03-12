@@ -131,7 +131,7 @@ class _DbTestBase(APITestCase):
         # change attributes in all annotations
         for item in tmp_annotations:
             if item in ["tags", "shapes", "tracks"]:
-                for index_elem, elem in enumerate(tmp_annotations[item]):
+                for index_elem, _ in enumerate(tmp_annotations[item]):
                     tmp_annotations[item][index_elem]["label_id"] = task["labels"][0]["id"]
 
                     for index_attribute, attribute in enumerate(task["labels"][0]["attributes"]):
@@ -149,7 +149,7 @@ class _DbTestBase(APITestCase):
                             value = attribute["default_value"]
 
                         if item == "tracks" and attribute["mutable"]:
-                            for index_shape, shape in enumerate(tmp_annotations[item][index_elem]["shapes"]):
+                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
                                 tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
                                     "spec_id": spec_id,
                                     "value": value,
@@ -575,10 +575,6 @@ class TaskExportTest(_DbTestBase):
         for i, frame in enumerate(task_data.group_by_frame()):
             self.assertTrue(frame.frame in range(6, 10))
         self.assertEqual(i + 1, 4)
-
-
-
-
 
     def test_api_v1_tasks_annotations_dump_and_upload_with_datumaro(self):
         test_name = self._testMethodName
@@ -1071,8 +1067,6 @@ class TaskExportTest(_DbTestBase):
         extractor = CvatTaskDataExtractor(task_data)
         data_from_task_after_upload = datumaro.components.project.Dataset.from_extractors(extractor)
         compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
-
-
 
 class FrameMatchingTest(_DbTestBase):
     def _generate_task_images(self, paths): # pylint: disable=no-self-use
