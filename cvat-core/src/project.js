@@ -66,10 +66,9 @@
                 }
                 data.task_subsets = Array.from(subsetsSet);
             }
-
-            data.training_project = JSON.parse(JSON.stringify(initialData.training_project));
-
-            // data.project_class = initialData.project_class;
+            if (initialData.training_project) {
+                data.training_project = JSON.parse(JSON.stringify(initialData.training_project));
+            }
 
             Object.defineProperties(
                 this,
@@ -228,7 +227,11 @@
                     training_project: {
                         get: () => data.training_project,
                         set: (training) => {
-                            data.training_project = JSON.parse(JSON.stringify(training));
+                            if (training) {
+                                data.training_project = JSON.parse(JSON.stringify(training));
+                            } else {
+                                data.training_project = training;
+                            }
                         },
                     },
                 }),
@@ -272,6 +275,10 @@
     };
 
     Project.prototype.save.implementation = async function () {
+        let trainingProject;
+        if (this.training_project) {
+            trainingProject = JSON.parse(JSON.stringify(this.training_project));
+        }
         if (typeof this.id !== 'undefined') {
             const projectData = {
                 name: this.name,
@@ -279,7 +286,7 @@
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
                 labels: [...this.labels.map((el) => el.toJSON())],
-                training_project: JSON.parse(JSON.stringify(this.training_project)),
+                training_project: trainingProject,
             };
 
             await serverProxy.projects.save(this.id, projectData);
@@ -290,7 +297,7 @@
             name: this.name,
             project_class: this.project_class,
             labels: [...this.labels.map((el) => el.toJSON())],
-            training_project: JSON.parse(JSON.stringify(this.training_project)),
+            training_project: trainingProject,
         };
 
         if (this.bugTracker) {
