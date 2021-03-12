@@ -593,7 +593,7 @@ class TaskExportTest(_DbTestBase):
                     "MOTS PNG 1.0", # issue #2925 and changed points values
                     "Datumaro 1.0", # not uploaded
                     "Segmentation mask 1.1", # changed points values
-                    "WiderFace 1.0", # issue #XXX
+                    "WiderFace 1.0", # issue #2944
                 ]:
                     continue
 
