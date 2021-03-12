@@ -313,7 +313,8 @@ class VideoReader(IMediaReader):
 
 class IChunkWriter(ABC):
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
-        self._image_quality = quality
+        # translate inversed range [1:100] to [0:51]
+        self._image_quality = round(51 * (100 - quality) / 99)
         self._dimension = dimension
 
     @staticmethod
@@ -373,7 +374,7 @@ class ZipCompressedChunkWriter(IChunkWriter):
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, quality=17):
+    def __init__(self, quality=67):
         super().__init__(quality)
         self._output_fps = 25
         try:
@@ -444,8 +445,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
     def __init__(self, quality):
-        # translate inversed range [1:100] to [0:51]
-        super().__init__(quality=round(51 * (100 - quality) / 99))
+        super().__init__(quality)
         if self._codec_name == 'libx264':
             self._codec_opts = {
                 'profile': 'baseline',

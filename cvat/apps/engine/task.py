@@ -298,13 +298,20 @@ def _create_thread(tid, data):
         update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 
     compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter
-    original_chunk_writer_class = Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter
+    if db_data.original_chunk_type == DataChoice.VIDEO:
+        original_chunk_writer_class = Mpeg4ChunkWriter
+        # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks, which should be visually lossless or nearly so.
+        # A lower value will significantly increase the chunk size with a slight increase of quality.
+        original_quality = 67
+    else:
+        original_chunk_writer_class = ZipChunkWriter
+        original_quality = 100
 
     kwargs = {}
     if validate_dimension.dimension == DimensionType.DIM_3D:
         kwargs["dimension"] = validate_dimension.dimension
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
-    original_chunk_writer = original_chunk_writer_class(100)
+    original_chunk_writer = original_chunk_writer_class(original_quality)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
