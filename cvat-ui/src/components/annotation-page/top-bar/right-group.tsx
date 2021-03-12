@@ -54,12 +54,12 @@ function RightGroup(props: Props): JSX.Element {
                 </Text>
             )}
             <br />
-            {predictor.annotationsAmount > 0 ? (
-                <Text>
-                    <span>Model mAp is</span>
-                    <span>{` ${formattedScore}`}</span>
-                    <br />
-                </Text>
+            <span>Annotations amount: {predictor.annotationAmount | 0}</span>
+            <br />
+            <span>Media amount: {predictor.mediaAmount | 0}</span>
+            <br />
+            {predictor.annotationAmount > 0 ? (
+                <span>Model mAP is {formattedScore}<br /></span>
             ) : null}
             {predictor.error ? (
                 <Text type='danger'>
@@ -67,7 +67,7 @@ function RightGroup(props: Props): JSX.Element {
                     <br />
                 </Text>
             ) : null}
-            {predictor.message ? <span>{`Message: ${predictor.message}`}<br /></span> : null}
+            {predictor.message ? <span>{`Status: ${predictor.message}`}<br /></span> : null}
             {predictor.timeRemaining > 0 ? (
                 <span>
                     Time Remaining:
@@ -94,7 +94,7 @@ function RightGroup(props: Props): JSX.Element {
     );
 
     let predictorClassName = 'cvat-annotation-header-button cvat-predictor-button';
-    if (!!predictor.error || predictor.projectScore === 0) {
+    if (!!predictor.error || !predictor.projectScore) {
         predictorClassName += ' cvat-predictor-disabled';
     } else if (predictor.enabled) {
         if (predictor.fetching) {
@@ -116,8 +116,8 @@ function RightGroup(props: Props): JSX.Element {
                     <Tooltip title={predictorTooltip}>
                         <Icon component={BrainIcon} />
                     </Tooltip>
-                    {predictor.annotationsAmount ?
-                        `mAP ${formattedScore}` : null}
+                    {predictor.annotationAmount ?
+                        `mAP ${formattedScore}` : 'not trained'}
                 </Button>
             )}
             <Button

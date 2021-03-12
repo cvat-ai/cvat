@@ -379,7 +379,8 @@ export interface PredictorState {
     error: Error | null;
     enabled: boolean;
     fetching: boolean;
-    annotationsAmount: number;
+    annotationAmount: number;
+    mediaAmount: number;
 }
 
 export interface AnnotationState {

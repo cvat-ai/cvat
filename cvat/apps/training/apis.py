@@ -332,7 +332,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         if len(job_items) == 0 and score == 0:
             message = 'Not started'
         elif len(job_items) == 0 and score > 0:
-            message = 'Finished'
+            message = ''
         else:
             message = 'In progress'
         progress = 0 if len(job_items) == 0 else job_items[0]["status"]["progress"]
