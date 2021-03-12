@@ -62,3 +62,12 @@ class PatchedDiscoverRunner(DiscoverRunner):
             config["ASYNC"] = False
 
         super().__init__(*args, **kwargs)
+
+
+from fakeredis import FakeStrictRedis, FakeRedis
+
+RQ_REDIS_ENABLED = False
+
+if not RQ_REDIS_ENABLED:
+    import django_rq.queues
+    django_rq.queues.get_redis_connection = lambda _, strict: FakeStrictRedis() if strict else FakeRedis()
