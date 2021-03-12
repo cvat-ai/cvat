@@ -53,7 +53,7 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
     }).then((responce) => {
         const authKey = responce['body']['key'];
         cy.request({
-            url: '/api/v1/users',
+            url: '/api/v1/users?page_size=all',
             headers: {
                 Authorization: `Token ${authKey}`,
             },
