@@ -19,15 +19,15 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
-        cy.get('body').type(`{alt}${key}`).wait(300); //Wait to change point cloud position
-        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
+        cy.get('body').type(`{alt}${key}`);
+        cy.get('.cvat-canvas3d-perspective').click().screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
-        cy.get('body').type(key).wait(300); //Wait to change point cloud position
-        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
+        cy.get('body').type(key);
+        cy.get('.cvat-canvas3d-perspective').click().screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
@@ -35,7 +35,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
         cy.get(element)
             .screenshot(screenshotNameBefore)
             .trigger('wheel', { deltaY: deltaY })
-            .wait(300) // Wait change points cloud position
+            .click()
             .screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
