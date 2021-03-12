@@ -18,7 +18,7 @@ context('Issue 1599 (Polish alphabet).', () => {
 
     after(() => {
         cy.logout(userName);
-        cy.deletingRegisteredUsers();
+        cy.deletingRegisteredUsers([userName]);
     });
 
     describe('User registration using the Polish alphabet.', () => {

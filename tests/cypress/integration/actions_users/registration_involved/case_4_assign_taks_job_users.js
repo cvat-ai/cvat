@@ -43,7 +43,7 @@ context('Multiple users. Assign task, job.', () => {
     });
 
     after(() => {
-        cy.deletingRegisteredUsers();
+        cy.deletingRegisteredUsers([secondUserName, thirdUserName]);
         cy.login();
         cy.deleteTask(taskName);
     });

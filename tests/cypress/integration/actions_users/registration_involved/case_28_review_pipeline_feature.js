@@ -131,7 +131,7 @@ context('Review pipeline feature', () => {
         cy.goToTaskList();
         cy.deleteTask(taskName);
         cy.logout();
-        cy.deletingRegisteredUsers();
+        cy.deletingRegisteredUsers([secondUserName, thirdUserName]);
     });
 
     describe(`Testing "${labelName}"`, () => {

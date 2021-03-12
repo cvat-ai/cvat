@@ -37,7 +37,7 @@ context('Register user, change password, login with new password', () => {
     after(() => {
         cy.get('.cvat-modal-change-password').find('[aria-label="Close"]').click();
         cy.logout(userName);
-        cy.deletingRegisteredUsers();
+        cy.deletingRegisteredUsers([userName]);
     });
 
     describe(`Testing "Case ${caseId}"`, () => {

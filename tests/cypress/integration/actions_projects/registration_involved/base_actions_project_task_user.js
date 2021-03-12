@@ -57,7 +57,7 @@ context('Base actions on the project', () => {
     });
 
     after(() => {
-        cy.deletingRegisteredUsers();
+        cy.deletingRegisteredUsers([userName]);
     });
 
     describe(`Testing "Base actions on the project"`, () => {
