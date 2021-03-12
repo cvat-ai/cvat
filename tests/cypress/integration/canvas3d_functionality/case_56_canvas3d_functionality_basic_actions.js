@@ -17,25 +17,21 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
     }
 
-    function checkFilenameWrapperText(expectedText) {
-        cy.get('.cvat-player-filename-wrapper').should('contain.text', expectedText);
-    }
-
-    function pressKeyPerspectiveDirections(key, screenshotNameBefore, screenshotNameAfter) {
+    function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(`{alt}${key}`).wait(300); //Wait to change point cloud position
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
-    function pressKeyArrowDirections(key, screenshotNameBefore, screenshotNameAfter) {
+    function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(key).wait(300); //Wait to change point cloud position
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
-    function wheelDirection(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
+    function testChangeOnWheel(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
         cy.get(element)
             .screenshot(screenshotNameBefore)
             .trigger('wheel', { deltaY: deltaY })
@@ -113,46 +109,51 @@ context('Canvas 3D functionality. Basic actions.', () => {
         it('Interaction with the frame change buttons.', () => {
             cy.get('.cvat-player-last-button').click();
             cy.checkFrameNum(2);
-            checkFilenameWrapperText('generated_pcd_5000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_5000_points.pcd');
             cy.get('.cvat-player-first-button').click();
             cy.checkFrameNum(0);
-            checkFilenameWrapperText('generated_pcd_10000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
             cy.get('.cvat-player-forward-button').click();
             cy.checkFrameNum(2);
-            checkFilenameWrapperText('generated_pcd_5000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_5000_points.pcd');
             cy.get('.cvat-player-backward-button').click();
             cy.checkFrameNum(0);
-            checkFilenameWrapperText('generated_pcd_10000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
             cy.get('.cvat-player-next-button').click();
             cy.checkFrameNum(1);
-            checkFilenameWrapperText('generated_pcd_1000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_1000_points.pcd');
             cy.get('.cvat-player-previous-button').click();
             cy.checkFrameNum(0);
-            checkFilenameWrapperText('generated_pcd_10000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
             cy.get('.cvat-player-play-button').click();
             cy.checkFrameNum(2);
-            checkFilenameWrapperText('generated_pcd_5000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_5000_points.pcd');
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
         it('Testing perspective visual regressions.', () => {
-            wheelDirection('.cvat-canvas3d-perspective', -1000, 'perspective_before_wheel', 'perspective_after_wheel');
-            pressKeyPerspectiveDirections('u', 'before_press_altU', 'after_press_altU');
-            pressKeyPerspectiveDirections('o', 'before_press_altO', 'after_press_altO');
-            pressKeyPerspectiveDirections('i', 'before_press_altI', 'after_press_altI');
-            pressKeyPerspectiveDirections('k', 'before_press_altK', 'after_press_altK');
-            pressKeyPerspectiveDirections('j', 'before_press_altJ', 'after_press_altJ');
-            pressKeyPerspectiveDirections('l', 'before_press_altL', 'after_press_altL');
-            pressKeyArrowDirections('{uparrow}', 'before_press_uparrow', 'after_press_uparrow');
-            pressKeyArrowDirections('{downarrow}', 'before_press_downarrow', 'after_press_downarrow');
-            pressKeyArrowDirections('{leftarrow}', 'before_press_leftarrow', 'after_press_leftarrow');
-            pressKeyArrowDirections('{rightarrow}', 'before_press_rightarrow', 'after_press_rightarrow');
+            testChangeOnWheel(
+                '.cvat-canvas3d-perspective',
+                -1000,
+                'perspective_before_wheel',
+                'perspective_after_wheel',
+            );
+            testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
+            testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
+            testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
+            testPerspectiveChangeOnKeyPress('k', 'before_press_altK', 'after_press_altK');
+            testPerspectiveChangeOnKeyPress('j', 'before_press_altJ', 'after_press_altJ');
+            testPerspectiveChangeOnKeyPress('l', 'before_press_altL', 'after_press_altL');
+            testPerspectiveChangeOnArrowKeyPress('{uparrow}', 'before_press_uparrow', 'after_press_uparrow');
+            testPerspectiveChangeOnArrowKeyPress('{downarrow}', 'before_press_downarrow', 'after_press_downarrow');
+            testPerspectiveChangeOnArrowKeyPress('{leftarrow}', 'before_press_leftarrow', 'after_press_leftarrow');
+            testPerspectiveChangeOnArrowKeyPress('{rightarrow}', 'before_press_rightarrow', 'after_press_rightarrow');
         });
 
         it('Testing top/side/front views visual regressions.', () => {
-            wheelDirection('.cvat-canvas3d-topview', -1000, 'topview_before_wheel', 'topview_after_wheel');
-            wheelDirection('.cvat-canvas3d-sideview', -1000, 'sideview_before_wheel', 'sideview_after_wheel');
-            wheelDirection('.cvat-canvas3d-frontview', -1000, 'frontview_before_wheel', 'frontview_after_wheel');
+            testChangeOnWheel('.cvat-canvas3d-topview', -1000, 'topview_before_wheel', 'topview_after_wheel');
+            testChangeOnWheel('.cvat-canvas3d-sideview', -1000, 'sideview_before_wheel', 'sideview_after_wheel');
+            testChangeOnWheel('.cvat-canvas3d-frontview', -1000, 'frontview_before_wheel', 'frontview_after_wheel');
         });
     });
 });
