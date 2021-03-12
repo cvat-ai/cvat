@@ -38,6 +38,12 @@ jobs:
           cd ./tests
           npm ci
           npx cypress run --headless --browser chrome
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress_screenshots
+          path: ${{ github.workspace }}/tests/cypress/screenshots
       - name: Collect coverage data
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}

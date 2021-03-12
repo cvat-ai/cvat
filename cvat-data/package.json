@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "async-mutex": "^0.3.0",
-    "jszip": "3.5.0"
+    "jszip": "3.6.0"
   },
   "scripts": {
     "patch": "cd src/js && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
