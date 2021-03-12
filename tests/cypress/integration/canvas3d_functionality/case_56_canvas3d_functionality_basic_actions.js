@@ -91,19 +91,20 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
 
         it('Check workspace selector.', () => {
+            // Try to click on the disabled workspace selectors. The value of the selector should not changed.
             cy.get('.cvat-workspace-selector').should('contain.text', 'Standard 3D').click();
-            cy.get('.cvat-workspace-selector-dropdown')
-                .not('.ant-select-dropdown-hidden')
-                .within(() => {
-                    cy.get('[title="Standard 3D"]').should('have.class', 'ant-select-item-option-active');
-                    for (const dropdownItems of [
-                        '[title="Attribute annotation"]',
-                        '[title="Tag annotation"]',
-                        '[title="Review"]',
-                    ]) {
-                        cy.get(dropdownItems).should('have.class', 'ant-select-item-option-disabled');
-                    }
-                });
+            for (const dropdownItems of [
+                '[title="Attribute annotation"]',
+                '[title="Tag annotation"]',
+                '[title="Review"]',
+            ]) {
+                cy.get('.cvat-workspace-selector-dropdown')
+                    .not('.ant-select-dropdown-hidden')
+                    .within(() => {
+                        cy.get(dropdownItems).click();
+                    });
+                cy.get('.cvat-workspace-selector').should('contain.text', 'Standard 3D');
+            }
         });
 
         it('Interaction with the frame change buttons.', () => {
