@@ -16,11 +16,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         username = options['username']
         password = options['password']
-
-        if not username:
-            raise CommandError('Poll "%s" does not exist' % poll_id)
         user = User.objects.create_user(username, password=password)
         user.is_superuser = False
         user.is_staff = False
         user.save()
-
+        print("User {} created successfully".format(username))
