@@ -20,23 +20,31 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(`{alt}${key}`);
-        cy.get('.cvat-canvas3d-perspective').click().screenshot(screenshotNameAfter);
+        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(key);
-        cy.get('.cvat-canvas3d-perspective').click().screenshot(screenshotNameAfter);
+        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
-    function testChangeOnWheel(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
-        cy.get(element)
+    function testPerspectiveChangeOnWheel(deltaY, screenshotNameBefore, screenshotNameAfter) {
+        cy.get('.cvat-canvas3d-perspective')
             .screenshot(screenshotNameBefore)
             .trigger('wheel', { deltaY: deltaY })
-            .click()
             .screenshot(screenshotNameAfter);
+        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+    }
+
+    function testTopSideFrontChangeOnWheel(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
+        cy.get(element).screenshot(screenshotNameBefore);
+        for (let i = 0; i < 10; i++) {
+            cy.get(element).trigger('wheel', { deltaY: deltaY });
+        }
+        cy.get(element).screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
@@ -110,35 +118,30 @@ context('Canvas 3D functionality. Basic actions.', () => {
         it('Interaction with the frame change buttons.', () => {
             cy.get('.cvat-player-last-button').click();
             cy.checkFrameNum(2);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_5000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_50000_points.pcd');
             cy.get('.cvat-player-first-button').click();
             cy.checkFrameNum(0);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_100000_points.pcd');
             cy.get('.cvat-player-forward-button').click();
             cy.checkFrameNum(2);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_5000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_50000_points.pcd');
             cy.get('.cvat-player-backward-button').click();
             cy.checkFrameNum(0);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_100000_points.pcd');
             cy.get('.cvat-player-next-button').click();
             cy.checkFrameNum(1);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_1000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
             cy.get('.cvat-player-previous-button').click();
             cy.checkFrameNum(0);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_100000_points.pcd');
             cy.get('.cvat-player-play-button').click();
             cy.checkFrameNum(2);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_5000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_50000_points.pcd');
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
         it('Testing perspective visual regressions.', () => {
-            testChangeOnWheel(
-                '.cvat-canvas3d-perspective',
-                -1000,
-                'perspective_before_wheel',
-                'perspective_after_wheel',
-            );
+            testPerspectiveChangeOnWheel(-1000, 'perspective_before_wheel', 'perspective_after_wheel');
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
@@ -152,9 +155,24 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
 
         it('Testing top/side/front views visual regressions.', () => {
-            testChangeOnWheel('.cvat-canvas3d-topview', -1000, 'topview_before_wheel', 'topview_after_wheel');
-            testChangeOnWheel('.cvat-canvas3d-sideview', -1000, 'sideview_before_wheel', 'sideview_after_wheel');
-            testChangeOnWheel('.cvat-canvas3d-frontview', -1000, 'frontview_before_wheel', 'frontview_after_wheel');
+            testTopSideFrontChangeOnWheel(
+                '.cvat-canvas3d-topview',
+                -1000,
+                'topview_before_wheel',
+                'topview_after_wheel',
+            );
+            testTopSideFrontChangeOnWheel(
+                '.cvat-canvas3d-sideview',
+                -1000,
+                'sideview_before_wheel',
+                'sideview_after_wheel',
+            );
+            testTopSideFrontChangeOnWheel(
+                '.cvat-canvas3d-frontview',
+                -1000,
+                'frontview_before_wheel',
+                'frontview_after_wheel',
+            );
         });
     });
 });
