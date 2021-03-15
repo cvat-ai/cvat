@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
   [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) images were published on DockerHub (<https://github.com/openvinotoolkit/cvat/pull/2766>)
 - Project task subsets (<https://github.com/openvinotoolkit/cvat/pull/2774>)
+- Label deletion from tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/2881>)
 
 ### Changed
 
