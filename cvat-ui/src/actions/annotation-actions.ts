@@ -5,6 +5,7 @@
 import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
+import { MutableRefObject } from 'react';
 import { ThunkAction } from 'utils/redux';
 
 import {
@@ -26,7 +27,6 @@ import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { getCVATStore } from 'cvat-store';
-import { MutableRefObject } from 'react';
 
 interface AnnotationsParameters {
     filters: string[];
