@@ -70,12 +70,12 @@ context('Group features', () => {
         cy.saveLocalStorage();
     });
 
-    function groupObjects(objectsArray) {
+    function groupObjects(objectsArray, cancelGrouping) {
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of objectsArray) {
             cy.get(shapeToGroup).click();
         }
-        cy.get('.cvat-group-control').click();
+        cancelGrouping ? cy.get('body').type('{Esc}') : cy.get('.cvat-group-control').click();
     }
 
     function changeGroupColor(object, color) {
@@ -123,9 +123,8 @@ context('Group features', () => {
         });
 
         it('With group button unite two shapes. They have corresponding colors.', () => {
+            groupObjects(shapeArray, true); // Reset grouping
             groupObjects(shapeArray); // Group
-            groupObjects(shapeArray); // Ungroup
-            groupObjects(shapeArray); // Group again
             for (const groupedShape of shapeArray) {
                 cy.get(groupedShape)
                     .should('have.css', 'fill')
