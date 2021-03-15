@@ -101,7 +101,6 @@ context('Edit handler.', () => {
                             }).length;
                             expect(pointsCountAfterSplitting).to.be.equal(pointsCountBefore); // expected 3 to equal 3
                         });
-                    expect();
                 });
         });
 
