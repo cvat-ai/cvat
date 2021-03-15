@@ -73,7 +73,7 @@ context('Group features', () => {
     function groupObjects(objectsArray, cancelGrouping) {
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of objectsArray) {
-            cy.get(shapeToGroup).click();
+            cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
         }
         cancelGrouping ? cy.get('body').type('{Esc}') : cy.get('.cvat-group-control').click();
     }
@@ -89,6 +89,21 @@ context('Group features', () => {
                 cy.contains('Change group color').click();
             });
         cy.changeColorViaBadge(color);
+    }
+
+    function checkShapesFill(equal) {
+        for (const groupedShape of shapeArray) {
+            cy.get(groupedShape)
+                .should('have.css', 'fill')
+                .then(($shapesGroupColor) => {
+                    if (equal) {
+                        expect($shapesGroupColor).to.be.equal(defaultGroupColorRgb);
+                    } else {
+                        expect($shapesGroupColor).to.not.equal(defaultGroupColorRgb);
+                        shapesGroupColor = $shapesGroupColor;
+                    }
+                });
+        }
     }
 
     describe(`Testing case "${caseId}"`, () => {
@@ -124,16 +139,9 @@ context('Group features', () => {
 
         it('With group button unite two shapes. They have corresponding colors.', () => {
             groupObjects(shapeArray, true); // Reset grouping
+            checkShapesFill(true);
             groupObjects(shapeArray); // Group
-            for (const groupedShape of shapeArray) {
-                cy.get(groupedShape)
-                    .should('have.css', 'fill')
-                    .then(($shapesGroupColor) => {
-                        // expected rgb(250, 50, 83) to not equal rgb(224, 224, 224)
-                        expect($shapesGroupColor).to.not.equal(defaultGroupColorRgb);
-                        shapesGroupColor = $shapesGroupColor;
-                    });
-            }
+            checkShapesFill(false);
             for (const objectSideBarShape of shapeSidebarItemArray) {
                 cy.get(objectSideBarShape)
                     .should('have.css', 'background-color')
