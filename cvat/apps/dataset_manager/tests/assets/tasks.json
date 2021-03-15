@@ -79,5 +79,18 @@
         "attributes": []
       }
     ]
+  },
+  "change ovelap and segment size": {
+    "name": "change ovelap and segment size",
+    "overlap": 3,
+    "segment_size": 6,
+    "owner_id": 1,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": []
+      }
+    ]
   }
 }

@@ -217,8 +217,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     ]:
                         self.skipTest("Format is fail")
 
-                    print("dump_format_name:", dump_format_name)
-
                     for include_images in (False, True):
                         # create task
                         images = self._generate_task_images(3)
@@ -548,8 +546,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     ]:
                         self.skipTest("Format is fail")
 
-                    print("dump_format_name:", dump_format_name)
-
                     # create task
                     images = self._generate_task_images(3)
                     task = self._create_task(tasks["main"], images)
@@ -594,7 +590,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     # equals dataset vs annotations
                     compare_datasets(self, data_datumaro["dataset"], data_datumaro["annotations"])
 
-    def test_api_v1_tasks_annotations_dump_and_upload_with_datumaro_many_jobs(self):
+    def test_api_v1_tasks_annotations_dump_and_upload_many_jobs_with_datumaro(self):
         test_name = self._testMethodName
         upload_format_name = "CVAT 1.1"
 
@@ -647,3 +643,136 @@ class TaskDumpUploadTest(_DbTestBase):
                         data_from_task_after_upload = Dataset.from_extractors(extractor)
                         compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
+    def test_api_v1_tasks_annotations_dump_and_upload_slice_track_with_datumaro(self):
+        test_name = self._testMethodName
+        dump_format_name = "CVAT for video 1.1"
+        upload_format_name = "CVAT 1.1"
+
+        # create task with annotations
+        images = self._generate_task_images(5)
+        task = self._create_task(tasks["main"], images)
+        self._create_annotations(task, f'{dump_format_name} slice track', "dafault")
+
+        task_id = task["id"]
+        task_ann = TaskAnnotation(task_id)
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+        extractor = CvatTaskDataExtractor(task_data)
+        data_from_task_before_upload = Dataset.from_extractors(extractor)
+
+        # dump annotations
+        url = self._generate_url_dump_tasks_annotations(task_id)
+        data = {
+            "format": dump_format_name,
+            "action": "download",
+        }
+        with TestDir() as test_dir:
+            file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+            self._download_file(url, data, self.admin, file_zip_name)
+            self._check_downloaded_file(file_zip_name)
+
+            # remove annotations
+            self._remove_annotations(url, self.admin)
+
+            # upload annotations
+            url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+            with open(file_zip_name, 'rb') as binary_file:
+                response = self._upload_file(url, binary_file, self.admin)
+                self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            # equals annotations
+            task_ann = TaskAnnotation(task_id)
+            task_ann.init_from_db()
+            task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+            extractor = CvatTaskDataExtractor(task_data)
+            data_from_task_after_upload = Dataset.from_extractors(extractor)
+            compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+
+    def test_api_v1_tasks_annotations_dump_and_upload_merge(self):
+        test_name = self._testMethodName
+        dump_format_name = "CVAT for images 1.1"
+        upload_format_name = "CVAT 1.1"
+
+        # create task with annotations
+        images = self._generate_task_images(10)
+        task = self._create_task(tasks["change ovelap and segment size"], images)
+        self._create_annotations(task, f'{dump_format_name} merge', "dafault")
+
+        task_id = task["id"]
+        task_ann = TaskAnnotation(task_id)
+        task_ann.init_from_db()
+        TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+
+        # dump annotations
+        url = self._generate_url_dump_tasks_annotations(task_id)
+        data = {
+            "format": dump_format_name,
+            "action": "download",
+        }
+        with TestDir() as test_dir:
+            file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+            self._download_file(url, data, self.admin, file_zip_name)
+            self._check_downloaded_file(file_zip_name)
+
+            # remove annotations
+            self._remove_annotations(url, self.admin)
+
+            # upload annotations
+            url_upload = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+            with open(file_zip_name, 'rb') as binary_file:
+                response = self._upload_file(url_upload, binary_file, self.admin)
+                self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            # equals annotations
+            task_ann = TaskAnnotation(task_id)
+            task_ann.init_from_db()
+            TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+
+            response = self._get_request(url, self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data["tags"]), 1)
+            self.assertEqual(len(response.data["shapes"]), 14) # convert tracks to shapes
+            self.assertEqual(len(response.data["tracks"]), 0)
+
+    def test_api_v1_tasks_annotations_dump_and_upload_rewrite(self):
+        test_name = self._testMethodName
+        dump_format_name = "CVAT for images 1.1"
+        upload_format_name = "CVAT 1.1"
+
+        # create task with annotations
+        images = self._generate_task_images(10)
+        task = self._create_task(tasks["change ovelap and segment size"], images)
+        self._create_annotations(task, f'{dump_format_name} merge', "dafault")
+
+        task_id = task["id"]
+        task_ann = TaskAnnotation(task_id)
+        task_ann.init_from_db()
+        TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+
+        # dump annotations
+        url = self._generate_url_dump_tasks_annotations(task_id)
+        data = {
+            "format": dump_format_name,
+            "action": "download",
+        }
+        with TestDir() as test_dir:
+            file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+            self._download_file(url, data, self.admin, file_zip_name)
+            self._check_downloaded_file(file_zip_name)
+
+            # upload annotations
+            url_upload = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+            with open(file_zip_name, 'rb') as binary_file:
+                response = self._upload_file(url_upload, binary_file, self.admin)
+                self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            # equals annotations
+            task_ann = TaskAnnotation(task_id)
+            task_ann.init_from_db()
+            TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+
+            response = self._get_request(url, self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data["tags"]), 1)
+            self.assertEqual(len(response.data["shapes"]), 14) # convert tracks to shapes
+            self.assertEqual(len(response.data["tracks"]), 0)

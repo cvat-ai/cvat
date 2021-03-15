@@ -730,5 +730,131 @@
         "attributes": []
       }
     ]
+  },
+  "CVAT for video 1.1 slice track": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [66.45, 147.08, 182.16, 204.56],
+            "frame": 0,
+            "outside": true,
+            "attributes": []
+          },
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [66.45, 147.08, 182.16, 204.56],
+            "frame": 1,
+            "outside": false,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      }
+    ]
+  },
+  "CVAT for images 1.1 merge": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [9.95, 8.09, 18.65, 13.39],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [11.545, 11.7, 19.44, 17.4],
+        "frame": 3,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [4.54, 19.59, 21.34, 26.89],
+            "frame": 0,
+            "outside": false,
+            "attributes": []
+          },
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [4.54, 19.59, 21.34, 26.89],
+            "frame": 6,
+            "outside": true,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      },
+      {
+        "frame": 3,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [9.65, 23.59, 22.65, 29.79],
+            "frame": 3,
+            "outside": false,
+            "attributes": []
+          },
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [9.65, 23.59, 22.65, 29.79],
+            "frame": 9,
+            "outside": true,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      }
+    ]
   }
 }
