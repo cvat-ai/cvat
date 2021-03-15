@@ -5,7 +5,6 @@
 import os
 import re
 import shutil
-from typing import Dict
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
