@@ -31,11 +31,12 @@ context('Canvas 3D functionality. Basic actions.', () => {
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
-    function testPerspectiveChangeOnWheel(deltaY, screenshotNameBefore, screenshotNameAfter) {
-        cy.get('.cvat-canvas3d-perspective')
-            .screenshot(screenshotNameBefore)
-            .trigger('wheel', { deltaY: deltaY })
-            .screenshot(screenshotNameAfter);
+    function testPerspectiveChangeOnWheel(screenshotNameBefore, screenshotNameAfter) {
+        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameBefore);
+        for (let i = 0; i < 5; i++) {
+            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -200 });
+        }
+        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
@@ -141,7 +142,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
 
         it('Testing perspective visual regressions.', () => {
-            testPerspectiveChangeOnWheel(-1000, 'perspective_before_wheel', 'perspective_after_wheel');
+            testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
