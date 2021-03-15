@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Layout from 'antd/lib/layout';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import { ActiveControl, Rotation } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -32,6 +32,7 @@ interface Props {
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    labels: any[];
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
@@ -64,10 +65,11 @@ const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitC
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
-        canvasInstance,
         activeControl,
+        canvasInstance,
         normalizedKeyMap,
         keyMap,
+        labels,
         mergeObjects,
         groupObjects,
         splitTrack,
@@ -114,6 +116,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 ActiveControl.OPENCV_TOOLS,
             ].includes(activeControl);
 
+            if (!labels.length) return;
+
             if (!drawing) {
                 canvasInstance.cancel();
                 // repeateDrawShapes gets all the latest parameters
@@ -136,6 +140,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
         SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
+            if (!labels.length) return;
             const merging = activeControl === ActiveControl.MERGE;
             if (!merging) {
                 canvasInstance.cancel();
@@ -145,6 +150,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
         SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
+            if (!labels.length) return;
             const splitting = activeControl === ActiveControl.SPLIT;
             if (!splitting) {
                 canvasInstance.cancel();
@@ -154,6 +160,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
         SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
+            if (!labels.length) return;
             const grouping = activeControl === ActiveControl.GROUP;
             if (!grouping) {
                 canvasInstance.cancel();
@@ -213,24 +220,29 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <ObservedDrawRectangleControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
+                disabled={!labels.length}
             />
             <ObservedDrawPolygonControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
+                disabled={!labels.length}
             />
             <ObservedDrawPolylineControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
+                disabled={!labels.length}
             />
             <ObservedDrawPointsControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POINTS}
+                disabled={!labels.length}
             />
             <ObservedDrawCuboidControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
+                disabled={!labels.length}
             />
-            <ObservedSetupTagControl canvasInstance={canvasInstance} isDrawing={false} />
+            <ObservedSetupTagControl canvasInstance={canvasInstance} isDrawing={false} disabled={!labels.length} />
 
             <hr />
 
@@ -239,6 +251,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 mergeObjects={mergeObjects}
+                disabled={!labels.length}
             />
             <ObservedGroupControl
                 switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
@@ -246,12 +259,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 groupObjects={groupObjects}
+                disabled={!labels.length}
             />
             <ObservedSplitControl
                 canvasInstance={canvasInstance}
                 switchSplitShortcut={normalizedKeyMap.SWITCH_SPLIT_MODE}
                 activeControl={activeControl}
                 splitTrack={splitTrack}
+                disabled={!labels.length}
             />
 
             <ExtraControlsControl />

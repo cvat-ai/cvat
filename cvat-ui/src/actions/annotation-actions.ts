@@ -6,6 +6,7 @@ import {
     AnyAction, Dispatch, ActionCreator, Store,
 } from 'redux';
 import { MutableRefObject } from 'react';
+import notification from 'antd/lib/notification';
 import { ThunkAction } from 'utils/redux';
 
 import {
@@ -920,9 +921,13 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             }
 
             if (!task.labels.length) {
-                throw new Error(
-                    `${task.projectId ? 'Project' : 'Task'} ${task.projectId || task.id} does not contain any label`,
-                );
+                notification.warning({
+                    message: 'No labels',
+                    description: `${task.projectId ? 'Project' : 'Task'} ${
+                        task.projectId || task.id
+                    } does not contain any label`,
+                    placement: 'topRight',
+                });
             }
 
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
