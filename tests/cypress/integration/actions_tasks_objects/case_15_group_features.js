@@ -78,6 +78,14 @@ context('Group features', () => {
         cancelGrouping ? cy.get('body').type('{Esc}') : cy.get('.cvat-group-control').click();
     }
 
+    function unGroupObjects(objectsArray) {
+        cy.get('.cvat-group-control').click();
+        for (const shapeToGroup of objectsArray) {
+            cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
+        }
+        cy.get('body').type('{Shift}g');
+    }
+
     function changeGroupColor(object, color) {
         cy.get(object).within(() => {
             cy.get('[aria-label="more"]').click();
@@ -152,6 +160,16 @@ context('Group features', () => {
                         expect($bColorobjectSideBarShape).to.be.contain(shapesGroupColor.match(/\d+, \d+, \d+/));
                     });
             }
+            unGroupObjects(shapeArray); // Ungroup
+            checkShapesFill(true);
+            // Start grouping. Cancel grouping via click to the same shape.
+            cy.get('.cvat-group-control').click();
+            cy.get(shapeArray[0])
+                .click()
+                .should('have.class', 'cvat_canvas_shape_grouping')
+                .click()
+                .should('not.have.class', 'cvat_canvas_shape_grouping');
+            cy.get('body').type('{Esc}'); // Cancel grouping
         });
 
         it('With group button unite two track. They have corresponding colors.', () => {
