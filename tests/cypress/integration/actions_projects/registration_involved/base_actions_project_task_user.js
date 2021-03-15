@@ -6,15 +6,6 @@
 
 import { projectName } from '../../../support/const_project';
 
-const randomString = (isPassword) => {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    for (let i = 0; i <= 8; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return isPassword ? `${result}${Math.floor(Math.random() * 10)}` : result;
-};
-
 context('Base actions on the project', () => {
     const labelName = `Base label for ${projectName}`;
     const taskName = {
@@ -45,11 +36,11 @@ context('Base actions on the project', () => {
     const newLabelName2 = `Second label ${projectName}`;
     const newLabelName3 = `Third label ${projectName}`;
     const newLabelName4 = `Fourth label ${projectName}`;
-    const firstName = `${randomString()}`;
-    const lastName = `${randomString()}`;
-    const userName = `${randomString()}`;
+    const firstName = 'Seconduser fm';
+    const lastName = 'Seconduser lm';
+    const userName = 'Seconduser';
     const emailAddr = `${userName}@local.local`;
-    const password = `${randomString(true)}`;
+    const password = 'GDrb41RguF!';
     let projectID = '';
 
     function getProjectID(projectName) {
@@ -63,6 +54,10 @@ context('Base actions on the project', () => {
 
     before(() => {
         cy.openProject(projectName);
+    });
+
+    after(() => {
+        cy.deletingRegisteredUsers([userName]);
     });
 
     describe(`Testing "Base actions on the project"`, () => {
@@ -125,7 +120,7 @@ context('Base actions on the project', () => {
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             cy.goToProjectsList();
             // tries to create project
-            const failProjectName = `${randomString()}`;
+            const failProjectName = 'failProject';
             cy.createProjects(failProjectName, labelName, attrName, textDefaultValue, null, 'fail');
             cy.closeNotification('.cvat-notification-notice-create-project-failed');
             cy.goToProjectsList();
@@ -159,6 +154,7 @@ context('Base actions on the project', () => {
             cy.goToTaskList();
             cy.contains('strong', taskName.firstTask).should('not.exist');
             cy.contains('strong', taskName.secondTask).should('not.exist');
+            cy.logout();
         });
     });
 });
