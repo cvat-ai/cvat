@@ -39,6 +39,11 @@ context('Edit handler.', () => {
         numberOfPoints: null,
     };
 
+    function testActivatingShape(x, y, expectedShape) {
+        cy.get('.cvat-canvas-container').trigger('mousemove', x, y);
+        cy.get(expectedShape).should('have.class', 'cvat_canvas_shape_activated');
+    }
+
     before(() => {
         cy.openTaskJob(taskName);
     });
@@ -46,8 +51,7 @@ context('Edit handler.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Start editing handler and cancel.', () => {
             cy.createPolygon(createPolygonShape);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 520, 400);
-            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+            testActivatingShape(520, 400, '#cvat_canvas_shape_1');
             cy.get('.cvat-canvas-container').click(550, 350, { shiftKey: true });
             cy.get('.cvat_canvas_shape_drawing').should('exist');
             cy.get('.cvat-canvas-container').click(650, 300);
@@ -83,8 +87,7 @@ context('Edit handler.', () => {
                             expect(pointsCountBefore).not.equal(pointsCountAfter); // expected 3 to not equal 4
                         });
                     // Splitting polygon
-                    cy.get('.cvat-canvas-container').trigger('mousemove', 520, 400);
-                    cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+                    testActivatingShape(520, 400, '#cvat_canvas_shape_1');
                     cy.get('.cvat-canvas-container')
                         .click(650, 300, { shiftKey: true })
                         .click(450, 350)
@@ -93,6 +96,20 @@ context('Edit handler.', () => {
                     cy.get('.cvat-canvas-container').trigger('mouseleave', 530, 340);
                     cy.get('.cvat_canvas_shape_splitting').should('not.exist');
                     cy.get('.cvat-canvas-container').click(530, 340);
+                    // Cancel changes, repeat edit handler and select an another shape
+                    cy.get('body').type('{Ctrl}z');
+                    testActivatingShape(520, 400, '#cvat_canvas_shape_1');
+                    cy.get('.cvat-canvas-container')
+                        .click(650, 300, { shiftKey: true })
+                        .click(450, 350)
+                        .click(530, 400);
+                    // Cancel changes again, repeat edit handler dblclick to the last point
+                    cy.get('body').type('{Ctrl}z');
+                    testActivatingShape(520, 400, '#cvat_canvas_shape_1');
+                    cy.get('.cvat-canvas-container')
+                        .click(650, 300, { shiftKey: true })
+                        .click(450, 350)
+                        .dblclick(530, 400);
                     cy.get('#cvat_canvas_shape_1')
                         .invoke('attr', 'points')
                         .then(($points) => {
