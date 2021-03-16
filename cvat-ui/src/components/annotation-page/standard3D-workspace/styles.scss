@@ -14,7 +14,6 @@
     background: $border-color-3;
     top: $grid-unit-size;
     right: $grid-unit-size;
-    max-height: $grid-unit-size * 16;
     z-index: 100;
     border-radius: $grid-unit-size;
     border: 1px solid $border-color-3;
@@ -271,36 +270,36 @@
 .react-resizable-handle-horizontal {
     position: absolute;
     margin-left: auto;
-    width: $grid-unit-size * 10;
+    width: 100%;
     margin-right: auto;
     right: 0;
     bottom: 0;
     left: 0;
     background-color: grey;
     height: $grid-unit-size/2;
-    cursor: pointer;
+    cursor: ns-resize;
 }
 
 .react-resizable-handle-vertical-side {
     position: absolute;
     width: $grid-unit-size/2;
     margin-right: auto;
-    top: 50%;
+    top: $grid-unit-size * 4.5;
     right: 0;
     bottom: 0;
     background-color: grey;
-    height: $grid-unit-size * 10;
-    cursor: pointer;
+    height: 100%;
+    cursor: ew-resize;
 }
 
 .react-resizable-handle-vertical-top {
     position: absolute;
     width: $grid-unit-size/2;
     margin-right: auto;
-    top: 50%;
+    top: $grid-unit-size * 4.5;
     right: 0;
     bottom: 0;
     background-color: grey;
-    height: $grid-unit-size * 10;
-    cursor: pointer;
+    height: 100%;
+    cursor: ew-resize;
 }

@@ -203,10 +203,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
                 this.controller.drawData.enabled = false;
-                this.views.perspective.scene.children[0].remove(this.cube.perspective);
-                this.views.top.scene.children[0].remove(this.cube.top);
-                this.views.side.scene.children[0].remove(this.cube.side);
-                this.views.front.scene.children[0].remove(this.cube.front);
+                Object.keys(this.views).forEach((view: string): void => {
+                    this.views[view as keyof Views].scene.children[0].remove(this.cube[view as keyof Views]);
+                });
             }
             this.mode = Mode.IDLE;
             const event: CustomEvent = new CustomEvent('canvas.canceled');
@@ -293,12 +292,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (this.mode === Mode.DRAW) {
             const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
                 this.views.perspective.scene.children,
-                true,
+                false,
             );
             if (intersects.length > 0) {
                 this.views.perspective.scene.children[0].add(this.cube.perspective);
                 const newPoints = intersects[0].point;
-                newPoints.z = -1;
                 this.cube.perspective.position.copy(newPoints);
             }
         } else if (this.mode === Mode.IDLE) {

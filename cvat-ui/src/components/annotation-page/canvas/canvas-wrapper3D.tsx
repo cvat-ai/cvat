@@ -5,7 +5,6 @@
 import React, {
     ReactElement, useEffect, useRef, useState,
 } from 'react';
-import { GlobalHotKeys } from 'react-hotkeys';
 import Layout from 'antd/lib/layout/layout';
 import {
     ArrowUpOutlined, ArrowRightOutlined, ArrowLeftOutlined, ArrowDownOutlined,
@@ -26,11 +25,8 @@ interface Props {
     data: string;
     annotations: any[];
     onSetupCanvas: () => void;
-
     getContextImage(): void;
-
     onResetCanvas(): void;
-
     workspace: Workspace;
     animateID: any;
     automaticBordering: boolean;
@@ -45,7 +41,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     const frontView = useRef<HTMLCanvasElement>(null);
 
     const [orthographicViewSize, setOrthographicViewSize] = useState({
-        vertical: '50%',
+        vertical: document.body.clientHeight / 2,
         top: 0,
         side: 0,
         front: 0,
@@ -263,8 +259,6 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
     return (
         <Layout.Content className='cvat-canvas3d-fullsize' id='canvas3d-container'>
-            <GlobalHotKeys />
-
             <ContextImage
                 frame={frameData}
                 contextImageHide={contextImageHide}
@@ -275,6 +269,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             <ResizableBox
                 width='100%'
                 height={document.body.clientHeight / 2}
+                axis='y'
                 handle={<span className='react-resizable-handle-horizontal' />}
                 onResize={onPerspectiveViewResize}
             >
@@ -288,7 +283,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 <ResizableBox
                     width={orthographicViewSize.top}
                     height={orthographicViewSize.vertical}
-                    axis='both'
+                    axis='x'
                     handle={<span className='react-resizable-handle-vertical-top' />}
                     onResize={(e: MouseEvent) => onOrthographicViewResize('top', e)}
                 >
@@ -300,7 +295,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 <ResizableBox
                     width={orthographicViewSize.side}
                     height={orthographicViewSize.vertical}
-                    axis='both'
+                    axis='x'
                     handle={<span className='react-resizable-handle-vertical-side' />}
                     onResize={(e: MouseEvent) => onOrthographicViewResize('side', e)}
                 >

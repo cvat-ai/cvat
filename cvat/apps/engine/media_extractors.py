@@ -680,7 +680,7 @@ class ValidateDimension:
     def validate_pointcloud(self, *args):
         root, actual_path, files = args
         pointcloud_files = self.process_files(root, actual_path, files)
-        related_path = root.split("pointcloud")[0]
+        related_path = root.split("/pointcloud")[0]
         related_images_path = os.path.join(related_path, "related_images")
 
         if os.path.isdir(related_images_path):

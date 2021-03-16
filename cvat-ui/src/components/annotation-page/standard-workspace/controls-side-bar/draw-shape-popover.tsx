@@ -8,14 +8,16 @@ import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
+import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
-import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
+    canvasInstance: Canvas | Canvas3d;
     shapeType: ShapeType;
     labels: any[];
     minimumPoints: number;
@@ -48,6 +50,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onChangePoints,
         onChangeRectDrawingMethod,
         onChangeCuboidDrawingMethod,
+        canvasInstance,
     } = props;
 
     return (
@@ -72,7 +75,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            {shapeType === ShapeType.RECTANGLE && (
+            {canvasInstance instanceof Canvas && shapeType === ShapeType.RECTANGLE && (
                 <>
                     <Row>
                         <Col>
@@ -97,7 +100,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Row>
                 </>
             )}
-            {shapeType === ShapeType.CUBOID && (
+            {canvasInstance instanceof Canvas && shapeType === ShapeType.CUBOID && (
                 <>
                     <Row>
                         <Col>
@@ -122,7 +125,8 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Row>
                 </>
             )}
-            {shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
+            {/* eslint-disable-next-line max-len */}
+            {canvasInstance instanceof Canvas && shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
                 <Row justify='space-around' align='middle'>
                     <Col span={14}>
                         <Text className='cvat-text-color'> Number of points: </Text>
@@ -150,11 +154,13 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         <Button onClick={onDrawShape}>Shape</Button>
                     </CVATTooltip>
                 </Col>
-                <Col span={12}>
-                    <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button onClick={onDrawTrack}>Track</Button>
-                    </CVATTooltip>
-                </Col>
+                {canvasInstance instanceof Canvas && (
+                    <Col span={12}>
+                        <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
+                            <Button onClick={onDrawTrack}>Track</Button>
+                        </CVATTooltip>
+                    </Col>
+                )}
             </Row>
         </div>
     );
