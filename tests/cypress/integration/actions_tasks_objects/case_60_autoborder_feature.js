@@ -76,7 +76,7 @@ context('Autoborder feature.', () => {
             cy.get('.cvat-draw-polygon-popover-visible').find('[type="button"]').contains('Shape').click();
             cy.get('body').type('{Ctrl}');
             checkAutoborderPointsCount(8); // 8 points at the rectangles
-            cy.get('.cvat-canvas-container').click(400, 350).click(450, 250).dblclick(500, 350); // Stop propagation
+            cy.get('.cvat-canvas-container').click(400, 350).click(450, 250).click(500, 350).click(500, 450); // Stop propagation
             cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
@@ -89,7 +89,7 @@ context('Autoborder feature.', () => {
         it('Start drawning a polyline with autobordering beetwen the two shapes.', () => {
             cy.get('.cvat-draw-polyline-control').click();
             cy.get('.cvat-draw-polyline-popover-visible').find('[type="button"]').contains('Shape').click();
-            checkAutoborderPointsCount(11); // // 8 points at the rectangles + 3 at the polygon
+            checkAutoborderPointsCount(12); // 8 points at the rectangles + 4 at the polygon
             cy.get('.cvat-canvas-container')
                 .click(600, 350)
                 .click(500, 350)
@@ -109,8 +109,8 @@ context('Autoborder feature.', () => {
         it('Checking whether the coordinates of the contact points of the shapes match.', () => {
             expect(polygonSvgJsCircleId[0]).to.be.equal(rectangleSvgJsCircleId[0]); // The 1st point of the rectangle and the 1st polygon point
             expect(polygonSvgJsCircleId[2]).to.be.equal(rectangleSvgJsCircleId[1]); // The 2nd point of the rectangle and the 3rd polygon point
-            expect(polylineSvgJsCircleId[1]).to.be.equal(rectangleSvgJsCircleId[1]);
-            expect(polylineSvgJsCircleId[2]).to.be.equal(rectangleSvgJsCircleId[3]);
+            expect(polylineSvgJsCircleId[1]).to.be.equal(rectangleSvgJsCircleId[1]); // The 2nd point of the rectangle and the 2nd polyline point
+            expect(polylineSvgJsCircleId[2]).to.be.equal(rectangleSvgJsCircleId[3]); // The 3rd point of the rectangle and the 4th polyline point
         });
     });
 });
