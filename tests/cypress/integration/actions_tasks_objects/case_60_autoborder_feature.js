@@ -30,6 +30,7 @@ context('Autoborder feature.', () => {
 
     const keyCodeN = 78;
     let rectangleSvgJsCircleId = [];
+    let rectangleSvgJsCircleIdSecond = [];
     let polygonSvgJsCircleId = [];
     let polylineSvgJsCircleId = [];
 
@@ -64,6 +65,9 @@ context('Autoborder feature.', () => {
         cy.get('.cvat-canvas-container').trigger('mousemove', 450, 400);
         cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         collectCxCircleCoord(rectangleSvgJsCircleId);
+        cy.get('.cvat-canvas-container').trigger('mousemove', 650, 400);
+        cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_activated');
+        collectCxCircleCoord(rectangleSvgJsCircleIdSecond);
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -86,12 +90,18 @@ context('Autoborder feature.', () => {
             cy.get('.cvat-draw-polyline-control').click();
             cy.get('.cvat-draw-polyline-popover-visible').find('[type="button"]').contains('Shape').click();
             checkAutoborderPointsCount(11); // // 8 points at the rectangles + 3 at the polygon
-            cy.get('.cvat-canvas-container').click(600, 350).click(500, 350).click(600, 450);
+            cy.get('.cvat-canvas-container')
+                .click(600, 350)
+                .click(500, 350)
+                .click(400, 450)
+                .click(550, 500)
+                .click(600, 450)
+                .click(600, 350);
             cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            cy.get('.cvat-canvas-container').trigger('mousemove', 550, 400);
+            cy.get('.cvat-canvas-container').trigger('mousemove', 550, 350);
             cy.get('#cvat_canvas_shape_4').should('have.class', 'cvat_canvas_shape_activated');
             collectCxCircleCoord(polylineSvgJsCircleId);
         });
@@ -99,7 +109,8 @@ context('Autoborder feature.', () => {
         it('Checking whether the coordinates of the contact points of the shapes match.', () => {
             expect(polygonSvgJsCircleId[0]).to.be.equal(rectangleSvgJsCircleId[0]); // The 1st point of the rectangle and the 1st polygon point
             expect(polygonSvgJsCircleId[2]).to.be.equal(rectangleSvgJsCircleId[1]); // The 2nd point of the rectangle and the 3rd polygon point
-            // expect(polylineSvgJsCircleId[1]).to.be.equal(rectangleSvgJsCircleId[1]);
+            expect(polylineSvgJsCircleId[1]).to.be.equal(rectangleSvgJsCircleId[1]);
+            expect(polylineSvgJsCircleId[2]).to.be.equal(rectangleSvgJsCircleId[3]);
         });
     });
 });
