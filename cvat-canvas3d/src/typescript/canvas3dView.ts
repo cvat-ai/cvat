@@ -302,7 +302,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else if (this.mode === Mode.IDLE) {
             const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
                 this.views.perspective.scene.children[0].children,
-                true,
+                false,
             );
             if (intersects.length !== 0) {
                 this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh): void => {
@@ -403,7 +403,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (type === 'click' && this.mode === Mode.IDLE) {
                 const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
                     this.views.perspective.scene.children[0].children,
-                    true,
+                    false,
                 );
                 if (intersects.length !== 0) {
                     this.views.perspective.scene.children[0].children.forEach((sceneItem: THREE.Mesh): void => {
