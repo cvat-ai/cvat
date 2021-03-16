@@ -70,7 +70,7 @@ context('Group features', () => {
         cy.saveLocalStorage();
     });
 
-    function groupObjects(objectsArray, cancelGrouping) {
+    function testGroupObjects(objectsArray, cancelGrouping) {
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of objectsArray) {
             cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
@@ -78,9 +78,9 @@ context('Group features', () => {
         cancelGrouping ? cy.get('body').type('{Esc}') : cy.get('.cvat-group-control').click();
     }
 
-    function unGroupObjects(objectsArray) {
+    function testUnGroupObjects() {
         cy.get('.cvat-group-control').click();
-        for (const shapeToGroup of objectsArray) {
+        for (const shapeToGroup of shapeArray) {
             cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
         }
         cy.get('body').type('{Shift}g');
@@ -99,7 +99,7 @@ context('Group features', () => {
         cy.changeColorViaBadge(color);
     }
 
-    function checkShapesFill(equal) {
+    function testShapesFillEquality(equal) {
         for (const groupedShape of shapeArray) {
             cy.get(groupedShape)
                 .should('have.css', 'fill')
@@ -110,6 +110,19 @@ context('Group features', () => {
                         expect($shapesGroupColor).to.not.equal(defaultGroupColorRgb);
                         shapesGroupColor = $shapesGroupColor;
                     }
+                });
+        }
+    }
+
+    function testSidebarItemsBackgroundColorEquality() {
+        for (const objectSideBarShape of shapeSidebarItemArray) {
+            cy.get(objectSideBarShape)
+                .should('have.css', 'background-color')
+                .then(($bColorobjectSideBarShape) => {
+                    // expected rgba(250, 50, 83, 0.533) to not include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
+                    expect($bColorobjectSideBarShape).to.not.contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
+                    // expected rgba(250, 50, 83, 0.533) to include [ 250, 50, 83, index: 4, input: 'rgb(250, 50, 83)', groups: undefined ]
+                    expect($bColorobjectSideBarShape).to.be.contain(shapesGroupColor.match(/\d+, \d+, \d+/));
                 });
         }
     }
@@ -146,22 +159,13 @@ context('Group features', () => {
         });
 
         it('With group button unite two shapes. They have corresponding colors.', () => {
-            groupObjects(shapeArray, true); // Reset grouping
-            checkShapesFill(true);
-            groupObjects(shapeArray); // Group
-            checkShapesFill(false);
-            for (const objectSideBarShape of shapeSidebarItemArray) {
-                cy.get(objectSideBarShape)
-                    .should('have.css', 'background-color')
-                    .then(($bColorobjectSideBarShape) => {
-                        // expected rgba(250, 50, 83, 0.533) to not include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
-                        expect($bColorobjectSideBarShape).to.not.contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
-                        // expected rgba(250, 50, 83, 0.533) to include [ 250, 50, 83, index: 4, input: 'rgb(250, 50, 83)', groups: undefined ]
-                        expect($bColorobjectSideBarShape).to.be.contain(shapesGroupColor.match(/\d+, \d+, \d+/));
-                    });
-            }
-            unGroupObjects(shapeArray); // Ungroup
-            checkShapesFill(true);
+            testGroupObjects(shapeArray, true); // Reset grouping
+            testShapesFillEquality(true);
+            testGroupObjects(shapeArray); // Group
+            testShapesFillEquality(false);
+            testSidebarItemsBackgroundColorEquality();
+            testUnGroupObjects(); // Ungroup
+            testShapesFillEquality(true);
             // Start grouping. Cancel grouping via click to the same shape.
             cy.get('.cvat-group-control').click();
             cy.get(shapeArray[0])
@@ -173,7 +177,7 @@ context('Group features', () => {
         });
 
         it('With group button unite two track. They have corresponding colors.', () => {
-            groupObjects(trackArray);
+            testGroupObjects(trackArray);
             for (const groupedTrack of trackArray) {
                 cy.get(groupedTrack)
                     .should('have.css', 'fill')
@@ -222,7 +226,7 @@ context('Group features', () => {
                         });
                 }
             });
-            groupObjects(shapeArray);
+            testGroupObjects(shapeArray);
         });
 
         it('Change group color.', () => {
