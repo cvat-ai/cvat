@@ -118,6 +118,13 @@ context('Edit handler.', () => {
                             cy.get('.cvat_canvas_shape_drawing')
                                 .should('exist')
                                 .and('have.attr', 'data-origin-client-id', '2');
+                            cy.get('body').type('{Ctrl}');
+                            cy.get('.cvat_canvas_autoborder_point')
+                                .should('exist')
+                                .and('be.visible')
+                                .then(($autoborderPoints) => {
+                                    expect($autoborderPoints.length).to.be.equal(3); // Autoborder points on the polygon
+                                });
                         });
                     cy.get('.cvat-canvas-container').click(750, 500).click(700, 350); // Click on the first polyline points to finish the change
                     cy.get('.cvat_canvas_shape_drawing').should('not.exist');
