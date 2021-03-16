@@ -108,6 +108,10 @@ context('Edit handler.', () => {
                     testActivatingShape(520, 400, '#cvat_canvas_shape_1');
                     cy.get('.cvat-canvas-container')
                         .click(650, 300, { shiftKey: true })
+                        .click(630, 300)
+                        .click(530, 300)
+                        .click(450, 350)
+                        .click(530, 400)
                         .click(450, 350)
                         .dblclick(530, 400);
                     cy.get('#cvat_canvas_shape_1')
@@ -116,7 +120,7 @@ context('Edit handler.', () => {
                             const pointsCountAfterSplitting = $points.split(' ').filter(function (el) {
                                 return el.length != 0;
                             }).length;
-                            expect(pointsCountAfterSplitting).to.be.equal(pointsCountBefore); // expected 3 to equal 3
+                            expect(pointsCountAfterSplitting).to.be.equal(5); // expected 3 to equal 3
                         });
                 });
         });
@@ -140,7 +144,7 @@ context('Edit handler.', () => {
                                 .should('exist')
                                 .and('be.visible')
                                 .then(($autoborderPoints) => {
-                                    expect($autoborderPoints.length).to.be.equal(3); // Autoborder points on the polygon
+                                    expect($autoborderPoints.length).to.be.equal(5); // Autoborder points on the polygon
                                 });
                         });
                     cy.get('.cvat-canvas-container').click(750, 500).click(700, 350); // Click on the first polyline points to finish the change
