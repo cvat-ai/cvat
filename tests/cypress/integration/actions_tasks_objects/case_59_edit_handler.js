@@ -39,8 +39,6 @@ context('Edit handler.', () => {
         numberOfPoints: null,
     };
 
-    const keyCodeShift = 16;
-
     function testActivatingShape(x, y, expectedShape) {
         cy.get('.cvat-canvas-container').trigger('mousemove', x, y);
         cy.get(expectedShape).should('have.class', 'cvat_canvas_shape_activated');
