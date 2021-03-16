@@ -39,6 +39,8 @@ context('Edit handler.', () => {
         numberOfPoints: null,
     };
 
+    const keyCodeShift = 16;
+
     function testActivatingShape(x, y, expectedShape) {
         cy.get('.cvat-canvas-container').trigger('mousemove', x, y);
         cy.get(expectedShape).should('have.class', 'cvat_canvas_shape_activated');
@@ -188,6 +190,37 @@ context('Edit handler.', () => {
                 .then(($circleCountAfterHanlerEditing) => {
                     expect($circleCountAfterHanlerEditing.length).to.be.equal(2);
                 });
+        });
+
+        it('Combining polygon and points.', () => {
+            testActivatingShape(520, 400, '#cvat_canvas_shape_1');
+            cy.get('.cvat-canvas-container') // Draw line with shift key held down
+                .click(550, 450, { shiftKey: true })
+                .trigger('mousemove', 530, 450, { shiftKey: true })
+                .trigger('mousemove', 500, 450, { shiftKey: true })
+                .trigger('mousemove', 200, 400, { shiftKey: true });
+            // Coverage "!pointsCriteria && !lengthCriteria"
+            cy.get('.cvat-canvas-container').click(200, 400).click(200, 300);
+            cy.get('.cvat_canvas_autoborder_point_direction').should('exist');
+            cy.get('.cvat-canvas-container').dblclick(200, 300);
+            cy.get('.cvat_canvas_autoborder_point_direction').should('not.exist');
+            cy.get('.cvat-canvas-container').click(450, 350);
+            cy.get('#cvat_canvas_shape_1')
+                .invoke('attr', 'points')
+                .then(($points) => {
+                    expect(
+                        $points.split(' ').filter(function (el) {
+                            return el.length != 0;
+                        }).length,
+                    ).to.be.equal(11);
+                });
+            testActivatingShape(750, 500, '#cvat_canvas_shape_2');
+            // Coverage "circle.on('mousedown', (e: MouseEvent): void => {"
+            cy.get('.cvat-canvas-container')
+                .click(750, 500, { shiftKey: true })
+                .click(450, 350)
+                .trigger('mousemove', 450, 370)
+                .click(450, 350);
         });
     });
 });
