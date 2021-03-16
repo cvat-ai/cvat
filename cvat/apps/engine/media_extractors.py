@@ -313,8 +313,7 @@ class VideoReader(IMediaReader):
 
 class IChunkWriter(ABC):
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
-        # translate inversed range [1:100] to [0:51]
-        self._image_quality = round(51 * (100 - quality) / 99)
+        self._image_quality = quality
         self._dimension = dimension
 
     @staticmethod
@@ -375,6 +374,8 @@ class ZipCompressedChunkWriter(IChunkWriter):
 
 class Mpeg4ChunkWriter(IChunkWriter):
     def __init__(self, quality=67):
+        # translate inversed range [1:100] to [0:51]
+        quality = round(51 * (100 - quality) / 99)
         super().__init__(quality)
         self._output_fps = 25
         try:
