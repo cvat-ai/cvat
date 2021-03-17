@@ -14,7 +14,8 @@ Docker volumes are used to store all CVAT data:
 - `cvat_logs`: used to store logs of CVAT backend processes managed by supevisord.
   Mounted into `cvat` container by `/home/django/logs` path.
 
-- `cvat_events`: this is an optional volume that is used only when [Analytics component](../../components/analytics) is enabled and is used to store Elasticsearch database files.
+- `cvat_events`: this is an optional volume that is used only when [Analytics component](../../components/analytics)
+  is enabled and is used to store Elasticsearch database files.
   Mounted into `cvat_elasticsearch` container by `/usr/share/elasticsearch/data` path.
 
 ## How to backup all CVAT data
