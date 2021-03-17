@@ -8,6 +8,7 @@ require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
+require('../plugins/compareImages/compareImagesCommand');
 
 let selectedValueGlobal = '';
 
