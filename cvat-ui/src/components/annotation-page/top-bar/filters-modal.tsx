@@ -7,16 +7,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils,
 } from 'react-awesome-query-builder';
+import AntdWidgets from 'react-awesome-query-builder/lib/components/widgets/antd';
 import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 import 'react-awesome-query-builder/lib/css/styles.css';
 import { DownOutlined } from '@ant-design/icons';
 import { Dropdown, Menu } from 'antd';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
+import { omit } from 'lodash';
+
 import { CombinedState } from 'reducers/interfaces';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
+
+const { FieldDropdown } = AntdWidgets;
 
 const FILTERS_HISTORY = 'filtersHistory';
 
@@ -31,19 +34,15 @@ interface StoredFilter {
 
 export default function FiltersModalComponent(props: Props): JSX.Element {
     const { visible } = props;
-    const { annotations, job } = useSelector((state: CombinedState) => state.annotation);
-
-    const jobLabels: string[] = job.labels.map((label: any) => label.name);
-    const serverIds: number[] = annotations.states.map((state: any) => state.serverID);
-    const clientIds: number[] = annotations.states.map((state: any) => state.clientID);
-    const jobAttributes: any[] = Object.values(job.attributes).flat(Number.MAX_SAFE_INTEGER);
+    const { labels } = useSelector((state: CombinedState) => state.annotation.job);
+    const { filters: activeFilters } = useSelector((state: CombinedState) => state.annotation.annotations);
 
     const getConvertedInputType = (inputType: string): string => {
         switch (inputType) {
             case 'checkbox':
                 return 'boolean';
             case 'radio':
-                return 'text';
+                return 'select';
             default:
                 return inputType;
         }
@@ -51,31 +50,31 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
 
     const getAttributesSubfields = (): Record<string, any> => {
         const subfields: Record<string, any> = {};
-        jobAttributes.map((attr: any) => {
-            subfields[attr.name] = {
-                label: attr.name,
-                type: getConvertedInputType(attr.inputType),
+        labels.forEach((label: any): void => {
+            subfields[label.name] = {
+                type: '!struct', // nested complex field
+                label: label.name,
+                subfields: {},
             };
-            if (attr.inputType === 'select') {
-                subfields[attr.name] = {
-                    ...subfields[attr.name],
-                    fieldSettings: {
-                        listValues: attr.values,
-                    },
+
+            const labelSubfields = subfields[label.name].subfields;
+            label.attributes.forEach((attr: any): void => {
+                labelSubfields[attr.name] = {
+                    label: attr.name,
+                    type: getConvertedInputType(attr.inputType),
                 };
-            }
-            return null;
+                if (labelSubfields[attr.name].type === 'select') {
+                    labelSubfields[attr.name] = {
+                        ...labelSubfields[attr.name],
+                        fieldSettings: {
+                            listValues: attr.values,
+                        },
+                    };
+                }
+            });
         });
+
         return subfields;
-    };
-
-    const customFilterOption = (input: string, option?: OptionData | OptionGroupData): boolean => {
-        if (option) {
-            const { children } = option.props;
-            return children.toString().toLowerCase().includes(input.toString().toLowerCase());
-        }
-
-        return false;
     };
 
     const config: Config = {
@@ -86,7 +85,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                 type: 'select',
                 valueSources: ['value'],
                 fieldSettings: {
-                    listValues: jobLabels,
+                    listValues: labels.map((label: any) => label.name),
                 },
             },
             type: {
@@ -129,48 +128,33 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
             },
             clientID: {
                 label: 'ObjectID',
-                type: 'select',
-                mainWidgetProps: {
-                    customProps: {
-                        filterOption: customFilterOption,
-                    },
-                },
+                type: 'number',
                 hideForCompare: true,
-                valueSources: ['value'],
-                fieldSettings: {
-                    listValues: clientIds,
-                },
+                fieldSettings: { min: 0 },
             },
             serverID: {
                 label: 'ServerID',
-                type: 'select',
+                type: 'sele',
                 hideForCompare: true,
-                valueSources: ['value'],
-                mainWidgetProps: {
-                    customProps: {
-                        filterOption: customFilterOption,
-                    },
-                },
-                fieldSettings: {
-                    listValues: serverIds,
-                },
+                fieldSettings: { min: 0 },
             },
             attr: {
                 label: 'Attributes',
                 type: '!struct',
                 subfields: getAttributesSubfields(),
+                fieldSettings: {
+                    treeSelectOnlyLeafs: true,
+                },
             },
         },
-
-        // widgets: {
-        //     select: {
-        //         customProps: {
-        //             onChange: (val: any) => {
-        //                 console.log('1');
-        //             },
-        //         }
-        //     }
-        // }
+        settings: {
+            ...AntdConfig.settings,
+            renderField: (_props: any) => (
+                <FieldDropdown {...omit(_props)} customProps={omit(_props.customProps, 'showSearch')} />
+            ),
+            // using FieldDropdown because we cannot use antd because of antd-related bugs
+            // https://github.com/ukrbublik/react-awesome-query-builder/issues/224
+        },
     };
 
     const initialState = {
@@ -200,7 +184,6 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (visible) {
-            const activeFilters = annotations.filters;
             const treeFromActiveFilters = activeFilters.length ?
                 QbUtils.checkTree(QbUtils.loadFromJsonLogic(activeFilters[0], config), config) :
                 null;
@@ -271,7 +254,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
             centered
             onCancel={() => dispatch(showFilters(false))}
             footer={[
-                <Button key='clear' disabled={!annotations.filters.length} onClick={() => applyFilters([])}>
+                <Button key='clear' disabled={!activeFilters.length} onClick={() => applyFilters([])}>
                     Clear filters
                 </Button>,
                 <Button key='cancel' onClick={() => dispatch(showFilters(false))}>

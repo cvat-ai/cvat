@@ -35,6 +35,7 @@ class AnnotationsFilter {
             }
 
             const attributes = {};
+            attributes[state.label.name] = {};
             Object.keys(state.attributes).reduce((acc, key) => {
                 const attr = labelAttributes[key];
                 let value = state.attributes[key].replace(/\\"/g, '`');
@@ -50,7 +51,7 @@ class AnnotationsFilter {
             return {
                 width,
                 height,
-                attr: attributes,
+                attr: Object.fromEntries([[state.label.name, attributes]]),
                 label: state.label.name.replace(/\\"/g, '`'),
                 serverID: state.serverID,
                 clientID: state.clientID,
@@ -60,16 +61,15 @@ class AnnotationsFilter {
             };
         });
 
-        return {
-            objects,
-        };
+        return objects;
     }
 
     filter(statesData, filters) {
         if (!filters.length) return statesData;
-        return this._convertObjects(statesData)
-            .objects.map((state) => jsonLogic.apply(filters[0], state) && state.clientID)
-            .filter(Boolean);
+        const converted = this._convertObjects(statesData);
+        return converted
+            .map((state) => state.clientID)
+            .filter((_, index) => jsonLogic.apply(filters[0], converted[index]));
     }
 }
 
