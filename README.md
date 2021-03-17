@@ -62,6 +62,8 @@ For more information about supported formats look at the
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
 | [ImageNet](http://www.image-net.org)                                          | X      | X      |
 | [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
+| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                               | X      | X      |
+| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                               | X      | X      |
 | [Market-1501](https://www.aitribune.com/dataset/2018051063)                   | X      | X      |
 
 ## Deep learning serverless functions for automatic labeling
