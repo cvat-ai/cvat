@@ -9,7 +9,7 @@ import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import CONST from './consts';
 import {
-    Canvas3dModel, UpdateReasons, Mode, DrawData, ViewType,
+    Canvas3dModel, UpdateReasons, Mode, DrawData, ViewType, MouseInteraction,
 } from './canvas3dModel';
 import { CuboidModel } from './cuboid';
 
@@ -386,9 +386,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    public mouseControls(type: string, event: MouseEvent): void {
+    public mouseControls(type: MouseInteraction, event: MouseEvent): void {
         event.preventDefault();
-        if (type === 'dblclick' && this.mode === Mode.DRAW) {
+        if (type === MouseInteraction.DOUBLE_CLICK && this.mode === Mode.DRAW) {
             this.controller.drawData.enabled = false;
             this.mode = Mode.IDLE;
             const cancelEvent: CustomEvent = new CustomEvent('canvas.canceled');
@@ -400,7 +400,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             mouseVector.x = ((event.clientX - (canvas.offsetLeft + rect.left)) / canvas.clientWidth) * 2 - 1;
             mouseVector.y = -((event.clientY - (canvas.offsetTop + rect.top)) / canvas.clientHeight) * 2 + 1;
 
-            if (type === 'click' && this.mode === Mode.IDLE) {
+            if (type === MouseInteraction.CLICK && this.mode === Mode.IDLE) {
                 const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
                     this.views.perspective.scene.children[0].children,
                     false,

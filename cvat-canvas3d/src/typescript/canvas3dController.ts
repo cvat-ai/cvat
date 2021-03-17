@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Canvas3dModel, Mode } from './canvas3dModel';
-import { DrawData } from '../../../cvat-canvas/src/typescript/canvasModel';
+import { Canvas3dModel, Mode, DrawData } from './canvas3dModel';
 
 export interface Canvas3dController {
     readonly drawData: DrawData;

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    ReactElement, useEffect, useRef, useState,
+    ReactElement, SyntheticEvent, useEffect, useRef, useState,
 } from 'react';
 import Layout from 'antd/lib/layout/layout';
 import {
@@ -11,9 +11,8 @@ import {
 } from '@ant-design/icons';
 import { ResizableBox } from 'react-resizable';
 import { Workspace } from 'reducers/interfaces';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas3d, MouseInteraction, ViewType } from 'cvat-canvas3d-wrapper';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
-import { ViewType } from '../../../reducers/interfaces';
 
 interface Props {
     canvasInstance: Canvas3d;
@@ -73,17 +72,17 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
     const onMouseClick = (event: MouseEvent): void => {
         const { canvasInstance } = props;
-        canvasInstance.mouseControls('click', event);
+        canvasInstance.mouseControls(MouseInteraction.CLICK, event);
     };
 
     const onMouseDoubleClick = (event: MouseEvent): void => {
         const { canvasInstance } = props;
-        canvasInstance.mouseControls('dblclick', event);
+        canvasInstance.mouseControls(MouseInteraction.DOUBLE_CLICK, event);
     };
 
     const onMouseHover = (event: MouseEvent): void => {
         const { canvasInstance } = props;
-        canvasInstance.mouseControls('hover', event);
+        canvasInstance.mouseControls(MouseInteraction.HOVER, event);
     };
 
     const onCanvasCancel = (): void => {
@@ -99,8 +98,8 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.setup', onCanvasSetup);
         canvasInstanceDOM.perspective.addEventListener('mousemove', onMouseHover);
         canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
-        canvasInstanceDOM.perspective.addEventListener('dblclick', onMouseDoubleClick);
-        canvasInstanceDOM.perspective.addEventListener('click', onMouseClick);
+        canvasInstanceDOM.perspective.addEventListener(MouseInteraction.DOUBLE_CLICK, onMouseDoubleClick);
+        canvasInstanceDOM.perspective.addEventListener(MouseInteraction.CLICK, onMouseClick);
     };
 
     const keyControls = (key: KeyboardEvent): void => {
@@ -108,18 +107,21 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstance.keyControls(key);
     };
 
-    const onPerspectiveViewResize = (e: MouseEvent): void => {
+    const onPerspectiveViewResize = (e: SyntheticEvent): void => {
+        const event = (e as unknown) as MouseEvent;
         const canvas3dContainer = document.getElementById('canvas3d-container');
         if (canvas3dContainer) {
-            const height = canvas3dContainer.clientHeight + canvas3dContainer.getBoundingClientRect().top - e.clientY;
+            const height =
+                canvas3dContainer.clientHeight + canvas3dContainer.getBoundingClientRect().top - event.clientY;
             setOrthographicViewSize({ ...orthographicViewSize, vertical: height });
         }
     };
 
-    const onOrthographicViewResize = (view: string, e: MouseEvent): void => {
+    const onOrthographicViewResize = (view: string, e: SyntheticEvent): void => {
+        const event = (e as unknown) as MouseEvent;
         const canvas3dContainer = document.getElementById('canvas3d-container');
         if (canvas3dContainer) {
-            const width = e.clientX - canvas3dContainer.getBoundingClientRect().left;
+            const width = event.clientX - canvas3dContainer.getBoundingClientRect().left;
             if (view === ViewType.TOP) {
                 const topWidth = orthographicViewSize.top;
                 if (topWidth < width) {
@@ -204,18 +206,18 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.setup', onCanvasSetup);
             canvasInstanceDOM.perspective.removeEventListener('mousemove', onMouseHover);
             canvasInstanceDOM.perspective.removeEventListener('canvas.canceled', onCanvasCancel);
-            canvasInstanceDOM.perspective.removeEventListener('dblclick', onMouseDoubleClick);
-            canvasInstanceDOM.perspective.removeEventListener('click', onMouseClick);
+            canvasInstanceDOM.perspective.removeEventListener(MouseInteraction.DOUBLE_CLICK, onMouseDoubleClick);
+            canvasInstanceDOM.perspective.removeEventListener(MouseInteraction.CLICK, onMouseClick);
             document.removeEventListener('keydown', keyControls);
             cancelAnimationFrame(animateId.current);
         };
-    });
+    }, []);
 
     useEffect(() => {
         updateCanvas();
     }, [frameData, annotations, curZLayer]);
 
-    const renderArrowGroup = (): ReactElement => (
+    const ArrowGroup = (): ReactElement => (
         <span className='cvat-canvas3d-perspective-arrow-directions'>
             <button type='button' className='cvat-canvas3d-perspective-arrow-directions-icons-up'>
                 <ArrowUpOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
@@ -233,7 +235,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         </span>
     );
 
-    const renderControlGroup = (): ReactElement => (
+    const ControlGroup = (): ReactElement => (
         <span className='cvat-canvas3d-perspective-directions'>
             <button type='button' className='cvat-canvas3d-perspective-directions-icon'>
                 U
@@ -267,25 +269,27 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 data={data}
             />
             <ResizableBox
-                width='100%'
+                className='cvat-resizable'
+                width={Infinity}
                 height={document.body.clientHeight / 2}
                 axis='y'
-                handle={<span className='react-resizable-handle-horizontal' />}
+                handle={<span className='cvat-resizable-handle-horizontal' />}
                 onResize={onPerspectiveViewResize}
             >
                 <div className='cvat-canvas3d-perspective'>
                     <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
-                    {renderArrowGroup()}
-                    {renderControlGroup()}
+                    <ArrowGroup />
+                    <ControlGroup />
                 </div>
             </ResizableBox>
             <div className='cvat-canvas3d-orthographic-views' style={{ height: orthographicViewSize.vertical }}>
                 <ResizableBox
+                    className='cvat-resizable'
                     width={orthographicViewSize.top}
                     height={orthographicViewSize.vertical}
                     axis='x'
-                    handle={<span className='react-resizable-handle-vertical-top' />}
-                    onResize={(e: MouseEvent) => onOrthographicViewResize('top', e)}
+                    handle={<span className='cvat-resizable-handle-vertical-top' />}
+                    onResize={(e: SyntheticEvent) => onOrthographicViewResize('top', e)}
                 >
                     <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
                         <div className='cvat-canvas3d-header'>TOP</div>
@@ -293,11 +297,12 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     </div>
                 </ResizableBox>
                 <ResizableBox
+                    className='cvat-resizable'
                     width={orthographicViewSize.side}
                     height={orthographicViewSize.vertical}
                     axis='x'
-                    handle={<span className='react-resizable-handle-vertical-side' />}
-                    onResize={(e: MouseEvent) => onOrthographicViewResize('side', e)}
+                    handle={<span className='cvat-resizable-handle-vertical-side' />}
+                    onResize={(e: SyntheticEvent) => onOrthographicViewResize('side', e)}
                 >
                     <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
                         <div className='cvat-canvas3d-header'>SIDE</div>

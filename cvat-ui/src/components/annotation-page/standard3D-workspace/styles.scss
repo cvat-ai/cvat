@@ -263,11 +263,11 @@
     vertical-align: middle;
 }
 
-.react-resizable {
+.cvat-resizable {
     position: relative;
 }
 
-.react-resizable-handle-horizontal {
+.cvat-resizable-handle-horizontal {
     position: absolute;
     margin-left: auto;
     width: 100%;
@@ -280,7 +280,7 @@
     cursor: ns-resize;
 }
 
-.react-resizable-handle-vertical-side {
+.cvat-resizable-handle-vertical-side {
     position: absolute;
     width: $grid-unit-size/2;
     margin-right: auto;
@@ -292,7 +292,7 @@
     cursor: ew-resize;
 }
 
-.react-resizable-handle-vertical-top {
+.cvat-resizable-handle-vertical-top {
     position: absolute;
     width: $grid-unit-size/2;
     margin-right: auto;
