@@ -2,7 +2,26 @@
 
 ### Steps before use
 
-When used separately from Computer Vision Annotation Tool(CVAT), the required modules must be installed
+When used separately from Computer Vision Annotation Tool(CVAT), the required dependencies must be installed
+
+#### Ubuntu:20.04
+
+Install dependencies:
+
+```bash
+# General
+sudo apt-get update && sudo apt-get --no-install-recommends install -y \
+    python3-dev python3-pip python3-venv pkg-config
+```
+
+```bash
+# Library components
+sudo apt-get install --no-install-recommends -y \
+    libavformat-dev libavcodec-dev libavdevice-dev \
+    libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+```
+
+Create an environment and install the necessary python modules:
 
 ```bash
 python3 -m venv .env
@@ -14,36 +33,56 @@ pip install -r requirements.txt
 ### Using
 
 ```bash
-usage: python create.py [-h] --type {video,images} [--chunk_size CHUNK_SIZE] manifest_directory sources [sources ...]
+usage: python create.py [-h] [--force] manifest_directory source
 
 positional arguments:
-  manifest_directory    Directory where the manifest file will be saved
-  sources               Source paths
+  manifest_directory  Directory where the manifest file will be saved
+  source              Source paths
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --type {video,images}
-                        Type of datset data
-  --chunk_size CHUNK_SIZE
-                        Chunk size that will be specified when creating the task with specified video and generated manifest file
+  -h, --help          show this help message and exit
+  --force             Use this flag to prepare the manifest file for video data if by default the video does not meet the requirements
+                      and a manifest file is not prepared
 ```
 
-**NOTE**: If ratio of number of frames to number of key frames is small compared to the `chunk size`,
-then when creating a task with prepared manifest file, you should expect that the waiting time for some chunks
-will be longer than the waiting time for other chunks. (At the first iteration, when there is no chunk in the cache)
+### Alternative way to use with openvino/cvat_server
+
+```bash
+docker run -it --entrypoint python3 -v /path/to/host/data/:/path/inside/container/:rw openvino/cvat_server
+utils/dataset_manifest/create.py /path/to/manifest/directory/ /path/to/data/
+```
 
 ### Examples of using
 
-Create a dataset manifest with video:
+Create a dataset manifest with video which contains enough keyframes:
 
 ```bash
-python create.py --type video ~/Documents ~/Documents/video.mp4
+python create.py ~/Documents ~/Documents/video.mp4
+```
+
+Create a dataset manifest with video which does not contain enough keyframes:
+
+```bash
+python create.py --force ~/Documents ~/Documents/video.mp4
 ```
 
 Create a dataset manifest with images:
 
 ```bash
-python create.py --type images ~/Documents ~/Documents/image1.jpg ~/Documents/image2.jpg ~/Documents/image3.jpg
+python create.py ~/Documents ~/Documents/images/
+```
+
+Create a dataset manifest with pattern (may be used `*`, `?`, `[]`):
+
+```bash
+python create.py ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
+```
+
+Create a dataset manifest with `openvino/cvat_server`:
+
+```bash
+docker run -it --entrypoint python3 -v ~/Documents/data/:${HOME}/manifest/:rw openvino/cvat_server
+utils/dataset_manifest/create.py ~/manifest/ ~/manifest/images/
 ```
 
 ### Example of generated `manifest.jsonl` for video
