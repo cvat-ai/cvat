@@ -29,7 +29,7 @@ jobs:
 
             echo "ESLint version: "`npx eslint --version`
             echo "The files will be checked: "`echo ${changed_files_eslint}`
-            npx eslint --no-error-on-unmatched-pattern ${changed_files_eslint} -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
+            npx eslint ${changed_files_eslint} -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
           else
             echo "No files with the \"js|ts|jsx|tsx\" extension found"
           fi

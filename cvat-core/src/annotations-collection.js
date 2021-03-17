@@ -25,9 +25,7 @@
     const { Label } = require('./labels');
     const { DataError, ArgumentError, ScriptingError } = require('./exceptions');
 
-    const {
-        HistoryActions, ObjectShape, ObjectType, colors,
-    } = require('./enums');
+    const { HistoryActions, ObjectShape, ObjectType, colors } = require('./enums');
     const ObjectState = require('./object-state');
 
     function shapeFactory(shapeData, clientID, injection) {
@@ -36,23 +34,23 @@
 
         let shapeModel = null;
         switch (type) {
-        case 'rectangle':
-            shapeModel = new RectangleShape(shapeData, clientID, color, injection);
-            break;
-        case 'polygon':
-            shapeModel = new PolygonShape(shapeData, clientID, color, injection);
-            break;
-        case 'polyline':
-            shapeModel = new PolylineShape(shapeData, clientID, color, injection);
-            break;
-        case 'points':
-            shapeModel = new PointsShape(shapeData, clientID, color, injection);
-            break;
-        case 'cuboid':
-            shapeModel = new CuboidShape(shapeData, clientID, color, injection);
-            break;
-        default:
-            throw new DataError(`An unexpected type of shape "${type}"`);
+            case 'rectangle':
+                shapeModel = new RectangleShape(shapeData, clientID, color, injection);
+                break;
+            case 'polygon':
+                shapeModel = new PolygonShape(shapeData, clientID, color, injection);
+                break;
+            case 'polyline':
+                shapeModel = new PolylineShape(shapeData, clientID, color, injection);
+                break;
+            case 'points':
+                shapeModel = new PointsShape(shapeData, clientID, color, injection);
+                break;
+            case 'cuboid':
+                shapeModel = new CuboidShape(shapeData, clientID, color, injection);
+                break;
+            default:
+                throw new DataError(`An unexpected type of shape "${type}"`);
         }
 
         return shapeModel;
@@ -65,23 +63,23 @@
 
             let trackModel = null;
             switch (type) {
-            case 'rectangle':
-                trackModel = new RectangleTrack(trackData, clientID, color, injection);
-                break;
-            case 'polygon':
-                trackModel = new PolygonTrack(trackData, clientID, color, injection);
-                break;
-            case 'polyline':
-                trackModel = new PolylineTrack(trackData, clientID, color, injection);
-                break;
-            case 'points':
-                trackModel = new PointsTrack(trackData, clientID, color, injection);
-                break;
-            case 'cuboid':
-                trackModel = new CuboidTrack(trackData, clientID, color, injection);
-                break;
-            default:
-                throw new DataError(`An unexpected type of track "${type}"`);
+                case 'rectangle':
+                    trackModel = new RectangleTrack(trackData, clientID, color, injection);
+                    break;
+                case 'polygon':
+                    trackModel = new PolygonTrack(trackData, clientID, color, injection);
+                    break;
+                case 'polyline':
+                    trackModel = new PolylineTrack(trackData, clientID, color, injection);
+                    break;
+                case 'points':
+                    trackModel = new PointsTrack(trackData, clientID, color, injection);
+                    break;
+                case 'cuboid':
+                    trackModel = new CuboidTrack(trackData, clientID, color, injection);
+                    break;
+                default:
+                    throw new DataError(`An unexpected type of track "${type}"`);
             }
 
             return trackModel;
@@ -214,7 +212,7 @@
             }
 
             const objectStates = [];
-            const filtered = this.annotationsFilter.filter(visible.data, filters);
+            const filtered = filters.length ? this.annotationsFilter.filter(visible.data, filters) : visible.data;
 
             visible.data.forEach((stateData, idx) => {
                 if (!filters.length || filtered.includes(stateData.clientID)) {
@@ -338,20 +336,20 @@
                             zOrder: shape.zOrder,
                             attributes: updatedAttributes
                                 ? Object.keys(attributes).reduce((accumulator, attrID) => {
-                                    accumulator.push({
-                                        spec_id: +attrID,
-                                        value: attributes[attrID],
-                                    });
+                                      accumulator.push({
+                                          spec_id: +attrID,
+                                          value: attributes[attrID],
+                                      });
 
-                                    return accumulator;
-                                }, [])
+                                      return accumulator;
+                                  }, [])
                                 : [],
                         };
                     }
                 } else {
                     throw new ArgumentError(
-                        `Trying to merge unknown object type: ${object.constructor.name}. `
-                            + 'Only shapes and tracks are expected.',
+                        `Trying to merge unknown object type: ${object.constructor.name}. ` +
+                            'Only shapes and tracks are expected.',
                     );
                 }
             }
