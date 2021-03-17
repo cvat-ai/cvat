@@ -35,7 +35,6 @@ class AnnotationsFilter {
             }
 
             const attributes = {};
-            attributes[state.label.name] = {};
             Object.keys(state.attributes).reduce((acc, key) => {
                 const attr = labelAttributes[key];
                 let value = state.attributes[key].replace(/\\"/g, '`');
