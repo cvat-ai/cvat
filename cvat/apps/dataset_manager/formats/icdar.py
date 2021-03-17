@@ -8,23 +8,78 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import (AnnotationType, Caption, Label,
-    LabelCategories)
+    LabelCategories, Transform)
 
-from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
-    import_dm_annotations
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+    import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
+
+
+class AddLabelToAnns(Transform):
+    def __init__(self, extractor, label):
+        super().__init__(extractor)
+
+        assert isinstance(label, str)
+        self._categories = {}
+        label_cat = self._extractor.categories().get(AnnotationType.label)
+        if not label_cat:
+            label_cat = LabelCategories()
+        self._label = label_cat.add(label)
+        self._categories[AnnotationType.label] = label_cat
+
+    def categories(self):
+        return self._categories
+
+    def transform_item(self, item):
+        annotations = item.annotations
+        for ann in annotations:
+            if ann.type in [AnnotationType.polygon,
+                    AnnotationType.bbox, AnnotationType.mask]:
+                ann.label = self._label
+        return item.wrap(annotations=annotations)
+
+class CaptionToLabel(Transform):
+    def __init__(self, extractor, label):
+        super().__init__(extractor)
+
+        assert isinstance(label, str)
+        self._categories = {}
+        label_cat = self._extractor.categories().get(AnnotationType.label)
+        if not label_cat:
+            label_cat = LabelCategories()
+        self._label = label_cat.add(label)
+        self._categories[AnnotationType.label] = label_cat
+
+    def categories(self):
+        return self._categories
+
+    def transform_item(self, item):
+        annotations = item.annotations
+        captions = [ann for ann in annotations
+            if ann.type == AnnotationType.caption]
+        for ann in captions:
+            annotations.append(Label(self._label,
+                attributes={'text': ann.caption}))
+            annotations.remove(ann)
+        return item.wrap(annotations=annotations)
+
+class LabelToCaption(Transform):
+    def transform_item(self, item):
+        annotations = item.annotations
+        anns = [p for p in annotations
+            if 'text' in p.attributes]
+        for ann in anns:
+            annotations.append(Caption(ann.attributes['text']))
+            annotations.remove(ann)
+        return item.wrap(annotations=annotations)
 
 @exporter(name='ICDAR Recognition', ext='ZIP', version='1.0')
 def _export_recognition(dst_file, task_data, save_images=False):
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
         task_data, include_images=save_images), env=dm_env)
-    for item in dataset:
-        anns = [p for p in item.annotations
-            if 'text' in p.attributes]
-        for ann in anns:
-            item.annotations.append(Caption(ann.attributes['text']))
+    dataset.transform(LabelToCaption)
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'icdar_word_recognition', save_images=save_images)
         make_zip_archive(temp_dir, dst_file)
@@ -55,21 +110,8 @@ def _import(src_file, task_data):
 
         dataset = Dataset.import_from(tmp_dir, 'icdar', env=dm_env)
         if osp.isdir(osp.join(tmp_dir, 'word_recognition')):
-            for item in dataset:
-                anns = [p for p in item.annotations
-                    if p.type == AnnotationType.caption]
-                for ann in anns:
-                    item.annotations.append(Label(label=0,
-                        attributes={'text': ann.caption}))
-                    item.annotations.remove(ann)
+            dataset.transform(CaptionToLabel, 'icdar')
         else:
-            for item in dataset:
-                anns = [p for p in item.annotations
-                    if p.type in [AnnotationType.bbox, AnnotationType.polygon, AnnotationType.mask]]
-                for ann in anns:
-                    ann.label = 0
-        label_cat = LabelCategories()
-        label_cat.add('icdar')
-        dataset.categories()[AnnotationType.label] = label_cat
+            dataset.transform(AddLabelToAnns, 'icdar')
         dataset.transform('masks_to_polygons')
         import_dm_annotations(dataset, task_data)
