@@ -66,6 +66,7 @@ class AnnotationsFilter {
     }
 
     filter(statesData, filters) {
+        if (!filters.length) return statesData;
         return this._convertObjects(statesData)
             .objects.map((state) => jsonLogic.apply(filters[0], state) && state.clientID)
             .filter(Boolean);
