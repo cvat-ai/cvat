@@ -60,10 +60,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
         cy.openTaskJob(taskName);
     });
 
-    // after(() => {
-    //     cy.goToTaskList();
-    //     cy.deleteTask(taskName);
-    // });
+    after(() => {
+        cy.goToTaskList();
+        cy.deleteTask(taskName);
+    });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check existing of elements.', () => {
