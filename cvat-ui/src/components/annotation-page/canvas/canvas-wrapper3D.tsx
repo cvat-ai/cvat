@@ -288,7 +288,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     onResize={(e: MouseEvent) => onOrthographicViewResize('top', e)}
                 >
                     <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
-                        <div className='cvat-canvas3d-header'>TOP VIEW</div>
+                        <div className='cvat-canvas3d-header'>TOP</div>
                         <div className='cvat-canvas3d-fullsize' ref={topView} />
                     </div>
                 </ResizableBox>
@@ -300,7 +300,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     onResize={(e: MouseEvent) => onOrthographicViewResize('side', e)}
                 >
                     <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
-                        <div className='cvat-canvas3d-header'>SIDE VIEW</div>
+                        <div className='cvat-canvas3d-header'>SIDE</div>
                         <div className='cvat-canvas3d-fullsize' ref={sideView} />
                     </div>
                 </ResizableBox>
@@ -308,7 +308,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     className='cvat-canvas3d-orthographic-view cvat-canvas3d-frontview'
                     style={{ width: orthographicViewSize.front }}
                 >
-                    <div className='cvat-canvas3d-header'>FRONT VIEW</div>
+                    <div className='cvat-canvas3d-header'>FRONT</div>
                     <div className='cvat-canvas3d-fullsize' ref={frontView} />
                 </div>
             </div>
