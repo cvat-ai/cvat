@@ -13,6 +13,8 @@ import { DownOutlined } from '@ant-design/icons';
 import { Dropdown, Menu } from 'antd';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 import { CombinedState } from 'reducers/interfaces';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
 
@@ -67,6 +69,15 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
         return subfields;
     };
 
+    const customFilterOption = (input: string, option?: OptionData | OptionGroupData): boolean => {
+        if (option) {
+            const { children } = option.props;
+            return children.toString().toLowerCase().includes(input.toString().toLowerCase());
+        }
+
+        return false;
+    };
+
     const config: Config = {
         ...AntdConfig,
         fields: {
@@ -117,8 +128,13 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                 fieldSettings: { min: 0 },
             },
             clientID: {
-                label: 'ClientID',
+                label: 'ObjectID',
                 type: 'select',
+                mainWidgetProps: {
+                    customProps: {
+                        filterOption: customFilterOption,
+                    },
+                },
                 hideForCompare: true,
                 valueSources: ['value'],
                 fieldSettings: {
@@ -130,6 +146,11 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                 type: 'select',
                 hideForCompare: true,
                 valueSources: ['value'],
+                mainWidgetProps: {
+                    customProps: {
+                        filterOption: customFilterOption,
+                    },
+                },
                 fieldSettings: {
                     listValues: serverIds,
                 },
@@ -140,6 +161,16 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                 subfields: getAttributesSubfields(),
             },
         },
+
+        // widgets: {
+        //     select: {
+        //         customProps: {
+        //             onChange: (val: any) => {
+        //                 console.log('1');
+        //             },
+        //         }
+        //     }
+        // }
     };
 
     const initialState = {
