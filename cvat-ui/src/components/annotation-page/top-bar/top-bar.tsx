@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Col, Row } from 'antd/lib/grid';
-import Input from 'antd/lib/input';
 import React from 'react';
+import Input from 'antd/lib/input';
+import { Col, Row } from 'antd/lib/grid';
+
 import { Workspace } from 'reducers/interfaces';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';

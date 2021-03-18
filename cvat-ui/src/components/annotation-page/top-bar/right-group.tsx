@@ -1,13 +1,14 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import Icon from '@ant-design/icons';
-import Button from 'antd/lib/button';
-import { Col } from 'antd/lib/grid';
-import Select from 'antd/lib/select';
 import React from 'react';
+import { Col } from 'antd/lib/grid';
+import Icon from '@ant-design/icons';
+import Select from 'antd/lib/select';
+import Button from 'antd/lib/button';
 import { useSelector } from 'react-redux';
+
 import { FilterIcon, FullscreenIcon, InfoIcon } from 'icons';
 import { CombinedState, DimensionType, Workspace } from 'reducers/interfaces';
 
