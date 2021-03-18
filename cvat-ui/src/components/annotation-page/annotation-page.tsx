@@ -8,8 +8,10 @@ import { useHistory } from 'react-router';
 import Layout from 'antd/lib/layout';
 import Spin from 'antd/lib/spin';
 import Result from 'antd/lib/result';
+import notification from 'antd/lib/notification';
 
 import { Workspace } from 'reducers/interfaces';
+import { usePrevious } from 'utils/hooks';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
 import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
@@ -33,6 +35,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
         job, fetching, getJob, closeJob, saveLogs, workspace,
     } = props;
+    const prevJob = usePrevious(job);
+    const prevFetching = usePrevious(fetching);
 
     const history = useHistory();
     useEffect(() => {
@@ -59,6 +63,26 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             getJob();
         }
     }, [job, fetching]);
+
+    useEffect(() => {
+        if (prevFetching && !fetching && !prevJob && job && !job.task.labels.length) {
+            notification.warning({
+                message: 'No labels',
+                description: (
+                    <span>
+                        {`${job.task.projectId ? 'Project' : 'Task'} ${
+                            job.task.projectId || job.task.id
+                        } does not contain any label. `}
+                        <a href={`/${job.task.projectId ? 'projects' : 'tasks'}/${job.task.projectId || job.task.id}/`}>
+                            Add
+                        </a>
+                        {' the first one for editing annotation.'}
+                    </span>
+                ),
+                placement: 'topRight',
+            });
+        }
+    }, [job, fetching, prevJob, prevFetching]);
 
     if (job === null) {
         return <Spin size='large' className='cvat-spinner' />;
