@@ -31,6 +31,8 @@ yarn-error.log*
 
 .DS_Store
 
-#Ignore Cypress tests temp files
-/tests/cypress/fixtures
-/tests/cypress/screenshots
+#Ignore website temp files
+/site/public/
+/site/resources/
+/site/node_modules/
+/site/tech-doc-hugo
