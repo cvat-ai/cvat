@@ -194,12 +194,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 .catch((error: Error | ValidateErrorEntity): void => {
                     notification.error({
                         message: 'Could not create a task',
-                        description:
-                            error instanceof Error ?
-                                error.toString() :
-                                error.errorFields
-                                    .map((field) => `${field.name} : ${field.errors.join(';')}`)
-                                    .map((text: string): JSX.Element => <div>{text}</div>),
+                        description: (error as ValidateErrorEntity).errorFields ?
+                            (error as ValidateErrorEntity).errorFields
+                                .map((field) => `${field.name} : ${field.errors.join(';')}`)
+                                .map((text: string): JSX.Element => <div>{text}</div>) :
+                            error.toString(),
                         className: 'cvat-notification-create-task-fail',
                     });
                 });
