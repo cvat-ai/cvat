@@ -68,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed export error when invalid polygons are present in overlapping frames (<https://github.com/openvinotoolkit/cvat/pull/2852>)
 - Fixed image quality option for tasks created from images (<https://github.com/openvinotoolkit/cvat/pull/2963>)
 - Incorrect text on the warning when specifying an incorrect link to the issue tracker (<https://github.com/openvinotoolkit/cvat/pull/2971>)
+- Updating label attributes when label contains number attributes (<https://github.com/openvinotoolkit/cvat/pull/2969>)
 
 ### Security
 
