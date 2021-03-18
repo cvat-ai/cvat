@@ -30,3 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 
 .DS_Store
+
+#Ignore website temp files
+/site/public/
+/site/resources/
+/site/node_modules/
+/site/tech-doc-hugo
