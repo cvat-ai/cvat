@@ -339,7 +339,7 @@ export default class LabelForm extends React.Component<Props> {
                 {() => (
                     <Row
                         justify='space-between'
-                        align='middle'
+                        align='top'
                         cvat-attribute-id={fieldValue.id}
                         className='cvat-attribute-inputs-wrapper'
                     >
