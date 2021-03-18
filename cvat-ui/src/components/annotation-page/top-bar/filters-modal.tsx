@@ -48,24 +48,28 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
         }
     };
 
+    const adjustName = (name: string): string => name.replaceAll('.', '\u2219');
+
     const getAttributesSubfields = (): Record<string, any> => {
         const subfields: Record<string, any> = {};
         labels.forEach((label: any): void => {
-            subfields[label.name] = {
+            const adjustedLabelName = adjustName(label.name);
+            subfields[adjustedLabelName] = {
                 type: '!struct', // nested complex field
                 label: label.name,
                 subfields: {},
             };
 
-            const labelSubfields = subfields[label.name].subfields;
+            const labelSubfields = subfields[adjustedLabelName].subfields;
             label.attributes.forEach((attr: any): void => {
-                labelSubfields[attr.name] = {
+                const adjustedAttrName = adjustName(attr.name);
+                labelSubfields[adjustedAttrName] = {
                     label: attr.name,
                     type: getConvertedInputType(attr.inputType),
                 };
-                if (labelSubfields[attr.name].type === 'select') {
-                    labelSubfields[attr.name] = {
-                        ...labelSubfields[attr.name],
+                if (labelSubfields[adjustedAttrName].type === 'select') {
+                    labelSubfields[adjustedAttrName] = {
+                        ...labelSubfields[adjustedAttrName],
                         fieldSettings: {
                             listValues: attr.values,
                         },

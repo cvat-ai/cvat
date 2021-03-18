@@ -5,6 +5,10 @@
 const jsonLogic = require('json-logic-js');
 const { AttributeType, ObjectType } = require('./enums');
 
+function adjustName(name) {
+    return name.replaceAll('.', '\u2219');
+}
+
 class AnnotationsFilter {
     _convertObjects(statesData) {
         const objects = statesData.map((state) => {
@@ -37,21 +41,21 @@ class AnnotationsFilter {
             const attributes = {};
             Object.keys(state.attributes).reduce((acc, key) => {
                 const attr = labelAttributes[key];
-                let value = state.attributes[key].replace(/\\"/g, '`');
+                let value = state.attributes[key];
                 if (attr.inputType === AttributeType.NUMBER) {
                     value = +value;
                 } else if (attr.inputType === AttributeType.CHECKBOX) {
                     value = value === 'true';
                 }
-                acc[attr.name] = value;
+                acc[adjustName(attr.name)] = value;
                 return acc;
             }, attributes);
 
             return {
                 width,
                 height,
-                attr: Object.fromEntries([[state.label.name, attributes]]),
-                label: state.label.name.replace(/\\"/g, '`'),
+                attr: Object.fromEntries([[adjustName(state.label.name), attributes]]),
+                label: state.label.name,
                 serverID: state.serverID,
                 objectID: state.clientID,
                 type: state.objectType,
