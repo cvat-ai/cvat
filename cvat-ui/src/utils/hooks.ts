@@ -4,8 +4,8 @@
 import { useRef, useEffect } from 'react';
 
 // eslint-disable-next-line import/prefer-default-export
-export function usePrevious(value: any): any {
-    const ref = useRef();
+export function usePrevious<T>(value: T): T | undefined {
+    const ref = useRef<T>();
     useEffect(() => {
         ref.current = value;
     });
