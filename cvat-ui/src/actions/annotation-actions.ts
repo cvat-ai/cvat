@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { MutableRefObject } from 'react';
 import {
     AnyAction, Dispatch, ActionCreator, Store,
 } from 'redux';
-import { MutableRefObject } from 'react';
-import notification from 'antd/lib/notification';
 import { ThunkAction } from 'utils/redux';
 
 import {
@@ -918,16 +917,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const job = task.jobs.filter((_job: any) => _job.id === jid)[0];
             if (!job) {
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
-            }
-
-            if (!task.labels.length) {
-                notification.warning({
-                    message: 'No labels',
-                    description: `${task.projectId ? 'Project' : 'Task'} ${
-                        task.projectId || task.id
-                    } does not contain any label`,
-                    placement: 'topRight',
-                });
             }
 
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);

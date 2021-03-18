@@ -1006,7 +1006,6 @@
             if (data.owner) data.owner = new User(data.owner);
 
             data.labels = [];
-            data.deleted_labels = [];
             data.jobs = [];
             data.files = Object.freeze({
                 server_files: [],
@@ -1305,7 +1304,7 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     labels: {
-                        get: () => [...data.labels],
+                        get: () => data.labels.filter((_label) => !_label.deleted),
                         set: (labels) => {
                             if (!Array.isArray(labels)) {
                                 throw new ArgumentError('Value must be an array of Labels');
@@ -1319,14 +1318,14 @@
                                 }
                             }
 
-                            for (const label of data.labels) {
-                                if (!labels.filter((_label) => _label.id === label.id).length) {
-                                    data.deleted_labels.push(label);
-                                }
-                            }
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
 
                             updatedFields.labels = true;
-                            data.labels = [...labels];
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -1502,14 +1501,14 @@
                          */
                         get: () => data.dimension,
                     },
+                    _internalData: {
+                        get: () => data,
+                    },
                     __updatedFields: {
                         get: () => updatedFields,
                         set: (fields) => {
                             updatedFields = fields;
                         },
-                    },
-                    _deletedLabels: {
-                        get: () => [...data.deleted_labels],
                     },
                 }),
             );
@@ -1930,14 +1929,7 @@
                         taskData.subset = this.subset;
                         break;
                     case 'labels':
-                        taskData.labels = [
-                            ...this.labels.map((el) => el.toJSON()),
-                            ...this._deletedLabels.map((label) => {
-                                const labelJSON = label.toJSON();
-                                labelJSON.deleted = true;
-                                return labelJSON;
-                            }),
-                        ];
+                        taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
                         break;
                     default:
                         break;

@@ -43,7 +43,6 @@
 
             data.labels = [];
             data.tasks = [];
-            data.deleted_labels = [];
 
             if (Array.isArray(initialData.labels)) {
                 for (const label of initialData.labels) {
@@ -187,13 +186,13 @@
                                 );
                             }
 
-                            for (const label of data.labels) {
-                                if (!labels.filter((_label) => _label.id === label.id).length) {
-                                    data.deleted_labels.push(label);
-                                }
-                            }
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
 
-                            data.labels = [...labels];
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -218,8 +217,8 @@
                     subsets: {
                         get: () => [...data.task_subsets],
                     },
-                    _deletedLabels: {
-                        get: () => [...data.deleted_labels],
+                    _internalData: {
+                        get: () => data,
                     },
                 }),
             );
@@ -267,14 +266,7 @@
                 name: this.name,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
-                labels: [
-                    ...this.labels.map((el) => el.toJSON()),
-                    ...this._deletedLabels.map((label) => {
-                        const labelJSON = label.toJSON();
-                        labelJSON.deleted = true;
-                        return labelJSON;
-                    }),
-                ],
+                labels: [...this._internalData.labels.map((el) => el.toJSON())],
             };
 
             await serverProxy.projects.save(this.id, projectData);
