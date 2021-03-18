@@ -292,7 +292,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-                <div className='sidebar-collapse-button-spacer' />
+                <div className='cvat-sidebar-collapse-button-spacer' />
                 <ObjectSwitcher
                     currentLabel={activeObjectState.label.name}
                     clientID={activeObjectState.clientID}
@@ -367,7 +367,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <div className='sidebar-collapse-button-spacer' />
+            <div className='cvat-sidebar-collapse-button-spacer' />
             <div className='attribute-annotations-sidebar-not-found-wrapper'>
                 <Text strong>No objects found</Text>
             </div>
