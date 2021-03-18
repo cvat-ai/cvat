@@ -1,6 +1,5 @@
 {
     "python.pythonPath": ".env/bin/python",
-    "eslint.enable": true,
     "eslint.probe": [
         "javascript",
         "typescript",
@@ -19,8 +18,10 @@
             "!cwd": true
         }
     ],
+    "npm.exclude": "**/.env/**",
+    "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
-    "python.testing.unittestEnabled": true,
+    "python.linting.pycodestyleEnabled": false,
     "licenser.license": "Custom",
     "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT",
     "files.trimTrailingWhitespace": true

@@ -16,11 +16,12 @@ import withVisibilityHandling from './handle-popover-visibility';
 export interface Props {
     canvasInstance: Canvas;
     isDrawing: boolean;
+    disabled?: boolean;
 }
 
 const CustomPopover = withVisibilityHandling(Popover, 'draw-polyline');
 function DrawPolylineControl(props: Props): JSX.Element {
-    const { canvasInstance, isDrawing } = props;
+    const { canvasInstance, isDrawing, disabled } = props;
     const dynamcPopoverPros = isDrawing ?
         {
             overlayStyle: {
@@ -40,7 +41,9 @@ function DrawPolylineControl(props: Props): JSX.Element {
             className: 'cvat-draw-polyline-control',
         };
 
-    return (
+    return disabled ? (
+        <Icon className='cvat-draw-polyline-control cvat-disabled-canvas-control' component={PolylineIcon} />
+    ) : (
         <CustomPopover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'

@@ -108,7 +108,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             libraryInitialized: openCVWrapper.isInitialized,
             initializationError: false,
             initializationProgress: -1,
-            activeLabelID: labels[0].id,
+            activeLabelID: labels.length ? labels[0].id : null,
         };
     }
 
@@ -383,7 +383,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     public render(): JSX.Element {
-        const { isActivated, canvasInstance } = this.props;
+        const { isActivated, canvasInstance, labels } = this.props;
         const dynamcPopoverPros = isActivated ?
             {
                 overlayStyle: {
@@ -394,7 +394,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
         const dynamicIconProps = isActivated ?
             {
-                className: 'cvat-active-canvas-control cvat-opencv-control',
+                className: 'cvat-opencv-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.interact({ enabled: false });
                 },
@@ -403,7 +403,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 className: 'cvat-tools-control',
             };
 
-        return (
+        return !labels.length ? (
+            <Icon className='cvat-opencv-control cvat-disabled-canvas-control' component={OpenCVIcon} />
+        ) : (
             <CustomPopover
                 {...dynamcPopoverPros}
                 placement='right'

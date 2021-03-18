@@ -14,12 +14,13 @@ export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     switchSplitShortcut: string;
+    disabled?: boolean;
     splitTrack(enabled: boolean): void;
 }
 
 function SplitControl(props: Props): JSX.Element {
     const {
-        switchSplitShortcut, activeControl, canvasInstance, splitTrack,
+        switchSplitShortcut, activeControl, canvasInstance, splitTrack, disabled,
     } = props;
 
     const dynamicIconProps =
@@ -40,7 +41,9 @@ function SplitControl(props: Props): JSX.Element {
                 },
             };
 
-    return (
+    return disabled ? (
+        <Icon className='cvat-split-track-control cvat-disabled-canvas-control' component={SplitIcon} />
+    ) : (
         <CVATTooltip title={`Split a track ${switchSplitShortcut}`} placement='right'>
             <Icon {...dynamicIconProps} component={SplitIcon} />
         </CVATTooltip>
