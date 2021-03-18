@@ -134,7 +134,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
             },
             serverID: {
                 label: 'ServerID',
-                type: 'sele',
+                type: 'number',
                 hideForCompare: true,
                 fieldSettings: { min: 0 },
             },
