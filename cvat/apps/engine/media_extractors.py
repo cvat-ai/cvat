@@ -373,12 +373,29 @@ class ZipCompressedChunkWriter(IChunkWriter):
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _):
-        super().__init__(17)
+    def __init__(self, quality=67):
+        # translate inversed range [1:100] to [0:51]
+        quality = round(51 * (100 - quality) / 99)
+        super().__init__(quality)
         self._output_fps = 25
+        try:
+            codec = av.codec.Codec('libopenh264', 'w')
+            self._codec_name = codec.name
+            self._codec_opts = {
+                'profile': 'constrained_baseline',
+                'qmin': str(self._image_quality),
+                'qmax': str(self._image_quality),
+                'rc_mode': 'buffer',
+            }
+        except av.codec.codec.UnknownCodecError:
+            codec = av.codec.Codec('libx264', 'w')
+            self._codec_name = codec.name
+            self._codec_opts = {
+                "crf": str(self._image_quality),
+                "preset": "ultrafast",
+            }
 
-    @staticmethod
-    def _create_av_container(path, w, h, rate, options, f='mp4'):
+    def _create_av_container(self, path, w, h, rate, options, f='mp4'):
             # x264 requires width and height must be divisible by 2 for yuv420p
             if h % 2:
                 h += 1
@@ -386,7 +403,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 w += 1
 
             container = av.open(path, 'w',format=f)
-            video_stream = container.add_stream('libopenh264', rate=rate)
+            video_stream = container.add_stream(self._codec_name, rate=rate)
             video_stream.pix_fmt = "yuv420p"
             video_stream.width = w
             video_stream.height = h
@@ -406,12 +423,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             w=input_w,
             h=input_h,
             rate=self._output_fps,
-            options={
-                'profile': 'constrained_baseline',
-                'qmin': str(self._image_quality),
-                'qmax': str(self._image_quality),
-                'rc_mode': 'buffer',
-            },
+            options=self._codec_opts,
         )
 
         self._encode_images(images, output_container, output_v_stream)
@@ -434,10 +446,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
     def __init__(self, quality):
-        # translate inversed range [1:100] to [0:51]
-        self._image_quality = round(51 * (100 - quality) / 99)
-        self._output_fps = 25
-
+        super().__init__(quality)
+        if self._codec_name == 'libx264':
+            self._codec_opts = {
+                'profile': 'baseline',
+                'coder': '0',
+                'crf': str(self._image_quality),
+                'wpredp': '0',
+                'flags': '-loop',
+            }
 
     def save_as_chunk(self, images, chunk_path):
         if not images:
@@ -458,12 +475,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             w=output_w,
             h=output_h,
             rate=self._output_fps,
-            options={
-                'profile': 'constrained_baseline',
-                'qmin': str(self._image_quality),
-                'qmax': str(self._image_quality),
-                'rc_mode': 'buffer',
-            },
+            options=self._codec_opts,
         )
 
         self._encode_images(images, output_container, output_v_stream)
