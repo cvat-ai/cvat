@@ -21,7 +21,7 @@ import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'ac
 
 const { FieldDropdown } = AntdWidgets;
 
-const FILTERS_HISTORY = 'filtersHistory';
+const FILTERS_HISTORY = 'annotationFiltersHistory';
 
 interface Props {
     visible: boolean;
@@ -126,7 +126,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
                 type: 'number',
                 fieldSettings: { min: 0 },
             },
-            clientID: {
+            objectID: {
                 label: 'ObjectID',
                 type: 'number',
                 hideForCompare: true,

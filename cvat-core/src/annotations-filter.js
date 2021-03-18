@@ -53,7 +53,7 @@ class AnnotationsFilter {
                 attr: Object.fromEntries([[state.label.name, attributes]]),
                 label: state.label.name.replace(/\\"/g, '`'),
                 serverID: state.serverID,
-                clientID: state.clientID,
+                objectID: state.clientID,
                 type: state.objectType,
                 shape: state.shapeType,
                 occluded: state.occluded,
