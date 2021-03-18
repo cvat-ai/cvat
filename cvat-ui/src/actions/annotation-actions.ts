@@ -912,10 +912,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
             }
 
-            if (!task.labels.length && task.projectId) {
-                throw new Error(`Project ${task.projectId} does not contain any label`);
-            }
-
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface

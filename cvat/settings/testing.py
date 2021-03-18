@@ -19,6 +19,9 @@ os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 TASKS_ROOT = os.path.join(DATA_ROOT, 'tasks')
 os.makedirs(TASKS_ROOT, exist_ok=True)
 
+PROJECTS_ROOT = os.path.join(DATA_ROOT, 'projects')
+os.makedirs(PROJECTS_ROOT, exist_ok=True)
+
 MODELS_ROOT = os.path.join(DATA_ROOT, 'models')
 os.makedirs(MODELS_ROOT, exist_ok=True)
 

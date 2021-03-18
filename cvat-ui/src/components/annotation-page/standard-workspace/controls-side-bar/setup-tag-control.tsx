@@ -15,11 +15,12 @@ import withVisibilityHandling from './handle-popover-visibility';
 export interface Props {
     canvasInstance: Canvas;
     isDrawing: boolean;
+    disabled?: boolean;
 }
 
 const CustomPopover = withVisibilityHandling(Popover, 'setup-tag');
 function SetupTagControl(props: Props): JSX.Element {
-    const { isDrawing } = props;
+    const { isDrawing, disabled } = props;
     const dynamcPopoverPros = isDrawing ?
         {
             overlayStyle: {
@@ -28,7 +29,9 @@ function SetupTagControl(props: Props): JSX.Element {
         } :
         {};
 
-    return (
+    return disabled ? (
+        <Icon className='cvat-setup-tag-control cvat-disabled-canvas-control' component={TagIcon} />
+    ) : (
         <CustomPopover {...dynamcPopoverPros} placement='right' content={<SetupTagPopoverContainer />}>
             <Icon className='cvat-setup-tag-control' component={TagIcon} />
         </CustomPopover>

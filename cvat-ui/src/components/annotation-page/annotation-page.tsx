@@ -7,6 +7,8 @@ import { useHistory } from 'react-router';
 import Layout from 'antd/lib/layout';
 import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
+import notification from 'antd/lib/notification';
+
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
@@ -18,6 +20,7 @@ import FiltersModalContainer from 'containers/annotation-page/top-bar/filters-mo
 import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers/interfaces';
+import { usePrevious } from 'utils/hooks';
 import './styles.scss';
 
 interface Props {
@@ -33,6 +36,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
         job, fetching, getJob, closeJob, saveLogs, workspace,
     } = props;
+    const prevJob = usePrevious(job);
+    const prevFetching = usePrevious(fetching);
 
     const history = useHistory();
     useEffect(() => {
@@ -59,6 +64,26 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             getJob();
         }
     }, [job, fetching]);
+
+    useEffect(() => {
+        if (prevFetching && !fetching && !prevJob && job && !job.task.labels.length) {
+            notification.warning({
+                message: 'No labels',
+                description: (
+                    <span>
+                        {`${job.task.projectId ? 'Project' : 'Task'} ${
+                            job.task.projectId || job.task.id
+                        } does not contain any label. `}
+                        <a href={`/${job.task.projectId ? 'projects' : 'tasks'}/${job.task.projectId || job.task.id}/`}>
+                            Add
+                        </a>
+                        {' the first one for editing annotation.'}
+                    </span>
+                ),
+                placement: 'topRight',
+            });
+        }
+    }, [job, fetching, prevJob, prevFetching]);
 
     if (job === null) {
         return <Spin size='large' className='cvat-spinner' />;
