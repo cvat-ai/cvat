@@ -61,12 +61,12 @@
     transform: scale(0.65);
     padding: 2px;
 
-    &:hover {
+    &:hover:not(.cvat-disabled-canvas-control) {
         background: $header-color;
         transform: scale(0.75);
     }
 
-    &:active {
+    &:active:not(.cvat-disabled-canvas-control) {
         transform: scale(0.65);
     }
 
@@ -85,6 +85,10 @@
 .cvat-active-canvas-control {
     background: $header-color;
     transform: scale(0.75);
+}
+
+.cvat-disabled-canvas-control > svg {
+    filter: opacity(0.45);
 }
 
 .cvat-rotate-canvas-controls-left,

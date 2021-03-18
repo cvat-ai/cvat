@@ -107,7 +107,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const defaultLabelID = labels[0].id;
+    const defaultLabelID = labels.length ? labels[0].id : null;
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [frameTags, setFrameTags] = useState([] as any[]);
@@ -196,7 +196,24 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         },
     };
 
-    return (
+    return !labels.length ? (
+        <Layout.Sider {...siderProps}>
+            {/* eslint-disable-next-line */}
+            <span
+                className={`cvat-objects-sidebar-sider
+                    ant-layout-sider-zero-width-trigger
+                    ant-layout-sider-zero-width-trigger-left`}
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            >
+                {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
+            </span>
+            <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
+                <Col>
+                    <Text strong>No labels are available.</Text>
+                </Col>
+            </Row>
+        </Layout.Sider>
+    ) : (
         <>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <Layout.Sider {...siderProps}>
