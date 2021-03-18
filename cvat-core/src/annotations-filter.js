@@ -67,7 +67,7 @@ class AnnotationsFilter {
         if (!filters.length) return statesData;
         const converted = this._convertObjects(statesData);
         return converted
-            .map((state) => state.clientID)
+            .map((state) => state.objectID)
             .filter((_, index) => jsonLogic.apply(filters[0], converted[index]));
     }
 }
