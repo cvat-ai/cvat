@@ -66,16 +66,16 @@ context('Autoborder feature.', () => {
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.createRectangle(createRectangleShape2PointsSec);
-
-        // Collect the rectagle points coordinates
-        testActivatingShape(450, 400, '#cvat_canvas_shape_1');
-        testCollectCxCircleCoord(rectangleSvgJsCircleId);
-        testActivatingShape(650, 400, '#cvat_canvas_shape_2');
-        testCollectCxCircleCoord(rectangleSvgJsCircleIdSecond);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Drawning a polygon with autoborder.', () => {
+            // Collect the rectagle points coordinates
+            testActivatingShape(450, 400, '#cvat_canvas_shape_1');
+            testCollectCxCircleCoord(rectangleSvgJsCircleId);
+            testActivatingShape(650, 400, '#cvat_canvas_shape_2');
+            testCollectCxCircleCoord(rectangleSvgJsCircleIdSecond);
+
             cy.get('.cvat-draw-polygon-control').click();
             cy.get('.cvat-draw-polygon-popover-visible').find('[type="button"]').contains('Shape').click();
             cy.get('body').type('{Ctrl}'); // Autoborder activation
@@ -89,7 +89,7 @@ context('Autoborder feature.', () => {
             testCollectCxCircleCoord(polygonSvgJsCircleId);
         });
 
-        it('Start drawning a polyline with autobordering beetwen the two shapes.', () => {
+        it('Start drawing a polyline with autobordering beetwen the two shapes.', () => {
             cy.get('.cvat-draw-polyline-control').click();
             cy.get('.cvat-draw-polyline-popover-visible').find('[type="button"]').contains('Shape').click();
             testAutoborderPointsCount(12); // 8 points at the rectangles + 4 at the polygon
