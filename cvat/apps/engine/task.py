@@ -10,9 +10,9 @@ from re import findall
 import rq
 import shutil
 from traceback import print_exception
-from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
+import requests
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter, ValidateDimension
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
@@ -195,20 +195,16 @@ def _download_data(urls, upload_dir):
         job.meta['status'] = '{} is being downloaded..'.format(url)
         job.save_meta()
 
-        req = urlrequest.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        try:
-            with urlrequest.urlopen(req) as fp, open(os.path.join(upload_dir, name), 'wb') as tfp:
-                while True:
-                    block = fp.read(8192)
-                    if not block:
-                        break
-                    tfp.write(block)
-        except urlerror.HTTPError as err:
-            raise Exception("Failed to download " + url + ". " + str(err.code) + ' - ' + err.reason)
-        except urlerror.URLError as err:
-            raise Exception("Invalid URL: " + url + ". " + err.reason)
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            response.raw.decode_content = True
+            with open(os.path.join(upload_dir, name), 'wb') as output_file:
+                shutil.copyfileobj(response.raw, output_file)
+        else:
+            raise Exception("Failed to download " + url)
 
         local_files[name] = True
+
     return list(local_files.keys())
 
 @transaction.atomic
@@ -298,13 +294,20 @@ def _create_thread(tid, data):
         update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 
     compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter
-    original_chunk_writer_class = Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter
+    if db_data.original_chunk_type == DataChoice.VIDEO:
+        original_chunk_writer_class = Mpeg4ChunkWriter
+        # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks, which should be visually lossless or nearly so.
+        # A lower value will significantly increase the chunk size with a slight increase of quality.
+        original_quality = 67
+    else:
+        original_chunk_writer_class = ZipChunkWriter
+        original_quality = 100
 
     kwargs = {}
     if validate_dimension.dimension == DimensionType.DIM_3D:
         kwargs["dimension"] = validate_dimension.dimension
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
-    original_chunk_writer = original_chunk_writer_class(100)
+    original_chunk_writer = original_chunk_writer_class(original_quality)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
