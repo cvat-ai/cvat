@@ -11,8 +11,11 @@ import {
 } from '@ant-design/icons';
 import { ResizableBox } from 'react-resizable';
 import { Workspace } from 'reducers/interfaces';
-import { Canvas3d, MouseInteraction, ViewType } from 'cvat-canvas3d-wrapper';
+import {
+    Canvas3d, MouseInteraction, ViewType, CAMERA_ACTION,
+} from 'cvat-canvas3d-wrapper';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
+import CVATTooltip from '../../common/cvat-tooltip';
 
 interface Props {
     canvasInstance: Canvas3d;
@@ -217,45 +220,110 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         updateCanvas();
     }, [frameData, annotations, curZLayer]);
 
+    const screenKeyControl = (code: CAMERA_ACTION): void => {
+        const { canvasInstance } = props;
+        canvasInstance.keyControls(new KeyboardEvent('keydown', { code, altKey: true }));
+    };
+
     const ArrowGroup = (): ReactElement => (
         <span className='cvat-canvas3d-perspective-arrow-directions'>
-            <button type='button' className='cvat-canvas3d-perspective-arrow-directions-icons-up'>
-                <ArrowUpOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-            </button>
+            <CVATTooltip title='Arrow Up' placement='topRight'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.TILT_UP)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-arrow-directions-icons-up'
+                >
+                    <ArrowUpOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                </button>
+            </CVATTooltip>
             <br />
-            <button type='button' className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'>
-                <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-            </button>
-            <button type='button' className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'>
-                <ArrowDownOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-            </button>
-            <button type='button' className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'>
-                <ArrowRightOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-            </button>
+            <CVATTooltip title='Arrow Left' placement='topRight'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.ROTATE_LEFT)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
+                >
+                    <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                </button>
+            </CVATTooltip>
+            <CVATTooltip title='Arrow Bottom' placement='topRight'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.TILT_DOWN)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
+                >
+                    <ArrowDownOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                </button>
+            </CVATTooltip>
+            <CVATTooltip title='Arrow Right' placement='topRight'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.ROTATE_RIGHT)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
+                >
+                    <ArrowRightOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                </button>
+            </CVATTooltip>
         </span>
     );
 
     const ControlGroup = (): ReactElement => (
         <span className='cvat-canvas3d-perspective-directions'>
-            <button type='button' className='cvat-canvas3d-perspective-directions-icon'>
-                U
-            </button>
-            <button type='button' className='cvat-canvas3d-perspective-directions-icon'>
-                I
-            </button>
-            <button type='button' className='cvat-canvas3d-perspective-directions-icon'>
-                O
-            </button>
+            <CVATTooltip title='Alt+U' placement='topLeft'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_UP)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-directions-icon'
+                >
+                    U
+                </button>
+            </CVATTooltip>
+            <CVATTooltip title='Alt+I' placement='topLeft'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.ZOOM_IN)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-directions-icon'
+                >
+                    I
+                </button>
+            </CVATTooltip>
+            <CVATTooltip title='Alt+O' placement='topLeft'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_DOWN)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-directions-icon'
+                >
+                    O
+                </button>
+            </CVATTooltip>
             <br />
-            <button type='button' className='cvat-canvas3d-perspective-directions-icon'>
-                J
-            </button>
-            <button type='button' className='cvat-canvas3d-perspective-directions-icon'>
-                K
-            </button>
-            <button type='button' className='cvat-canvas3d-perspective-directions-icon'>
-                L
-            </button>
+            <CVATTooltip title='Alt+J' placement='topLeft'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_LEFT)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-directions-icon'
+                >
+                    J
+                </button>
+            </CVATTooltip>
+            <CVATTooltip title='Alt+K' placement='topLeft'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.ZOOM_OUT)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-directions-icon'
+                >
+                    K
+                </button>
+            </CVATTooltip>
+            <CVATTooltip title='Alt+L' placement='topLeft'>
+                <button
+                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_RIGHT)}
+                    type='button'
+                    className='cvat-canvas3d-perspective-directions-icon'
+                >
+                    L
+                </button>
+            </CVATTooltip>
         </span>
     );
 

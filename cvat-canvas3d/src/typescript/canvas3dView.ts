@@ -20,7 +20,7 @@ export interface Canvas3dView {
     mouseControls(type: string, event: MouseEvent): void;
 }
 
-enum CAMERA_ACTION {
+export enum CAMERA_ACTION {
     ZOOM_IN = 'KeyI',
     MOVE_UP = 'KeyU',
     MOVE_DOWN = 'KeyO',

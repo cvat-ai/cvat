@@ -7,7 +7,9 @@ import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController
 import {
     Canvas3dModel, Canvas3dModelImpl, Mode, DrawData, ViewType, MouseInteraction,
 } from './canvas3dModel';
-import { Canvas3dView, Canvas3dViewImpl, ViewsDOM } from './canvas3dView';
+import {
+    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CAMERA_ACTION,
+} from './canvas3dView';
 import { Master } from './master';
 
 const Canvas3dVersion = pjson.version;
@@ -73,5 +75,5 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction,
+    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CAMERA_ACTION,
 };
