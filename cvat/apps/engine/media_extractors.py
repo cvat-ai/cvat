@@ -681,7 +681,7 @@ class ValidateDimension:
     def validate_pointcloud(self, *args):
         root, actual_path, files = args
         pointcloud_files = self.process_files(root, actual_path, files)
-        related_path = root.split("/pointcloud")[0]
+        related_path = root.rsplit("/pointcloud", 1)[0]
         related_images_path = os.path.join(related_path, "related_images")
 
         if os.path.isdir(related_images_path):
@@ -691,7 +691,7 @@ class ValidateDimension:
             for k in pointcloud_files:
                 for path in paths:
 
-                    if k == path.split("_")[0]:
+                    if k == path.rsplit("_", 1)[0]:
                         file_path = os.path.abspath(os.path.join(related_images_path, path))
                         files = [file for file in os.listdir(file_path) if
                                  os.path.isfile(os.path.join(file_path, file))]
@@ -710,7 +710,7 @@ class ValidateDimension:
             current_directory_name = os.path.split(root)
 
             if len(pcd_files.keys()) == 1:
-                pcd_name = list(pcd_files.keys())[0].split(".")[0]
+                pcd_name = list(pcd_files.keys())[0].rsplit(".", 1)[0]
                 if current_directory_name[1] == pcd_name:
                     for related_image in self.image_files.values():
                         if root == os.path.split(related_image)[0]:

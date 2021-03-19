@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    ReactElement, SyntheticEvent, useEffect, useRef, useState,
+    ReactElement, SyntheticEvent, useEffect, useReducer, useRef,
 } from 'react';
 import Layout from 'antd/lib/layout/layout';
 import {
-    ArrowUpOutlined, ArrowRightOutlined, ArrowLeftOutlined, ArrowDownOutlined,
+    ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
 import { ResizableBox } from 'react-resizable';
 import { Workspace } from 'reducers/interfaces';
 import {
-    Canvas3d, MouseInteraction, ViewType, CAMERA_ACTION,
+    CAMERA_ACTION, Canvas3d, MouseInteraction, ViewType,
 } from 'cvat-canvas3d-wrapper';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
 import CVATTooltip from '../../common/cvat-tooltip';
@@ -35,19 +35,89 @@ interface Props {
     showObjectsTextAlways: boolean;
 }
 
+interface ViewSize {
+    fullHeight: number;
+    vertical: number;
+    top: number;
+    side: number;
+    front: number;
+}
+
+function viewSizeReducer(
+    state: ViewSize,
+    action: { type: ViewType | 'set'; e?: SyntheticEvent; data?: ViewSize },
+): ViewSize {
+    const event = (action.e as unknown) as MouseEvent;
+    const canvas3dContainer = document.getElementById('canvas3d-container');
+    if (canvas3dContainer) {
+        switch (action.type) {
+            case ViewType.TOP: {
+                const width = event.clientX - canvas3dContainer.getBoundingClientRect().left;
+                const topWidth = state.top;
+                if (topWidth < width) {
+                    const top = state.top + (width - topWidth);
+                    const side = state.side - (width - topWidth);
+                    return {
+                        ...state,
+                        top,
+                        side,
+                    };
+                }
+                const top = state.top - (topWidth - width);
+                const side = state.side + (topWidth - width);
+                return {
+                    ...state,
+                    top,
+                    side,
+                };
+            }
+            case ViewType.SIDE: {
+                const width = event.clientX - canvas3dContainer.getBoundingClientRect().left;
+                const topSideWidth = state.top + state.side;
+                if (topSideWidth < width) {
+                    const side = state.side + (width - topSideWidth);
+                    const front = state.front - (width - topSideWidth);
+                    return {
+                        ...state,
+                        side,
+                        front,
+                    };
+                }
+                const side = state.side - (topSideWidth - width);
+                const front = state.front + (topSideWidth - width);
+                return {
+                    ...state,
+                    side,
+                    front,
+                };
+            }
+            case ViewType.PERSPECTIVE:
+                return {
+                    ...state,
+                    vertical: event.clientY - canvas3dContainer.getBoundingClientRect().top,
+                };
+            case 'set':
+                return action.data as ViewSize;
+            default:
+                throw new Error();
+        }
+    }
+    return state;
+}
+
 const CanvasWrapperComponent = (props: Props): ReactElement => {
     const animateId = useRef(0);
-    const perspectiveView = useRef<HTMLDivElement | null>(null);
-    const topView = useRef<HTMLDivElement | null>(null);
-    const sideView = useRef<HTMLDivElement | null>(null);
-    const frontView = useRef<HTMLDivElement | null>(null);
-
-    const [orthographicViewSize, setOrthographicViewSize] = useState({
-        vertical: document.body.clientHeight / 2,
+    const [viewSize, setViewSize] = useReducer(viewSizeReducer, {
+        fullHeight: 0,
+        vertical: 0,
         top: 0,
         side: 0,
         front: 0,
     });
+    const perspectiveView = useRef<HTMLDivElement | null>(null);
+    const topView = useRef<HTMLDivElement | null>(null);
+    const sideView = useRef<HTMLDivElement | null>(null);
+    const frontView = useRef<HTMLDivElement | null>(null);
 
     const {
         frameData, contextImageHide, getContextImage, loaded, data, annotations, curZLayer,
@@ -110,64 +180,6 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstance.keyControls(key);
     };
 
-    const onPerspectiveViewResize = (e: SyntheticEvent): void => {
-        const event = (e as unknown) as MouseEvent;
-        const canvas3dContainer = document.getElementById('canvas3d-container');
-        if (canvas3dContainer) {
-            const height =
-                canvas3dContainer.clientHeight + canvas3dContainer.getBoundingClientRect().top - event.clientY;
-            setOrthographicViewSize({ ...orthographicViewSize, vertical: height });
-        }
-    };
-
-    const onOrthographicViewResize = (view: ViewType, e: SyntheticEvent): void => {
-        const event = (e as unknown) as MouseEvent;
-        const canvas3dContainer = document.getElementById('canvas3d-container');
-        if (canvas3dContainer) {
-            const width = event.clientX - canvas3dContainer.getBoundingClientRect().left;
-            if (view === ViewType.TOP) {
-                const topWidth = orthographicViewSize.top;
-                if (topWidth < width) {
-                    const top = orthographicViewSize.top + (width - topWidth);
-                    const side = orthographicViewSize.side - (width - topWidth);
-                    setOrthographicViewSize({
-                        ...orthographicViewSize,
-                        top,
-                        side,
-                    });
-                } else {
-                    const top = orthographicViewSize.top - (topWidth - width);
-                    const side = orthographicViewSize.side + (topWidth - width);
-                    setOrthographicViewSize({
-                        ...orthographicViewSize,
-                        top,
-                        side,
-                    });
-                }
-            }
-            if (view === ViewType.SIDE) {
-                const topSideWidth = orthographicViewSize.top + orthographicViewSize.side;
-                if (topSideWidth < width) {
-                    const side = orthographicViewSize.side + (width - topSideWidth);
-                    const front = orthographicViewSize.front - (width - topSideWidth);
-                    setOrthographicViewSize({
-                        ...orthographicViewSize,
-                        side,
-                        front,
-                    });
-                } else {
-                    const side = orthographicViewSize.side - (topSideWidth - width);
-                    const front = orthographicViewSize.front + (topSideWidth - width);
-                    setOrthographicViewSize({
-                        ...orthographicViewSize,
-                        side,
-                        front,
-                    });
-                }
-            }
-        }
-    };
-
     useEffect(() => {
         const { canvasInstance } = props;
 
@@ -188,13 +200,17 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             sideView.current.appendChild(canvasInstanceDOM.side);
             frontView.current.appendChild(canvasInstanceDOM.front);
             const canvas3dContainer = document.getElementById('canvas3d-container');
-            if (canvas3dContainer && orthographicViewSize.top === 0) {
+            if (canvas3dContainer) {
                 const width = canvas3dContainer.clientWidth / 3;
-                setOrthographicViewSize({
-                    ...orthographicViewSize,
-                    top: width,
-                    side: width,
-                    front: width,
+                setViewSize({
+                    type: 'set',
+                    data: {
+                        fullHeight: canvas3dContainer.clientHeight,
+                        vertical: canvas3dContainer.clientHeight / 2,
+                        top: width,
+                        side: width,
+                        front: width,
+                    },
                 });
             }
         }
@@ -339,10 +355,10 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             <ResizableBox
                 className='cvat-resizable'
                 width={Infinity}
-                height={document.body.clientHeight / 2}
+                height={viewSize.vertical}
                 axis='y'
                 handle={<span className='cvat-resizable-handle-horizontal' />}
-                onResize={onPerspectiveViewResize}
+                onResize={(e: SyntheticEvent) => setViewSize({ type: ViewType.PERSPECTIVE, e })}
             >
                 <div className='cvat-canvas3d-perspective'>
                     <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
@@ -350,14 +366,17 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     <ControlGroup />
                 </div>
             </ResizableBox>
-            <div className='cvat-canvas3d-orthographic-views' style={{ height: orthographicViewSize.vertical }}>
+            <div
+                className='cvat-canvas3d-orthographic-views'
+                style={{ height: viewSize.fullHeight - viewSize.vertical }}
+            >
                 <ResizableBox
                     className='cvat-resizable'
-                    width={orthographicViewSize.top}
-                    height={orthographicViewSize.vertical}
+                    width={viewSize.top}
+                    height={viewSize.fullHeight - viewSize.vertical}
                     axis='x'
                     handle={<span className='cvat-resizable-handle-vertical-top' />}
-                    onResize={(e: SyntheticEvent) => onOrthographicViewResize('top', e)}
+                    onResize={(e: SyntheticEvent) => setViewSize({ type: ViewType.TOP, e })}
                 >
                     <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
                         <div className='cvat-canvas3d-header'>TOP</div>
@@ -366,11 +385,11 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 </ResizableBox>
                 <ResizableBox
                     className='cvat-resizable'
-                    width={orthographicViewSize.side}
-                    height={orthographicViewSize.vertical}
+                    width={viewSize.side}
+                    height={viewSize.fullHeight - viewSize.vertical}
                     axis='x'
                     handle={<span className='cvat-resizable-handle-vertical-side' />}
-                    onResize={(e: SyntheticEvent) => onOrthographicViewResize('side', e)}
+                    onResize={(e: SyntheticEvent) => setViewSize({ type: ViewType.SIDE, e })}
                 >
                     <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
                         <div className='cvat-canvas3d-header'>SIDE</div>
@@ -379,7 +398,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 </ResizableBox>
                 <div
                     className='cvat-canvas3d-orthographic-view cvat-canvas3d-frontview'
-                    style={{ width: orthographicViewSize.front }}
+                    style={{ width: viewSize.front, height: viewSize.fullHeight - viewSize.vertical }}
                 >
                     <div className='cvat-canvas3d-header'>FRONT</div>
                     <div className='cvat-canvas3d-fullsize' ref={frontView} />
