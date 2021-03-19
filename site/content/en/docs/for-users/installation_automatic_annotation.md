@@ -3,10 +3,9 @@ title: "Semi-automatic and Automatic Annotation"
 linkTitle: "Semi-automatic and Automatic Annotation"
 weight: 5
 ---
-{{% alert title="Warning" color="warning" %}}
+
 > **⚠ WARNING: Do not use `docker-compose up`**
 > If you did, make sure all containers are stopped by `docker-compose down`.
-{{% /alert %}}
 
 - To bring up cvat with auto annotation tool, from cvat root directory, you need to run:
 

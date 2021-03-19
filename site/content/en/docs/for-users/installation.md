@@ -1,7 +1,7 @@
 ---
 title: "Installation"
 linkTitle: "Installation"
-weight: 3
+weight: 1
 ---
 
 # Quick installation guide

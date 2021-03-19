@@ -7,7 +7,7 @@ To change documentation files or add a documentation page,
 simply click `Edit this page` on the page you would like to edit.
 If you need to add a child page, click `Create child page`.
 
-If you need to edit the text that has the markup [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet), click on the Fork this reposytory` button.
+If you need to edit the text that has the markup [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet), click on the `Fork this reposytory` button.
 
 Read how to edit files for githab ([GitHub docs](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-another-users-repository)).
 
@@ -23,9 +23,9 @@ Please note that files have a markup for correct display on the site: the title,
 
 ### Start site localy
 
-To start the site locally, you need a recent [extended version hugo](https://github.com/gohugoio/hugo/releases) (recommend version 0.75.0 or later).  Open the most recent release and scroll down until you find a list of Extended versions.
+To start the site locally, you need a recent [extended version hugo](https://github.com/gohugoio/hugo/releases) (recommend version 0.75.0 or later).  Open the most recent release and scroll down until you find a list of Extended versions. [Read more](https://gohugo.io/getting-started/installing/#quick-install)
 
-Add a path to "hugo" in the "Path" variable environment.
+Add a path to "hugo" in the "Path" environment variable.
 
 Clone a repository branch containing the site. For example, using a git command:
 
