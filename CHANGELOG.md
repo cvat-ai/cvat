@@ -20,8 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
   [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) images were published on DockerHub (<https://github.com/openvinotoolkit/cvat/pull/2766>)
 - Project task subsets (<https://github.com/openvinotoolkit/cvat/pull/2774>)
+- Kubernetes templates and guide for their deployment (<https://github.com/openvinotoolkit/cvat/pull/1962>)
 - [WiderFace](http://shuoyang1213.me/WIDERFACE/) format support (<https://github.com/openvinotoolkit/cvat/pull/2864>)
 - [VGGFace2](https://github.com/ox-vgg/vgg_face2) format support (<https://github.com/openvinotoolkit/cvat/pull/2865>)
+- [Backup/Restore guide](cvat/apps/documentation/backup_guide.md) (<https://github.com/openvinotoolkit/cvat/pull/2964>)
+- Label deletion from tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/2881>)
 
 ### Changed
 
@@ -34,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
 - Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
 - Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
+- Improved error messages for annotation import (<https://github.com/openvinotoolkit/cvat/pull/2935>)
 
 ### Deprecated
 

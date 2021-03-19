@@ -186,7 +186,13 @@
                                 );
                             }
 
-                            data.labels = [...labels];
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
+
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -210,6 +216,9 @@
                      */
                     subsets: {
                         get: () => [...data.task_subsets],
+                    },
+                    _internalData: {
+                        get: () => data,
                     },
                 }),
             );
@@ -257,7 +266,7 @@
                 name: this.name,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
-                labels: [...this.labels.map((el) => el.toJSON())],
+                labels: [...this._internalData.labels.map((el) => el.toJSON())],
             };
 
             await serverProxy.projects.save(this.id, projectData);

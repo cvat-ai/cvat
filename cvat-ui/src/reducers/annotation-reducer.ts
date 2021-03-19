@@ -182,7 +182,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 drawing: {
                     ...state.drawing,
-                    activeLabelID: job.task.labels[0].id,
+                    activeLabelID: job.task.labels.length ? job.task.labels[0].id : null,
                     activeObjectType: job.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                 },
                 canvas: {
