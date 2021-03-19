@@ -63,7 +63,8 @@ class CLI():
 
     def tasks_create(self, name, labels, overlap, segment_size, bug, resource_type, resources,
                      annotation_path='', annotation_format='CVAT XML 1.1',
-                     completion_verification_period=20, **kwargs):
+                     completion_verification_period=20, dataset_repository_url='',
+                     lfs=False, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
         url = self.api.tasks
@@ -97,6 +98,16 @@ class CLI():
                 log.info(logger_string)
 
             self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
+        if dataset_repository_url:
+            git_url = self.api.git
+            response = self.session.post(
+                        f'{git_url}create/{task_id}',
+                        json={
+                            'path': dataset_repository_url,
+                            'lfs': lfs,
+                            'tid': task_id})
+            response_json = response.json()
+            log.info(f"Create: {response_json.rq_id}")
 
     def tasks_delete(self, task_ids, **kwargs):
         """ Delete a list of tasks, ignoring those which don't exist. """
