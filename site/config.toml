@@ -165,9 +165,9 @@ enable = false
         desc = "Discussion and help from your fellow users"
 [[params.links.user]]
 	name ="Gitter"
-	url = "https://gitter.im/openvinotoolkit-cvat"
+	url = "https://gitter.im/opencv-cvat"
 	icon = "fab fa-gitter"
-        desc = "Follow us on Twitter to get the latest news!"
+        desc = "Join our Gitter channel for community support."
 [[params.links.user]]
 	name = "Stack Overflow"
 	url = "https://stackoverflow.com/search?q=%23cvat"
