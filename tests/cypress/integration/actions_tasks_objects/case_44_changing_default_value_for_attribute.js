@@ -76,19 +76,13 @@ context('Changing a default value for an attribute.', () => {
             cy.openJob();
             cy.createRectangle(rectangleShape2Points);
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
-            cy.contains(new RegExp(`^${additionalAttrsLabel[0].additionalAttrName}: ${newTextValue}$`)).should(
-                'be.visible',
-            );
-            cy.contains(
-                new RegExp(
-                    `^${additionalAttrsLabel[1].additionalAttrName}: ${
-                        additionalAttrsLabel[1].additionalValue.split(';')[0]
-                    }$`,
-                ),
-            ).should('be.visible');
-            cy.contains(
-                new RegExp(`^${additionalAttrsLabel[2].additionalAttrName}: ${newCheckboxValue.toLowerCase()}$`),
-            ).should('be.visible');
+            [
+                [additionalAttrsLabel[0].additionalAttrName, newTextValue],
+                [additionalAttrsLabel[1].additionalAttrName, additionalAttrsLabel[1].additionalValue.split(';')[0]],
+                [additionalAttrsLabel[2].additionalAttrName, newCheckboxValue.toLowerCase()],
+            ].forEach(([attrName, attrValue]) => {
+                cy.contains(new RegExp(`^${attrName}: ${attrValue}$`)).should('be.visible');
+            });
         });
     });
 });
