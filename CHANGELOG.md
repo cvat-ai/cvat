@@ -10,22 +10,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - CVAT-3D: support lidar data on the server side (<https://github.com/openvinotoolkit/cvat/pull/2534>)
+- GPU support for Mask-RCNN and improvement in its deployment time (<https://github.com/openvinotoolkit/cvat/pull/2714>)
 - CVAT-3D: Load all frames corresponding to the job instance
   (<https://github.com/openvinotoolkit/cvat/pull/2645>)
 - Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
+- CVAT-3D: Visualize 3D point cloud spaces in 3D View, Top View Side View and Front View (<https://github.com/openvinotoolkit/cvat/pull/2768>)
 - [Inside Outside Guidence](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
   function for interative segmentation
 - Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
   [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) images were published on DockerHub (<https://github.com/openvinotoolkit/cvat/pull/2766>)
 - Project task subsets (<https://github.com/openvinotoolkit/cvat/pull/2774>)
+- Kubernetes templates and guide for their deployment (<https://github.com/openvinotoolkit/cvat/pull/1962>)
+- [WiderFace](http://shuoyang1213.me/WIDERFACE/) format support (<https://github.com/openvinotoolkit/cvat/pull/2864>)
+- [VGGFace2](https://github.com/ox-vgg/vgg_face2) format support (<https://github.com/openvinotoolkit/cvat/pull/2865>)
+- [Backup/Restore guide](cvat/apps/documentation/backup_guide.md) (<https://github.com/openvinotoolkit/cvat/pull/2964>)
+- Label deletion from tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/2881>)
 
 ### Changed
 
+- CLI - task list now returns a list of current tasks. (<https://github.com/openvinotoolkit/cvat/pull/2863>)
 - Updated HTTPS install README section (cleanup and described more robust deploy)
 - Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
-- Bumped nuclio version to 1.5.16
+- Bumped nuclio version to 1.5.16 (<https://github.com/openvinotoolkit/cvat/pull/2578>)
 - All methods for interative segmentation accept negative points as well
 - Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
+- Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
+- Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
+- Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
 
 ### Deprecated
 
@@ -37,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- More robust execution of nuclio GPU functions by limiting the GPU memory consumption per worker (<https://github.com/openvinotoolkit/cvat/pull/2714>)
 - Kibana startup initialization (<https://github.com/openvinotoolkit/cvat/pull/2659>)
 - The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
 - SSLCertVerificationError when remote source is used (<https://github.com/openvinotoolkit/cvat/pull/2683>)
@@ -48,12 +60,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
 - Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
 - Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
+- Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
+- Updated the path to python for DL models inside automatic annotation documentation (<https://github.com/openvinotoolkit/cvat/pull/2847>)
+- Fixed of receiving function variable (<https://github.com/openvinotoolkit/cvat/pull/2860>)
+- Shortcuts with CAPSLOCK enabled and with non-US languages activated (<https://github.com/openvinotoolkit/cvat/pull/2872>)
+- Prevented creating several issues for the same object (<https://github.com/openvinotoolkit/cvat/pull/2868>)
+- Fixed label editor name field validator (<https://github.com/openvinotoolkit/cvat/pull/2879>)
+- An error about track shapes outside of the task frames during export (<https://github.com/openvinotoolkit/cvat/pull/2890>)
+- Fixed project search field updating (<https://github.com/openvinotoolkit/cvat/pull/2901>)
+- Fixed export error when invalid polygons are present in overlapping frames (<https://github.com/openvinotoolkit/cvat/pull/2852>)
+- Fixed image quality option for tasks created from images (<https://github.com/openvinotoolkit/cvat/pull/2963>)
+- Incorrect text on the warning when specifying an incorrect link to the issue tracker (<https://github.com/openvinotoolkit/cvat/pull/2971>)
+- Updating label attributes when label contains number attributes (<https://github.com/openvinotoolkit/cvat/pull/2969>)
 
 ### Security
 
 -
 
-## [1.2.0] - 2020-01-08
+## [1.2.0] - 2021-01-08
 
 ### Fixed
 

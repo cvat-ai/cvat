@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvat-postgres
+  namespace: cvat
+  labels:
+    app: cvat-app
+    tier: db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cvat-app
+      tier: db
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: db
+    spec:
+      containers:
+        - name: cvat-postgres
+          image: postgres:10.3-alpine
+          imagePullPolicy: 'IfNotPresent'
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: cvat-postgres-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cvat-postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cvat-postgres-secret
+                  key: POSTGRES_PASSWORD
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - su - postgres -c "pg_isready --host=$POD_IP"
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+              subPath: postgres
+      volumes:
+        - name: postgredb
+          persistentVolumeClaim:
+            claimName: cvat-postgres-data

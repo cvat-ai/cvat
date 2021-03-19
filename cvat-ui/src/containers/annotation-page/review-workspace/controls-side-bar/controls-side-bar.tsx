@@ -1,9 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
+import { KeyMap } from 'utils/mousetrap-react';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import {
@@ -24,7 +24,7 @@ interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 

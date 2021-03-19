@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvat-frontend
+  namespace: cvat
+  labels:
+    app: cvat-app
+    tier: frontend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cvat-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: frontend
+    spec:
+      containers:
+        - name: cvat-frontend-app-container
+          image: openvino/cvat_ui:v1.2.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources: {}

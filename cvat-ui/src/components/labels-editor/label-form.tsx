@@ -161,20 +161,20 @@ export default class LabelForm extends React.Component<Props> {
         const locked = attr ? attr.id >= 0 : false;
         const existedValues = attr ? attr.values : [];
 
-        const validator = (_: any, values: string[], callback: any): void => {
+        const validator = (_: any, values: string[]): Promise<void> => {
             if (locked && existedValues) {
                 if (!equalArrayHead(existedValues, values)) {
-                    callback('You can only append new values');
+                    return Promise.reject(new Error('You can only append new values'));
                 }
             }
 
             for (const value of values) {
                 if (!patterns.validateAttributeValue.pattern.test(value)) {
-                    callback(`Invalid attribute value: "${value}"`);
+                    return Promise.reject(new Error(`Invalid attribute value: "${value}"`));
                 }
             }
 
-            callback();
+            return Promise.resolve();
         };
 
         return (
@@ -223,35 +223,35 @@ export default class LabelForm extends React.Component<Props> {
     private renderNumberRangeInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id >= 0 : false;
-        const value = attr ? attr.values.join(';') : '';
+        const value = attr ? attr.values : '';
 
-        const validator = (_: any, strNumbers: string, callback: any): void => {
+        const validator = (_: any, strNumbers: string): Promise<void> => {
             const numbers = strNumbers.split(';').map((number): number => Number.parseFloat(number));
             if (numbers.length !== 3) {
-                callback('Three numbers are expected');
+                return Promise.reject(new Error('Three numbers are expected'));
             }
 
             for (const number of numbers) {
                 if (Number.isNaN(number)) {
-                    callback(`"${number}" is not a number`);
+                    return Promise.reject(new Error(`"${number}" is not a number`));
                 }
             }
 
             const [min, max, step] = numbers;
 
             if (min >= max) {
-                callback('Minimum must be less than maximum');
+                return Promise.reject(new Error('Minimum must be less than maximum'));
             }
 
             if (max - min < step) {
-                callback('Step must be less than minmax difference');
+                return Promise.reject(new Error('Step must be less than minmax difference'));
             }
 
             if (step <= 0) {
-                callback('Step must be a positive number');
+                return Promise.reject(new Error('Step must be a positive number'));
             }
 
-            callback();
+            return Promise.resolve();
         };
 
         return (
@@ -339,7 +339,7 @@ export default class LabelForm extends React.Component<Props> {
                 {() => (
                     <Row
                         justify='space-between'
-                        align='middle'
+                        align='top'
                         cvat-attribute-id={fieldValue.id}
                         className='cvat-attribute-inputs-wrapper'
                     >
@@ -390,10 +390,11 @@ export default class LabelForm extends React.Component<Props> {
                         message: patterns.validateAttributeName.message,
                     },
                     {
-                        validator: async (_rule: any, labelName: string, callback: Function) => {
+                        validator: (_rule: any, labelName: string) => {
                             if (labelNames && labelNames.includes(labelName)) {
-                                callback('Label name must be unique for the task');
+                                return Promise.reject(new Error('Label name must be unique for the task'));
                             }
+                            return Promise.resolve();
                         },
                     },
                 ]}
@@ -506,6 +507,10 @@ export default class LabelForm extends React.Component<Props> {
                 label.attributes.map(
                     (attribute: Attribute): Store => ({
                         ...attribute,
+                        values:
+                              attribute.input_type.toUpperCase() === 'NUMBER' ?
+                                  attribute.values.join(';') :
+                                  attribute.values,
                         type: attribute.input_type.toUpperCase(),
                     }),
                 ) :
@@ -522,7 +527,7 @@ export default class LabelForm extends React.Component<Props> {
     public render(): JSX.Element {
         return (
             <Form onFinish={this.handleSubmit} layout='vertical' ref={this.formRef}>
-                <Row justify='start' align='middle'>
+                <Row justify='start' align='top'>
                     <Col span={10}>{this.renderLabelNameInput()}</Col>
                     <Col span={3} offset={1}>
                         {this.renderChangeColorButton()}
@@ -531,7 +536,7 @@ export default class LabelForm extends React.Component<Props> {
                         {this.renderNewAttributeButton()}
                     </Col>
                 </Row>
-                <Row justify='start' align='middle'>
+                <Row justify='start' align='top'>
                     <Col span={24}>
                         <Form.List name='attributes'>{this.renderAttributes()}</Form.List>
                     </Col>

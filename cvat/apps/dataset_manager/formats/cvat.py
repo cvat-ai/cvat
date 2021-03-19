@@ -9,10 +9,11 @@ from collections import OrderedDict
 from glob import glob
 from tempfile import TemporaryDirectory
 
+from datumaro.components.extractor import DatasetItem
+
 from cvat.apps.dataset_manager.bindings import match_dm_item
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
-from datumaro.components.extractor import DatasetItem
 
 from .registry import exporter, importer
 

@@ -133,6 +133,7 @@
                 id: undefined,
                 name: undefined,
                 color: undefined,
+                deleted: false,
             };
 
             for (const key in data) {
@@ -208,6 +209,12 @@
                     attributes: {
                         get: () => [...data.attributes],
                     },
+                    deleted: {
+                        get: () => data.deleted,
+                        set: (value) => {
+                            data.deleted = value;
+                        },
+                    },
                 }),
             );
         }
@@ -221,6 +228,10 @@
 
             if (typeof this.id !== 'undefined') {
                 object.id = this.id;
+            }
+
+            if (this.deleted) {
+                object.deleted = this.deleted;
             }
 
             return object;

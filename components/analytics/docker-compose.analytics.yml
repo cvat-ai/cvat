@@ -31,7 +31,7 @@ services:
 
   cvat_kibana_setup:
     container_name: cvat_kibana_setup
-    image: cvat/server
+    image: openvino/cvat_server
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat']
     working_dir: '/home/django'
@@ -70,9 +70,9 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
     environment:
-        LOGSTASH_OUTPUT_HOST: elasticsearch:9200
-        LOGSTASH_OUTPUT_USER:
-        LOGSTASH_OUTPUT_PASS:
+      LOGSTASH_OUTPUT_HOST: elasticsearch:9200
+      LOGSTASH_OUTPUT_USER:
+      LOGSTASH_OUTPUT_PASS:
     depends_on: ['cvat_elasticsearch']
     restart: always
 

@@ -10,17 +10,18 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     switchGroupShortcut: string;
     resetGroupShortcut: string;
+    disabled?: boolean;
     groupObjects(enabled: boolean): void;
 }
 
 function GroupControl(props: Props): JSX.Element {
     const {
-        switchGroupShortcut, resetGroupShortcut, activeControl, canvasInstance, groupObjects,
+        switchGroupShortcut, resetGroupShortcut, activeControl, canvasInstance, groupObjects, disabled,
     } = props;
 
     const dynamicIconProps =
@@ -46,7 +47,9 @@ function GroupControl(props: Props): JSX.Element {
         `Select and press ${resetGroupShortcut} to reset a group.`,
     ].join(' ');
 
-    return (
+    return disabled ? (
+        <Icon className='cvat-group-control cvat-disabled-canvas-control' component={GroupIcon} />
+    ) : (
         <CVATTooltip title={title} placement='right'>
             <Icon {...dynamicIconProps} component={GroupIcon} />
         </CVATTooltip>

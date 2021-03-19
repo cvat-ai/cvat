@@ -111,7 +111,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.state = {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
-            activeLabelID: props.labels[0].id,
+            activeLabelID: props.labels.length ? props.labels[0].id : null,
             interactiveStateID: null,
             trackingProgress: null,
             trackingFrames: 10,
@@ -239,7 +239,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const object = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
-                    label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                    label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                     shapeType: ShapeType.POLYGON,
                     points: result.flat(),
                     occluded: false,
@@ -257,7 +257,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     const object = new core.classes.ObjectState({
                         frame,
                         objectType: ObjectType.SHAPE,
-                        label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                        label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                         shapeType: ShapeType.POLYGON,
                         points: result.flat(),
                         occluded: false,
@@ -716,7 +716,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated, canvasInstance,
+            interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const { fetching, trackingProgress } = this.state;
 
@@ -732,7 +732,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const dynamicIconProps = isActivated ?
             {
-                className: 'cvat-active-canvas-control cvat-tools-control',
+                className: 'cvat-tools-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.interact({ enabled: false });
                 },
@@ -741,7 +741,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        return (
+        return !labels.length ? (
+            <Icon className=' cvat-tools-control cvat-disabled-canvas-control' component={AIToolsIcon} />
+        ) : (
             <>
                 <Modal
                     title='Making a server request'

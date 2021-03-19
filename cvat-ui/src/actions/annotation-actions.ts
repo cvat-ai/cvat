@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { MutableRefObject } from 'react';
 import {
     AnyAction, Dispatch, ActionCreator, Store,
 } from 'redux';
@@ -26,7 +27,6 @@ import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { getCVATStore } from 'cvat-store';
-import { MutableRefObject } from 'react';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -917,10 +917,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const job = task.jobs.filter((_job: any) => _job.id === jid)[0];
             if (!job) {
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
-            }
-
-            if (!task.labels.length && task.projectId) {
-                throw new Error(`Project ${task.projectId} does not contain any label`);
             }
 
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);

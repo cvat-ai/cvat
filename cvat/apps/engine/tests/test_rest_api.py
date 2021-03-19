@@ -16,8 +16,6 @@ from enum import Enum
 from glob import glob
 from io import BytesIO
 from unittest import mock
-import open3d as o3d
-import struct
 
 import av
 import numpy as np
@@ -30,7 +28,7 @@ from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
 from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 from cvat.apps.engine.media_extractors import ValidateDimension
@@ -74,6 +72,7 @@ def create_db_task(data):
     os.makedirs(db_data.get_data_dirname())
     os.makedirs(db_data.get_upload_dirname())
 
+    labels = data.pop('labels', None)
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_task_dirname(), ignore_errors=True)
     os.makedirs(db_task.get_task_dirname())
@@ -81,6 +80,17 @@ def create_db_task(data):
     os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
     db_task.save()
+
+    if not labels is None:
+        for label_data in labels:
+            attributes = label_data.pop('attributes', None)
+            db_label = Label(task=db_task, **label_data)
+            db_label.save()
+
+            if not attributes is None:
+                for attribute_data in attributes:
+                    db_attribute = AttributeSpec(label=db_label, **attribute_data)
+                    db_attribute.save()
 
     for x in range(0, db_task.data.size, db_task.segment_size):
         start_frame = x
@@ -97,6 +107,26 @@ def create_db_task(data):
         db_job.save()
 
     return db_task
+
+def create_db_project(data):
+    labels = data.pop('labels', None)
+    db_project = Project.objects.create(**data)
+    shutil.rmtree(db_project.get_project_dirname(), ignore_errors=True)
+    os.makedirs(db_project.get_project_dirname())
+    os.makedirs(db_project.get_project_logs_dirname())
+
+    if not labels is None:
+        for label_data in labels:
+            attributes = label_data.pop('attributes', None)
+            db_label = Label(project=db_project, **label_data)
+            db_label.save()
+
+            if not attributes is None:
+                for attribute_data in attributes:
+                    db_attribute = AttributeSpec(label=db_label, **attribute_data)
+                    db_attribute.save()
+
+    return db_project
 
 def create_dummy_db_tasks(obj, project=None):
     tasks = []
@@ -161,14 +191,14 @@ def create_dummy_db_projects(obj):
         "owner": obj.owner,
         "assignee": obj.assignee,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     projects.append(db_project)
 
     data = {
         "name": "my project without assignee",
         "owner": obj.user,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
@@ -177,14 +207,14 @@ def create_dummy_db_projects(obj):
         "owner": obj.owner,
         "assignee": obj.assignee,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
     data = {
         "name": "public project",
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
@@ -193,7 +223,7 @@ def create_dummy_db_projects(obj):
         "owner": obj.admin,
         "assignee": obj.assignee,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
@@ -739,7 +769,7 @@ class UserListAPITestCase(UserAPITestCase):
 
         return response
 
-    def _check_response(self, user, response, is_full):
+    def _check_response(self, user, response, is_full=True):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for user_info in response.data['results']:
             db_user = getattr(self, user_info['username'])
@@ -1159,7 +1189,7 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
 
     def _check_response(self, response, db_project, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        name = data.get("name", data.get("name", db_project.name))
+        name = data.get("name", db_project.name)
         self.assertEqual(response.data["name"], name)
         response_owner = response.data["owner"]["id"] if response.data["owner"] else None
         db_owner = db_project.owner.id if db_project.owner else None
@@ -1169,6 +1199,16 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         self.assertEqual(response_assignee, data.get("assignee_id", db_assignee))
         self.assertEqual(response.data["status"], data.get("status", db_project.status))
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", db_project.bug_tracker))
+        if data.get("labels"):
+            self.assertListEqual(
+                [label["name"] for label in data.get("labels") if not label.get("deleted", False)],
+                [label["name"] for label in response.data["labels"]]
+            )
+        else:
+            self.assertListEqual(
+                [label.name for label in db_project.label_set.all()],
+                [label["name"] for label in response.data["labels"]]
+            )
 
     def _check_api_v1_projects_id(self, user, data):
         for db_project in self.projects:
@@ -1182,9 +1222,13 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
 
     def test_api_v1_projects_id_admin(self):
         data = {
-            "name": "new name for the project",
+            "name": "project with some labels",
             "owner_id": self.owner.id,
             "bug_tracker": "https://new.bug.tracker",
+            "labels": [
+                {"name": "car"},
+                {"name": "person"}
+            ],
         }
         self._check_api_v1_projects_id(self.admin, data)
 
@@ -1207,6 +1251,103 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v1_projects_id(None, data)
 
+class UpdateLabelsAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def assertLabelsEqual(self, label1, label2):
+        self.assertEqual(label1.get("name", label2.get("name")), label2.get("name"))
+        self.assertEqual(label1.get("color", label2.get("color")), label2.get("color"))
+
+    def _check_response(self, response, db_object, data):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        db_labels = db_object.label_set.all()
+        response_labels = response.data["labels"]
+        for label in data["labels"]:
+            if label.get("id", None) is None:
+                self.assertLabelsEqual(
+                    label,
+                    [l for l in response_labels if label.get("name") == l.get("name")][0],
+                )
+                db_labels = [l for l in db_labels if label.get("name") != l.name]
+                response_labels = [l for l in response_labels if label.get("name") != l.get("name")]
+            else:
+                if not label.get("deleted", False):
+                    self.assertLabelsEqual(
+                        label,
+                        [l for l in response_labels if label.get("id") == l.get("id")][0],
+                    )
+                    response_labels = [l for l in response_labels if label.get("id") != l.get("id")]
+                    db_labels = [l for l in db_labels if label.get("id") != l.id]
+                else:
+                    self.assertEqual(
+                        len([l for l in response_labels if label.get("id") == l.get("id")]), 0
+                    )
+            self.assertEqual(len(response_labels), len(db_labels))
+
+class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        project_data = {
+            "name": "Project with labels",
+            "bug_tracker": "https://new.bug.tracker",
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+            }, {
+                "name": "person",
+            }]
+        }
+
+        create_db_users(cls)
+        db_project = create_db_project(project_data)
+        create_dummy_db_tasks(cls, db_project)
+        cls.project = db_project
+
+    def _check_api_v1_project(self, data):
+        response = self._run_api_v1_project_id(self.project.id, self.admin, data)
+        self._check_response(response, self.project, data)
+
+    def _run_api_v1_project_id(self, pid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/projects/{}'.format(pid),
+                data=data, format="json")
+
+        return response
+
+    def test_api_v1_projects_create_label(self):
+        data = {
+            "labels": [{
+                "name": "new label",
+            }],
+        }
+        self._check_api_v1_project(data)
+
+    def test_api_v1_projects_edit_label(self):
+        data = {
+            "labels": [{
+                "id": 1,
+                "name": "New name for label",
+                "color": "#fefefe",
+            }],
+        }
+        self._check_api_v1_project(data)
+
+    def test_api_v1_projects_delete_label(self):
+        data = {
+            "labels": [{
+                "id": 2,
+                "name": "Label for deletion",
+                "deleted": True
+            }]
+        }
+        self._check_api_v1_project(data)
 class ProjectListOfTasksAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1567,6 +1708,73 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
             }]
         }
         self._check_api_v1_tasks_id(None, data)
+
+class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        task_data = {
+            "name": "Project with labels",
+            "bug_tracker": "https://new.bug.tracker",
+            "overlap": 0,
+            "segment_size": 100,
+            "image_quality": 75,
+            "size": 100,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+            }, {
+                "name": "person",
+            }]
+        }
+
+        create_db_users(cls)
+        db_task = create_db_task(task_data)
+        cls.task = db_task
+
+    def _check_api_v1_task(self, data):
+        response = self._run_api_v1_task_id(self.task.id, self.admin, data)
+        self._check_response(response, self.task, data)
+
+    def _run_api_v1_task_id(self, tid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+                data=data, format="json")
+
+        return response
+
+    def test_api_v1_tasks_create_label(self):
+        data = {
+            "labels": [{
+                "name": "new label",
+            }],
+        }
+        self._check_api_v1_task(data)
+
+    def test_api_v1_tasks_edit_label(self):
+        data = {
+            "labels": [{
+                "id": 1,
+                "name": "New name for label",
+                "color": "#fefefe",
+            }],
+        }
+        self._check_api_v1_task(data)
+
+    def test_api_v1_tasks_delete_label(self):
+        data = {
+            "labels": [{
+                "id": 2,
+                "name": "Label for deletion",
+                "deleted": True
+            }]
+        }
+        self._check_api_v1_task(data)
 
 class TaskCreateAPITestCase(APITestCase):
     def setUp(self):
@@ -2597,6 +2805,32 @@ class JobAnnotationAPITestCase(APITestCase):
                     ]
                 },
                 {"name": "person"},
+                {
+                    "name": "widerface",
+                    "attributes": [
+                        {
+                            "name": "blur",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1", "2"]
+                        },
+                        {
+                            "name": "expression",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                        {
+                            "name": "illumination",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                    ]
+                },
             ]
         }
 
@@ -3718,6 +3952,30 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "occluded": False,
             }]
 
+            rectangle_shapes_with_wider_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][2]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][2]["attributes"][0]["id"],
+                            "value": task["labels"][2]["attributes"][0]["default_value"]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][1]["id"],
+                            "value": task["labels"][2]["attributes"][1]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][2]["id"],
+                            "value": task["labels"][2]["attributes"][2]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+
             rectangle_shapes_wo_attrs = [{
                 "frame": 1,
                 "label_id": task["labels"][1]["id"],
@@ -3769,6 +4027,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 "type": "polygon",
                 "occluded": False,
             }]
+
+            points_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
+                    "type": "points",
+                    "occluded": False,
+                }]
 
             tags_wo_attrs = [{
                 "frame": 2,
@@ -3854,6 +4123,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "CamVid 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
+
+            elif annotation_format == "WiderFace 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = rectangle_shapes_with_wider_attrs
+
+            elif annotation_format == "VGGFace2 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = points_wo_attrs \
+                                      + rectangle_shapes_wo_attrs
 
             else:
                 raise Exception("Unknown format {}".format(annotation_format))

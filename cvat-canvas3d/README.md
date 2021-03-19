@@ -28,7 +28,6 @@ npm run build -- --mode=development     # without a minification
 interface Canvas3d {
   html(): HTMLDivElement;
   setup(frameData: any): void;
-  fitCanvas(): void;
   mode(): Mode;
   isAbleToChangeFrame(): boolean;
   render(): void;
@@ -46,5 +45,4 @@ console.log('Current mode is ', window.canvas.mode());
 
 // Put canvas to a html container
 htmlContainer.appendChild(canvas.html());
-canvas.fitCanvas();
 ```

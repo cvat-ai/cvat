@@ -1,13 +1,13 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { shortcutsActions } from 'actions/shortcuts-actions';
 import Modal from 'antd/lib/modal';
 import Table from 'antd/lib/table';
 import React from 'react';
-import { getApplicationKeyMap } from 'react-hotkeys';
 import { connect } from 'react-redux';
+import { getApplicationKeyMap } from 'utils/mousetrap-react';
+import { shortcutsActions } from 'actions/shortcuts-actions';
 import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -80,8 +80,8 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
         key: id,
         name: keyMap[key].name || key,
         description: keyMap[key].description || '',
-        shortcut: keyMap[key].sequences.map((value) => value.sequence),
-        action: keyMap[key].sequences.map((value) => value.action || 'keydown'),
+        shortcut: keyMap[key].sequences,
+        action: [keyMap[key].action],
     }));
 
     return (

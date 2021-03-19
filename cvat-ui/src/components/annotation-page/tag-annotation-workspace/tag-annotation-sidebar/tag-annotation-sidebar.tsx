@@ -1,10 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Row, Col } from 'antd/lib/grid';
@@ -21,6 +20,7 @@ import {
     changeFrameAsync,
     rememberObject,
 } from 'actions/annotation-actions';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
 import LabelSelector from 'components/label-selector/label-selector';
@@ -35,7 +35,7 @@ interface StateToProps {
     jobInstance: any;
     canvasInstance: Canvas;
     frameNumber: number;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 
@@ -107,7 +107,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const defaultLabelID = labels[0].id;
+    const defaultLabelID = labels.length ? labels[0].id : null;
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [frameTags, setFrameTags] = useState([] as any[]);
@@ -196,9 +196,26 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         },
     };
 
-    return (
+    return !labels.length ? (
+        <Layout.Sider {...siderProps}>
+            {/* eslint-disable-next-line */}
+            <span
+                className={`cvat-objects-sidebar-sider
+                    ant-layout-sider-zero-width-trigger
+                    ant-layout-sider-zero-width-trigger-left`}
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            >
+                {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
+            </span>
+            <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
+                <Col>
+                    <Text strong>No labels are available.</Text>
+                </Col>
+            </Row>
+        </Layout.Sider>
+    ) : (
         <>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <Layout.Sider {...siderProps}>
                 {/* eslint-disable-next-line */}
                 <span

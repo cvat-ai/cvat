@@ -61,21 +61,23 @@ export default function ProjectSearchField(props: Props): JSX.Element {
     };
 
     useEffect(() => {
-        if (value && !projects.filter((project) => project.id === value).length) {
-            core.projects.get({ id: value }).then((result: Project[]) => {
-                const [project] = result;
-                setProjects([
-                    ...projects,
-                    {
-                        id: project.id,
-                        name: project.name,
-                    },
-                ]);
-                setSearchPhrase(project.name);
-                onSelect(project.id);
-            });
-            // } else if (!value) {
-            //     setSearchPhrase('');
+        if (value) {
+            if (!projects.filter((project) => project.id === value).length) {
+                core.projects.get({ id: value }).then((result: Project[]) => {
+                    const [project] = result;
+                    setProjects([
+                        ...projects,
+                        {
+                            id: project.id,
+                            name: project.name,
+                        },
+                    ]);
+                    setSearchPhrase(project.name);
+                    onSelect(project.id);
+                });
+            }
+        } else {
+            setSearchPhrase('');
         }
     }, [value]);
 

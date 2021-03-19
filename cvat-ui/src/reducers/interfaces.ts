@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
+import { KeyMap } from 'utils/mousetrap-react';
 
 export type StringObject = {
     [index: string]: string;
@@ -544,7 +544,7 @@ export interface SettingsState {
 
 export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 
