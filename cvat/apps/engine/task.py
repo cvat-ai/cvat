@@ -367,13 +367,12 @@ def _create_thread(tid, data):
                             _update_status('{} Start prepare a valid manifest file.'.format(base_msg))
 
                     if not manifest_is_prepared:
-                        meta_info, smooth_decoding = prepare_meta(
+                        meta_info = prepare_meta(
                             data_type='video',
                             media_file=media_files[0],
                             upload_dir=upload_dir,
                             chunk_size=db_data.chunk_size
                         )
-                        assert smooth_decoding == True, 'Too few keyframes for smooth video decoding.'
                         _update_status('Start prepare a manifest file')
                         manifest = VideoManifestManager(db_data.get_manifest_path())
                         manifest.create(meta_info)

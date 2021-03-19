@@ -63,6 +63,30 @@ class AnalyzeVideo(WorkWithVideo):
 
                     frame_pts, frame_dts = frame.pts, frame.dts
 
+    def rough_estimate_frames_ratio(self, upper_bound):
+        analyzed_frames_number, key_frames_number = 0, 0
+        _processing_end = False
+
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
+            for packet in container.demux(video_stream):
+                for frame in packet.decode():
+                    if frame.key_frame:
+                        key_frames_number += 1
+                    analyzed_frames_number += 1
+                    if upper_bound == analyzed_frames_number:
+                        _processing_end = True
+                        break
+                if _processing_end:
+                    break
+        # In our case no videos with non-key first frame, so 1 key frame is guaranteed
+        return analyzed_frames_number // key_frames_number
+
+    def validate_frames_ratio(self, chunk_size):
+        upper_bound = 30 * chunk_size
+        ratio = self.rough_estimate_frames_ratio(upper_bound + 1)
+        assert ratio < upper_bound, 'Too few keyframes'
+
 class PrepareImageInfo:
     def __init__(self, sources, is_sorted=True, use_image_hash=False, *args, **kwargs):
         self._sources = sources if is_sorted else sorted(sources)
@@ -127,9 +151,6 @@ class PrepareVideoInfo(WorkWithVideo):
                 container.seek(offset=key_frame[1]['pts'], stream=video_stream)
                 self.validate_key_frame(container, video_stream, key_frame)
 
-    def validate_frames_ratio(self, chunk_size):
-        return (len(self._key_frames) and (self.frames // len(self._key_frames)) <= 2 * chunk_size)
-
     def save_key_frames(self):
         with closing(av.open(self.source_path, mode='r')) as container:
             video_stream = self._get_video_stream(container)
@@ -156,17 +177,21 @@ class PrepareVideoInfo(WorkWithVideo):
         for idx, key_frame in self._key_frames.items():
             yield (idx, key_frame['pts'], key_frame['md5'])
 
-def _prepare_video_meta(media_file, upload_dir=None, chunk_size=None):
+def _prepare_video_meta(media_file, upload_dir=None, chunk_size=36, force=False):
     source_path = os.path.join(upload_dir, media_file) if upload_dir else media_file
     analyzer = AnalyzeVideo(source_path=source_path)
     analyzer.check_type_first_frame()
+    try:
+        analyzer.validate_frames_ratio(chunk_size)
+    except AssertionError:
+        if not force:
+            raise
     analyzer.check_video_timestamps_sequences()
 
     meta_info = PrepareVideoInfo(source_path=source_path)
     meta_info.save_key_frames()
     meta_info.validate_seek_key_frames()
-    smooth_decoding = meta_info.validate_frames_ratio(chunk_size) if chunk_size else None
-    return (meta_info, smooth_decoding)
+    return meta_info
 
 def _prepare_images_meta(sources, **kwargs):
     meta_info = PrepareImageInfo(sources=sources, **kwargs)

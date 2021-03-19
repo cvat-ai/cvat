@@ -36,53 +36,54 @@ pip install -r requirements.txt
 usage: python create.py [-h] [--force] manifest_directory source
 
 positional arguments:
-  manifest_directory  Directory where the manifest file will be saved
-  source              Source paths
+  source                Source paths
 
 optional arguments:
-  -h, --help          show this help message and exit
-  --force             Use this flag to prepare the manifest file for video data if by default the video does not meet the requirements
-                      and a manifest file is not prepared
+  -h, --help            show this help message and exit
+  --force               Use this flag to prepare the manifest file for video data if by default the video does not meet the requirements
+                        and a manifest file is not prepared
+  --output-dir OUTPUT_DIR
+                        Directory where the manifest file will be saved
 ```
 
 ### Alternative way to use with openvino/cvat_server
 
 ```bash
 docker run -it --entrypoint python3 -v /path/to/host/data/:/path/inside/container/:rw openvino/cvat_server
-utils/dataset_manifest/create.py /path/to/manifest/directory/ /path/to/data/
+utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/
 ```
 
 ### Examples of using
 
-Create a dataset manifest with video which contains enough keyframes:
+Create a dataset manifest in the current directory with video which contains enough keyframes:
 
 ```bash
-python create.py ~/Documents ~/Documents/video.mp4
+python create.py ~/Documents/video.mp4
 ```
 
 Create a dataset manifest with video which does not contain enough keyframes:
 
 ```bash
-python create.py --force ~/Documents ~/Documents/video.mp4
+python create.py --force --output-dir ~/Documents ~/Documents/video.mp4
 ```
 
 Create a dataset manifest with images:
 
 ```bash
-python create.py ~/Documents ~/Documents/images/
+python create.py --output-dir ~/Documents ~/Documents/images/
 ```
 
 Create a dataset manifest with pattern (may be used `*`, `?`, `[]`):
 
 ```bash
-python create.py ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
+python create.py --output-dir ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
 ```
 
 Create a dataset manifest with `openvino/cvat_server`:
 
 ```bash
 docker run -it --entrypoint python3 -v ~/Documents/data/:${HOME}/manifest/:rw openvino/cvat_server
-utils/dataset_manifest/create.py ~/manifest/ ~/manifest/images/
+utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 ```
 
 ### Example of generated `manifest.jsonl` for video

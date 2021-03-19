@@ -1769,7 +1769,8 @@ def generate_manifest_file(data_type, manifest_path, sources):
         },
         'video': {
             'media_file': sources[0],
-            'upload_dir': os.path.dirname(sources[0])
+            'upload_dir': os.path.dirname(sources[0]),
+            'force': True
         }
     }
 
@@ -1779,7 +1780,7 @@ def generate_manifest_file(data_type, manifest_path, sources):
     )
     if data_type == 'video':
         manifest = VideoManifestManager(manifest_path)
-        manifest.create(prepared_meta[0])
+        manifest.create(prepared_meta)
     else:
         manifest = ImageManifestManager(manifest_path)
         manifest.create(prepared_meta)

@@ -23,14 +23,15 @@ def get_args():
     parser.add_argument('--force', action='store_true',
         help='Use this flag to prepare the manifest file for video data '
              'if by default the video does not meet the requirements and a manifest file is not prepared')
-    parser.add_argument('manifest_directory',type=str, help='Directory where the manifest file will be saved')
+    parser.add_argument('--output-dir',type=str, help='Directory where the manifest file will be saved',
+        default=os.getcwd())
     parser.add_argument('source', type=str, help='Source paths')
     return parser.parse_args()
 
 def main():
     args = get_args()
 
-    manifest_directory = os.path.abspath(args.manifest_directory)
+    manifest_directory = os.path.abspath(args.output_dir)
     os.makedirs(manifest_directory, exist_ok=True)
     source = os.path.abspath(args.source)
 
@@ -67,15 +68,16 @@ def main():
     else: # video
         try:
             assert _is_video(source), 'You can specify a video path or a directory/pattern with images'
-            meta_info, smooth_decoding = prepare_meta(
-                data_type='video', media_file=source, chunk_size=36
-            )
-            if smooth_decoding is not None and not smooth_decoding:
-                if not args.force:
+            try:
+                meta_info = prepare_meta(data_type='video', media_file=source, force=args.force)
+            except AssertionError as ex:
+                if str(ex) == 'Too few keyframes':
                     msg = 'NOTE: prepared manifest file contains too few key frames for smooth decoding.\n' \
                         'Use --force flag if you still want to prepare a manifest file.'
                     print(msg)
                     sys.exit(0)
+                else:
+                    raise
             manifest = VideoManifestManager(manifest_path=manifest_directory)
             manifest.create(meta_info)
         except Exception as ex:

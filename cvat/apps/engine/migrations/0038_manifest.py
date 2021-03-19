@@ -30,7 +30,7 @@ def migrate_data(apps, shema_editor):
             data_dir = upload_dir if db_data.storage == StorageChoice.LOCAL else settings.SHARE_ROOT
             if hasattr(db_data, 'video'):
                 media_file = os.path.join(data_dir, db_data.video.path)
-                meta_info, _ = prepare_meta(
+                meta_info = prepare_meta(
                     data_type='video',
                     media_file=media_file,
                 )
