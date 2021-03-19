@@ -37,10 +37,10 @@ interface Props {
 
 const CanvasWrapperComponent = (props: Props): ReactElement => {
     const animateId = useRef(0);
-    const perspectiveView = useRef<HTMLCanvasElement>(null);
-    const topView = useRef<HTMLCanvasElement>(null);
-    const sideView = useRef<HTMLCanvasElement>(null);
-    const frontView = useRef<HTMLCanvasElement>(null);
+    const perspectiveView = useRef<HTMLDivElement | null>(null);
+    const topView = useRef<HTMLDivElement | null>(null);
+    const sideView = useRef<HTMLDivElement | null>(null);
+    const frontView = useRef<HTMLDivElement | null>(null);
 
     const [orthographicViewSize, setOrthographicViewSize] = useState({
         vertical: document.body.clientHeight / 2,
@@ -120,7 +120,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         }
     };
 
-    const onOrthographicViewResize = (view: string, e: SyntheticEvent): void => {
+    const onOrthographicViewResize = (view: ViewType, e: SyntheticEvent): void => {
         const event = (e as unknown) as MouseEvent;
         const canvas3dContainer = document.getElementById('canvas3d-container');
         if (canvas3dContainer) {

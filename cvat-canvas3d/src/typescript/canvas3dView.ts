@@ -17,7 +17,7 @@ export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
-    mouseControls(type: string, event: MouseEvent): void;
+    mouseControls(type: MouseInteraction, event: MouseEvent): void;
 }
 
 export enum CAMERA_ACTION {

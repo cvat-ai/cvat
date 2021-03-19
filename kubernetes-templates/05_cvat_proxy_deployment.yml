@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvat-nginx
+  namespace: cvat
+  labels:
+    app: cvat-app
+    tier: proxy
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cvat-app
+      tier: proxy
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: proxy
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /etc/nginx
+              readOnly: true
+              name: cvat-nginx-conf
+            - mountPath: /var/log/nginx
+              name: log
+      volumes:
+        - name: cvat-nginx-conf
+          configMap:
+            name: cvat-nginx-conf
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+              - key: mime.types
+                path: mime.types
+              - key: cvat.conf
+                path: cvat.d/cvat.conf
+        - name: log
+          emptyDir: {}

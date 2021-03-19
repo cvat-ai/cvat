@@ -45,7 +45,7 @@ class Canvas3dImpl implements Canvas3d {
         this.view.keyControls(keys);
     }
 
-    public mouseControls(type: string, event: MouseEvent): void {
+    public mouseControls(type: MouseInteraction, event: MouseEvent): void {
         this.view.mouseControls(type, event);
     }
 
