@@ -162,7 +162,19 @@ task_create_parser.add_argument(
     help='''number of seconds to wait until checking
             if data compression finished (necessary before uploading annotations)'''
 )
-
+task_create_parser.add_argument(
+    '--dataset_repository_url',
+    default='',
+    type=str,
+    help=('git repository to store annotations e.g.'
+          ' https://github.com/user/repos [annotation/<anno_file_name.zip>]')
+)
+task_create_parser.add_argument(
+    '--lfs',
+    default=False,
+    action='store_true',
+    help='using lfs for dataset repository (default: %(default)s)'
+)
 #######################################################################
 # Delete
 #######################################################################
