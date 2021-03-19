@@ -28,7 +28,7 @@ coreapi==2.3.3
 django-filter==2.3.0
 Markdown==3.2.2
 djangorestframework==3.11.1
-Pygments==2.6.1
+Pygments==2.7.4
 drf-yasg==1.17.1
 Shapely==1.7.1
 pdf2image==1.14.0

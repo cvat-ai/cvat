@@ -80,6 +80,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                     </span>
                 ),
                 placement: 'topRight',
+                className: 'cvat-notification-no-labels',
             });
         }
     }, [job, fetching, prevJob, prevFetching]);

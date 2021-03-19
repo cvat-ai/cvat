@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
 - Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
 - Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
+- Improved error messages for annotation import (<https://github.com/openvinotoolkit/cvat/pull/2935>)
 
 ### Deprecated
 
