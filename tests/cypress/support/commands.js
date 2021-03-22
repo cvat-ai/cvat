@@ -162,12 +162,14 @@ Cypress.Commands.add('getJobNum', (jobID) => {
         });
 });
 
-Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true) => {
+Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
-    cy.get('.cvat-canvas-container').should('exist');
+    expectedFail
+        ? cy.get('.cvat-canvas-container').should('not.exist')
+        : cy.get('.cvat-canvas-container').should('exist');
     if (removeAnnotations) {
         cy.document().then((doc) => {
             const objects = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -179,9 +181,9 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true) => {
     }
 });
 
-Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.openTask(taskName);
-    cy.openJob(jobID, removeAnnotations);
+    cy.openJob(jobID, removeAnnotations, expectedFail);
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {

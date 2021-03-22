@@ -37,6 +37,7 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
+from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
@@ -1030,7 +1031,17 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
             os.remove(rq_job.meta['tmp_file'])
             exc_info = str(rq_job.exc_info)
             rq_job.delete()
-            return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # RQ adds a prefix with exception class name
+            import_error_prefix = '{}.{}'.format(
+                CvatImportError.__module__, CvatImportError.__name__)
+            if exc_info.startswith(import_error_prefix):
+                exc_info = exc_info.replace(import_error_prefix + ': ', '')
+                return Response(data=exc_info,
+                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(data=exc_info,
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_202_ACCEPTED)
 

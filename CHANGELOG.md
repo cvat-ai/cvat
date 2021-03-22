@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [VGGFace2](https://github.com/ox-vgg/vgg_face2) format support (<https://github.com/openvinotoolkit/cvat/pull/2865>)
 - [Backup/Restore guide](cvat/apps/documentation/backup_guide.md) (<https://github.com/openvinotoolkit/cvat/pull/2964>)
 - Label deletion from tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/2881>)
+- [Market-1501](https://www.aitribune.com/dataset/2018051063) format support (<https://github.com/openvinotoolkit/cvat/pull/2869>)
 - Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
 
 ### Changed
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
 - Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
 - Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
+- Improved error messages for annotation import (<https://github.com/openvinotoolkit/cvat/pull/2935>)
 
 ### Deprecated
 
