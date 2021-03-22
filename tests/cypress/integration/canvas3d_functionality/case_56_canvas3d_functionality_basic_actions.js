@@ -33,20 +33,27 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     function testPerspectiveChangeOnWheel(screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameBefore);
-        for (let i = 0; i < 5; i++) {
-            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -200 });
+        for (let i = 0; i < 3; i++) {
+            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -50 });
         }
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
-    function testTopSideFrontChangeOnWheel(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
-        cy.get(element).screenshot(screenshotNameBefore);
-        for (let i = 0; i < 10; i++) {
-            cy.get(element).trigger('wheel', { deltaY: deltaY });
+    function testTopSideFrontChangeOnWheel(element, screenshotNameBefore, screenshotNameAfter) {
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameBefore);
+        for (let i = 0; i < 3; i++) {
+            cy.get(element).trigger('wheel', { deltaY: -100 });
         }
-        cy.get(element).screenshot(screenshotNameAfter);
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+    }
+
+    function testContextImage() {
+        cy.get('.cvat-contextImage-show').should('exist').and('be.visible');
+        cy.get('[data-icon="camera"]').click(); // Context image hide
+        cy.get('.cvat-contextImage-show').should('not.exist');
+        cy.get('[data-icon="camera"]').click(); // Context image show
     }
 
     before(() => {
@@ -119,30 +126,32 @@ context('Canvas 3D functionality. Basic actions.', () => {
         it('Interaction with the frame change buttons.', () => {
             cy.get('.cvat-player-last-button').click();
             cy.checkFrameNum(2);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_50000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', '000003.pcd');
+            testContextImage(); // Check context image on the last frame
             cy.get('.cvat-player-first-button').click();
             cy.checkFrameNum(0);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_100000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', '000001.pcd');
+            testContextImage(); // Check context image on the firts frame
             cy.get('.cvat-player-forward-button').click();
             cy.checkFrameNum(2);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_50000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', '000003.pcd');
             cy.get('.cvat-player-backward-button').click();
             cy.checkFrameNum(0);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_100000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', '000001.pcd');
             cy.get('.cvat-player-next-button').click();
             cy.checkFrameNum(1);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_10000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', '000002.pcd');
+            testContextImage(); // Check context image on the second frame
             cy.get('.cvat-player-previous-button').click();
             cy.checkFrameNum(0);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_100000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', '000001.pcd');
             cy.get('.cvat-player-play-button').click();
             cy.checkFrameNum(2);
-            cy.get('.cvat-player-filename-wrapper').should('contain.text', 'generated_pcd_50000_points.pcd');
+            cy.get('.cvat-player-filename-wrapper').should('contain.text', '000003.pcd');
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
         it('Testing perspective visual regressions.', () => {
-            testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
@@ -153,24 +162,14 @@ context('Canvas 3D functionality. Basic actions.', () => {
             testPerspectiveChangeOnArrowKeyPress('{downarrow}', 'before_press_downarrow', 'after_press_downarrow');
             testPerspectiveChangeOnArrowKeyPress('{leftarrow}', 'before_press_leftarrow', 'after_press_leftarrow');
             testPerspectiveChangeOnArrowKeyPress('{rightarrow}', 'before_press_rightarrow', 'after_press_rightarrow');
+            testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
         });
 
         it('Testing top/side/front views visual regressions.', () => {
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-topview',
-                -1000,
-                'topview_before_wheel',
-                'topview_after_wheel',
-            );
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-sideview',
-                -1000,
-                'sideview_before_wheel',
-                'sideview_after_wheel',
-            );
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-topview', 'topview_before_wheel', 'topview_after_wheel');
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-sideview', 'sideview_before_wheel', 'sideview_after_wheel');
             testTopSideFrontChangeOnWheel(
                 '.cvat-canvas3d-frontview',
-                -1000,
                 'frontview_before_wheel',
                 'frontview_after_wheel',
             );
