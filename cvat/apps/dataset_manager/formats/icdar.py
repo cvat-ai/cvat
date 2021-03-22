@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os.path as osp
 import zipfile
 from tempfile import TemporaryDirectory
 
@@ -84,6 +83,15 @@ def _export_recognition(dst_file, task_data, save_images=False):
         dataset.export(temp_dir, 'icdar_word_recognition', save_images=save_images)
         make_zip_archive(temp_dir, dst_file)
 
+@importer(name='ICDAR Recognition', ext='ZIP', version='1.0')
+def _import(src_file, task_data):
+    with TemporaryDirectory() as tmp_dir:
+        zipfile.ZipFile(src_file).extractall(tmp_dir)
+        dataset = Dataset.import_from(tmp_dir, 'icdar_word_recognition', env=dm_env)
+        dataset.transform(CaptionToLabel, 'icdar')
+        import_dm_annotations(dataset, task_data)
+
+
 @exporter(name='ICDAR Localization', ext='ZIP', version='1.0')
 def _export_localization(dst_file, task_data, save_images=False):
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
@@ -91,6 +99,16 @@ def _export_localization(dst_file, task_data, save_images=False):
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'icdar_text_localization', save_images=save_images)
         make_zip_archive(temp_dir, dst_file)
+
+@importer(name='ICDAR Localization', ext='ZIP', version='1.0')
+def _import(src_file, task_data):
+    with TemporaryDirectory() as tmp_dir:
+        zipfile.ZipFile(src_file).extractall(tmp_dir)
+
+        dataset = Dataset.import_from(tmp_dir, 'icdar_text_localization', env=dm_env)
+        dataset.transform(AddLabelToAnns, 'icdar')
+        import_dm_annotations(dataset, task_data)
+
 
 @exporter(name='ICDAR Segmentation', ext='ZIP', version='1.0')
 def _export_segmentation(dst_file, task_data, save_images=False):
@@ -103,15 +121,11 @@ def _export_segmentation(dst_file, task_data, save_images=False):
         dataset.export(temp_dir, 'icdar_text_segmentation', save_images=save_images)
         make_zip_archive(temp_dir, dst_file)
 
-@importer(name='ICDAR', ext='ZIP', version='1.0')
+@importer(name='ICDAR Segmentation', ext='ZIP', version='1.0')
 def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
-
-        dataset = Dataset.import_from(tmp_dir, 'icdar', env=dm_env)
-        if osp.isdir(osp.join(tmp_dir, 'word_recognition')):
-            dataset.transform(CaptionToLabel, 'icdar')
-        else:
-            dataset.transform(AddLabelToAnns, 'icdar')
+        dataset = Dataset.import_from(tmp_dir, 'icdar_text_segmentation', env=dm_env)
+        dataset.transform(AddLabelToAnns, 'icdar')
         dataset.transform('masks_to_polygons')
         import_dm_annotations(dataset, task_data)
