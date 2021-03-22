@@ -75,7 +75,7 @@ def main():
                     msg = 'NOTE: prepared manifest file contains too few key frames for smooth decoding.\n' \
                         'Use --force flag if you still want to prepare a manifest file.'
                     print(msg)
-                    sys.exit(0)
+                    sys.exit(2)
                 else:
                     raise
             manifest = VideoManifestManager(manifest_path=manifest_directory)

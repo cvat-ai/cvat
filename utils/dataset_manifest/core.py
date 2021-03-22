@@ -83,7 +83,7 @@ class AnalyzeVideo(WorkWithVideo):
         return analyzed_frames_number // key_frames_number
 
     def validate_frames_ratio(self, chunk_size):
-        upper_bound = 30 * chunk_size
+        upper_bound = 3 * chunk_size
         ratio = self.rough_estimate_frames_ratio(upper_bound + 1)
         assert ratio < upper_bound, 'Too few keyframes'
 
