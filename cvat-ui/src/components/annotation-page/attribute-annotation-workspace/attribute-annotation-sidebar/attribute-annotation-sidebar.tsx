@@ -2,24 +2,25 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
-import Layout, { SiderProps } from 'antd/lib/layout';
-import { SelectValue } from 'antd/lib/select';
-import Text from 'antd/lib/typography/Text';
 import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { SelectValue } from 'antd/lib/select';
+import Layout, { SiderProps } from 'antd/lib/layout';
+import Text from 'antd/lib/typography/Text';
+
+import { Canvas } from 'cvat-canvas-wrapper';
+import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     changeFrameAsync,
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';
-import AppearanceBlock from 'components/annotation-page/appearance-block';
-import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { LogType } from 'cvat-logger';
-import { CombinedState, ObjectType } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';
+import AppearanceBlock from 'components/annotation-page/appearance-block';
+import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
+import { CombinedState, ObjectType } from 'reducers/interfaces';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';

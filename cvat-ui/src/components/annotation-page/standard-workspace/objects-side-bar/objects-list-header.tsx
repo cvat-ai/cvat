@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
 import {
     CaretDownOutlined,
     CaretUpFilled,
@@ -11,7 +12,7 @@ import {
     UnlockOutlined,
 } from '@ant-design/icons';
 import { Col, Row } from 'antd/lib/grid';
-import React from 'react';
+
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { StatesOrdering } from 'reducers/interfaces';
