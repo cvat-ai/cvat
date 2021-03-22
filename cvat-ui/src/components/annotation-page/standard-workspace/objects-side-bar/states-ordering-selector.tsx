@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,7 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
     const { statesOrdering, changeStatesOrdering } = props;
 
     return (
-        <Col span={16}>
+        <Col>
             <Text strong>Sort by</Text>
             <Select
                 className='cvat-objects-sidebar-ordering-selector'

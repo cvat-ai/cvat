@@ -18,9 +18,17 @@
     border-bottom: 1px solid $border-color-1;
     height: 54px;
     padding: 0;
+
+    > div:first-child {
+        display: flex;
+        flex: 1;
+        flex-flow: unset;
+    }
 }
 
 .cvat-annotation-header-left-group {
+    display: flex;
+
     > button:first-child {
         filter: invert(0.9);
         background: $background-color-1;
@@ -33,7 +41,6 @@
     padding: 0;
     width: 54px;
     height: 54px;
-    float: left;
     text-align: center;
     user-select: none;
     color: $text-color;
@@ -64,6 +71,14 @@
         display: block;
         line-height: 0;
     }
+
+    &.filters-armed {
+        color: $info-icon-color;
+
+        path {
+            fill: $info-icon-color;
+        }
+    }
 }
 
 .cvat-annotation-disabled-header-button {
@@ -76,6 +91,7 @@
 .cvat-annotation-header-player-group > div {
     height: 54px;
     line-height: 0;
+    flex-wrap: nowrap;
 }
 
 .cvat-player-buttons {
@@ -146,8 +162,10 @@
 }
 
 .cvat-annotation-header-right-group {
+    display: flex;
+    justify-content: flex-end;
+
     > div {
-        float: left;
         display: block;
         height: 54px;
         margin-right: 15px;
@@ -403,6 +421,31 @@
                     margin-top: $grid-unit-size * 2;
                     margin-bottom: $grid-unit-size * 2;
                 }
+            }
+        }
+    }
+}
+
+.cvat-filters-modal {
+    .ant-modal-body {
+        padding: 1px;
+
+        .recently-used-wrapper {
+            padding-top: $grid-unit-size * 2;
+        }
+
+        .query-builder-container {
+            .query-builder > :first-child {
+                padding-right: 0;
+            }
+
+            .group-or-rule {
+                border-radius: $grid-unit-size / 4;
+            }
+
+            .group {
+                background: rgba(216, 233, 250, 0.5);
+                border: 1px solid #d3e0ec;
             }
         }
     }
