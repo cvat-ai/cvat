@@ -1,7 +1,8 @@
 ---
 title: "Command line interface (CLI)"
 linkTitle: "CLI"
-weight: 1
+weight: 3
+description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/cli)
 ---
 
 Command line interface (CLI)

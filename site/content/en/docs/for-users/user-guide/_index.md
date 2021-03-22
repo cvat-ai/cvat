@@ -2,6 +2,7 @@
 title: "User's guide"
 linkTitle: "User's guide"
 weight: 1
+description: "This multipage document contains information on how to work with the CVAT user interface"
 ---
 Computer Vision Annotation Tool (CVAT) is a web-based tool which helps to
 annotate videos and images for Computer Vision algorithms. It was inspired

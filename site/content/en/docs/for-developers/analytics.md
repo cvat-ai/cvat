@@ -1,10 +1,11 @@
 ---
 title: "Analytics for Computer Vision Annotation Tool (CVAT)"
 linkTitle: "Analytics"
-weight: 7
+weight: 2
+description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics)
 ---
 
-![](/cvat/apps/documentation/static/documentation/images/image097.jpg)
+![](/images/image097.jpg)
 
 It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
 

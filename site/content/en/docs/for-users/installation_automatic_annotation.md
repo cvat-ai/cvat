@@ -2,6 +2,7 @@
 title: "Semi-automatic and Automatic Annotation"
 linkTitle: "Semi-automatic and Automatic Annotation"
 weight: 5
+description: "This page provides information about the installation of components needed for semi-automatic and automatic annotation"
 ---
 
 > **⚠ WARNING: Do not use `docker-compose up`**

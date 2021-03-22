@@ -35,7 +35,7 @@ If there are not enough keyframes in the video for smooth video decoding, the ta
 
 When creating a task, you can upload a file with meta information along with the video,
 which will further reduce the time for creating a task.
-You can see how to prepare meta information [here](/utils/prepare_meta_information/README.md).
+You can see how to prepare meta information [here](/docs/for-developers/prepare_meta_information).
 
 It is worth noting that the generated file also contains information about the number of frames in the video at the end.
 

@@ -1,7 +1,8 @@
 ---
 title: "Simple command line for prepare meta information for video data"
-linkTitle: "Simple command line for prepare meta information for video data"
+linkTitle: "Prepare meta information"
 weight: 8
+description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/prepare_meta_information)
 ---
 
 **Usage**

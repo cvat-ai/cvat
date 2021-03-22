@@ -1,8 +1,6 @@
 aseURL = "cvat.org"
 title = "CVAT"
 
-sidebar_menu_compact = true
-
 enableRobotsTXT = true
 
 # Hugo allows theme composition (and inheritance). The precedence is from left to right.
@@ -112,7 +110,7 @@ github_project_repo = "https://github.com/openvinotoolkit/cvat"
 
 # Uncomment this if you have a newer GitHub repo with "main" as the default branch,
 # or specify a new value if you want to reference another branch in your GitHub links
-github_branch= "develop"
+github_branch = "develop"
 
 # Google Custom Search Engine ID. Remove or comment out to disable search.
 # gcs_engine_id = "011737558837375720776:fsdu1nryfng"
@@ -184,3 +182,8 @@ enable = false
 	url = "https://example.org/mail"
 	icon = "fa fa-envelope"
         desc = "Discuss development issues around the project"
+
+[[menu.main]]
+    name = "Try it now"
+    weight = 50
+    url = "https://cvat.org"
