@@ -8,6 +8,7 @@ require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
+require('../plugins/compareImages/compareImagesCommand');
 
 let selectedValueGlobal = '';
 
@@ -39,6 +40,43 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     if (Cypress.browser.family === 'chromium') {
         cy.url().should('include', '/tasks');
     }
+});
+
+Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
+    cy.request({
+        method: 'POST',
+        url: '/api/v1/auth/login',
+        body: {
+            username: Cypress.env('user'),
+            email: Cypress.env('email'),
+            password: Cypress.env('password'),
+        },
+    }).then((responce) => {
+        const authKey = responce['body']['key'];
+        cy.request({
+            url: '/api/v1/users?page_size=all',
+            headers: {
+                Authorization: `Token ${authKey}`,
+            },
+        }).then((responce) => {
+            const responceResult = responce['body']['results'];
+            for (const user of responceResult) {
+                const userId = user['id'];
+                const userName = user['username'];
+                for (const account of accountToDelete) {
+                    if (userName === account) {
+                        cy.request({
+                            method: 'DELETE',
+                            url: `/api/v1/users/${userId}`,
+                            headers: {
+                                Authorization: `Token ${authKey}`,
+                            },
+                        });
+                    }
+                }
+            }
+        });
+    });
 });
 
 Cypress.Commands.add(
@@ -124,12 +162,14 @@ Cypress.Commands.add('getJobNum', (jobID) => {
         });
 });
 
-Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true) => {
+Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
-    cy.get('.cvat-canvas-container').should('exist');
+    expectedFail
+        ? cy.get('.cvat-canvas-container').should('not.exist')
+        : cy.get('.cvat-canvas-container').should('exist');
     if (removeAnnotations) {
         cy.document().then((doc) => {
             const objects = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -141,9 +181,9 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true) => {
     }
 });
 
-Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true) => {
+Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.openTask(taskName);
-    cy.openJob(jobID, removeAnnotations);
+    cy.openJob(jobID, removeAnnotations, expectedFail);
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {

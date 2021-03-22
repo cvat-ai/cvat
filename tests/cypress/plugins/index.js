@@ -6,12 +6,14 @@
 
 const { imageGenerator } = require('../plugins/imageGenerator/addPlugin');
 const { createZipArchive } = require('../plugins/createZipArchive/addPlugin');
+const { compareImages } = require('../plugins/compareImages/addPlugin');
 const fs = require('fs');
 
 module.exports = (on, config) => {
     require('@cypress/code-coverage/task')(on, config);
     on('task', { imageGenerator });
     on('task', { createZipArchive });
+    on('task', { compareImages });
     on('task', {
         log(message) {
             console.log(message);

@@ -2,31 +2,29 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { MutableRefObject } from 'react';
 import {
-    AnyAction, Dispatch, ActionCreator, Store,
+    ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-
-import {
-    CombinedState,
-    ActiveControl,
-    ShapeType,
-    ObjectType,
-    Task,
-    FrameSpeed,
-    Rotation,
-    ContextMenuType,
-    Workspace,
-    Model,
-    DimensionType,
-    OpenCVTool,
-} from 'reducers/interfaces';
-
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { getCVATStore } from 'cvat-store';
-import { MutableRefObject } from 'react';
+import {
+    ActiveControl,
+    CombinedState,
+    ContextMenuType,
+    DimensionType,
+    FrameSpeed,
+    Model,
+    ObjectType,
+    OpenCVTool,
+    Rotation,
+    ShapeType,
+    Task,
+    Workspace,
+} from 'reducers/interfaces';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -161,6 +159,7 @@ export enum AnnotationActionTypes {
     PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
     CHANGE_PROPAGATE_FRAMES = 'CHANGE_PROPAGATE_FRAMES',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
+    SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
     COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
     COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
@@ -276,24 +275,10 @@ export function fetchAnnotationsAsync(): ThunkAction {
     };
 }
 
-export function changeAnnotationsFilters(filters: string[]): AnyAction {
-    const state: CombinedState = getStore().getState();
-    const { filtersHistory, filters: oldFilters } = state.annotation.annotations;
-
-    filters.forEach((element: string) => {
-        if (!(filtersHistory.includes(element) || oldFilters.includes(element))) {
-            filtersHistory.push(element);
-        }
-    });
-
-    window.localStorage.setItem('filtersHistory', JSON.stringify(filtersHistory.slice(-10)));
-
+export function changeAnnotationsFilters(filters: any[]): AnyAction {
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
-        payload: {
-            filters,
-            filtersHistory: filtersHistory.slice(-10),
-        },
+        payload: { filters },
     };
 }
 
@@ -438,6 +423,14 @@ export function collectStatisticsAsync(sessionInstance: any): ThunkAction {
 export function showStatistics(visible: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.SWITCH_SHOWING_STATISTICS,
+        payload: {
+            visible,
+        },
+    };
+}
+export function showFilters(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SHOWING_FILTERS,
         payload: {
             visible,
         },
@@ -876,7 +869,7 @@ export function closeJob(): ThunkAction {
     };
 }
 
-export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: string[]): ThunkAction {
+export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: object[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const state: CombinedState = getStore().getState();
@@ -917,10 +910,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const job = task.jobs.filter((_job: any) => _job.id === jid)[0];
             if (!job) {
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
-            }
-
-            if (!task.labels.length && task.projectId) {
-                throw new Error(`Project ${task.projectId} does not contain any label`);
             }
 
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);

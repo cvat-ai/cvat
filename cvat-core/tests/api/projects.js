@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -166,5 +166,22 @@ describe('Feature: delete a project', () => {
 
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(0);
+    });
+});
+
+describe('Feature: delete a label', () => {
+    test('delete a label', async () => {
+        let result = await window.cvat.projects.get({
+            id: 2,
+        });
+
+        const labelsLength = result[0].labels.length;
+        const deletedLabels = result[0].labels.filter((el) => el.name !== 'bicycle');
+        result[0].labels = deletedLabels;
+        result[0].save();
+        result = await window.cvat.projects.get({
+            id: 2,
+        });
+        expect(result[0].labels).toHaveLength(labelsLength - 1);
     });
 });
