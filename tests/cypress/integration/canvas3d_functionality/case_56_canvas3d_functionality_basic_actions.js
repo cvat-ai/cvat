@@ -33,19 +33,19 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     function testPerspectiveChangeOnWheel(screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameBefore);
-        for (let i = 0; i < 5; i++) {
-            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -200 });
+        for (let i = 0; i < 3; i++) {
+            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -50 });
         }
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
-    function testTopSideFrontChangeOnWheel(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
-        cy.get(element).screenshot(screenshotNameBefore);
-        for (let i = 0; i < 10; i++) {
-            cy.get(element).trigger('wheel', { deltaY: deltaY });
+    function testTopSideFrontChangeOnWheel(element, screenshotNameBefore, screenshotNameAfter) {
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameBefore);
+        for (let i = 0; i < 3; i++) {
+            cy.get(element).trigger('wheel', { deltaY: -100 });
         }
-        cy.get(element).screenshot(screenshotNameAfter);
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
@@ -166,21 +166,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
 
         it('Testing top/side/front views visual regressions.', () => {
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-topview',
-                -1000,
-                'topview_before_wheel',
-                'topview_after_wheel',
-            );
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-sideview',
-                -1000,
-                'sideview_before_wheel',
-                'sideview_after_wheel',
-            );
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-topview', 'topview_before_wheel', 'topview_after_wheel');
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-sideview', 'sideview_before_wheel', 'sideview_after_wheel');
             testTopSideFrontChangeOnWheel(
                 '.cvat-canvas3d-frontview',
-                -1000,
                 'frontview_before_wheel',
                 'frontview_after_wheel',
             );

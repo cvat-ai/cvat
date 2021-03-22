@@ -11,6 +11,7 @@ context('Changing a default value for an attribute.', () => {
     const additionalLabel = `Case ${caseId}`;
     const additionalAttrsLabel = [
         { additionalAttrName: 'type', additionalValue: '', typeAttribute: 'Text' },
+        { additionalAttrName: 'count', additionalValue: '0;5;1', typeAttribute: 'Number' }, // Check issue 2968
         { additionalAttrName: 'shape', additionalValue: 'False', typeAttribute: 'Checkbox' },
     ];
     const rectangleShape2Points = {
@@ -30,7 +31,7 @@ context('Changing a default value for an attribute.', () => {
         cy.openTask(taskName);
     });
 
-    describe(`Testing case "${caseId}"`, () => {
+    describe(`Testing case "${caseId}", issue 2968`, () => {
         it('Add a label, add text (leave it’s value empty by default) & checkbox attributes.', () => {
             cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
             cy.intercept('GET', '/api/v1/tasks**').as('getTask');
@@ -55,15 +56,19 @@ context('Changing a default value for an attribute.', () => {
                     const minId = Math.min(...wrapperId);
                     const maxId = Math.max(...wrapperId);
                     cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
-                    cy.task('log', `minId: ${minId}`);
                     cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click().wait(500); // Wait for the dropdown menu to transition.
-                    cy.task('log', `maxId: ${maxId}`);
                 });
             });
             cy.get('.ant-select-dropdown').within(() => {
                 cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
             });
             cy.contains('[type="submit"]', 'Done').click();
+            cy.contains(
+                '[role="alert"]',
+                `Validation error on field 'attributes.${additionalAttrsLabel.indexOf(
+                    additionalAttrsLabel[1],
+                )}.values'`,
+            ).should('not.exist');
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
         });
 
@@ -71,8 +76,13 @@ context('Changing a default value for an attribute.', () => {
             cy.openJob();
             cy.createRectangle(rectangleShape2Points);
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
-            cy.contains(new RegExp(`^type: ${newTextValue}$`)).should('be.visible');
-            cy.contains(new RegExp(`^shape: ${newCheckboxValue.toLowerCase()}$`)).should('be.visible');
+            [
+                [additionalAttrsLabel[0].additionalAttrName, newTextValue],
+                [additionalAttrsLabel[1].additionalAttrName, additionalAttrsLabel[1].additionalValue.split(';')[0]],
+                [additionalAttrsLabel[2].additionalAttrName, newCheckboxValue.toLowerCase()],
+            ].forEach(([attrName, attrValue]) => {
+                cy.contains(new RegExp(`^${attrName}: ${attrValue}$`)).should('be.visible');
+            });
         });
     });
 });
