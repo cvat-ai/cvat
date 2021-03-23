@@ -1,0 +1,138 @@
+<annotations>
+  <version>1.1</version>
+  <meta>
+    <task>
+      <id>1</id>
+      <name>main task</name>
+      <size>3</size>
+      <mode>annotation</mode>
+      <overlap>0</overlap>
+      <bugtracker />
+      <created>2021-03-23 10:21:12.892906+00:00</created>
+      <updated>2021-03-23 10:21:13.037772+00:00</updated>
+      <start_frame>0</start_frame>
+      <stop_frame>2</stop_frame>
+      <frame_filter />
+      <labels>
+        <label>
+          <name>car</name>
+          <color>#2080c0</color>
+          <attributes>
+            <attribute>
+              <name>select_name</name>
+              <mutable>False</mutable>
+              <input_type>select</input_type>
+              <default_value>bmw</default_value>
+              <values>bmw
+mazda
+renault</values>
+            </attribute>
+            <attribute>
+              <name>radio_name</name>
+              <mutable>False</mutable>
+              <input_type>radio</input_type>
+              <default_value>x1</default_value>
+              <values>x1
+x2
+x3</values>
+            </attribute>
+            <attribute>
+              <name>check_name</name>
+              <mutable>True</mutable>
+              <input_type>checkbox</input_type>
+              <default_value>false</default_value>
+              <values>false</values>
+            </attribute>
+            <attribute>
+              <name>text_name</name>
+              <mutable>False</mutable>
+              <input_type>text</input_type>
+              <default_value>qwerty</default_value>
+              <values>qwerty</values>
+            </attribute>
+            <attribute>
+              <name>number_name</name>
+              <mutable>False</mutable>
+              <input_type>number</input_type>
+              <default_value>-4</default_value>
+              <values>-4
+4
+1</values>
+            </attribute>
+          </attributes>
+        </label>
+        <label>
+          <name>person</name>
+          <color>#c06060</color>
+          <attributes>
+          </attributes>
+        </label>
+      </labels>
+      <segments>
+        <segment>
+          <id>1</id>
+          <start>0</start>
+          <stop>2</stop>
+          <url>http://testserver/?id=1</url>
+        </segment>
+      </segments>
+      <owner>
+        <username>admin</username>
+        <email />
+      </owner>
+      <assignee>
+        <username>user</username>
+        <email />
+      </assignee>
+    </task>
+    <dumped>2021-03-23 10:21:13.132793+00:00</dumped>
+  </meta>
+  <image height="50" id="0" name="image_0.jpg" width="100">
+    <box group_id="1" label="car" occluded="0" source="manual" xbr="19.64" xtl="5.54" ybr="11.19" ytl="3.50" z_order="0">
+      <attribute name="select_name">mazda</attribute>
+      <attribute name="radio_name">x2</attribute>
+      <attribute name="check_name">wrong_checkbox_value</attribute>
+      <attribute name="text_name">qwerty</attribute>
+      <attribute name="number_name">3</attribute>
+    </box>
+    <polygon label="car" occluded="1" points="25.04,13.70;35.85,20.20;16.65,19.80" source="manual" z_order="0">
+      <attribute name="select_name">bmw</attribute>
+      <attribute name="radio_name">x1</attribute>
+      <attribute name="check_name">false</attribute>
+      <attribute name="text_name">qwerty</attribute>
+      <attribute name="number_name">-4</attribute>
+    </polygon>
+    <polyline group_id="2" label="car" occluded="0" points="27.15,26.70;53.25,24.80" source="manual" z_order="1">
+      <attribute name="select_name">renault</attribute>
+      <attribute name="radio_name">x1</attribute>
+      <attribute name="check_name">false</attribute>
+      <attribute name="text_name">qwerty</attribute>
+      <attribute name="number_name">-4</attribute>
+    </polyline>
+    <cuboid group_id="1" label="car" occluded="0" source="manual" xbl1="51.65" xbl2="72.11" xbr1="70.25" xbr2="53.51" xtl1="51.65" xtl2="72.11" xtr1="70.25" xtr2="53.51" ybl1="46.80" ybl2="45.74" ybr1="46.80" ybr2="45.74" ytl1="37.30" ytl2="36.34" ytr1="37.20" ytr2="36.34" z_order="2">
+      <attribute name="select_name">bmw</attribute>
+      <attribute name="radio_name">x3</attribute>
+      <attribute name="check_name">false</attribute>
+      <attribute name="text_name">qwerty</attribute>
+      <attribute name="number_name">-3</attribute>
+    </cuboid>
+    <tag label="car" source="manual">
+      <attribute name="select_name">bmw</attribute>
+      <attribute name="radio_name">x3</attribute>
+      <attribute name="check_name">false</attribute>
+      <attribute name="text_name">qwerty</attribute>
+      <attribute name="number_name">0</attribute>
+    </tag>
+  </image>
+  <image height="50" id="1" name="image_1.jpg" width="100">
+    <points label="car" occluded="0" points="42.95,33.59" source="manual" z_order="1">
+      <attribute name="select_name">bmw</attribute>
+      <attribute name="radio_name">x1</attribute>
+      <attribute name="check_name">false</attribute>
+      <attribute name="text_name">qwerty</attribute>
+      <attribute name="number_name">-3</attribute>
+    </points>
+  </image>
+  <image height="50" id="2" name="image_2.jpg" width="100">
+  </image>
+</annotations>
