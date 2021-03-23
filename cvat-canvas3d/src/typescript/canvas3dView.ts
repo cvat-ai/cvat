@@ -226,12 +226,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         points.material.color = new THREE.Color(0x0000ff);
         const sphereCenter = points.geometry.boundingSphere.center;
         const { radius } = points.geometry.boundingSphere;
-        const xRange = -radius < this.views.perspective.camera.position.x - sphereCenter.x
-            && radius > this.views.perspective.camera.position.x - sphereCenter.x;
-        const yRange = -radius < this.views.perspective.camera.position.y - sphereCenter.y
-            && radius > this.views.perspective.camera.position.y - sphereCenter.y;
-        const zRange = -radius < this.views.perspective.camera.position.z - sphereCenter.z
-            && radius > this.views.perspective.camera.position.z - sphereCenter.z;
+        const xRange = -radius / 2 < this.views.perspective.camera.position.x - sphereCenter.x
+            && radius / 2 > this.views.perspective.camera.position.x - sphereCenter.x;
+        const yRange = -radius / 2 < this.views.perspective.camera.position.y - sphereCenter.y
+            && radius / 2 > this.views.perspective.camera.position.y - sphereCenter.y;
+        const zRange = -radius / 2 < this.views.perspective.camera.position.z - sphereCenter.z
+            && radius / 2 > this.views.perspective.camera.position.z - sphereCenter.z;
         let newX = 0;
         let newY = 0;
         let newZ = 0;
@@ -255,7 +255,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private positionAllViews(x: number, y: number, z: number): void {
         this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, false);
-        this.views.top.controls.setLookAt(x, y, z + 10, x, y, z, false);
+        this.views.top.controls.setLookAt(x, y, z + 8, x, y, z, false);
         this.views.side.controls.setLookAt(x, y + 8, z, x, y, z, false);
         this.views.front.controls.setLookAt(x + 8, y, z, x, y, z, false);
     }
@@ -270,7 +270,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (camera instanceof THREE.PerspectiveCamera) {
                 camera.aspect = width / height;
             } else {
-                const topViewFactor = viewName === ViewType.TOP ? 2 : 0;
+                const topViewFactor = 0; // viewName === ViewType.TOP ? 2 : 0;
                 const viewSize = CONST.ZOOM_FACTOR;
                 const aspectRatio = width / height;
                 if (!(camera instanceof THREE.PerspectiveCamera)) {
@@ -416,7 +416,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         if (view !== ViewType.PERSPECTIVE) {
                             this.views[view as keyof Views].scene.children[0].children = [selectedObject.clone()];
                             this.views[view as keyof Views].controls.fitToBox(selectedObject, false);
-                            this.views[view as keyof Views].controls.zoom(view === ViewType.TOP ? -7 : -5, false);
+                            this.views[view as keyof Views].controls.zoom(view === ViewType.TOP ? -5 : -5, false);
                         }
                         this.views[view as keyof Views].scene.background = new THREE.Color(0x000000);
                     });
