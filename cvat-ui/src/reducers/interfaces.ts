@@ -428,8 +428,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
-        filters: string[];
-        filtersHistory: string[];
+        filters: any[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];
@@ -456,6 +455,7 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
+    filtersPanelVisible: boolean;
     requestReviewDialogVisible: boolean;
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;

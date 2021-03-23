@@ -4,21 +4,20 @@
 
 import React from 'react';
 import { AnyAction } from 'redux';
-
-import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationState,
     ActiveControl,
-    ShapeType,
-    ObjectType,
+    AnnotationState,
     ContextMenuType,
-    Workspace,
-    TaskStatus,
     DimensionType,
+    ObjectType,
+    ShapeType,
+    TaskStatus,
+    Workspace,
 } from './interfaces';
 
 const defaultState: AnnotationState = {
@@ -81,7 +80,6 @@ const defaultState: AnnotationState = {
         collapsedAll: true,
         states: [],
         filters: [],
-        filtersHistory: JSON.parse(window.localStorage.getItem('filtersHistory') || '[]'),
         resetGroupFlag: false,
         history: {
             undo: [],
@@ -106,6 +104,7 @@ const defaultState: AnnotationState = {
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
+    filtersPanelVisible: false,
     requestReviewDialogVisible: false,
     submitReviewDialogVisible: false,
     tabContentHeight: 0,
@@ -806,6 +805,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SWITCH_SHOWING_FILTERS: {
+            const { visible } = action.payload;
+
+            return {
+                ...state,
+                filtersPanelVisible: visible,
+            };
+        }
         case AnnotationActionTypes.COLLECT_STATISTICS: {
             return {
                 ...state,
@@ -976,13 +983,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS: {
-            const { filters, filtersHistory } = action.payload;
-
+            const { filters } = action.payload;
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    filtersHistory,
                     filters,
                 },
             };
