@@ -51,8 +51,8 @@ def retry(amount: int = 2) -> Callable:
                 try:
                     result = func(*args, **kwargs)
                     return result
-                except Exception as e:
-                    print(e)
+                except Exception:
+                    pass
 
         return wrapper
 
@@ -165,7 +165,6 @@ class TrainingServerAPI(TrainingServerAPIAbs):
             "pipeline_representation": 'Detection',
             "type": "project",
         }
-        print(data)
         response = self.request(method='POST', url=url, json=data, headers=headers)
         return response
 
@@ -279,14 +278,11 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         return f'{self.host}_{self.username}_token'
 
     def request(self, method: str, url: str, **kwargs) -> Union[list, dict, str]:
-        print('Request')
-        print(f'Url {url}\ndata {kwargs.get("data")}, files {kwargs.get("files")}')
         response = requests.request(method=method, url=url, verify=False, **kwargs)
         if response.status_code == 401:
             self.__delete_token()
             raise Exception("401")
         result = response.json()
-        print('Resp', result, '\n')
         return result
 
     def create_project(self, name: str, description: str = '', project_class: Project.ProjectClass = None,

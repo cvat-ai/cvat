@@ -5,7 +5,6 @@ class TrainingConfig(AppConfig):
     name = 'cvat.apps.training'
 
     def ready(self):
-        assert 'Hello'
         # Required to define signals in application
         import cvat.apps.training.signals
         # Required in order to silent "unused-import" in pyflake
