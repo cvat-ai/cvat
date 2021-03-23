@@ -59,17 +59,18 @@ def main():
             sources = list(filter(_is_image, glob(source, recursive=True)))
         try:
             assert len(sources), 'A images was not found'
-            meta_info = prepare_meta(data_type='images', sources=sources,
-                is_sorted=False, use_image_hash=True, data_dir=data_dir)
             manifest = ImageManifestManager(manifest_path=manifest_directory)
+            meta_info = manifest.prepare_meta(sources=sources, is_sorted=False,
+                use_image_hash=True, data_dir=data_dir)
             manifest.create(meta_info)
         except Exception as ex:
             sys.exit(str(ex))
     else: # video
         try:
             assert _is_video(source), 'You can specify a video path or a directory/pattern with images'
+            manifest = VideoManifestManager(manifest_path=manifest_directory)
             try:
-                meta_info = prepare_meta(data_type='video', media_file=source, force=args.force)
+                meta_info = manifest.prepare_meta(media_file=source, force=args.force)
             except AssertionError as ex:
                 if str(ex) == 'Too few keyframes':
                     msg = 'NOTE: prepared manifest file contains too few key frames for smooth decoding.\n' \
@@ -78,7 +79,6 @@ def main():
                     sys.exit(2)
                 else:
                     raise
-            manifest = VideoManifestManager(manifest_path=manifest_directory)
             manifest.create(meta_info)
         except Exception as ex:
             sys.exit(str(ex))
@@ -87,5 +87,5 @@ def main():
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(base_dir)
-    from dataset_manifest.core import prepare_meta, VideoManifestManager, ImageManifestManager
+    from dataset_manifest.core import VideoManifestManager, ImageManifestManager
     main()

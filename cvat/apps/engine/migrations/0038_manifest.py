@@ -9,9 +9,7 @@ from django.db import migrations
 
 from cvat.apps.engine.models import (DimensionType, StorageChoice,
                                      StorageMethodChoice)
-from utils.dataset_manifest import (ImageManifestManager, VideoManifestManager,
-                                    prepare_meta)
-
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 def migrate_data(apps, shema_editor):
     Data = apps.get_model("engine", "Data")
@@ -30,14 +28,12 @@ def migrate_data(apps, shema_editor):
             data_dir = upload_dir if db_data.storage == StorageChoice.LOCAL else settings.SHARE_ROOT
             if hasattr(db_data, 'video'):
                 media_file = os.path.join(data_dir, db_data.video.path)
-                meta_info = prepare_meta(
-                    data_type='video',
-                    media_file=media_file,
-                )
                 manifest = VideoManifestManager(manifest_path=upload_dir)
+                meta_info = manifest.prepare_meta(media_file=media_file)
                 manifest.create(meta_info)
                 manifest.init_index()
             else:
+                manifest = ImageManifestManager(manifest_path=upload_dir)
                 sources = []
                 if db_data.storage == StorageChoice.LOCAL:
                     for (root, _, files) in os.walk(data_dir):
@@ -55,9 +51,8 @@ def migrate_data(apps, shema_editor):
                             'extension': ext
                         })
                 else:
-                    meta_info = prepare_meta(data_type='images', sources=sources, data_dir=data_dir)
+                    meta_info = manifest.prepare_meta(sources=sources, data_dir=data_dir)
                     content = meta_info.content
-                manifest = ImageManifestManager(manifest_path=upload_dir)
 
                 if db_data.storage == StorageChoice.SHARE:
                     def _get_frame_step(str_):

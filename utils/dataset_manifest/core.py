@@ -11,9 +11,14 @@ from contextlib import closing
 from PIL import Image
 from .utils import md5_hash, rotate_image
 
-class WorkWithVideo:
+class VideoStreamReader:
     def __init__(self, source_path):
         self.source_path = source_path
+        self._key_frames = OrderedDict()
+        self.frames = 0
+
+        with closing(av.open(self.source_path, mode='r')) as container:
+            self.width, self.height = self._get_frame_size(container)
 
     @staticmethod
     def _get_video_stream(container):
@@ -23,7 +28,7 @@ class WorkWithVideo:
 
     @staticmethod
     def _get_frame_size(container):
-        video_stream = WorkWithVideo._get_video_stream(container)
+        video_stream = VideoStreamReader._get_video_stream(container)
         for packet in container.demux(video_stream):
             for frame in packet.decode():
                 if video_stream.metadata.get('rotate'):
@@ -36,14 +41,14 @@ class WorkWithVideo:
                     )
                 return frame.width, frame.height
 
-class AnalyzeVideo(WorkWithVideo):
     def check_type_first_frame(self):
         with closing(av.open(self.source_path, mode='r')) as container:
             video_stream = self._get_video_stream(container)
 
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
-                    assert frame.pict_type.name == 'I', 'First frame is not key frame'
+                    if not frame.pict_type.name == 'I':
+                        raise Exception('First frame is not key frame')
                     return
 
     def check_video_timestamps_sequences(self):
@@ -87,47 +92,7 @@ class AnalyzeVideo(WorkWithVideo):
         ratio = self.rough_estimate_frames_ratio(upper_bound + 1)
         assert ratio < upper_bound, 'Too few keyframes'
 
-class PrepareImageInfo:
-    def __init__(self, sources, is_sorted=True, use_image_hash=False, *args, **kwargs):
-        self._sources = sources if is_sorted else sorted(sources)
-        self._content = []
-        self._data_dir = kwargs.get('data_dir', None)
-        self._use_image_hash = use_image_hash
-
-    def __iter__(self):
-        for image in self._sources:
-            img = Image.open(image, mode='r')
-            img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                else os.path.basename(image)
-            name, extension = os.path.splitext(img_name)
-            image_properties = {
-                'name': name,
-                'extension': extension,
-                'width': img.width,
-                'height': img.height,
-            }
-            if self._use_image_hash:
-                image_properties['checksum'] = md5_hash(img)
-            yield image_properties
-
-    def create(self):
-        for item in self:
-            self._content.append(item)
-
-    @property
-    def content(self):
-        return self._content
-
-class PrepareVideoInfo(WorkWithVideo):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._key_frames = OrderedDict()
-        self.frames = 0
-
-        with closing(av.open(self.source_path, mode='r')) as container:
-            self.width, self.height = self._get_frame_size(container)
-
-    def get_task_size(self):
+    def get_size(self):
         return self.frames
 
     @property
@@ -173,38 +138,42 @@ class PrepareVideoInfo(WorkWithVideo):
     def __len__(self):
         return len(self._key_frames)
 
+    #TODO: need to change it in future
     def __iter__(self):
         for idx, key_frame in self._key_frames.items():
             yield (idx, key_frame['pts'], key_frame['md5'])
 
-def _prepare_video_meta(media_file, upload_dir=None, chunk_size=36, force=False):
-    source_path = os.path.join(upload_dir, media_file) if upload_dir else media_file
-    analyzer = AnalyzeVideo(source_path=source_path)
-    analyzer.check_type_first_frame()
-    try:
-        analyzer.validate_frames_ratio(chunk_size)
-    except AssertionError:
-        if not force:
-            raise
-    analyzer.check_video_timestamps_sequences()
 
-    meta_info = PrepareVideoInfo(source_path=source_path)
-    meta_info.save_key_frames()
-    meta_info.validate_seek_key_frames()
-    return meta_info
+class DatasetImagesReader:
+    def __init__(self, sources, is_sorted=True, use_image_hash=False, *args, **kwargs):
+        self._sources = sources if is_sorted else sorted(sources)
+        self._content = []
+        self._data_dir = kwargs.get('data_dir', None)
+        self._use_image_hash = use_image_hash
 
-def _prepare_images_meta(sources, **kwargs):
-    meta_info = PrepareImageInfo(sources=sources, **kwargs)
-    meta_info.create()
-    return meta_info
+    def __iter__(self):
+        for image in self._sources:
+            img = Image.open(image, mode='r')
+            img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
+                else os.path.basename(image)
+            name, extension = os.path.splitext(img_name)
+            image_properties = {
+                'name': name,
+                'extension': extension,
+                'width': img.width,
+                'height': img.height,
+            }
+            if self._use_image_hash:
+                image_properties['checksum'] = md5_hash(img)
+            yield image_properties
 
-def prepare_meta(data_type, **kwargs):
-    assert data_type in ('video', 'images'), 'prepare_meta: Unknown data type'
-    actions = {
-        'video': _prepare_video_meta,
-        'images': _prepare_images_meta,
-    }
-    return actions[data_type](**kwargs)
+    def create(self):
+        for item in self:
+            self._content.append(item)
+
+    @property
+    def content(self):
+        return self._content
 
 class _Manifest:
     FILE_NAME = 'manifest.jsonl'
@@ -370,7 +339,7 @@ class VideoManifestManager(_ManifestManager):
                 'properties': {
                     'name': os.path.basename(content.source_path),
                     'resolution': content.frame_sizes,
-                    'length': content.get_task_size(),
+                    'length': content.get_size(),
                 },
             }
             for key, value in base_info.items():
@@ -389,17 +358,32 @@ class VideoManifestManager(_ManifestManager):
     def partial_update(self, number, properties):
         pass
 
-#TODO:
+    @staticmethod
+    def prepare_meta(media_file, upload_dir=None, chunk_size=36, force=False):
+        source_path = os.path.join(upload_dir, media_file) if upload_dir else media_file
+        meta_info = VideoStreamReader(source_path=source_path)
+        meta_info.check_type_first_frame()
+        try:
+            meta_info.validate_frames_ratio(chunk_size)
+        except AssertionError:
+            if not force:
+                raise
+        meta_info.check_video_timestamps_sequences()
+        meta_info.save_key_frames()
+        meta_info.validate_seek_key_frames()
+        return meta_info
+
+#TODO: add generic manifest structure file validation
 class ManifestValidator:
     def validate_base_info(self):
         with open(self._manifest.path, 'r') as manifest_file:
             assert self._manifest.VERSION != json.loads(manifest_file.readline())['version']
             assert self._manifest.TYPE != json.loads(manifest_file.readline())['type']
 
-class VideoManifestValidator(VideoManifestManager, WorkWithVideo):
+class VideoManifestValidator(VideoManifestManager):
     def __init__(self, **kwargs):
-        WorkWithVideo.__init__(self, kwargs.pop('source_path'))
-        VideoManifestManager.__init__(self, **kwargs)
+        self.source_path = kwargs.pop('source_path')
+        super().__init__(self, **kwargs)
 
     def validate_key_frame(self, container, video_stream, key_frame):
         for packet in container.demux(video_stream):
@@ -454,3 +438,9 @@ class ImageManifestManager(_ManifestManager):
 
     def partial_update(self, number, properties):
         pass
+
+    @staticmethod
+    def prepare_meta(sources, **kwargs):
+        meta_info = DatasetImagesReader(sources=sources, **kwargs)
+        meta_info.create()
+        return meta_info

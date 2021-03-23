@@ -17,7 +17,7 @@ from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkW
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import DimensionType
-from utils.dataset_manifest import prepare_meta, ImageManifestManager, VideoManifestManager
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.core import VideoManifestValidator
 
 import django_rq
@@ -367,19 +367,18 @@ def _create_thread(tid, data):
                             _update_status('{} Start prepare a valid manifest file.'.format(base_msg))
 
                     if not manifest_is_prepared:
-                        meta_info = prepare_meta(
-                            data_type='video',
+                        _update_status('Start prepare a manifest file')
+                        manifest = VideoManifestManager(db_data.get_manifest_path())
+                        meta_info = manifest.prepare_meta(
                             media_file=media_files[0],
                             upload_dir=upload_dir,
                             chunk_size=db_data.chunk_size
                         )
-                        _update_status('Start prepare a manifest file')
-                        manifest = VideoManifestManager(db_data.get_manifest_path())
                         manifest.create(meta_info)
                         manifest.init_index()
                         _update_status('A manifest had been created')
 
-                        all_frames = meta_info.get_task_size()
+                        all_frames = meta_info.get_size()
                         video_size = meta_info.frame_sizes
                         manifest_is_prepared = True
 
@@ -400,8 +399,7 @@ def _create_thread(tid, data):
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
                     if db_task.dimension == DimensionType.DIM_2D:
-                        meta_info = prepare_meta(
-                            data_type='images',
+                        meta_info = manifest.prepare_meta(
                             sources=extractor.absolute_source_paths,
                             data_dir=upload_dir
                         )

@@ -27,7 +27,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
-from utils.dataset_manifest.core import WorkWithVideo
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
@@ -359,10 +358,10 @@ class ImageDatasetManifestReader(FragmentMediaReader):
         for idx in self._frame_range:
             yield self._manifest[idx]
 
-class VideoDatasetManifestReader(WorkWithVideo, FragmentMediaReader):
+class VideoDatasetManifestReader(FragmentMediaReader):
     def __init__(self, manifest_path, **kwargs):
-        WorkWithVideo.__init__(self, kwargs.pop('source_path'))
-        FragmentMediaReader.__init__(self, **kwargs)
+        self.source_path = kwargs.pop('source_path')
+        super().__init__(**kwargs)
         self._manifest = VideoManifestManager(manifest_path)
         self._manifest.init_index()
 
@@ -391,7 +390,9 @@ class VideoDatasetManifestReader(WorkWithVideo, FragmentMediaReader):
     def __iter__(self):
         start_decode_frame_number, start_decode_timestamp = self._get_nearest_left_key_frame()
         with closing(av.open(self.source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
+            video_stream = next(stream for stream in container.streams if stream.type == 'video')
+            video_stream.thread_type = 'AUTO'
+
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
             frame_number = start_decode_frame_number - 1
