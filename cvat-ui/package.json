@@ -78,6 +78,8 @@
     "react-cookie": "^4.0.3",
     "react-dom": "^16.14.0",
     "react-redux": "^7.2.2",
+    "react-resizable": "^1.11.0",
+    "@types/react-resizable": "^1.7.2",
     "react-router": "^5.1.0",
     "react-router-dom": "^5.1.0",
     "react-share": "^3.0.1",
