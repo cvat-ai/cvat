@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const_canvas3d';
+
 context('Canvas 3D functionality. Resize views.', () => {
     const caseId = '62';
     let widthHightArrBeforeResize = [];
