@@ -25,7 +25,7 @@ weight: 9
       format and a text file with the value of each color.
     - [YOLO](https://pjreddie.com/darknet/yolo/)
     - [COCO](http://cocodataset.org/#format-data)
-    - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
+    - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)
     - [MOT](https://motchallenge.net/)
     - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
-    - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/)
+    - [Datumaro](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/datumaro)

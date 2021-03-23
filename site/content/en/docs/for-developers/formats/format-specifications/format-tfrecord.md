@@ -3,7 +3,7 @@ linkTitle: "TFRecord"
 weight: 6
 ---
 
-### [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)<a id="tfrecord" />
+### [TFRecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)<a id="tfrecord" />
 
 TFRecord is a very flexible format, but we try to correspond the
 format that used in
@@ -160,7 +160,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
    ```
 
    Select images. zip as data.
-   See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
+   See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task)
    guide for details.
 
 1. Zip `pascal.tfrecord` and `label_map.pbtxt` files together

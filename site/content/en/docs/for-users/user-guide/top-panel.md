@@ -20,7 +20,7 @@ Button assignment:
 - `Upload Annotations` — uploads annotations into a task.
 - `Remove Annotations` — removes annotations from the current job.
 - `Export as a dataset` — download a data set from a task. Several formats are available:
-  - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design)
+  - [Datumaro](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/datumaro)
   - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
   - [MS COCO](http://cocodataset.org/#format-data)
   - [YOLO](https://pjreddie.com/darknet/yolo/)

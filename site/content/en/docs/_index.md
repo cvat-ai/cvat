@@ -25,7 +25,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 - [Installation guide](for-users/installation)
 - [User's guide](for-users/user-guide)
 - [Django REST API documentation](#rest-api)
-- [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README)
+- [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
 - [Command line interface](for-developers/cli)
 - [XML annotation format](for-developers/xml_format)
 - [AWS Deployment Guide](for-developers/aws-deployment-guide/)
@@ -63,7 +63,7 @@ For more information about supported formats look at the
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/) | X      | X      |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                    | X      | X      |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)               | X      | X      |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)         | X      | X      |
+| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)         | X      | X      |
 | [MOT](https://motchallenge.net/)                                              | X      | X      |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
 | [ImageNet](http://www.image-net.org)                                          | X      | X      |
@@ -126,7 +126,7 @@ name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`.
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
 
 This software uses LGPL licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
-The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
+The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](https://github.com/openvinotoolkit/cvat/blob/develop/Dockerfile).
 
 FFmpeg is an open source framework licensed under LGPL and GPL.
 See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible

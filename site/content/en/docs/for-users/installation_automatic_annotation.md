@@ -25,7 +25,7 @@ description: "This page provides information about the installation of component
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions. Download [version 1.5.16](https://github.com/nuclio/nuclio/releases/tag/1.5.16).
   It is important that the version you download matches the version in
-  [docker-compose.serverless.yml](/components/serverless/docker-compose.serverless.yml)
+  [docker-compose.serverless.yml](https://github.com/openvinotoolkit/cvat/blob/develop/components/serverless/docker-compose.serverless.yml)
   After downloading the nuclio, give it a proper permission and do a softlink
 
   ```
@@ -55,7 +55,7 @@ description: "This page provides information about the installation of component
 
   **Note:**
 
-  - See [deploy_cpu.sh](/serverless/deploy_cpu.sh) for more examples.
+  - See [deploy_cpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_cpu.sh) for more examples.
 
   #### GPU Support
   You will need to install [Nvidia Container Toolkit](https://www.tensorflow.org/install/docker#gpu_support).
@@ -75,7 +75,7 @@ description: "This page provides information about the installation of component
 
   **Note:**
   - The number of GPU deployed functions will be limited to your GPU memory.
-  - See [deploy_gpu.sh](/serverless/deploy_gpu.sh) script for more examples.
+  - See [deploy_gpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_gpu.sh) script for more examples.
 
 **Troubleshooting Nuclio Functions:**
 
