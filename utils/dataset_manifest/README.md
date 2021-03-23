@@ -86,7 +86,14 @@ docker run -it --entrypoint python3 -v ~/Documents/data/:${HOME}/manifest/:rw op
 utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 ```
 
-### Example of generated `manifest.jsonl` for video
+### Examples of generated `manifest.jsonl` files
+
+A maifest file contains some intuitive information and some specific like:
+
+`pts` - time at which the frame should be shown to the user
+`checksum` - `md5` hash sum for the specific image/frame
+
+#### For a video
 
 ```json
 {"version":"1.0"}
@@ -100,7 +107,7 @@ utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 {"number":675,"pts":2430000,"checksum":"0e72faf67e5218c70b506445ac91cdd7"}
 ```
 
-### Example of generated `manifest.jsonl` for dataset with images
+#### For a dataset with images
 
 ```json
 {"version":"1.0"}
