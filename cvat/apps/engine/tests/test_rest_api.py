@@ -30,9 +30,9 @@ from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
-from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.models import DimensionType
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1971,6 +1971,26 @@ def generate_pdf_file(filename, page_count=1):
     file_buf.seek(0)
     return image_sizes, file_buf
 
+def generate_manifest_file(data_type, manifest_path, sources):
+    kwargs = {
+        'images': {
+            'sources': sources,
+            'is_sorted': False,
+        },
+        'video': {
+            'media_file': sources[0],
+            'upload_dir': os.path.dirname(sources[0]),
+            'force': True
+        }
+    }
+
+    if data_type == 'video':
+        manifest = VideoManifestManager(manifest_path)
+    else:
+        manifest = ImageManifestManager(manifest_path)
+    prepared_meta = manifest.prepare_meta(**kwargs[data_type])
+    manifest.create(prepared_meta)
+
 class TaskDataAPITestCase(APITestCase):
     _image_sizes = {}
 
@@ -2093,6 +2113,12 @@ class TaskDataAPITestCase(APITestCase):
         shutil.rmtree(root_path)
         cls._image_sizes[filename] = image_sizes
 
+        generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
+            sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
+
+        generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
+            sources=[os.path.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -2114,7 +2140,10 @@ class TaskDataAPITestCase(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "videos", "meta_info.txt")
+        path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
         os.remove(path)
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
@@ -2257,7 +2286,7 @@ class TaskDataAPITestCase(APITestCase):
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
-                server_files = [img for key, img in data.items() if key.startswith("server_files")]
+                server_files = [img for key, img in data.items() if key.startswith("server_files") and not img.endswith("manifest.jsonl")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
@@ -2446,7 +2475,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
-                                             expected_uploaded_data_location=StorageChoice.SHARE)
+                                             expected_uploaded_data_location=StorageChoice.LOCAL)
 
         task_spec.update([('name', 'my archive task #12')])
         task_data.update([('copy_data', True)])
@@ -2546,7 +2575,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
         task_spec.update([('name', 'my cached zip archive task #19')])
         task_data.update([('copy_data', True)])
@@ -2595,11 +2624,6 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data,
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
-        prepare_meta_for_upload(
-            prepare_meta,
-            os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4"),
-            os.path.join(settings.SHARE_ROOT, "videos")
-        )
         task_spec = {
             "name": "my video with meta info task without copying #22",
             "overlap": 0,
@@ -2611,7 +2635,7 @@ class TaskDataAPITestCase(APITestCase):
         }
         task_data = {
             "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
-            "server_files[1]": os.path.join("videos", "meta_info.txt"),
+            "server_files[1]": os.path.join("videos", "manifest.jsonl"),
             "image_quality": 70,
             "use_cache": True
         }
@@ -2722,6 +2746,38 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
+
+        task_spec = {
+            "name": "my images+manifest without copying #26",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_3.jpg",
+            "server_files[3]": "manifest.jsonl",
+            "image_quality": 70,
+            "use_cache": True
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        task_spec.update([('name', 'my images+manifest #27')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
