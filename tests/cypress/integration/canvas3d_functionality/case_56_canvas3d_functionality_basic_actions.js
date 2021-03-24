@@ -12,24 +12,24 @@ context('Canvas 3D functionality. Basic actions.', () => {
     const screenshotsPath =
         'cypress/screenshots/canvas3d_functionality/case_56_canvas3d_functionality_basic_actions.js';
 
-    function compareImages(imgBefore, imgAfter) {
-        cy.compareImages(`${screenshotsPath}/${imgBefore}`, `${screenshotsPath}/${imgAfter}`).then((diffPercent) => {
-            expect(diffPercent).to.be.gt(0);
-        });
-    }
-
     function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(`{alt}${key}`);
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(key);
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     function testPerspectiveChangeOnWheel(screenshotNameBefore, screenshotNameAfter) {
@@ -38,7 +38,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -50 });
         }
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     function testTopSideFrontChangeOnWheel(element, screenshotNameBefore, screenshotNameAfter) {
@@ -47,7 +50,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get(element).trigger('wheel', { deltaY: -100 });
         }
         cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     function testContextImage() {

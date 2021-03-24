@@ -11,12 +11,6 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
     const screenshotsPath =
         'cypress/screenshots/canvas3d_functionality/case_63_canvas3d_functionality_control_button_mouse_interaction.js';
 
-    function compareImages(imgBefore, imgAfter) {
-        cy.compareImages(`${screenshotsPath}/${imgBefore}`, `${screenshotsPath}/${imgAfter}`).then((diffPercent) => {
-            expect(diffPercent).to.be.gt(0);
-        });
-    }
-
     function testPerspectiveChangeOnButtonClick(
         button,
         expectedTooltipText,
@@ -32,7 +26,10 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
             : cy.contains('button', new RegExp(`^${button}$`)).trigger('mouseout');
         cy.contains(expectedTooltipText).should('not.exist');
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     before(() => {
