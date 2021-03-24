@@ -11,12 +11,6 @@ context('Canvas 3D functionality. Add cuboid.', () => {
 
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_64_canvas3d_functionality_cuboid.js';
 
-    function compareImages(imgBefore, imgAfter) {
-        cy.compareImages(`${screenshotsPath}/${imgBefore}`, `${screenshotsPath}/${imgAfter}`).then((diffPercent) => {
-            expect(diffPercent).to.be.gt(0);
-        });
-    }
-
     before(() => {
         cy.openTaskJob(taskName);
         // Prepare screenshots to compare
@@ -32,7 +26,10 @@ context('Canvas 3D functionality. Add cuboid.', () => {
             cy.get('.cvat-draw-shape-popover').find('button').click();
             cy.get('.cvat-canvas3d-perspective').dblclick();
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboid'); // The cuboid displayed
-            compareImages('canvas3d_perspective_before_all.png', 'canvas3d_perspective_after_add_cuboid.png');
+            cy.compareImagesAndCheckResult(
+                `${screenshotsPath}/canvas3d_perspective_before_all.png`,
+                `${screenshotsPath}/canvas3d_perspective_after_add_cuboid.png`,
+            );
         });
 
         it('Cuboid interaction by mouse.', () => {
@@ -42,18 +39,18 @@ context('Canvas 3D functionality. Add cuboid.', () => {
                 .trigger('mousemove', 400, 200)
                 .trigger('mousemove', 300, 200); // The cuboid should change a color after movement cursor from it
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_cursor_movements_from_cuboid');
-            compareImages(
-                'canvas3d_perspective_after_add_cuboid.png',
-                'canvas3d_perspective_after_cursor_movements_from_cuboid.png',
+            cy.compareImagesAndCheckResult(
+                `${screenshotsPath}/canvas3d_perspective_after_add_cuboid.png`,
+                `${screenshotsPath}/canvas3d_perspective_after_cursor_movements_from_cuboid.png`,
             );
 
             // Move cursor to the cuboid. The cuboid does not have time to change color so we make the mouse movement 3 times
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove').trigger('mousemove').trigger('mousemove');
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_cursor_movements_to_cuboid');
             // The cuboid changed a color
-            compareImages(
-                'canvas3d_perspective_after_cursor_movements_from_cuboid.png',
-                'canvas3d_perspective_after_cursor_movements_to_cuboid.png',
+            cy.compareImagesAndCheckResult(
+                `${screenshotsPath}/canvas3d_perspective_after_cursor_movements_from_cuboid.png`,
+                `${screenshotsPath}/canvas3d_perspective_after_cursor_movements_to_cuboid.png`,
             );
         });
 
@@ -61,9 +58,9 @@ context('Canvas 3D functionality. Add cuboid.', () => {
             cy.get('.cvat-canvas3d-perspective').dblclick(); // Dblclick on the cuboid
             // On the perspective view the cuboid should change a color also.
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_dblclick_on_cuboid');
-            compareImages(
-                'canvas3d_perspective_after_cursor_movements_to_cuboid.png',
-                'canvas3d_perspective_after_dblclick_on_cuboid.png',
+            cy.compareImagesAndCheckResult(
+                `${screenshotsPath}/canvas3d_perspective_after_cursor_movements_to_cuboid.png`,
+                `${screenshotsPath}/canvas3d_perspective_after_dblclick_on_cuboid.png`,
             );
 
             ['topview', 'sideview', 'frontview'].forEach((view) => {
@@ -76,7 +73,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
                 ['canvas3d_sideview_before_all.png', 'canvas3d_sideview_show_cuboid.png'],
                 ['canvas3d_frontview_before_all.png', 'canvas3d_frontview_show_cuboid.png'],
             ].forEach(([viewBefore, viewAfter]) => {
-                compareImages(viewBefore, viewAfter);
+                cy.compareImagesAndCheckResult(`${screenshotsPath}/${viewBefore}`, `${screenshotsPath}/${viewAfter}`);
             });
         });
     });
