@@ -7,3 +7,11 @@ Add styles or override variables from the theme here.
 $enable-gradients: false;
 $enable-rounded: true;
 $enable-shadows: true;
+
+/*
+Increased left padding on the sidebar of documentation
+*/
+
+.td-sidebar-nav__section-title .td-sidebar-nav__section .with-child {
+        padding-left: 1rem;
+    }
