@@ -33,7 +33,7 @@ pip install -r requirements.txt
 ### Using
 
 ```bash
-usage: python create.py [-h] [--force] manifest_directory source
+usage: python create.py [-h] [--force] [--output-dir .] source
 
 positional arguments:
   source                Source paths
