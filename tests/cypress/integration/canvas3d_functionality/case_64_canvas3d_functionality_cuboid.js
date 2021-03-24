@@ -50,7 +50,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
             // Move cursor to the cuboid. The cuboid does not have time to change color so we make the mouse movement 3 times
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove').trigger('mousemove').trigger('mousemove');
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_cursor_movements_to_cuboid');
-            // The cuboid changed color to yellow
+            // The cuboid changed a color
             compareImages(
                 'canvas3d_perspective_after_cursor_movements_from_cuboid.png',
                 'canvas3d_perspective_after_cursor_movements_to_cuboid.png',
@@ -59,7 +59,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
 
         it('Top/side/front views should be changed afer dblclick on the cuboid on perspective view because of the drawing of the cuboid.', () => {
             cy.get('.cvat-canvas3d-perspective').dblclick(); // Dblclick on the cuboid
-            // On the perspective view the cuboid should change a color also. To turquoise
+            // On the perspective view the cuboid should change a color also.
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_dblclick_on_cuboid');
             compareImages(
                 'canvas3d_perspective_after_cursor_movements_to_cuboid.png',
