@@ -15,6 +15,7 @@ weight: 10
     ![](/images/image109.jpg)
 
 1.  The next step is to go to the repository and manually create a pull request to the main branch.
+
 1.  After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to blue.
 
     ![](/images/image110.jpg)
