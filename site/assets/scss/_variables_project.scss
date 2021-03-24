@@ -12,6 +12,6 @@ $enable-shadows: true;
 Increased left padding on the sidebar of documentation
 */
 
-.td-sidebar-nav__section-title .td-sidebar-nav__section .with-child {
-        padding-left: 1rem;
+.td-sidebar-nav__section-title .td-sidebar-nav__section {
+        padding-left: 0.3rem;
     }
