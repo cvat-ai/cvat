@@ -12,8 +12,14 @@ import Tooltip from 'antd/lib/tooltip';
 import Moment from 'react-moment';
 
 import moment from 'moment';
-import { DimensionType, PredictorState, Workspace } from 'reducers/interfaces';
-import { BrainIcon, FullscreenIcon, InfoIcon } from 'icons';
+import { useSelector } from 'react-redux';
+
+import {
+    FilterIcon, FullscreenIcon, InfoIcon, BrainIcon,
+} from 'icons';
+import {
+    CombinedState, DimensionType, Workspace, PredictorState,
+} from 'reducers/interfaces';
 
 interface Props {
     workspace: Workspace;
@@ -24,6 +30,7 @@ interface Props {
 
     switchPredictor(predictorEnabled: boolean): void;
 
+    showFilters(): void;
     changeWorkspace(workspace: Workspace): void;
 
     jobInstance: any;
@@ -38,6 +45,7 @@ function RightGroup(props: Props): JSX.Element {
         predictor,
         jobInstance,
         isTrainingActive,
+        showFilters,
     } = props;
     predictor.annotationAmount = predictor.annotationAmount ? predictor.annotationAmount : 0;
     predictor.mediaAmount = predictor.mediaAmount ? predictor.mediaAmount : 0;
@@ -116,6 +124,8 @@ function RightGroup(props: Props): JSX.Element {
         predictorClassName += ' cvat-predictor-inprogress';
     }
 
+    const filters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+
     return (
         <Col className='cvat-annotation-header-right-group'>
             {isTrainingActive && (
@@ -151,6 +161,14 @@ function RightGroup(props: Props): JSX.Element {
             <Button type='link' className='cvat-annotation-header-button' onClick={showStatistics}>
                 <Icon component={InfoIcon} />
                 Info
+            </Button>
+            <Button
+                type='link'
+                className={`cvat-annotation-header-button ${filters.length ? 'filters-armed' : ''}`}
+                onClick={showFilters}
+            >
+                <Icon component={FilterIcon} />
+                Filters
             </Button>
             <div>
                 <Select

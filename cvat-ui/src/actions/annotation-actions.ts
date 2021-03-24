@@ -7,7 +7,10 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
+import getCore from 'cvat-core-wrapper';
+import logger, { LogType } from 'cvat-logger';
+import { getCVATStore } from 'cvat-store';
 import {
     ActiveControl,
     CombinedState,
@@ -22,11 +25,6 @@ import {
     Task,
     Workspace,
 } from 'reducers/interfaces';
-
-import getCore from 'cvat-core-wrapper';
-import logger, { LogType } from 'cvat-logger';
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
-import { getCVATStore } from 'cvat-store';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -161,6 +159,7 @@ export enum AnnotationActionTypes {
     PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
     CHANGE_PROPAGATE_FRAMES = 'CHANGE_PROPAGATE_FRAMES',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
+    SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
     COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
     COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
@@ -280,24 +279,10 @@ export function fetchAnnotationsAsync(): ThunkAction {
     };
 }
 
-export function changeAnnotationsFilters(filters: string[]): AnyAction {
-    const state: CombinedState = getStore().getState();
-    const { filtersHistory, filters: oldFilters } = state.annotation.annotations;
-
-    filters.forEach((element: string) => {
-        if (!(filtersHistory.includes(element) || oldFilters.includes(element))) {
-            filtersHistory.push(element);
-        }
-    });
-
-    window.localStorage.setItem('filtersHistory', JSON.stringify(filtersHistory.slice(-10)));
-
+export function changeAnnotationsFilters(filters: any[]): AnyAction {
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
-        payload: {
-            filters,
-            filtersHistory: filtersHistory.slice(-10),
-        },
+        payload: { filters },
     };
 }
 
@@ -442,6 +427,14 @@ export function collectStatisticsAsync(sessionInstance: any): ThunkAction {
 export function showStatistics(visible: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.SWITCH_SHOWING_STATISTICS,
+        payload: {
+            visible,
+        },
+    };
+}
+export function showFilters(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SHOWING_FILTERS,
         payload: {
             visible,
         },
@@ -962,7 +955,7 @@ export function closeJob(): ThunkAction {
     };
 }
 
-export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: string[]): ThunkAction {
+export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: object[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const state: CombinedState = getStore().getState();

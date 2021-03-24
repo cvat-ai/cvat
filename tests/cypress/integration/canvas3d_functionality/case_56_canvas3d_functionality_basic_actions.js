@@ -33,19 +33,19 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     function testPerspectiveChangeOnWheel(screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameBefore);
-        for (let i = 0; i < 5; i++) {
-            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -200 });
+        for (let i = 0; i < 3; i++) {
+            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -50 });
         }
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
-    function testTopSideFrontChangeOnWheel(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
-        cy.get(element).screenshot(screenshotNameBefore);
-        for (let i = 0; i < 10; i++) {
-            cy.get(element).trigger('wheel', { deltaY: deltaY });
+    function testTopSideFrontChangeOnWheel(element, screenshotNameBefore, screenshotNameAfter) {
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameBefore);
+        for (let i = 0; i < 3; i++) {
+            cy.get(element).trigger('wheel', { deltaY: -100 });
         }
-        cy.get(element).screenshot(screenshotNameAfter);
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameAfter);
         compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
     }
 
@@ -152,7 +152,6 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
 
         it('Testing perspective visual regressions.', () => {
-            testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
@@ -163,24 +162,14 @@ context('Canvas 3D functionality. Basic actions.', () => {
             testPerspectiveChangeOnArrowKeyPress('{downarrow}', 'before_press_downarrow', 'after_press_downarrow');
             testPerspectiveChangeOnArrowKeyPress('{leftarrow}', 'before_press_leftarrow', 'after_press_leftarrow');
             testPerspectiveChangeOnArrowKeyPress('{rightarrow}', 'before_press_rightarrow', 'after_press_rightarrow');
+            testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
         });
 
         it('Testing top/side/front views visual regressions.', () => {
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-topview',
-                -1000,
-                'topview_before_wheel',
-                'topview_after_wheel',
-            );
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-sideview',
-                -1000,
-                'sideview_before_wheel',
-                'sideview_after_wheel',
-            );
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-topview', 'topview_before_wheel', 'topview_after_wheel');
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-sideview', 'sideview_before_wheel', 'sideview_after_wheel');
             testTopSideFrontChangeOnWheel(
                 '.cvat-canvas3d-frontview',
-                -1000,
                 'frontview_before_wheel',
                 'frontview_after_wheel',
             );

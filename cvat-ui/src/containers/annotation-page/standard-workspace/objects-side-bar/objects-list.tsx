@@ -17,7 +17,9 @@ import {
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { CombinedState, StatesOrdering, ObjectType, ColorBy } from 'reducers/interfaces';
+import {
+    CombinedState, StatesOrdering, ObjectType, ColorBy,
+} from 'reducers/interfaces';
 
 interface OwnProps {
     readonly: boolean;
@@ -32,13 +34,12 @@ interface StateToProps {
     statesCollapsedAll: boolean;
     collapsedStates: Record<number, boolean>;
     objectStates: any[];
-    annotationsFilters: string[];
+    annotationsFilters: any[];
     colors: string[];
     colorBy: ColorBy;
     activatedStateID: number | null;
     minZLayer: number;
     maxZLayer: number;
-    annotationsFiltersHistory: string[];
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
@@ -60,7 +61,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: objectStates,
                 filters: annotationsFilters,
-                filtersHistory: annotationsFiltersHistory,
                 collapsed,
                 collapsedAll,
                 activatedStateID,
@@ -108,7 +108,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         minZLayer,
         maxZLayer,
-        annotationsFiltersHistory,
         keyMap,
         normalizedKeyMap,
         canvasInstance,

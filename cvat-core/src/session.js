@@ -392,7 +392,7 @@
              * @param {integer} frame get objects from the frame
              * @param {boolean} allTracks show all tracks
              * even if they are outside and not keyframe
-             * @param {string[]} [filters = []]
+             * @param {any[]} [filters = []]
              * get only objects that satisfied to specific filters
              * @returns {module:API.cvat.classes.ObjectState[]}
              * @memberof Session.annotations
@@ -1805,8 +1805,8 @@
 
     // TODO: Check filter for annotations
     Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frame)) {
@@ -1822,8 +1822,8 @@
     };
 
     Job.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
