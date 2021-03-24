@@ -201,87 +201,87 @@ class _DbTestBase(APITestCase):
         return response
 
 class TaskDumpUploadTest(_DbTestBase):
-    def test_check_CI(self):
-        pass
-    
-    # def test_api_v1_tasks_annotations_dump_and_upload_with_datumaro(self):
-    #     test_name = self._testMethodName
-    #     # get formats
-    #     dump_formats = dm.views.get_export_formats()
-    #
-    #     for dump_format in dump_formats:
-    #         if dump_format.ENABLED:
-    #             dump_format_name = dump_format.DISPLAY_NAME
-    #
-    #             with self.subTest():
-    #                 # TODO skip failed formats
-    #                 if dump_format_name in [
-    #                     "CVAT for video 1.1", # issues #2923 and #2924
-    #                     "MOT 1.1", # issue #2925
-    #                     "Datumaro 1.0", # not uploaded
-    #                     "WiderFace 1.0", # issue #2944
-    #                     "CamVid 1.0", # issue #2840 and changed points values
-    #                     "MOTS PNG 1.0", # issue #2925 and changed points values
-    #                     "Segmentation mask 1.1", # changed points values
-    #                 ]:
-    #                     self.skipTest("Format is fail")
-    #
-    #                 for include_images in (False, True):
-    #                     # create task
-    #                     images = self._generate_task_images(3)
-    #                     task = self._create_task(tasks["main"], images)
-    #
-    #                     # create annotations
-    #                     if dump_format_name in [
-    #                         "MOT 1.1", "MOTS PNG 1.0", \
-    #                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-    #                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-    #                         "WiderFace 1.0", "VGGFace2 1.0", \
-    #                     ]:
-    #                         self._create_annotations(task, dump_format_name, "default")
-    #                     else:
-    #                         self._create_annotations(task, dump_format_name, "random")
-    #
-    #                     task_id = task["id"]
-    #                     task_ann = TaskAnnotation(task_id)
-    #                     task_ann.init_from_db()
-    #                     task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-    #                     extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-    #                     data_from_task_before_upload = Dataset.from_extractors(extractor)
-    #
-    #                     # dump annotations
-    #                     url = self._generate_url_dump_tasks_annotations(task_id)
-    #                     data = {
-    #                         "format": dump_format_name,
-    #                         "action": "download",
-    #                     }
-    #                     with TestDir() as test_dir:
-    #                         file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-    #                         self._download_file(url, data, self.admin, file_zip_name)
-    #                         self._check_downloaded_file(file_zip_name)
-    #
-    #                         # remove annotations
-    #                         self._remove_annotations(url, self.admin)
-    #
-    #                         # upload annotations
-    #                         if dump_format_name in ["CVAT for images 1.1", "CVAT for video 1.1"]:
-    #                             upload_format_name = "CVAT 1.1"
-    #                         else:
-    #                             upload_format_name = dump_format_name
-    #
-    #                         url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
-    #                         with open(file_zip_name, 'rb') as binary_file:
-    #                             response = self._upload_file(url, binary_file, self.admin)
-    #                             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    #
-    #                         # equals annotations
-    #                         task_ann = TaskAnnotation(task_id)
-    #                         task_ann.init_from_db()
-    #                         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-    #                         extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-    #                         data_from_task_after_upload = Dataset.from_extractors(extractor)
-    #                         compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
-    #
+    # def test_check_CI(self):
+    #     pass
+
+    def test_api_v1_tasks_annotations_dump_and_upload_with_datumaro(self):
+        test_name = self._testMethodName
+        # get formats
+        dump_formats = dm.views.get_export_formats()
+
+        for dump_format in dump_formats:
+            if dump_format.ENABLED:
+                dump_format_name = dump_format.DISPLAY_NAME
+
+                with self.subTest():
+                    # TODO skip failed formats
+                    if dump_format_name in [
+                        "CVAT for video 1.1", # issues #2923 and #2924
+                        "MOT 1.1", # issue #2925
+                        "Datumaro 1.0", # not uploaded
+                        "WiderFace 1.0", # issue #2944
+                        "CamVid 1.0", # issue #2840 and changed points values
+                        "MOTS PNG 1.0", # issue #2925 and changed points values
+                        "Segmentation mask 1.1", # changed points values
+                    ]:
+                        self.skipTest("Format is fail")
+
+                    for include_images in (False, True):
+                        # create task
+                        images = self._generate_task_images(3)
+                        task = self._create_task(tasks["main"], images)
+
+                        # create annotations
+                        if dump_format_name in [
+                            "MOT 1.1", "MOTS PNG 1.0", \
+                            "PASCAL VOC 1.1", "Segmentation mask 1.1", \
+                            "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
+                            "WiderFace 1.0", "VGGFace2 1.0", \
+                        ]:
+                            self._create_annotations(task, dump_format_name, "default")
+                        else:
+                            self._create_annotations(task, dump_format_name, "random")
+
+                        task_id = task["id"]
+                        task_ann = TaskAnnotation(task_id)
+                        task_ann.init_from_db()
+                        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+                        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+                        data_from_task_before_upload = Dataset.from_extractors(extractor)
+
+                        # dump annotations
+                        url = self._generate_url_dump_tasks_annotations(task_id)
+                        data = {
+                            "format": dump_format_name,
+                            "action": "download",
+                        }
+                        with TestDir() as test_dir:
+                            file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+                            self._download_file(url, data, self.admin, file_zip_name)
+                            self._check_downloaded_file(file_zip_name)
+
+                            # remove annotations
+                            self._remove_annotations(url, self.admin)
+
+                            # upload annotations
+                            if dump_format_name in ["CVAT for images 1.1", "CVAT for video 1.1"]:
+                                upload_format_name = "CVAT 1.1"
+                            else:
+                                upload_format_name = dump_format_name
+
+                            url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+                            with open(file_zip_name, 'rb') as binary_file:
+                                response = self._upload_file(url, binary_file, self.admin)
+                                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+                            # equals annotations
+                            task_ann = TaskAnnotation(task_id)
+                            task_ann.init_from_db()
+                            task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+                            extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+                            data_from_task_after_upload = Dataset.from_extractors(extractor)
+                            compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+
     # def test_api_v1_tasks_annotations_update_wrong_label(self):
     #     test_name = self._testMethodName
     #     dump_format_name = "CVAT for images 1.1"
