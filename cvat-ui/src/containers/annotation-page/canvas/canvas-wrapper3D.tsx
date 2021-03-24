@@ -5,7 +5,7 @@
 import { connect } from 'react-redux';
 
 import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper3D';
-import { confirmCanvasReady, getContextImage } from 'actions/annotation-actions';
+import { confirmCanvasReady, getContextImage, resetCanvas } from 'actions/annotation-actions';
 
 import { CombinedState } from 'reducers/interfaces';
 
@@ -25,6 +25,7 @@ interface StateToProps {
 interface DispatchToProps {
     onSetupCanvas(): void;
     getContextImage(): void;
+    onResetCanvas(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -62,6 +63,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         getContextImage(): void {
             dispatch(getContextImage());
+        },
+        onResetCanvas(): void {
+            dispatch(resetCanvas());
         },
     };
 }

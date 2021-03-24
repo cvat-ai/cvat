@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [VGGFace2](https://github.com/ox-vgg/vgg_face2) format support (<https://github.com/openvinotoolkit/cvat/pull/2865>)
 - [Backup/Restore guide](cvat/apps/documentation/backup_guide.md) (<https://github.com/openvinotoolkit/cvat/pull/2964>)
 - Label deletion from tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/2881>)
+- CVAT-3D: Implemented initial cuboid placement in 3D View and select cuboid in Top, Side and Front views
+  (<https://github.com/openvinotoolkit/cvat/pull/2891>)
 - [Market-1501](https://www.aitribune.com/dataset/2018051063) format support (<https://github.com/openvinotoolkit/cvat/pull/2869>)
 - Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
 
