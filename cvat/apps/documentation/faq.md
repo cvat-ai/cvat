@@ -15,7 +15,6 @@
 - [How to create a task with multiple jobs](#how-to-create-a-task-with-multiple-jobs)
 - [How to transfer CVAT to another machine](#how-to-transfer-cvat-to-another-machine)
 
-
 ## How to update CVAT
 
 Before upgrading, please follow the [backup guide](backup_guide.md) and backup all CVAT volumes.
@@ -151,4 +150,5 @@ Set the segment size when you create a new task, this option is available in the
 [Advanced configuration](user_guide.md#advanced-configuration) section.
 
 ## How to transfer CVAT to another machine
+
 Follow the [backup/restore guide](backup_guide.md#how-to-backup-all-cvat-data).
