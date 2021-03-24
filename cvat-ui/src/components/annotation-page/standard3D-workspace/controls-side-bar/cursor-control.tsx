@@ -17,7 +17,7 @@ interface Props {
 }
 
 function CursorControl(props: Props): JSX.Element {
-    const { activeControl, cursorShortkey } = props;
+    const { activeControl, cursorShortkey, canvasInstance } = props;
 
     return (
         <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>
@@ -27,6 +27,7 @@ function CursorControl(props: Props): JSX.Element {
                     'cvat-cursor-control',
                     activeControl === ActiveControl.CURSOR ? 'cvat-active-canvas-control ' : '',
                 ].join(' ')}
+                onClick={activeControl !== ActiveControl.CURSOR ? (): void => canvasInstance.cancel() : undefined}
             />
         </CVATTooltip>
     );

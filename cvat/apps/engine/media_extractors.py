@@ -40,6 +40,12 @@ def delete_tmp_dir(tmp_dir):
     if tmp_dir:
         shutil.rmtree(tmp_dir)
 
+def files_to_ignore(directory):
+    ignore_files = ('__MSOSX', '._.DS_Store', '__MACOSX', '.DS_Store')
+    if not any(ignore_file in directory for ignore_file in ignore_files):
+        return True
+    return False
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop):
         self._source_path = sorted(source_path)
@@ -186,7 +192,7 @@ class ZipReader(ImageListReader):
         self._dimension = DimensionType.DIM_2D
         self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
-        file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
+        file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
         super().__init__(file_list, step, start, stop)
 
     def __del__(self):
@@ -373,12 +379,29 @@ class ZipCompressedChunkWriter(IChunkWriter):
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    def __init__(self, _):
-        super().__init__(17)
+    def __init__(self, quality=67):
+        # translate inversed range [1:100] to [0:51]
+        quality = round(51 * (100 - quality) / 99)
+        super().__init__(quality)
         self._output_fps = 25
+        try:
+            codec = av.codec.Codec('libopenh264', 'w')
+            self._codec_name = codec.name
+            self._codec_opts = {
+                'profile': 'constrained_baseline',
+                'qmin': str(self._image_quality),
+                'qmax': str(self._image_quality),
+                'rc_mode': 'buffer',
+            }
+        except av.codec.codec.UnknownCodecError:
+            codec = av.codec.Codec('libx264', 'w')
+            self._codec_name = codec.name
+            self._codec_opts = {
+                "crf": str(self._image_quality),
+                "preset": "ultrafast",
+            }
 
-    @staticmethod
-    def _create_av_container(path, w, h, rate, options, f='mp4'):
+    def _create_av_container(self, path, w, h, rate, options, f='mp4'):
             # x264 requires width and height must be divisible by 2 for yuv420p
             if h % 2:
                 h += 1
@@ -386,7 +409,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 w += 1
 
             container = av.open(path, 'w',format=f)
-            video_stream = container.add_stream('libopenh264', rate=rate)
+            video_stream = container.add_stream(self._codec_name, rate=rate)
             video_stream.pix_fmt = "yuv420p"
             video_stream.width = w
             video_stream.height = h
@@ -406,12 +429,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
             w=input_w,
             h=input_h,
             rate=self._output_fps,
-            options={
-                'profile': 'constrained_baseline',
-                'qmin': str(self._image_quality),
-                'qmax': str(self._image_quality),
-                'rc_mode': 'buffer',
-            },
+            options=self._codec_opts,
         )
 
         self._encode_images(images, output_container, output_v_stream)
@@ -434,10 +452,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
     def __init__(self, quality):
-        # translate inversed range [1:100] to [0:51]
-        self._image_quality = round(51 * (100 - quality) / 99)
-        self._output_fps = 25
-
+        super().__init__(quality)
+        if self._codec_name == 'libx264':
+            self._codec_opts = {
+                'profile': 'baseline',
+                'coder': '0',
+                'crf': str(self._image_quality),
+                'wpredp': '0',
+                'flags': '-loop',
+            }
 
     def save_as_chunk(self, images, chunk_path):
         if not images:
@@ -458,12 +481,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             w=output_w,
             h=output_h,
             rate=self._output_fps,
-            options={
-                'profile': 'constrained_baseline',
-                'qmin': str(self._image_quality),
-                'qmax': str(self._image_quality),
-                'rc_mode': 'buffer',
-            },
+            options=self._codec_opts,
         )
 
         self._encode_images(images, output_container, output_v_stream)
@@ -663,7 +681,7 @@ class ValidateDimension:
     def validate_pointcloud(self, *args):
         root, actual_path, files = args
         pointcloud_files = self.process_files(root, actual_path, files)
-        related_path = root.split("pointcloud")[0]
+        related_path = root.rsplit("/pointcloud", 1)[0]
         related_images_path = os.path.join(related_path, "related_images")
 
         if os.path.isdir(related_images_path):
@@ -673,7 +691,7 @@ class ValidateDimension:
             for k in pointcloud_files:
                 for path in paths:
 
-                    if k == path.split("_")[0]:
+                    if k == path.rsplit("_", 1)[0]:
                         file_path = os.path.abspath(os.path.join(related_images_path, path))
                         files = [file for file in os.listdir(file_path) if
                                  os.path.isfile(os.path.join(file_path, file))]
@@ -692,7 +710,7 @@ class ValidateDimension:
             current_directory_name = os.path.split(root)
 
             if len(pcd_files.keys()) == 1:
-                pcd_name = list(pcd_files.keys())[0].split(".")[0]
+                pcd_name = list(pcd_files.keys())[0].rsplit(".", 1)[0]
                 if current_directory_name[1] == pcd_name:
                     for related_image in self.image_files.values():
                         if root == os.path.split(related_image)[0]:
@@ -706,6 +724,8 @@ class ValidateDimension:
             return
         actual_path = self.path
         for root, _, files in os.walk(actual_path):
+            if not files_to_ignore(root):
+                continue
 
             if root.endswith("data"):
                 if os.path.split(os.path.split(root)[0])[1] == "velodyne_points":

@@ -46,7 +46,6 @@ services:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
-      - cvat_models:/home/django/models
 
   cvat_ui:
     container_name: cvat_ui
@@ -87,4 +86,3 @@ volumes:
   cvat_data:
   cvat_keys:
   cvat_logs:
-  cvat_models:

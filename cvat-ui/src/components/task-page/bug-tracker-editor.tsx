@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,6 +34,7 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                     onOk: () => {
                         shown = false;
                     },
+                    className: 'cvat-modal-issue-tracker-update-task-fail',
                 });
                 shown = true;
             }
@@ -52,7 +53,9 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                         Issue Tracker
                     </Text>
                     <br />
-                    <Text editable={{ onChange: onChangeValue }}>{bugTracker}</Text>
+                    <Text editable={{ onChange: onChangeValue }} className='cvat-issue-tracker-value'>
+                        {bugTracker}
+                    </Text>
                     <Button
                         type='ghost'
                         size='small'

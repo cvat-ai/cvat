@@ -15,6 +15,7 @@
     "actions_tasks_objects/**/*",
     "actions_users/**/*",
     "actions_projects/**/*",
+    "canvas3d_functionality/*",
     "remove_users_tasks_projects.js"
   ]
 }

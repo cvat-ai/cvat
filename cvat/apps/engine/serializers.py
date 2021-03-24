@@ -70,10 +70,17 @@ class LabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set',
         default=[])
     color = serializers.CharField(allow_blank=True, required=False)
+    deleted = serializers.BooleanField(required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes')
+        fields = ('id', 'name', 'color', 'attributes', 'deleted')
+
+    def validate(self, attrs):
+        if attrs.get('deleted') == True and attrs.get('id') is None:
+            raise serializers.ValidationError('Deleted label must have an ID')
+
+        return attrs
 
     @staticmethod
     def update_instance(validated_data, parent_instance):
@@ -96,6 +103,9 @@ class LabelSerializer(serializers.ModelSerializer):
         else:
             db_label = models.Label.objects.create(name=validated_data.get('name'), **instance)
             logger.info("New {} label was created".format(db_label.name))
+        if validated_data.get('deleted') == True:
+            db_label.delete()
+            return
         if not validated_data.get('color', None):
             label_names = [l.name for l in
                 instance[tuple(instance.keys())[0]].label_set.exclude(id=db_label.id).order_by('id')
