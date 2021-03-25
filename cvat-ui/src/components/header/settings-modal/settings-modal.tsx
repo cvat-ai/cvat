@@ -10,6 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal/Modal';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
+import Tooltip from 'antd/lib/tooltip';
 import { PlayCircleOutlined, LaptopOutlined } from '@ant-design/icons';
 
 import { setSettings } from 'actions/settings-actions';
@@ -72,9 +73,11 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             className='cvat-settings-modal'
             footer={(
                 <>
-                    <Button type='primary' onClick={onSaveSettings}>
-                        Save
-                    </Button>
+                    <Tooltip title='Will save settings from this page and appearance settings on standard workspace page in browser'>
+                        <Button type='primary' onClick={onSaveSettings}>
+                            Save
+                        </Button>
+                    </Tooltip>
                     <Button type='default' onClick={onClose}>
                         Close
                     </Button>
