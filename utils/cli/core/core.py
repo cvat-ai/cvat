@@ -203,6 +203,7 @@ class CVAT_API_V1():
             host = host.replace('https://', '')
         scheme = 'https' if https else 'http'
         self.base = '{}://{}/api/v1/'.format(scheme, host)
+        self.git = f'{scheme}://{host}/git/repository/'
 
     @property
     def tasks(self):
