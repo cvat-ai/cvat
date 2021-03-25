@@ -11,6 +11,8 @@ import Button from 'antd/lib/button';
 import Collapse from 'antd/lib/collapse';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 
 import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
@@ -183,19 +185,20 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     if (this.advancedConfigurationComponent.current) {
                         return this.advancedConfigurationComponent.current.submit();
                     }
-
-                    return new Promise<void>((resolve): void => {
-                        resolve();
-                    });
+                    return Promise.resolve();
                 })
                 .then((): void => {
                     const { onCreate } = this.props;
                     onCreate(this.state);
                 })
-                .catch((error: Error): void => {
+                .catch((error: Error | ValidateErrorEntity): void => {
                     notification.error({
                         message: 'Could not create a task',
-                        description: error.toString(),
+                        description: (error as ValidateErrorEntity).errorFields ?
+                            (error as ValidateErrorEntity).errorFields
+                                .map((field) => `${field.name} : ${field.errors.join(';')}`)
+                                .map((text: string): JSX.Element => <div>{text}</div>) :
+                            error.toString(),
                         className: 'cvat-notification-create-task-fail',
                     });
                 });

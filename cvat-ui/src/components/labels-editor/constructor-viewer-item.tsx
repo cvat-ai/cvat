@@ -35,18 +35,16 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     <EditOutlined />
                 </span>
             </CVATTooltip>
-            {label.id < 0 && (
-                <CVATTooltip title='Delete label'>
-                    <span
-                        role='button'
-                        tabIndex={0}
-                        onClick={(): void => onDelete(label)}
-                        onKeyPress={(): boolean => false}
-                    >
-                        <CloseOutlined />
-                    </span>
-                </CVATTooltip>
-            )}
+            <CVATTooltip title='Delete label'>
+                <span
+                    role='button'
+                    tabIndex={0}
+                    onClick={(): void => onDelete(label)}
+                    onKeyPress={(): boolean => false}
+                >
+                    <CloseOutlined />
+                </span>
+            </CVATTooltip>
         </div>
     );
 }

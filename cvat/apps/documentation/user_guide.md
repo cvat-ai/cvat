@@ -153,8 +153,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Select files**. Press tab `My computer` to choose some files for annotation from your PC.
     If you select tab `Connected file share` you can choose files for annotation from your network.
     If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
-    If you upload a video data and select `Use cache` option, you can along with the video file attach a file with meta information.
-    You can find how to prepare it [here](/utils/prepare_meta_information/README.md).
+    If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
+    You can find how to prepare it [here](/utils/dataset_manifest/README.md).
 
     ![](static/documentation/images/image127.jpg)
 
@@ -1156,8 +1156,6 @@ Once it is loaded, the tool's functionality will be available.
 Intelligent scissors is an CV method of creating a polygon by placing points with automatic drawing of a line between them.
 The distance between the adjacent points is limited by the threshold of action,
 displayed as a red square which is tied to the cursor.
-
-
 
 - First, select the label and then click on the `intelligent scissors` button.
 

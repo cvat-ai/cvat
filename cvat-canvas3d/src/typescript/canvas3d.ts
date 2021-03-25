@@ -4,8 +4,12 @@
 
 import pjson from '../../package.json';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
-import { Canvas3dModel, Canvas3dModelImpl, Mode } from './canvas3dModel';
-import { Canvas3dView, Canvas3dViewImpl, ViewsDOM } from './canvas3dView';
+import {
+    Canvas3dModel, Canvas3dModelImpl, Mode, DrawData, ViewType, MouseInteraction,
+} from './canvas3dModel';
+import {
+    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CAMERA_ACTION,
+} from './canvas3dView';
 import { Master } from './master';
 
 const Canvas3dVersion = pjson.version;
@@ -17,6 +21,9 @@ interface Canvas3d {
     mode(): Mode;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
+    mouseControls(type: string, event: MouseEvent): void;
+    draw(drawData: DrawData): void;
+    cancel(): void;
 }
 
 class Canvas3dImpl implements Canvas3d {
@@ -38,8 +45,16 @@ class Canvas3dImpl implements Canvas3d {
         this.view.keyControls(keys);
     }
 
+    public mouseControls(type: MouseInteraction, event: MouseEvent): void {
+        this.view.mouseControls(type, event);
+    }
+
     public render(): void {
         this.view.render();
+    }
+
+    public draw(drawData: DrawData): void {
+        this.model.draw(drawData);
     }
 
     public setup(frameData: any): void {
@@ -53,6 +68,12 @@ class Canvas3dImpl implements Canvas3d {
     public isAbleToChangeFrame(): boolean {
         return this.model.isAbleToChangeFrame();
     }
+
+    public cancel(): void {
+        this.model.cancel();
+    }
 }
 
-export { Canvas3dImpl as Canvas3d, Canvas3dVersion };
+export {
+    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CAMERA_ACTION,
+};

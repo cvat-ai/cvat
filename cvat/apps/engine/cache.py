@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,11 +9,10 @@ from diskcache import Cache
 from django.conf import settings
 
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
-    Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter)
+    Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
+    ImageDatasetManifestReader, VideoDatasetManifestReader)
 from cvat.apps.engine.models import DataChoice, StorageChoice
-from cvat.apps.engine.prepare import PrepareInfo, md5_hash, ParsingMeta
 from cvat.apps.engine.models import DimensionType
-
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 class CacheInteraction:
     def __init__(self, dimension=DimensionType.DIM_2D):
@@ -54,37 +53,21 @@ class CacheInteraction:
             }[db_data.storage]
         if hasattr(db_data, 'video'):
             source_path = os.path.join(upload_dir, db_data.video.path)
-            meta = PrepareInfo(source_path=source_path, meta_path=db_data.get_meta_path())
-            for frame in meta.decode_needed_frames(chunk_number, db_data):
+
+            reader = VideoDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
+                source_path=source_path, chunk_number=chunk_number,
+                chunk_size=db_data.chunk_size, start=db_data.start_frame,
+                stop=db_data.stop_frame, step=db_data.get_frame_step())
+            for frame in reader:
                 images.append((frame, source_path, None))
         else:
-            if db_data.storage == StorageChoice.CLOUD_STORAGE:
-                db_cloud_storage = db_data.cloud_storage
-                credentials = Credentials()
-                credentials.convert_from_db({
-                    'type': db_cloud_storage.credentials_type,
-                    'value': db_cloud_storage.credentials,
-                })
-                details = {
-                    'resource_name': db_cloud_storage.resource_name,
-                    'session_token': credentials.session_token,
-                    'key': credentials.key,
-                    'secret_key': credentials.secret_key,
-                }
-                cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
-                cloud_storage_instance.initialize_content()
-                meta_parser = ParsingMeta(db_data.get_meta_path())
-                for img_name, _ , img_hash  in meta_parser.parsing(start=db_data.start_frame, step=db_data.get_frame_step(), \
-                        stop=db_data.start_frame, chunk_size=db_data.chunk_size, chunk_number=chunk_number):
-                    if img_name not in cloud_storage_instance:
-                        # or need to generate dummy image?
-                        raise Exception('{} file was not found on a {} storage'.format(img_name, cloud_storage_instance.name))
-                    image = cloud_storage_instance.download_fileobj(img_name)
-                    assert md5_hash(image) != img_hash, "Image '{}' does not match with origin image".format(img_name)
-                    images.append((img_name, image, None))
-            else:
-                with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
-                    images = [((image := os.path.join(upload_dir, line.strip())), image, None) for line in dummy_file]
+            reader = ImageDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
+                chunk_number=chunk_number, chunk_size=db_data.chunk_size,
+                start=db_data.start_frame, stop=db_data.stop_frame,
+                step=db_data.get_frame_step())
+            for item in reader:
+                source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
+                images.append((source_path, source_path, None))
         writer.save_as_chunk(images, buff)
         buff.seek(0)
         return buff, mime_type

@@ -47,6 +47,7 @@ context('Rename a task.', () => {
     });
 
     after(() => {
+        cy.deletingRegisteredUsers([secondUserName]);
         cy.login();
         cy.deleteTask(newNaskName);
     });
