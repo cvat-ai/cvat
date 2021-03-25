@@ -39,6 +39,7 @@ context('Create an annotation task with manifest.', () => {
             cy.checkFrameNum(0);
             cy.get('.cvat-player-filename-wrapper').should('have.text', 'image_case_65_1.png');
             cy.get('.cvat-player-next-button').click();
+            cy.get('.cvat-canvas-container').should('exist');
             cy.checkFrameNum(1);
             cy.get('.cvat-player-filename-wrapper').should('have.text', 'image_case_65_2.png');
         });
