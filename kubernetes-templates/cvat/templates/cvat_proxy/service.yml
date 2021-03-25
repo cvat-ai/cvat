@@ -1,0 +1,20 @@
+{{- if .Values.cvat_proxy.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvat-proxy-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: proxy
+spec:
+  type: NodePort
+  selector:
+      app: cvat-app
+      tier: proxy
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+{{- end}}

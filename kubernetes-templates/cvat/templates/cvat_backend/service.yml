@@ -1,0 +1,20 @@
+{{- if .Values.database.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvat-backend-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+      app: cvat-app
+      tier: backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+{{- end }}

@@ -1,0 +1,20 @@
+{{- if .Values.redis.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvat-redis-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: redis-app
+spec:
+  type: ClusterIP
+  selector:
+      app: cvat-app
+      tier: redis-app
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP
+      name: http
+{{- end}}
