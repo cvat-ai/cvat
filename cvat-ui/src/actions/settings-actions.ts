@@ -1,9 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { GridColor, ColorBy } from 'reducers/interfaces';
+import { GridColor, ColorBy, SettingsState } from 'reducers/interfaces';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -31,6 +31,7 @@ export enum SettingsActionTypes {
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
+    SET_SETTINGS = 'SET_SETTINGS',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -255,6 +256,15 @@ export function switchSettingsDialog(show?: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_SETTINGS_DIALOG,
         payload: {
             show,
+        },
+    };
+}
+
+export function setSettings(settings: Partial<SettingsState>): AnyAction {
+    return {
+        type: SettingsActionTypes.SET_SETTINGS,
+        payload: {
+            settings,
         },
     };
 }

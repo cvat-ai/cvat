@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,9 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
-import { SettingsState, GridColor, FrameSpeed, ColorBy } from './interfaces';
+import {
+    SettingsState, GridColor, FrameSpeed, ColorBy,
+} from './interfaces';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -271,14 +273,20 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 showDialog: typeof action.payload.show === 'undefined' ? !state.showDialog : action.payload.show,
             };
         }
+        case SettingsActionTypes.SET_SETTINGS: {
+            return {
+                ...state,
+                ...action.payload.settings,
+            };
+        }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
 
             return {
-                ...defaultState,
+                ...state,
                 player: {
-                    ...defaultState.player,
+                    ...state.player,
                     resetZoom: job && job.task.mode === 'annotation',
                 },
             };
