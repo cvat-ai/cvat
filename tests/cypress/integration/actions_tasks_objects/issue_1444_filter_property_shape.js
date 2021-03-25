@@ -45,17 +45,8 @@ context('Filter property "shape" work correctly', () => {
             cy.get('#cvat-objects-sidebar-state-item-2').should('contain', '2').and('contain', 'POLYGON SHAPE');
         });
 
-        it('Set filter "shape == "polygon""', () => {
-            cy.contains('.cvat-annotation-header-button', 'Filters').click();
-            cy.get('.cvat-filters-modal').within(() => {
-                cy.contains('button', 'Add rule').click();
-                cy.contains('button', 'Select field').click();
-            });
-            cy.contains('[role="menuitem"]', 'Shape').click();
-            cy.get('.cvat-filters-modal').within(() => {
-                cy.get('[type="search"]').last().type('polygon{Enter}');
-                cy.contains('button', 'Submit').click();
-            });
+        it('Set a filter: "shape == "polygon""', () => {
+            cy.setFilterRule('Shape', '==', 'polygon');
         });
 
         it('Only polygon is visible', () => {
