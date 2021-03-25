@@ -4,39 +4,43 @@
 
 /// <reference types="cypress" />
 
-context('Create and delete a annotation task', () => {
+context('Create an annotation task with manifest.', () => {
     const caseId = '65';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some default value for type Text';
-    const imagesCount = 10;
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 800;
-    const height = 800;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
-    const archiveName = `${imageFileName}.zip`;
-    const archivePath = `cypress/fixtures/${archiveName}`;
-    const imagesFolder = `cypress/fixtures/${imageFileName}`;
-    const directoryToArchive = imagesFolder;
-    const manifestName = 'manifest.jsonl';
-    const manifestPath = `${__dirname}/assets/${manifestName}`;
+    const pathToFiles = `${__dirname}/assets/case_65_manifest`;
+    let filesToAttache = [];
 
     before(() => {
         cy.visit('auth/login');
         cy.login();
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-        cy.readFile(manifestPath).then(($manifest) => {
-            cy.writeFile(`${directoryToArchive}/${manifestName}`, $manifest);
-        });
-        cy.createZipArchive(directoryToArchive, archivePath);
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Create a task', () => {
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
+        it('Task created successfully.', () => {
+            cy.task('listFiles', pathToFiles).then(($files) => {
+                $files.forEach(($el) => {
+                    // Add the path relative to the fixtures folder to the file names for the plugin "cypress-file-upload" to work correctly
+                    filesToAttache.push(`../../${pathToFiles}/${$el}`);
+                });
+                cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, filesToAttache);
+            });
+            cy.get('.cvat-notification-create-task-success').should('exist');
+            cy.get('.cvat-notification-create-task-fail').should('not.exist');
+        });
+
+        it('The task and a job opened successfully.', () => {
+            cy.openTaskJob(taskName);
+        });
+
+        it('Moving through frames works correctly.', () => {
+            cy.checkFrameNum(0);
+            cy.get('.cvat-player-filename-wrapper').should('have.text', 'image_case_65_1.png');
+            cy.get('.cvat-player-next-button').click();
+            cy.checkFrameNum(1);
+            cy.get('.cvat-player-filename-wrapper').should('have.text', 'image_case_65_2.png');
         });
     });
 });
