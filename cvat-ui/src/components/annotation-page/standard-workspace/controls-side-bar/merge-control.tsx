@@ -10,16 +10,17 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     switchMergeShortcut: string;
+    disabled?: boolean;
     mergeObjects(enabled: boolean): void;
 }
 
 function MergeControl(props: Props): JSX.Element {
     const {
-        switchMergeShortcut, activeControl, canvasInstance, mergeObjects,
+        switchMergeShortcut, activeControl, canvasInstance, mergeObjects, disabled,
     } = props;
 
     const dynamicIconProps =
@@ -40,7 +41,9 @@ function MergeControl(props: Props): JSX.Element {
                 },
             };
 
-    return (
+    return disabled ? (
+        <Icon className='cvat-merge-control cvat-disabled-canvas-control' component={MergeIcon} />
+    ) : (
         <CVATTooltip title={`Merge shapes/tracks ${switchMergeShortcut}`} placement='right'>
             <Icon {...dynamicIconProps} component={MergeIcon} />
         </CVATTooltip>

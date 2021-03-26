@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -213,13 +213,9 @@
                 visible.data.push(stateData);
             }
 
-            const [, query] = this.annotationsFilter.toJSONQuery(filters);
-            let filtered = [];
-            if (filters.length) {
-                filtered = this.annotationsFilter.filter(visible.data, query);
-            }
-
             const objectStates = [];
+            const filtered = this.annotationsFilter.filter(visible.data, filters);
+
             visible.data.forEach((stateData, idx) => {
                 if (!filters.length || filtered.includes(stateData.clientID)) {
                     const model = visible.models[idx];
@@ -777,6 +773,7 @@
             }
 
             // Add constructed objects to a collection
+            // eslint-disable-next-line no-unsanitized/method
             const imported = this.import(constructed);
             const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
 
@@ -865,13 +862,9 @@
         }
 
         search(filters, frameFrom, frameTo) {
-            const [groups, query] = this.annotationsFilter.toJSONQuery(filters);
             const sign = Math.sign(frameTo - frameFrom);
-
-            const flattenedQuery = groups.flat(Number.MAX_SAFE_INTEGER);
-            const containsDifficultProperties = flattenedQuery.some(
-                (fragment) => fragment.match(/^width/) || fragment.match(/^height/),
-            );
+            const filtersStr = JSON.stringify(filters);
+            const containsDifficultProperties = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
 
             const deepSearch = (deepSearchFrom, deepSearchTo) => {
                 // deepSearchFrom is expected to be a frame that doesn't satisfy a filter
@@ -882,7 +875,7 @@
                 while (!(Math.abs(prev - next) === 1)) {
                     const middle = next + Math.floor((prev - next) / 2);
                     const shapesData = this.tracks.map((track) => track.get(middle));
-                    const filtered = this.annotationsFilter.filter(shapesData, query);
+                    const filtered = this.annotationsFilter.filter(shapesData, filters);
                     if (filtered.length) {
                         next = middle;
                     } else {
@@ -919,7 +912,7 @@
                 }
 
                 // Filtering
-                const filtered = this.annotationsFilter.filter(statesData, query);
+                const filtered = this.annotationsFilter.filter(statesData, filters);
 
                 // Now we are checking whether we need deep search or not
                 // Deep search is needed in some difficult cases

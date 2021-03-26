@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -79,7 +79,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         super(props);
 
         const { shapeType } = props;
-        const defaultLabelID = props.labels[0].id;
+        const defaultLabelID = props.labels.length ? props.labels[0].id : null;
         const defaultRectDrawingMethod = RectDrawingMethod.CLASSIC;
         const defaultCuboidDrawingMethod = CuboidDrawingMethod.CLASSIC;
         this.state = {
@@ -156,10 +156,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints,
         } = this.state;
 
-        const { normalizedKeyMap, labels, shapeType } = this.props;
+        const {
+            normalizedKeyMap, labels, shapeType, canvasInstance,
+        } = this.props;
 
         return (
             <DrawShapePopoverComponent
+                canvasInstance={canvasInstance}
                 labels={labels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}

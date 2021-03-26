@@ -130,13 +130,8 @@
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
     padding: 5px;
-    height: 80px;
 
-    > div:nth-child(1) > div:nth-child(1) {
-        height: 32px;
-    }
-
-    > div:nth-child(2) {
+    > div:nth-child(1) {
         margin-top: $grid-unit-size;
 
         > div {
@@ -161,7 +156,7 @@
 
 .cvat-objects-sidebar-states-list {
     background-color: $background-color-2;
-    height: calc(100% - 80px);
+    height: calc(100% - 50px);
     overflow-y: auto;
 }
 

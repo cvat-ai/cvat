@@ -37,6 +37,7 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
+from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
@@ -214,7 +215,11 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('owner', openapi.IN_QUERY, description="Find all project where owner name contains a parameter value",
             type=openapi.TYPE_STRING),
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
-            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice])]))
+            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
+        openapi.Parameter('names_only', openapi.IN_QUERY, description="Returns only names and id's of projects.",
+            type=openapi.TYPE_BOOLEAN),
+        openapi.Parameter('without_tasks', openapi.IN_QUERY, description="Returns only projects entities without related tasks",
+            type=openapi.TYPE_BOOLEAN)],))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
@@ -1087,7 +1092,17 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
             os.remove(rq_job.meta['tmp_file'])
             exc_info = str(rq_job.exc_info)
             rq_job.delete()
-            return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # RQ adds a prefix with exception class name
+            import_error_prefix = '{}.{}'.format(
+                CvatImportError.__module__, CvatImportError.__name__)
+            if exc_info.startswith(import_error_prefix):
+                exc_info = exc_info.replace(import_error_prefix + ': ', '')
+                return Response(data=exc_info,
+                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(data=exc_info,
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_202_ACCEPTED)
 

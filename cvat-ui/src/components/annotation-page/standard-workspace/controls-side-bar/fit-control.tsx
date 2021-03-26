@@ -9,7 +9,7 @@ import { FitIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
 }
 

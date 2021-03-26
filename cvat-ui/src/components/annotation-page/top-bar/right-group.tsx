@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,21 +7,25 @@ import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
+import { useSelector } from 'react-redux';
 
-import { DimensionType, Workspace } from 'reducers/interfaces';
-import { InfoIcon, FullscreenIcon } from 'icons';
+import { FilterIcon, FullscreenIcon, InfoIcon } from 'icons';
+import { CombinedState, DimensionType, Workspace } from 'reducers/interfaces';
 
 interface Props {
     workspace: Workspace;
     showStatistics(): void;
+    showFilters(): void;
     changeWorkspace(workspace: Workspace): void;
     jobInstance: any;
 }
 
 function RightGroup(props: Props): JSX.Element {
     const {
-        showStatistics, changeWorkspace, workspace, jobInstance,
+        showFilters, showStatistics, changeWorkspace, workspace, jobInstance,
     } = props;
+
+    const filters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
 
     return (
         <Col className='cvat-annotation-header-right-group'>
@@ -44,6 +48,14 @@ function RightGroup(props: Props): JSX.Element {
             <Button type='link' className='cvat-annotation-header-button' onClick={showStatistics}>
                 <Icon component={InfoIcon} />
                 Info
+            </Button>
+            <Button
+                type='link'
+                className={`cvat-annotation-header-button ${filters.length ? 'filters-armed' : ''}`}
+                onClick={showFilters}
+            >
+                <Icon component={FilterIcon} />
+                Filters
             </Button>
             <div>
                 <Select
