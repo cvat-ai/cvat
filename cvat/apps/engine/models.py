@@ -33,7 +33,6 @@ class DimensionType(str, Enum):
         return self.value
 
 class StatusChoice(str, Enum):
-    PREPROCESSING = 'preprocessing'
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
     COMPLETED = 'completed'
@@ -228,7 +227,7 @@ class Task(models.Model):
     # Zero means that there are no limits (default)
     segment_size = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-                              default=StatusChoice.PREPROCESSING)
+                              default=StatusChoice.ANNOTATION)
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
     dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
     subset = models.CharField(max_length=64, blank=True, default="")
