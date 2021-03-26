@@ -65,6 +65,7 @@ For more information about supported formats look at the
 | [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                               | X      | X      |
 | [VGGFace2](https://github.com/ox-vgg/vgg_face2)                               | X      | X      |
 | [Market-1501](https://www.aitribune.com/dataset/2018051063)                   | X      | X      |
+| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                    | X      | X      |
 
 ## Deep learning serverless functions for automatic labeling
 
