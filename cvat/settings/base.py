@@ -131,7 +131,7 @@ INSTALLED_APPS = [
     'rest_auth.registration'
 ]
 
-if strtobool(os.environ.get("ADAPTIVE_AUTO_ANNOTATION", '0')):
+if strtobool(os.environ.get("ADAPTIVE_AUTO_ANNOTATION", 'false')):
     INSTALLED_APPS.append('cvat.apps.training')
 
 SITE_ID = 1

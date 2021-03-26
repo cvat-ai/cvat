@@ -9,10 +9,7 @@ DEBUG = True
 
 INSTALLED_APPS += [
     'django_extensions',
-    'cvat.apps.training',
 ]
-
-INSTALLED_APPS = list(set(INSTALLED_APPS))
 
 ALLOWED_HOSTS.append('testserver')
 
