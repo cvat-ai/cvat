@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvat-redis
+  namespace: cvat
+  labels:
+    app: cvat-app
+    tier: redis-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvat-app
+      tier: redis-app
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: redis-app
+    spec:
+      containers:
+        - image: redis:4.0.5-alpine
+          name: cvat-redis
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: '0.1'

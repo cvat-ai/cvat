@@ -21,7 +21,7 @@
     "worker-loader": "^2.0.0"
   },
   "dependencies": {
-    "async-mutex": "^0.3.0",
+    "async-mutex": "^0.3.1",
     "jszip": "3.6.0"
   },
   "scripts": {

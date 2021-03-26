@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cvat-postgres-service
+  namespace: cvat
+  labels:
+    app: cvat-app
+    tier: db
+spec:
+  type: ClusterIP
+  selector:
+    app: cvat-app
+    tier: db
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: http

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -100,6 +100,15 @@ context('Lock/hide features.', () => {
         cy.addNewLabel(newLabelName3);
         cy.addNewLabel(newLabelName4);
         cy.openJob();
+    });
+
+    beforeEach(() => {
+        cy.document().then((doc) => {
+            const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
+            if (tooltips.length > 0) {
+                cy.get('.ant-tooltip').invoke('hide');
+            }
+        });
     });
 
     describe(`Testing case "${caseId}"`, () => {

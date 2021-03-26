@@ -54,6 +54,43 @@
       }
     ]
   },
+  "market1501": {
+    "name": "market1501 task",
+    "overlap": 0,
+    "segment_size": 100,
+    "owner_id": 1,
+    "assignee_id": 2,
+    "labels": [
+      {
+        "name": "market-1501",
+        "attributes": [
+          {
+            "name": "query",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["True", "False"]
+          },
+          {
+            "name": "camera_id",
+            "mutable": false,
+            "input_type": "number",
+            "values": ["1", "2", "3", "4", "5", "6"]
+          },
+          {
+            "name": "person_id",
+            "mutable": false,
+            "input_type": "number",
+            "values": ["1", "2", "3"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      }
+    ]
+  },
   "wrong_checkbox_value": {
     "name": "wrong checkbox value task",
     "overlap": 0,

@@ -97,3 +97,4 @@ import cvat.apps.dataset_manager.formats.imagenet
 import cvat.apps.dataset_manager.formats.camvid
 import cvat.apps.dataset_manager.formats.widerface
 import cvat.apps.dataset_manager.formats.vggface2
+import cvat.apps.dataset_manager.formats.market1501

@@ -189,6 +189,12 @@ const projectsDummyData = {
                         },
                     ],
                 },
+                {
+                    id: 2,
+                    name: 'bicycle',
+                    color: '#bb20c0',
+                    attributes: [],
+                },
             ],
             tasks: [
                 {

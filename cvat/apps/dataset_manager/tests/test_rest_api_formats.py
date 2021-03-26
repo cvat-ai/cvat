@@ -226,7 +226,10 @@ class TaskDumpUploadTest(_DbTestBase):
                     for include_images in (False, True):
                         # create task
                         images = self._generate_task_images(3)
-                        task = self._create_task(tasks["main"], images)
+                        if dump_format_name == "Market-1501 1.0":
+                            task = self._create_task(tasks["market1501"], images)
+                        else:
+                            task = self._create_task(tasks["main"], images)
 
                         # create annotations
                         if dump_format_name in [
@@ -394,7 +397,7 @@ class TaskDumpUploadTest(_DbTestBase):
     #         self.assertEqual(len(response.data["tags"]), 0)
     #         self.assertEqual(len(response.data["shapes"]), 0)
     #         self.assertEqual(len(response.data["tracks"]), 0)
-    #
+
     def test_api_v1_tasks_annotations_dump_others_user(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for images 1.1"
@@ -533,6 +536,7 @@ class TaskDumpUploadTest(_DbTestBase):
             'CamVid 1.0': 'camvid',
             'WiderFace 1.0': 'wider_face',
             'VGGFace2 1.0': 'vgg_face2',
+            'Market-1501 1.0': 'market1501',
         }
 
         # get formats
@@ -547,14 +551,17 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "CVAT for video 1.1",
                         "YOLO 1.1",
-                        "ImageNet 1.0",
+                        # "ImageNet 1.0",
                         "Datumaro 1.0",
                     ]:
                         self.skipTest("Format is fail")
 
                     # create task
                     images = self._generate_task_images(3)
-                    task = self._create_task(tasks["main"], images)
+                    if dump_format_name == "Market-1501 1.0":
+                        task = self._create_task(tasks["market1501"], images)
+                    else:
+                        task = self._create_task(tasks["main"], images)
 
                     # create annotations
                     if dump_format_name in [
