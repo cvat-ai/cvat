@@ -48,7 +48,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
         }
     };
 
-    const adjustName = (name: string): string => name.replaceAll('.', '\u2219');
+    const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
 
     const getAttributesSubfields = (): Record<string, any> => {
         const subfields: Record<string, any> = {};
