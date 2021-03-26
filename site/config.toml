@@ -1,4 +1,4 @@
-aseURL = "cvat.org"
+baseURL = "cvat.org"
 title = "CVAT"
 
 enableRobotsTXT = true
