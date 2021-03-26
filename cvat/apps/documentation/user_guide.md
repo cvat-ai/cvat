@@ -1196,13 +1196,6 @@ Press `Esc` to cancel editing.
 
 It is used for semantic / instance segmentation.
 
-The Z-Order flag defines the order of drawing. It is necessary to
-get the right annotation mask without extra work (additional drawing of borders).
-Z-Order can be changed by pressing `+`/`-` which set maximum/minimum z-order
-accordingly.
-
-![](static/documentation/images/image074.jpg)
-
 Before starting, you need to select `Polygon` on the controls sidebar and choose the correct Label.
 
 ![](static/documentation/images/image084.jpg)
@@ -1597,8 +1590,8 @@ The "Add rule" button adds a rule for objects display. A rule may use the follow
 | `Occluded`  | true or false                                          | occluded ([read more](#shape-mode-advanced))|
 | `Width`     | number of px or field                                  | shape width                                 |
 | `Height`    | number of px or field                                  | shape height                                |
-| `ObjectID`  | number or field                                        | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu)|
-| `CientID`   | number or field                                        | ID of the object in your client <br>(indicated on the objects sidebar)|
+| `ServerID`  | number or field                                        | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu)|
+| `ObjectID`   | number or field                                        | ID of the object in your client <br>(indicated on the objects sidebar)|
 | `Attributes`| field                                                  | attribute name                              |
 
 **Supported operators for properties:**
