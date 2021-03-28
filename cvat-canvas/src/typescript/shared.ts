@@ -25,7 +25,7 @@ export interface BBox {
     y: number;
 }
 
-interface Point {
+export interface Point {
     x: number;
     y: number;
 }

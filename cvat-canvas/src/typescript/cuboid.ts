@@ -1,9 +1,5 @@
 import consts from './consts';
-
-export interface Point {
-    x: number;
-    y: number;
-}
+import {Point} from './shared';
 
 export enum Orientation {
     LEFT = 'left',
@@ -17,7 +13,7 @@ function line(p1: Point, p2: Point): number[] {
     return [a, b, c];
 }
 
-function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null {
+export function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null {
     const L1 = line(p1, p2);
     const L2 = line(p3, p4);
 
@@ -27,7 +23,7 @@ function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null 
 
     let x = null;
     let y = null;
-    if (D !== 0) {
+    if (Math.abs(D) > Number.EPSILON) {
         x = Dx / D;
         y = Dy / D;
         return { x, y };
