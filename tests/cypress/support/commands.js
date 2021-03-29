@@ -572,52 +572,6 @@ Cypress.Commands.add('getScaleValue', () => {
         });
 });
 
-Cypress.Commands.add('сheckFiltersModalOpened', () => {
-    cy.document().then((doc) => {
-        const filterModal = Array.from(doc.querySelectorAll('.cvat-filters-modal-visible'));
-        if (filterModal.length === 0) {
-            cy.contains('.cvat-annotation-header-button', 'Filters').click();
-        }
-    });
-});
-
-Cypress.Commands.add('clearFilters', () => {
-    cy.сheckFiltersModalOpened();
-    cy.contains('button', 'Clear filters').click();
-});
-
-Cypress.Commands.add('setFilterRule', (field, operator, value) => {
-    cy.сheckFiltersModalOpened();
-    cy.get('.cvat-filters-modal').within(() => {
-        cy.contains('button', 'Add rule').click();
-        cy.contains('button', 'Select field').click();
-    });
-    cy.contains('[role="menuitem"]', field).click();
-    cy.get('.cvat-filters-modal').within(() => {
-        cy.get('[type="search"]').first().click({ force: true });
-    });
-    cy.get(`[label="${operator}"]`).click();
-    cy.get('.cvat-filters-modal').within(() => {
-        cy.get('[type="search"]').last().type(`${value}{Enter}`);
-        cy.contains('button', 'Submit').click();
-    });
-});
-
-Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
-    if (clear) {
-        cy.get('.cvat-annotations-filters-input').within(() => {
-            cy.get('[aria-label="close-circle"]').click();
-        });
-    }
-    cy.get('body').click();
-    cy.get('.cvat-annotations-filters-input').click();
-    cy.contains('.cvat-annotations-filters-input-history-element', filterValue).scrollIntoView().click();
-    cy.get('body').click();
-    cy.get('.cvat-annotations-filters-input').within(() => {
-        cy.contains('.ant-select-selection-item-content', filterValue);
-    });
-});
-
 Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]')
