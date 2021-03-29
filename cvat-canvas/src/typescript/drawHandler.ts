@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -96,9 +96,9 @@ export class DrawHandlerImpl implements DrawHandler {
             Vertical,
         }
 
-        const isBetween = (x1: number, x2: number, c: number): boolean => {
-            return c >= Math.min(x1, x2) && c <= Math.max(x1, x2);
-        };
+        const isBetween = (x1: number, x2: number, c: number): boolean => (
+            c >= Math.min(x1, x2) && c <= Math.max(x1, x2)
+        );
 
         const isInsideFrame = (p: Point, direction: Direction): boolean => {
             if (direction === Direction.Horizontal) {
