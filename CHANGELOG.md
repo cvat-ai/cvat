@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability of upload manifest for dataset with images (<https://github.com/openvinotoolkit/cvat/pull/2763>)
 - Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
 - [ICDAR](https://rrc.cvc.uab.es/?ch=2) format support (<https://github.com/openvinotoolkit/cvat/pull/2866>)
+- Added switcher to maintain poylgon crop behaviour (<https://github.com/openvinotoolkit/cvat/pull/3021>)
 
 ### Changed
 
