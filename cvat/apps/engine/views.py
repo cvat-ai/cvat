@@ -215,7 +215,11 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('owner', openapi.IN_QUERY, description="Find all project where owner name contains a parameter value",
             type=openapi.TYPE_STRING),
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
-            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice])]))
+            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
+        openapi.Parameter('names_only', openapi.IN_QUERY, description="Returns only names and id's of projects.",
+            type=openapi.TYPE_BOOLEAN),
+        openapi.Parameter('without_tasks', openapi.IN_QUERY, description="Returns only projects entities without related tasks",
+            type=openapi.TYPE_BOOLEAN)],))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
