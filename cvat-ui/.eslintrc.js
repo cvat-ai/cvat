@@ -57,6 +57,12 @@ module.exports = {
             },
         ],
         'prettier/prettier': ['error'],
+        'import/order': [
+            'error',
+            {
+                'groups': ['builtin', 'external', 'internal'],
+            }
+        ]
     },
     settings: {
         'import/resolver': {

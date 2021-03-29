@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0037_task_subset'),
+        ('engine', '0038_manifest'),
     ]
 
     operations = [

@@ -4,15 +4,11 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
-
 import { ActiveControl } from 'reducers/interfaces';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
-
 import CursorControl from './cursor-control';
 import MoveControl from './move-control';
-
 import DrawCuboidControl from './draw-cuboid-control';
-
 import PhotoContextControl from './photo-context';
 
 interface Props {
@@ -31,7 +27,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
-
             <CursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}

@@ -379,7 +379,7 @@
              * @param {integer} frame get objects from the frame
              * @param {boolean} allTracks show all tracks
              * even if they are outside and not keyframe
-             * @param {string[]} [filters = []]
+             * @param {any[]} [filters = []]
              * get only objects that satisfied to specific filters
              * @returns {module:API.cvat.classes.ObjectState[]}
              * @memberof Session.annotations
@@ -1321,7 +1321,7 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     labels: {
-                        get: () => [...data.labels],
+                        get: () => data.labels.filter((_label) => !_label.deleted),
                         set: (labels) => {
                             if (!Array.isArray(labels)) {
                                 throw new ArgumentError('Value must be an array of Labels');
@@ -1335,8 +1335,14 @@
                                 }
                             }
 
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
+
                             updatedFields.labels = true;
-                            data.labels = [...labels];
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -1539,12 +1545,6 @@
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
-                    __updatedFields: {
-                        get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
-                    },
                     dimension: {
                         /**
                          * @name enabled
@@ -1569,6 +1569,15 @@
                                 throw new ArgumentError('Clowder API key must not be empty');
                             }
                             data.clowder_api_key = apiKey;
+                        },
+                    },
+                    _internalData: {
+                        get: () => data,
+                    },
+                    __updatedFields: {
+                        get: () => updatedFields,
+                        set: (fields) => {
+                            updatedFields = fields;
                         },
                     },
                 }),
@@ -1824,8 +1833,8 @@
 
     // TODO: Check filter for annotations
     Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frame)) {
@@ -1841,8 +1850,8 @@
     };
 
     Job.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -2010,7 +2019,7 @@
                         taskData.subset = this.subset;
                         break;
                     case 'labels':
-                        taskData.labels = [...this.labels.map((el) => el.toJSON())];
+                        taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
                         break;
                     default:
                         break;

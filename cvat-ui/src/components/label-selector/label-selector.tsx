@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,7 +31,7 @@ export default function LabelSelector(props: Props): JSX.Element {
             showSearch
             filterOption={(input: string, option?: OptionData | OptionGroupData) => {
                 if (option) {
-                    const { children } = option;
+                    const { children } = option.props;
                     if (typeof children === 'string') {
                         return children.toLowerCase().includes(input.toLowerCase());
                     }

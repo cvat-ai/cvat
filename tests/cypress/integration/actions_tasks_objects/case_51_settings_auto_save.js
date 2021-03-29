@@ -24,9 +24,10 @@ context('Settings. "Auto save" option.', () => {
                 cy.get('.ant-checkbox-checked').should('not.exist');
             });
             cy.get('.cvat-workspace-settings-auto-save-interval').within(() => {
-                cy.get('[role="spinbutton"]').clear().tab(); // Clear field and press Tab
-                cy.get('[role="spinbutton"]').should('have.value', 1); // Interval should`t be empty
-                cy.get('[role="spinbutton"]').clear().type(5).should('have.value', 5);
+                cy.get('[role="spinbutton"]').clear().type(0).tab();
+                cy.get('[role="spinbutton"]').should('have.value', 1); // Interval should`t be less then 1
+                cy.get('[role="spinbutton"]').clear().type(5).tab();
+                cy.get('[role="spinbutton"]').should('have.value', 5);
             });
         });
     });
