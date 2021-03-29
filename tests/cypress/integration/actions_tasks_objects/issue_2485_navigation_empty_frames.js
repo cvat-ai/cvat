@@ -34,7 +34,8 @@ context('Navigation to empty frames', () => {
         });
 
         it('Set a filter to see the created objects.', () => {
-            cy.setFilterRule('Shape', '==', 'rectangle');
+            cy.addFiltersRule(0);
+            cy.setFilter(0, 0, 'Shape', '==', false, 'rectangle', false, false, true);
             cy.get('#cvat_canvas_shape_2').should('exist');
         });
 
