@@ -63,7 +63,9 @@ class CLI():
 
     def tasks_create(self, name, labels, overlap, segment_size, bug, resource_type, resources,
                      annotation_path='', annotation_format='CVAT XML 1.1',
-                     completion_verification_period=20, dataset_repository_url='',
+                     completion_verification_period=20,
+                     git_completion_verification_period=2,
+                     dataset_repository_url='',
                      lfs=False, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
@@ -99,15 +101,28 @@ class CLI():
 
             self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
         if dataset_repository_url:
-            git_url = self.api.git
             response = self.session.post(
-                        f'{git_url}create/{task_id}',
+                        self.api.git_create(task_id),
                         json={
                             'path': dataset_repository_url,
                             'lfs': lfs,
                             'tid': task_id})
             response_json = response.json()
-            log.info(f"Create: {response_json.rq_id}")
+            rq_id = response_json['rq_id']
+            log.info(f"Create RQ ID: {rq_id}")
+            check_url = self.api.git_check(rq_id)
+            response = self.session.get(check_url)
+            response_json = response.json()
+            log.info('''Awaiting dataset repository for task. Status: {}'''.format(
+                    response_json['status']))
+            while response_json['status'] != 'finished':
+                sleep(git_completion_verification_period)
+                response = self.session.get(check_url)
+                response_json = response.json()
+                if response_json['status'] == 'Failed':
+                    log.error(f'Dataset repository creation request for task {task_id} failed.')
+
+            log.info(f"Dataset repository creation completed with status: {response_json['status']}.")
 
     def tasks_delete(self, task_ids, **kwargs):
         """ Delete a list of tasks, ignoring those which don't exist. """
@@ -231,6 +246,12 @@ class CVAT_API_V1():
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations?format={}&filename={}' \
             .format(fileformat, name)
+
+    def git_create(self, task_id):
+        return self.git + f'create/{task_id}'
+
+    def git_check(self, rq_id):
+        return self.git + f'check/{rq_id}'
 
     @property
     def login(self):
