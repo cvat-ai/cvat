@@ -28,7 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CVAT-3D: Implemented initial cuboid placement in 3D View and select cuboid in Top, Side and Front views
   (<https://github.com/openvinotoolkit/cvat/pull/2891>)
 - [Market-1501](https://www.aitribune.com/dataset/2018051063) format support (<https://github.com/openvinotoolkit/cvat/pull/2869>)
+- Ability of upload manifest for dataset with images (<https://github.com/openvinotoolkit/cvat/pull/2763>)
 - Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
+- [ICDAR](https://rrc.cvc.uab.es/?ch=2) format support (<https://github.com/openvinotoolkit/cvat/pull/2866>)
 
 ### Changed
 
@@ -42,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
 - Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
 - Improved error messages for annotation import (<https://github.com/openvinotoolkit/cvat/pull/2935>)
+- Using manifest support instead video meta information and dummy chunks (<https://github.com/openvinotoolkit/cvat/pull/2763>)
 
 ### Deprecated
 
