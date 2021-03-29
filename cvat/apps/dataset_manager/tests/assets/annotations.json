@@ -291,6 +291,78 @@
     ],
     "tracks": []
   },
+  "ICDAR Localization 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [10.0, 8.79, 20.5, 15.69],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [35.0, 22.5, 53.32, 30.63, 22.34, 29.45, 47.43, 38.21],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "ICDAR Recognition 1.0": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [],
+    "tracks": []
+  },
+  "ICDAR Segmentation 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [10.0, 12.1, 25.6, 21.9],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [35.0, 22.5, 53.32, 30.63, 22.34, 29.45],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "ImageNet 1.0": {
     "version": 0,
     "tags": [

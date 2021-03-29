@@ -227,6 +227,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "CamVid 1.0", # issue #2840 and changed points values
                         "MOTS PNG 1.0", # issue #2925 and changed points values
                         "Segmentation mask 1.1", # changed points values
+                        "ICDAR Segmentation 1.0", # changed points values
                     ]:
                         self.skipTest("Format is fail")
 
@@ -235,6 +236,11 @@ class TaskDumpUploadTest(_DbTestBase):
                         images = self._generate_task_images(3)
                         if dump_format_name == "Market-1501 1.0":
                             task = self._create_task(tasks["market1501"], images)
+                        elif dump_format_name in ["ICDAR Localization 1.0",
+                                "ICDAR Recognition 1.0"]:
+                            task = self._create_task(tasks["icdar_localization_and_recognition"], images)
+                        elif dump_format_name == "ICDAR Segmentation 1.0":
+                            task = self._create_task(tasks["icdar_segmentation"], images)
                         else:
                             task = self._create_task(tasks["main"], images)
 
@@ -536,6 +542,9 @@ class TaskDumpUploadTest(_DbTestBase):
             'WiderFace 1.0': 'wider_face',
             'VGGFace2 1.0': 'vgg_face2',
             'Market-1501 1.0': 'market1501',
+            'ICDAR Localization 1.0': 'icdar_text_localization',
+            'ICDAR Recognition 1.0': 'icdar_word_recognition',
+            'ICDAR Segmentation 1.0': 'icdar_text_segmentation',
         }
 
         # get formats
@@ -559,6 +568,11 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     if dump_format_name == "Market-1501 1.0":
                         task = self._create_task(tasks["market1501"], images)
+                    elif dump_format_name in ["ICDAR Localization 1.0",
+                                "ICDAR Recognition 1.0"]:
+                            task = self._create_task(tasks["icdar_localization_and_recognition"], images)
+                    elif dump_format_name == "ICDAR Segmentation 1.0":
+                        task = self._create_task(tasks["icdar_segmentation"], images)
                     else:
                         task = self._create_task(tasks["main"], images)
 
