@@ -83,11 +83,6 @@
             "values": ["1", "2", "3"]
           }
         ]
-      },
-      {
-        "name": "person",
-        "color": "#c06060",
-        "attributes": []
       }
     ]
   },
@@ -172,8 +167,8 @@
       }
     ]
   },
-  "change ovelap and segment size": {
-    "name": "change ovelap and segment size",
+  "change overlap and segment size": {
+    "name": "change overlap and segment size",
     "overlap": 3,
     "segment_size": 6,
     "owner_id": 1,

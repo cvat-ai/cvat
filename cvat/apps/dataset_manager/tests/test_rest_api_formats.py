@@ -200,6 +200,14 @@ class _DbTestBase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
+    def _get_data_from_task(self, task_id, include_images=False):
+        task_ann = TaskAnnotation(task_id)
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+        data_from_task = Dataset.from_extractors(extractor)
+        return data_from_task
+
 class TaskDumpUploadTest(_DbTestBase):
     def test_api_v1_tasks_annotations_dump_and_upload_with_datumaro(self):
         test_name = self._testMethodName
@@ -211,7 +219,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 dump_format_name = dump_format.DISPLAY_NAME
 
                 with self.subTest():
-                    # TODO skip failed formats
                     if dump_format_name in [
                         "CVAT for video 1.1", # issues #2923 and #2924
                         "MOT 1.1", # issue #2925
@@ -243,11 +250,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             self._create_annotations(task, dump_format_name, "random")
 
                         task_id = task["id"]
-                        task_ann = TaskAnnotation(task_id)
-                        task_ann.init_from_db()
-                        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                        data_from_task_before_upload = Dataset.from_extractors(extractor)
+                        data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                         # dump annotations
                         url = self._generate_url_dump_tasks_annotations(task_id)
@@ -275,11 +278,7 @@ class TaskDumpUploadTest(_DbTestBase):
                                 self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
                             # equals annotations
-                            task_ann = TaskAnnotation(task_id)
-                            task_ann.init_from_db()
-                            task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                            extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                            data_from_task_after_upload = Dataset.from_extractors(extractor)
+                            data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                             compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
     # def test_api_v1_tasks_annotations_update_wrong_label(self):
@@ -551,7 +550,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "CVAT for video 1.1",
                         "YOLO 1.1",
-                        # "ImageNet 1.0",
+                        "ImageNet 1.0",
                         "Datumaro 1.0",
                     ]:
                         self.skipTest("Format is fail")
@@ -622,11 +621,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     self._create_annotations(task, f'{dump_format_name} many jobs', "default")
 
                     task_id = task["id"]
-                    task_ann = TaskAnnotation(task_id)
-                    task_ann.init_from_db()
-                    task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                    extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                    data_from_task_before_upload = Dataset.from_extractors(extractor)
+                    data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                     # dump annotations
                     url = self._generate_url_dump_tasks_annotations(task_id)
@@ -649,11 +644,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
                         # equals annotations
-                        task_ann = TaskAnnotation(task_id)
-                        task_ann.init_from_db()
-                        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                        data_from_task_after_upload = Dataset.from_extractors(extractor)
+                        data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                         compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v1_tasks_annotations_dump_and_upload_slice_track_with_datumaro(self):
@@ -667,11 +658,7 @@ class TaskDumpUploadTest(_DbTestBase):
         self._create_annotations(task, f'{dump_format_name} slice track', "default")
 
         task_id = task["id"]
-        task_ann = TaskAnnotation(task_id)
-        task_ann.init_from_db()
-        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-        extractor = CvatTaskDataExtractor(task_data)
-        data_from_task_before_upload = Dataset.from_extractors(extractor)
+        data_from_task_before_upload = self._get_data_from_task(task_id)
 
         # dump annotations
         url = self._generate_url_dump_tasks_annotations(task_id)
@@ -694,11 +681,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
             # equals annotations
-            task_ann = TaskAnnotation(task_id)
-            task_ann.init_from_db()
-            task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-            extractor = CvatTaskDataExtractor(task_data)
-            data_from_task_after_upload = Dataset.from_extractors(extractor)
+            data_from_task_after_upload = self._get_data_from_task(task_id)
             compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v1_tasks_annotations_dump_and_upload_merge(self):
@@ -708,7 +691,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
         # create task with annotations
         images = self._generate_task_images(10)
-        task = self._create_task(tasks["change ovelap and segment size"], images)
+        task = self._create_task(tasks["change overlap and segment size"], images)
         self._create_annotations(task, f'{dump_format_name} merge', "default")
 
         task_id = task["id"]
@@ -754,7 +737,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
         # create task with annotations
         images = self._generate_task_images(10)
-        task = self._create_task(tasks["change ovelap and segment size"], images)
+        task = self._create_task(tasks["change overlap and segment size"], images)
         self._create_annotations(task, f'{dump_format_name} merge', "default")
 
         task_id = task["id"]
