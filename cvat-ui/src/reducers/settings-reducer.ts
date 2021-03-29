@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,9 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
-import { SettingsState, GridColor, FrameSpeed, ColorBy } from './interfaces';
+import {
+    SettingsState, GridColor, FrameSpeed, ColorBy,
+} from './interfaces';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -28,6 +30,7 @@ const defaultState: SettingsState = {
         automaticBordering: false,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
+        intelligentPolygonCrop: true,
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -253,6 +256,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     automaticBordering: action.payload.automaticBordering,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_INTELLIGENT_POLYGON_CROP: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    intelligentPolygonCrop: action.payload.intelligentPolygonCrop,
                 },
             };
         }

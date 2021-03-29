@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,6 +27,7 @@ export enum SettingsActionTypes {
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
+    SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
@@ -237,6 +238,15 @@ export function switchAutomaticBordering(automaticBordering: boolean): AnyAction
         type: SettingsActionTypes.SWITCH_AUTOMATIC_BORDERING,
         payload: {
             automaticBordering,
+        },
+    };
+}
+
+export function switchIntelligentPolygonCrop(intelligentPolygonCrop: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_INTELLIGENT_POLYGON_CROP,
+        payload: {
+            intelligentPolygonCrop,
         },
     };
 }
