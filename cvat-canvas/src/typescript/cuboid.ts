@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import consts from './consts';
-import {Point} from './shared';
+import { Point } from './shared';
 
 export enum Orientation {
     LEFT = 'left',

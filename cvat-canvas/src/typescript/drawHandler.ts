@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,6 @@ import {
     BBox,
     Box,
     Point,
-
 } from './shared';
 import Crosshair from './crosshair';
 import consts from './consts';
@@ -93,71 +92,83 @@ export class DrawHandlerImpl implements DrawHandler {
         enum Direction {
             Horizontal,
             Vertical,
-        };
-
-        const isBetween = (x1: number, x2: number, c: number): Boolean => {
-            return  c >= Math.min(x1, x2) && c <= Math.max(x1, x2);
         }
 
-        const isInsideFrame = (p: Point, direction: Direction): Boolean => {
+        const isBetween = (x1: number, x2: number, c: number): boolean => {
+            return c >= Math.min(x1, x2) && c <= Math.max(x1, x2);
+        };
+
+        const isInsideFrame = (p: Point, direction: Direction): boolean => {
             if (direction === Direction.Horizontal) {
                 return isBetween(0, frameWidth, p.x);
             } else {
                 return isBetween(0, frameHeight, p.y);
             }
-        }
+        };
 
         const findInersection = (p1: Point, p2: Point, p3: Point, p4: Point): Array<number> => {
             const intersectionPoint = intersection(p1, p2, p3, p4);
-            if (intersectionPoint && isBetween(p1.x, p2.x, intersectionPoint.x)
-                && isBetween(p1.y, p2.y, intersectionPoint.y)) {
+            if (
+                intersectionPoint &&
+                isBetween(p1.x, p2.x, intersectionPoint.x) &&
+                isBetween(p1.y, p2.y, intersectionPoint.y)
+            ) {
                 return [intersectionPoint.x, intersectionPoint.y];
             }
             return [];
-        }
+        };
 
         const findIntersectionsWithFrameBorders = (p1: Point, p2: Point, direction: Direction): Array<number> => {
             const resultPoints = [];
             if (direction === Direction.Horizontal) {
-                resultPoints.push(...findInersection(p1, p2, {x:0, y:0}, {x:0, y:frameHeight}));
-                resultPoints.push(...findInersection(p1, p2, {x:frameWidth, y:frameHeight}, {x:frameWidth, y:0}));
+                resultPoints.push(...findInersection(p1, p2, { x: 0, y: 0 }, { x: 0, y: frameHeight }));
+                resultPoints.push(
+                    ...findInersection(p1, p2, { x: frameWidth, y: frameHeight }, { x: frameWidth, y: 0 }),
+                );
             } else {
-                resultPoints.push(...findInersection(p1, p2, {x:0, y:frameHeight}, {x:frameWidth, y:frameHeight}));
-                resultPoints.push(...findInersection(p1, p2, {x:frameWidth, y:0}, {x:0, y:0}));
+                resultPoints.push(
+                    ...findInersection(p1, p2, { x: 0, y: frameHeight }, { x: frameWidth, y: frameHeight }),
+                );
+                resultPoints.push(...findInersection(p1, p2, { x: frameWidth, y: 0 }, { x: 0, y: 0 }));
             }
 
             if (resultPoints.length === 4) {
-                if (Math.sign(resultPoints[0] - resultPoints[2]) !== Math.sign(p1.x - p2.x) &&
-                    Math.sign(resultPoints[1] - resultPoints[3]) !== Math.sign(p1.y - p2.y)) {
+                if (
+                    Math.sign(resultPoints[0] - resultPoints[2]) !== Math.sign(p1.x - p2.x) &&
+                    Math.sign(resultPoints[1] - resultPoints[3]) !== Math.sign(p1.y - p2.y)
+                ) {
                     [resultPoints[0], resultPoints[2]] = [resultPoints[2], resultPoints[0]];
                     [resultPoints[1], resultPoints[3]] = [resultPoints[3], resultPoints[1]];
                 }
             }
             return resultPoints;
-        }
+        };
 
         const crop = (polygonPoints: Array<number>, direction: Direction): Array<number> => {
             const resultPoints = [];
             for (let i = 0; i < polygonPoints.length - 1; i += 2) {
-                const curPoint = {x: polygonPoints[i], y: polygonPoints[i + 1]};
+                const curPoint = { x: polygonPoints[i], y: polygonPoints[i + 1] };
                 if (isInsideFrame(curPoint, direction)) {
                     resultPoints.push(polygonPoints[i], polygonPoints[i + 1]);
                 }
                 const isLastPoint = i === polygonPoints.length - 2;
-                if (isLastPoint && (this.drawData.shapeType === 'polyline'
-                    || this.drawData.shapeType === 'polygon' && polygonPoints.length === 4)) {
+                if (
+                    isLastPoint &&
+                    (this.drawData.shapeType === 'polyline' ||
+                        (this.drawData.shapeType === 'polygon' && polygonPoints.length === 4))
+                ) {
                     break;
                 }
-                const nextPoint = isLastPoint ?
-                   {x:polygonPoints[0], y: polygonPoints[1]} :
-                   {x:polygonPoints[i + 2], y:polygonPoints[i + 3]};
+                const nextPoint = isLastPoint
+                    ? { x: polygonPoints[0], y: polygonPoints[1] }
+                    : { x: polygonPoints[i + 2], y: polygonPoints[i + 3] };
                 const intersectionPoints = findIntersectionsWithFrameBorders(curPoint, nextPoint, direction);
                 if (intersectionPoints.length !== 0) {
                     resultPoints.push(...intersectionPoints);
                 }
             }
             return resultPoints;
-        }
+        };
 
         points = crop(points, Direction.Horizontal);
         points = crop(points, Direction.Vertical);
