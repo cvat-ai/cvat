@@ -1582,17 +1582,17 @@ The "Add rule" button adds a rule for objects display. A rule may use the follow
 
 **Supported properties:**
 
-| Properties  | Supported values                                       | Description                                 |
-| ----------- | ------------------------------------------------------ | --------------------------------------------|
-| `Label`     | all the label names that are in the task               | label name                                  |
-| `Type`      | shape, track or tag                                    | type of object                              |
-| `Shape`     | all shape types                                        | type of shape                               |
-| `Occluded`  | true or false                                          | occluded ([read more](#shape-mode-advanced))|
-| `Width`     | number of px or field                                  | shape width                                 |
-| `Height`    | number of px or field                                  | shape height                                |
-| `ServerID`  | number or field                                        | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu)|
-| `ObjectID`  | number or field                                        | ID of the object in your client <br>(indicated on the objects sidebar)|
-| `Attributes`| some other fields including attributes with a <br>similar type or a specific attribute value| any fields specified by a label |
+| Properties   | Supported values                                                                             | Description                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Label`      | all the label names that are in the task                                                     | label name                                                                                                    |
+| `Type`       | shape, track or tag                                                                          | type of object                                                                                                |
+| `Shape`      | all shape types                                                                              | type of shape                                                                                                 |
+| `Occluded`   | true or false                                                                                | occluded ([read more](#shape-mode-advanced))                                                                  |
+| `Width`      | number of px or field                                                                        | shape width                                                                                                   |
+| `Height`     | number of px or field                                                                        | shape height                                                                                                  |
+| `ServerID`   | number or field                                                                              | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu) |
+| `ObjectID`   | number or field                                                                              | ID of the object in your client <br>(indicated on the objects sidebar)                                        |
+| `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label                                                                               |
 
 **Supported operators for properties:**
 
@@ -1624,7 +1624,7 @@ To add a group, click the "add group" button. Inside the group you can create ru
 
 If there is more than one rule in the group, they can be connected by `And` or `Or` operators.
 The rule group will work as well as a separate rule outside the group and will be joined by an
- operator outside the group.
+operator outside the group.
 You can create groups within other groups, to do so you need to click the add group button within the group.
 
 You can move rules and groups. To move the rule or group, drag it by the button.
