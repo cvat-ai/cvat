@@ -285,6 +285,9 @@ class TaskExportTest(_DbTestBase):
             'WiderFace 1.0',
             'VGGFace2 1.0',
             'Market-1501 1.0',
+            'ICDAR Recognition 1.0',
+            'ICDAR Localization 1.0',
+            'ICDAR Segmentation 1.0',
         })
 
     def test_import_formats_query(self):
@@ -306,6 +309,9 @@ class TaskExportTest(_DbTestBase):
             'WiderFace 1.0',
             'VGGFace2 1.0',
             'Market-1501 1.0',
+            'ICDAR Recognition 1.0',
+            'ICDAR Localization 1.0',
+            'ICDAR Segmentation 1.0',
         })
 
     def test_exports(self):
@@ -319,7 +325,7 @@ class TaskExportTest(_DbTestBase):
 
             format_name = f.DISPLAY_NAME
             if format_name == "VGGFace2 1.0":
-                self.skipTest("Format does not support multiple shapes for one item")
+                self.skipTest("Format is disabled")
 
             for save_images in { True, False }:
                 images = self._generate_task_images(3)
@@ -349,6 +355,9 @@ class TaskExportTest(_DbTestBase):
             ('WiderFace 1.0', 'wider_face'),
             ('VGGFace2 1.0', 'vgg_face2'),
             ('Market-1501 1.0', 'market1501'),
+            ('ICDAR Recognition 1.0', 'icdar_word_recognition'),
+            ('ICDAR Localization 1.0', 'icdar_text_localization'),
+            ('ICDAR Segmentation 1.0', 'icdar_text_segmentation'),
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
