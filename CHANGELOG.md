@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Market-1501](https://www.aitribune.com/dataset/2018051063) format support (<https://github.com/openvinotoolkit/cvat/pull/2869>)
 - Ability of upload manifest for dataset with images (<https://github.com/openvinotoolkit/cvat/pull/2763>)
 - Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
+- Storing settings in local storage to keep them between browser sessions (<https://github.com/openvinotoolkit/cvat/pull/3017>)
 - [ICDAR](https://rrc.cvc.uab.es/?ch=2) format support (<https://github.com/openvinotoolkit/cvat/pull/2866>)
 - Added switcher to maintain poylgon crop behaviour (<https://github.com/openvinotoolkit/cvat/pull/3021>)
 
@@ -81,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed image quality option for tasks created from images (<https://github.com/openvinotoolkit/cvat/pull/2963>)
 - Incorrect text on the warning when specifying an incorrect link to the issue tracker (<https://github.com/openvinotoolkit/cvat/pull/2971>)
 - Updating label attributes when label contains number attributes (<https://github.com/openvinotoolkit/cvat/pull/2969>)
+- Crop a polygon if its points are outside the bounds of the image (<https://github.com/openvinotoolkit/cvat/pull/3025>)
 
 ### Security
 

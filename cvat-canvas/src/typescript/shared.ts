@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +25,7 @@ export interface BBox {
     y: number;
 }
 
-interface Point {
+export interface Point {
     x: number;
     y: number;
 }
@@ -176,5 +176,5 @@ export function scalarProduct(a: Vector2D, b: Vector2D): number {
 }
 
 export function vectorLength(vector: Vector2D): number {
-    return Math.sqrt(vector.i ** 2 + vector.j ** 2);
+    return Math.sqrt((vector.i ** 2) + (vector.j ** 2));
 }

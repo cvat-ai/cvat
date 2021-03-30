@@ -283,14 +283,20 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 showDialog: typeof action.payload.show === 'undefined' ? !state.showDialog : action.payload.show,
             };
         }
+        case SettingsActionTypes.SET_SETTINGS: {
+            return {
+                ...state,
+                ...action.payload.settings,
+            };
+        }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
 
             return {
-                ...defaultState,
+                ...state,
                 player: {
-                    ...defaultState.player,
+                    ...state.player,
                     resetZoom: job && job.task.mode === 'annotation',
                 },
             };
