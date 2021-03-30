@@ -5,13 +5,6 @@ weight: 1
 ---
 It is used for semantic / instance segmentation.
 
-The Z-Order flag defines the order of drawing. It is necessary to
-get the right annotation mask without extra work (additional drawing of borders).
-Z-Order can be changed by pressing `+`/`-` which set maximum/minimum z-order
-accordingly.
-
-![](/images/image074.jpg)
-
 Before starting, you need to select `Polygon` on the controls sidebar and choose the correct Label.
 
 ![](/images/image084.jpg)

@@ -16,7 +16,7 @@ Each format is supported by an importer and exporter.
 It can be a function or a class decorated with
 `importer` or `exporter` from [registry.py](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py). Examples:
 
-``` python
+```python
 @importer(name="MyFormat", version="1.0", ext="ZIP")
 def my_importer(file_object, task_data, **options):
   ...
@@ -33,27 +33,27 @@ def my_exporter(file_object, task_data, **options):
 
 Each decorator defines format parameters such as:
 
-- *name*
+- _name_
 
-- *version*
+- _version_
 
-- *file extension*. For the `importer` it can be a comma-separated list.
+- _file extension_. For the `importer` it can be a comma-separated list.
   These parameters are combined to produce a visible name. It can be
   set explicitly by the `display_name` argument.
 
 Importer arguments:
 
-- *file_object* - a file with annotations or dataset
-- *task_data* - an instance of `TaskData` class.
+- _file_object_ - a file with annotations or dataset
+- _task_data_ - an instance of `TaskData` class.
 
 Exporter arguments:
 
-- *file_object* - a file for annotations or dataset
+- _file_object_ - a file for annotations or dataset
 
-- *task_data* - an instance of `TaskData` class.
+- _task_data_ - an instance of `TaskData` class.
 
-- *options* - format-specific options. `save_images` is the option to
-distinguish if dataset or just annotations are requested.
+- _options_ - format-specific options. `save_images` is the option to
+  distinguish if dataset or just annotations are requested.
 
 [`TaskData`](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/bindings.py) provides many task properties and interfaces
 to add and read task annotations.
@@ -62,18 +62,15 @@ Public members:
 
 - **TaskData. Attribute** - class, `namedtuple('Attribute', 'name, value')`
 
-- **TaskData. LabeledShape** - class, `namedtuple('LabeledShape',
-  'type, frame, label, points, occluded, attributes, group, z_order')`
+- **TaskData. LabeledShape** - class, `namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')`
 
-- **TrackedShape** - `namedtuple('TrackedShape',
-  'type, points, occluded, frame, attributes, outside, keyframe, z_order')`
+- **TrackedShape** - `namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')`
 
 - **Track** - class, `namedtuple('Track', 'label, group, shapes')`
 
 - **Tag** - class, `namedtuple('Tag', 'frame, label, attributes, group')`
 
-- **Frame** - class, `namedtuple('Frame',
-  'frame, name, width, height, labeled_shapes, tags')`
+- **Frame** - class, `namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')`
 
 - **TaskData. shapes** - property, an iterator over `LabeledShape` objects
 
@@ -98,7 +95,7 @@ Public members:
 
 Sample exporter code:
 
-``` python
+```python
 ...
 # dump meta info if necessary
 ...
@@ -127,7 +124,7 @@ file_object.write(...)
 
 Sample importer code:
 
-``` python
+```python
 ...
 #read file_object
 ...
@@ -143,5 +140,3 @@ for parsed_shape in parsed_shapes:
   )
 task_data.add_shape(shape)
 ```
-
-## Format specifications<a id="formats" />

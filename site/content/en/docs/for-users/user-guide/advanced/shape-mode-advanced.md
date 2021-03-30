@@ -4,7 +4,7 @@ linkTitle: "Shape mode"
 weight: 1
 ---
 
-Basic operations in the mode were described in section [shape mode (basics)](/docs/for-users/user-guide/basics/shape-mode-basics).
+Basic operations in the mode were described in section [shape mode (basics)](/docs/for-users/user-guide/basics/shape-mode-basics/).
 
 **Occluded**
 Occlusion is an attribute used if an object is occluded by another object or

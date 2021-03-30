@@ -1,6 +1,6 @@
 ---
 linkTitle: "MOT"
-weight: 7
+weight: 3
 ---
 
 ### [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)<a id="mot" />
@@ -9,11 +9,11 @@ weight: 7
 
 Downloaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── img1/
-|   ├── imgage1.jpg
-|   └── imgage2.jpg
+|   ├── image1.jpg
+|   └── image2.jpg
 └── gt/
     ├── labels.txt
     └── gt.txt
@@ -38,7 +38,7 @@ person
 
 Uploaded file: a zip archive of the structure above or:
 
-``` bash
+```bash
 taskname.zip/
 ├── labels.txt # optional, mandatory for non-official labels
 └── gt.txt

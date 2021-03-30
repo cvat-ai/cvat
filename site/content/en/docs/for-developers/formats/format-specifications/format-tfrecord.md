@@ -1,6 +1,6 @@
 ---
 linkTitle: "TFRecord"
-weight: 6
+weight: 8
 ---
 
 ### [TFRecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)<a id="tfrecord" />
@@ -12,7 +12,7 @@ with minimal modifications.
 
 Used feature description:
 
-``` python
+```python
 image_feature_description = {
     'image/filename': tf.io.FixedLenFeature([], tf.string),
     'image/source_id': tf.io.FixedLenFeature([], tf.string),
@@ -32,7 +32,7 @@ image_feature_description = {
 
 Downloaded file: a zip archive with following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── task2.tfrecord
 └── label_map.pbtxt
@@ -44,7 +44,7 @@ taskname.zip/
 
 Uploaded file: a zip archive of following structure:
 
-``` bash
+```bash
 taskname.zip/
 └── task2.tfrecord
 ```
@@ -55,7 +55,7 @@ taskname.zip/
 
 1. Create `label_map.pbtxt` file with the following content:
 
-``` js
+```js
 item {
     id: 1
     name: 'aeroplane'
@@ -143,29 +143,29 @@ item {
 to convert VOC2007 dataset to TFRecord format.
 As example:
 
-``` bash
+```bash
 python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --year VOC2007 --output_path pascal.tfrecord --label_map_path label_map.pbtxt
 ```
 
 1. Zip train images
 
-   ``` bash
+   ```bash
    cat <path to VOCdevkit>/VOC2007/ImageSets/Main/train.txt | while read p; do echo <path to VOCdevkit>/VOC2007/JPEGImages/${p}.jpg  ; done | zip images.zip -j -@
    ```
 
 1. Create a CVAT task with the following labels:
 
-   ``` bash
+   ```bash
    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
    ```
 
    Select images. zip as data.
-   See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task)
+   See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task/)
    guide for details.
 
 1. Zip `pascal.tfrecord` and `label_map.pbtxt` files together
 
-   ``` bash
+   ```bash
    zip anno.zip -j <path to pascal.tfrecord> <path to label_map.pbtxt>
    ```
 

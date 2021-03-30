@@ -1,6 +1,6 @@
 ---
 linkTitle: "CVAT"
-weight: 3
+weight: 1
 ---
 
 ### CVAT<a id="cvat" />
@@ -13,13 +13,13 @@ features, so it can be used to make data backups.
 
 - attributes are supported
 
-- [Format specification](/docs/for-developers/xml_format)
+- [Format specification](/docs/for-developers/xml_format/)
 
 #### CVAT for images dumper
 
 Downloaded file: a ZIP file of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── images/
 |   ├── img1.png
@@ -33,7 +33,7 @@ taskname.zip/
 
 Downloaded file: a ZIP file of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── images/
 |   ├── frame_000000.png

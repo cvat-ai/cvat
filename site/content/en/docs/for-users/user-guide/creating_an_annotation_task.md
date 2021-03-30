@@ -65,8 +65,8 @@ weight: 2
     **Select files**. Press tab `My computer` to choose some files for annotation from your PC.
     If you select tab `Connected file share` you can choose files for annotation from your network.
     If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
-    If you upload a video data and select `Use cache` option, you can along with the video file attach a file with meta information.
-    You can find how to prepare it [here](/docs/for-developers/prepare_meta_information).
+    If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
+    You can find how to prepare it [here](/docs/for-developers/dataset_manifest/).
 
     ![](/images/image127.jpg)
 
@@ -79,7 +79,7 @@ weight: 2
     **Use cache**. Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
     which will reduce the task creation time (by preparing chunks when requests are received)
     and store data in a cache of limited size with a policy of evicting less popular items.
-    See more [here](/docs/for-developers/data_on_fly).
+    See more [here](/docs/for-developers/data_on_fly/).
 
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.
@@ -173,7 +173,7 @@ weight: 2
       - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
       - [Datumaro](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/datumaro)
     - `Upload annotation` is available in the same formats as in `Dump annotation`.
-      - [CVAT](/docs/for-developers/xml_format) accepts both video and image sub-formats.
+      - [CVAT](/docs/for-developers/xml_format/) accepts both video and image sub-formats.
     - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
     - `Delete` — delete task.
@@ -204,7 +204,7 @@ weight: 2
       - Duration — is the amount of time the job is being worked.
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
-      - Reviewer – a user assigned to carry out the review, read more in the [review](/docs/for-users/user-guide/advanced/review) section.
+      - Reviewer – a user assigned to carry out the review, read more in the [review](/docs/for-users/user-guide/advanced/review/) section.
       - `Copy`. By clicking Copy you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
 

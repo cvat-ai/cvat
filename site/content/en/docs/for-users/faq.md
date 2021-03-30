@@ -7,8 +7,7 @@ description: "Answers to frequently asked questions"
 
 ## How to update CVAT
 
-Before upgrading, please follow the official docker
-[manual](https://docs.docker.com/storage/volumes/#backup-restore-or-migrate-data-volumes) and backup all CVAT volumes.
+Before upgrading, please follow the [backup guide](/docs/for-developers/backup_guide/) and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
 
@@ -139,3 +138,6 @@ services:
 
 Set the segment size when you create a new task, this option is available in the
 [Advanced configuration](/docs/for-users/user-guide/creating_an_annotation_task/#advanced-configuration) section.
+
+## How to transfer CVAT to another machine
+Follow the [backup/restore guide](/docs/for-developers/backup_guide/#how-to-backup-all-cvat-data).

@@ -1,6 +1,6 @@
 ---
 linkTitle: "LabelMe"
-weight: 8
+weight: 2
 ---
 
 ### [LabelMe](http://labelme.csail.mit.edu/Release3.0)<a id="labelme" />
@@ -9,7 +9,7 @@ weight: 8
 
 Downloaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── img1.jpg
 └── img1.xml
@@ -21,7 +21,7 @@ taskname.zip/
 
 Uploaded file: a zip archive of the following structure:
 
-``` bash
+```bash
 taskname.zip/
 ├── Masks/
 |   ├── img1_mask1.png

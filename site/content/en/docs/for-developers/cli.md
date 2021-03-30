@@ -5,7 +5,6 @@ weight: 3
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/cli)
 ---
 
-Command line interface (CLI)
 **Description**
 A simple command line interface for working with CVAT tasks. At the moment it
 implements a basic feature set but may serve as the starting point for a more
@@ -20,6 +19,7 @@ Overview of functionality:
 - Dump annotations (supports all formats via format string)
 
 **Usage**
+
 ```bash
 usage: cli.py [-h] [--auth USER:[PASS]] [--server-host SERVER_HOST]
               [--server-port SERVER_PORT] [--debug]
@@ -42,7 +42,9 @@ optional arguments:
                         using https connection (default: False)
   --debug               show debug output
 ```
+
 **Examples**
+
 - List all tasks
 `cli.py ls`
 - Create a task

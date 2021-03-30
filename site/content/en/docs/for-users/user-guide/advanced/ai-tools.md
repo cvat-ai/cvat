@@ -6,7 +6,7 @@ weight: 5
 
 The tool is designed for semi-automatic and automatic annotation using DL models.
 The tool is available only if there is a corresponding model.
-For more details about DL models read the [Models](/docs/for-users/user-guide/models) section.
+For more details about DL models read the [Models](/docs/for-users/user-guide/models/) section.
 
 ### Interactors
 
@@ -36,7 +36,7 @@ In most cases specifying positive points alone is enough to build a polygon.
 - To finish interaction, click on the icon on the controls sidebar or press `N` on your keyboard.
 
 - When the object is finished, you can edit it like a polygon.
-  You can read about editing polygons in the [Annotation with polygons](/docs/for-users/user-guide/advanced/annotation-with-polygons) section.
+  You can read about editing polygons in the [Annotation with polygons](/docs/for-users/user-guide/advanced/annotation-with-polygons/) section.
 
 ### Detectors
 
@@ -49,4 +49,4 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
   ![](/images/image187.jpg)
 
 - This action will automatically annotates one frame.
-  In the [Automatic annotation](/docs/for-users/user-guide/advanced/automatic-annotation) section you can read how to make automatic annotation of all frames.
+  In the [Automatic annotation](/docs/for-users/user-guide/advanced/automatic-annotation/) section you can read how to make automatic annotation of all frames.

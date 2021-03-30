@@ -14,7 +14,7 @@ weight: 16
 
 ![](/images/image059.jpg)
 
-The way how to use filters is described in the advanced guide [here](/docs/for-users/user-guide/advanced/filter).
+The way how to use filters is described in the advanced guide [here](/docs/for-users/user-guide/advanced/filter/).
 
 **List of objects**
 

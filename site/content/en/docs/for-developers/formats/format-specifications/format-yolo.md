@@ -1,6 +1,6 @@
 ---
 linkTitle: "YOLO"
-weight: 4
+weight: 7
 ---
 
 ### [YOLO](https://pjreddie.com/darknet/yolo/)<a id="yolo" />
@@ -12,13 +12,13 @@ weight: 4
 
 Downloaded file: a zip archive with following structure:
 
-``` bash
+```bash
 archive.zip/
 ├── obj.data
 ├── obj.names
 ├── obj_<subset>_data
-│   ├── image1.txt
-│   └── image2.txt
+│   ├── image1.txt
+│   └── image2.txt
 └── train.txt # list of subset image paths
 
 # the only valid subsets are: train, valid
@@ -74,25 +74,25 @@ and annotation file name. There are 2 options:
 
 1. Zip train images
 
-``` bash
+```bash
 zip images.zip -j -@ < train.txt
 ```
 
 1. Create a CVAT task with the following labels:
 
-   ``` bash
+   ```bash
    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog
    horse motorbike person pottedplant sheep sofa train tvmonitor
    ```
 
    Select images. zip as data. Most likely you should use `share`
    functionality because size of images. zip is more than 500Mb.
-   See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task)
+   See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task/)
    guide for details.
 
 1. Create `obj.names` with the following content:
 
-   ``` bash
+   ```bash
    aeroplane
    bicycle
    bird
@@ -117,7 +117,7 @@ zip images.zip -j -@ < train.txt
 
 1. Zip all label files together (we need to add only label files that correspond to the train subset)
 
-   ``` bash
+   ```bash
    cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
    ```
 

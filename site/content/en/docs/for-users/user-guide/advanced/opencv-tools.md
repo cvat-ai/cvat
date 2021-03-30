@@ -17,8 +17,6 @@ Intelligent scissors is an CV method of creating a polygon by placing points wit
 The distance between the adjacent points is limited by the threshold of action,
 displayed as a red square which is tied to the cursor.
 
-
-
 - First, select the label and then click on the `intelligent scissors` button.
 
   ![](/images/image199.jpg)
@@ -35,4 +33,4 @@ displayed as a red square which is tied to the cursor.
   During the drawing process you can remove the last point by clicking on it with the left mouse button.
 
 - Once all the points are placed, you can complete the creation of the object by clicking on the icon or clicking `N`.
-  As a result, a polygon will be created (read more about the polygons in the [annoation with polygons](/docs/for-users/user-guide/advanced/annotation-with-polygons)).
+  As a result, a polygon will be created (read more about the polygons in the [annoation with polygons](/docs/for-users/user-guide/advanced/annotation-with-polygons/)).

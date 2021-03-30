@@ -25,9 +25,9 @@ Button assignment:
   - [MS COCO](http://cocodataset.org/#format-data)
   - [YOLO](https://pjreddie.com/darknet/yolo/)
 - `Open the task` — opens a page with details about the task.
-- `Request a review` - calls up the form to submit the job for a review, read more in the [review](/docs/for-users/user-guide/advanced/review) section.
+- `Request a review` - calls up the form to submit the job for a review, read more in the [review](/docs/for-users/user-guide/advanced/review/) section.
 - `Finish the job` - changes the status of the job to `completed` and returns to the task page without review.
-- `Submit the review` - (available during the review) calls up the form to submit a review, read more in the [review](/docs/for-users/user-guide/advanced/review) section.
+- `Submit the review` - (available during the review) calls up the form to submit a review, read more in the [review](/docs/for-users/user-guide/advanced/review/) section.
 
 #### Save Work
 
@@ -58,7 +58,7 @@ Go to the next/previous frame with a predefined step. Shortcuts:
 The button to go to the next / previous frame has the customization possibility. To customize, right-click on the button and select one of three options:
 
 1. The default option - go to the next / previous frame (the step is 1 frame).
-2. Go to the next / previous frame that has any objects (in particular filtered). Read the [filter](/docs/for-users/user-guide/advanced/filter) section to know the details how to use it.
+2. Go to the next / previous frame that has any objects (in particular filtered). Read the [filter](/docs/for-users/user-guide/advanced/filter/) section to know the details how to use it.
 3. Go to the next / previous frame without annotation at all. Use this option in cases when you need to find missed frames quickly.
 
 Shortcuts: `D` - previous, `F` - next.
