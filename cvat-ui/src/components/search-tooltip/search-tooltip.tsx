@@ -22,7 +22,7 @@ export default function SearchTooltip(props: Props): JSX.Element {
     return (
         <CVATTooltip
             overlayClassName={`cvat-${instance}s-search-tooltip`}
-            title={
+            title={(
                 <>
                     <Paragraph>
                         <Text strong>owner: admin</Text>
@@ -86,7 +86,7 @@ export default function SearchTooltip(props: Props): JSX.Element {
                         <Text type='success'>Search within all the string fields by default</Text>
                     </Paragraph>
                 </>
-            }
+            )}
         >
             {children}
         </CVATTooltip>
