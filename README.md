@@ -16,14 +16,14 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 ## Documentation
 
-- [Installation guide](cvat/apps/documentation/installation.md)
-- [User's guide](cvat/apps/documentation/user_guide.md)
+- [Installation guide](site/content/en/docs/for-users/installation.md)
+- [User's guide](https://cvat.org/docs/for-users/user-guide/)
 - [Django REST API documentation](#rest-api)
 - [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
-- [Command line interface](utils/cli/)
-- [XML annotation format](cvat/apps/documentation/xml_format.md)
-- [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
-- [Frequently asked questions](cvat/apps/documentation/faq.md)
+- [Command line interface](site/content/en/docs/for-developers/cli.md)
+- [XML annotation format](site/content/en/docs/for-developers/xml_format.md)
+- [AWS Deployment Guide](site/content/en/docs/for-developers/AWS-Deployment-Guide.md)
+- [Frequently asked questions](site/content/en/docs/for-users/faq.md)
 - [Questions](#questions)
 
 ## Screencasts
@@ -48,23 +48,22 @@ line tool and Python library.
 For more information about supported formats look at the
 [documentation](cvat/apps/dataset_manager/formats/README.md#formats).
 
-| Annotation format                                                             | Import | Export |
-| ----------------------------------------------------------------------------- | ------ | ------ |
-| [CVAT for images](cvat/apps/documentation/xml_format.md#annotation)           | X      | X      |
-| [CVAT for a video](cvat/apps/documentation/xml_format.md#interpolation)       | X      | X      |
-| [Datumaro](https://github.com/openvinotoolkit/datumaro)                       |        | X      |
-| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                         | X      | X      |
-| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/) | X      | X      |
-| [YOLO](https://pjreddie.com/darknet/yolo/)                                    | X      | X      |
-| [MS COCO Object Detection](http://cocodataset.org/#format-data)               | X      | X      |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)         | X      | X      |
-| [MOT](https://motchallenge.net/)                                              | X      | X      |
-| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
-| [ImageNet](http://www.image-net.org)                                          | X      | X      |
-| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
-| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                               | X      | X      |
-| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                               | X      | X      |
-| [Market-1501](https://www.aitribune.com/dataset/2018051063)                   | X      | X      |
+| Annotation format                                                                   | Import | Export |
+| ----------------------------------------------------------------------------------  | ------ | ------ |
+| [CVAT for images](site/content/en/docs/for-developers/xml_format.md#annotation)     | X      | X      |
+| [CVAT for a video](site/content/en/docs/for-developers/xml_format.md#interpolation) | X      | X      |
+| [Datumaro](https://github.com/openvinotoolkit/datumaro)                             |        | X      |
+| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                               | X      | X      |
+| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)       | X      | X      |
+| [YOLO](https://pjreddie.com/darknet/yolo/)                                          | X      | X      |
+| [MS COCO Object Detection](http://cocodataset.org/#format-data)                     | X      | X      |
+| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                 | X      | X      |
+| [MOT](https://motchallenge.net/)                                                    | X      | X      |
+| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                              | X      | X      |
+| [ImageNet](http://www.image-net.org)                                                | X      | X      |
+| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                | X      | X      |
+| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                     | X      | X      |
+| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                     | X      | X      |
 
 ## Deep learning serverless functions for automatic labeling
 
@@ -95,7 +94,7 @@ are visible to users.
 
 Disabled features:
 
-- [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
+- [Analytics: management and monitoring of data annotation team](site/content/en/docs/for-developers/analytics.md)
 
 Limitations:
 
