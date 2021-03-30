@@ -41,6 +41,7 @@ This multipage document contains information on how to work with the CVAT user i
 
 Answers to frequently asked questions.
 
+
 {{% /blocks/feature %}}
 
 
@@ -53,7 +54,7 @@ This page provides information about the installation of components needed for s
 {{% /blocks/feature %}}
 
 
-{{% blocks/feature icon="fa-terminal" title="[For Developers](/docs/for-users/for-developers/)" %}}
+{{% blocks/feature icon="fa-terminal" title="[For Developers](/docs/for-developers/)" %}}
 
 
 This section contains documents for CVAT developers.
@@ -69,7 +70,6 @@ Computer Vision Annotation Tool GitHub repository.
 
 
 {{% /blocks/feature %}}
-
 
 
 {{< /blocks/section >}}
