@@ -23,17 +23,17 @@ context('Rename a label via raw editor.', () => {
     const directoryToArchive = imagesFolder;
     const newlabelName = `Changed case ${caseId}`;
     const newlabelColor = '#C14330';
-    let rawLabelViewerDefault = '';
+    let rawLabelsValue = '';
 
-    function testChangingRawLabelsViewerText(rawLableViewer) {
-        const json = JSON.parse(rawLableViewer.text());
-        json.forEach(($el) => {
-            if ($el.name === labelName) {
-                $el.name = newlabelName;
-                $el.color = newlabelColor;
+    function testChangingRawLabelsViewerText(rawLabelsTextarea) {
+        const labels = JSON.parse(rawLabelsTextarea.text());
+        labels.forEach((label) => {
+            if (label.name === labelName) {
+                label.name = newlabelName;
+                label.color = newlabelColor;
             }
         });
-        cy.get('.cvat-raw-labels-viewer').clear().type(JSON.stringify(json), { parseSpecialCharSequences: false });
+        cy.get('.cvat-raw-labels-viewer').clear().type(JSON.stringify(labels), { parseSpecialCharSequences: false });
     }
 
     before(() => {
@@ -54,22 +54,22 @@ context('Rename a label via raw editor.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Change label name, color by raw editor. Press "Reset". The values returned to their original values.', () => {
             cy.contains('[role="tab"]', 'Raw').click();
-            cy.get('.cvat-raw-labels-viewer').then(($rawLabelViewerDefault) => {
-                rawLabelViewerDefault = $rawLabelViewerDefault.text();
-                testChangingRawLabelsViewerText($rawLabelViewerDefault);
+            cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextarea) => {
+                rawLabelsValue = $rawLabelsTextarea.text();
+                testChangingRawLabelsViewerText($rawLabelsTextarea);
             });
             cy.contains('[type="button"]', 'Reset').click();
         });
 
         it('After reset, the text of the element returned to its original value.', () => {
-            cy.get('.cvat-raw-labels-viewer').then(($rawViewerAfterReset) => {
-                expect(rawLabelViewerDefault).to.be.equal($rawViewerAfterReset.text());
+            cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextareaAfterReset) => {
+                expect(rawLabelsValue).to.be.equal($rawLabelsTextareaAfterReset.text());
             });
         });
 
-        it('Change label attributes by raw editor. Press "Done". The label parameters have taken on new values.', () => {
-            cy.get('.cvat-raw-labels-viewer').then(($rawLabelViewerDefault) => {
-                testChangingRawLabelsViewerText($rawLabelViewerDefault);
+        it('Change label name, color by raw editor. Press "Done". The label parameters have taken on new values.', () => {
+            cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextarea) => {
+                testChangingRawLabelsViewerText($rawLabelsTextarea);
             });
             cy.contains('[type="submit"]', 'Done').click();
             cy.contains('[role="tab"]', 'Constructor').click();
