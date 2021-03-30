@@ -32,6 +32,8 @@ path = osp.join(osp.dirname(__file__), 'assets', 'annotations.json')
 with open(path) as f:
     annotations = json.load(f)
 
+TEST_DATA_ROOT = "/tmp/cvat"
+
 def generate_image_file(filename, size=(100, 50)):
     f = BytesIO()
     image = Image.new('RGB', size=size)
@@ -255,7 +257,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             "format": dump_format_name,
                             "action": "download",
                         }
-                        with TestDir() as test_dir:
+                        with TestDir(path = TEST_DATA_ROOT) as test_dir:
                             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                             self._download_file(url, data, self.admin, file_zip_name)
                             self._check_downloaded_file(file_zip_name)
@@ -417,7 +419,7 @@ class TaskDumpUploadTest(_DbTestBase):
             "action": "download",
         }
 
-        with TestDir() as test_dir:
+        with TestDir(path = TEST_DATA_ROOT) as test_dir:
             file_zip_name = osp.join(test_dir, f'{test_name}_admin_{dump_format_name}.zip')
             response = self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -453,7 +455,7 @@ class TaskDumpUploadTest(_DbTestBase):
             "action": "download",
         }
 
-        with TestDir() as test_dir:
+        with TestDir(path = TEST_DATA_ROOT) as test_dir:
             file_zip_name = osp.join(test_dir, f'{test_name}_admin_{dump_format_name}.zip')
             response = self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -489,7 +491,7 @@ class TaskDumpUploadTest(_DbTestBase):
             "format": dump_format_name,
             "action": "download",
         }
-        with TestDir() as test_dir:
+        with TestDir(path = TEST_DATA_ROOT) as test_dir:
             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
             response = self._download_file(url, data, self.admin, file_zip_name)
             self._check_downloaded_file(file_zip_name)
@@ -582,7 +584,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "dataset": None,
                         "annotations": None,
                     }
-                    with TestDir() as test_dir:
+                    with TestDir(path = TEST_DATA_ROOT) as test_dir:
                         for type_file in ("dataset", "annotations"):
                             # dump file
                             url = f"/api/v1/tasks/{task_id}/{type_file}"
@@ -634,7 +636,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "format": dump_format_name,
                         "action": "download",
                     }
-                    with TestDir() as test_dir:
+                    with TestDir(path = TEST_DATA_ROOT) as test_dir:
                         file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                         self._download_file(url, data, self.admin, file_zip_name)
                         self._check_downloaded_file(file_zip_name)
@@ -679,7 +681,7 @@ class TaskDumpUploadTest(_DbTestBase):
             "format": dump_format_name,
             "action": "download",
         }
-        with TestDir() as test_dir:
+        with TestDir(path = TEST_DATA_ROOT) as test_dir:
             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
             self._download_file(url, data, self.admin, file_zip_name)
             self._check_downloaded_file(file_zip_name)
@@ -722,7 +724,7 @@ class TaskDumpUploadTest(_DbTestBase):
             "format": dump_format_name,
             "action": "download",
         }
-        with TestDir() as test_dir:
+        with TestDir(path = TEST_DATA_ROOT) as test_dir:
             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
             self._download_file(url, data, self.admin, file_zip_name)
             self._check_downloaded_file(file_zip_name)
@@ -768,7 +770,7 @@ class TaskDumpUploadTest(_DbTestBase):
             "format": dump_format_name,
             "action": "download",
         }
-        with TestDir() as test_dir:
+        with TestDir(path = TEST_DATA_ROOT) as test_dir:
             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
             self._download_file(url, data, self.admin, file_zip_name)
             self._check_downloaded_file(file_zip_name)
