@@ -55,17 +55,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/opencv/cvat.git"
+    "url": "git+https://github.com/openvinotoolkit/cvat.git"
   },
   "author": "Intel",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/opencv/cvat/issues"
+    "url": "https://github.com/openvinotoolkit/cvat/issues"
   },
-  "homepage": "https://github.com/opencv/cvat#readme",
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  }
+  "homepage": "https://github.com/openvinotoolkit/cvat#readme"
 }
