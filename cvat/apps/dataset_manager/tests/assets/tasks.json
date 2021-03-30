@@ -54,6 +54,64 @@
       }
     ]
   },
+  "icdar_localization_and_recognition": {
+    "name": "icdar localization/recogntion task",
+    "overlap": 0,
+    "segment_size": 100,
+    "owner_id": 1,
+    "assignee_id": 2,
+    "labels": [
+      {
+        "name": "icdar",
+        "attributes": [
+          {
+            "name": "text",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["word_1", "word_2", "word_3"]
+          }
+        ]
+      }
+    ]
+  },
+  "icdar_segmentation": {
+    "name": "icdar segmentation task",
+    "overlap": 0,
+    "segment_size": 100,
+    "owner_id": 1,
+    "assignee_id": 2,
+    "labels": [
+      {
+        "name": "icdar",
+        "attributes": [
+          {
+            "name": "text",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["word_1", "word_2", "word_3"]
+          },
+          {
+            "name": "index",
+            "mutable": false,
+            "input_type": "number",
+            "values": ["0", "1", "2"]
+          },
+          {
+            "name": "color",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["100 110 240", "10 15 20", "120 128 64"]
+          },
+          {
+            "name": "center",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["1 2", "2 4", "10 45"]
+          }
+        ]
+      }
+    ]
+  },
   "market1501": {
     "name": "market1501 task",
     "overlap": 0,
@@ -83,11 +141,6 @@
             "values": ["1", "2", "3"]
           }
         ]
-      },
-      {
-        "name": "person",
-        "color": "#c06060",
-        "attributes": []
       }
     ]
   },
@@ -172,8 +225,8 @@
       }
     ]
   },
-  "change ovelap and segment size": {
-    "name": "change ovelap and segment size",
+  "change overlap and segment size": {
+    "name": "change overlap and segment size",
     "overlap": 3,
     "segment_size": 6,
     "owner_id": 1,

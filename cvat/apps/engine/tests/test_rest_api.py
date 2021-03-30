@@ -30,9 +30,9 @@ from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
-from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.models import DimensionType
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1971,6 +1971,26 @@ def generate_pdf_file(filename, page_count=1):
     file_buf.seek(0)
     return image_sizes, file_buf
 
+def generate_manifest_file(data_type, manifest_path, sources):
+    kwargs = {
+        'images': {
+            'sources': sources,
+            'is_sorted': False,
+        },
+        'video': {
+            'media_file': sources[0],
+            'upload_dir': os.path.dirname(sources[0]),
+            'force': True
+        }
+    }
+
+    if data_type == 'video':
+        manifest = VideoManifestManager(manifest_path)
+    else:
+        manifest = ImageManifestManager(manifest_path)
+    prepared_meta = manifest.prepare_meta(**kwargs[data_type])
+    manifest.create(prepared_meta)
+
 class TaskDataAPITestCase(APITestCase):
     _image_sizes = {}
 
@@ -2093,6 +2113,12 @@ class TaskDataAPITestCase(APITestCase):
         shutil.rmtree(root_path)
         cls._image_sizes[filename] = image_sizes
 
+        generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
+            sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
+
+        generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
+            sources=[os.path.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -2114,7 +2140,10 @@ class TaskDataAPITestCase(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "videos", "meta_info.txt")
+        path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
         os.remove(path)
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
@@ -2257,7 +2286,7 @@ class TaskDataAPITestCase(APITestCase):
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
-                server_files = [img for key, img in data.items() if key.startswith("server_files")]
+                server_files = [img for key, img in data.items() if key.startswith("server_files") and not img.endswith("manifest.jsonl")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
@@ -2446,7 +2475,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
-                                             expected_uploaded_data_location=StorageChoice.SHARE)
+                                             expected_uploaded_data_location=StorageChoice.LOCAL)
 
         task_spec.update([('name', 'my archive task #12')])
         task_data.update([('copy_data', True)])
@@ -2546,7 +2575,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
         task_spec.update([('name', 'my cached zip archive task #19')])
         task_data.update([('copy_data', True)])
@@ -2595,11 +2624,6 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data,
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
-        prepare_meta_for_upload(
-            prepare_meta,
-            os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4"),
-            os.path.join(settings.SHARE_ROOT, "videos")
-        )
         task_spec = {
             "name": "my video with meta info task without copying #22",
             "overlap": 0,
@@ -2611,7 +2635,7 @@ class TaskDataAPITestCase(APITestCase):
         }
         task_data = {
             "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
-            "server_files[1]": os.path.join("videos", "meta_info.txt"),
+            "server_files[1]": os.path.join("videos", "manifest.jsonl"),
             "image_quality": 70,
             "use_cache": True
         }
@@ -2722,6 +2746,38 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
+
+        task_spec = {
+            "name": "my images+manifest without copying #26",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_3.jpg",
+            "server_files[3]": "manifest.jsonl",
+            "image_quality": 70,
+            "use_cache": True
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        task_spec.update([('name', 'my images+manifest #27')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
@@ -2854,6 +2910,49 @@ class JobAnnotationAPITestCase(APITestCase):
                         "mutable": False,
                         "input_type": "number",
                         "values": ["1", "2", "3"]
+                    },
+                ]
+            }]
+        elif annotation_format in ["ICDAR Recognition 1.0",
+                "ICDAR Localization 1.0"]:
+            data["labels"] = [{
+                "name": "icdar",
+                "attributes": [
+                    {
+                        "name": "text",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["word_1", "word_2", "word_3"]
+                    },
+                ]
+            }]
+        elif annotation_format == "ICDAR Segmentation 1.0":
+            data["labels"] = [{
+                "name": "icdar",
+                "attributes": [
+                    {
+                        "name": "text",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["word_1", "word_2", "word_3"]
+                    },
+                    {
+                        "name": "index",
+                        "mutable": False,
+                        "input_type": "number",
+                        "values": ["0", "1", "2"]
+                    },
+                    {
+                        "name": "color",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["100 110 240", "10 15 20", "120 128 64"]
+                    },
+                    {
+                        "name": "center",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["1 2", "2 4", "10 45"]
                     },
                 ]
             }]
@@ -3836,7 +3935,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
-            if annotation_format != "Market-1501 1.0":
+            if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
+                    "ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4181,6 +4281,116 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 }]
                 annotations["tags"] = tags_with_attrs
 
+            elif annotation_format == "ICDAR Recognition 1.0":
+                tags_with_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        }
+                    ],
+                }]
+
+                annotations["tags"] = tags_with_attrs
+
+            elif annotation_format == "ICDAR Localization 1.0":
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + polygon_shapes_with_attrs
+
+            elif annotation_format == "ICDAR Segmentation 1.0":
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][2]["id"],
+                            "value": task["labels"][0]["attributes"][2]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][3]["id"],
+                            "value": task["labels"][0]["attributes"][3]["values"][2]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][2]["id"],
+                            "value": task["labels"][0]["attributes"][2]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][3]["id"],
+                            "value": task["labels"][0]["attributes"][3]["values"][1]
+                        }
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + polygon_shapes_with_attrs
+
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
@@ -4277,7 +4487,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 # 7. check annotation
-                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0", "CamVid 1.0"}:
+                if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
+                        "CamVid 1.0", "ICDAR Segmentation 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)
