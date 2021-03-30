@@ -46,10 +46,10 @@ optional arguments:
 **Examples**
 
 - List all tasks
-`cli.py ls`
+  `cli.py ls`
 - Create a task
-`cli.py create "new task" --labels labels.json local file1.jpg file2.jpg`
+  `cli.py create "new task" --labels labels.json local file1.jpg file2.jpg`
 - Delete some tasks
-`cli.py delete 100 101 102`
+  `cli.py delete 100 101 102`
 - Dump annotations
-`cli.py dump --format "CVAT for images 1.1" 103 output.xml`
+  `cli.py dump --format "CVAT for images 1.1" 103 output.xml`
