@@ -154,16 +154,6 @@
     @extend .cvat-text-color;
 }
 
-.cvat-tasks-search-tooltip {
-    span {
-        color: white;
-    }
-
-    strong::after {
-        content: ' - ';
-    }
-}
-
 #cvat-create-task-button {
     padding: 0 30px;
 }
