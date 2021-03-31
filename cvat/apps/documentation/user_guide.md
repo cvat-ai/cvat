@@ -1290,6 +1290,7 @@ internal shapes (they will be merged into the largest one and then covered by
 
 There are several formats in CVAT that can be used to export masks:
 - `Segmentation Mask` (PASCAL VOC masks)
+- `CamVid`
 - `MOTS`
 - `ICDAR`
 - `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#tfrecord)):
