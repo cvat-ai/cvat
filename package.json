@@ -46,7 +46,7 @@
     "instrument": "nyc instrument cvat-ui cvat-ui_cov && nyc instrument cvat-canvas cvat-canvas_cov && nyc instrument cvat-data cvat-data_cov && nyc instrument cvat-core cvat-core_cov",
     "cp": "cp -r cvat-ui_cov/* cvat-ui && cp -r cvat-canvas_cov/* cvat-canvas && cp -r cvat-data_cov/* cvat-data && cp -r cvat-core_cov/* cvat-core",
     "rm": "rm -rf cvat-ui_cov cvat-canvas_cov cvat-data_cov cvat-core_cov",
-    "prepare": "husky install && npx husky add .husky/pre-commit \"npx lint-staged\"",
+    "prepare": "husky install && rm .husky/pre-commit && npx husky add .husky/pre-commit \"npx lint-staged\"",
     "precommit:cvat-data": "cd cvat-ui && eslint --fix",
     "precommit:cvat-core": "cd cvat-ui && eslint --fix",
     "precommit:cvat-canvas": "cd cvat-ui && eslint --fix",
