@@ -1293,6 +1293,7 @@ There are several formats in CVAT that can be used to export masks:
 - `CamVid`
 - `MOTS`
 - `ICDAR`
+- `COCO` (RLE-encoded instance masks, [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#coco))
 - `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#tfrecord)):
 - `Datumaro`
 
