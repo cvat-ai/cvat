@@ -48,24 +48,6 @@ line tool and Python library.
 For more information about supported formats look at the
 [documentation](cvat/apps/dataset_manager/formats/README.md#formats).
 
-<<<<<<< HEAD
-| Annotation format                                                                   | Import | Export |
-| ----------------------------------------------------------------------------------  | ------ | ------ |
-| [CVAT for images](site/content/en/docs/for-developers/xml_format.md#annotation)     | X      | X      |
-| [CVAT for a video](site/content/en/docs/for-developers/xml_format.md#interpolation) | X      | X      |
-| [Datumaro](https://github.com/openvinotoolkit/datumaro)                             |        | X      |
-| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                               | X      | X      |
-| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)       | X      | X      |
-| [YOLO](https://pjreddie.com/darknet/yolo/)                                          | X      | X      |
-| [MS COCO Object Detection](http://cocodataset.org/#format-data)                     | X      | X      |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                 | X      | X      |
-| [MOT](https://motchallenge.net/)                                                    | X      | X      |
-| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                              | X      | X      |
-| [ImageNet](http://www.image-net.org)                                                | X      | X      |
-| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                | X      | X      |
-| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                     | X      | X      |
-| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                     | X      | X      |
-=======
 | Annotation format                                                             | Import | Export |
 | ----------------------------------------------------------------------------- | ------ | ------ |
 | [CVAT for images](cvat/apps/documentation/xml_format.md#annotation)           | X      | X      |
@@ -84,7 +66,6 @@ For more information about supported formats look at the
 | [VGGFace2](https://github.com/ox-vgg/vgg_face2)                               | X      | X      |
 | [Market-1501](https://www.aitribune.com/dataset/2018051063)                   | X      | X      |
 | [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                    | X      | X      |
->>>>>>> upstream/develop
 
 ## Deep learning serverless functions for automatic labeling
 
