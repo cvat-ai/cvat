@@ -676,11 +676,31 @@ In addition the workspace also has the following functions:
 
   ![](static/documentation/images/image140.jpg)
 
+- `Image settings panel` -  used to set up the grid and set up image brightness contrast saturation.
+
+  - Show `Grid`, change grid size, choose color and transparency:
+
+    ![](static/documentation/images/image068_mapillary_vistas.jpg)
+
+  - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
+  dark images using `F3` — color settings (changes displaying settings and not the
+  image itself).
+
+  Shortcuts:
+
+  - `Shift+B+=`/`Shift+B+-` for brightness.
+  - `Shift+C+=`/`Shift+C+-` for contrast.
+  - `Shift+S+=`/`Shift+S+-` for saturation.
+
+    ![](static/documentation/images/image164_mapillary_vistas.jpg)
+
+  - `Reset color settings` to default values.
+
 ---
 
 ### Settings
 
-To open the settings open the user menu in the header and select the settings item or press `F3`.
+To open the settings open the user menu in the header and select the settings item or press `F2`.
 
 ![](static/documentation/images/image067.jpg)
 
@@ -691,26 +711,9 @@ In tab `Player` you can:
 - Control step of `C` and `V` shortcuts.
 - Control speed of `Space`/`Play` button.
 - Select canvas background color. You can choose a background color or enter manually (in RGB or HEX format).
-- Show `Grid`, change grid size, choose color and transparency:
-
-  ![](static/documentation/images/image068_mapillary_vistas.jpg)
-
-- Show every image in full size or zoomed out like previous
+- `Reset zoom` Show every image in full size or zoomed out like previous
   (it is enabled by default for interpolation mode and disabled for annotation mode).
 - `Rotate all images` checkbox — switch the rotation of all frames or an individual frame.
-- Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-  dark images using `F3` — color settings (changes displaying settings and not the
-  image itself).
-
-Shortcuts:
-
-- `Shift+B+=`/`Shift+B+-` for brightness.
-- `Shift+C+=`/`Shift+C+-` for contrast.
-- `Shift+S+=`/`Shift+S+-` for saturation.
-
-  ![](static/documentation/images/image164_mapillary_vistas.jpg)
-
-- `Reset color settings` to default values.
 
 ---
 
@@ -728,9 +731,12 @@ In tab `Workspace` you can:
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section [annotation with polygons](#Annotation-with-polygons).
+
+- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](#edit-polygon)
+
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
-- Press ` Go back` or `F3` to return to the annotation.
+- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed). Click `Cancel`  or press `F2` to return to the annotation.
 
 ---
 
@@ -1258,10 +1264,18 @@ If you need to annotate small objects, increase `Image Quality` to
 
 ### Edit polygon
 
-To edit a polygon you have to click with pressed `Shift`, it will open the polygon editor.
+To edit a polygon you have to click on it while holding `Shift`, it will open the polygon editor.
 
-- There you can create new points or delete part of a polygon closing the line on another point.
-- After closing the polygon, you can select the part of the polygon that you want to leave.
+- In the editor you can create new points or delete part of a polygon by closing the line on another point.
+- When `Intelligent polygon cropping` option is activated in the settings, СVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.
+  - The first criteria is a number of cut points.
+  - The second criteria is a length of a cut curve.
+
+  If both criteria recommend to cut the same part, algorithm works automatically, and if not, a user has to make the decision.
+  If you want to choose manually which part of a polygon should be cut off, disable `Intelligent polygon cropping` in the settings. In this case after closing the polygon, you can select the part of the polygon you want to leave.
+
+  ![](static/documentation/images/image209.jpg)
+
 - You can press `Esc` to cancel editing.
 
   ![](static/documentation/images/gif007_mapillary_vistas.gif)

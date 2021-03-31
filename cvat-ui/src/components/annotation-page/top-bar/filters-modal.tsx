@@ -251,7 +251,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
 
     return (
         <Modal
-            className='cvat-filters-modal'
+            className={visible ? 'cvat-filters-modal cvat-filters-modal-visible' : 'cvat-filters-modal'}
             visible={visible}
             closable={false}
             width={800}
