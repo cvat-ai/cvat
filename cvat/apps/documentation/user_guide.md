@@ -26,6 +26,7 @@
   - [Track mode (advanced)](#track-mode-advanced)
   - [Attribute annotation mode (advanced)](#attribute-annotation-mode-advanced)
   - [AI Tools](#ai-tools)
+  - [OpenCV Tools](#opencv-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
@@ -71,7 +72,7 @@ computer vision tasks developed by our team.
   [Django administration panel](http://localhost:8080/admin) to assign correct
   groups to the user. Please use the command below to create an admin account:
 
-  `docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'`
+  `docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'`
 
 - If you want to create a non-admin account, you can do that using the link below
   on the login page. Don't forget to modify permissions for the new user in the
@@ -152,8 +153,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Select files**. Press tab `My computer` to choose some files for annotation from your PC.
     If you select tab `Connected file share` you can choose files for annotation from your network.
     If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
-    If you upload a video data and select `Use cache` option, you can along with the video file attach a file with meta information.
-    You can find how to prepare it [here](/utils/prepare_meta_information/README.md).
+    If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
+    You can find how to prepare it [here](/utils/dataset_manifest/README.md).
 
     ![](static/documentation/images/image127.jpg)
 
@@ -321,14 +322,15 @@ Once created, the project will appear on the projects page. To open a project, j
 ![](static/documentation/images/image192_mapillary_vistas.jpg)
 
 Here you can do the following:
-  1. Change the project's title.
-  1. Open the `Actions` menu.
-  1. Change issue tracker or open issue tracker if it is specified.
-  1. Change labels.
-  You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
-  You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
-  1. Assigned to — is used to assign a project to a person. Start typing an assignee's name and/or choose the right person out of the dropdown list.
-  1. `Tasks` — is a list of all tasks for a particular project.
+
+1. Change the project's title.
+1. Open the `Actions` menu.
+1. Change issue tracker or open issue tracker if it is specified.
+1. Change labels.
+   You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
+   You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
+1. Assigned to — is used to assign a project to a person. Start typing an assignee's name and/or choose the right person out of the dropdown list.
+1. `Tasks` — is a list of all tasks for a particular project.
 
 You can remove the project and all related tasks through the Action menu.
 
@@ -674,11 +676,31 @@ In addition the workspace also has the following functions:
 
   ![](static/documentation/images/image140.jpg)
 
+- `Image settings panel` -  used to set up the grid and set up image brightness contrast saturation.
+
+  - Show `Grid`, change grid size, choose color and transparency:
+
+    ![](static/documentation/images/image068_mapillary_vistas.jpg)
+
+  - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
+  dark images using `F3` — color settings (changes displaying settings and not the
+  image itself).
+
+  Shortcuts:
+
+  - `Shift+B+=`/`Shift+B+-` for brightness.
+  - `Shift+C+=`/`Shift+C+-` for contrast.
+  - `Shift+S+=`/`Shift+S+-` for saturation.
+
+    ![](static/documentation/images/image164_mapillary_vistas.jpg)
+
+  - `Reset color settings` to default values.
+
 ---
 
 ### Settings
 
-To open the settings open the user menu in the header and select the settings item or press `F3`.
+To open the settings open the user menu in the header and select the settings item or press `F2`.
 
 ![](static/documentation/images/image067.jpg)
 
@@ -689,26 +711,9 @@ In tab `Player` you can:
 - Control step of `C` and `V` shortcuts.
 - Control speed of `Space`/`Play` button.
 - Select canvas background color. You can choose a background color or enter manually (in RGB or HEX format).
-- Show `Grid`, change grid size, choose color and transparency:
-
-  ![](static/documentation/images/image068_mapillary_vistas.jpg)
-
-- Show every image in full size or zoomed out like previous
+- `Reset zoom` Show every image in full size or zoomed out like previous
   (it is enabled by default for interpolation mode and disabled for annotation mode).
 - `Rotate all images` checkbox — switch the rotation of all frames or an individual frame.
-- Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-  dark images using `F3` — color settings (changes displaying settings and not the
-  image itself).
-
-Shortcuts:
-
-- `Shift+B+=`/`Shift+B+-` for brightness.
-- `Shift+C+=`/`Shift+C+-` for contrast.
-- `Shift+S+=`/`Shift+S+-` for saturation.
-
-  ![](static/documentation/images/image164_mapillary_vistas.jpg)
-
-- `Reset color settings` to default values.
 
 ---
 
@@ -726,9 +731,12 @@ In tab `Workspace` you can:
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section [annotation with polygons](#Annotation-with-polygons).
+
+- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](#edit-polygon)
+
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
-- Press ` Go back` or `F3` to return to the annotation.
+- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed). Click `Cancel`  or press `F2` to return to the annotation.
 
 ---
 
@@ -755,7 +763,7 @@ Button assignment:
   - [MS COCO](http://cocodataset.org/#format-data)
   - [YOLO](https://pjreddie.com/darknet/yolo/)
 - `Open the task` — opens a page with details about the task.
-- `Request a review` - calls up the form to submit the job for a review, read more in the [review](#review)  section.
+- `Request a review` - calls up the form to submit the job for a review, read more in the [review](#review) section.
 - `Finish the job` - changes the status of the job to `completed` and returns to the task page without review.
 - `Submit the review` - (available during the review) calls up the form to submit a review, read more in the [review](#review) section.
 
@@ -858,6 +866,7 @@ Switching between user interface modes.
 |Icon |Description |Links to section |
 |-- |-- |-- |
 |![](static/documentation/images/image189.jpg)|`AI Tools` |[AI Tools](#ai-tools)|
+|![](static/documentation/images/image201.jpg)|`OpenCV` |[OpenCV](#opencv)|
 |![](static/documentation/images/image167.jpg)|`Rectangle`|[Shape mode](#shape-mode-basics); [Track mode](#track-mode-basics);<br/> [Drawing by 4 points](#annotation-with-rectangle-by-4-points)|
 |![](static/documentation/images/image168.jpg)|`Polygon` |[Annotation with polygons](#annotation-with-polygons); [Track mode with polygons](#track-mode-with-polygons) |
 |![](static/documentation/images/image169.jpg)|`Polyline` |[Annotation with polylines](#annotation-with-polylines)|
@@ -1138,6 +1147,40 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 - This action will automatically annotates one frame.
   In the [Automatic annotation](#automatic-annotation) section you can read how to make automatic annotation of all frames.
 
+## OpenCV tools
+
+The tool based on [Open CV](https://opencv.org/) Computer Vision library which is an open-source product that includes many CV algorithms. Some of these algorithms can be used to simplify the annotation process.
+
+First step to work with OpenCV is to load it into CVAT. Click on the toolbar icon, then click `Load OpenCV`.
+
+![](static/documentation/images/image198.jpg)
+
+Once it is loaded, the tool's functionality will be available.
+
+### Intelligent scissors
+
+Intelligent scissors is an CV method of creating a polygon by placing points with automatic drawing of a line between them.
+The distance between the adjacent points is limited by the threshold of action,
+displayed as a red square which is tied to the cursor.
+
+- First, select the label and then click on the `intelligent scissors` button.
+
+  ![](static/documentation/images/image199.jpg)
+
+- Create the first point on the boundary of the allocated object.
+  You will see a line repeating the outline of the object.
+- Place the second point, so that the previous point is within the restrictive threshold.
+  After that a line repeating the object boundary will be automatically created between the points.
+
+  ![](static/documentation/images/image200_detrac.jpg)
+
+  To increase or lower the action threshold, hold `Ctrl` and scroll the mouse wheel.
+  Increasing action threshold will affect the performance.
+  During the drawing process you can remove the last point by clicking on it with the left mouse button.
+
+- Once all the points are placed, you can complete the creation of the object by clicking on the icon or clicking `N`.
+  As a result, a polygon will be created (read more about the polygons in the [annoation with polygons](#annotation-with-polygons)).
+
 ## Annotation with rectangle by 4 points
 
 It is an efficient method of bounding box annotation, proposed
@@ -1158,13 +1201,6 @@ Press `Esc` to cancel editing.
 ### Manual drawing
 
 It is used for semantic / instance segmentation.
-
-The Z-Order flag defines the order of drawing. It is necessary to
-get the right annotation mask without extra work (additional drawing of borders).
-Z-Order can be changed by pressing `+`/`-` which set maximum/minimum z-order
-accordingly.
-
-![](static/documentation/images/image074.jpg)
 
 Before starting, you need to select `Polygon` on the controls sidebar and choose the correct Label.
 
@@ -1228,10 +1264,18 @@ If you need to annotate small objects, increase `Image Quality` to
 
 ### Edit polygon
 
-To edit a polygon you have to click with pressed `Shift`, it will open the polygon editor.
+To edit a polygon you have to click on it while holding `Shift`, it will open the polygon editor.
 
-- There you can create new points or delete part of a polygon closing the line on another point.
-- After closing the polygon, you can select the part of the polygon that you want to leave.
+- In the editor you can create new points or delete part of a polygon by closing the line on another point.
+- When `Intelligent polygon cropping` option is activated in the settings, СVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.
+  - The first criteria is a number of cut points.
+  - The second criteria is a length of a cut curve.
+
+  If both criteria recommend to cut the same part, algorithm works automatically, and if not, a user has to make the decision.
+  If you want to choose manually which part of a polygon should be cut off, disable `Intelligent polygon cropping` in the settings. In this case after closing the polygon, you can select the part of the polygon you want to leave.
+
+  ![](static/documentation/images/image209.jpg)
+
 - You can press `Esc` to cancel editing.
 
   ![](static/documentation/images/gif007_mapillary_vistas.gif)
@@ -1438,18 +1482,19 @@ or areas in the frame and describe the problem.
   ![](static/documentation/images/image195.jpg)
 
 - Then click on an object in the frame to highlight the object or highlight the area by holding the left mouse button
-and describe the problem. The object or area will be shaded in red.
+  and describe the problem. The object or area will be shaded in red.
 - The created issue will appear in the workspace and in the `issues` tab on the objects sidebar.
 - After you save the annotation, other users will be able to see the problem, comment on each issue
-and change the status of the problem to `resolved`.
+  and change the status of the problem to `resolved`.
 - You can use the arrows on the issues tab to navigate the frames that contain problems.
 
   ![](static/documentation/images/image196_detrac.jpg)
 
 - Once all the problems are marked, save the annotation, open the menu and select "submit the review". After that you'll see a form containing the verification statistics, here you can give an assessment of the job and choose further actions:
-    - Accept - changes the status of the job to `completed`.
-    - Review next – passes the job to another user for re-review.
-    - Reject - changes the status of the job to `annotation`.
+
+  - Accept - changes the status of the job to `completed`.
+  - Review next – passes the job to another user for re-review.
+  - Reject - changes the status of the job to `annotation`.
 
   ![](static/documentation/images/image197.jpg)
 
@@ -1526,70 +1571,86 @@ Shapes that don't have `group_id`, will be highlighted in white.
 
 ## Filter
 
-![](static/documentation/images/image059.jpg)
-
 There are some reasons to use the feature:
 
 1. When you use a filter, objects that don't match the filter will be hidden.
 1. The fast navigation between frames which have an object of interest.
    Use the `Left Arrow` / `Right Arrow` keys for this purpose
-   or customize the UI buttons by right-clicking and select "switching by filter".
+   or customize the UI buttons by right-clicking and select `switching by filter`.
    If there are no objects which correspond to the filter,
    you will go to the previous / next frame which contains any annotated objects.
-1. The list contains frequently used and recent filters.
 
-To use the function, it is enough to specify a value inside the `Filter` text
-field and press `Enter`. After that, the filter will be applied.
+To apply filters you need to click on the button on the top panel.
 
----
+![](static/documentation/images/image059.jpg)
+
+It will open a window for filter input. Here you will find two buttons: `Add rule` and `Add group`.
+
+![](static/documentation/images/image202.jpg)
+
+### Rules
+
+The "Add rule" button adds a rule for objects display. A rule may use the following properties:
+
+![](static/documentation/images/image204.jpg)
 
 **Supported properties:**
 
-| Properties | Supported values                                       | Description                                                                                                |
-| ---------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `width`    | number of px or `height`                               | shape width                                                                                                |
-| `height`   | number of px or `width`                                | shape height                                                                                               |
-| `label`    | `"text"` or `["text"]`                                 | label name                                                                                                 |
-| `serverID` | number                                                 | ID of the object on server <br> (You can find out by forming a link to the object through the Action menu) |
-| `clientID` | number                                                 | ID of the object in your client (indicated on the objects sidebar)                                         |
-| `type`     | `"shape"`, `"track"`, `"tag"`                          | type of object                                                                                             |
-| `shape`    | `"rectangle"`,`"polygon"`, <br>`"polyline"`,`"points"` | type of shape                                                                                              |
-| `occluded` | `true` or `false`                                      | occluded properties                                                                                        |
-| `attr`     | `"text"`                                               | attribute name                                                                                             |
+| Properties   | Supported values                                                                             | Description                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Label`      | all the label names that are in the task                                                     | label name                                                                                                    |
+| `Type`       | shape, track or tag                                                                          | type of object                                                                                                |
+| `Shape`      | all shape types                                                                              | type of shape                                                                                                 |
+| `Occluded`   | true or false                                                                                | occluded ([read more](#shape-mode-advanced))                                                                  |
+| `Width`      | number of px or field                                                                        | shape width                                                                                                   |
+| `Height`     | number of px or field                                                                        | shape height                                                                                                  |
+| `ServerID`   | number or field                                                                              | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu) |
+| `ObjectID`   | number or field                                                                              | ID of the object in your client <br>(indicated on the objects sidebar)                                        |
+| `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label                                                                               |
 
-**Supported operators:**
+**Supported operators for properties:**
 
-`==` - Equally; `!=` - Not equal; `>` - More; `>=` - More or equal; `<` - Less; `<=` - Less or equal;
-`()` - Brackets; `&` - And; `|`- Or.
+`==` - Equally; `!=` - Not equal; `>` - More; `>=` - More or equal; `<` - Less; `<=` - Less or equal;
 
-If you have double quotes in your query string, please escape them using backslash: `\"` (see the latest example)
-All properties and values are case-sensitive. CVAT uses json queries to perform search.
+`Any in`; `Not in` - these operators allow you to set multiple values in one rule;
 
----
+![](static/documentation/images/image203.jpg)
 
-**Examples filters**
+`Is empty`; `is not empty` – these operators don't require to input a value.
 
-- `label=="car" | label==["road sign"]` - this filter will show only objects with the car or road sign label.
-- `shape == "polygon"` - this filter will show only polygons.
-- `width >= height` - this filter will show only those objects whose width will be greater than
-  or equal to the height.
-- `attr["color"] == "black"` - this filter will show objects whose color attribute is black.
-- `clientID == 50` - this filter will show the object with id equal to 50 (e.g. rectangle 50).
-- `(label=="car" & attr["parked"]==true) | (label=="pedestrian" & width > 150)` - this filter will display objects
-  with the “car” label and the parking attribute enabled or objects with the “pedestrian” label with a height of more
-  than 150 pixels
-- `(( label==["car \"mazda\""]) | (attr["parked"]==true & width > 150)) & (height > 150 & (clientID == serverID)))` -
-  This filter will show objects with the label "car" mazda "" or objects that have the parked attribute turned on
-  and have a width of more than 150 pixels, and those listed should have a height of more than 150 pixels
-  and their clientID is equal to serverID.
+`Between`; `Not between` – these operators allow you to choose a range between two values.
 
-**Filter history**
+Some properties support two types of values that you can choose:
 
-![](static/documentation/images/image175.jpg)
+![](static/documentation/images/image205.jpg)
 
-You can add previously entered filters and combine them. To do so, click on the input field and a list of previously
-entered filters will open. Click on the filters to add them to the input field.
-Combined filters occur with the "or" operator.
+You can add multiple rules, to do so click the add rule button and set another rule. Once you've set a new rule, you'll be able to choose which operator they will be connected by: `And` or `Or`.
+
+![](static/documentation/images/image206.jpg)
+
+All subsequent rules will be joined by the chosen operator. Click `Submit` to apply the filter or if you want multiple rules to be connected by different operators, use groups.
+
+### Groups
+
+To add a group, click the "add group" button. Inside the group you can create rules or groups.
+
+![](static/documentation/images/image207.jpg)
+
+If there is more than one rule in the group, they can be connected by `And` or `Or` operators.
+The rule group will work as well as a separate rule outside the group and will be joined by an
+operator outside the group.
+You can create groups within other groups, to do so you need to click the add group button within the group.
+
+You can move rules and groups. To move the rule or group, drag it by the button.
+To remove the rule or group, click on the `Delete` button.
+
+![](static/documentation/images/image208.jpg)
+
+If you activate the `Not` button, objects that don't match the group will be filtered out.
+Click `Submit` to apply the filter.
+The "Cancel" button undoes the filter. The `Clear filter` button removes the filter.
+
+Once applied filter automatically appears in `Recent used` list. Maximum length of the list is 10.
 
 ---
 
@@ -1618,8 +1679,8 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | Shortcut                   | Common                                                                                                   |
 | -------------------------- | -------------------------------------------------------------------------------------------------------- |
 |                            | _Main functions_                                                                                         |
-| `F2`                       | Open/hide the list of available shortcuts                                                                |
-| `F3`                       | Go to the settings page or go back                                                                       |
+| `F1`                       | Open/hide the list of available shortcuts                                                                |
+| `F2`                       | Go to the settings page or go back                                                                       |
 | `Ctrl+S`                   | Go to the settings page or go back                                                                       |
 | `Ctrl+Z`                   | Cancel the latest action related with objects                                                            |
 | `Ctrl+Shift+Z` or `Ctrl+Y` | Cancel undo action                                                                                       |

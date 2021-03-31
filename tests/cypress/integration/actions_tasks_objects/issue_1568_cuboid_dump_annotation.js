@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,11 +20,6 @@ context('Dump annotation if cuboid created', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
-    });
-
-    after('Go to task list', () => {
-        cy.removeAnnotations();
-        cy.saveJob('PUT');
     });
 
     describe(`Testing issue "${issueId}"`, () => {

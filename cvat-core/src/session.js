@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {
-        getFrame, getRanges, getPreview, clear: clearFrames,
+        getFrame, getRanges, getPreview, clear: clearFrames, getContextImage,
     } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
@@ -181,6 +181,15 @@
                     },
                     async preview() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
+                        return result;
+                    },
+                    async contextImage(taskId, frameId) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.contextImage,
+                            taskId,
+                            frameId,
+                        );
                         return result;
                     },
                 },
@@ -370,7 +379,7 @@
              * @param {integer} frame get objects from the frame
              * @param {boolean} allTracks show all tracks
              * even if they are outside and not keyframe
-             * @param {string[]} [filters = []]
+             * @param {any[]} [filters = []]
              * get only objects that satisfied to specific filters
              * @returns {module:API.cvat.classes.ObjectState[]}
              * @memberof Session.annotations
@@ -850,6 +859,7 @@
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
             this.logger = {
@@ -962,6 +972,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 bug_tracker: undefined,
+                subset: undefined,
                 overlap: undefined,
                 segment_size: undefined,
                 image_quality: undefined,
@@ -974,12 +985,14 @@
                 use_zip_chunks: undefined,
                 use_cache: undefined,
                 copy_data: undefined,
+                dimension: undefined,
             };
 
             let updatedFields = {
                 name: false,
                 assignee: false,
                 bug_tracker: false,
+                subset: false,
                 labels: false,
             };
 
@@ -1156,8 +1169,34 @@
                     bugTracker: {
                         get: () => data.bug_tracker,
                         set: (tracker) => {
+                            if (typeof tracker !== 'string') {
+                                throw new ArgumentError(
+                                    `Subset value must be a string. But ${typeof tracker} has been got.`,
+                                );
+                            }
+
                             updatedFields.bug_tracker = true;
                             data.bug_tracker = tracker;
+                        },
+                    },
+                    /**
+                     * @name subset
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     * @throws {module:API.cvat.exception.ArgumentError}
+                     */
+                    subset: {
+                        get: () => data.subset,
+                        set: (subset) => {
+                            if (typeof subset !== 'string') {
+                                throw new ArgumentError(
+                                    `Subset value must be a string. But ${typeof subset} has been got.`,
+                                );
+                            }
+
+                            updatedFields.subset = true;
+                            data.subset = subset;
                         },
                     },
                     /**
@@ -1265,7 +1304,7 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     labels: {
-                        get: () => [...data.labels],
+                        get: () => data.labels.filter((_label) => !_label.deleted),
                         set: (labels) => {
                             if (!Array.isArray(labels)) {
                                 throw new ArgumentError('Value must be an array of Labels');
@@ -1279,8 +1318,14 @@
                                 }
                             }
 
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
+
                             updatedFields.labels = true;
-                            data.labels = [...labels];
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -1446,6 +1491,19 @@
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
+                    dimension: {
+                        /**
+                         * @name enabled
+                         * @type {string}
+                         * @memberof module:API.cvat.enums.DimensionType
+                         * @readonly
+                         * @instance
+                         */
+                        get: () => data.dimension,
+                    },
+                    _internalData: {
+                        get: () => data,
+                    },
                     __updatedFields: {
                         get: () => updatedFields,
                         set: (fields) => {
@@ -1490,6 +1548,7 @@
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
             this.logger = {
@@ -1672,6 +1731,7 @@
             this.stopFrame,
             isPlaying,
             step,
+            this.task.dimension,
         );
         return frameData;
     };
@@ -1683,8 +1743,8 @@
 
     // TODO: Check filter for annotations
     Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frame)) {
@@ -1700,8 +1760,8 @@
     };
 
     Job.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -1865,8 +1925,11 @@
                     case 'bug_tracker':
                         taskData.bug_tracker = this.bugTracker;
                         break;
+                    case 'subset':
+                        taskData.subset = this.subset;
+                        break;
                     case 'labels':
-                        taskData.labels = [...this.labels.map((el) => el.toJSON())];
+                        taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
                         break;
                     default:
                         break;
@@ -1880,6 +1943,7 @@
                 assignee: false,
                 name: false,
                 bugTracker: false,
+                subset: false,
                 labels: false,
             };
 
@@ -1902,6 +1966,9 @@
         }
         if (typeof this.projectId !== 'undefined') {
             taskSpec.project_id = this.projectId;
+        }
+        if (typeof this.subset !== 'undefined') {
+            taskSpec.subset = this.subset;
         }
 
         const taskDataSpec = {
@@ -2129,6 +2196,11 @@
 
     Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
         const result = await loggerStorage.log(logType, { ...payload, task_id: this.id }, wait);
+        return result;
+    };
+
+    Job.prototype.frames.contextImage.implementation = async function (taskId, frameId) {
+        const result = await getContextImage(taskId, frameId);
         return result;
     };
 })();

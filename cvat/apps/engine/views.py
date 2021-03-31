@@ -4,11 +4,13 @@
 
 import os
 import os.path as osp
+import io
 import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
+import cv2
 
 import django_rq
 from django.shortcuts import get_object_or_404
@@ -35,18 +37,19 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
+from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
-    Comment, StorageMethodChoice, ReviewStatus, StorageChoice
+    Comment, StorageMethodChoice, ReviewStatus, StorageChoice, DimensionType, Image
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, RqStatusSerializer,
-    TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
+    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
+    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
@@ -212,7 +215,11 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('owner', openapi.IN_QUERY, description="Find all project where owner name contains a parameter value",
             type=openapi.TYPE_STRING),
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
-            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice])]))
+            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
+        openapi.Parameter('names_only', openapi.IN_QUERY, description="Returns only names and id's of projects.",
+            type=openapi.TYPE_BOOLEAN),
+        openapi.Parameter('without_tasks', openapi.IN_QUERY, description="Returns only projects entities without related tasks",
+            type=openapi.TYPE_BOOLEAN)],))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
@@ -227,6 +234,8 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
+        if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
+            return ProjectWithoutTaskSerializer
         else:
             return ProjectSerializer
 
@@ -391,7 +400,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @swagger_auto_schema(method='get', operation_summary='Method returns data for a specific task',
         manual_parameters=[
             openapi.Parameter('type', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
-                enum=['chunk', 'frame', 'preview'],
+                enum=['chunk', 'frame', 'preview', 'context_image'],
                 description="Specifies the type of the requested data"),
             openapi.Parameter('quality', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
                 enum=['compressed', 'original'],
@@ -430,7 +439,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             data_id = request.query_params.get('number', None)
             data_quality = request.query_params.get('quality', 'compressed')
 
-            possible_data_type_values = ('chunk', 'frame', 'preview')
+            possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
             possible_quality_values = ('compressed', 'original')
 
             try:
@@ -447,7 +456,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 if not db_data:
                     raise NotFound(detail='Cannot find requested data for the task')
 
-                frame_provider = FrameProvider(db_task.data)
+                frame_provider = FrameProvider(db_task.data, db_task.dimension)
 
                 if data_type == 'chunk':
                     data_id = int(data_id)
@@ -475,6 +484,23 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                 elif data_type == 'preview':
                     return sendfile(request, frame_provider.get_preview())
+
+                elif data_type == 'context_image':
+                    if db_task.dimension == DimensionType.DIM_3D:
+                        data_id = int(data_id)
+                        image = Image.objects.get(data_id=db_task.data_id, frame=data_id)
+                        for i in image.related_files.all():
+                            path = os.path.realpath(str(i.path))
+                            image = cv2.imread(path)
+                            success, result = cv2.imencode('.JPEG', image)
+                            if not success:
+                                raise Exception("Failed to encode image to '%s' format" % (".jpeg"))
+                            return HttpResponse(io.BytesIO(result.tobytes()), content_type="image/jpeg")
+                        return Response(data='No context image related to the frame',
+                                        status=status.HTTP_404_NOT_FOUND)
+                    else:
+                        return Response(data='Only 3D tasks support context images',
+                                        status=status.HTTP_400_BAD_REQUEST)
                 else:
                     return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
             except APIException as e:
@@ -1009,7 +1035,17 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
             os.remove(rq_job.meta['tmp_file'])
             exc_info = str(rq_job.exc_info)
             rq_job.delete()
-            return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # RQ adds a prefix with exception class name
+            import_error_prefix = '{}.{}'.format(
+                CvatImportError.__module__, CvatImportError.__name__)
+            if exc_info.startswith(import_error_prefix):
+                exc_info = exc_info.replace(import_error_prefix + ': ', '')
+                return Response(data=exc_info,
+                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(data=exc_info,
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_202_ACCEPTED)
 

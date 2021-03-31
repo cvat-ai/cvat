@@ -1,19 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 import { projectName } from '../../../support/const_project';
-
-const randomString = (isPassword) => {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    for (let i = 0; i <= 8; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return isPassword ? `${result}${Math.floor(Math.random() * 10)}` : result;
-};
 
 context('Base actions on the project', () => {
     const labelName = `Base label for ${projectName}`;
@@ -45,15 +36,28 @@ context('Base actions on the project', () => {
     const newLabelName2 = `Second label ${projectName}`;
     const newLabelName3 = `Third label ${projectName}`;
     const newLabelName4 = `Fourth label ${projectName}`;
-    const firstName = `${randomString()}`;
-    const lastName = `${randomString()}`;
-    const userName = `${randomString()}`;
+    const firstName = 'Seconduser fm';
+    const lastName = 'Seconduser lm';
+    const userName = 'Seconduser';
     const emailAddr = `${userName}@local.local`;
-    const password = `${randomString(true)}`;
+    const password = 'GDrb41RguF!';
     let projectID = '';
+
+    function getProjectID(projectName) {
+        cy.contains('.cvat-project-name', projectName)
+            .parents('.cvat-project-details')
+            .should('have.attr', 'cvat-project-id')
+            .then(($projectID) => {
+                projectID = $projectID;
+            });
+    }
 
     before(() => {
         cy.openProject(projectName);
+    });
+
+    after(() => {
+        cy.deletingRegisteredUsers([userName]);
     });
 
     describe(`Testing "Base actions on the project"`, () => {
@@ -101,9 +105,7 @@ context('Base actions on the project', () => {
         it('The task is successfully opened. No label editor on task page.', () => {
             cy.goToProjectsList();
             cy.openProject(projectName);
-            cy.getProjectID(projectName).then(($projectID) => {
-                projectID = $projectID;
-            });
+            getProjectID(projectName);
             cy.get('.cvat-tasks-list-item').then((countTasks) => {
                 // The number of created tasks is greater than zero
                 expect(countTasks.length).to.be.gt(0);
@@ -111,10 +113,18 @@ context('Base actions on the project', () => {
             cy.openTask(taskName.firstTask);
             cy.get('.cvat-constructor-viewer').should('not.exist');
         });
-        it('Logout first user, register second user, logout.', () => {
+        it('Logout first user, register second user, tries to create project and logout.', () => {
+            cy.goToTaskList();
             cy.logout();
             cy.goToRegisterPage();
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
+            cy.goToProjectsList();
+            // tries to create project
+            const failProjectName = 'failProject';
+            cy.createProjects(failProjectName, labelName, attrName, textDefaultValue, null, 'fail');
+            cy.closeNotification('.cvat-notification-notice-create-project-failed');
+            cy.goToProjectsList();
+            cy.contains('.cvat-projects-project-item-title', failProjectName).should('not.exist');
             cy.logout(userName);
         });
         it('Login first user. Assing project to second user. Logout.', () => {
@@ -124,13 +134,17 @@ context('Base actions on the project', () => {
             cy.assignProjectToUser(userName);
             cy.logout();
         });
-        it('Login second user. The project and first tasks available for that user. Logout.', () => {
+        it('Login second user. The project and first tasks available for that user. Tries to delete project. Logout.', () => {
             cy.login(userName, password);
             cy.goToProjectsList();
+            // tries to delete project
+            cy.deleteProject(projectName, projectID, 'fail');
+            cy.closeNotification('.cvat-notification-notice-delete-project-failed');
             cy.openProject(projectName);
             cy.goToTaskList();
             cy.contains('strong', taskName.secondTask).should('not.exist');
             cy.openTask(taskName.firstTask);
+            cy.goToTaskList();
             cy.logout(userName);
         });
         it('Delete the project. Deleted project not exist. Checking the availability of tasks.', () => {
@@ -140,6 +154,7 @@ context('Base actions on the project', () => {
             cy.goToTaskList();
             cy.contains('strong', taskName.firstTask).should('not.exist');
             cy.contains('strong', taskName.secondTask).should('not.exist');
+            cy.logout();
         });
     });
 });

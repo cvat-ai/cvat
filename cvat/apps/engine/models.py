@@ -19,6 +19,17 @@ class SafeCharField(models.CharField):
             return value[:self.max_length]
         return value
 
+class DimensionType(str, Enum):
+    DIM_3D = '3d'
+    DIM_2D = '2d'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class StatusChoice(str, Enum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
@@ -127,11 +138,10 @@ class Data(models.Model):
     def get_preview_path(self):
         return os.path.join(self.get_data_dirname(), 'preview.jpeg')
 
-    def get_meta_path(self):
-        return os.path.join(self.get_upload_dirname(), 'meta_info.txt')
-
-    def get_dummy_chunk_path(self, chunk_number):
-        return os.path.join(self.get_upload_dirname(), 'dummy_{}.txt'.format(chunk_number))
+    def get_manifest_path(self):
+        return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
+    def get_index_path(self):
+        return os.path.join(self.get_upload_dirname(), 'index.json')
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
@@ -202,6 +212,8 @@ class Task(models.Model):
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
+    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
+    subset = models.CharField(max_length=64, blank=True, default="")
 
     # Extend default permission model
     class Meta:
@@ -264,6 +276,17 @@ class RemoteFile(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class RelatedFile(models.Model):
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
+    path = models.FileField(upload_to=upload_path_handler,
+                            max_length=1024, storage=MyFileSystemStorage())
+    primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ("data", "path")
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)

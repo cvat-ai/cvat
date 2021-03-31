@@ -20,6 +20,10 @@
   - [TF detection API](#tfrecord)
   - [ImageNet](#imagenet)
   - [CamVid](#camvid)
+  - [WIDER Face](#widerface)
+  - [VGGFace2](#vggface2)
+  - [Market-1501](#market1501)
+  - [ICDAR13/15](#icdar)
 
 ## How to add a new annotation format support<a id="how-to-add"></a>
 
@@ -814,9 +818,9 @@ Downloaded file: a zip archive of the following structure:
 ```bash
 # if we save images:
 taskname.zip/
-└── label1/
-    ├── label1_image1.jpg
-    └── label1_image2.jpg
+├── label1/
+|   ├── label1_image1.jpg
+|   └── label1_image2.jpg
 └── label2/
     ├── label2_image1.jpg
     ├── label2_image3.jpg
@@ -824,7 +828,7 @@ taskname.zip/
 
 # if we keep only annotation:
 taskname.zip/
-└── <any_subset_name>.txt
+├── <any_subset_name>.txt
 └── synsets.txt
 
 ```
@@ -846,12 +850,12 @@ Downloaded file: a zip archive of the following structure:
 ```bash
 taskname.zip/
 ├── labelmap.txt # optional, required for non-CamVid labels
-└── <any_subset_name>/
-    ├── image1.png
-    └── image2.png
-└── <any_subset_name>annot/
-    ├── image1.png
-    └── image2.png
+├── <any_subset_name>/
+|   ├── image1.png
+|   └── image2.png
+├── <any_subset_name>annot/
+|   ├── image1.png
+|   └── image2.png
 └── <any_subset_name>.txt
 
 # labelmap.txt
@@ -874,3 +878,169 @@ has own color which corresponds to a label.
 Uploaded file: a zip archive of the structure above
 
 - supported annotations: Polygons
+
+### [WIDER Face](http://shuoyang1213.me/WIDERFACE/)<a id="widerface" />
+
+#### WIDER Face Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+taskname.zip/
+├── labels.txt # optional
+├── wider_face_split/
+│   └── wider_face_<any_subset_name>_bbx_gt.txt
+└── WIDER_<any_subset_name>/
+    └── images/
+        ├── 0--label0/
+        │   └── 0_label0_image1.jpg
+        └── 1--label1/
+            └── 1_label1_image2.jpg
+```
+
+- supported annotations: Rectangles (with attributes), Labels
+- supported attributes: `blur`, `expression`, `illumination`,
+  `occluded` (both the annotation property & an attribute), `pose`, `invalid`
+
+#### WIDER Face Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Rectangles (with attributes), Labels
+- supported attributes: `blur`, `expression`, `illumination`, `occluded`, `pose`, `invalid`
+
+### [VGGFace2](https://github.com/ox-vgg/vgg_face2)<a id="vggface2" />
+
+#### VGGFace2 Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+taskname.zip/
+├── labels.txt # optional
+├── <any_subset_name>/
+|   ├── label0/
+|   |   └── image1.jpg
+|   └── label1/
+|       └── image2.jpg
+└── bb_landmark/
+    ├── loose_bb_<any_subset_name>.csv
+    └── loose_landmark_<any_subset_name>.csv
+# labels.txt
+# n000001 car
+label0 <class0>
+label1 <class1>
+```
+
+- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
+
+#### VGGFace2 Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
+
+### [Market-1501](https://www.aitribune.com/dataset/2018051063)<a id="market1501" />
+
+#### Market-1501 Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+taskname.zip/
+├── bounding_box_<any_subset_name>/
+│   └── image_name_1.jpg
+└── query
+    ├── image_name_2.jpg
+    └── image_name_3.jpg
+# if we keep only annotation:
+taskname.zip/
+└── images_<any_subset_name>.txt
+# images_<any_subset_name>.txt
+query/image_name_1.jpg
+bounding_box_<any_subset_name>/image_name_2.jpg
+bounding_box_<any_subset_name>/image_name_3.jpg
+# image_name = 0001_c1s1_000015_00.jpg
+0001 - person id
+c1 - camera id (there are totally 6 cameras)
+s1 - sequence
+000015 - frame number in sequence
+00 - means that this bounding box is the first one among the several
+```
+
+- supported annotations: Label `market-1501` with atrributes (`query`, `person_id`, `camera_id`)
+
+#### Market-1501 Loader
+
+Uploaded file: a zip archive of the structure above
+
+- supported annotations: Label `market-1501` with atrributes (`query`, `person_id`, `camera_id`)
+
+### [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)<a id="icdar" />
+
+#### ICDAR13/15 Dumper
+
+Downloaded file: a zip archive of the following structure:
+
+```bash
+# word recognition task
+taskname.zip/
+└── word_recognition/
+    └── <any_subset_name>/
+        ├── images
+        |   ├── word1.png
+        |   └── word2.png
+        └── gt.txt
+# text localization task
+taskname.zip/
+└── text_localization/
+    └── <any_subset_name>/
+        ├── images
+        |   ├── img_1.png
+        |   └── img_2.png
+        ├── gt_img_1.txt
+        └── gt_img_1.txt
+#text segmentation task
+taskname.zip/
+└── text_localization/
+    └── <any_subset_name>/
+        ├── images
+        |   ├── 1.png
+        |   └── 2.png
+        ├── 1_GT.bmp
+        ├── 1_GT.txt
+        ├── 2_GT.bmp
+        └── 2_GT.txt
+```
+
+**Word recognition task**:
+
+- supported annotations: Label `icdar` with attribute `caption`
+
+**Text localization task**:
+
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attribute `text`
+
+**Text segmentation task**:
+
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attributes `index`, `text`, `color`, `center`
+
+#### ICDAR13/15 Loader
+
+Uploaded file: a zip archive of the structure above
+
+**Word recognition task**:
+
+- supported annotations: Label `icdar` with attribute `caption`
+
+**Text localization task**:
+
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attribute `text`
+
+**Text segmentation task**:
+
+- supported annotations: Rectangles and Polygons with label `icdar`
+  and attributes `index`, `text`, `color`, `center`

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,11 +22,6 @@ context('Check error сannot read property at saving job', () => {
         cy.openTaskJob(taskName);
     });
 
-    after('Remove annotations and save job', () => {
-        cy.removeAnnotations();
-        cy.saveJob('PUT');
-    });
-
     describe(`Testing pr "${prId}"`, () => {
         it('Create an object in first frame', () => {
             cy.createRectangle(createRectangleShape2Points);
@@ -42,10 +37,10 @@ context('Check error сannot read property at saving job', () => {
         });
 
         it('Save job and go to previous frame at saving job', () => {
-            cy.server().route('PATCH', '/api/v1/jobs/**').as('saveJob');
+            cy.intercept('PATCH', '/api/v1/jobs/**').as('saveJob');
             cy.saveJob();
             cy.get('body').type('d');
-            cy.wait('@saveJob').its('status').should('equal', 200);
+            cy.wait('@saveJob').its('response.statusCode').should('equal', 200);
         });
 
         it('Page with the error is missing', () => {

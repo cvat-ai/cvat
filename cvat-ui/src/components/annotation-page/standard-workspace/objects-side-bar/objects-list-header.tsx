@@ -1,21 +1,20 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { Row, Col } from 'antd/lib/grid';
 import {
-    LockFilled,
-    UnlockOutlined,
-    EyeInvisibleFilled,
-    EyeOutlined,
     CaretDownOutlined,
     CaretUpFilled,
+    EyeInvisibleFilled,
+    EyeOutlined,
+    LockFilled,
+    UnlockOutlined,
 } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
+import { Col, Row } from 'antd/lib/grid';
 
-import AnnotationsFiltersInput from 'components/annotation-page/annotations-filters-input';
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { StatesOrdering } from 'reducers/interfaces';
 
 interface Props {
@@ -41,9 +40,9 @@ function LockAllSwitcher(props: Props): JSX.Element {
     } = props;
     return (
         <Col span={2}>
-            <Tooltip title={`Switch lock property for all ${switchLockAllShortcut}`} mouseLeaveDelay={0}>
+            <CVATTooltip title={`Switch lock property for all ${switchLockAllShortcut}`}>
                 {statesLocked ? <LockFilled onClick={unlockAllStates} /> : <UnlockOutlined onClick={lockAllStates} />}
-            </Tooltip>
+            </CVATTooltip>
         </Col>
     );
 }
@@ -54,13 +53,13 @@ function HideAllSwitcher(props: Props): JSX.Element {
     } = props;
     return (
         <Col span={2}>
-            <Tooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`} mouseLeaveDelay={0}>
+            <CVATTooltip title={`Switch hidden property for all ${switchHiddenAllShortcut}`}>
                 {statesHidden ? (
                     <EyeInvisibleFilled onClick={showAllStates} />
                 ) : (
                     <EyeOutlined onClick={hideAllStates} />
                 )}
-            </Tooltip>
+            </CVATTooltip>
         </Col>
     );
 }
@@ -69,13 +68,13 @@ function CollapseAllSwitcher(props: Props): JSX.Element {
     const { statesCollapsed, expandAllStates, collapseAllStates } = props;
     return (
         <Col span={2}>
-            <Tooltip title='Expand/collapse all' mouseLeaveDelay={0}>
+            <CVATTooltip title='Expand/collapse all'>
                 {statesCollapsed ? (
                     <CaretDownOutlined onClick={expandAllStates} />
                 ) : (
                     <CaretUpFilled onClick={collapseAllStates} />
                 )}
-            </Tooltip>
+            </CVATTooltip>
         </Col>
     );
 }
@@ -85,11 +84,6 @@ function ObjectListHeader(props: Props): JSX.Element {
 
     return (
         <div className='cvat-objects-sidebar-states-header'>
-            <Row>
-                <Col span={24}>
-                    <AnnotationsFiltersInput />
-                </Col>
-            </Row>
             <Row justify='space-between' align='middle'>
                 {!readonly && (
                     <>

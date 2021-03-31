@@ -1,0 +1,61 @@
+name: Publish Docker images
+on:
+  release:
+    types: [published]
+
+jobs:
+  build_and_push_to_registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+
+      - name: Build images
+        run: |
+          CLAM_AV=yes INSTALL_SOURCES=yes docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml build
+
+      - name: Run unit tests
+        env:
+          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+          CONTAINER_COVERAGE_DATA_DIR: '/coverage_data'
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli'
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test'
+          docker-compose up -d
+          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+
+      - name: Run end-to-end tests
+        run: |
+          cd ./tests
+          npm ci
+          npm run cypress:run:chrome
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress_screenshots
+          path: ${{ github.workspace }}/tests/cypress/screenshots
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push to Docker Hub
+        env:
+          DOCKERHUB_WORKSPACE: 'openvino'
+          SERVER_IMAGE_REPO: 'cvat_server'
+          UI_IMAGE_REPO: 'cvat_ui'
+        run: |
+          docker tag "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}"
+          docker push "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}"
+          docker push "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:latest"
+
+          docker tag "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:${{ github.event.release.tag_name }}"
+          docker push "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:${{ github.event.release.tag_name }}"
+          docker push "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:latest"

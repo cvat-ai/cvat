@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,12 +7,14 @@ import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import { LoadingOutlined, QuestionCircleOutlined, CopyOutlined } from '@ant-design/icons';
+import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 import getCore from 'cvat-core-wrapper';
 import UserSelector, { User } from './user-selector';
@@ -100,6 +102,46 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
     } = props;
 
     const { jobs, id: taskId } = taskInstance;
+
+    function sorter(path: string) {
+        return (obj1: any, obj2: any): number => {
+            let currentObj1 = obj1;
+            let currentObj2 = obj2;
+            let field1: string | null = null;
+            let field2: string | null = null;
+            for (const pathSegment of path.split('.')) {
+                field1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
+                field2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
+                currentObj1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
+                currentObj2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
+            }
+
+            if (field1 && field2) {
+                return field1.localeCompare(field2);
+            }
+
+            if (field1 === null) {
+                return 1;
+            }
+
+            return -1;
+        };
+    }
+
+    function collectUsers(path: string): ColumnFilterItem[] {
+        return Array.from<string | null>(
+            new Set(
+                jobs.map((job: any) => {
+                    if (job[path] === null) {
+                        return null;
+                    }
+
+                    return job[path].username;
+                }),
+            ),
+        ).map((value: string | null) => ({ text: value || 'Is Empty', value: value || false }));
+    }
+
     const columns = [
         {
             title: 'Job',
@@ -145,12 +187,19 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 return (
                     <Text strong className={progressColor}>
                         {status}
-                        <Tooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
+                        <CVATTooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
                             <QuestionCircleOutlined />
-                        </Tooltip>
+                        </CVATTooltip>
                     </Text>
                 );
             },
+            sorter: sorter('status.status'),
+            filters: [
+                { text: 'annotation', value: 'annotation' },
+                { text: 'validation', value: 'validation' },
+                { text: 'completed', value: 'completed' },
+            ],
+            onFilter: (value: string | number | boolean, record: any) => record.status.status === value,
         },
         {
             title: 'Started on',
@@ -179,6 +228,10 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     }}
                 />
             ),
+            sorter: sorter('assignee.assignee.username'),
+            filters: collectUsers('assignee'),
+            onFilter: (value: string | number | boolean, record: any) =>
+                (record.assignee.assignee?.username || false) === value,
         },
         {
             title: 'Reviewer',
@@ -195,6 +248,10 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     }}
                 />
             ),
+            sorter: sorter('reviewer.reviewer.username'),
+            filters: collectUsers('reviewer'),
+            onFilter: (value: string | number | boolean, record: any) =>
+                (record.reviewer.reviewer?.username || false) === value,
         },
     ];
 
@@ -206,13 +263,14 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
         const created = moment(props.taskInstance.createdDate);
 
+        const now = moment(moment.now());
         acc.push({
             key: job.id,
             job: job.id,
             frames: `${job.startFrame}-${job.stopFrame}`,
             status: job,
             started: `${created.format('MMMM Do YYYY HH:MM')}`,
-            duration: `${moment.duration(moment(moment.now()).diff(created)).humanize()}`,
+            duration: `${moment.duration(now.diff(created)).humanize()}`,
             assignee: job,
             reviewer: job,
         });
@@ -225,7 +283,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             <Row justify='space-between' align='middle'>
                 <Col>
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
-                    <Tooltip trigger='click' title='Copied to clipboard!' mouseLeaveDelay={0}>
+                    <CVATTooltip trigger='click' title='Copied to clipboard!'>
                         <Button
                             type='link'
                             onClick={(): void => {
@@ -258,13 +316,19 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                             <CopyOutlined />
                             Copy
                         </Button>
-                    </Tooltip>
+                    </CVATTooltip>
                 </Col>
                 <Col>
                     <Text className='cvat-text-color'>{`${completed} of ${data.length} jobs`}</Text>
                 </Col>
             </Row>
-            <Table className='cvat-task-jobs-table' rowClassName={() => 'cvat-task-jobs-table-row'} columns={columns} dataSource={data} size='small' />
+            <Table
+                className='cvat-task-jobs-table'
+                rowClassName={() => 'cvat-task-jobs-table-row'}
+                columns={columns}
+                dataSource={data}
+                size='small'
+            />
         </div>
     );
 }

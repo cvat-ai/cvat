@@ -21,6 +21,7 @@
             height: 25px;
 
             .ant-collapse-arrow {
+                padding: 0;
                 top: $grid-unit-size;
             }
         }
@@ -32,6 +33,7 @@
 
             > .ant-collapse-content-box {
                 padding: 10px;
+                padding-bottom: 0;
             }
         }
     }
@@ -128,13 +130,8 @@
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
     padding: 5px;
-    height: 80px;
 
-    > div:nth-child(1) > div:nth-child(1) {
-        height: 32px;
-    }
-
-    > div:nth-child(2) {
+    > div:nth-child(1) {
         margin-top: $grid-unit-size;
 
         > div {
@@ -159,7 +156,7 @@
 
 .cvat-objects-sidebar-states-list {
     background-color: $background-color-2;
-    height: calc(100% - 80px);
+    height: calc(100% - 50px);
     overflow-y: auto;
 }
 
@@ -215,6 +212,7 @@
 .cvat-objects-sidebar-state-item-collapse {
     border: 0;
     background: inherit;
+    width: 100%;
 
     > .ant-collapse-item {
         background: inherit;
@@ -226,6 +224,7 @@
             padding-bottom: 2px;
 
             .ant-collapse-arrow {
+                padding: 0;
                 top: $grid-unit-size;
             }
         }

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,14 +9,26 @@
     overflow: hidden;
 }
 
+.cvat-annotation-layout-content {
+    height: 100%;
+}
+
 .ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
     border-bottom: 1px solid $border-color-1;
     height: 54px;
     padding: 0;
+
+    > div:first-child {
+        display: flex;
+        flex: 1;
+        flex-flow: unset;
+    }
 }
 
 .cvat-annotation-header-left-group {
+    display: flex;
+
     > button:first-child {
         filter: invert(0.9);
         background: $background-color-1;
@@ -29,7 +41,6 @@
     padding: 0;
     width: 54px;
     height: 54px;
-    float: left;
     text-align: center;
     user-select: none;
     color: $text-color;
@@ -60,6 +71,14 @@
         display: block;
         line-height: 0;
     }
+
+    &.filters-armed {
+        color: $info-icon-color;
+
+        path {
+            fill: $info-icon-color;
+        }
+    }
 }
 
 .cvat-annotation-disabled-header-button {
@@ -72,6 +91,7 @@
 .cvat-annotation-header-player-group > div {
     height: 54px;
     line-height: 0;
+    flex-wrap: nowrap;
 }
 
 .cvat-player-buttons {
@@ -83,7 +103,7 @@
 
     > span {
         font-size: 25px;
-        margin: 0 7px;
+        margin: 0 4px;
         color: $player-buttons-color;
 
         &:hover {
@@ -142,8 +162,10 @@
 }
 
 .cvat-annotation-header-right-group {
+    display: flex;
+    justify-content: flex-end;
+
     > div {
-        float: left;
         display: block;
         height: 54px;
         margin-right: 15px;
@@ -234,6 +256,77 @@
     }
 }
 
+.cvat-canvas-image-setups-trigger {
+    position: absolute;
+    background: $background-color-2;
+    bottom: 0;
+    left: 50%;
+    opacity: 0.5;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid $border-color-3;
+    z-index: 100;
+    padding: 4px 12px;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    &:active {
+        opacity: 0.75;
+    }
+}
+
+.cvat-canvas-image-setups-content {
+    background: $background-color-2;
+    padding: 8px;
+    border-radius: 6px;
+    opacity: 0.9;
+}
+
+.cvat-image-setups-grid {
+    margin-bottom: 25px;
+
+    > div:first-child {
+        margin-bottom: 10px;
+    }
+}
+
+.cvat-image-setups-grid-size,
+.cvat-image-setups-grid-color,
+.cvat-image-setups-opacity {
+    margin-bottom: 25px;
+}
+
+.cvat-image-setups-grid-size,
+.cvat-image-setups-grid-color,
+.cvat-image-setups-grid-opacity {
+    display: flex;
+    justify-items: start;
+}
+
+.cvat-image-setups-grid-size-input {
+    height: fit-content;
+}
+
+.cvat-image-setups-grid-color {
+    > .ant-select {
+        width: 150px;
+    }
+}
+
+.cvat-image-setups-grid-opacity {
+    > .ant-slider {
+        width: 150px;
+    }
+}
+
+.cvat-image-setups-reset-color-settings,
+.cvat-image-setups-brightness,
+.cvat-image-setups-contrast,
+.cvat-image-setups-saturation {
+    width: 100%;
+}
+
 .cvat-canvas-z-axis-wrapper {
     position: absolute;
     background: $background-color-2;
@@ -280,15 +373,14 @@
     }
 }
 
-.cvat-annotations-filters-input.ant-select > div {
-    height: 32px;
-
-    > div {
+.cvat-annotations-filters-input.ant-select {
+    > .ant-select-selector {
         height: 32px;
+        overflow: auto;
+    }
 
-        ul {
-            display: flex;
-        }
+    > .ant-select-clear {
+        right: 20px;
     }
 }
 
@@ -329,6 +421,31 @@
                     margin-top: $grid-unit-size * 2;
                     margin-bottom: $grid-unit-size * 2;
                 }
+            }
+        }
+    }
+}
+
+.cvat-filters-modal {
+    .ant-modal-body {
+        padding: 1px;
+
+        .recently-used-wrapper {
+            padding-top: $grid-unit-size * 2;
+        }
+
+        .query-builder-container {
+            .query-builder > :first-child {
+                padding-right: 0;
+            }
+
+            .group-or-rule {
+                border-radius: $grid-unit-size / 4;
+            }
+
+            .group {
+                background: rgba(216, 233, 250, 0.5);
+                border: 1px solid #d3e0ec;
             }
         }
     }

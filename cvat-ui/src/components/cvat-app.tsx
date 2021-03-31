@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,7 +27,7 @@ import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import getCore from 'cvat-core-wrapper';
 import React from 'react';
-import { configure, ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Redirect, Route, Switch } from 'react-router';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { NotificationsState } from 'reducers/interfaces';
@@ -47,7 +47,7 @@ interface CVATAppProps {
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
     pluginsInitialized: boolean;
@@ -71,7 +71,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public componentDidMount(): void {
         const core = getCore();
         const { verifyAuthorized, history, location } = this.props;
-        configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
+        // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
@@ -256,12 +256,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         };
 
         const handlers = {
-            SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
+            SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
 
                 switchShortcutsDialog();
             },
-            SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
+            SWITCH_SETTINGS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
 
                 switchSettingsDialog();
@@ -326,7 +326,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
-                                <a id='downloadAnchor' style={{ display: 'none' }} download />
+                                <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                             </Layout.Content>
                         </Layout>
                     </GlobalErrorBoundary>

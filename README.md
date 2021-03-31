@@ -1,6 +1,6 @@
 # Computer Vision Annotation Tool (CVAT)
 
-[![Build Status](https://travis-ci.org/openvinotoolkit/cvat.svg?branch=develop)](https://travis-ci.org/openvinotoolkit/cvat)
+[![CI](https://github.com/openvinotoolkit/cvat/workflows/CI/badge.svg?branch=develop)](https://github.com/openvinotoolkit/cvat/actions)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9899c72f2764df0b5d26390cb872e21)](https://app.codacy.com/gh/openvinotoolkit/cvat?utm_source=github.com&utm_medium=referral&utm_content=openvinotoolkit/cvat&utm_campaign=Badge_Grade_Dashboard)
 [![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
 [![Coverage Status](https://coveralls.io/repos/github/openvinotoolkit/cvat/badge.svg?branch=develop)](https://coveralls.io/github/openvinotoolkit/cvat?branch=develop)
@@ -62,19 +62,31 @@ For more information about supported formats look at the
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
 | [ImageNet](http://www.image-net.org)                                          | X      | X      |
 | [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)          | X      | X      |
+| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                               | X      | X      |
+| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                               | X      | X      |
+| [Market-1501](https://www.aitribune.com/dataset/2018051063)                   | X      | X      |
+| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                    | X      | X      |
 
-## Deep learning models for automatic labeling
+## Deep learning serverless functions for automatic labeling
+
+<!--lint disable maximum-line-length-->
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
-| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |
+| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |     |
+| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | X   |     |
+| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |     |
+| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |     |
+| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |     |
+| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |     |
+| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |     |
+| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | X   |     |
+| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    | X   |     |
+| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | X   |     |
 | [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
-| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |
-| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |
-| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |
-| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |
-| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   |
-| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |
+| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   | X   |
+
+<!--lint enable maximum-line-length-->
 
 ## Online demo: [cvat.org](https://cvat.org)
 
@@ -91,17 +103,35 @@ Limitations:
 - No more than 10 tasks per user
 - Uploaded data is limited to 500Mb
 
+## Prebuilt Docker images
+
+Prebuilt docker images for CVAT releases are available on Docker Hub:
+
+- [cvat_server](https://hub.docker.com/r/openvino/cvat_server)
+- [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui)
+
 ## REST API
 
-Automatically generated Swagger documentation for Django REST API is
-available on `<cvat_origin>/api/swagger`
-(default: `localhost:8080/api/swagger`).
+Automatically generated Swagger documentation for Django REST API is available
+on `<cvat_origin>/api/swagger`(default: `localhost:8080/api/swagger`).
 
-Swagger documentation is visiable on allowed hostes, Update environement variable in docker-compose.yml file with cvat hosted machine IP or domain name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`)
+Swagger documentation is visiable on allowed hostes, Update environement
+variable in docker-compose.yml file with cvat hosted machine IP or domain
+name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`.
 
 ## LICENSE
 
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
+
+This software uses LGPL licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
+The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
+
+FFmpeg is an open source framework licensed under LGPL and GPL.
+See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
+for determining if your use of FFmpeg requires any
+additional licenses. Intel is not responsible for obtaining any
+such licenses, nor liable for any licensing fees due in
+connection with your use of FFmpeg.
 
 ## Questions
 
@@ -129,4 +159,6 @@ Other ways to ask questions and get our support:
 
 ## Projects using CVAT
 
-- [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source vision AI platform that fully integrates CVAT with scalable data processing and parallelized training pipelines.
+- [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source
+  vision AI platform that fully integrates CVAT with scalable data processing
+  and parallelized training pipelines.

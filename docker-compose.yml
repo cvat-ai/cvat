@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -32,22 +32,11 @@ services:
 
   cvat:
     container_name: cvat
-    image: cvat/server
+    image: openvino/cvat_server
     restart: always
     depends_on:
       - cvat_redis
       - cvat_db
-    build:
-      context: .
-      args:
-        http_proxy:
-        https_proxy:
-        no_proxy: nuclio,${no_proxy}
-        socks_proxy:
-        USER: 'django'
-        DJANGO_CONFIGURATION: 'production'
-        TZ: 'Etc/UTC'
-        CLAM_AV: 'no'
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
@@ -57,21 +46,11 @@ services:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
-      - cvat_models:/home/django/models
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui
+    image: openvino/cvat_ui
     restart: always
-    build:
-      context: .
-      args:
-        http_proxy:
-        https_proxy:
-        no_proxy:
-        socks_proxy:
-      dockerfile: Dockerfile.ui
-
     networks:
       default:
         aliases:
@@ -107,4 +86,3 @@ volumes:
   cvat_data:
   cvat_keys:
   cvat_logs:
-  cvat_models:

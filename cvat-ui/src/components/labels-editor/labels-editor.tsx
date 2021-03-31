@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,12 +6,14 @@ import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
-import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
+import ModalConfirm from 'antd/lib/modal/confirm';
 import copy from 'copy-to-clipboard';
-import { CopyOutlined, EditOutlined, BuildOutlined } from '@ant-design/icons';
+import {
+    CopyOutlined, EditOutlined, BuildOutlined, ExclamationCircleOutlined,
+} from '@ant-design/icons';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import RawViewer from './raw-viewer';
 import ConstructorViewer from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
@@ -144,20 +146,31 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
     };
 
     private handleDelete = (label: Label): void => {
-        // the label is saved on the server, cannot delete it
+        const deleteLabel = (): void => {
+            const { unsavedLabels, savedLabels } = this.state;
+
+            const filteredUnsavedLabels = unsavedLabels.filter((_label: Label): boolean => _label.id !== label.id);
+            const filteredSavedLabels = savedLabels.filter((_label: Label): boolean => _label.id !== label.id);
+
+            this.setState({ savedLabels: filteredSavedLabels, unsavedLabels: filteredUnsavedLabels });
+            this.handleSubmit(filteredSavedLabels, filteredUnsavedLabels);
+        };
+
         if (typeof label.id !== 'undefined' && label.id >= 0) {
-            notification.error({
-                message: 'Could not delete the label',
-                description: 'It has been already saved on the server',
+            ModalConfirm({
+                className: 'cvat-modal-delete-label',
+                title: `Do you want to delete "${label.name}" label?`,
+                icon: <ExclamationCircleOutlined />,
+                content: 'This action is irreversible. Annotation corresponding with this label will be deleted.',
+                type: 'warning',
+                okType: 'danger',
+                onOk() {
+                    deleteLabel();
+                },
             });
+        } else {
+            deleteLabel();
         }
-
-        const { unsavedLabels, savedLabels } = this.state;
-
-        const filteredUnsavedLabels = unsavedLabels.filter((_label: Label): boolean => _label.id !== label.id);
-
-        this.setState({ unsavedLabels: filteredUnsavedLabels });
-        this.handleSubmit(savedLabels, filteredUnsavedLabels);
     };
 
     private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]): void {
@@ -195,7 +208,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
                 type='card'
                 tabBarStyle={{ marginBottom: '0px' }}
                 tabBarExtraContent={(
-                    <Tooltip title='Copied to clipboard!' trigger='click' mouseLeaveDelay={0}>
+                    <CVATTooltip title='Copied to clipboard!' trigger='click'>
                         <Button
                             type='link'
                             icon={<CopyOutlined />}
@@ -218,7 +231,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
                         >
                             Copy
                         </Button>
-                    </Tooltip>
+                    </CVATTooltip>
                 )}
             >
                 <Tabs.TabPane

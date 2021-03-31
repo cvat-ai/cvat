@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,6 +32,7 @@
                 bug_tracker: undefined,
                 created_date: undefined,
                 updated_date: undefined,
+                task_subsets: undefined,
             };
 
             for (const property in data) {
@@ -55,6 +56,13 @@
                     const taskInstance = new Task(task);
                     data.tasks.push(taskInstance);
                 }
+            }
+            if (!data.task_subsets && data.tasks.length) {
+                const subsetsSet = new Set();
+                for (const task in data.tasks) {
+                    if (task.subset) subsetsSet.add(task.subset);
+                }
+                data.task_subsets = Array.from(subsetsSet);
             }
 
             Object.defineProperties(
@@ -178,7 +186,13 @@
                                 );
                             }
 
-                            data.labels = [...labels];
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
+
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -191,6 +205,20 @@
                      */
                     tasks: {
                         get: () => [...data.tasks],
+                    },
+                    /**
+                     * Subsets array for linked tasks
+                     * @name subsets
+                     * @type {string[]}
+                     * @memberof module:API.cvat.classes.Project
+                     * @readonly
+                     * @instance
+                     */
+                    subsets: {
+                        get: () => [...data.task_subsets],
+                    },
+                    _internalData: {
+                        get: () => data,
                     },
                 }),
             );
@@ -238,7 +266,7 @@
                 name: this.name,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
-                labels: [...this.labels.map((el) => el.toJSON())],
+                labels: [...this._internalData.labels.map((el) => el.toJSON())],
             };
 
             await serverProxy.projects.save(this.id, projectData);

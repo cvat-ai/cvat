@@ -4,6 +4,7 @@
   "viewportWidth": 1300,
   "viewportHeight": 960,
   "defaultCommandTimeout": 25000,
+  "downloadsFolder": "cypress/fixtures",
   "env": {
     "user": "admin",
     "email": "admin@localhost.company",
@@ -11,9 +12,10 @@
   },
   "testFiles": [
     "auth_page.js",
-    "actions_tasks_objects/*",
-    "actions_users/**/*",
-    "actions_projects/**/*",
+    "actions_tasks_objects/**/*.js",
+    "actions_users/**/*.js",
+    "actions_projects/**/*.js",
+    "canvas3d_functionality/*.js",
     "remove_users_tasks_projects.js"
   ]
 }

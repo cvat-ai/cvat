@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -75,21 +75,17 @@ Cypress.Commands.add('collectIssueRegionId', () => {
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
         for (let i = 0; i < issueRegionList.length; i++) {
-            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\d+$/)));
+            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\-?\d+$/)));
         }
         return issueRegionIdList;
     });
 });
 
-Cypress.Commands.add('checkIssueRegion', (afterSave = false) => {
+Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
     cy.collectIssueRegionId().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        if (!afterSave) {
-            cy.get(`${sccSelectorIssueRegionId}-${maxId}`).trigger('mousemove').should('exist').and('be.visible');
-        } else {
-            cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').should('exist').and('be.visible');
-        }
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').should('exist').and('be.visible');
     });
 });
 
@@ -120,7 +116,9 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
             .trigger('mousemove', createIssueParams.secondX, createIssueParams.secondY)
             .trigger('mouseup');
     } else if (createIssueParams.type === 'point') {
-        cy.get('.cvat-canvas-container').click(createIssueParams.firstX, createIssueParams.firstY);
+        cy.get('.cvat-canvas-container')
+            .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 })
+            .trigger('mouseup');
     }
     cy.get('.cvat-create-issue-dialog').within(() => {
         cy.get('#issue_description').type(createIssueParams.description);
@@ -142,10 +140,10 @@ Cypress.Commands.add('submitReview', (decision, user) => {
     cy.get('.cvat-submit-review-dialog').within(() => {
         cy.contains(new RegExp(`^${decision}$`, 'g')).click();
         if (decision === 'Review next') {
-            cy.server().route('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
+            cy.intercept('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {
                 cy.get('input[type="search"]').clear().type(`${user}`);
-                cy.wait('@searchUsers').its('status').should('equal', 200);
+                cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
                 cy.get('input[type="search"]').type('{Enter}');
             });
         }

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
 import ExportSubmenu from './export-submenu';
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     taskID: number;
@@ -22,7 +23,7 @@ interface Props {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     inferenceIsActive: boolean;
-
+    taskDimension: DimensionType;
     onClickMenu: (params: MenuInfo, file?: File) => void;
 }
 
@@ -47,6 +48,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         dumpActivities,
         exportActivities,
         loadActivity,
+        taskDimension,
     } = props;
 
     let latestParams: MenuInfo | null = null;
@@ -64,6 +66,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     Modal.confirm({
                         title: 'Current annotation will be lost',
                         content: 'You are going to upload new annotations to this task. Continue?',
+                        className: 'cvat-modal-content-load-task-annotation',
                         onOk: () => {
                             onClickMenu(copyParams, file);
                         },
@@ -81,6 +84,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             Modal.confirm({
                 title: `The task ${taskID} will be deleted`,
                 content: 'All related data (images, annotations) will be lost. Continue?',
+                className: 'cvat-modal-confirm-delete-task',
                 onOk: () => {
                     onClickMenu(copyParams);
                 },
@@ -102,6 +106,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                 dumpers,
                 dumpActivities,
                 menuKey: Actions.DUMP_TASK_ANNO,
+                taskDimension,
             })}
             {LoadSubmenu({
                 loaders,
@@ -110,11 +115,13 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                     onClickMenuWrapper(null, file);
                 },
                 menuKey: Actions.LOAD_TASK_ANNO,
+                taskDimension,
             })}
             {ExportSubmenu({
                 exporters: dumpers,
                 exportActivities,
                 menuKey: Actions.EXPORT_TASK_DATASET,
+                taskDimension,
             })}
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>

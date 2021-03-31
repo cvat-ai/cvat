@@ -267,6 +267,11 @@ class TaskData:
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
+            if shape['frame'] not in self._frame_info:
+                # After interpolation there can be a finishing frame
+                # outside of the task boundaries. Filter it out to avoid errors.
+                # https://github.com/openvinotoolkit/cvat/issues/2827
+                continue
             if 'track_id' in shape:
                 if shape['outside']:
                     continue
@@ -596,12 +601,15 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
         return item_anno
 
+class CvatImportError(Exception):
+    pass
+
 def match_dm_item(item, task_data, root_hint=None):
     is_video = task_data.meta['task']['mode'] == 'interpolation'
 
     frame_number = None
     if frame_number is None and item.has_image:
-        frame_number = task_data.match_frame(item.image.path, root_hint)
+        frame_number = task_data.match_frame(item.id + item.image.ext, root_hint)
     if frame_number is None:
         frame_number = task_data.match_frame(item.id, root_hint)
     if frame_number is None:
@@ -610,8 +618,8 @@ def match_dm_item(item, task_data, root_hint=None):
         frame_number = cast(osp.basename(item.id)[len('frame_'):], int)
 
     if not frame_number in task_data.frame_info:
-        raise Exception("Could not match item id: '%s' with any task frame" %
-            item.id)
+        raise CvatImportError("Could not match item id: "
+            "'%s' with any task frame" % item.id)
     return frame_number
 
 def find_dataset_root(dm_dataset, task_data):
@@ -625,7 +633,6 @@ def find_dataset_root(dm_dataset, task_data):
     if prefix.endswith('/'):
         prefix = prefix[:-1]
     return prefix
-
 
 def import_dm_annotations(dm_dataset, task_data):
     shapes = {
@@ -662,26 +669,32 @@ def import_dm_annotations(dm_dataset, task_data):
             if 1 < s and group_map[g]}
         group_map = {g: i for i, g in enumerate([0] + sorted(group_map))}
 
-        for ann in item.annotations:
-            if ann.type in shapes:
-                task_data.add_shape(task_data.LabeledShape(
-                    type=shapes[ann.type],
-                    frame=frame_number,
-                    label=label_cat.items[ann.label].name,
-                    points=ann.points,
-                    occluded=ann.attributes.get('occluded') == True,
-                    z_order=ann.z_order,
-                    group=group_map.get(ann.group, 0),
-                    source='manual',
-                    attributes=[task_data.Attribute(name=n, value=str(v))
-                        for n, v in ann.attributes.items()],
-                ))
-            elif ann.type == datumaro.AnnotationType.label:
-                task_data.add_tag(task_data.Tag(
-                    frame=frame_number,
-                    label=label_cat.items[ann.label].name,
-                    group=group_map.get(ann.group, 0),
-                    source='manual',
-                    attributes=[task_data.Attribute(name=n, value=str(v))
-                        for n, v in ann.attributes.items()],
-                ))
+        for idx, ann in enumerate(item.annotations):
+            try:
+                if hasattr(ann, 'label') and ann.label is None:
+                    raise CvatImportError("annotation has no label")
+                if ann.type in shapes:
+                    task_data.add_shape(task_data.LabeledShape(
+                        type=shapes[ann.type],
+                        frame=frame_number,
+                        label=label_cat.items[ann.label].name,
+                        points=ann.points,
+                        occluded=ann.attributes.get('occluded') == True,
+                        z_order=ann.z_order,
+                        group=group_map.get(ann.group, 0),
+                        source='manual',
+                        attributes=[task_data.Attribute(name=n, value=str(v))
+                            for n, v in ann.attributes.items()],
+                    ))
+                elif ann.type == datumaro.AnnotationType.label:
+                    task_data.add_tag(task_data.Tag(
+                        frame=frame_number,
+                        label=label_cat.items[ann.label].name,
+                        group=group_map.get(ann.group, 0),
+                        source='manual',
+                        attributes=[task_data.Attribute(name=n, value=str(v))
+                            for n, v in ann.attributes.items()],
+                    ))
+            except Exception as e:
+                raise CvatImportError("Image {}: can't import annotation "
+                    "#{} ({}): {}".format(item.id, idx, ann.type.name, e))

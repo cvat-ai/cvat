@@ -11,10 +11,10 @@
   },
   "testFiles": [
     "auth_page.js",
-    "actions_tasks_objects/*",
-    "actions_projects/*",
-    "actions_users/*",
-    "email_system/*",
+    "actions_tasks_objects/*.js",
+    "actions_projects/*.js",
+    "actions_users/*.js",
+    "email_system/*.js",
     "remove_users_tasks_projects.js"
   ]
 }
