@@ -137,15 +137,7 @@ services:
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-<<<<<<< HEAD:cvat/apps/documentation/faq.md
-[Advanced configuration](user_guide.md#advanced-configuration) section.
-
-## How to transfer CVAT to another machine
-
-Follow the [backup/restore guide](backup_guide.md#how-to-backup-all-cvat-data).
-=======
 [Advanced configuration](/docs/for-users/user-guide/creating_an_annotation_task/#advanced-configuration) section.
 
 ## How to transfer CVAT to another machine
 Follow the [backup/restore guide](/docs/for-developers/backup_guide/#how-to-backup-all-cvat-data).
->>>>>>> 00a8fd91e357c1d8e30b2dfa2194c4208169e0d4:site/content/en/docs/for-users/faq.md
