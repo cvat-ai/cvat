@@ -33,7 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
 - Storing settings in local storage to keep them between browser sessions (<https://github.com/openvinotoolkit/cvat/pull/3017>)
 - [ICDAR](https://rrc.cvc.uab.es/?ch=2) format support (<https://github.com/openvinotoolkit/cvat/pull/2866>)
-- Added switcher to maintain poylgon crop behaviour (<https://github.com/openvinotoolkit/cvat/pull/3021>)
+- Added switcher to maintain poylgon crop behaviour (<https://github.com/openvinotoolkit/cvat/pull/3021>
+- Filters and sorting options for job list, added tooltip for tasks filters (<https://github.com/openvinotoolkit/cvat/pull/3030>)
 
 ### Changed
 
