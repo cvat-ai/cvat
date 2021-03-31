@@ -47,7 +47,14 @@ context('Filter property "shape" work correctly', () => {
 
         it('Set a filter: "shape == "polygon""', () => {
             cy.addFiltersRule(0);
-            cy.setFilter(0, 0, 'Shape', '==', false, 'polygon', false, false, true);
+            cy.setFilter({
+                groupIndex: 0,
+                ruleIndex: 0,
+                field: 'Shape',
+                operator: '==',
+                value: 'polygon',
+                submit: true,
+            });
         });
 
         it('Only polygon is visible', () => {
