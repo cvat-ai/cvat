@@ -52,19 +52,19 @@ Cypress.Commands.add('addFiltersRule', (groupIndex) => {
     });
 });
 
-Cypress.Commands.add('setGroupConition', (groupIndex, contidion) => {
+Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
     cy.сheckFiltersModalOpened();
     cy.collectGroupID().then((groupIdIndex) => {
         cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).within(() => {
             cy.get('.group--header').first().trigger('mouseover');
-            cy.contains('button', contidion).click({ force: true });
+            cy.contains('button', condition).click({ force: true });
         });
     });
 });
 
 Cypress.Commands.add(
     'setFilter',
-    (groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit) => {
+    ({groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit}) => {
         cy.сheckFiltersModalOpened();
         cy.collectGroupID().then((groupIdIndex) => {
             cy.collectRuleID().then((ruleIdIndex) => {
