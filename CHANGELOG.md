@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0-alpha] - Unreleased
+## [1.3.0] - 3/31/2021
 
 ### Added
 
@@ -16,8 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/openvinotoolkit/cvat/pull/2645>)
 - Intelligent scissors with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/2689>)
 - CVAT-3D: Visualize 3D point cloud spaces in 3D View, Top View Side View and Front View (<https://github.com/openvinotoolkit/cvat/pull/2768>)
-- [Inside Outside Guidence](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
-  function for interative segmentation
+- [Inside Outside Guidance](https://github.com/shiyinzhang/Inside-Outside-Guidance) serverless
+  function for interactive segmentation
 - Pre-built [cvat_server](https://hub.docker.com/r/openvino/cvat_server) and
   [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui) images were published on DockerHub (<https://github.com/openvinotoolkit/cvat/pull/2766>)
 - Project task subsets (<https://github.com/openvinotoolkit/cvat/pull/2774>)
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
 - Storing settings in local storage to keep them between browser sessions (<https://github.com/openvinotoolkit/cvat/pull/3017>)
 - [ICDAR](https://rrc.cvc.uab.es/?ch=2) format support (<https://github.com/openvinotoolkit/cvat/pull/2866>)
-- Added switcher to maintain poylgon crop behaviour (<https://github.com/openvinotoolkit/cvat/pull/3021>
+- Added switcher to maintain polygon crop behavior (<https://github.com/openvinotoolkit/cvat/pull/3021>
 - Filters and sorting options for job list, added tooltip for tasks filters (<https://github.com/openvinotoolkit/cvat/pull/3030>)
 
 ### Changed
@@ -42,21 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated HTTPS install README section (cleanup and described more robust deploy)
 - Logstash is improved for using with configurable elasticsearch outputs (<https://github.com/openvinotoolkit/cvat/pull/2531>)
 - Bumped nuclio version to 1.5.16 (<https://github.com/openvinotoolkit/cvat/pull/2578>)
-- All methods for interative segmentation accept negative points as well
+- All methods for interactive segmentation accept negative points as well
 - Persistent queue added to logstash (<https://github.com/openvinotoolkit/cvat/pull/2744>)
-- Improved maintanance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
+- Improved maintenance of popups visibility (<https://github.com/openvinotoolkit/cvat/pull/2809>)
 - Image visualizations settings on canvas for faster access (<https://github.com/openvinotoolkit/cvat/pull/2872>)
 - Better scale management of left panel when screen is too small (<https://github.com/openvinotoolkit/cvat/pull/2880>)
 - Improved error messages for annotation import (<https://github.com/openvinotoolkit/cvat/pull/2935>)
 - Using manifest support instead video meta information and dummy chunks (<https://github.com/openvinotoolkit/cvat/pull/2763>)
-
-### Deprecated
-
--
-
-### Removed
-
--
 
 ### Fixed
 
@@ -65,12 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The cursor jumps to the end of the line when renaming a task (<https://github.com/openvinotoolkit/cvat/pull/2669>)
 - SSLCertVerificationError when remote source is used (<https://github.com/openvinotoolkit/cvat/pull/2683>)
 - Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
-- Fixed tasks in project autoannotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
+- Fixed tasks in project auto annotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
 - Cuboids are missed in annotations statistics (<https://github.com/openvinotoolkit/cvat/pull/2704>)
 - The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pul
 - A couple of css-related issues (top bar disappear, wrong arrow position on collapse elements) (<https://github.com/openvinotoolkit/cvat/pull/2736>)
 - Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
-- Fixed cuboid perpective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
+- Fixed cuboid perspective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
 - Annotation page popups (ai tools, drawing) reset state after detecting, tracking, drawing (<https://github.com/openvinotoolkit/cvat/pull/2780>)
 - Polygon editing using trailing point (<https://github.com/openvinotoolkit/cvat/pull/2808>)
 - Updated the path to python for DL models inside automatic annotation documentation (<https://github.com/openvinotoolkit/cvat/pull/2847>)
@@ -85,10 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incorrect text on the warning when specifying an incorrect link to the issue tracker (<https://github.com/openvinotoolkit/cvat/pull/2971>)
 - Updating label attributes when label contains number attributes (<https://github.com/openvinotoolkit/cvat/pull/2969>)
 - Crop a polygon if its points are outside the bounds of the image (<https://github.com/openvinotoolkit/cvat/pull/3025>)
-
-### Security
-
--
 
 ## [1.2.0] - 2021-01-08
 
