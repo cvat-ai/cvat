@@ -39,17 +39,27 @@ context('Filter property "shape" work correctly', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat-objects-sidebar-state-item-1').should('contain', '1').and('contain', 'RECTANGLE SHAPE');
         });
+
         it('Create a polygon', () => {
             cy.createPolygon(createPolygonShape);
             cy.get('#cvat-objects-sidebar-state-item-2').should('contain', '2').and('contain', 'POLYGON SHAPE');
         });
-        // TODO: Update with new filters UI
-        // it('Input filter "shape == "polygon""', () => {
-        //     cy.get('.cvat-annotations-filters-input').type('shape == "polygon"{Enter}');
-        // });
-        // it('Only polygon is visible', () => {
-        //     cy.get('#cvat_canvas_shape_2').should('exist');
-        //     cy.get('#cvat_canvas_shape_1').should('not.exist');
-        // });
+
+        it('Set a filter: "shape == "polygon""', () => {
+            cy.addFiltersRule(0);
+            cy.setFilter({
+                groupIndex: 0,
+                ruleIndex: 0,
+                field: 'Shape',
+                operator: '==',
+                value: 'polygon',
+                submit: true,
+            });
+        });
+
+        it('Only polygon is visible', () => {
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+        });
     });
 });
