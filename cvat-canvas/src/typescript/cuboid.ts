@@ -1,9 +1,9 @@
-import consts from './consts';
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
 
-export interface Point {
-    x: number;
-    y: number;
-}
+import consts from './consts';
+import { Point } from './shared';
 
 export enum Orientation {
     LEFT = 'left',
@@ -17,7 +17,7 @@ function line(p1: Point, p2: Point): number[] {
     return [a, b, c];
 }
 
-function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null {
+export function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null {
     const L1 = line(p1, p2);
     const L2 = line(p3, p4);
 
@@ -27,7 +27,7 @@ function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null 
 
     let x = null;
     let y = null;
-    if (D !== 0) {
+    if (Math.abs(D) > Number.EPSILON) {
         x = Dx / D;
         y = Dy / D;
         return { x, y };
@@ -348,10 +348,9 @@ function setupCuboidPoints(points: Point[]): any[] {
     let p3;
     let p4;
 
-    const height =
-        Math.abs(points[0].x - points[1].x) < Math.abs(points[1].x - points[2].x)
-            ? Math.abs(points[1].y - points[0].y)
-            : Math.abs(points[1].y - points[2].y);
+    const height = Math.abs(points[0].x - points[1].x) < Math.abs(points[1].x - points[2].x)
+        ? Math.abs(points[1].y - points[0].y)
+        : Math.abs(points[1].y - points[2].y);
 
     // seperate into left and right point
     // we pick the first and third point because we know assume they will be on

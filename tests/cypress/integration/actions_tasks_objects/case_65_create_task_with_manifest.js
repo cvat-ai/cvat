@@ -18,6 +18,11 @@ context('Create an annotation task with manifest.', () => {
         cy.login();
     });
 
+    after(() => {
+        cy.goToTaskList();
+        cy.deleteTask(taskName);
+    });
+
     describe(`Testing "${labelName}"`, () => {
         it('Task created successfully.', () => {
             cy.task('listFiles', pathToFiles).then(($files) => {
