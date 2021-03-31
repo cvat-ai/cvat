@@ -700,7 +700,7 @@ In addition the workspace also has the following functions:
 
 ### Settings
 
-To open the settings open the user menu in the header and select the settings item or press `F3`.
+To open the settings open the user menu in the header and select the settings item or press `F2`.
 
 ![](static/documentation/images/image067.jpg)
 
