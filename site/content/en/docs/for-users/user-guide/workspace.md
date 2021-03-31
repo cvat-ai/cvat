@@ -3,6 +3,7 @@ title: "Workspace"
 linkTitle: "Workspace"
 weight: 12
 ---
+
 This is the main field in which drawing and editing objects takes place.
 In addition the workspace also has the following functions:
 
@@ -21,3 +22,23 @@ In addition the workspace also has the following functions:
   You can move objects in layers using the `+` and `-` keys.
 
   ![](/images/image140.jpg)
+
+- `Image settings panel` -  used to set up the grid and set up image brightness contrast saturation.
+
+  - Show `Grid`, change grid size, choose color and transparency:
+
+    ![](/images/image068_mapillary_vistas.jpg)
+
+  - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
+  dark images using `F3` — color settings (changes displaying settings and not the
+  image itself).
+
+  Shortcuts:
+
+  - `Shift+B+=`/`Shift+B+-` for brightness.
+  - `Shift+C+=`/`Shift+C+-` for contrast.
+  - `Shift+S+=`/`Shift+S+-` for saturation.
+
+    ![](/images/image164_mapillary_vistas.jpg)
+
+  - `Reset color settings` to default values.
