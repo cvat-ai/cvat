@@ -86,6 +86,7 @@ context('Filters, sorting jobs.', () => {
     }
 
     before(() => {
+        // Preparing a jobs
         cy.visit('auth/register');
         cy.userRegistration(
             secondUser.firstName,
@@ -112,8 +113,7 @@ context('Filters, sorting jobs.', () => {
         cy.assignJobToUser(1, secondUserName);
         cy.logout();
 
-        // Preparing a jobs
-        // First job to validation status
+        // The first job is transferred to the validation status
         cy.login(secondUserName, secondUser.password);
         cy.openTaskJob(taskName);
         cy.changeWorkspace('Review');
@@ -129,7 +129,7 @@ context('Filters, sorting jobs.', () => {
             });
         cy.checkJobStatus(0, 'validation', secondUserName, Cypress.env('user'));
 
-        // Second job to complete status
+        // The first job is transferred to the complete status
         cy.openJob(1);
         cy.changeWorkspace('Review');
         cy.createIssueFromControlButton(createIssueRectangle);
