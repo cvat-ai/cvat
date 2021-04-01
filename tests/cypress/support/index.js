@@ -6,6 +6,7 @@ require('./commands');
 require('./commands_projects');
 require('./commands_review_pipeline');
 require('./commands_canvas3d');
+require('./commands_filters_feature');
 require('@cypress/code-coverage/support');
 require('cypress-plugin-tab');
 

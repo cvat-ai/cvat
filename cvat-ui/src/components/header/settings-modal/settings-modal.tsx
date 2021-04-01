@@ -45,7 +45,9 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
     useEffect(() => {
         try {
             const newSettings: any = {};
-            const loadedSettings = JSON.parse(localStorage.getItem('clientSettings') as string);
+            const settingsString = localStorage.getItem('clientSettings') as string;
+            if (!settingsString) return;
+            const loadedSettings = JSON.parse(settingsString);
             for (const [sectionKey, section] of Object.entries(settings)) {
                 for (const [key, value] of Object.entries(section)) {
                     let settedValue = value;
