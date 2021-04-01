@@ -158,7 +158,7 @@ context('Filters, sorting jobs.', () => {
         cy.deleteTask(taskName);
     });
 
-    describe(`Testing "${labelName}". Issue 2572.`, () => {
+    describe(`Testing "${labelName}".`, () => {
         it('Feltering jobs by status.', () => {
             testSetJobFilter({ column: '.cvat-job-item-status', menuItem: 'annotation' });
             checkJobsTableRowCount(1);
