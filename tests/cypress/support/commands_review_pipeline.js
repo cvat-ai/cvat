@@ -73,7 +73,7 @@ Cypress.Commands.add('collectIssueRegionId', () => {
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
         for (let i = 0; i < issueRegionList.length; i++) {
-            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\-?\d+$/)));
+            issueRegionIdList.push(Number(issueRegionList[i].id.match(/-?\d+$/)));
         }
         return issueRegionIdList;
     });
