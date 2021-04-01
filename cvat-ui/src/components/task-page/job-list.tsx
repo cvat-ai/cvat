@@ -217,6 +217,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Assignee',
             dataIndex: 'assignee',
             key: 'assignee',
+            className: 'cvat-job-item-assignee',
             render: (jobInstance: any): JSX.Element => (
                 <UserSelector
                     className='cvat-job-assignee-selector'
@@ -237,6 +238,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Reviewer',
             dataIndex: 'reviewer',
             key: 'reviewer',
+            className: 'cvat-job-item-reviewer',
             render: (jobInstance: any): JSX.Element => (
                 <UserSelector
                     className='cvat-job-reviewer-selector'
