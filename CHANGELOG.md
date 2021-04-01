@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - Unreleased
 
 ### Added
--
+- Documentation on mask annotation (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 
 ### Changed
 -
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Export of instance masks with holes (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 
 ### Security
 -
@@ -56,7 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ICDAR](https://rrc.cvc.uab.es/?ch=2) format support (<https://github.com/openvinotoolkit/cvat/pull/2866>)
 - Added switcher to maintain polygon crop behavior (<https://github.com/openvinotoolkit/cvat/pull/3021>
 - Filters and sorting options for job list, added tooltip for tasks filters (<https://github.com/openvinotoolkit/cvat/pull/3030>)
-- Documentation on mask annotation (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 
 ### Changed
 
@@ -99,7 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incorrect text on the warning when specifying an incorrect link to the issue tracker (<https://github.com/openvinotoolkit/cvat/pull/2971>)
 - Updating label attributes when label contains number attributes (<https://github.com/openvinotoolkit/cvat/pull/2969>)
 - Crop a polygon if its points are outside the bounds of the image (<https://github.com/openvinotoolkit/cvat/pull/3025>)
-- Export of instance masks with holes (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 
 ## [1.2.0] - 2021-01-08
 
