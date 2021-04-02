@@ -17,6 +17,10 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
     cy.url().should('match', /\/tasks$/);
+    cy.document().then((doc) => {
+        const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
+        loadSettingFailNotice.length > 0 ? cy.closeNotification('.cvat-notification-notice-load-settings-fail') : null;
+    });
 });
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
@@ -320,6 +324,12 @@ Cypress.Commands.add('closeSettings', () => {
         cy.contains('button', 'Close').click();
     });
     cy.get('.cvat-settings-modal').should('not.be.visible');
+});
+
+Cypress.Commands.add('saveSettings', () => {
+    cy.get('.cvat-settings-modal').within(() => {
+        cy.contains('button', 'Save').click();
+    });
 });
 
 Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
