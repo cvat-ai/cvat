@@ -7,8 +7,8 @@
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
         user !== ''
-        ? cy.get('.cvat-user-search-field').find('[type="search"]').type(`${user}{Enter}`)
-        : cy.get('.cvat-user-search-field').find('[type="search"]').clear().type('{Enter}');
+            ? cy.get('.cvat-user-search-field').find('[type="search"]').type(`${user}{Enter}`)
+            : cy.get('.cvat-user-search-field').find('[type="search"]').clear().type('{Enter}');
     });
 });
 
@@ -24,6 +24,18 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
+});
+
+Cypress.Commands.add('reviewJobToUser', (jobID, user) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`)
+            .parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-reviewer-selector')
+            .find('[type="search"]')
+            .clear()
+            .type(`${user}{Enter}`);
+    });
 });
 
 Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {

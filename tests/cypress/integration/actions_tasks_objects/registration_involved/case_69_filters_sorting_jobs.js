@@ -34,15 +34,6 @@ context('Filters, sorting jobs.', () => {
         password: 'Pass!UserCase69',
     };
 
-    const createIssueRectangle = {
-        type: 'rectangle',
-        description: 'Wrong position',
-        firstX: 550,
-        firstY: 100,
-        secondX: 650,
-        secondY: 200,
-    };
-
     function checkJobsTableRowCount(expectedCount) {
         if (expectedCount !== 0) {
             cy.get('.cvat-task-jobs-table-row').then(($jobsTableRows) => {
@@ -68,7 +59,7 @@ context('Filters, sorting jobs.', () => {
     }
 
     function testSetJobFilter({ column, menuItem, reset }) {
-        cy.get(column).find('[role="button"]').click().wait(300); // Wait for dropdown menu transition
+        cy.get(column).find('[role="button"]').click().wait(300); // Waiting for dropdown menu transition
         cy.get('.ant-dropdown')
             .not('.ant-dropdown-hidden')
             .within(() => {
@@ -111,13 +102,10 @@ context('Filters, sorting jobs.', () => {
         cy.openTask(taskName);
         cy.assignJobToUser(0, secondUserName);
         cy.assignJobToUser(1, secondUserName);
-        cy.logout();
+        cy.reviewJobToUser(1, Cypress.env('user'));
 
         // The first job is transferred to the validation status
-        cy.login(secondUserName, secondUser.password);
-        cy.openTaskJob(taskName);
-        cy.changeWorkspace('Review');
-        cy.createIssueFromControlButton(createIssueRectangle);
+        cy.openJob();
         cy.interactMenu('Request a review');
         cy.get('.cvat-request-review-dialog')
             .should('exist')
@@ -127,28 +115,11 @@ context('Filters, sorting jobs.', () => {
                     .type(`${Cypress.env('user')}{Enter}`);
                 cy.contains('[type="button"]', 'Submit').click();
             });
-        cy.checkJobStatus(0, 'validation', secondUserName, Cypress.env('user'));
 
         // The first job is transferred to the complete status
         cy.openJob(1);
-        cy.changeWorkspace('Review');
-        cy.createIssueFromControlButton(createIssueRectangle);
-        cy.interactMenu('Request a review');
-        cy.get('.cvat-request-review-dialog')
-            .should('exist')
-            .within(() => {
-                cy.get('.cvat-user-search-field')
-                    .find('[type="search"]')
-                    .type(`${Cypress.env('user')}{Enter}`);
-                cy.contains('[type="button"]', 'Submit').click();
-            });
-        cy.logout(secondUserName);
-        cy.login();
-        cy.openTaskJob(taskName, 1);
-        cy.resolveIssue('.cvat-hidden-issue-label', 'Done');
-        cy.interactMenu('Submit the review');
-        cy.submitReview('Accept');
-        cy.checkJobStatus(1, 'completed', secondUserName, Cypress.env('user'));
+        cy.interactMenu('Finish the job');
+        cy.contains('[type="button"]', 'Continue').click();
     });
 
     after(() => {
@@ -159,27 +130,27 @@ context('Filters, sorting jobs.', () => {
     });
 
     describe(`Testing "${labelName}".`, () => {
-        it('Feltering jobs by status.', () => {
+        it('Filtering jobs by status.', () => {
             testSetJobFilter({ column: '.cvat-job-item-status', menuItem: 'annotation' });
             checkJobsTableRowCount(1);
             checkContentsRow(0, 'annotation', '', '');
         });
 
-        it('Feltering jobs by status and by assignee.', () => {
+        it('Filtering jobs by status and by assignee.', () => {
             testSetJobFilter({ column: '.cvat-job-item-assignee', menuItem: secondUserName });
             checkJobsTableRowCount(0);
             testSetJobFilter({ column: '.cvat-job-item-assignee', reset: true });
             checkJobsTableRowCount(1);
         });
 
-        it('Feltering jobs by status. Annotation and validation', () => {
+        it('Filtering jobs by status. Annotation and validation', () => {
             testSetJobFilter({ column: '.cvat-job-item-status', menuItem: 'validation' });
             checkJobsTableRowCount(2);
             checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));
             checkContentsRow(1, 'annotation', '', '');
         });
 
-        it('Feltering jobs by status. Annotation, validation, completed', () => {
+        it('Filtering jobs by status. Annotation, validation, completed', () => {
             testSetJobFilter({ column: '.cvat-job-item-status', menuItem: 'completed' });
             checkJobsTableRowCount(3);
             checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));
@@ -188,7 +159,7 @@ context('Filters, sorting jobs.', () => {
             testSetJobFilter({ column: '.cvat-job-item-status', reset: true }); // Reset filter by status
         });
 
-        it('Feltering jobs by reviewer and sort by ascending status.', () => {
+        it('Filtering jobs by reviewer and sort by ascending status.', () => {
             testSetJobFilter({ column: '.cvat-job-item-reviewer', menuItem: Cypress.env('user') });
             checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));
             checkContentsRow(1, 'completed', secondUserName, Cypress.env('user'));
@@ -197,7 +168,7 @@ context('Filters, sorting jobs.', () => {
             checkContentsRow(1, 'validation', secondUserName, Cypress.env('user'));
         });
 
-        it('Feltering jobs by reviewer and sort by ascending status, assignee.', () => {
+        it('Filtering jobs by reviewer and sort by ascending status, assignee.', () => {
             cy.contains('.cvat-job-item-status', 'Status').click();
             cy.contains('.cvat-job-item-assignee', 'Assignee').click();
             checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));

@@ -31,11 +31,7 @@ context('Search task feature.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Tooltip task filter contain all the possible options.', () => {
             cy.get('.cvat-task-page-search-task').trigger('mouseover');
-            cy.get('.cvat-tasks-search-tooltip').should('be.visible').invoke('text').then(($tooltipText) => {
-                for (const i of ['owner: admin', 'assignee: employee', 'name: training', 'mode: annotation', 'status: annotation', 'id: 5']) {
-                    expect($tooltipText).contain(i);
-                }
-            });
+            cy.get('.cvat-tasks-search-tooltip').should('be.visible');
         });
 
         it('Type to task search some filter and check result.', () => {
