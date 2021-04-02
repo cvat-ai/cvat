@@ -374,6 +374,10 @@ This depends on the email server you are using and is not covered in this tutori
 [Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
 for details.
 
+### Deploy CVAT on the Scaleway public cloud
+
+Please follow [this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/) to install and set up remote access to CVAT on a Scaleway cloud instance with data in a mounted object storage bucket.
+
 ### Deploy secure CVAT instance with HTTPS
 
 Certificates (issued by let's encrypt) to cloud instance.

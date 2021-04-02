@@ -293,8 +293,10 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
       - Reviewer – a user assigned to carry out the review, read more in the [review](#review) section.
-      - `Copy`. By clicking Copy you will copy the job list to the clipboard.
+      - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
+
+        You can filter or sort jobs by status, as well as by assigner or reviewer.
 
 1.  Follow a link inside `Jobs` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -363,7 +365,7 @@ There are several options how to use the search.
 - Search for specific fields. How to perform:
   - `owner: admin` - all tasks created by the user who has the substring "admin" in his name
   - `assignee: employee` - all tasks which are assigned to a user who has the substring "employee" in his name
-  - `name: mighty` - all tasks with the substring "mighty" in their names
+  - `name: training` - all tasks with the substring "training" in their names
   - `mode: annotation` or `mode: interpolation` - all tasks with images or videos.
   - `status: annotation` or `status: validation` or `status: completed` - search by status
   - `id: 5` - task with id = 5.
