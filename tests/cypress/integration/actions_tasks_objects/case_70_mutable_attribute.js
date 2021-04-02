@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Filters functionality.', () => {
+context('Mutable attribute.', () => {
     const caseId = '70';
     const labelTrack = `Case ${caseId}`;
     const additionalAttrsLabelShape = [
