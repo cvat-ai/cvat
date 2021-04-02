@@ -9,14 +9,18 @@ import { PlusOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
+import Upload from 'antd/lib/upload';
+import { UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 
 interface VisibleTopBarProps {
     onSearch: (value: string) => void;
+    onFileUpload(file: File): void;
     searchValue: string;
+    taskImporting: boolean;
 }
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
-    const { searchValue, onSearch } = props;
+    const { searchValue, onSearch, onFileUpload, taskImporting } = props;
 
     const history = useHistory();
 
@@ -32,6 +36,29 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                         size='large'
                         placeholder='Search'
                     />
+                </Col>
+                <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 8 }} xxl={{ span: 7 }}>
+                    <Upload
+                        accept='.zip'
+                        multiple={false}
+                        showUploadList={false}
+                        beforeUpload={(file: File): boolean => {
+                            onFileUpload(file);
+                            return false;
+                        }}
+                    >
+                        <Button
+                            size='large'
+                            id='cvat-import-task-button'
+                            type='primary'
+                            disabled={taskImporting}
+                            icon={<UploadOutlined />}
+                        >
+
+                            Import Task
+                            {taskImporting && <LoadingOutlined style={{ marginLeft: 10 }} />}
+                        </Button>
+                    </Upload>
                 </Col>
                 <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 8 }} xxl={{ span: 7 }}>
                     <Button

@@ -1604,6 +1604,36 @@
             const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.delete);
             return result;
         }
+
+        /**
+         * Method makes a backup of a task
+         * @method backup
+         * @memberof module:API.cvat.classes.Task
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async backup() {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.backup);
+            return result;
+        }
+
+        /**
+         * Method imports a task from a backup
+         * @method import
+         * @memberof module:API.cvat.classes.Task
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+         async import(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.import, file);
+            return result;
+        }
     }
 
     module.exports = {
@@ -2002,6 +2032,16 @@
 
     Task.prototype.delete.implementation = async function () {
         const result = await serverProxy.tasks.deleteTask(this.id);
+        return result;
+    };
+
+    Task.prototype.backup.implementation = async function () {
+        const result = await serverProxy.tasks.backupTask(this.id);
+        return result;
+    };
+
+    Task.prototype.import.implementation = async function (file) {
+        const result = await serverProxy.tasks.importTask(file);
         return result;
     };
 

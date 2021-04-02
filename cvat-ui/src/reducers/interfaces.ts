@@ -70,6 +70,7 @@ export interface Task {
 }
 
 export interface TasksState {
+    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
@@ -98,6 +99,9 @@ export interface TasksState {
             status: string;
             error: string;
         };
+        backups: {
+            [tid: number]: boolean;
+        }
     };
 }
 

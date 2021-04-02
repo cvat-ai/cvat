@@ -276,7 +276,7 @@ class DataSerializer(serializers.ModelSerializer):
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'use_cache', 'copy_data')
+            'use_cache', 'copy_data', 'storage_method', 'storage')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -525,6 +525,7 @@ class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
+    path = serializers.CharField(max_length=1024, default='')
 
 class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
@@ -625,6 +626,9 @@ class LogEventSerializer(serializers.Serializer):
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
+
+class TaskFileSerializer(serializers.Serializer):
+    task_file = serializers.FileField()
 
 class ReviewSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)

@@ -36,7 +36,9 @@ const defaultState: TasksState = {
             status: '',
             error: '',
         },
+        backups: {},
     },
+    importing: false,
 };
 
 export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
@@ -236,6 +238,52 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                         ...deletes,
                     },
                 },
+            };
+        }
+        case TasksActionTypes.BACKUP_TASK: {
+            const { taskID } = action.payload;
+            const { backups } = state.activities;
+
+            backups[taskID] = true;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: {
+                        ...backups,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.BACKUP_TASK_FAILED:
+        case TasksActionTypes.BACKUP_TASK_SUCCESS: {
+            const { taskID } = action.payload;
+            const { backups } = state.activities;
+
+            delete backups[taskID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: {
+                        ...backups,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK: {
+            return {
+                ...state,
+                importing: true,
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_FAILED:
+        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
+            return {
+                ...state,
+                importing: false,
             };
         }
         case TasksActionTypes.CREATE_TASK: {

@@ -35,6 +35,12 @@ export enum TasksActionTypes {
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
+    BACKUP_TASK = 'BACKUP_TASK',
+    BACKUP_TASK_SUCCESS = 'BACKUP_TASK_SUCCESS',
+    BACKUP_TASK_FAILED = 'BACKUP_TASK_FAILED',
+    IMPORT_TASK = 'IMPORT_TASK',
+    IMPORT_TASK_SUCCESS = 'IMPORT_TASK_SUCCESS',
+    IMPORT_TASK_FAILED = 'IMPORT_TASK_FAILED',
 }
 
 function getTasks(): AnyAction {
@@ -213,6 +219,55 @@ export function loadAnnotationsAsync(
     };
 }
 
+function importTask(): AnyAction {
+    const action = {
+        type: TasksActionTypes.IMPORT_TASK,
+        payload: {},
+        importing: true,
+    };
+
+    return action;
+}
+
+function importTaskSuccess(taskId: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.IMPORT_TASK_SUCCESS,
+        payload: {
+            taskId,
+            importing: false,
+        },
+    };
+
+    return action;
+}
+
+function importTaskFailed(error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.IMPORT_TASK_FAILED,
+        payload: {
+            error,
+            importing: false,
+        },
+    };
+
+    return action;
+}
+
+export function importTaskAsync(
+    file: File,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(importTask());
+            let taskInstance = new cvat.classes.Task({});
+            taskInstance = await taskInstance.import(file);
+            dispatch(importTaskSuccess(taskInstance));
+        } catch (error) {
+            dispatch(importTaskFailed(error));
+        }
+    };
+}
+
 function exportDataset(task: any, exporter: any): AnyAction {
     const action = {
         type: TasksActionTypes.EXPORT_DATASET,
@@ -264,6 +319,57 @@ export function exportDatasetAsync(task: any, exporter: any): ThunkAction<Promis
         }
 
         dispatch(exportDatasetSuccess(task, exporter));
+    };
+}
+
+function backupTask(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.BACKUP_TASK,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function backupTaskSuccess(taskID: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.BACKUP_TASK_SUCCESS,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function backupTaskFailed(taskID: any, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.BACKUP_TASK_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
+export function backupTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(backupTask(taskInstance.id));
+
+        try {
+            const url = await taskInstance.backup();
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = url;
+            downloadAnchor.click();
+        } catch (error) {
+            dispatch(backupTaskFailed(taskInstance.id, error));
+        }
+
+        dispatch(backupTaskSuccess(taskInstance.id));
     };
 }
 

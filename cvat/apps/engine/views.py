@@ -2,23 +2,24 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import os
 import os.path as osp
-import io
 import shutil
 import traceback
+import uuid
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
-import cv2
 
+import cv2
 import django_rq
-from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -35,23 +36,34 @@ from rest_framework.response import Response
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views # pylint: disable=unused-import
+import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, Project, Review, Issue,
-    Comment, StorageMethodChoice, ReviewStatus, StorageChoice, DimensionType, Image
-)
-from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
-    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
-    CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer
-)
+from cvat.apps.engine.models import (Comment, DimensionType, Image, Issue, Job,
+                                     Project, Review, ReviewStatus,
+                                     StatusChoice, StorageChoice,
+                                     StorageMethodChoice, Task)
+from cvat.apps.engine.serializers import (AboutSerializer,
+                                          AnnotationFileSerializer,
+                                          BasicUserSerializer,
+                                          CombinedIssueSerializer,
+                                          CombinedReviewSerializer,
+                                          CommentSerializer,
+                                          DataMetaSerializer, DataSerializer,
+                                          ExceptionSerializer,
+                                          FileInfoSerializer, IssueSerializer,
+                                          JobSerializer, LabeledDataSerializer,
+                                          LogEventSerializer,
+                                          PluginsSerializer,
+                                          ProjectSearchSerializer,
+                                          ProjectSerializer,
+                                          ProjectWithoutTaskSerializer,
+                                          ReviewSerializer, RqStatusSerializer,
+                                          TaskFileSerializer, TaskSerializer,
+                                          UserSerializer)
+from cvat.apps.engine.backup import import_task
 from cvat.apps.engine.utils import av_scan_paths
 
 from . import models, task
@@ -355,20 +367,133 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return [perm() for perm in permissions]
 
-    def perform_create(self, serializer):
-        def validate_task_limit(owner):
-            admin_perm = auth.AdminRolePermission()
-            is_admin = admin_perm.has_permission(self.request, self)
-            if not is_admin and settings.RESTRICTIONS['task_limit'] is not None and \
-                Task.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['task_limit']:
-                raise serializers.ValidationError('The user has the maximum number of tasks')
+    def _validate_task_limit(self, owner):
+        admin_perm = auth.AdminRolePermission()
+        is_admin = admin_perm.has_permission(self.request, self)
+        if not is_admin and settings.RESTRICTIONS['task_limit'] is not None and \
+            Task.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['task_limit']:
+            raise serializers.ValidationError('The user has the maximum number of tasks')
 
+    def create(self, request):
+        action = self.request.query_params.get('action', None)
+        if action is None:
+            return super().create(request)
+        elif action == 'import':
+            self._validate_task_limit(owner=self.request.user)
+            if 'rq_id' in request.data:
+                rq_id = request.data['rq_id']
+            else:
+                rq_id = "{}@/api/v1/tasks/{}?action_import".format(request.user, uuid.uuid4())
+
+            queue = django_rq.get_queue("default")
+            rq_job = queue.fetch_job(rq_id)
+
+            if not rq_job:
+                serializer = TaskFileSerializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                task_file = serializer.validated_data['task_file']
+                fd, filename = mkstemp(prefix='cvat_')
+                with open(filename, 'wb+') as f:
+                    for chunk in task_file.chunks():
+                        f.write(chunk)
+                rq_job = queue.enqueue_call(
+                    func=import_task,
+                    args=(filename,),
+                    job_id=rq_id,
+                )
+                rq_job.meta['tmp_file'] = filename
+                rq_job.meta['tmp_file_descriptor'] = fd
+                rq_job.save_meta()
+            else:
+                if rq_job.is_finished:
+                    task_id = rq_job.return_value
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response({'id': task_id}, status=status.HTTP_201_CREATED)
+                elif rq_job.is_failed:
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    exc_info = str(rq_job.exc_info)
+                    rq_job.delete()
+
+                    # RQ adds a prefix with exception class name
+                    import_error_prefix = '{}.{}'.format(
+                        CvatImportError.__module__, CvatImportError.__name__)
+                    if exc_info.startswith(import_error_prefix):
+                        exc_info = exc_info.replace(import_error_prefix + ': ', '')
+                        return Response(data=exc_info,
+                            status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        return Response(data=exc_info,
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+        else:
+            raise serializers.ValidationError(
+                "Unexpected action specified for the request")
+
+    def retrieve(self, request, pk=None):
+        db_task = self.get_object() # force to call check_object_permissions
+        action = self.request.query_params.get('action', None)
+        if action is None:
+            return super().retrieve(request, pk)
+        elif action in ('export', 'download'):
+            queue = django_rq.get_queue("default")
+            rq_id = "/api/v1/tasks/{}?action_export".format(pk)
+
+            rq_job = queue.fetch_job(rq_id)
+            if rq_job:
+                last_task_update_time = timezone.localtime(db_task.updated_date)
+                request_time = rq_job.meta.get('request_time', None)
+                if request_time is None or request_time < last_task_update_time:
+                    rq_job.cancel()
+                    rq_job.delete()
+                else:
+                    if rq_job.is_finished:
+                        file_path = rq_job.return_value
+                        if action == "download" and osp.exists(file_path):
+                            rq_job.delete()
+
+                            timestamp = datetime.strftime(last_task_update_time,
+                                "%Y_%m_%d_%H_%M_%S")
+                            filename = "task_{}_backup_{}{}".format(
+                                db_task.name, timestamp,
+                                osp.splitext(file_path)[1])
+                            return sendfile(request, file_path, attachment=True,
+                                attachment_filename=filename.lower())
+                        else:
+                            if osp.exists(file_path):
+                                return Response(status=status.HTTP_201_CREATED)
+                    elif rq_job.is_failed:
+                        exc_info = str(rq_job.exc_info)
+                        rq_job.delete()
+                        return Response(exc_info,
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    else:
+                        return Response(status=status.HTTP_202_ACCEPTED)
+
+            ttl = dm.views.CACHE_TTL.total_seconds()
+            queue.enqueue_call(
+                func=dm.views.backup_task,
+                args=(pk, 'task_dump.zip'),
+                job_id=rq_id,
+                meta={ 'request_time': timezone.localtime() },
+                result_ttl=ttl, failure_ttl=ttl)
+            return Response(status=status.HTTP_202_ACCEPTED)
+
+        else:
+            raise serializers.ValidationError(
+                "Unexpected action specified for the request")
+
+
+    def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
         if owner:
-            validate_task_limit(owner)
+            self._validate_task_limit(owner)
             serializer.save()
         else:
-            validate_task_limit(self.request.user)
+            self._validate_task_limit(self.request.user)
             serializer.save(owner=self.request.user)
 
     def perform_destroy(self, instance):
