@@ -18,7 +18,7 @@ context('Search task feature.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.assignTaskToUser(Cypress.env('user')); // Assigne a task to an ures to check filter
+        cy.assignTaskToUser(Cypress.env('user')); // Assign a task to an ures to check filter
         cy.goToTaskList();
     });
 
