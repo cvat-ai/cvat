@@ -205,8 +205,10 @@ weight: 2
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
       - Reviewer – a user assigned to carry out the review, read more in the [review](/docs/for-users/user-guide/advanced/review/) section.
-      - `Copy`. By clicking Copy you will copy the job list to the clipboard.
+      - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
+
+      You can filter or sort jobs by status, as well as by assigner or reviewer.
 
 1.  Follow a link inside `Jobs` section to start annotation process.
     In some cases, you can have several links. It depends on size of your

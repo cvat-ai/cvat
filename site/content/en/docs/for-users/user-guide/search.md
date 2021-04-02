@@ -12,7 +12,7 @@ There are several options how to use the search.
 - Search for specific fields. How to perform:
   - `owner: admin` - all tasks created by the user who has the substring "admin" in his name
   - `assignee: employee` - all tasks which are assigned to a user who has the substring "employee" in his name
-  - `name: mighty` - all tasks with the substring "mighty" in their names
+  - `name: training` - all tasks with the substring "training" in their names
   - `mode: annotation` or `mode: interpolation` - all tasks with images or videos.
   - `status: annotation` or `status: validation` or `status: completed` - search by status
   - `id: 5` - task with id = 5.
