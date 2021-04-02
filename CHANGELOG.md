@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - Unreleased
 
 ### Added
--
+- Documentation on mask annotation (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 
 ### Changed
 -
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Export of instance masks with holes (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 
 ### Security
 -
