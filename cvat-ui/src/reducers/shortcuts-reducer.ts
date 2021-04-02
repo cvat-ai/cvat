@@ -293,6 +293,15 @@ const defaultKeyMap = ({
     },
 } as any) as KeyMap;
 
+for (let i = 0; i < 10; i++) {
+    defaultKeyMap[`SWITCH_LABEL_${i}`] = {
+        name: `Switch label ${i}`,
+        description: `Switch label to label mapped to key ${i}`,
+        sequences: [`${i}`],
+        action: 'keydown',
+    };
+}
+
 const defaultState: ShortcutsState = {
     visibleShortcutsHelp: false,
     keyMap: defaultKeyMap,

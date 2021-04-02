@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,9 +18,13 @@ interface StateToProps {
     label: any;
     labelName: string;
     labelColor: string;
+    labelId: number;
     objectStates: any[];
     jobInstance: any;
     frameNumber: any;
+    label2NumberMap: {
+        [key: number]: number;
+    };
 }
 
 interface DispatchToProps {
@@ -35,6 +39,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
+            label2NumberMap,
         },
     } = state;
 
@@ -44,9 +49,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         label,
         labelColor: label.color,
         labelName: label.name,
+        labelId: label.id,
         objectStates,
         jobInstance,
         frameNumber,
+        label2NumberMap,
     };
 }
 
@@ -127,8 +134,10 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
 
     private switchHidden(value: boolean): void {
         const { updateAnnotations } = this.props;
+        const { ownObjectStates, visible } = this.state;
 
-        const { ownObjectStates } = this.state;
+        if (!visible) return;
+
         for (const state of ownObjectStates) {
             state.hidden = value;
         }
@@ -138,8 +147,10 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
 
     private switchLock(value: boolean): void {
         const { updateAnnotations } = this.props;
+        const { ownObjectStates, visible } = this.state;
 
-        const { ownObjectStates } = this.state;
+        if (!visible) return;
+
         for (const state of ownObjectStates) {
             state.lock = value;
         }
@@ -148,17 +159,20 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
+        const {
+            labelName, labelColor, labelId, label2NumberMap,
+        } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
-
-        const { labelName, labelColor } = this.props;
 
         return (
             <LabelItemComponent
                 labelName={labelName}
                 labelColor={labelColor}
+                labelId={labelId}
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
+                label2NumberMap={label2NumberMap}
                 hideStates={this.hideStates}
                 showStates={this.showStates}
                 lockStates={this.lockStates}

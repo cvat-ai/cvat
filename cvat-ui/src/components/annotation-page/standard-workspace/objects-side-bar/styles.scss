@@ -309,6 +309,10 @@
     &:hover {
         @extend .cvat-objects-sidebar-label-active-item;
     }
+
+    .ant-btn-dashed {
+        border-color: $objects-bar-icons-color;
+    }
 }
 
 .cvat-label-item-color-button {
@@ -360,4 +364,8 @@
     :first-child {
         margin-right: $grid-unit-size;
     }
+}
+
+.cvat-objects-sidebar-label-item-disabled {
+    opacity: 0.4;
 }

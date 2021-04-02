@@ -454,6 +454,9 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    label2NumberMap: {
+        [lid: number]: number;
+    };
     colors: any[];
     filtersPanelVisible: boolean;
     requestReviewDialogVisible: boolean;

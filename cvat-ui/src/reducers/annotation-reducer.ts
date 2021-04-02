@@ -100,6 +100,7 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
+    label2NumberMap: {},
     aiToolsRef: React.createRef(),
     colors: [],
     sidebarCollapsed: false,
@@ -144,6 +145,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             if (job.task.dimension === DimensionType.DIM_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
             }
+
+            const label2NumberMap: any = {};
+            job.task.labels.slice(0, 10).forEach((label: any, idx: number) => {
+                label2NumberMap[idx] = label.id;
+            });
             return {
                 ...state,
                 job: {
@@ -189,6 +195,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
+                label2NumberMap,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
             };
         }
