@@ -253,7 +253,7 @@ def _create_thread(tid, data):
             if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()
-                db_data.storage = StorageChoice.LOCAL
+                db_data.storage = models.StorageChoice.LOCAL
             extractor = MEDIA_TYPES[media_type]['extractor'](
                 source_path=source_paths,
                 step=db_data.get_frame_step(),
