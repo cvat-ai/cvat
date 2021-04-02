@@ -156,10 +156,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints,
         } = this.state;
 
-        const { normalizedKeyMap, labels, shapeType } = this.props;
+        const {
+            normalizedKeyMap, labels, shapeType, canvasInstance,
+        } = this.props;
 
         return (
             <DrawShapePopoverComponent
+                canvasInstance={canvasInstance}
                 labels={labels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}

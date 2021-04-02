@@ -6,7 +6,7 @@ const jsonLogic = require('json-logic-js');
 const { AttributeType, ObjectType } = require('./enums');
 
 function adjustName(name) {
-    return name.replaceAll('.', '\u2219');
+    return name.replace(/\./g, '\u2219');
 }
 
 class AnnotationsFilter {

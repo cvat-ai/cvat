@@ -48,7 +48,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
         }
     };
 
-    const adjustName = (name: string): string => name.replaceAll('.', '\u2219');
+    const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
 
     const getAttributesSubfields = (): Record<string, any> => {
         const subfields: Record<string, any> = {};
@@ -251,7 +251,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
 
     return (
         <Modal
-            className='cvat-filters-modal'
+            className={visible ? 'cvat-filters-modal cvat-filters-modal-visible' : 'cvat-filters-modal'}
             visible={visible}
             closable={false}
             width={800}

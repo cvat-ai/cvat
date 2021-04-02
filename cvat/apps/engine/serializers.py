@@ -70,7 +70,7 @@ class LabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set',
         default=[])
     color = serializers.CharField(allow_blank=True, required=False)
-    deleted = serializers.BooleanField(required=False)
+    deleted = serializers.BooleanField(required=False, help_text="Delete label if value is true from proper Task/Project object")
 
     class Meta:
         model = models.Label

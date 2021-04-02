@@ -522,6 +522,7 @@ export interface WorkspaceSettingsState {
     automaticBordering: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
+    intelligentPolygonCrop: boolean;
 }
 
 export interface ShapesSettingsState {
