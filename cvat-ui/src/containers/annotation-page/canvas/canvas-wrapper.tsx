@@ -5,6 +5,7 @@
 import { connect } from 'react-redux';
 import { KeyMap } from 'utils/mousetrap-react';
 
+import { KeyMap } from 'utils/mousetrap-react';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper';
 import {
     confirmCanvasReady,
@@ -159,7 +160,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 resetZoom,
             },
             workspace: {
-                aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering,
+                aamZoomMargin,
+                showObjectsTextAlways,
+                showAllInterpolationTracks,
+                automaticBordering,
+                intelligentPolygonCrop,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
@@ -207,6 +212,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         automaticBordering,
+        intelligentPolygonCrop,
         workspace,
         keyMap,
         canvasBackgroundColor,

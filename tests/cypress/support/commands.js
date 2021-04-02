@@ -17,6 +17,10 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
     cy.url().should('match', /\/tasks$/);
+    cy.document().then((doc) => {
+        const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
+        loadSettingFailNotice.length > 0 ? cy.closeNotification('.cvat-notification-notice-load-settings-fail') : null;
+    });
 });
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
@@ -322,6 +326,12 @@ Cypress.Commands.add('closeSettings', () => {
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
+Cypress.Commands.add('saveSettings', () => {
+    cy.get('.cvat-settings-modal').within(() => {
+        cy.contains('button', 'Save').click();
+    });
+});
+
 Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
@@ -570,34 +580,6 @@ Cypress.Commands.add('getScaleValue', () => {
         .then(($styles) => {
             return Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
         });
-});
-
-Cypress.Commands.add('writeFilterValue', (clear, filterValue) => {
-    if (clear) {
-        cy.get('.cvat-annotations-filters-input').within(() => {
-            cy.get('[aria-label="close-circle"]').click();
-        });
-    }
-    cy.get('.cvat-annotations-filters-input')
-        .type(`${filterValue}{Enter}`)
-        .within(() => {
-            cy.get('.ant-select-selection-item-content').should('have.text', filterValue);
-        });
-});
-
-Cypress.Commands.add('selectFilterValue', (clear, filterValue) => {
-    if (clear) {
-        cy.get('.cvat-annotations-filters-input').within(() => {
-            cy.get('[aria-label="close-circle"]').click();
-        });
-    }
-    cy.get('body').click();
-    cy.get('.cvat-annotations-filters-input').click();
-    cy.contains('.cvat-annotations-filters-input-history-element', filterValue).scrollIntoView().click();
-    cy.get('body').click();
-    cy.get('.cvat-annotations-filters-input').within(() => {
-        cy.contains('.ant-select-selection-item-content', filterValue);
-    });
 });
 
 Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
