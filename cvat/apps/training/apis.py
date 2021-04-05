@@ -289,13 +289,15 @@ class TrainingServerAPI(TrainingServerAPIAbs):
                        labels: List[dict] = None) -> dict:
         all_tasks = self.__get_tasks()
         task_type = self.TRAINING_CLASS.get(project_class)
+        task_algo = 'Retinanet - TF2'
         tasks = [
             next(({'temp_id': '_1_', **task}
                   for task in all_tasks
                   if task['task_type'] == 'DATASET'), {}),
             next(({'temp_id': '_2_', **task}
                   for task in all_tasks
-                  if task['task_type'] == task_type), {}),
+                  if task['task_type'] == task_type and
+                     task['algorithm_name'] == task_algo), {}),
         ]
         labels = [{
             'name': label['name'],
