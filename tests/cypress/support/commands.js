@@ -541,7 +541,7 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
 Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
     cy.collectLabelsName().then((labelsNames) => {
         if (additionalLabels.some((el) => labelsNames.indexOf(el) === -1)) {
-            cy.contains('button', 'Add label').click();
+            cy.get('.cvat-constructor-viewer-new-item').click();
             for (let j = 0; j < additionalLabels.length; j++) {
                 cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
                 if (j !== additionalLabels.length - 1) {
