@@ -266,35 +266,17 @@ class TaskImporter():
         return db_data
 
     def _create_frames(self, db_data, frames):
-        for frame in frames:
+        for idx, frame in enumerate(frames):
             frame['data'] = db_data
             frame['path'] = frame.pop('name')
+            frame['frame'] = idx
 
         if self._db_task.mode == 'annotation':
             if self._db_task.dimension == models.DimensionType.DIM_2D:
-                models.Image.objects.bulk_create(frames)
+                models.Image.objects.bulk_create(models.Image(**frame) for frame in frames)
             # else: TODO
         else:
             models.Video.objects.create(**frames[0])
-
-    def _create_task(self):
-        data = self._manifest.pop('data')
-        frames = data.pop('frames')
-        labels = self._manifest.pop('labels')
-        segments = self._manifest.pop('segments')
-
-        db_data = self._create_data(data)
-
-        self._prepare_task_meta(self._manifest)
-        self._manifest['data_id'] = db_data.id
-
-        self._db_task = models.Task.objects.create(data=db_data, **self._manifest)
-
-        self._create_frames(db_data, frames)
-
-        labels_mapping, attributes_mapping = self._create_labels(self._db_task, labels)
-
-        self._create_segments(self._db_task, labels_mapping, attributes_mapping, segments)
 
     def _import_task(self):
         data = self._manifest.pop('data')
@@ -309,7 +291,10 @@ class TaskImporter():
 
         self._db_task = models.Task.objects.create(data=db_data, **self._manifest)
 
-        self._create_frames(db_data, frames)
+        try:
+            self._create_frames(db_data, frames)
+        except Exception as e:
+            print(e)
 
         self._labels_mapping, self._attributes_mapping = self._create_labels(self._db_task, labels)
 

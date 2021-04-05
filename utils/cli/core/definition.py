@@ -290,3 +290,50 @@ upload_parser.add_argument(
     default='CVAT 1.1',
     help='annotation format (default: %(default)s)'
 )
+
+#######################################################################
+# Export task
+#######################################################################
+
+export_task_parser = task_subparser.add_parser(
+    'export',
+    description='Export a CVAT task.'
+)
+export_task_parser.add_argument(
+    'task_id',
+    type=int,
+    help='task ID'
+)
+export_task_parser.add_argument(
+    'filename',
+    type=str,
+    help='output file'
+)
+export_task_parser.add_argument(
+    '--export_verification_period',
+    default=3,
+    type=int,
+    help='''number of seconds to wait until checking
+            if the export of the task is completed'''
+)
+
+#######################################################################
+# Import task
+#######################################################################
+
+import_task_parser = task_subparser.add_parser(
+    'import',
+    description='import a CVAT task.'
+)
+import_task_parser.add_argument(
+    'filename',
+    type=str,
+    help='upload file'
+)
+import_task_parser.add_argument(
+    '--import_verification_period',
+    default=3,
+    type=int,
+    help='''number of seconds to wait until checking
+            if the import of the task is completed'''
+)
