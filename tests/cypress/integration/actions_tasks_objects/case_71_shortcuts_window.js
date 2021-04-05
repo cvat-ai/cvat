@@ -8,7 +8,7 @@ import { taskName } from '../../support/const';
 
 context('Shortcuts window.', () => {
     const caseId = '71';
-    const KeyCodeF1 = 112;
+    const keyCodeF1 = 112;
     let shortcutsTableTrCount = 0;
 
     before(() => {
@@ -17,7 +17,7 @@ context('Shortcuts window.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Press "F1" from a task. Shortcuts window be visible. Closing the modal window by button "OK".', () => {
-            cy.get('body').trigger('keydown', { keyCode: KeyCodeF1 });
+            cy.get('body').trigger('keydown', { keyCode: keyCodeF1 });
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible').within(() => {
                 cy.get('.cvat-shortcuts-modal-window-table').within(() => {
                     cy.get('tr').should('exist').then(($shortcutsTableTrCount) => {
@@ -31,7 +31,7 @@ context('Shortcuts window.', () => {
 
         it('Open a job. Press "F1". Shortcuts window be visible. Closing the modal window by F1.', () => {
             cy.openJob();
-            cy.get('body').trigger('keydown', { keyCode: KeyCodeF1 });
+            cy.get('body').trigger('keydown', { keyCode: keyCodeF1 });
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible').within(() => {
                 cy.get('.cvat-shortcuts-modal-window-table').within(() => {
                     cy.get('tr').should('exist').then(($shortcutsTableTrCount) => {
@@ -39,7 +39,7 @@ context('Shortcuts window.', () => {
                     });
                 });
             });
-            cy.get('body').trigger('keydown', { keyCode: KeyCodeF1 });
+            cy.get('body').trigger('keydown', { keyCode: keyCodeF1 });
             cy.get('.cvat-shortcuts-modal-window').should('not.be.visible');
         });
     });
