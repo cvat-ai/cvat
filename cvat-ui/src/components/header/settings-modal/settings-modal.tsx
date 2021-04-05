@@ -39,6 +39,7 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
         localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
         notification.success({
             message: 'Settings was successfully saved',
+            className: 'cvat-notification-notice-save-settings-success',
         });
     };
 
@@ -62,6 +63,7 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
         } catch {
             notification.error({
                 message: 'Failed to load settings from local storage',
+                className: 'cvat-notification-notice-load-settings-fail',
             });
         }
     }, []);
