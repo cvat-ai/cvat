@@ -167,16 +167,18 @@ class Image(models.Model):
 
 
 class TrainingProject(models.Model):
+    class ProjectClass(models.TextChoices):
+        DETECTION = 'OD', _('Object Detection')
+
     host = models.CharField(max_length=256)
     username = models.CharField(max_length=256)
     password = models.CharField(max_length=256)
     training_id = models.CharField(max_length=64)
     enabled = models.BooleanField(null=True)
+    project_class = models.CharField(max_length=2, choices=ProjectClass.choices, null=True, blank=True)
 
 
 class Project(models.Model):
-    class ProjectClass(models.TextChoices):
-        DETECTION = 'OD', _('Object Detection')
 
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
@@ -189,7 +191,6 @@ class Project(models.Model):
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
     training_project = models.ForeignKey(TrainingProject, null=True, blank=True, on_delete=models.SET_NULL)
-    project_class = models.CharField(max_length=2, choices=ProjectClass.choices, null=True, blank=True)
 
     def get_project_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))

@@ -19,17 +19,11 @@ import patterns from 'utils/validation-patterns';
 import { CombinedState } from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
-import CreateProjectContext, { ICreateProjectContext } from './create-project.context';
+import CreateProjectContext from './create-project.context';
 
 const { Option } = Select;
 
 function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
-    const { projectClass, trainingEnabled } = useContext<ICreateProjectContext>(CreateProjectContext);
-
-    useEffect(() => {
-        trainingEnabled.set(false);
-    }, [projectClass.value]);
-
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
@@ -45,13 +39,6 @@ function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }
             >
                 <Input />
             </Form.Item>
-
-            <Form.Item name='project_class' hasFeedback label='Class'>
-                <Select value={projectClass.value} onChange={(v) => projectClass.set(v)}>
-                    <Option value=''>--Not Selected--</Option>
-                    <Option value='OD'>Detection</Option>
-                </Select>
-            </Form.Item>
         </Form>
     );
 }
@@ -61,6 +48,13 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     const projectClassesForTraining = ['OD'];
     return (
         <Form layout='vertical' ref={formRef}>
+            <Form.Item name='project_class' hasFeedback label='Class'>
+                <Select value={projectClass.value} onChange={(v) => projectClass.set(v)}>
+                    <Option value=''>--Not Selected--</Option>
+                    <Option value='OD'>Detection</Option>
+                </Select>
+            </Form.Item>
+
             <Form.Item name='enabled' label='Adaptive auto annotation' initialValue={false}>
                 <Switch
                     disabled={!projectClassesForTraining.includes(projectClass.value)}
@@ -68,6 +62,7 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
                     onClick={() => trainingEnabled.set(!trainingEnabled.value)}
                 />
             </Form.Item>
+
             <Form.Item
                 name='host'
                 label='Host'
@@ -169,7 +164,6 @@ export default function CreateProjectContent(): JSX.Element {
             const advancedValues = await advancedFormRef.current.validateFields();
             const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
             projectData.name = basicValues.name;
-            projectData.project_class = basicValues.project_class;
             projectData.training_project = {};
             for (const [field, value] of Object.entries(adaptiveAutoAnnotationValues || {})) {
                 projectData.training_project[field] = value;

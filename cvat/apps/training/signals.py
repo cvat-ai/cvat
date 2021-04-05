@@ -11,18 +11,16 @@ from cvat.apps.training.jobs import (
 
 @receiver(post_save, sender=Project, dispatch_uid="create_training_project")
 def create_training_project(instance: Project, **kwargs):
-    if instance.project_class and instance.training_project:
+    if instance.training_project:
         create_training_project_job.delay(instance.id)
 
 
 @receiver(post_save, sender=Task, dispatch_uid='upload_images_to_training_project')
-def upload_images_to_training_project(instance: Task, update_fields, **kwargs):
-    if update_fields \
-            and 'status' in update_fields \
-            and instance.status == StatusChoice.ANNOTATION \
-            and instance.project_id \
-            and instance.project.project_class \
-            and instance.project.training_project:
+def upload_images_to_training_project(instance: Task, **kwargs):
+    if (instance.status == StatusChoice.ANNOTATION and
+        instance.data and instance.data.size != 0 and \
+        instance.project_id and instance.project.training_project):
+
         upload_images_job.delay(instance.id)
 
 

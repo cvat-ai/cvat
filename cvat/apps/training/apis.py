@@ -8,7 +8,7 @@ import requests
 
 from cacheops import cache, CacheMiss
 
-from cvat.apps.engine.models import Project, ShapeType
+from cvat.apps.engine.models import TrainingProject, ShapeType
 
 
 class TrainingServerAPIAbs(ABC):
@@ -23,7 +23,7 @@ class TrainingServerAPIAbs(ABC):
         pass
 
     @abstractmethod
-    def create_project(self, name: str, description: str = '', project_class: Project.ProjectClass = None,
+    def create_project(self, name: str, description: str = '', project_class: TrainingProject.ProjectClass = None,
                        labels: List[dict] = None):
         pass
 
@@ -61,7 +61,7 @@ def retry(amount: int = 2) -> Callable:
 
 class TrainingServerAPI(TrainingServerAPIAbs):
     TRAINING_CLASS = {
-        Project.ProjectClass.DETECTION: "DETECTION"
+        TrainingProject.ProjectClass.DETECTION: "DETECTION"
     }
 
     @staticmethod
@@ -285,7 +285,7 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         result = response.json()
         return result
 
-    def create_project(self, name: str, description: str = '', project_class: Project.ProjectClass = None,
+    def create_project(self, name: str, description: str = '', project_class: TrainingProject.ProjectClass = None,
                        labels: List[dict] = None) -> dict:
         all_tasks = self.__get_tasks()
         task_type = self.TRAINING_CLASS.get(project_class)

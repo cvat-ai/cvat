@@ -75,20 +75,21 @@ def save_frame_prediction_to_cache_job(cache_key: str,
 
 @job
 def upload_images_job(task_id: int):
-    task = Task.objects.get(pk=task_id)
-    frame_provider = FrameProvider(task.data)
-    frames = frame_provider.get_frames()
-    api = TrainingServerAPI(
-        host=task.project.training_project.host,
-        username=task.project.training_project.username,
-        password=task.project.training_project.password,
-    )
-    for i, (buffer, _) in enumerate(frames):
-        training_image_id = api.upload_image(training_id=task.project.training_project.training_id, buffer=buffer)
-        if training_image_id:
-            TrainingProjectImage.objects.create(task=task, idx=i,
-                                                training_image_id=training_image_id)
+    if TrainingProjectImage.objects.filter(task_id=task_id).count() is 0:
+        task = Task.objects.get(pk=task_id)
+        frame_provider = FrameProvider(task.data)
+        frames = frame_provider.get_frames()
+        api = TrainingServerAPI(
+            host=task.project.training_project.host,
+            username=task.project.training_project.username,
+            password=task.project.training_project.password,
+        )
 
+        for i, (buffer, _) in enumerate(frames):
+            training_image_id = api.upload_image(training_id=task.project.training_project.training_id, buffer=buffer)
+            if training_image_id:
+                TrainingProjectImage.objects.create(task=task, idx=i,
+                                                    training_image_id=training_image_id)
 
 def __add_fields_to_shape(shape: dict, frame: int, data: Data, labels_mapping: dict) -> dict:
     image = Image.objects.get(frame=frame, data=data)
@@ -145,8 +146,6 @@ def upload_annotation_to_training_project_job(job_id: int):
 @job
 def create_training_project_job(project_id: int):
     cvat_project = Project.objects.get(pk=project_id)
-    if not cvat_project.project_class:
-        cvat_project.project_class = cvat_project.ProjectClass.DETECTION
     training_project = cvat_project.training_project
     api = TrainingServerAPI(
         host=cvat_project.training_project.host,
@@ -160,7 +159,7 @@ def create_training_project(cvat_project, training_project, api):
     labels = cvat_project.label_set.all()
     training_project_resp = api.create_project(
         name=f'{cvat_project.name}_cvat',
-        project_class=cvat_project.project_class,
+        project_class=training_project.project_class,
         labels=[{'name': label.name} for label in labels]
     )
     if training_project_resp.get('id'):

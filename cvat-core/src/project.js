@@ -34,7 +34,6 @@
                 updated_date: undefined,
                 task_subsets: undefined,
                 training_project: undefined,
-                project_class: undefined,
             };
 
             for (const property in data) {
@@ -100,12 +99,6 @@
                         },
                     },
 
-                    project_class: {
-                        get: () => data.project_class,
-                        set: (value) => {
-                            data.project_class = value;
-                        },
-                    },
                     /**
                      * @name status
                      * @type {module:API.cvat.enums.TaskStatus}
@@ -292,7 +285,6 @@
         if (typeof this.id !== 'undefined') {
             const projectData = {
                 name: this.name,
-                project_class: this.project_class,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
                 labels: [...this._internalData.labels.map((el) => el.toJSON())],
@@ -305,7 +297,6 @@
 
         const projectSpec = {
             name: this.name,
-            project_class: this.project_class,
             labels: [...this.labels.map((el) => el.toJSON())],
             training_project: trainingProject,
         };

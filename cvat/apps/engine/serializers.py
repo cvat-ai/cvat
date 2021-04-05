@@ -13,7 +13,6 @@ from django.contrib.auth.models import User, Group
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import TrainingProject
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -428,14 +427,10 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
 
 
 class TrainingProjectSerializer(serializers.ModelSerializer):
-    host = serializers.CharField(max_length=256, required=False)
-    username = serializers.CharField(max_length=256, required=False)
-    password = serializers.CharField(max_length=256, required=False)
-
     class Meta:
-        model = TrainingProject
-        fields = ('host', 'username', 'password', 'enabled')
-        write_once_fields = ('host', 'username', 'password')
+        model = models.TrainingProject
+        fields = ('host', 'username', 'password', 'enabled', 'project_class')
+        write_once_fields = ('host', 'username', 'password', 'project_class')
 
 
 class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
@@ -449,7 +444,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
-                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project', 'project_class')
+                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
         ordering = ['-id']
 
