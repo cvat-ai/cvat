@@ -164,10 +164,14 @@ export default function CreateProjectContent(): JSX.Element {
             const advancedValues = await advancedFormRef.current.validateFields();
             const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
             projectData.name = basicValues.name;
-            projectData.training_project = {};
-            for (const [field, value] of Object.entries(adaptiveAutoAnnotationValues || {})) {
-                projectData.training_project[field] = value;
+            projectData.training_project = null;
+            if (adaptiveAutoAnnotationValues) {
+                projectData.training_project = {};
+                for (const [field, value] of Object.entries(adaptiveAutoAnnotationValues)) {
+                    projectData.training_project[field] = value;
+                }
             }
+
             for (const [field, value] of Object.entries(advancedValues)) {
                 projectData[field] = value;
             }
