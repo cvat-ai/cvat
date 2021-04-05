@@ -81,8 +81,9 @@ weight = 1
 section = ["HTML", "print"]
 
 [params]
-copyright = "The Docsy Authors"
-privacy_policy = "https://policies.google.com/privacy"
+intel_terms_of_use = "https://www.intel.com/content/www/us/en/legal/terms-of-use.html"
+intel_privacy_notice = "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html"
+cvat_terms_of_use = "https://cvat.org/api/v1/restrictions/terms-of-use"
 
 # First one is picked as the Twitter card image if not set on page.
 # images = ["images/project-illustration.png"]
@@ -161,11 +162,11 @@ enable = false
 
 [params.links]
 # End user relevant links. These will show up on left side of footer and in the community page if you have one.
-[[params.links.user]]
-	name = "User mailing list"
-	url = "https://example.org/mail"
-	icon = "fa fa-envelope"
-        desc = "Discussion and help from your fellow users"
+# [[params.links.user]]
+#	name = "User mailing list"
+#	url = "https://example.org/mail"
+#	icon = "fa fa-envelope"
+#       desc = "Discussion and help from your fellow users"
 [[params.links.user]]
 	name ="Gitter"
 	url = "https://gitter.im/opencv-cvat"
@@ -182,8 +183,8 @@ enable = false
 	url = "https://github.com/openvinotoolkit/cvat"
 	icon = "fab fa-github"
         desc = "Development takes place here!"
-[[params.links.developer]]
-	name = "Developer mailing list"
-	url = "https://example.org/mail"
-	icon = "fa fa-envelope"
-        desc = "Discuss development issues around the project"
+# [[params.links.developer]]
+#	name = "Developer mailing list"
+#	url = "https://example.org/mail"
+#	icon = "fa fa-envelope"
+#        desc = "Discuss development issues around the project"

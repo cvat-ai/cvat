@@ -4,19 +4,8 @@ Add styles or override variables from the theme here.
 
 */
 
+@import "custom";
+
 $enable-gradients: false;
 $enable-rounded: true;
 $enable-shadows: true;
-
-/*
-Increased left padding on the sidebar of documentation
-*/
-
-.td-sidebar-nav__section-title .td-sidebar-nav__section {
-        padding-left: 0.3rem;
-    }
-
-
-#docs .td-box .row {
-    padding-top: 5vw;
-}

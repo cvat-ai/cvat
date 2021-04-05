@@ -18,7 +18,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 
 
-{{% blocks/feature icon="fa-server" title="[Instalation Guide](/docs/for-users/installation/)" %}}
+{{% blocks/feature icon="fa-server" title="[Installation Guide](/docs/for-users/installation/)" %}}
 
 
 CVAT installation guide for different operating systems.
@@ -45,7 +45,7 @@ Answers to frequently asked questions.
 {{% /blocks/feature %}}
 
 
-{{% blocks/feature icon="fa-magic" title="[Instalation Auto Annotation](/docs/for-users/installation_automatic_annotation/)" %}}
+{{% blocks/feature icon="fa-magic" title="[Installation Auto Annotation](/docs/for-users/installation_automatic_annotation/)" %}}
 
 
 This page provides information about the installation of components needed for semi-automatic and automatic annotation.
