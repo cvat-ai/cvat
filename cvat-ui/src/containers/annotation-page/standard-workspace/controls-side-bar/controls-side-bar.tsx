@@ -106,7 +106,7 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         updateAnnotation(statesToUpdate: any[]): void {
             dispatch(updateAnnotationsAsync(statesToUpdate));
-        }
+        },
     };
 }
 
