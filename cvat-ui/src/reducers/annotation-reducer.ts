@@ -100,7 +100,7 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
-    label2NumberMap: {},
+    label2KeyMap: {},
     aiToolsRef: React.createRef(),
     colors: [],
     sidebarCollapsed: false,
@@ -146,9 +146,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 workspaceSelected = Workspace.STANDARD3D;
             }
 
-            const label2NumberMap: any = {};
+            const label2KeyMap: any = {};
             job.task.labels.slice(0, 10).forEach((label: any, idx: number) => {
-                label2NumberMap[idx] = label.id;
+                label2KeyMap[label.id] = ((idx + 1) % 10).toString();
             });
             return {
                 ...state,
@@ -195,7 +195,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                label2NumberMap,
+                label2KeyMap,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
             };
         }
@@ -1136,6 +1136,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         data: context,
                         hidden: state.player.contextImage.hidden,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.SET_LABEL2KEY_MAP: {
+            const { label2KeyMap } = action.payload;
+
+            return {
+                ...state,
+                label2KeyMap,
+            };
+        }
+        case AnnotationActionTypes.SET_DRAWING_LABEL_ID: {
+            return {
+                ...state,
+                drawing: {
+                    ...state.drawing,
+                    activeLabelID: action.payload.labelId,
                 },
             };
         }

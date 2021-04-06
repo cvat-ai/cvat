@@ -369,3 +369,23 @@
 .cvat-objects-sidebar-label-item-disabled {
     opacity: 0.4;
 }
+
+.cvat-label-select-number-popover {
+    margin-top: -$grid-unit-size;
+    margin-bottom: -$grid-unit-size;
+
+    .ant-row {
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
+    }
+
+    .ant-col {
+        display: flex;
+        justify-content: center;
+    }
+
+    .ant-btn > span {
+        width: 60px;
+        overflow-x: hidden;
+    }
+}

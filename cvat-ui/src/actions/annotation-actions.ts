@@ -192,6 +192,8 @@ export enum AnnotationActionTypes {
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
     HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
     GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
+    SET_LABEL2KEY_MAP = 'SET_LABEL2KEY_MAP',
+    SET_DRAWING_LABEL_ID = 'SET_DRAWING_LABEL_ID',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1556,5 +1558,23 @@ export function getContextImage(): ThunkAction {
                 },
             });
         }
+    };
+}
+
+export function setLabel2KeyMap(label2KeyMap: {[lid: number]: string}): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_LABEL2KEY_MAP,
+        payload: {
+            label2KeyMap,
+        },
+    };
+}
+
+export function setDrawingLabel(labelId: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_DRAWING_LABEL_ID,
+        payload: {
+            labelId,
+        },
     };
 }

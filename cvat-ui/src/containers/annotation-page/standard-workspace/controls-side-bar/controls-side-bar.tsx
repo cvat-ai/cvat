@@ -14,6 +14,8 @@ import {
     repeatDrawShapeAsync,
     pasteShapeAsync,
     resetAnnotationsGroup,
+    setDrawingLabel,
+    updateAnnotationsAsync,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
@@ -23,9 +25,14 @@ interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
+    activatedStateID: number | null;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     labels: any[];
+    annotationStates: any[];
+    label2KeyMap: {
+        [lid: number]: string;
+    }
 }
 
 interface DispatchToProps {
@@ -37,6 +44,8 @@ interface DispatchToProps {
     repeatDrawShape(): void;
     pasteShape(): void;
     redrawShape(): void;
+    changeDrawingLabelId(labelId: number): void;
+    updateAnnotation(statesToUpdate: any[]): void
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -44,6 +53,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
             job: { labels },
+            annotations: { activatedStateID, states },
+            label2KeyMap,
         },
         settings: {
             player: { rotateAll },
@@ -55,9 +66,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         rotateAll,
         canvasInstance,
         activeControl,
+        activatedStateID,
+        annotationStates: states,
         labels,
         normalizedKeyMap,
         keyMap,
+        label2KeyMap,
     };
 }
 
@@ -87,6 +101,12 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         redrawShape(): void {
             dispatch(redrawShapeAsync());
         },
+        changeDrawingLabelId(labelId: number): void {
+            dispatch(setDrawingLabel(labelId));
+        },
+        updateAnnotation(statesToUpdate: any[]): void {
+            dispatch(updateAnnotationsAsync(statesToUpdate));
+        }
     };
 }
 

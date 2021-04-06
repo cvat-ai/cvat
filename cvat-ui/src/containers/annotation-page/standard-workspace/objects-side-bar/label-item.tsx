@@ -22,7 +22,7 @@ interface StateToProps {
     objectStates: any[];
     jobInstance: any;
     frameNumber: any;
-    label2NumberMap: {
+    label2KeyMap: {
         [key: number]: number;
     };
 }
@@ -39,7 +39,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
-            label2NumberMap,
+            label2KeyMap,
         },
     } = state;
 
@@ -53,7 +53,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         objectStates,
         jobInstance,
         frameNumber,
-        label2NumberMap,
+        label2KeyMap,
     };
 }
 
@@ -160,7 +160,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            labelName, labelColor, labelId, label2NumberMap,
+            labelName, labelColor, labelId, label2KeyMap,
         } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
 
@@ -172,7 +172,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
-                label2NumberMap={label2NumberMap}
+                label2KeyMap={label2KeyMap}
                 hideStates={this.hideStates}
                 showStates={this.showStates}
                 lockStates={this.lockStates}

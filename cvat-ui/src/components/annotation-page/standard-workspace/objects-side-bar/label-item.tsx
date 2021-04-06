@@ -10,6 +10,8 @@ import {
     LockFilled, UnlockOutlined, EyeInvisibleFilled, EyeOutlined,
 } from '@ant-design/icons';
 
+import LabelKeySelectorPopover from './label-key-selector-popover';
+
 interface Props {
     labelName: string;
     labelColor: string;
@@ -17,8 +19,8 @@ interface Props {
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
-    label2NumberMap: {
-        [key: number]: number;
+    label2KeyMap: {
+        [key: number]: string;
     };
     hideStates(): void;
     showStates(): void;
@@ -34,7 +36,7 @@ function LabelItemComponent(props: Props): JSX.Element {
         visible,
         statesHidden,
         statesLocked,
-        label2NumberMap,
+        label2KeyMap,
         hideStates,
         showStates,
         lockStates,
@@ -52,7 +54,7 @@ function LabelItemComponent(props: Props): JSX.Element {
         },
     };
 
-    const labelNumberPair = Object.entries(label2NumberMap).filter((pair) => pair[1] === labelId);
+    const labelNumberPair = Object.entries(label2KeyMap).filter((pair) => pair[0] === labelId.toString());
 
     return (
         <Row
@@ -71,9 +73,11 @@ function LabelItemComponent(props: Props): JSX.Element {
                 </Text>
             </Col>
             <Col span={3}>
-                <Button size='small' ghost type='dashed'>
-                    {labelNumberPair.length ? labelNumberPair[0][0] : '\u00A0'}
-                </Button>
+                <LabelKeySelectorPopover labelId={+labelNumberPair[0][0]}>
+                    <Button size='small' ghost type='dashed'>
+                        {labelNumberPair.length ? labelNumberPair[0][1] : '\u00A0'}
+                    </Button>
+                </LabelKeySelectorPopover>
             </Col>
             <Col span={3}>
                 {statesLocked ? (

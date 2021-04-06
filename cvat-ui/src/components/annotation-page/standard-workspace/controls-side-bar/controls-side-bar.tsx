@@ -30,9 +30,14 @@ import SplitControl, { Props as SplitControlProps } from './split-control';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
+    activatedStateID: number | null;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     labels: any[];
+    annotationStates: any[];
+    label2KeyMap: {
+        [lid: number]: string;
+    }
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
@@ -42,6 +47,8 @@ interface Props {
     pasteShape(): void;
     resetGroup(): void;
     redrawShape(): void;
+    changeDrawingLabelId(labelId: number): void;
+    updateAnnotation(statesToUpdate: any[]): void;
 }
 
 // We use the observer to see if these controls are in the viewport
@@ -68,8 +75,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         activeControl,
         canvasInstance,
         normalizedKeyMap,
+        activatedStateID,
         keyMap,
         labels,
+        label2KeyMap,
+        annotationStates,
         mergeObjects,
         groupObjects,
         splitTrack,
@@ -78,6 +88,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         pasteShape,
         resetGroup,
         redrawShape,
+        changeDrawingLabelId,
+        updateAnnotation,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -187,6 +199,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 groupObjects(false);
             },
         };
+
         subKeyMap = {
             ...subKeyMap,
             PASTE_SHAPE: keyMap.PASTE_SHAPE,
@@ -196,6 +209,26 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             SWITCH_GROUP_MODE: keyMap.SWITCH_GROUP_MODE,
             RESET_GROUP: keyMap.RESET_GROUP,
         };
+
+        for (let i = 0; i < 10; i++) {
+            handlers[`SWITCH_LABEL_${i}`] = (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const [pair] = Object.entries(label2KeyMap).filter((_pair) => _pair[1] === i.toString());
+                if (pair) {
+                    if (!activatedStateID) {
+                        changeDrawingLabelId(+pair[0]);
+                    } else {
+                        const [activatedState] = annotationStates.filter(
+                            (state) => state.clientID === activatedStateID,
+                        );
+                        const [label] = labels.filter((l) => l.id === +pair[0]);
+                        activatedState.label = label;
+                        updateAnnotation([activatedState]);
+                    }
+                }
+            };
+            subKeyMap[`SWITCH_LABEL_${i}`] = keyMap[`SWITCH_LABEL_${i}`];
+        }
     }
 
     return (
