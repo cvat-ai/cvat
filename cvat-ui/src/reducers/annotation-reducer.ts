@@ -116,10 +116,6 @@ const defaultState: AnnotationState = {
         projectScore: 0,
         fetching: false,
         annotatedFrames: [],
-        timeRemaining: 0,
-        progress: 0,
-        annotationAmount: 0,
-        mediaAmount: 0,
     },
     workspace: Workspace.STANDARD,
 };
@@ -158,7 +154,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             if (job.task.dimension === DimensionType.DIM_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
             }
-
             return {
                 ...state,
                 job: {

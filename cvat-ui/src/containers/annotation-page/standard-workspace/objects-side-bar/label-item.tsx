@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { updateAnnotationsAsync, rememberObject as rememberObjectAction } from 'actions/annotation-actions';
+import { updateAnnotationsAsync } from 'actions/annotation-actions';
 
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
@@ -18,22 +18,19 @@ interface StateToProps {
     label: any;
     labelName: string;
     labelColor: string;
-    labelId: number;
     objectStates: any[];
     jobInstance: any;
     frameNumber: number;
-    activatedStateID: number | null;
 }
 
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
-    rememberObject(labelID: number): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
-            annotations: { states: objectStates, activatedStateID },
+            annotations: { states: objectStates },
             job: { labels, instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
@@ -47,11 +44,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         label,
         labelColor: label.color,
         labelName: label.name,
-        labelId: label.id,
         objectStates,
         jobInstance,
         frameNumber,
-        activatedStateID,
     };
 }
 
@@ -60,9 +55,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateAnnotations(states: any[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        rememberObject(labelID: number): void {
-            dispatch(rememberObjectAction({ activeLabelID: labelID }));
-        },
     };
 }
 
@@ -70,7 +62,6 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     objectStates: any[];
     ownObjectStates: any[];
-    switchLabelMapping: Record<number, number>; // key, labelID
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
@@ -82,7 +73,6 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         this.state = {
             objectStates: [],
             ownObjectStates: [],
-            switchLabelMapping: {},
             visible: true,
             statesHidden: false,
             statesLocked: false,
@@ -158,14 +148,13 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { labelName, labelColor, labelId } = this.props;
+        const { labelName, labelColor } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
 
         return (
             <LabelItemComponent
                 labelName={labelName}
                 labelColor={labelColor}
-                labelId={labelId}
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}

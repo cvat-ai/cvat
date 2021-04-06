@@ -13,7 +13,6 @@ import {
 interface Props {
     labelName: string;
     labelColor: string;
-    labelId: number;
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
