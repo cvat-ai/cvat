@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Select, { SelectValue } from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
+
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import consts from 'consts';
 
