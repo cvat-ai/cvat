@@ -4,15 +4,18 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Button from 'antd/lib/button';
+import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import {
     LockFilled, UnlockOutlined, EyeInvisibleFilled, EyeOutlined,
 } from '@ant-design/icons';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
+
 interface Props {
     labelName: string;
     labelColor: string;
+    labelShortcutKey: string;
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
@@ -20,6 +23,7 @@ interface Props {
     showStates(): void;
     lockStates(): void;
     unlockStates(): void;
+    updateLabelShortcutKey(labelShortcut: string): void;
 }
 
 function LabelItemComponent(props: Props): JSX.Element {
@@ -29,10 +33,12 @@ function LabelItemComponent(props: Props): JSX.Element {
         visible,
         statesHidden,
         statesLocked,
+        labelShortcutKey,
         hideStates,
         showStates,
         lockStates,
         unlockStates,
+        updateLabelShortcutKey,
     } = props;
 
     const classes = {
@@ -47,39 +53,58 @@ function LabelItemComponent(props: Props): JSX.Element {
     };
 
     return (
-        <Row
-            align='stretch'
-            justify='space-around'
-            className={[
-                'cvat-objects-sidebar-label-item',
-                visible ? '' : 'cvat-objects-sidebar-label-item-disabled',
-            ].join(' ')}
-        >
-            <Col span={4}>
-                <Button style={{ background: labelColor }} className='cvat-label-item-color-button'>
-                    {' '}
-                </Button>
-            </Col>
-            <Col span={14}>
-                <Text strong className='cvat-text'>
-                    {labelName}
-                </Text>
-            </Col>
-            <Col span={3}>
-                {statesLocked ? (
-                    <LockFilled {...classes.lock.enabled} onClick={unlockStates} />
-                ) : (
-                    <UnlockOutlined {...classes.lock.disabled} onClick={lockStates} />
-                )}
-            </Col>
-            <Col span={3}>
-                {statesHidden ? (
-                    <EyeInvisibleFilled {...classes.hidden.enabled} onClick={showStates} />
-                ) : (
-                    <EyeOutlined {...classes.hidden.disabled} onClick={hideStates} />
-                )}
-            </Col>
-        </Row>
+        <div className='cvat-objects-sidebar-label-item-wrapper'>
+            <div className='cvat-objects-sidebar-label-item-color' style={{ background: `${labelColor}` }} />
+            <Row
+                align='stretch'
+                justify='space-around'
+                className={[
+                    'cvat-objects-sidebar-label-item',
+                    visible ? '' : 'cvat-objects-sidebar-label-item-disabled',
+                ].join(' ')}
+                style={{ background: `${labelColor}88` }}
+            >
+                <Col span={13}>
+                    <CVATTooltip title={labelName}>
+                        <Text strong className='cvat-text'>
+                            {labelName}
+                        </Text>
+                    </CVATTooltip>
+                </Col>
+                <Col span={4}>
+                    <Select
+                        size='small'
+                        value={labelShortcutKey}
+                        onChange={(value: string) => {
+                            updateLabelShortcutKey(value);
+                        }}
+                    >
+                        <Select.Option value='—'>—</Select.Option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(
+                            (value: number, id: number): JSX.Element => (
+                                <Select.Option value={`${value}`} key={id}>
+                                    {value}
+                                </Select.Option>
+                            ),
+                        )}
+                    </Select>
+                </Col>
+                <Col span={3} offset={1}>
+                    {statesLocked ? (
+                        <LockFilled {...classes.lock.enabled} onClick={unlockStates} />
+                    ) : (
+                        <UnlockOutlined {...classes.lock.disabled} onClick={lockStates} />
+                    )}
+                </Col>
+                <Col span={3}>
+                    {statesHidden ? (
+                        <EyeInvisibleFilled {...classes.hidden.enabled} onClick={showStates} />
+                    ) : (
+                        <EyeOutlined {...classes.hidden.disabled} onClick={hideStates} />
+                    )}
+                </Col>
+            </Row>
+        </div>
     );
 }
 

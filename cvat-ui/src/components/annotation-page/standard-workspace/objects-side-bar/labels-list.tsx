@@ -24,7 +24,7 @@ function LabelsListComponent(): JSX.Element {
 
     const labelIDs = labels.map((label: any): number => label.id);
 
-    const [keyMapping] = useState<Record<number, number>>(
+    const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
         Object.fromEntries(
             labelIDs.slice(0, 10).map((labelID: number, idx: number) => [idx + 1 > 9 ? 0 : idx + 1, labelID]),
         ),
@@ -37,8 +37,7 @@ function LabelsListComponent(): JSX.Element {
     const handlers = {
         SWITCH_LABEL: (event: KeyboardEvent | undefined, shortcut: string) => {
             if (event) event.preventDefault();
-            const key = +shortcut.split('+')[1];
-            const labelID = keyMapping[key];
+            const labelID = keyToLabelMapping[shortcut.split('+')[1].trim()];
             const label = labels.filter((_label: any) => _label.id === labelID)[0];
             if (Number.isInteger(labelID) && label) {
                 if (Number.isInteger(activatedStateID)) {
@@ -56,12 +55,53 @@ function LabelsListComponent(): JSX.Element {
         },
     };
 
+    // create reversed mapping just to receive key easily
+    const labelToKeyMapping: Record<string, string> = Object.fromEntries(
+        Object.entries(keyToLabelMapping).map(([key, labelID]) => [labelID, key]),
+    );
+
     return (
         <div style={{ height: listHeight }} className='cvat-objects-sidebar-labels-list'>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             {labelIDs.map(
                 (labelID: number): JSX.Element => (
-                    <LabelItemContainer key={labelID} labelID={labelID} />
+                    <LabelItemContainer
+                        key={labelID}
+                        labelID={labelID}
+                        labelShortcutKey={labelToKeyMapping[labelID] || '—'}
+                        updateLabelShortcutKey={(key: string) => {
+                            // unassign any keys assigned to the current labels
+                            const keyToLabelMappingCopy = { ...keyToLabelMapping };
+                            for (const shortKey of Object.keys(keyToLabelMappingCopy)) {
+                                if (keyToLabelMappingCopy[shortKey] === labelID) {
+                                    delete keyToLabelMappingCopy[shortKey];
+                                }
+                            }
+
+                            if (key === '—') {
+                                setKeyToLabelMapping(keyToLabelMappingCopy);
+                                return;
+                            }
+
+                            // check if this key is assigned to another label
+                            if (key in keyToLabelMappingCopy) {
+                                // try to find a new key for the other label
+                                for (let i = 0; i < 10; i++) {
+                                    const adjustedI = i + 1 > 9 ? 0 : i + 1;
+                                    if (!(adjustedI in keyToLabelMappingCopy)) {
+                                        keyToLabelMappingCopy[adjustedI] = keyToLabelMappingCopy[key];
+                                        break;
+                                    }
+                                }
+                                // delete assigning to the other label
+                                delete keyToLabelMappingCopy[key];
+                            }
+
+                            // assigning to the current label
+                            keyToLabelMappingCopy[key] = labelID;
+                            setKeyToLabelMapping(keyToLabelMappingCopy);
+                        }}
+                    />
                 ),
             )}
         </div>

@@ -167,7 +167,8 @@
     padding: 3px 1px 1px 3px;
 }
 
-.cvat-objects-sidebar-state-item-color {
+.cvat-objects-sidebar-state-item-color,
+.cvat-objects-sidebar-label-item-color {
     border: 1px solid $object-item-border-color;
     width: 7px;
     opacity: 1;
@@ -287,19 +288,23 @@
 }
 
 .cvat-objects-sidebar-label-active-item {
-    background: $active-label-background-color;
+    border-top: 2px solid $object-item-border-color;
+    border-right: 2px solid $object-item-border-color;
+    border-bottom: 2px solid $object-item-border-color;
+    padding: 3px 1px 1px 3px;
 }
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
+    width: 100%;
     border-bottom: 1px solid $border-color-1;
-    padding: 5px;
+    padding: 5px 3px 3px 3px;
 
     span {
         @extend .cvat-object-sidebar-icon;
     }
 
-    > div:nth-child(2) {
+    > div:nth-child(1) {
         text-overflow: ellipsis;
         overflow: hidden;
         max-height: 1.5em;
@@ -311,10 +316,8 @@
     }
 }
 
-.cvat-label-item-color-button {
-    width: 30px;
-    height: 20px;
-    border-radius: 5px;
+.cvat-objects-sidebar-label-item-wrapper {
+    display: flex;
 }
 
 .cvat-objects-appearance-content {
@@ -363,6 +366,5 @@
 }
 
 .cvat-objects-sidebar-label-item-disabled {
-    opacity: 0.4;
-    pointer-events: none;
+    opacity: 0.5;
 }
