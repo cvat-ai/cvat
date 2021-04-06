@@ -8,7 +8,7 @@ on:
     branches:
       - '*'
 jobs:
-  build_CVAT_unit_tests:
+  Unit_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
 
-  build_CVAT_E2E_actions_tasks_objects:
+  E2E_actions_tasks_objects:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -37,8 +37,6 @@ jobs:
           npm run coverage
       - name: Build CVAT
         env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: '/coverage_data'
           DJANGO_SU_NAME: 'admin'
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
@@ -52,8 +50,14 @@ jobs:
           cd ./tests
           npm ci
           npx cypress run --headless --browser chrome --spec 'cypress/integration/actions_tasks_objects/**/*.js'
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress_screenshots
+          path: ${{ github.workspace }}/tests/cypress/screenshots
 
-  build_CVAT_E2E_actions_users:
+  E2E_actions_users:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -66,8 +70,6 @@ jobs:
           npm run coverage
       - name: Build CVAT
         env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: '/coverage_data'
           DJANGO_SU_NAME: 'admin'
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
@@ -81,8 +83,14 @@ jobs:
           cd ./tests
           npm ci
           npx cypress run --headless --browser chrome --spec 'cypress/integration/actions_users/**/*.js'
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress_screenshots
+          path: ${{ github.workspace }}/tests/cypress/screenshots
 
-  build_CVAT_E2E_actions_projects:
+  E2E_actions_projects:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -95,8 +103,6 @@ jobs:
           npm run coverage
       - name: Build CVAT
         env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: '/coverage_data'
           DJANGO_SU_NAME: 'admin'
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
@@ -110,13 +116,79 @@ jobs:
           cd ./tests
           npm ci
           npx cypress run --headless --browser chrome --spec 'cypress/integration/actions_projects/**/*.js'
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress_screenshots
+          path: ${{ github.workspace }}/tests/cypress/screenshots
 
-      # - name: Uploading cypress screenshots as an artifact
-      #   if: failure()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: cypress_screenshots
-      #     path: ${{ github.workspace }}/tests/cypress/screenshots
+  E2E_canvas3d_functionality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+      - name: Code instrumentation
+        run: |
+          npm ci
+          npm run coverage
+      - name: Build CVAT
+        env:
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+          API_ABOUT_PAGE: "localhost:8080/api/v1/server/about"
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+          /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
+          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+      - name: End-to-end testing
+        run: |
+          cd ./tests
+          npm ci
+          npx cypress run --headless --browser chrome --spec 'cypress/integration/canvas3d_functionality/**/*.js'
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress_screenshots
+          path: ${{ github.workspace }}/tests/cypress/screenshots
+
+  E2E_issues_PRs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+      - name: Code instrumentation
+        run: |
+          npm ci
+          npm run coverage
+      - name: Build CVAT
+        env:
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+          API_ABOUT_PAGE: "localhost:8080/api/v1/server/about"
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+          /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
+          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+      - name: End-to-end testing
+        run: |
+          cd ./tests
+          npm ci
+          npx cypress run --headless --browser chrome --spec 'cypress/integration/issues_prs/**/*.js'
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress_screenshots
+          path: ${{ github.workspace }}/tests/cypress/screenshots
+
       # - name: Collect coverage data
       #   env:
       #     HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
