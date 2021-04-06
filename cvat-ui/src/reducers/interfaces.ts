@@ -372,7 +372,7 @@ export enum Rotation {
 }
 
 export interface PredictorState {
-    timeRemaining: any;
+    timeRemaining: number;
     progress: number;
     projectScore: number;
     message: string;
