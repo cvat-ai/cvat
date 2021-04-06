@@ -33,11 +33,34 @@ jobs:
           npm ci
           npm run coverage
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+  E2E-cypress-tests-object-tasks:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: End-to-end testing
         run: |
           cd ./tests
           npm ci
-          npx cypress run --headless --browser chrome
+          npx cypress run --headless --browser chrome --spec 'cypress/integration/actions_tasks_objects/**/*.js'
+  E2E-cypress-tests-actions-users:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: End-to-end testing
+        run: |
+          cd ./tests
+          npm ci
+          npx cypress run --headless --browser chrome --spec 'cypress/integration/actions_users/**/*.js'
+  E2E-cypress-tests-actions-projects:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: End-to-end testing
+        run: |
+          cd ./tests
+          npm ci
+          npx cypress run --headless --browser chrome --spec 'cypress/integration/actions_projects/**/*.js'
+
       - name: Uploading cypress screenshots as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
