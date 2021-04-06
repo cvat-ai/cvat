@@ -15,7 +15,7 @@ features, so it can be used to make data backups.
 
 - [Format specification](/docs/for-developers/xml_format/)
 
-#### CVAT for images dumper
+#### CVAT for images export
 
 Downloaded file: a ZIP file of the following structure:
 
@@ -29,7 +29,7 @@ taskname.zip/
 
 - tracks are split by frames
 
-#### CVAT for videos dumper
+#### CVAT for videos export
 
 Downloaded file: a ZIP file of the following structure:
 

@@ -5,7 +5,7 @@ weight: 9
 
 ### [ImageNet](http://www.image-net.org)<a id="imagenet" />
 
-#### ImageNet Dumper
+#### ImageNet export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -29,7 +29,7 @@ taskname.zip/
 
 - supported annotations: Labels
 
-#### ImageNet Loader
+#### ImageNet import
 
 Uploaded file: a zip archive of the structure above
 

@@ -5,7 +5,7 @@ weight: 3
 
 ### [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)<a id="mot" />
 
-#### MOT Dumper
+#### MOT export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -34,7 +34,7 @@ person
 - supported annotations: Rectangle shapes and tracks
 - supported attributes: `visibility` (number), `ignored` (checkbox)
 
-#### MOT Loader
+#### MOT import
 
 Uploaded file: a zip archive of the structure above or:
 

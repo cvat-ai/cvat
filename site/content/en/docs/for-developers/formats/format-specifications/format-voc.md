@@ -15,9 +15,10 @@ weight: 6
 
 - supported attributes:
 
-  - `occluded`
+  - `occluded` (both UI option and a separate attribute)
   - `truncated` and `difficult` (should be defined for labels as `checkbox` -es)
   - action attributes (import only, should be defined as `checkbox` -es)
+  - arbitrary attributes (in the `attributes` secion of XML files)
 
 #### Pascal VOC export
 
@@ -25,7 +26,7 @@ Downloaded file: a zip archive of the following structure:
 
 ```bash
 taskname.zip/
-├── JpegImages/
+├── JPEGImages/
 │   ├── <image_name1>.jpg
 │   ├── <image_name2>.jpg
 │   └── <image_nameN>.jpg

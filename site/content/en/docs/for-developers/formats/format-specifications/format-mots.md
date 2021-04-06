@@ -5,7 +5,7 @@ weight: 4
 
 ### [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)<a id="mots" />
 
-#### MOTS PNG Dumper
+#### MOTS PNG export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -29,7 +29,7 @@ person
 
 - supported annotations: Rectangle and Polygon tracks
 
-#### MOTS PNG Loader
+#### MOTS PNG import
 
 Uploaded file: a zip archive of the structure above
 

@@ -28,25 +28,48 @@ image_feature_description = {
 }
 ```
 
-#### TFRecord dumper description
+#### TFRecord export
 
 Downloaded file: a zip archive with following structure:
 
 ```bash
 taskname.zip/
-├── task2.tfrecord
+├── default.tfrecord
 └── label_map.pbtxt
+
+# label_map.pbtxt
+item {
+	id: 1
+	name: 'label_0'
+}
+item {
+	id: 2
+	name: 'label_1'
+}
+...
 ```
 
-- supported annotations: Rectangles
+- supported annotations: Rectangles, Polygons (as masks, manually over [Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md))
 
-#### TFRecord loader description
+How to export masks:
+1. Export annotations in `Datumaro` format
+1. Apply `polygons_to_masks` and `boxes_to_masks` transforms
+  ```bash
+  datum transform -t polygons_to_masks -p path/to/proj -o ptm
+  datum transform -t boxes_to_masks -p ptm -o btm
+  ```
+1. Export in the `TF Detection API` format
+  ```bash
+  datum export -f tf_detection_api -p btm [-- --save-images]
+  ```
+
+#### TFRecord import
 
 Uploaded file: a zip archive of following structure:
 
 ```bash
 taskname.zip/
-└── task2.tfrecord
+└── <any name>.tfrecord
 ```
 
 - supported annotations: Rectangles

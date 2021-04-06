@@ -5,7 +5,7 @@ weight: 2
 
 ### [LabelMe](http://labelme.csail.mit.edu/Release3.0)<a id="labelme" />
 
-#### LabelMe Dumper
+#### LabelMe export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -17,7 +17,7 @@ taskname.zip/
 
 - supported annotations: Rectangles, Polygons (with attributes)
 
-#### LabelMe Loader
+#### LabelMe import
 
 Uploaded file: a zip archive of the following structure:
 

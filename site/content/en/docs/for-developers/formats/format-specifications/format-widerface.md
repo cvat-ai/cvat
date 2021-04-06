@@ -5,7 +5,7 @@ weight: 9
 
 ### [WIDER Face](http://shuoyang1213.me/WIDERFACE/)<a id="widerface" />
 
-#### WIDER Face Dumper
+#### WIDER Face export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -23,12 +23,14 @@ taskname.zip/
 ```
 
 - supported annotations: Rectangles (with attributes), Labels
-- supported attributes: `blur`, `expression`, `illumination`,
-  `occluded` (both the annotation property & an attribute), `pose`, `invalid`
+- supported attributes:
+  - `blur`, `expression`, `illumination`, `pose`, `invalid`
+  - `occluded` (both the annotation property & an attribute)
 
-#### WIDER Face Loader
+#### WIDER Face import
 
 Uploaded file: a zip archive of the structure above
 
 - supported annotations: Rectangles (with attributes), Labels
-- supported attributes: `blur`, `expression`, `illumination`, `occluded`, `pose`, `invalid`
+- supported attributes:
+  - `blur`, `expression`, `illumination`, `occluded`, `pose`, `invalid`

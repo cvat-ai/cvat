@@ -6,6 +6,7 @@ hide_feedback: true
 ---
 
   - [CVAT](format-cvat)
+  - [Datumaro](format-datumaro)
   - [LabelMe](format-labelme)
   - [MOT](format-mot)
   - [MOTS](format-mots)

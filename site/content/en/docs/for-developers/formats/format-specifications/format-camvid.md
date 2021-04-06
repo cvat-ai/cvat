@@ -5,7 +5,7 @@ weight: 10
 
 ### [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)<a id="camvid" />
 
-#### CamVid Dumper
+#### CamVid export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -35,7 +35,7 @@ has own color which corresponds to a label.
 
 - supported annotations: Rectangles, Polygons
 
-#### CamVid Loader
+#### CamVid import
 
 Uploaded file: a zip archive of the structure above
 

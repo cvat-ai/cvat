@@ -7,17 +7,47 @@ weight: 5
 
 - [Format specification](http://cocodataset.org/#format-data)
 
-#### COCO dumper description
+#### COCO export
 
-Downloaded file: single unpacked `json`.
+Downloaded file: a zip archive with following structure:
+
+```bash
+archive.zip/
+├── images/
+│   ├── <image_name1.ext>
+│   ├── <image_name2.ext>
+│   └── ...
+└── annotations/
+    └── instances_default.json
+```
 
 - supported annotations: Polygons, Rectangles
+- supported attributes:
+  - `is_crowd` (checkbox or integer with values 0 and 1) -
+    specifies that the instance (an object group) should have an
+    RLE-encoded mask in the `segmentation` field. All the grouped shapes
+    are merged into a single mask, the largest one defines all
+    the object properties
+  - `score` (number) - the annotation `score` field
+  - arbitrary attributes - will be stored in the `attributes` annotation section
 
-#### COCO loader description
 
-Uploaded file: single unpacked `*.json` .
+*Note*: there is also a [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582)
 
-- supported annotations: Polygons, Rectangles (if `segmentation` field is empty)
+1. Install [Datumaro](https://github.com/openvinotoolkit/datumaro)
+  `pip install datumaro`
+1. Export the task in the `Datumaro` format, unzip
+1. Export the Datumaro project in `coco` / `coco_person_keypoints` formats
+  `datum export -f coco -p path/to/project [-- --save-images]`
+
+This way, one can export CVAT points as single keypoints or
+keypoint lists (without the `visibility` COCO flag).
+
+#### COCO import
+
+Uploaded file: a single unpacked `*.json` or a zip archive with the structure above (without images).
+
+- supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 
 #### How to create a task from MS COCO dataset
 

@@ -5,7 +5,7 @@ weight: 13
 
 ### [Market-1501](https://www.aitribune.com/dataset/2018051063)<a id="market1501" />
 
-#### Market-1501 Dumper
+#### Market-1501 export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -33,7 +33,7 @@ s1 - sequence
 
 - supported annotations: Label `market-1501` with atrributes (`query`, `person_id`, `camera_id`)
 
-#### Market-1501 Loader
+#### Market-1501 import
 
 Uploaded file: a zip archive of the structure above
 

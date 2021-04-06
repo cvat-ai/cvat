@@ -5,7 +5,7 @@ weight: 12
 
 ### [VGGFace2](https://github.com/ox-vgg/vgg_face2)<a id="vggface2" />
 
-#### VGGFace2 Dumper
+#### VGGFace2 export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -28,7 +28,7 @@ label1 <class1>
 
 - supported annotations: Rectangles, Points (landmarks - groups of 5 points)
 
-#### VGGFace2 Loader
+#### VGGFace2 import
 
 Uploaded file: a zip archive of the structure above
 

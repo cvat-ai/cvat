@@ -5,7 +5,7 @@ weight: 14
 
 ### [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)<a id="icdar" />
 
-#### ICDAR13/15 Dumper
+#### ICDAR13/15 export
 
 Downloaded file: a zip archive of the following structure:
 
@@ -54,7 +54,7 @@ taskname.zip/
 - supported annotations: Rectangles and Polygons with label `icdar`
   and attributes `index`, `text`, `color`, `center`
 
-#### ICDAR13/15 Loader
+#### ICDAR13/15 import
 
 Uploaded file: a zip archive of the structure above
 
