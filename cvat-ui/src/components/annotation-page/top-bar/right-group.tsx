@@ -7,28 +7,141 @@ import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
+import Text from 'antd/lib/typography/Text';
+import Tooltip from 'antd/lib/tooltip';
+import Moment from 'react-moment';
+
+import moment from 'moment';
 import { useSelector } from 'react-redux';
 
-import { FilterIcon, FullscreenIcon, InfoIcon } from 'icons';
-import { CombinedState, DimensionType, Workspace } from 'reducers/interfaces';
+import {
+    FilterIcon, FullscreenIcon, InfoIcon, BrainIcon,
+} from 'icons';
+import {
+    CombinedState, DimensionType, Workspace, PredictorState,
+} from 'reducers/interfaces';
 
 interface Props {
     workspace: Workspace;
+    predictor: PredictorState;
+    isTrainingActive: boolean;
+
     showStatistics(): void;
+
+    switchPredictor(predictorEnabled: boolean): void;
+
     showFilters(): void;
     changeWorkspace(workspace: Workspace): void;
+
     jobInstance: any;
 }
 
 function RightGroup(props: Props): JSX.Element {
     const {
-        showFilters, showStatistics, changeWorkspace, workspace, jobInstance,
+        showStatistics,
+        changeWorkspace,
+        switchPredictor,
+        workspace,
+        predictor,
+        jobInstance,
+        isTrainingActive,
+        showFilters,
     } = props;
+    predictor.annotationAmount = predictor.annotationAmount ? predictor.annotationAmount : 0;
+    predictor.mediaAmount = predictor.mediaAmount ? predictor.mediaAmount : 0;
+    const formattedScore = `${(predictor.projectScore * 100).toFixed(0)}%`;
+    const predictorTooltip = (
+        <div className='cvat-predictor-tooltip'>
+            <span>Adaptive auto annotation is</span>
+            {predictor.enabled ? (
+                <Text type='success' strong>
+                    {' active'}
+                </Text>
+            ) : (
+                <Text type='warning' strong>
+                    {' inactive'}
+                </Text>
+            )}
+            <br />
+            <span>
+                Annotations amount:
+                {predictor.annotationAmount}
+            </span>
+            <br />
+            <span>
+                Media amount:
+                {predictor.mediaAmount}
+            </span>
+            <br />
+            {predictor.annotationAmount > 0 ? (
+                <span>
+                    Model mAP is
+                    {' '}
+                    {formattedScore}
+                    <br />
+                </span>
+            ) : null}
+            {predictor.error ? (
+                <Text type='danger'>
+                    {predictor.error.toString()}
+                    <br />
+                </Text>
+            ) : null}
+            {predictor.message ? (
+                <span>
+                    Status:
+                    {' '}
+                    {predictor.message}
+                    <br />
+                </span>
+            ) : null}
+            {predictor.timeRemaining > 0 ? (
+                <span>
+                    Time Remaining:
+                    {' '}
+                    <Moment date={moment().add(-predictor.timeRemaining, 's')} format='hh:mm:ss' trim durationFromNow />
+                    <br />
+                </span>
+            ) : null}
+            {predictor.progress > 0 ? (
+                <span>
+                    Progress:
+                    {predictor.progress.toFixed(1)}
+                    {' '}
+                    %
+                </span>
+            ) : null}
+        </div>
+    );
+
+    let predictorClassName = 'cvat-annotation-header-button cvat-predictor-button';
+    if (!!predictor.error || !predictor.projectScore) {
+        predictorClassName += ' cvat-predictor-disabled';
+    } else if (predictor.enabled) {
+        if (predictor.fetching) {
+            predictorClassName += ' cvat-predictor-fetching';
+        }
+        predictorClassName += ' cvat-predictor-inprogress';
+    }
 
     const filters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
 
     return (
         <Col className='cvat-annotation-header-right-group'>
+            {isTrainingActive && (
+                <Button
+                    type='link'
+                    className={predictorClassName}
+                    onClick={() => {
+                        switchPredictor(!predictor.enabled);
+                    }}
+                >
+                    <Tooltip title={predictorTooltip}>
+                        <Icon component={BrainIcon} />
+                    </Tooltip>
+                    {predictor.annotationAmount ? `mAP ${formattedScore}` : 'not trained'}
+                </Button>
+            )}
             <Button
                 type='link'
                 className='cvat-annotation-header-button'

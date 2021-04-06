@@ -42,6 +42,7 @@ services:
       ALLOWED_HOSTS: '*'
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
+      ADAPTIVE_AUTO_ANNOTATION: 'false'
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys

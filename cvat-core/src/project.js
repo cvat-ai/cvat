@@ -33,6 +33,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 task_subsets: undefined,
+                training_project: undefined,
             };
 
             for (const property in data) {
@@ -64,6 +65,9 @@
                 }
                 data.task_subsets = Array.from(subsetsSet);
             }
+            if (initialData.training_project) {
+                data.training_project = JSON.parse(JSON.stringify(initialData.training_project));
+            }
 
             Object.defineProperties(
                 this,
@@ -94,6 +98,7 @@
                             data.name = value;
                         },
                     },
+
                     /**
                      * @name status
                      * @type {module:API.cvat.enums.TaskStatus}
@@ -217,8 +222,20 @@
                     subsets: {
                         get: () => [...data.task_subsets],
                     },
+
                     _internalData: {
                         get: () => data,
+                    },
+
+                    training_project: {
+                        get: () => data.training_project,
+                        set: (training) => {
+                            if (training) {
+                                data.training_project = JSON.parse(JSON.stringify(training));
+                            } else {
+                                data.training_project = training;
+                            }
+                        },
                     },
                 }),
             );
@@ -261,12 +278,17 @@
     };
 
     Project.prototype.save.implementation = async function () {
+        let trainingProject;
+        if (this.training_project) {
+            trainingProject = JSON.parse(JSON.stringify(this.training_project));
+        }
         if (typeof this.id !== 'undefined') {
             const projectData = {
                 name: this.name,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
                 labels: [...this._internalData.labels.map((el) => el.toJSON())],
+                training_project: trainingProject,
             };
 
             await serverProxy.projects.save(this.id, projectData);
@@ -276,6 +298,7 @@
         const projectSpec = {
             name: this.name,
             labels: [...this.labels.map((el) => el.toJSON())],
+            training_project: trainingProject,
         };
 
         if (this.bugTracker) {

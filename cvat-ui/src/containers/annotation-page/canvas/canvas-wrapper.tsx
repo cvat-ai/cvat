@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
-
 import { KeyMap } from 'utils/mousetrap-react';
+
 import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper';
 import {
     confirmCanvasReady,
