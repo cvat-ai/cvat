@@ -381,6 +381,7 @@ export interface PredictorState {
     fetching: boolean;
     annotationAmount: number;
     mediaAmount: number;
+    annotatedFrames: number[];
 }
 
 export interface AnnotationState {
@@ -470,9 +471,6 @@ export interface AnnotationState {
         collecting: boolean;
         visible: boolean;
         data: any;
-    };
-    label2NumberMap: {
-        [lid: number]: number;
     };
     colors: any[];
     filtersPanelVisible: boolean;

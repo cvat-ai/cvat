@@ -17,9 +17,6 @@ interface Props {
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
-    label2NumberMap: {
-        [key: number]: number;
-    };
     hideStates(): void;
     showStates(): void;
     lockStates(): void;
@@ -30,11 +27,9 @@ function LabelItemComponent(props: Props): JSX.Element {
     const {
         labelName,
         labelColor,
-        labelId,
         visible,
         statesHidden,
         statesLocked,
-        label2NumberMap,
         hideStates,
         showStates,
         lockStates,
@@ -52,28 +47,21 @@ function LabelItemComponent(props: Props): JSX.Element {
         },
     };
 
-    const labelNumberPair = Object.entries(label2NumberMap).filter((pair) => pair[1] === labelId);
-
     return (
         <Row
             align='middle'
             justify='space-around'
             className={`cvat-objects-sidebar-label-item${visible ? '' : ' cvat-objects-sidebar-label-item-disabled'}`}
         >
-            <Col span={4} style={{ display: 'flex' }}>
+            <Col span={4}>
                 <Button style={{ background: labelColor }} className='cvat-label-item-color-button'>
                     {' '}
                 </Button>
             </Col>
-            <Col span={11}>
+            <Col span={14}>
                 <Text strong className='cvat-text'>
                     {labelName}
                 </Text>
-            </Col>
-            <Col span={3}>
-                <Button size='small' ghost type='dashed'>
-                    {labelNumberPair.length ? labelNumberPair[0][0] : '\u00A0'}
-                </Button>
             </Col>
             <Col span={3}>
                 {statesLocked ? (

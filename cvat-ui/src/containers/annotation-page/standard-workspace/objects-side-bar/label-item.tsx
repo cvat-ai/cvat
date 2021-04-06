@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { updateAnnotationsAsync } from 'actions/annotation-actions';
+import { updateAnnotationsAsync, rememberObject as rememberObjectAction } from 'actions/annotation-actions';
 
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
@@ -21,25 +21,23 @@ interface StateToProps {
     labelId: number;
     objectStates: any[];
     jobInstance: any;
-    frameNumber: any;
-    label2NumberMap: {
-        [key: number]: number;
-    };
+    frameNumber: number;
+    activatedStateID: number | null;
 }
 
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
+    rememberObject(labelID: number): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
-            annotations: { states: objectStates },
+            annotations: { states: objectStates, activatedStateID },
             job: { labels, instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
             },
-            label2NumberMap,
         },
     } = state;
 
@@ -53,7 +51,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         objectStates,
         jobInstance,
         frameNumber,
-        label2NumberMap,
+        activatedStateID,
     };
 }
 
@@ -62,6 +60,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateAnnotations(states: any[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
+        rememberObject(labelID: number): void {
+            dispatch(rememberObjectAction({ activeLabelID: labelID }));
+        },
     };
 }
 
@@ -69,6 +70,7 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     objectStates: any[];
     ownObjectStates: any[];
+    switchLabelMapping: Record<number, number>; // key, labelID
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
@@ -80,6 +82,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         this.state = {
             objectStates: [],
             ownObjectStates: [],
+            switchLabelMapping: {},
             visible: true,
             statesHidden: false,
             statesLocked: false,
@@ -134,34 +137,28 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
 
     private switchHidden(value: boolean): void {
         const { updateAnnotations } = this.props;
-        const { ownObjectStates, visible } = this.state;
+        const { ownObjectStates } = this.state;
 
-        if (!visible) return;
-
-        for (const state of ownObjectStates) {
-            state.hidden = value;
+        if (ownObjectStates.length) {
+            // false alarm
+            // eslint-disable-next-line
+            updateAnnotations(ownObjectStates.map((state: any) => ((state.hidden = value), state)));
         }
-
-        updateAnnotations(ownObjectStates);
     }
 
     private switchLock(value: boolean): void {
         const { updateAnnotations } = this.props;
-        const { ownObjectStates, visible } = this.state;
+        const { ownObjectStates } = this.state;
 
-        if (!visible) return;
-
-        for (const state of ownObjectStates) {
-            state.lock = value;
+        if (ownObjectStates.length) {
+            // false alarm
+            // eslint-disable-next-line
+            updateAnnotations(ownObjectStates.map((state: any) => ((state.lock = value), state)));
         }
-
-        updateAnnotations(ownObjectStates);
     }
 
     public render(): JSX.Element {
-        const {
-            labelName, labelColor, labelId, label2NumberMap,
-        } = this.props;
+        const { labelName, labelColor, labelId } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
 
         return (
@@ -172,7 +169,6 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
-                label2NumberMap={label2NumberMap}
                 hideStates={this.hideStates}
                 showStates={this.showStates}
                 lockStates={this.lockStates}

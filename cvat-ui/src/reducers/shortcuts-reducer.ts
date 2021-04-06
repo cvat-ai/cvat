@@ -287,20 +287,17 @@ const defaultKeyMap = ({
     },
     TOGGLE_LAYOUT_GRID: {
         name: 'Toggle layout grid',
-        description: 'Is used in development',
+        description: 'The grid is used to UI development',
         sequences: ['ctrl+alt+enter'],
         action: 'keydown',
     },
-} as any) as KeyMap;
-
-for (let i = 0; i < 10; i++) {
-    defaultKeyMap[`SWITCH_LABEL_${i}`] = {
-        name: `Switch label ${i}`,
-        description: `Switch label to label mapped to key ${i}`,
-        sequences: [`${i}`],
+    SWITCH_LABEL: {
+        name: 'Switch label',
+        description: 'Changes a label for an activated object or for the next drawn object if no objects are activated',
+        sequences: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((val: string): string => `ctrl+${val}`),
         action: 'keydown',
-    };
-}
+    },
+} as any) as KeyMap;
 
 const defaultState: ShortcutsState = {
     visibleShortcutsHelp: false,

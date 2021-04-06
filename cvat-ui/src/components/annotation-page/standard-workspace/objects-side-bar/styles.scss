@@ -294,6 +294,7 @@
     height: 2.5em;
     border-bottom: 1px solid $border-color-1;
     padding: 5px;
+    display: flex;
 
     span {
         @extend .cvat-object-sidebar-icon;
@@ -368,4 +369,5 @@
 
 .cvat-objects-sidebar-label-item-disabled {
     opacity: 0.4;
+    pointer-events: none;
 }

@@ -101,7 +101,6 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
-    label2NumberMap: {},
     aiToolsRef: React.createRef(),
     colors: [],
     sidebarCollapsed: false,
@@ -117,6 +116,10 @@ const defaultState: AnnotationState = {
         projectScore: 0,
         fetching: false,
         annotatedFrames: [],
+        timeRemaining: 0,
+        progress: 0,
+        annotationAmount: 0,
+        mediaAmount: 0,
     },
     workspace: Workspace.STANDARD,
 };
@@ -156,10 +159,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 workspaceSelected = Workspace.STANDARD3D;
             }
 
-            const label2NumberMap: any = {};
-            job.task.labels.slice(0, 10).forEach((label: any, idx: number) => {
-                label2NumberMap[idx] = label.id;
-            });
             return {
                 ...state,
                 job: {
@@ -206,7 +205,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                label2NumberMap,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
             };
         }
@@ -463,9 +461,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
-            const {
-                shapeType, labelID, objectType, points, activeControl, rectDrawingMethod,
-            } = action.payload;
+            const { createParams, activeControl } = action.payload;
 
             return {
                 ...state,
@@ -475,15 +471,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    activeControl,
+                    activeControl: activeControl === null ? state.canvas.activeControl : activeControl,
                 },
                 drawing: {
+                    ...state.drawing,
+                    ...createParams,
                     activeInteractor: undefined,
-                    activeLabelID: labelID,
-                    activeNumOfPoints: points,
-                    activeObjectType: objectType,
-                    activeShapeType: shapeType,
-                    activeRectDrawingMethod: rectDrawingMethod,
                 },
             };
         }
