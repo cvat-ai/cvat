@@ -44,10 +44,8 @@ function PopoverContent(props: LabelKeySelectorPopoverContentProps): JSX.Element
                             <Col key={i} span={8}>
                                 <CVATTooltip title={labelName}>
                                     <Button onClick={() => updateLabelShortcutKey(i, labelID)}>
-                                        <div>
-                                            <Text>{`${i}:`}</Text>
-                                            <Text type='secondary'>{labelName}</Text>
-                                        </div>
+                                        <Text>{`${i}:`}</Text>
+                                        <Text type='secondary'>{labelName}</Text>
                                     </Button>
                                 </CVATTooltip>
                             </Col>
@@ -68,6 +66,7 @@ function LabelKeySelectorPopover(props: LabelKeySelectorPopoverProps): JSX.Eleme
 
     return (
         <Popover
+            destroyTooltipOnHide={{ keepParent: false }}
             trigger='click'
             content={(
                 <MemoizedContent

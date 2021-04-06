@@ -48,7 +48,7 @@ function LabelItemComponent(props: Props): JSX.Element {
     const labelToKeyMapping: Record<string, string> = Object.fromEntries(
         Object.entries(keyToLabelMapping).map(([key, _labelID]) => [_labelID, key]),
     );
-    const labelShortcutKey = labelToKeyMapping[labelID] || '\u2205';
+    const labelShortcutKey = labelToKeyMapping[labelID] || '?';
     const classes = {
         lock: {
             enabled: { className: 'cvat-label-item-button-lock cvat-label-item-button-lock-enabled' },
