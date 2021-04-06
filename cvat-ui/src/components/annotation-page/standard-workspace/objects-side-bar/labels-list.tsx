@@ -55,11 +55,6 @@ function LabelsListComponent(): JSX.Element {
         },
     };
 
-    // create reversed mapping just to receive key easily
-    const labelToKeyMapping: Record<string, string> = Object.fromEntries(
-        Object.entries(keyToLabelMapping).map(([key, labelID]) => [labelID, key]),
-    );
-
     return (
         <div style={{ height: listHeight }} className='cvat-objects-sidebar-labels-list'>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
@@ -68,7 +63,7 @@ function LabelsListComponent(): JSX.Element {
                     <LabelItemContainer
                         key={labelID}
                         labelID={labelID}
-                        labelShortcutKey={labelToKeyMapping[labelID] || '—'}
+                        keyToLabelMapping={keyToLabelMapping}
                         updateLabelShortcutKey={(key: string) => {
                             // unassign any keys assigned to the current labels
                             const keyToLabelMappingCopy = { ...keyToLabelMapping };

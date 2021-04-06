@@ -12,8 +12,8 @@ import { CombinedState, ObjectType } from 'reducers/interfaces';
 
 interface OwnProps {
     labelID: number;
-    labelShortcutKey?: string;
-    updateLabelShortcutKey(labelShortcut: string): void;
+    keyToLabelMapping: Record<string, number>;
+    updateLabelShortcutKey(updatedKey: string): void;
 }
 
 interface StateToProps {
@@ -151,7 +151,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            labelName, labelColor, labelShortcutKey, updateLabelShortcutKey,
+            labelName, labelColor, keyToLabelMapping, labelID, updateLabelShortcutKey,
         } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
 
@@ -159,7 +159,8 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
             <LabelItemComponent
                 labelName={labelName}
                 labelColor={labelColor}
-                labelShortcutKey={labelShortcutKey}
+                labelID={labelID}
+                keyToLabelMapping={keyToLabelMapping}
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}

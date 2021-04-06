@@ -288,6 +288,7 @@
 }
 
 .cvat-objects-sidebar-label-active-item {
+    background: $active-label-background-color;
     border-top: 2px solid $object-item-border-color;
     border-right: 2px solid $object-item-border-color;
     border-bottom: 2px solid $object-item-border-color;
@@ -296,7 +297,6 @@
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
-    width: 100%;
     border-bottom: 1px solid $border-color-1;
     padding: 5px 3px 3px 3px;
 
@@ -304,7 +304,7 @@
         @extend .cvat-object-sidebar-icon;
     }
 
-    > div:nth-child(1) {
+    > div:nth-child(2) {
         text-overflow: ellipsis;
         overflow: hidden;
         max-height: 1.5em;
@@ -316,8 +316,39 @@
     }
 }
 
-.cvat-objects-sidebar-label-item-wrapper {
-    display: flex;
+.cvat-label-item-color {
+    background: rgb(25, 184, 14);
+    height: 80%;
+    width: 90%;
+    border-radius: $grid-unit-size / 2;
+}
+
+.cvat-label-item-setup-shortcut-button {
+    border-color: $objects-bar-icons-color;
+}
+
+.cvat-label-item-setup-shortcut-popover {
+    margin-top: -$grid-unit-size;
+    margin-bottom: -$grid-unit-size;
+
+    > div {
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
+
+        > div {
+            display: flex;
+            justify-content: center;
+
+            > button {
+                width: $grid-unit-size * 15;
+                overflow-x: hidden;
+
+                span:first-child {
+                    margin-right: $grid-unit-size;
+                }
+            }
+        }
+    }
 }
 
 .cvat-objects-appearance-content {
