@@ -168,8 +168,8 @@ enable = false
 #	icon = "fa fa-envelope"
 #       desc = "Discussion and help from your fellow users"
 [[params.links.user]]
-	name ="Gitter"
-	url = "https://gitter.im/opencv-cvat"
+	name ="Gitter public chat"
+	url = "https://gitter.im/opencv-cvat/public"
 	icon = "fab fa-gitter"
         desc = "Join our Gitter channel for community support."
 [[params.links.user]]
@@ -177,12 +177,27 @@ enable = false
 	url = "https://stackoverflow.com/search?q=%23cvat"
 	icon = "fab fa-stack-overflow"
         desc = "Practical questions and curated answers"
+[[params.links.user]]
+	name = "YouTube"
+	url = "https://www.youtube.com/user/nmanovic"
+	icon = "fab fa-youtube"
+        desc = "Practical questions and curated answers"
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
 	name = "GitHub"
 	url = "https://github.com/openvinotoolkit/cvat"
 	icon = "fab fa-github"
         desc = "Development takes place here!"
+[[params.links.developer]]
+	name = "Forum on Intel Developer Zone"
+	url = "https://community.intel.com/t5/Intel-Distribution-of-OpenVINO/bd-p/distribution-openvino-toolkit"
+	icon = "fas fa-envelope"
+        desc = "Development takes place here!"
+[[params.links.developer]]
+	name ="Gitter developers chat"
+	url = "https://gitter.im/opencv-cvat/dev"
+	icon = "fab fa-gitter"
+        desc = "Join our Gitter channel for community support."
 # [[params.links.developer]]
 #	name = "Developer mailing list"
 #	url = "https://example.org/mail"

@@ -1,6 +1,7 @@
 ---
 title: "CVAT Documentation"
 linkTitle: "Documentation"
+no_list: true
 menu:
   main:
     weight: 20
@@ -14,7 +15,8 @@ and UX decisions are based on feedbacks from professional data
 annotation team. Try it online [cvat.org](https://cvat.org).
 
 <section id="docs">
-{{< blocks/section color="docs" height="max" >}}
+
+{{< blocks/section color="docs" >}}
 
 
 
@@ -73,7 +75,5 @@ Computer Vision Annotation Tool GitHub repository.
 
 
 {{< /blocks/section >}}
-</section>
 
-The documentation is divided into two sections:
----
+</section>

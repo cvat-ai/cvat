@@ -6,8 +6,13 @@
 
 /*Main documentation page*/
 
-#docs .td-box .row {
-    padding-top: 5rem;
+#docs section {
+    padding-top: 2rem;
+    padding-bottom: 7rem;
+}
+
+#docs .row div {
+    margin-top: 1rem;
 }
 
 /*Footer*/
@@ -23,4 +28,10 @@
     min-height: inherit;
     padding-bottom: .5rem !important;
     padding-top: 2rem !important;
+}
+
+/*Icon color*/
+
+#about i {
+    color:lightgrey
 }
