@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,8 +6,8 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Check if UI not fails with shape dragging over sidebar', () => {
-    const issueId = '1216';
+context('Information about a blocked object disappears if hover the cursor over another object', () => {
+    const issueId = '1439';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -33,21 +33,20 @@ context('Check if UI not fails with shape dragging over sidebar', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Create multiple objects', () => {
-            /* The error was repeated when the number of
-            objects was more than or equal to 2 */
             cy.createRectangle(createRectangleShape2Points);
             cy.createRectangle(createRectangleShape2PointsSecond);
         });
-        it('Shape dragging over sidebar.', () => {
-            /*To reproduce the error, move the any shape under any
-            #cvat-objects-sidebar-state-item-*. */
-            cy.get('#cvat_canvas_shape_2').trigger('mousemove').trigger('mouseover').trigger('mousedown', { which: 1 });
+        it('Lock all objects', () => {
+            cy.get('.cvat-objects-sidebar-states-header').find('.anticon-unlock').click();
         });
-        it('There is no error like "Canvas is busy. Action: drag" in the console', () => {
-            cy.get('body')
-                /*Since cy.click () contains events such as
-            mousemove, mouseover, etc. Use it to reduce lines of code.*/
-                .click(1299, 300);
+        it('Mousemove to 1st object', () => {
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+        });
+        it('Mousemove to 2nd object', () => {
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove');
+        });
+        it('Information about 1st object not exist', () => {
+            cy.get('#cvat_canvas_text_content').contains(`${labelName} 1`).should('not.exist');
         });
     });
 });
