@@ -23,11 +23,17 @@ jobs:
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml build
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/.coverage
+            ${{ github.workspace }}/lcov.info
 
   E2E_testing:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         path: ['actions_tasks_objects', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs']
     steps:
@@ -60,6 +66,10 @@ jobs:
         with:
           name: cypress_screenshots_${{ matrix.path }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: ${{ github.workspace }}/tests/.nyc_output
 
       # - name: Collect coverage data
       #   env:
