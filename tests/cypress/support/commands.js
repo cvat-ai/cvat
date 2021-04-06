@@ -420,6 +420,10 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
                     cy.get(`.ant-select-item-option[title="${multiAttrParams.additionalValue}"]`).click();
                 });
         }
+        if (multiAttrParams.mutable) {
+            cy.get('.cvat-attribute-mutable-checkbox')
+                .find('[type="checkbox"]').should('not.be.checked').check().should('be.checked');
+        }
     });
 });
 
