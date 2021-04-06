@@ -1137,25 +1137,9 @@ export function rememberObject(createParams: {
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
 }): AnyAction {
-    let activeControl = createParams.activeObjectType ? ActiveControl.CURSOR : null;
-    if (createParams.activeShapeType === ShapeType.RECTANGLE) {
-        activeControl = ActiveControl.DRAW_RECTANGLE;
-    } else if (createParams.activeShapeType === ShapeType.POLYGON) {
-        activeControl = ActiveControl.DRAW_POLYGON;
-    } else if (createParams.activeShapeType === ShapeType.POLYLINE) {
-        activeControl = ActiveControl.DRAW_POLYLINE;
-    } else if (createParams.activeShapeType === ShapeType.POINTS) {
-        activeControl = ActiveControl.DRAW_POINTS;
-    } else if (createParams.activeShapeType === ShapeType.CUBOID) {
-        activeControl = ActiveControl.DRAW_CUBOID;
-    }
-
     return {
         type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
-        payload: {
-            createParams,
-            activeControl,
-        },
+        payload: createParams,
     };
 }
 

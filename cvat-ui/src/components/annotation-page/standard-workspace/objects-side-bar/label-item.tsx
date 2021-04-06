@@ -48,9 +48,12 @@ function LabelItemComponent(props: Props): JSX.Element {
 
     return (
         <Row
-            align='middle'
+            align='stretch'
             justify='space-around'
-            className={`cvat-objects-sidebar-label-item${visible ? '' : ' cvat-objects-sidebar-label-item-disabled'}`}
+            className={[
+                'cvat-objects-sidebar-label-item',
+                visible ? '' : 'cvat-objects-sidebar-label-item-disabled',
+            ].join(' ')}
         >
             <Col span={4}>
                 <Button style={{ background: labelColor }} className='cvat-label-item-color-button'>

@@ -294,7 +294,6 @@
     height: 2.5em;
     border-bottom: 1px solid $border-color-1;
     padding: 5px;
-    display: flex;
 
     span {
         @extend .cvat-object-sidebar-icon;
@@ -309,10 +308,6 @@
 
     &:hover {
         @extend .cvat-objects-sidebar-label-active-item;
-    }
-
-    .ant-btn-dashed {
-        border-color: $objects-bar-icons-color;
     }
 }
 
