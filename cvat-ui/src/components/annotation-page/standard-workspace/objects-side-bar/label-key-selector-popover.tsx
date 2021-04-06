@@ -13,18 +13,20 @@ import { CombinedState } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface LabelKeySelectorPopoverProps {
-    updateLabelShortcutKey(updatedKey: string): void;
+    updateLabelShortcutKey(updatedKey: string, labelID: number): void;
     keyToLabelMapping: Record<string, number>;
+    labelID: number;
     children: JSX.Element;
 }
 
 interface LabelKeySelectorPopoverContentProps {
-    updateLabelShortcutKey(updatedKey: string): void;
+    updateLabelShortcutKey(updatedKey: string, labelID: number): void;
+    labelID: number;
     keyToLabelMapping: Record<string, number>;
 }
 
 function PopoverContent(props: LabelKeySelectorPopoverContentProps): JSX.Element {
-    const { keyToLabelMapping, updateLabelShortcutKey } = props;
+    const { keyToLabelMapping, labelID, updateLabelShortcutKey } = props;
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
 
     return (
@@ -32,15 +34,16 @@ function PopoverContent(props: LabelKeySelectorPopoverContentProps): JSX.Element
             {[['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['0']].map((arr, i_) => (
                 <Row justify='space-around' gutter={[16, 16]} key={i_}>
                     {arr.map((i) => {
-                        const labelID = keyToLabelMapping[i];
-                        const labelName = Number.isInteger(labelID) ?
-                            labels.filter((label: any): boolean => label.id === labelID)[0]?.name || 'undefined' :
+                        const previousLabelID = keyToLabelMapping[i];
+                        const labelName = Number.isInteger(previousLabelID) ?
+                            labels.filter((label: any): boolean => label.id === previousLabelID)[0]?.name ||
+                              'undefined' :
                             'None';
 
                         return (
                             <Col key={i} span={8}>
                                 <CVATTooltip title={labelName}>
-                                    <Button onClick={() => updateLabelShortcutKey(i)}>
+                                    <Button onClick={() => updateLabelShortcutKey(i, labelID)}>
                                         <div>
                                             <Text>{`${i}:`}</Text>
                                             <Text type='secondary'>{labelName}</Text>
@@ -56,18 +59,28 @@ function PopoverContent(props: LabelKeySelectorPopoverContentProps): JSX.Element
     );
 }
 
-export default function LabelKeySelectorPopover(props: LabelKeySelectorPopoverProps): JSX.Element {
-    const { children, updateLabelShortcutKey, keyToLabelMapping } = props;
+const MemoizedContent = React.memo(PopoverContent);
+
+function LabelKeySelectorPopover(props: LabelKeySelectorPopoverProps): JSX.Element {
+    const {
+        children, labelID, updateLabelShortcutKey, keyToLabelMapping,
+    } = props;
 
     return (
         <Popover
             trigger='click'
-            content={
-                <PopoverContent keyToLabelMapping={keyToLabelMapping} updateLabelShortcutKey={updateLabelShortcutKey} />
-            }
+            content={(
+                <MemoizedContent
+                    keyToLabelMapping={keyToLabelMapping}
+                    labelID={labelID}
+                    updateLabelShortcutKey={updateLabelShortcutKey}
+                />
+            )}
             placement='left'
         >
             {children}
         </Popover>
     );
 }
+
+export default React.memo(LabelKeySelectorPopover);

@@ -13,7 +13,7 @@ import { CombinedState, ObjectType } from 'reducers/interfaces';
 interface OwnProps {
     labelID: number;
     keyToLabelMapping: Record<string, number>;
-    updateLabelShortcutKey(updatedKey: string): void;
+    updateLabelShortcutKey(updatedKey: string, labelID: number): void;
 }
 
 interface StateToProps {

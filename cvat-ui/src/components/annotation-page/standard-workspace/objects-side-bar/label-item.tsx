@@ -25,7 +25,7 @@ interface Props {
     showStates(): void;
     lockStates(): void;
     unlockStates(): void;
-    updateLabelShortcutKey(updatedKey: string): void;
+    updateLabelShortcutKey(updatedKey: string, labelID: number): void;
 }
 
 function LabelItemComponent(props: Props): JSX.Element {
@@ -48,7 +48,7 @@ function LabelItemComponent(props: Props): JSX.Element {
     const labelToKeyMapping: Record<string, string> = Object.fromEntries(
         Object.entries(keyToLabelMapping).map(([key, _labelID]) => [_labelID, key]),
     );
-    const labelShortcutKey = labelToKeyMapping[labelID];
+    const labelShortcutKey = labelToKeyMapping[labelID] || '\u2205';
     const classes = {
         lock: {
             enabled: { className: 'cvat-label-item-button-lock cvat-label-item-button-lock-enabled' },
@@ -83,8 +83,9 @@ function LabelItemComponent(props: Props): JSX.Element {
             </Col>
             <Col span={3}>
                 <LabelKeySelectorPopover
-                    updateLabelShortcutKey={updateLabelShortcutKey}
                     keyToLabelMapping={keyToLabelMapping}
+                    labelID={labelID}
+                    updateLabelShortcutKey={updateLabelShortcutKey}
                 >
                     <Button className='cvat-label-item-setup-shortcut-button' size='small' ghost type='dashed'>
                         {labelShortcutKey}

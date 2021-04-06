@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
@@ -21,13 +21,48 @@ function LabelsListComponent(): JSX.Element {
         },
         shortcuts: { keyMap },
     } = useSelector((state: CombinedState) => state);
-
     const labelIDs = labels.map((label: any): number => label.id);
 
     const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
         Object.fromEntries(
             labelIDs.slice(0, 10).map((labelID: number, idx: number) => [idx + 1 > 9 ? 0 : idx + 1, labelID]),
         ),
+    );
+
+    const updateLabelShortcutKey = useCallback(
+        (key: string, labelID: number) => {
+            // unassign any keys assigned to the current labels
+            const keyToLabelMappingCopy = { ...keyToLabelMapping };
+            for (const shortKey of Object.keys(keyToLabelMappingCopy)) {
+                if (keyToLabelMappingCopy[shortKey] === labelID) {
+                    delete keyToLabelMappingCopy[shortKey];
+                }
+            }
+
+            if (key === '—') {
+                setKeyToLabelMapping(keyToLabelMappingCopy);
+                return;
+            }
+
+            // check if this key is assigned to another label
+            if (key in keyToLabelMappingCopy) {
+                // try to find a new key for the other label
+                for (let i = 0; i < 10; i++) {
+                    const adjustedI = i + 1 > 9 ? 0 : i + 1;
+                    if (!(adjustedI in keyToLabelMappingCopy)) {
+                        keyToLabelMappingCopy[adjustedI] = keyToLabelMappingCopy[key];
+                        break;
+                    }
+                }
+                // delete assigning to the other label
+                delete keyToLabelMappingCopy[key];
+            }
+
+            // assigning to the current label
+            keyToLabelMappingCopy[key] = labelID;
+            setKeyToLabelMapping(keyToLabelMappingCopy);
+        },
+        [keyToLabelMapping],
     );
 
     const subKeyMap = {
@@ -64,38 +99,7 @@ function LabelsListComponent(): JSX.Element {
                         key={labelID}
                         labelID={labelID}
                         keyToLabelMapping={keyToLabelMapping}
-                        updateLabelShortcutKey={(key: string) => {
-                            // unassign any keys assigned to the current labels
-                            const keyToLabelMappingCopy = { ...keyToLabelMapping };
-                            for (const shortKey of Object.keys(keyToLabelMappingCopy)) {
-                                if (keyToLabelMappingCopy[shortKey] === labelID) {
-                                    delete keyToLabelMappingCopy[shortKey];
-                                }
-                            }
-
-                            if (key === '—') {
-                                setKeyToLabelMapping(keyToLabelMappingCopy);
-                                return;
-                            }
-
-                            // check if this key is assigned to another label
-                            if (key in keyToLabelMappingCopy) {
-                                // try to find a new key for the other label
-                                for (let i = 0; i < 10; i++) {
-                                    const adjustedI = i + 1 > 9 ? 0 : i + 1;
-                                    if (!(adjustedI in keyToLabelMappingCopy)) {
-                                        keyToLabelMappingCopy[adjustedI] = keyToLabelMappingCopy[key];
-                                        break;
-                                    }
-                                }
-                                // delete assigning to the other label
-                                delete keyToLabelMappingCopy[key];
-                            }
-
-                            // assigning to the current label
-                            keyToLabelMappingCopy[key] = labelID;
-                            setKeyToLabelMapping(keyToLabelMappingCopy);
-                        }}
+                        updateLabelShortcutKey={updateLabelShortcutKey}
                     />
                 ),
             )}
