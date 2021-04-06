@@ -8,23 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - Unreleased
 
 ### Added
+
 - Documentation on mask annotation (<https://github.com/openvinotoolkit/cvat/pull/3044>)
+- Hotkeys to switch a label of existing object or to change default label (for objects created with N) (<https://github.com/openvinotoolkit/cvat/pull/3070>)
 
 ### Changed
+
 -
 
 ### Deprecated
+
 -
 
 ### Removed
+
 -
 
 ### Fixed
+
 - Export of instance masks with holes (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 
 ### Security
--
 
+-
 
 ## [1.3.0] - 3/31/2021
 
