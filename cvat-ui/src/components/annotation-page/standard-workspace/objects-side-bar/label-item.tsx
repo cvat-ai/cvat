@@ -74,7 +74,7 @@ function LabelItemComponent(props: Props): JSX.Element {
                     {' '}
                 </div>
             </Col>
-            <Col span={11}>
+            <Col span={12}>
                 <CVATTooltip title={labelName}>
                     <Text strong className='cvat-text'>
                         {labelName}
@@ -92,7 +92,7 @@ function LabelItemComponent(props: Props): JSX.Element {
                     </Button>
                 </LabelKeySelectorPopover>
             </Col>
-            <Col span={3} offset={1}>
+            <Col span={2} offset={1}>
                 {statesLocked ? (
                     <LockFilled {...classes.lock.enabled} onClick={unlockStates} />
                 ) : (

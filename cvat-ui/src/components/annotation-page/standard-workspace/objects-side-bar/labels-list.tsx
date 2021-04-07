@@ -24,9 +24,7 @@ function LabelsListComponent(): JSX.Element {
     const labelIDs = labels.map((label: any): number => label.id);
 
     const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
-        Object.fromEntries(
-            labelIDs.slice(0, 10).map((labelID: number, idx: number) => [idx + 1 > 9 ? 0 : idx + 1, labelID]),
-        ),
+        Object.fromEntries(labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID])),
     );
 
     const updateLabelShortcutKey = useCallback(
@@ -48,7 +46,7 @@ function LabelsListComponent(): JSX.Element {
             if (key in keyToLabelMappingCopy) {
                 // try to find a new key for the other label
                 for (let i = 0; i < 10; i++) {
-                    const adjustedI = i + 1 > 9 ? 0 : i + 1;
+                    const adjustedI = (i + 1) % 10;
                     if (!(adjustedI in keyToLabelMappingCopy)) {
                         keyToLabelMappingCopy[adjustedI] = keyToLabelMappingCopy[key];
                         break;
