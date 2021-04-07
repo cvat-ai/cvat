@@ -23,19 +23,15 @@ const { FieldDropdown } = AntdWidgets;
 
 const FILTERS_HISTORY = 'annotationFiltersHistory';
 
-interface Props {
-    visible: boolean;
-}
-
 interface StoredFilter {
     id: string;
     logic: JsonLogicTree;
 }
 
-export default function FiltersModalComponent(props: Props): JSX.Element {
-    const { visible } = props;
-    const { labels } = useSelector((state: CombinedState) => state.annotation.job);
-    const { filters: activeFilters } = useSelector((state: CombinedState) => state.annotation.annotations);
+function FiltersModalComponent(): JSX.Element {
+    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
+    const activeFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const visible = useSelector((state: CombinedState) => state.annotation.filtersPanelVisible);
 
     const getConvertedInputType = (inputType: string): string => {
         switch (inputType) {
@@ -286,3 +282,5 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
         </Modal>
     );
 }
+
+export default React.memo(FiltersModalComponent);

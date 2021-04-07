@@ -47,8 +47,8 @@ function RightGroup(props: Props): JSX.Element {
         isTrainingActive,
         showFilters,
     } = props;
-    predictor.annotationAmount = predictor.annotationAmount ? predictor.annotationAmount : 0;
-    predictor.mediaAmount = predictor.mediaAmount ? predictor.mediaAmount : 0;
+    const annotationAmount = predictor.annotationAmount || 0;
+    const mediaAmount = predictor.mediaAmount || 0;
     const formattedScore = `${(predictor.projectScore * 100).toFixed(0)}%`;
     const predictorTooltip = (
         <div className='cvat-predictor-tooltip'>
@@ -65,15 +65,15 @@ function RightGroup(props: Props): JSX.Element {
             <br />
             <span>
                 Annotations amount:
-                {predictor.annotationAmount}
+                {annotationAmount}
             </span>
             <br />
             <span>
                 Media amount:
-                {predictor.mediaAmount}
+                {mediaAmount}
             </span>
             <br />
-            {predictor.annotationAmount > 0 ? (
+            {annotationAmount > 0 ? (
                 <span>
                     Model mAP is
                     {' '}
@@ -139,7 +139,7 @@ function RightGroup(props: Props): JSX.Element {
                     <Tooltip title={predictorTooltip}>
                         <Icon component={BrainIcon} />
                     </Tooltip>
-                    {predictor.annotationAmount ? `mAP ${formattedScore}` : 'not trained'}
+                    {annotationAmount ? `mAP ${formattedScore}` : 'not trained'}
                 </Button>
             )}
             <Button
