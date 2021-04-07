@@ -237,25 +237,11 @@ function FiltersModalComponent(): JSX.Element {
                     // loadFromJsonLogic() prints a warning to console
                     // the are not ways to configure this behaviour
 
-                    let invalid = false;
-                    const { warn } = console;
-                    // eslint-disable-next-line
-                    console.warn = (...rest) => {
-                        invalid = true;
-                    };
                     const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    // eslint-disable-next-line
-                    console.warn = warn;
-
                     const queryString = QbUtils.queryString(tree, config);
-                    return {
-                        tree,
-                        queryString,
-                        filter,
-                        invalid,
-                    };
+                    return { tree, queryString, filter };
                 })
-                .filter(({ queryString, invalid }) => !!queryString || invalid)
+                .filter(({ queryString }) => !!queryString)
                 .map(({ filter, tree }) => (
                     <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
                         {QbUtils.queryString(tree, config)}
