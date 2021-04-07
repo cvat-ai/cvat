@@ -61,7 +61,7 @@ jobs:
           cd ./tests
           npm ci
           npx cypress run --headless --browser chrome --spec 'cypress/integration/${{ matrix.path }}/**/*.js'
-          ls -l ./.nyc_output
+          mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.path }}.json
       - name: Uploading cypress screenshots as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
