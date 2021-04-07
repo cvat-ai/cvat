@@ -73,14 +73,27 @@ jobs:
           name: coverage_results
           path: ${{ github.workspace }}/tests/.nyc_output
 
-      # - name: Collect coverage data
-      #   env:
-      #     HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-      #     CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
-      #     COVERALLS_SERVICE_NAME: github
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     mv ./tests/.nyc_output ./
-      #     npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
-      #     docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
-      #     docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
+  Coveralls:
+    runs-on: ubuntu-latest
+    needs: [Unit_tests, E2E_testing]
+    steps:
+    - name: Download coverage results
+      uses: actions/download-artifact@v2
+      with:
+        name: coverage_results
+    - name: Combine coverage results
+      run: |
+        ls -la
+        mkdir -p .nyc_output
+        mv out_*.json .nyc_output
+        ls -la .nyc_output
+    - name: Send results to Coveralls
+      env:
+        HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+        CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
+        COVERALLS_SERVICE_NAME: github
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+          npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
+          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
