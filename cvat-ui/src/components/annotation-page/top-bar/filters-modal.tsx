@@ -242,9 +242,9 @@ function FiltersModalComponent(): JSX.Element {
                     return { tree, queryString, filter };
                 })
                 .filter(({ queryString }) => !!queryString)
-                .map(({ filter, tree }) => (
+                .map(({ filter, tree, queryString }) => (
                     <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
-                        {QbUtils.queryString(tree, config)}
+                        {queryString}
                     </Menu.Item>
                 ))}
         </Menu>
