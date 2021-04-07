@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,6 +38,7 @@ const defaultState: AnnotationState = {
         activeControl: ActiveControl.CURSOR,
     },
     job: {
+        openTime: null,
         labels: [],
         requestedId: null,
         instance: null,
@@ -108,6 +109,14 @@ const defaultState: AnnotationState = {
     requestReviewDialogVisible: false,
     submitReviewDialogVisible: false,
     tabContentHeight: 0,
+    predictor: {
+        enabled: false,
+        error: null,
+        message: '',
+        projectScore: 0,
+        fetching: false,
+        annotatedFrames: [],
+    },
     workspace: Workspace.STANDARD,
 };
 
@@ -129,6 +138,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 job,
                 states,
+                openTime,
                 frameNumber: number,
                 frameFilename: filename,
                 colors,
@@ -148,6 +158,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 job: {
                     ...state.job,
+                    openTime,
                     fetching: false,
                     instance: job,
                     labels: job.task.labels,
@@ -443,7 +454,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
-            const { shapeType, labelID, objectType, points, activeControl, rectDrawingMethod } = action.payload;
+            const { payload } = action;
+
+            let { activeControl } = state.canvas;
+            if (payload.activeShapeType === ShapeType.RECTANGLE) {
+                activeControl = ActiveControl.DRAW_RECTANGLE;
+            } else if (payload.activeShapeType === ShapeType.POLYGON) {
+                activeControl = ActiveControl.DRAW_POLYGON;
+            } else if (payload.activeShapeType === ShapeType.POLYLINE) {
+                activeControl = ActiveControl.DRAW_POLYLINE;
+            } else if (payload.activeShapeType === ShapeType.POINTS) {
+                activeControl = ActiveControl.DRAW_POINTS;
+            } else if (payload.activeShapeType === ShapeType.CUBOID) {
+                activeControl = ActiveControl.DRAW_CUBOID;
+            } else if (payload.activeObjectType === ObjectType.TAG) {
+                activeControl = ActiveControl.CURSOR;
+            }
 
             return {
                 ...state,
@@ -456,12 +482,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activeControl,
                 },
                 drawing: {
+                    ...state.drawing,
+                    ...payload,
                     activeInteractor: undefined,
-                    activeLabelID: labelID,
-                    activeNumOfPoints: points,
-                    activeObjectType: objectType,
-                    activeShapeType: shapeType,
-                    activeRectDrawingMethod: rectDrawingMethod,
                 },
             };
         }
@@ -1081,6 +1104,47 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 workspace,
+            };
+        }
+        case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {
+            const { payload } = action;
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    ...payload,
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS: {
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    fetching: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS_SUCCESS: {
+            const { frame } = action.payload;
+            const annotatedFrames = [...state.predictor.annotatedFrames, frame];
+
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    fetching: false,
+                    annotatedFrames,
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
+            return {
+                ...state,
+                predictor: {
+                    ...state.predictor,
+                    fetching: false,
+                },
             };
         }
         case AnnotationActionTypes.RESET_CANVAS: {
