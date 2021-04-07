@@ -456,9 +456,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
-            const {
-                shapeType, labelID, objectType, points, activeControl, rectDrawingMethod,
-            } = action.payload;
+            const { payload } = action;
+
+            let { activeControl } = state.canvas;
+            if (payload.activeShapeType === ShapeType.RECTANGLE) {
+                activeControl = ActiveControl.DRAW_RECTANGLE;
+            } else if (payload.activeShapeType === ShapeType.POLYGON) {
+                activeControl = ActiveControl.DRAW_POLYGON;
+            } else if (payload.activeShapeType === ShapeType.POLYLINE) {
+                activeControl = ActiveControl.DRAW_POLYLINE;
+            } else if (payload.activeShapeType === ShapeType.POINTS) {
+                activeControl = ActiveControl.DRAW_POINTS;
+            } else if (payload.activeShapeType === ShapeType.CUBOID) {
+                activeControl = ActiveControl.DRAW_CUBOID;
+            } else if (payload.activeObjectType === ObjectType.TAG) {
+                activeControl = ActiveControl.CURSOR;
+            }
 
             return {
                 ...state,
@@ -471,12 +484,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activeControl,
                 },
                 drawing: {
+                    ...state.drawing,
+                    ...payload,
                     activeInteractor: undefined,
-                    activeLabelID: labelID,
-                    activeNumOfPoints: points,
-                    activeObjectType: objectType,
-                    activeShapeType: shapeType,
-                    activeRectDrawingMethod: rectDrawingMethod,
                 },
             };
         }

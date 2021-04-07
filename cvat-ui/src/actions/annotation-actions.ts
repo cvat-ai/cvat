@@ -1130,36 +1130,16 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
 }
 
 // used to reproduce the latest drawing (in case of tags just creating) by using N
-export function rememberObject(
-    objectType: ObjectType,
-    labelID: number,
-    shapeType?: ShapeType,
-    points?: number,
-    rectDrawingMethod?: RectDrawingMethod,
-): AnyAction {
-    let activeControl = ActiveControl.CURSOR;
-    if (shapeType === ShapeType.RECTANGLE) {
-        activeControl = ActiveControl.DRAW_RECTANGLE;
-    } else if (shapeType === ShapeType.POLYGON) {
-        activeControl = ActiveControl.DRAW_POLYGON;
-    } else if (shapeType === ShapeType.POLYLINE) {
-        activeControl = ActiveControl.DRAW_POLYLINE;
-    } else if (shapeType === ShapeType.POINTS) {
-        activeControl = ActiveControl.DRAW_POINTS;
-    } else if (shapeType === ShapeType.CUBOID) {
-        activeControl = ActiveControl.DRAW_CUBOID;
-    }
-
+export function rememberObject(createParams: {
+    activeObjectType?: ObjectType;
+    activeLabelID?: number;
+    activeShapeType?: ShapeType;
+    activeNumOfPoints?: number;
+    activeRectDrawingMethod?: RectDrawingMethod;
+}): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
-        payload: {
-            shapeType,
-            labelID,
-            objectType,
-            points,
-            activeControl,
-            rectDrawingMethod,
-        },
+        payload: createParams,
     };
 }
 

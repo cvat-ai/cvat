@@ -82,7 +82,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
             dispatch(removeObjectAsync(jobInstance, objectState, true));
         },
         onRememberObject(labelID: number): void {
-            dispatch(rememberObject(ObjectType.TAG, labelID));
+            dispatch(rememberObject({ activeObjectType: ObjectType.TAG, activeLabelID: labelID }));
         },
     };
 }

@@ -17,7 +17,7 @@ export interface KeyMap {
 }
 
 export interface Handlers {
-    [index: string]: (event: KeyboardEvent) => void;
+    [index: string]: (event: KeyboardEvent, shortcut: string) => void;
 }
 
 interface Props {

@@ -381,6 +381,7 @@ export interface PredictorState {
     fetching: boolean;
     annotationAmount: number;
     mediaAmount: number;
+    annotatedFrames: number[];
 }
 
 export interface AnnotationState {

@@ -41,7 +41,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             points?: number,
             rectDrawingMethod?: RectDrawingMethod,
         ): void {
-            dispatch(rememberObject(objectType, labelID, shapeType, points, rectDrawingMethod));
+            dispatch(
+                rememberObject({
+                    activeObjectType: objectType,
+                    activeShapeType: shapeType,
+                    activeLabelID: labelID,
+                    activeNumOfPoints: points,
+                    activeRectDrawingMethod: rectDrawingMethod,
+                }),
+            );
         },
     };
 }
