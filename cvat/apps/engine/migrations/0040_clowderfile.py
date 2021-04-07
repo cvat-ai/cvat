@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0038_manifest'),
+        ('engine', '0039_auto_training'),
     ]
 
     operations = [
