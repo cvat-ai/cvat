@@ -11,7 +11,8 @@
   },
   "testFiles": [
     "auth_page.js",
-    "actions_tasks_objects/*.js",
+    "actions_tasks/*.js",
+    "actions_objects/*.js",
     "issues_prs/*.js",
     "actions_projects/*.js",
     "actions_users/*.js",

@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks_objects', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs']
+        specs: ['actions_tasks', 'actions_objects', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
