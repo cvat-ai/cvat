@@ -230,18 +230,37 @@ function FiltersModalComponent(): JSX.Element {
     const menu = (
         <Menu>
             {filters
-                .filter((filter: StoredFilter) => {
-                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    return !!QbUtils.queryString(tree, config);
-                })
                 .map((filter: StoredFilter) => {
+                    // if a logic received from local storage does not correspond to current config
+                    // which depends on label specification
+                    // (it can be when history from another task with another specification or when label was removed)
+                    // loadFromJsonLogic() prints a warning to console
+                    // the are not ways to configure this behaviour
+
+                    let invalid = false;
+                    const { warn } = console;
+                    // eslint-disable-next-line
+                    console.warn = (...rest) => {
+                        invalid = true;
+                    };
                     const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    return (
-                        <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
-                            {QbUtils.queryString(tree, config)}
-                        </Menu.Item>
-                    );
-                })}
+                    // eslint-disable-next-line
+                    console.warn = warn;
+
+                    const queryString = QbUtils.queryString(tree, config);
+                    return {
+                        tree,
+                        queryString,
+                        filter,
+                        invalid,
+                    };
+                })
+                .filter(({ queryString, invalid }) => !!queryString || invalid)
+                .map(({ filter, tree }) => (
+                    <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
+                        {QbUtils.queryString(tree, config)}
+                    </Menu.Item>
+                ))}
         </Menu>
     );
 
