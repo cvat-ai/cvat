@@ -7,33 +7,66 @@ menu:
 ---
 
 
-{{< blocks/section height="min" color="info" >}}
+{{< blocks/cover height="min" >}}
 
-<div class="col-12 mx-auto py-5 text-center">
+<div class="col-12 mx-auto py-4 text-center">
   <img src="/images/logo2.png">
 </div>
 
-<p class="col-12 pt-5 mx-auto text-center"> CVAT is completely re-designed and re-implemented version of Video Annotation Tool from Irvine, California tool. It is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.
+<p class="col-12 pt-5 mx-auto text-center"> CVAT was designed to provide users with a set of convenient instruments for annotating digital images and videos. CVAT supports supervised machine learning tasks pertaining to object detection, image classification, and image segmentation. It enables users to annotate images with four types of shapes: boxes, polygons (both generally and for segmentation tasks), polylines (which can be useful for annotating markings on roads), and points (e.g., for annotating face landmarks or pose estimation).
 <br/>
 </p>
-<p class="col-12 mx-auto text-center"> Read on to find out more, or visit our <a href="/docs">documentation</a> to get started!
-</p>
-
-{{< /blocks/section >}}
 
 
-{{< blocks/section  height="min" color="docs" >}}
+{{< /blocks/cover >}}
 
 
-{{< /blocks/section >}}
-
-
-{{< blocks/section  height="min" color="info" >}}
-<div>
-  <h4 class="mb-3">LICENSE</h4>
-  <p>Code released under the <a href="https://opensource.org/licenses/MIT">MIT License</a>.</p>
-  <p>This software uses LGPL licensed libraries from the <a href="https://www.ffmpeg.org/">FFmpeg</a> project. The exact steps on how FFmpeg was configured and compiled can be found in the <a href="https://github.com/openvinotoolkit/cvat/blob/develop/DockerfileDockerfile">Dockerfile</a>.</p>
-  <p>FFmpeg is an open source framework licensed under LGPL and GPL. See <a href="https://www.ffmpeg.org/legal.html">https://www.ffmpeg.org/legal.html</a>. You are solely responsible for determining if your use of FFmpeg requires any additional licenses.
-    Intel is not responsible for obtaining any such licenses, nor liable for any licensing fees due in connection with your use of FFmpeg.</p>
+{{< blocks/section height="min" color="dark" >}}
+<div class="history col-12 mx-auto text-left">
+  <p>Data scientists need annotated data (and lots of it) to train the deep neural networks (DNNs) at the core of AI workflows. Obtaining annotated data, or annotating data yourself, is a challenging and time-consuming process. For example, it took about 3,100 total hours for members of Intel’s own data annotation team to annotate the more than 769,000 objects used for just one of our algorithms. To help solve this challenge, Intel is conducting research to find better methods to annotate data and deliver tools that help developers do the same.</p>
+  <div class="col mt-5">
+    <div class="row">
+      <div id="year" class="col-lg-2 text-left col-lg-2 mt-2">
+        <h2 class="mt-2">2017
+          <img class="ml-2" alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMuMTc5bW0iIGhlaWdodD0iMi45NjQ5bW0iIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIzLjE3OSAyLjk2NDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTI5Ljg5IC0xMjguMzEpIiBmaWxsPSIjZmZmIj4KICA8cGF0aCBkPSJtMTUwLjkyIDEyOC4zMSAyLjE0OCAxLjQ4MjQtMi4xNDggMS40ODI0eiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzMC41NiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii4xIiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTMzLjUiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuMiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzNi40NCIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii41IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTM5LjM4IiBjeT0iMTI5Ljc5IiByPSIuNjY4MTciIGZpbGwtb3BhY2l0eT0iLjYiIG9wYWNpdHk9Ii45OTUiLz4KICA8Y2lyY2xlIGN4PSIxNDIuMzIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuNyIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjE0NS4yNiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii44IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTQ4LjIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuOSIgb3BhY2l0eT0iLjk5NSIvPgogPC9nPgo8L3N2Zz4K" />
+        </h2>
+        <small class="text-left">First version of CVAT was created and open sourced.</small>
+      </div>
+      <div id="year" class="col-lg-2 text-left col-lg-2 mt-2">
+        <h2 class="mt-2">2018
+          <img class="ml-2" alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMuMTc5bW0iIGhlaWdodD0iMi45NjQ5bW0iIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIzLjE3OSAyLjk2NDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTI5Ljg5IC0xMjguMzEpIiBmaWxsPSIjZmZmIj4KICA8cGF0aCBkPSJtMTUwLjkyIDEyOC4zMSAyLjE0OCAxLjQ4MjQtMi4xNDggMS40ODI0eiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzMC41NiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii4xIiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTMzLjUiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuMiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzNi40NCIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii41IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTM5LjM4IiBjeT0iMTI5Ljc5IiByPSIuNjY4MTciIGZpbGwtb3BhY2l0eT0iLjYiIG9wYWNpdHk9Ii45OTUiLz4KICA8Y2lyY2xlIGN4PSIxNDIuMzIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuNyIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjE0NS4yNiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii44IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTQ4LjIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuOSIgb3BhY2l0eT0iLjk5NSIvPgogPC9nPgo8L3N2Zz4K" />
+        </h2>
+        <small class="text-left">Publication on GitHub.</small>
+      </div>
+      <div id="year" class="col-lg-2 text-left col-lg-2 mt-2">
+        <h2 class="mt-2">2020
+          <img class="ml-2" alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMuMTc5bW0iIGhlaWdodD0iMi45NjQ5bW0iIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIzLjE3OSAyLjk2NDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTI5Ljg5IC0xMjguMzEpIiBmaWxsPSIjZmZmIj4KICA8cGF0aCBkPSJtMTUwLjkyIDEyOC4zMSAyLjE0OCAxLjQ4MjQtMi4xNDggMS40ODI0eiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzMC41NiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii4xIiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTMzLjUiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuMiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzNi40NCIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii41IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTM5LjM4IiBjeT0iMTI5Ljc5IiByPSIuNjY4MTciIGZpbGwtb3BhY2l0eT0iLjYiIG9wYWNpdHk9Ii45OTUiLz4KICA8Y2lyY2xlIGN4PSIxNDIuMzIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuNyIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjE0NS4yNiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii44IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTQ4LjIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuOSIgb3BhY2l0eT0iLjk5NSIvPgogPC9nPgo8L3N2Zz4K" />
+        </h2>
+        <small class="text-left">Release version 1.0.0. Major update. <br/>Opening public demo-server cvat.org.</small>
+      </div>
+      <div id="year" class="col-lg-2 text-left col-lg-2 mt-2">
+        <h2 class="mt-2">2020
+          <img class="ml-2" alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMuMTc5bW0iIGhlaWdodD0iMi45NjQ5bW0iIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIzLjE3OSAyLjk2NDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTI5Ljg5IC0xMjguMzEpIiBmaWxsPSIjZmZmIj4KICA8cGF0aCBkPSJtMTUwLjkyIDEyOC4zMSAyLjE0OCAxLjQ4MjQtMi4xNDggMS40ODI0eiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzMC41NiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii4xIiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTMzLjUiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuMiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzNi40NCIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii41IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTM5LjM4IiBjeT0iMTI5Ljc5IiByPSIuNjY4MTciIGZpbGwtb3BhY2l0eT0iLjYiIG9wYWNpdHk9Ii45OTUiLz4KICA8Y2lyY2xlIGN4PSIxNDIuMzIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuNyIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjE0NS4yNiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii44IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTQ4LjIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuOSIgb3BhY2l0eT0iLjk5NSIvPgogPC9nPgo8L3N2Zz4K" />
+        </h2>
+        <small class="text-left">Release version 1.1.0. <br/>Adding DL models.</small>
+      </div>
+      <div id="year" class="col-lg-2 text-left col-lg-2 mt-2">
+        <h2 class="mt-2">2021
+          <img class="ml-2" alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMuMTc5bW0iIGhlaWdodD0iMi45NjQ5bW0iIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIzLjE3OSAyLjk2NDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTI5Ljg5IC0xMjguMzEpIiBmaWxsPSIjZmZmIj4KICA8cGF0aCBkPSJtMTUwLjkyIDEyOC4zMSAyLjE0OCAxLjQ4MjQtMi4xNDggMS40ODI0eiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzMC41NiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii4xIiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTMzLjUiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuMiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzNi40NCIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii41IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTM5LjM4IiBjeT0iMTI5Ljc5IiByPSIuNjY4MTciIGZpbGwtb3BhY2l0eT0iLjYiIG9wYWNpdHk9Ii45OTUiLz4KICA8Y2lyY2xlIGN4PSIxNDIuMzIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuNyIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjE0NS4yNiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii44IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTQ4LjIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuOSIgb3BhY2l0eT0iLjk5NSIvPgogPC9nPgo8L3N2Zz4K" />
+        </h2>
+        <small class="text-left">Release version 1.3.0. <br/> Adding CVAT-3D.</small>
+      </div>
+      <div id="year" class="col-lg-2 text-left col-lg-2 mt-2">
+        <h2 class="mt-2">2022
+          <img class="ml-2" alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMuMTc5bW0iIGhlaWdodD0iMi45NjQ5bW0iIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIzLjE3OSAyLjk2NDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTI5Ljg5IC0xMjguMzEpIiBmaWxsPSIjZmZmIj4KICA8cGF0aCBkPSJtMTUwLjkyIDEyOC4zMSAyLjE0OCAxLjQ4MjQtMi4xNDggMS40ODI0eiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzMC41NiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii4xIiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTMzLjUiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuMiIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjEzNi40NCIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii41IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTM5LjM4IiBjeT0iMTI5Ljc5IiByPSIuNjY4MTciIGZpbGwtb3BhY2l0eT0iLjYiIG9wYWNpdHk9Ii45OTUiLz4KICA8Y2lyY2xlIGN4PSIxNDIuMzIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuNyIgb3BhY2l0eT0iLjk5NSIvPgogIDxjaXJjbGUgY3g9IjE0NS4yNiIgY3k9IjEyOS43OSIgcj0iLjY2ODE3IiBmaWxsLW9wYWNpdHk9Ii44IiBvcGFjaXR5PSIuOTk1Ii8+CiAgPGNpcmNsZSBjeD0iMTQ4LjIiIGN5PSIxMjkuNzkiIHI9Ii42NjgxNyIgZmlsbC1vcGFjaXR5PSIuOSIgb3BhY2l0eT0iLjk5NSIvPgogPC9nPgo8L3N2Zz4K" />
+        </h2>
+        <small class="text-left">Further development...</small>
+      </div>
+    </div>
   </div>
+</div>
+
 {{< /blocks/section >}}
+
+
+
