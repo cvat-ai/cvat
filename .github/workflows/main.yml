@@ -77,6 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [Unit_tests, E2E_testing]
     steps:
+    - uses: actions/checkout@v2
     - name: Download coverage results
       uses: actions/download-artifact@v2
       with:
