@@ -9,9 +9,11 @@ import shutil
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 
+
+from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.dataset_manager.formats.utils import get_label_color
+
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
@@ -415,6 +417,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError('All label names must be unique for the task')
         return value
 
+
 class ProjectSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
@@ -423,17 +426,25 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         ordering = ['-id']
 
 
+class TrainingProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.TrainingProject
+        fields = ('host', 'username', 'password', 'enabled', 'project_class')
+        write_once_fields = ('host', 'username', 'password', 'project_class')
+
+
 class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
     owner = BasicUserSerializer(required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    training_project = TrainingProjectSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'owner', 'assignee', 'owner_id', 'assignee_id',
-            'bug_tracker', 'created_date', 'updated_date', 'status')
+        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
+                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
         ordering = ['-id']
 
@@ -456,7 +467,17 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
-        db_project = models.Project.objects.create(**validated_data)
+        training_data = validated_data.pop('training_project', {})
+        if training_data.get('enabled'):
+            host = training_data.pop('host').strip('/')
+            username = training_data.pop('username').strip()
+            password = training_data.pop('password').strip()
+            tr_p = models.TrainingProject.objects.create(**training_data,
+                                                         host=host, username=username, password=password)
+            db_project = models.Project.objects.create(**validated_data,
+                                                       training_project=tr_p)
+        else:
+            db_project = models.Project.objects.create(**validated_data)
         label_names = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
@@ -472,7 +493,6 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
             shutil.rmtree(project_path)
         os.makedirs(db_project.get_project_logs_dirname())
 
-        db_project.save()
         return db_project
 
     # pylint: disable=no-self-use
@@ -530,6 +550,7 @@ class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
     ANALYTICS = serializers.BooleanField()
     MODELS = serializers.BooleanField()
+    PREDICT = serializers.BooleanField()
 
 class DataMetaSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
