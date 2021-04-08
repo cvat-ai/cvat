@@ -303,14 +303,6 @@ class RemoteFile(models.Model):
     class Meta:
         default_permissions = ()
 
-class ClowderFile(models.Model):
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='clowder_files')
-    clowderid = models.CharField(max_length=1024)
-    name = models.CharField(max_length=2048)
-    srcdatasetid = models.CharField(max_length=1024)
-
-    class Meta:
-        default_permissions = ()
 
 class ClowderFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='clowder_files')
