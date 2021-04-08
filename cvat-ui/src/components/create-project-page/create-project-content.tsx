@@ -154,26 +154,19 @@ export default function CreateProjectContent(): JSX.Element {
     }, [newProjectId]);
 
     const onSumbit = async (): Promise<void> => {
-        interface Project {
-            [key: string]: any;
-        }
-
-        const projectData: Project = {};
+        let projectData: Record<string, any> = {};
         if (nameFormRef.current && advancedFormRef.current) {
             const basicValues = await nameFormRef.current.validateFields();
             const advancedValues = await advancedFormRef.current.validateFields();
             const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
-            projectData.name = basicValues.name;
-            projectData.training_project = null;
-            if (adaptiveAutoAnnotationValues) {
-                projectData.training_project = {};
-                for (const [field, value] of Object.entries(adaptiveAutoAnnotationValues)) {
-                    projectData.training_project[field] = value;
-                }
-            }
+            projectData = {
+                ...projectData,
+                ...advancedValues,
+                name: basicValues.name,
+            };
 
-            for (const [field, value] of Object.entries(advancedValues)) {
-                projectData[field] = value;
+            if (adaptiveAutoAnnotationValues) {
+                projectData.training_project = { ...adaptiveAutoAnnotationValues };
             }
         }
 
