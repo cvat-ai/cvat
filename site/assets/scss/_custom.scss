@@ -37,8 +37,9 @@
 }
 
 /*About page*/
-.team {
-    max-width: 900px !important;
+
+.logo-2 {
+    opacity: 0.3;
 }
 
 .history #year h2 {
@@ -57,9 +58,41 @@
 }
 
 .avatar:hover .image {
-    opacity: 0.4;
+    box-shadow: 0px 0px 15px gray;
 }
 
-.avatar:hover .middle {
-    opacity: 0.3;
+.developer-info-list-item {
+    min-width: 15rem !important
+}
+
+/*World map*/
+
+.team-container {
+    margin: auto;
+    width: 70%;
+    height: auto;
+}
+
+.world-map-container {
+    width: 100%;
+    height: auto;
+}
+
+#world-map {
+    z-index:1;
+    width: 100%;
+
+}
+
+#world-map-marker {
+    vertical-align: baseline;
+    z-index:2;
+    position: absolute;
+    border-radius: 50%;
+    border: 2px white solid;
+    box-shadow: 2px 2px 1px gray ;
+}
+
+#world-map-marker:hover {
+    border: 4px white solid;
 }
