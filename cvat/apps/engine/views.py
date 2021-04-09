@@ -1011,14 +1011,12 @@ def _clowder_get_content(api_key, datasetid, folderid=None):
             file['srcdatasetid'] = datasetid
             file['is_file'] = True
         folders_raw = clowder.get_folders(datasetid, folderid)
-        folders = []
-        for raw in folders_raw:
-            folder = dict()
-            folder['clowderid'] = raw['id']
-            folder['name'] = raw['path'][-1]
-            folder['is_file'] = False
-            folder['srcdatasetid'] = datasetid
-            folders.append(folder)
+        folders = [{
+            'clowderid': raw['id'],
+            'name': raw['path'][-1],
+            'is_file': False,
+            'srcdatasetid': datasetid
+        } for raw in folders_raw]
         return folders + files
 
 @api_view(['GET'])
