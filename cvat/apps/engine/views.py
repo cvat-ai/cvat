@@ -27,7 +27,7 @@ from drf_yasg import openapi
 from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
@@ -39,6 +39,7 @@ import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
+from cvat.apps.engine.clowder_api import ClowderApi
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
@@ -978,8 +979,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
 # TODO: document for swagger
-from rest_framework.decorators import api_view
-from cvat.apps.engine.clowder_api import ClowderApi
 @api_view(['POST'])
 def clowder_dataset_root_contents(request, dataset_id):
     try:
