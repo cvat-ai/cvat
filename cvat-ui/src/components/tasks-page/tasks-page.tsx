@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -83,7 +83,9 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     }
 
     public componentDidUpdate(prevProps: TasksPageProps & RouteComponentProps): void {
-        const { location, gettingQuery, tasksFetching, numberOfHiddenTasks, onGetTasks, hideEmptyTasks } = this.props;
+        const {
+            location, gettingQuery, tasksFetching, numberOfHiddenTasks, onGetTasks, hideEmptyTasks,
+        } = this.props;
 
         if (prevProps.location.search !== location.search) {
             // get new tasks if any query changes
@@ -188,7 +190,9 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     }
 
     public render(): JSX.Element {
-        const { tasksFetching, gettingQuery, numberOfVisibleTasks, onImportTask, taskImporting } = this.props;
+        const {
+            tasksFetching, gettingQuery, numberOfVisibleTasks, onImportTask, taskImporting,
+        } = this.props;
 
         if (tasksFetching) {
             return <Spin size='large' className='cvat-spinner' />;
@@ -201,7 +205,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                     searchValue={getSearchField(gettingQuery)}
                     onFileUpload={onImportTask}
                     taskImporting={taskImporting}
-                 />
+                />
                 {numberOfVisibleTasks ? (
                     <TaskListContainer onSwitchPage={this.handlePagination} />
                 ) : (
