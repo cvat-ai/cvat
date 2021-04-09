@@ -153,7 +153,7 @@ def _count_files(data, manifest_file=None):
     )
 
     count_files(
-        file_mapping={ f['name']:os.path.abspath(os.path.join(share_root, f['name'])) for f in data['clowder_files']},
+        file_mapping={f['name']: f['name'] for f in data['clowder_files']},
         counter=counter,
     )
 
