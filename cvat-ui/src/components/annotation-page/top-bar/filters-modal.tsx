@@ -23,19 +23,15 @@ const { FieldDropdown } = AntdWidgets;
 
 const FILTERS_HISTORY = 'annotationFiltersHistory';
 
-interface Props {
-    visible: boolean;
-}
-
 interface StoredFilter {
     id: string;
     logic: JsonLogicTree;
 }
 
-export default function FiltersModalComponent(props: Props): JSX.Element {
-    const { visible } = props;
-    const { labels } = useSelector((state: CombinedState) => state.annotation.job);
-    const { filters: activeFilters } = useSelector((state: CombinedState) => state.annotation.annotations);
+function FiltersModalComponent(): JSX.Element {
+    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
+    const activeFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const visible = useSelector((state: CombinedState) => state.annotation.filtersPanelVisible);
 
     const getConvertedInputType = (inputType: string): string => {
         switch (inputType) {
@@ -234,18 +230,23 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
     const menu = (
         <Menu>
             {filters
-                .filter((filter: StoredFilter) => {
-                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    return !!QbUtils.queryString(tree, config);
-                })
                 .map((filter: StoredFilter) => {
+                    // if a logic received from local storage does not correspond to current config
+                    // which depends on label specification
+                    // (it can be when history from another task with another specification or when label was removed)
+                    // loadFromJsonLogic() prints a warning to console
+                    // the are not ways to configure this behaviour
+
                     const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    return (
-                        <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
-                            {QbUtils.queryString(tree, config)}
-                        </Menu.Item>
-                    );
-                })}
+                    const queryString = QbUtils.queryString(tree, config);
+                    return { tree, queryString, filter };
+                })
+                .filter(({ queryString }) => !!queryString)
+                .map(({ filter, tree, queryString }) => (
+                    <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
+                        {queryString}
+                    </Menu.Item>
+                ))}
         </Menu>
     );
 
@@ -286,3 +287,5 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
         </Modal>
     );
 }
+
+export default React.memo(FiltersModalComponent);

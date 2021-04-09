@@ -19,7 +19,8 @@ def _export(dst_file, task_data, save_images=False):
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
         task_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
-        dataset.export(temp_dir, 'coco_instances', save_images=save_images)
+        dataset.export(temp_dir, 'coco_instances', save_images=save_images,
+            merge_images=True)
 
         make_zip_archive(temp_dir, dst_file)
 

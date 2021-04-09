@@ -10,6 +10,7 @@
     - [Advanced settings](#advanced-settings)
     - [Share path](#share-path)
     - [Email verification](#email-verification)
+    - [Deploy CVAT on the Scaleway public cloud](#deploy-cvat-on-the-scaleway-public-cloud)
     - [Deploy secure CVAT instance with HTTPS](#deploy-secure-cvat-instance-with-https)
       - [Prerequisites](#prerequisites)
       - [Roadmap](#roadmap)

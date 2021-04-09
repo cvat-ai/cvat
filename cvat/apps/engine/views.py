@@ -65,7 +65,6 @@ from cvat.apps.engine.serializers import (AboutSerializer,
                                           UserSerializer)
 from cvat.apps.engine.backup import import_task
 from cvat.apps.engine.utils import av_scan_paths
-
 from . import models, task
 from .log import clogger, slogger
 
@@ -200,6 +199,7 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS':       False,
             'MODELS':          False,
+            'PREDICT':         apps.is_installed('cvat.apps.training')
         }
         if strtobool(os.environ.get("CVAT_ANALYTICS", '0')):
             response['ANALYTICS'] = True
@@ -301,6 +301,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True,
             context={"request": request})
         return Response(serializer.data)
+
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -1234,3 +1235,5 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
+
+

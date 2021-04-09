@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,9 @@ interface StateToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
-    const { interactors, detectors, trackers, reid } = models;
+    const {
+        interactors, detectors, trackers, reid,
+    } = models;
 
     return {
         interactors,

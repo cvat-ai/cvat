@@ -6,12 +6,10 @@
 
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
-        cy.get('.cvat-user-search-field').click();
+        user !== ''
+            ? cy.get('.cvat-user-search-field').find('[type="search"]').type(`${user}{Enter}`)
+            : cy.get('.cvat-user-search-field').find('[type="search"]').clear().type('{Enter}');
     });
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .contains(new RegExp(`^${user}$`, 'g'))
-        .click();
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
@@ -26,6 +24,18 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
+});
+
+Cypress.Commands.add('reviewJobToUser', (jobID, user) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`)
+            .parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-reviewer-selector')
+            .find('[type="search"]')
+            .clear()
+            .type(`${user}{Enter}`);
+    });
 });
 
 Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {
@@ -75,7 +85,7 @@ Cypress.Commands.add('collectIssueRegionId', () => {
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
         for (let i = 0; i < issueRegionList.length; i++) {
-            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\-?\d+$/)));
+            issueRegionIdList.push(Number(issueRegionList[i].id.match(/-?\d+$/)));
         }
         return issueRegionIdList;
     });
