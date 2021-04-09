@@ -1,22 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="23.252mm" height="4.4768mm" version="1.1" viewBox="0 0 23.252 4.4768" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
- <metadata>
-  <rdf:RDF>
-   <cc:Work rdf:about="">
-    <dc:format>image/svg+xml</dc:format>
-    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:title/>
-   </cc:Work>
-  </rdf:RDF>
- </metadata>
- <g transform="translate(-129.89 -127.55)">
-  <path d="m150.47 127.55 2.6727 2.2384-2.6727 2.2384z" opacity=".995"/>
-  <circle cx="130.56" cy="129.79" r=".66817" opacity=".995"/>
-  <circle cx="133.5" cy="129.79" r=".66817" opacity=".995"/>
-  <circle cx="136.44" cy="129.79" r=".66817" opacity=".995"/>
-  <circle cx="139.38" cy="129.79" r=".66817" opacity=".995"/>
-  <circle cx="142.32" cy="129.79" r=".66817" opacity=".995"/>
-  <circle cx="145.26" cy="129.79" r=".66817" opacity=".995"/>
-  <circle cx="148.2" cy="129.79" r=".66817" opacity=".995"/>
+<svg width="23.179mm" height="2.9649mm" version="1.1" viewBox="0 0 23.179 2.9649" xmlns="http://www.w3.org/2000/svg">
+ <g>
+  <path d="m21.03 0 2.148 1.4824-2.148 1.4824z" opacity=".995"/>
+  <circle cx=".67" cy="1.48" r=".66817" fill-opacity=".1" opacity=".995"/>
+  <circle cx="3.61" cy="1.48" r=".66817" fill-opacity=".2" opacity=".995"/>
+  <circle cx="6.55" cy="1.48" r=".66817" fill-opacity=".5" opacity=".995"/>
+  <circle cx="9.49" cy="1.48" r=".66817" fill-opacity=".6" opacity=".995"/>
+  <circle cx="12.43" cy="1.48" r=".66817" fill-opacity=".7" opacity=".995"/>
+  <circle cx="15.37" cy="1.48" r=".66817" fill-opacity=".8" opacity=".995"/>
+  <circle cx="18.31" cy="1.48" r=".66817" fill-opacity=".9" opacity=".995"/>
  </g>
 </svg>
