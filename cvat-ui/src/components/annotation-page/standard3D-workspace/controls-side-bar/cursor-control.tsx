@@ -7,11 +7,12 @@ import Icon from '@ant-design/icons';
 
 import { CursorIcon } from 'icons';
 import { ActiveControl } from 'reducers/interfaces';
-import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     cursorShortkey: string;
     activeControl: ActiveControl;
 }

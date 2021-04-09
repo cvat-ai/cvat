@@ -7,25 +7,35 @@ import Icon from '@ant-design/icons';
 
 import { MoveIcon } from 'icons';
 import { ActiveControl } from 'reducers/interfaces';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 
-interface Props {
-    canvasInstance: Canvas;
+export interface Props {
+    canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
 }
 
 function MoveControl(props: Props): JSX.Element {
-    const { activeControl } = props;
+    const { canvasInstance, activeControl } = props;
 
     return (
         <CVATTooltip title='Move the image' placement='right'>
             <Icon
                 component={MoveIcon}
-                className={[
-                    'cvat-move-control',
-                    activeControl === ActiveControl.DRAG_CANVAS ? 'cvat-active-canvas-control' : '',
-                ].join(' ')}
+                className={
+                    activeControl === ActiveControl.DRAG_CANVAS ?
+                        'cvat-move-control cvat-active-canvas-control' :
+                        'cvat-move-control'
+                }
+                onClick={(): void => {
+                    if (activeControl === ActiveControl.DRAG_CANVAS) {
+                        canvasInstance.dragCanvas(false);
+                    } else {
+                        canvasInstance.cancel();
+                        canvasInstance.dragCanvas(true);
+                    }
+                }}
             />
         </CVATTooltip>
     );

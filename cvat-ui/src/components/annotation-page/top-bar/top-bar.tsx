@@ -7,12 +7,15 @@ import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
 import { PredictorState, Workspace } from 'reducers/interfaces';
+import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
 import RightGroup from './right-group';
 
 interface Props {
+    canvasInstance: Canvas | Canvas3d;
     playing: boolean;
     saving: boolean;
     savingStatuses: string[];
@@ -106,6 +109,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onRedoClick,
         jobInstance,
         isTrainingActive,
+        canvasInstance,
     } = props;
 
     return (
@@ -157,6 +161,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 </Row>
             </Col>
             <RightGroup
+                canvasInstance={canvasInstance}
                 predictor={predictor}
                 workspace={workspace}
                 switchPredictor={switchPredictor}

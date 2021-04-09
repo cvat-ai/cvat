@@ -10,14 +10,23 @@ import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
 import { ResizableBox } from 'react-resizable';
-import { Workspace } from 'reducers/interfaces';
 import {
-    CAMERA_ACTION, Canvas3d, MouseInteraction, ViewType,
-} from 'cvat-canvas3d-wrapper';
+    ColorBy, ContextMenuType, ObjectType, Workspace,
+} from 'reducers/interfaces';
+import { CAMERA_ACTION, Canvas3d, ViewType } from 'cvat-canvas3d-wrapper';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
 import CVATTooltip from '../../common/cvat-tooltip';
+import { LogType } from '../../../cvat-logger';
+import getCore from '../../../cvat-core-wrapper';
+
+const cvat = getCore();
 
 interface Props {
+    opacity: number;
+    selectedOpacity: number;
+    outlined: boolean;
+    outlineColor: string;
+    colorBy: ColorBy;
     canvasInstance: Canvas3d;
     jobInstance: any;
     frameData: any;
@@ -26,13 +35,25 @@ interface Props {
     loaded: boolean;
     data: string;
     annotations: any[];
+    contextMenuVisibility: boolean;
+    activeLabelID: number;
+    activatedStateID: number | null;
+    activeObjectType: ObjectType;
     onSetupCanvas: () => void;
     getContextImage(): void;
     onResetCanvas(): void;
+    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onActivateObject(activatedStateID: number | null): void;
+    onUpdateAnnotations(states: any[]): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
+    onEditShape: (enabled: boolean) => void;
+    onDragCanvas: (enabled: boolean) => void;
+    onShapeDrawn: () => void;
     workspace: Workspace;
     animateID: any;
     automaticBordering: boolean;
     showObjectsTextAlways: boolean;
+    frame: number;
 }
 
 interface ViewSize {
@@ -120,71 +141,122 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     const frontView = useRef<HTMLDivElement | null>(null);
 
     const {
-        frameData, contextImageHide, getContextImage, loaded, data, annotations, curZLayer,
+        opacity,
+        outlined,
+        outlineColor,
+        selectedOpacity,
+        colorBy,
+        contextMenuVisibility,
+        frameData,
+        onResetCanvas,
+        onSetupCanvas,
+        contextImageHide,
+        getContextImage,
+        loaded,
+        data,
+        annotations,
+        curZLayer,
+        frame,
+        jobInstance,
+        activeLabelID,
+        activeObjectType,
+        onShapeDrawn,
+        onCreateAnnotations,
+        canvasInstance,
     } = props;
 
     const onCanvasSetup = (): void => {
-        const { onSetupCanvas } = props;
         onSetupCanvas();
     };
 
-    const animateCanvas = (): void => {
-        const { canvasInstance } = props;
+    const onCanvasDragStart = (): void => {
+        const { onDragCanvas } = props;
+        onDragCanvas(true);
+    };
 
+    const onCanvasDragDone = (): void => {
+        const { onDragCanvas } = props;
+        onDragCanvas(false);
+    };
+
+    const animateCanvas = (): void => {
         canvasInstance.render();
         animateId.current = requestAnimationFrame(animateCanvas);
     };
 
     const updateCanvas = (): void => {
-        const { canvasInstance } = props;
-
         if (frameData !== null) {
-            canvasInstance.setup(frameData);
+            canvasInstance.setup(
+                frameData,
+                annotations.filter((e) => e.objectType !== ObjectType.TAG),
+                curZLayer,
+            );
         }
     };
 
-    const onMouseClick = (event: MouseEvent): void => {
-        const { canvasInstance } = props;
-        canvasInstance.mouseControls(MouseInteraction.CLICK, event);
-    };
-
-    const onMouseDoubleClick = (event: MouseEvent): void => {
-        const { canvasInstance } = props;
-        canvasInstance.mouseControls(MouseInteraction.DOUBLE_CLICK, event);
-    };
-
-    const onMouseHover = (event: MouseEvent): void => {
-        const { canvasInstance } = props;
-        canvasInstance.mouseControls(MouseInteraction.HOVER, event);
-    };
-
     const onCanvasCancel = (): void => {
-        const { onResetCanvas } = props;
         onResetCanvas();
     };
 
-    const initialSetup = (): void => {
-        const { canvasInstance } = props;
+    const onCanvasShapeDrawn = (event: any): void => {
+        if (!event.detail.continue) {
+            onShapeDrawn();
+        }
 
+        const { state, duration } = event.detail;
+        const isDrawnFromScratch = !state.label;
+        if (isDrawnFromScratch) {
+            jobInstance.logger.log(LogType.drawObject, { count: 1, duration });
+        } else {
+            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration });
+        }
+
+        state.objectType = state.objectType || activeObjectType;
+        state.label = state.label || jobInstance.task.labels.filter((label: any) => label.id === activeLabelID)[0];
+        state.occluded = state.occluded || false;
+        state.frame = frame;
+        const objectState = new cvat.classes.ObjectState(state);
+        onCreateAnnotations(jobInstance, frame, [objectState]);
+    };
+
+    const onCanvasClick = (e: MouseEvent): void => {
+        const { onUpdateContextMenu } = props;
+        if (contextMenuVisibility) {
+            onUpdateContextMenu(false, e.clientX, e.clientY, ContextMenuType.CANVAS_SHAPE);
+        }
+    };
+
+    const initialSetup = (): void => {
         const canvasInstanceDOM = canvasInstance.html();
-        // Events
         canvasInstanceDOM.perspective.addEventListener('canvas.setup', onCanvasSetup);
-        canvasInstanceDOM.perspective.addEventListener('mousemove', onMouseHover);
         canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
-        canvasInstanceDOM.perspective.addEventListener(MouseInteraction.DOUBLE_CLICK, onMouseDoubleClick);
-        canvasInstanceDOM.perspective.addEventListener(MouseInteraction.CLICK, onMouseClick);
+        canvasInstanceDOM.perspective.addEventListener('canvas.dragstart', onCanvasDragStart);
+        canvasInstanceDOM.perspective.addEventListener('canvas.dragstop', onCanvasDragDone);
     };
 
     const keyControls = (key: KeyboardEvent): void => {
-        const { canvasInstance } = props;
         canvasInstance.keyControls(key);
     };
 
+    const onCanvasShapeSelected = (event: any): void => {
+        const { onActivateObject, activatedStateID } = props;
+        const { clientID } = event.detail;
+        if (activatedStateID !== clientID) {
+            onActivateObject(clientID);
+            canvasInstance.activate(clientID);
+        }
+    };
+
+    const onCanvasEditDone = (event: any): void => {
+        const { onEditShape, onUpdateAnnotations } = props;
+        onEditShape(false);
+        const { state, points } = event.detail;
+        state.points = points;
+        onUpdateAnnotations([state]);
+    };
+
     useEffect(() => {
-        const { canvasInstance } = props;
-
         const canvasInstanceDOM = canvasInstance.html();
-
         if (
             perspectiveView &&
             perspectiveView.current &&
@@ -223,21 +295,58 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
         return () => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.setup', onCanvasSetup);
-            canvasInstanceDOM.perspective.removeEventListener('mousemove', onMouseHover);
             canvasInstanceDOM.perspective.removeEventListener('canvas.canceled', onCanvasCancel);
-            canvasInstanceDOM.perspective.removeEventListener(MouseInteraction.DOUBLE_CLICK, onMouseDoubleClick);
-            canvasInstanceDOM.perspective.removeEventListener(MouseInteraction.CLICK, onMouseClick);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.dragstart', onCanvasDragStart);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.dragstop', onCanvasDragDone);
+
             document.removeEventListener('keydown', keyControls);
             cancelAnimationFrame(animateId.current);
         };
     }, []);
 
+    const updateShapesView = (): void => {
+        canvasInstance.configureShapes({
+            opacity,
+            outlined,
+            outlineColor,
+            selectedOpacity,
+            colorBy,
+        });
+    };
+
+    const onContextMenu = (event: any): void => {
+        const { onUpdateContextMenu, onActivateObject } = props;
+        onActivateObject(event.detail.clientID);
+        onUpdateContextMenu(
+            event.detail.clientID !== null,
+            event.detail.clientX,
+            event.detail.clientY,
+            ContextMenuType.CANVAS_SHAPE,
+        );
+    };
+
     useEffect(() => {
+        updateShapesView();
+    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy]);
+
+    useEffect(() => {
+        const canvasInstanceDOM = canvasInstance.html();
         updateCanvas();
-    }, [frameData, annotations, curZLayer]);
+        canvasInstanceDOM.perspective.addEventListener('canvas.drawn', onCanvasShapeDrawn);
+        canvasInstanceDOM.perspective.addEventListener('canvas.selected', onCanvasShapeSelected);
+        canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
+        canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
+        canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
+        return () => {
+            canvasInstanceDOM.perspective.removeEventListener('canvas.drawn', onCanvasShapeDrawn);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.selected', onCanvasShapeSelected);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
+            canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
+        };
+    }, [frameData, annotations, curZLayer, activeLabelID, contextMenuVisibility]);
 
     const screenKeyControl = (code: CAMERA_ACTION): void => {
-        const { canvasInstance } = props;
         canvasInstance.keyControls(new KeyboardEvent('keydown', { code, altKey: true }));
     };
 

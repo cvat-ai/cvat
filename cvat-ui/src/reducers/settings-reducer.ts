@@ -299,6 +299,11 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     ...state.player,
                     resetZoom: job && job.task.mode === 'annotation',
                 },
+                shapes: {
+                    ...defaultState.shapes,
+                    opacity: (job.task.dimension === '3d') ? 40 : 3,
+                    selectedOpacity: (job.task.dimension === '3d') ? 60 : 30,
+                },
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
