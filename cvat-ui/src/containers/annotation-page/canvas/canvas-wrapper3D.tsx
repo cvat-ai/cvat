@@ -8,10 +8,14 @@ import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wra
 import {
     activateObject,
     confirmCanvasReady,
-    createAnnotationsAsync, dragCanvas, editShape,
+    createAnnotationsAsync,
+    dragCanvas,
+    editShape,
     getContextImage,
     resetCanvas,
-    shapeDrawn, updateAnnotationsAsync, updateCanvasContextMenu
+    shapeDrawn,
+    updateAnnotationsAsync,
+    updateCanvasContextMenu,
 } from 'actions/annotation-actions';
 
 import {
@@ -21,11 +25,11 @@ import {
     ContextMenuType,
     GridColor,
     ObjectType,
-    Workspace
+    Workspace,
 } from 'reducers/interfaces';
 
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import {KeyMap} from "../../../utils/mousetrap-react";
+import { KeyMap } from '../../../utils/mousetrap-react';
 
 interface StateToProps {
     canvasInstance: Canvas3d;
@@ -72,8 +76,6 @@ interface StateToProps {
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
     canvasBackgroundColor: string;
-
-
 }
 
 interface DispatchToProps {
@@ -92,22 +94,24 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            canvas: {activeControl,  instance: canvasInstance, contextMenu : {
-                visible : contextMenuVisibility
-            } },
+            canvas: {
+                activeControl,
+                instance: canvasInstance,
+                contextMenu: { visible: contextMenuVisibility },
+            },
             drawing: { activeLabelID, activeObjectType },
             job: { instance: jobInstance },
             player: {
                 frame: { data: frameData, number: frame, fetching: frameFetching },
                 contextImage: { hidden: contextImageHide, data, loaded },
-                frameAngles
+                frameAngles,
             },
             annotations: {
                 states: annotations,
                 activatedStateID,
                 activatedAttributeID,
                 selectedStatesID,
-                zLayer: { cur: curZLayer , min: minZLayer, max: maxZLayer},
+                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             sidebarCollapsed,
             workspace,

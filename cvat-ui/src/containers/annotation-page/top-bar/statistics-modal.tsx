@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -60,7 +60,14 @@ type Props = StateToProps & DispatchToProps;
 class StatisticsModalContainer extends React.PureComponent<Props> {
     public render(): JSX.Element {
         const {
-            jobInstance, visible, collecting, data, closeStatistics, jobStatus, savingJobStatus, canvasInstance,
+            jobInstance,
+            visible,
+            collecting,
+            data,
+            closeStatistics,
+            jobStatus,
+            savingJobStatus,
+            canvasInstance,
         } = this.props;
 
         return (
