@@ -83,7 +83,12 @@ jobs:
       with:
         name: coverage_results
     - name: Combine coverage results
-      run: mkdir -p .nyc_output && mv out_*.json .nyc_output
+      run: |
+        mkdir -p ./nyc_output_tmp
+        mv ./out_*.json ./nyc_output_tmp
+        mkdir -p ./.nyc_output
+        npm ci
+        npx nyc merge ./nyc_output_tmp ./.nyc_output/out.json
     - name: Send results to Coveralls
       env:
         HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
