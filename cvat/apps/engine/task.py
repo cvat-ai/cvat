@@ -193,7 +193,7 @@ def _copy_data_from_clowder(api_key, file_info, upload_dir):
     from cvat.apps.engine.clowder_api import ClowderApi
 
     job = rq.get_current_job()
-    local_files = {}
+    local_files = set()
     for file in file_info:
         if file['name'] in local_files:
             raise Exception("filename collision: {}".format(file['name']))
@@ -210,8 +210,8 @@ def _copy_data_from_clowder(api_key, file_info, upload_dir):
         except urlerror.URLError as err:
             raise Exception("Invalid URL: {} (file id {})".format(file['name'], file['clowderid']) + ". " + err.reason)
 
-        local_files[file['name']] = True
-    return list(local_files.keys())
+        local_files.add(file['name'])
+    return list(local_files)
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
