@@ -7,7 +7,7 @@ description: "Answers to frequently asked questions"
 
 ## How to update CVAT
 
-Before upgrading, please follow the [backup guide](/docs/for-developers/backup_guide/) and backup all CVAT volumes.
+Before upgrading, please follow the [backup guide](../../../docs/for-developers/backup_guide/) and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
 
@@ -108,13 +108,13 @@ volumes:
 
 ## How to mark job/task as completed
 
-The status is set by the user in the [Info window](/docs/for-users/user-guide/top-panel/#info) of the job annotation view.
+The status is set by the user in the [Info window](../../../docs/for-users/user-guide/top-panel/#info) of the job annotation view.
 There are three types of status: annotation, validation or completed.
 The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 
-Follow this [guide](/docs/for-users/installation/#windows-10).
+Follow this [guide](../../../docs/for-users/installation/#windows-10).
 
 ## I do not have the Analytics tab on the header section. How can I add analytics
 
@@ -137,7 +137,7 @@ services:
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-[Advanced configuration](/docs/for-users/user-guide/creating_an_annotation_task/#advanced-configuration) section.
+[Advanced configuration](../../../docs/for-users/user-guide/creating_an_annotation_task/#advanced-configuration) section.
 
 ## How to transfer CVAT to another machine
-Follow the [backup/restore guide](/docs/for-developers/backup_guide/#how-to-backup-all-cvat-data).
+Follow the [backup/restore guide](../../../docs/for-developers/backup_guide/#how-to-backup-all-cvat-data).

@@ -8,15 +8,15 @@ At CVAT, you can create a project containing tasks of the same type. All tasks 
 To create a project, go to the projects section by clicking on the `Projects` item in the top menu. 
 On the projects page, you can see a list of projects, use a search, or create a new project by clicking `Create New Project`.
 
-![](/images/image190.jpg)
+![](../../../../images/image190.jpg)
 
 You can change: the name of the project, the list of labels (which will be used for tasks created as parts of this project) and a link to the issue.
 
-![](/images/image191.jpg)
+![](../../../../images/image191.jpg)
 
 Once created, the project will appear on the projects page. To open a project, just click on it.
 
-![](/images/image192_mapillary_vistas.jpg)
+![](../../../../images/image192_mapillary_vistas.jpg)
 
 Here you can do the following:
 

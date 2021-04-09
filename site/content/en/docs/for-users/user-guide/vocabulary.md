@@ -5,7 +5,7 @@ weight: 11
 ---
 **Label** is a type of an annotated object (e.g. person, car, vehicle, etc.)
 
-![](/images/image032_detrac.jpg)
+![](../../../../images/image032_detrac.jpg)
 
 ---
 
@@ -14,18 +14,18 @@ quality, etc.). There are two types of attributes:
 
 - **Unique**: immutable and can't be changed from frame to frame (e.g. age, gender, color, etc.)
 
-  ![](/images/image073.jpg)
+  ![](../../../../images/image073.jpg)
 
 - **Temporary**: mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)
 
-  ![](/images/image072.jpg)
+  ![](../../../../images/image072.jpg)
 
 ---
 
 **Track** is a set of shapes on different frames which corresponds to one object.
 Tracks are created in `Track mode`
 
-![](/images/gif003_detrac.gif)
+![](../../../../images/gif003_detrac.gif)
 
 ---
 

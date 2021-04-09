@@ -1,4 +1,4 @@
-baseURL = "cvat.org"
+baseURL = "/"
 title = "CVAT"
 
 enableRobotsTXT = true
@@ -33,10 +33,20 @@ blog = "/:section/:year/:month/:day/:slug/"
 
 ## Configuration for BlackFriday markdown parser: https://github.com/russross/blackfriday
 [blackfriday]
-plainIDAnchors = true
-hrefTargetBlank = true
-angledQuotes = false
-latexDashes = true
+    angledQuotes = false
+    footnoteAnchorPrefix = ""
+    footnoteReturnLinkContents = ""
+    fractions = false
+    hrefTargetBlank = false
+    latexDashes = false
+    nofollowLinks = false
+    noreferrerLinks = false
+    plainIDAnchors = false
+    skipHTML = false
+    smartDashes = false
+    smartypants = false
+    smartypantsQuotesNBSP = false
+    taskLists = false
 
 # Image processing configuration.
 [imaging]
@@ -162,11 +172,6 @@ enable = false
 
 [params.links]
 # End user relevant links. These will show up on left side of footer and in the community page if you have one.
-# [[params.links.user]]
-#	name = "User mailing list"
-#	url = "https://example.org/mail"
-#	icon = "fa fa-envelope"
-#       desc = "Discussion and help from your fellow users"
 [[params.links.user]]
 	name ="Gitter public chat"
 	url = "https://gitter.im/opencv-cvat/public"
@@ -198,8 +203,3 @@ enable = false
 	url = "https://gitter.im/opencv-cvat/dev"
 	icon = "fab fa-gitter"
         desc = "Join our Gitter channel for community support."
-# [[params.links.developer]]
-#	name = "Developer mailing list"
-#	url = "https://example.org/mail"
-#	icon = "fa fa-envelope"
-#        desc = "Discuss development issues around the project"

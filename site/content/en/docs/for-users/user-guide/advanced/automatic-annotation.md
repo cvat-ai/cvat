@@ -11,7 +11,7 @@ You can find the list of available models in the `Models` section.
 1.  To launch automatic annotation, you should open the dashboard and find a task which you want to annotate.
     Then click the `Actions` button and choose option `Automatic Annotation` from the dropdown menu.
 
-    ![](/images/image119_detrac.jpg)
+    ![](../../../../../images/image119_detrac.jpg)
 
 1.  In the dialog window select a model you need. DL models are created for specific labels, e.g.
     the Crossroad model was taught using footage from cameras located above the highway and it is best to
@@ -25,16 +25,16 @@ You can find the list of available models in the `Models` section.
     in this case using auto annotation will help you complete the task faster.
     Click `Submit` to begin the automatic annotation process.
 
-    ![](/images/image120.jpg)
+    ![](../../../../../images/image120.jpg)
 
 1.  At runtime - you can see the percentage of completion.
     You can cancel the automatic annotation by clicking on the `Cancel`button.
 
-    ![](/images/image121_detrac.jpg)
+    ![](../../../../../images/image121_detrac.jpg)
 
 1.  The end result of an automatic annotation is an annotation with separate rectangles (or other shapes)
 
-    ![](/images/gif014_detrac.gif)
+    ![](../../../../../images/gif014_detrac.gif)
 
 1.  You can combine separate bounding boxes into tracks using the `Person reidentification ` model.
     To do this, click on the automatic annotation item in the action menu again and select the model
@@ -44,8 +44,8 @@ You can find the list of available models in the `Models` section.
     - Model `Threshold` is a maximum cosine distance between objects’ embeddings.
     - `Maximum distance` defines a maximum radius that an object can diverge between adjacent frames.
 
-    ![](/images/image133.jpg)
+    ![](../../../../../images/image133.jpg)
 
 1.  You can remove false positives and edit tracks using `Split` and `Merge` functions.
 
-    ![](/images/gif015_detrac.gif)
+    ![](../../../../../images/gif015_detrac.gif)

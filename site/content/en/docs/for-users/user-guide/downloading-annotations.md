@@ -8,16 +8,16 @@ weight: 9
 1.  After that, сlick the `Menu` button.
 1.  Press the `Dump Annotation` button.
 
-    ![](/images/image028.jpg)
+    ![](../../../../images/image028.jpg)
 
 1.  Choose format dump annotation file. Dump annotation are available in several formats:
 
-    - [CVAT for video](/docs/for-developers/xml_format/#interpolation)
+    - [CVAT for video](../../../../docs/for-developers/xml_format/#interpolation)
       is highlighted if a task has the interpolation mode.
-    - [CVAT for images](/docs/for-developers/xml_format/#annotation)
+    - [CVAT for images](../../../../docs/for-developers/xml_format/#annotation)
       is highlighted if a task has the annotation mode.
 
-    ![](/images/image029.jpg 'Example XML format')
+    ![](../../../../images/image029.jpg 'Example XML format')
 
     - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
     - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —

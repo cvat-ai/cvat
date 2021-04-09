@@ -10,7 +10,7 @@ There are two ways of deploying the CVAT.
    Overall setup instruction is explained in [main readme file](https://github.com/opencv/cvat/), except Installing Nvidia drivers. So we need to download the drivers and install it. For Amazon P3 instances, download the Nvidia Drivers from Nvidia website. For more check [Installing the NVIDIA Driver on Linux Instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-nvidia-driver.html) link.
 
 2. **On Any other AWS Machine:** We can follow the same instruction guide mentioned in the
-   [installation instructions](/docs/for-users/installation/).
+   [installation instructions](../../../docs/for-users/installation/).
    The additional step is to add a [security group and rule to allow incoming connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
 
 For any of above, don't forget to add exposed AWS public IP address or hostname to `docker-compose.override.yml`:

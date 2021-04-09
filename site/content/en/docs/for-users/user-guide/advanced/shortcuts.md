@@ -6,7 +6,7 @@ weight: 18
 
 Many UI elements have shortcut hints. Put your pointer to a required element to see it.
 
-![](/images/image075.jpg)
+![](../../../../../images/image075.jpg)
 
 | Shortcut                   | Common                                                                                                   |
 | -------------------------- | -------------------------------------------------------------------------------------------------------- |

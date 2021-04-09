@@ -14,8 +14,8 @@ To edit a polygon you have to click on it while holding `Shift`, it will open th
   If both criteria recommend to cut the same part, algorithm works automatically, and if not, a user has to make the decision.
   If you want to choose manually which part of a polygon should be cut off, disable `Intelligent polygon cropping` in the settings. In this case after closing the polygon, you can select the part of the polygon you want to leave.
 
-  ![](/images/image209.jpg)
+  ![](../../../../../../images/image209.jpg)
 
 - You can press `Esc` to cancel editing.
 
-  ![](/images/gif007_mapillary_vistas.gif)
+  ![](../../../../../../images/gif007_mapillary_vistas.gif)

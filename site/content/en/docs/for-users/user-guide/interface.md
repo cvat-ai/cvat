@@ -13,4 +13,4 @@ The tool consists of:
 - `Objects sidebar` — contains label filter, two lists:
   objects (on the frame) and labels (of objects on the frame) and appearance settings.
 
-![](/images/image034_detrac.jpg)
+![](../../../../images/image034_detrac.jpg)

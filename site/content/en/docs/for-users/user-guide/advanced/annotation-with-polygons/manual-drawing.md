@@ -7,7 +7,7 @@ It is used for semantic / instance segmentation.
 
 Before starting, you need to select `Polygon` on the controls sidebar and choose the correct Label.
 
-![](/images/image084.jpg)
+![](../../../../../../images/image084.jpg)
 
 - Click `Shape` to enter drawing mode.
   There are two ways to draw a polygon: either create points by clicking or
@@ -15,7 +15,7 @@ Before starting, you need to select `Polygon` on the controls sidebar and choose
 
 | Clicking points                                    | Holding Shift+Dragging                             |
 | -------------------------------------------------- | -------------------------------------------------- |
-| ![](/images/gif005_detrac.gif) | ![](/images/gif006_detrac.gif) |
+| ![](../../../../../../images/gif005_detrac.gif)                   | ![](../../../../../../images/gif006_detrac.gif)                   |
 
 - When `Shift` isn't pressed, you can zoom in/out (when scrolling the mouse
   wheel) and move (when clicking the mouse wheel and moving the mouse), you can also

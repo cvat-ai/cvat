@@ -109,7 +109,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT user's guide](/docs/for-users/user-guide/) for more details.
+  [CVAT user's guide](../../../docs/for-users/user-guide/) for more details.
 
 ## Windows 10
 
@@ -172,7 +172,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT user's guide](/docs/for-users/user-guide) for more details.
+  [CVAT user's guide](../../../docs/for-users/user-guide) for more details.
 
 ## Mac OS Mojave
 
@@ -239,7 +239,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT user's guide](/docs/for-users/user-guide) for more details.
+  [CVAT user's guide](../../../docs/for-users/user-guide) for more details.
 
 ## Advanced Topics
 
@@ -268,7 +268,7 @@ Please see the [Docker documentation](https://docs.docker.com/network/proxy/) fo
 
 ### Additional components
 
-- [Analytics: management and monitoring of data annotation team](/docs/for-developers/analytics/)
+- [Analytics: management and monitoring of data annotation team](../../../docs/for-developers/analytics/)
 
 ```bash
 # Build and run containers with Analytics component support:
@@ -278,7 +278,7 @@ docker-compose -f docker-compose.yml \
 
 ### Semi-automatic and automatic annotation
 
-Please follow this [guide](/docs/for-users/installation_automatic_annotation/).
+Please follow this [guide](../../../docs/for-users/installation_automatic_annotation/).
 
 ### Stop all containers
 
@@ -336,7 +336,7 @@ You can change the share device path to your actual share. For user convenience
 we have defined the environment variable \$CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
 
-You can [mount](/docs/for-developers/mounting_cloud_storages/)
+You can [mount](../../../docs/for-developers/mounting_cloud_storages/)
 your cloud storage as a FUSE and use it later as a share.
 
 ### Email verification

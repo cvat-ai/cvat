@@ -14,13 +14,13 @@ Docker volumes are used to store all CVAT data:
 - `cvat_data`: used to store uploaded and prepared media data.
   Mounted into `cvat` container by `/home/django/data` path.
 
-- `cvat_keys`: used to store user ssh keys needed for [synchronization with a remote Git repository](/docs/for-users/user-guide/task-synchronization/).
+- `cvat_keys`: used to store user ssh keys needed for [synchronization with a remote Git repository](../../../docs/for-users/user-guide/task-synchronization/).
   Mounted into `cvat` container by `/home/django/keys` path.
 
 - `cvat_logs`: used to store logs of CVAT backend processes managed by supevisord.
   Mounted into `cvat` container by `/home/django/logs` path.
 
-- `cvat_events`: this is an optional volume that is used only when [Analytics component](/docs/for-developers/analytics/)
+- `cvat_events`: this is an optional volume that is used only when [Analytics component](../../../docs/for-developers/analytics/)
   is enabled and is used to store Elasticsearch database files.
   Mounted into `cvat_elasticsearch` container by `/usr/share/elasticsearch/data` path.
 
@@ -54,7 +54,7 @@ cvat_data.tar.bz2  cvat_db.tar.bz2  cvat_events.tar.bz2
 
 ## How to restore CVAT from backup
 
-Note: CVAT containers must exist (if no, please follow the [installation guide](/docs/for-users/installation/#quick-installation-guide)).
+Note: CVAT containers must exist (if no, please follow the [installation guide](../../../docs/for-users/installation/#quick-installation-guide)).
 Stop all CVAT containers:
 
 ```console

@@ -5,7 +5,7 @@ weight: 13
 ---
 To open the settings open the user menu in the header and select the settings item or press `F2`.
 
-![](/images/image067.jpg)
+![](../../../../images/image067.jpg)
 
 `Settings` have two tabs:
 
@@ -22,7 +22,7 @@ In tab `Player` you can:
 
 In tab `Workspace` you can:
 
-![](/images/image155.jpg)
+![](../../../../images/image155.jpg)
 
 - `Enable auto save` checkbox — turned off by default.
 - `Auto save interval (min)` input box — 15 minutes by default.
@@ -30,12 +30,12 @@ In tab `Workspace` you can:
   side panel for every interpolated object (turned off by default).
 - `Always show object details` - show text for an object on the canvas not only when the object is activated:
 
-  ![](/images/image152_detrac.jpg)
+  ![](../../../../images/image152_detrac.jpg)
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
-  For more information To find out more, go to the section [annotation with polygons](/docs/for-users/user-guide/advanced/annotation-with-polygons/).
+  For more information To find out more, go to the section [annotation with polygons](../../../../docs/for-users/user-guide/advanced/annotation-with-polygons/).
 
-- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](/docs/for-users/user-guide/advanced/annotation-with-polygons/edit-polygon/)
+- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](../../../../docs/for-users/user-guide/advanced/annotation-with-polygons/edit-polygon/)
 
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
