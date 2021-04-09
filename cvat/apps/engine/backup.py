@@ -8,9 +8,11 @@ from rest_framework.renderers import JSONRenderer
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
+from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
                                           FrameMetaSerializer,
                                           LabeledDataSerializer,
+                                          RelatedFileSerializer,
                                           SegmentSerializer,
                                           SimpleJobSerializer, TaskSerializer)
 from cvat.apps.engine.utils import av_scan_paths
@@ -30,10 +32,10 @@ class TaskExporter():
         self._db_data = self._db_task.data
         self._version = version
 
-    def _write_directory(self, source_dir, zip_object, target_dir, exclude=None):
-        exclude = [] if exclude is None else exclude
+    def _write_directory(self, source_dir, zip_object, target_dir, recursive=True):
         for root, dirs, files in os.walk(source_dir, topdown=True):
-            dirs[:] = [d for d in dirs if d not in exclude]
+            if not recursive:
+                dirs.clear()
             for filename in files:
                 file_path = os.path.join(root, filename)
                 arcname = os.path.normpath(os.path.join(target_dir, os.path.relpath(root, source_dir), filename))
@@ -41,65 +43,111 @@ class TaskExporter():
 
     def _write_data(self, zip_object):
         data_dir = self._db_data.get_data_dirname()
-        self._write_directory(source_dir=data_dir, zip_object=zip_object, target_dir=self.DATA_DIRNAME)
+        self._write_directory(
+            source_dir=data_dir,
+            zip_object=zip_object,
+            target_dir=self.DATA_DIRNAME,
+        )
 
     def _write_task(self, zip_object):
         task_dir = self._db_task.get_task_dirname()
-        self._write_directory(source_dir=task_dir, zip_object=zip_object, target_dir=self.TASK_DIRNAME, exclude=('artifacts', 'export_cache', 'logs'))
+        self._write_directory(
+            source_dir=task_dir,
+            zip_object=zip_object,
+            target_dir=self.TASK_DIRNAME,
+            recursive=False,
+        )
 
     def _write_manifest(self, zip_object):
-        task_serializer = TaskSerializer(self._db_task)
-        task_serializer.fields.pop('url')
-        task_serializer.fields['owner'].fields.pop('url')
-        task_serializer.fields.pop('segments')
-        segments = []
-        for db_segment in self._db_task.segment_set.all():
-            jobs = []
-            for db_job in db_segment.job_set.all():
-                job_serializer = SimpleJobSerializer(db_job)
-                job_serializer.fields.pop('url')
-                jobs.append(job_serializer.data)
-            segment_serailizer = SegmentSerializer(db_segment)
-            segment_serailizer.fields.pop('jobs')
-            segment = segment_serailizer.data
-            segment['jobs'] = jobs
-            segments.append(segment)
+        def serialize_task():
+            task_serializer = TaskSerializer(self._db_task)
+            task_serializer.fields.pop('url')
+            task_serializer.fields['owner'].fields.pop('url')
+            task_serializer.fields.pop('segments')
 
-        data_serializer = DataSerializer(self._db_data)
-        if hasattr(self._db_task.data, 'video'):
-            media = [self._db_task.data.video]
-        else:
-            media = list(self._db_task.data.images.order_by('frame'))
+            return task_serializer.data
 
-        frame_meta = [{
-            'width': item.width,
-            'height': item.height,
-            'name': item.path,
-        } for item in media]
-        frame_meta_serializer = FrameMetaSerializer(data=frame_meta, many=True)
+        def serialize_segmetnts():
+            def serialize_annotations(segments):
+                job_annotations = {}
+                for db_segment in self._db_task.segment_set.all():
+                    for db_job in db_segment.job_set.all():
+                        annotations = dm.task.get_job_data(db_job.id)
+                        annotations_serializer = LabeledDataSerializer(data=annotations)
+                        annotations_serializer.is_valid(raise_exception=True)
+                        job_annotations[db_job.id] = annotations_serializer.data
 
-        job_annotations = {}
-        for db_segment in self._db_task.segment_set.all():
-            for db_job in db_segment.job_set.all():
-                annotations = dm.task.get_job_data(db_job.id)
-                annotations_serializer = LabeledDataSerializer(data=annotations)
-                annotations_serializer.is_valid(raise_exception=True)
-                job_annotations[db_job.id] = annotations_serializer.data
+                for segment in segments:
+                    for job in segment['jobs']:
+                        job['annotations'] = job_annotations[job['id']]
 
-        manifest = task_serializer.data
+                return segments
+
+            segments = []
+            for db_segment in self._db_task.segment_set.all():
+                jobs = []
+                for db_job in db_segment.job_set.all():
+                    job_serializer = SimpleJobSerializer(db_job)
+                    job_serializer.fields.pop('url')
+                    jobs.append(job_serializer.data)
+                segment_serailizer = SegmentSerializer(db_segment)
+                segment_serailizer.fields.pop('jobs')
+                segment = segment_serailizer.data
+                segment['jobs'] = jobs
+                segments.append(segment)
+
+            return serialize_annotations(segments)
+
+        def serialize_data():
+            def serialize_related_files(image):
+                related_files_serializer = RelatedFileSerializer(image.related_files.all(), many=True)
+                related_files = related_files_serializer.data
+                for f in related_files:
+                    f['path'] = os.path.relpath(f['path'], image.data.get_upload_dirname())
+
+                return related_files
+
+            def serialize_frames():
+                if hasattr(self._db_task.data, 'video'):
+                    media = [self._db_task.data.video]
+                else:
+                    media = list(self._db_task.data.images.order_by('frame'))
+
+                frame_meta = []
+                for item in media:
+                    frame = {
+                        'width': item.width,
+                        'height': item.height,
+                        'name': item.path,
+                    }
+
+                    frame_meta_serializer = FrameMetaSerializer(data=frame)
+                    frame_meta_serializer.is_valid(raise_exception=True)
+                    frame = frame_meta_serializer.data
+
+                    if self._db_task.dimension == models.DimensionType.DIM_3D:
+                        frame['related_files'] = serialize_related_files(item)
+
+                    frame_meta.append(frame)
+
+                return frame_meta
+
+            data_serializer = DataSerializer(self._db_data)
+
+            data = data_serializer.data
+            data['frames'] = serialize_frames()
+
+            return data
+
+        manifest = serialize_task()
         manifest['version'] = self._version.value
-        manifest['data'] = data_serializer.data
-        frame_meta_serializer.is_valid(raise_exception=True)
-        manifest['data']['frames'] = frame_meta_serializer.data
-        for segment in segments:
-            for job in segment['jobs']:
-                job['annotations'] = job_annotations[job['id']]
-        manifest['segments'] = segments
+        manifest['data'] = serialize_data()
+        manifest['segments'] = serialize_segmetnts()
 
         zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(manifest))
 
     def export_to(self, filename):
-        with ZipFile(filename, 'x') as output_file:
+        with ZipFile(filename, 'w') as output_file:
             self._write_data(output_file)
             self._write_task(output_file)
             self._write_manifest(output_file)
@@ -129,12 +177,14 @@ class TaskImporter():
             raise ValueError('{} version is not supported'.format(version))
 
     def _prepare_meta(self, allowed_keys, meta):
-        for key in list(meta.keys()):
-            if key not in allowed_keys:
-                del meta[key]
+        keys_to_drop = set(meta.keys()) - allowed_keys
+        logger = slogger.task[self._db_task.id] if hasattr(self, '_db_task') else slogger.glob
+        logger.warning('the following keys are dropped {}'.format(keys_to_drop))
+        for key in keys_to_drop:
+            del meta[key]
 
     def _prepare_task_meta(self, task):
-        allowed_fields = (
+        allowed_fields = {
             'name',
             'mode',
             'bug_tracker',
@@ -143,12 +193,12 @@ class TaskImporter():
             'status',
             'dimension',
             'subset',
-        )
+        }
 
         self._prepare_meta(allowed_fields, task)
 
     def _prepare_data_meta(self, data):
-        allowed_fields = (
+        allowed_fields = {
             'chunk_size',
             'size',
             'image_quality',
@@ -159,26 +209,26 @@ class TaskImporter():
             'original_chunk_type',
             'storage_method',
             'storage',
-        )
+        }
         self._prepare_meta(allowed_fields, data)
         if not data['frame_filter']:
             data.pop('frame_filter')
 
     def _prepare_segment_meta(self, segments):
-        allowed_fields = (
+        allowed_fields = {
             'start_frame',
             'stop_frame',
-        )
+        }
         self._prepare_meta(allowed_fields, segments)
 
     def _prepare_job_meta(self, jobs):
-        allowed_fields = (
+        allowed_fields = {
             'status',
-        )
+        }
         self._prepare_meta(allowed_fields, jobs)
 
     def _prepare_annotations(self, annotations):
-        allowed_fields = (
+        allowed_fields = {
             'label_id',
             'type',
             'occluded',
@@ -189,7 +239,7 @@ class TaskImporter():
             'source',
             'attributes',
             'shapes',
-        )
+        }
 
         for tag in annotations['tags']:
             self._prepare_meta(allowed_fields, tag)
@@ -197,6 +247,12 @@ class TaskImporter():
             self._prepare_meta(allowed_fields, shape)
         for track in annotations['tracks']:
             self._prepare_meta(allowed_fields, track)
+
+    @staticmethod
+    def _prepare_dirs(filepath):
+        target_dir = os.path.dirname(filepath)
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
 
     def _create_labels(self, db_task, labels):
         label_mapping = {}
@@ -210,7 +266,6 @@ class TaskImporter():
 
             for attribute in attributes:
                 attribute_id = attribute.pop('id')
-                # attribute['label_id'] = db_label.id
                 attribute_serializer = AttributeSerializer(data=attribute)
                 attribute_serializer.is_valid(raise_exception=True)
                 db_attribute = attribute_serializer.save(label=db_label)
@@ -238,7 +293,6 @@ class TaskImporter():
                 track_shape.pop('id')
                 for attribute in track_shape['attributes']:
                     attribute['spec_id'] = attributes_mapping[attribute['spec_id']]
-                    attribute.pop('id')
 
     def _create_annotations(self, db_job, labels_mapping, attributes_mapping, annotations):
         self._update_annotations(labels_mapping, attributes_mapping, annotations)
@@ -266,17 +320,55 @@ class TaskImporter():
         return db_data
 
     def _create_frames(self, db_data, frames):
-        for idx, frame in enumerate(frames):
+        def _prepare_frame(frame, frame_number=None):
             frame['data'] = db_data
             frame['path'] = frame.pop('name')
-            frame['frame'] = idx
+            if frame_number is not None:
+                frame['frame'] = frame_number
+
+            return frame
+
+        def _prepare_related_file(related_file, rf_id):
+            related_file['data'] = db_data
+            related_file.pop('primary_image')
+            related_file.pop('id')
+            related_file['primary_image_id'] = rf_id
+            related_file['path'] = os.path.join(db_data.get_upload_dirname(), related_file['path'])
+
+            return related_file
 
         if self._db_task.mode == 'annotation':
-            if self._db_task.dimension == models.DimensionType.DIM_2D:
-                models.Image.objects.bulk_create(models.Image(**frame) for frame in frames)
-            # else: TODO
+            db_frames = []
+            db_related_files = []
+            for idx, frame in enumerate(frames):
+                related_files = frame.pop('related_files', [])
+                frame = _prepare_frame(frame, idx)
+
+                for related_file in related_files:
+                    related_file = _prepare_related_file(related_file, len(db_frames))
+                    db_related_file = models.RelatedFile(**related_file)
+                    db_related_files.append(db_related_file)
+
+                db_frames.append(models.Image(**frame))
+
+            db_frames = dm.task.bulk_create(
+                db_model=models.Image,
+                objects=db_frames,
+                flt_param={'data_id': db_data.id},
+            )
+
+            for db_related_file in db_related_files:
+                db_related_file.primary_image = db_frames[db_related_file.primary_image_id]
+
+            dm.task.bulk_create(
+                db_model=models.RelatedFile,
+                objects=db_related_files,
+                flt_param={}
+            )
+
         else:
-            models.Video.objects.create(**frames[0])
+            frame = _prepare_frame(frames[0])
+            models.Video.objects.create(**frame)
 
     def _import_task(self):
         data = self._manifest.pop('data')
@@ -284,29 +376,8 @@ class TaskImporter():
         labels = self._manifest.pop('labels')
         self._segments = self._manifest.pop('segments')
 
-        db_data = self._create_data(data)
-
         self._prepare_task_meta(self._manifest)
-        self._manifest['data_id'] = db_data.id
-
-        self._db_task = models.Task.objects.create(data=db_data, **self._manifest)
-
-        try:
-            self._create_frames(db_data, frames)
-        except Exception as e:
-            print(e)
-
-        self._labels_mapping, self._attributes_mapping = self._create_labels(self._db_task, labels)
-
-        return self._db_task.id
-
-    def _import_annotations(self):
-        if not hasattr(self, '_labels_mapping') or not hasattr(self, '_attributes_mapping') or not hasattr(self, '_segments'):
-            raise Exception('Call import_task() first')
-
-        self._create_segments(self._db_task, self._labels_mapping, self._attributes_mapping, self._segments)
-
-    def _import_media(self):
+        self._db_task = models.Task.objects.create(**self._manifest)
         task_path = self._db_task.get_task_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
@@ -314,22 +385,41 @@ class TaskImporter():
         os.makedirs(self._db_task.get_task_logs_dirname())
         os.makedirs(self._db_task.get_task_artifacts_dirname())
 
+        db_data = self._create_data(data)
+        self._db_task.data = db_data
+        self._db_task.save()
+
+        self._create_frames(db_data, frames)
+
+        self._labels_mapping, self._attributes_mapping = self._create_labels(self._db_task, labels)
+
+        return self._db_task.id
+
+    def _import_annotations(self):
+        self._create_segments(self._db_task, self._labels_mapping, self._attributes_mapping, self._segments)
+
+    def _import_media(self):
         data_path = self._db_task.data.get_data_dirname()
 
         with ZipFile(self._filename, 'r') as input_file:
             for f in input_file.namelist():
                 if f.startswith(self.DATA_DIRNAME + os.path.sep):
-                    with open(os.path.join(data_path, os.path.relpath(f, self.DATA_DIRNAME)), "wb") as target_file:
-                        target_file.write(input_file.read(f))
+                    target_file = os.path.join(data_path, os.path.relpath(f, self.DATA_DIRNAME))
+                    self._prepare_dirs(target_file)
+                    with open(target_file, "wb") as out:
+                        out.write(input_file.read(f))
                 elif f.startswith(self.TASK_DIRNAME + os.path.sep):
-                    with open(os.path.join(task_path, os.path.relpath(f, self.TASK_DIRNAME)), "wb") as target_file:
-                        target_file.write(input_file.read(f))
+                    target_file = os.path.join(task_path, os.path.relpath(f, self.TASK_DIRNAME))
+                    self._prepare_dirs(target_file)
+                    with open(target_file, "wb") as out:
+                        out.write(input_file.read(f))
 
     def import_task(self):
         self._import_task()
         self._import_annotations()
         self._import_media()
         return self._db_task
+
 
 
 def import_task(filename):

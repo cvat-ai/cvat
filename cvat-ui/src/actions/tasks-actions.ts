@@ -35,9 +35,9 @@ export enum TasksActionTypes {
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
-    BACKUP_TASK = 'BACKUP_TASK',
-    BACKUP_TASK_SUCCESS = 'BACKUP_TASK_SUCCESS',
-    BACKUP_TASK_FAILED = 'BACKUP_TASK_FAILED',
+    EXPORT_TASK = 'EXPORT_TASK',
+    EXPORT_TASK_SUCCESS = 'EXPORT_TASK_SUCCESS',
+    EXPORT_TASK_FAILED = 'EXPORT_TASK_FAILED',
     IMPORT_TASK = 'IMPORT_TASK',
     IMPORT_TASK_SUCCESS = 'IMPORT_TASK_SUCCESS',
     IMPORT_TASK_FAILED = 'IMPORT_TASK_FAILED',
@@ -223,18 +223,16 @@ function importTask(): AnyAction {
     const action = {
         type: TasksActionTypes.IMPORT_TASK,
         payload: {},
-        importing: true,
     };
 
     return action;
 }
 
-function importTaskSuccess(taskId: number): AnyAction {
+function importTaskSuccess(task: any): AnyAction {
     const action = {
         type: TasksActionTypes.IMPORT_TASK_SUCCESS,
         payload: {
-            taskId,
-            importing: false,
+            task,
         },
     };
 
@@ -246,21 +244,17 @@ function importTaskFailed(error: any): AnyAction {
         type: TasksActionTypes.IMPORT_TASK_FAILED,
         payload: {
             error,
-            importing: false,
         },
     };
 
     return action;
 }
 
-export function importTaskAsync(
-    file: File,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function importTaskAsync(file: File): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(importTask());
-            let taskInstance = new cvat.classes.Task({});
-            taskInstance = await taskInstance.import(file);
+            const taskInstance = await cvat.classes.Task.import(file);
             dispatch(importTaskSuccess(taskInstance));
         } catch (error) {
             dispatch(importTaskFailed(error));
@@ -322,9 +316,9 @@ export function exportDatasetAsync(task: any, exporter: any): ThunkAction<Promis
     };
 }
 
-function backupTask(taskID: number): AnyAction {
+function exportTask(taskID: number): AnyAction {
     const action = {
-        type: TasksActionTypes.BACKUP_TASK,
+        type: TasksActionTypes.EXPORT_TASK,
         payload: {
             taskID,
         },
@@ -333,9 +327,9 @@ function backupTask(taskID: number): AnyAction {
     return action;
 }
 
-function backupTaskSuccess(taskID: any): AnyAction {
+function exportTaskSuccess(taskID: number): AnyAction {
     const action = {
-        type: TasksActionTypes.BACKUP_TASK_SUCCESS,
+        type: TasksActionTypes.EXPORT_TASK_SUCCESS,
         payload: {
             taskID,
         },
@@ -344,9 +338,9 @@ function backupTaskSuccess(taskID: any): AnyAction {
     return action;
 }
 
-function backupTaskFailed(taskID: any, error: any): AnyAction {
+function exportTaskFailed(taskID: number, error: Error): AnyAction {
     const action = {
-        type: TasksActionTypes.BACKUP_TASK_FAILED,
+        type: TasksActionTypes.EXPORT_TASK_FAILED,
         payload: {
             taskID,
             error,
@@ -356,20 +350,20 @@ function backupTaskFailed(taskID: any, error: any): AnyAction {
     return action;
 }
 
-export function backupTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function exportTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(backupTask(taskInstance.id));
+        dispatch(exportTask(taskInstance.id));
 
         try {
-            const url = await taskInstance.backup();
+            const url = await taskInstance.export();
             const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
             downloadAnchor.href = url;
             downloadAnchor.click();
         } catch (error) {
-            dispatch(backupTaskFailed(taskInstance.id, error));
+            dispatch(exportTaskFailed(taskInstance.id, error));
         }
 
-        dispatch(backupTaskSuccess(taskInstance.id));
+        dispatch(exportTaskSuccess(taskInstance.id));
     };
 }
 

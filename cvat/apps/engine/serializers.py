@@ -690,3 +690,10 @@ class CombinedReviewSerializer(ReviewSerializer):
                 models.Comment.objects.create(**comment)
 
         return db_review
+
+class RelatedFileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.RelatedFile
+        fields = '__all__'
+        read_only_fields = ('path',)

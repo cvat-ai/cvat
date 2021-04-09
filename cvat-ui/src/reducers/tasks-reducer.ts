@@ -1,8 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
+import { omit } from 'lodash';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -240,11 +241,9 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 },
             };
         }
-        case TasksActionTypes.BACKUP_TASK: {
+        case TasksActionTypes.EXPORT_TASK: {
             const { taskID } = action.payload;
             const { backups } = state.activities;
-
-            backups[taskID] = true;
 
             return {
                 ...state,
@@ -252,12 +251,13 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     backups: {
                         ...backups,
+                        ...Object.fromEntries([[taskID, true]]),
                     },
                 },
             };
         }
-        case TasksActionTypes.BACKUP_TASK_FAILED:
-        case TasksActionTypes.BACKUP_TASK_SUCCESS: {
+        case TasksActionTypes.EXPORT_TASK_FAILED:
+        case TasksActionTypes.EXPORT_TASK_SUCCESS: {
             const { taskID } = action.payload;
             const { backups } = state.activities;
 
@@ -267,9 +267,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 ...state,
                 activities: {
                     ...state.activities,
-                    backups: {
-                        ...backups,
-                    },
+                    backups: omit(backups, [taskID]),
                 },
             };
         }

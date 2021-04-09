@@ -465,9 +465,9 @@
                 });
             }
 
-            async function backupTask(id) {
+            async function exportTask(id) {
                 const { backendAPI } = config;
-                let url = `${backendAPI}/tasks/${id}`;
+                const url = `${backendAPI}/tasks/${id}`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {
@@ -498,13 +498,9 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.post(
-                                `${backendAPI}/tasks?action=import`,
-                                annotationData,
-                                {
-                                    proxy: config.proxy,
-                                },
-                            );
+                            const response = await Axios.post(`${backendAPI}/tasks?action=import`, annotationData, {
+                                proxy: config.proxy,
+                            });
                             if (response.status === 202) {
                                 annotationData = new FormData();
                                 annotationData.append('rq_id', response.data.rq_id);
@@ -1103,7 +1099,7 @@
                             createTask,
                             deleteTask,
                             exportDataset,
-                            backupTask,
+                            exportTask,
                             importTask,
                         }),
                         writable: false,

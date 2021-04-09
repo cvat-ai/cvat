@@ -26,7 +26,7 @@ interface Props {
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
     onClickMenu: (params: MenuInfo, file?: File) => void;
-    backupIsActive: boolean;
+    exportIsActive: boolean;
 }
 
 export enum Actions {
@@ -36,7 +36,7 @@ export enum Actions {
     DELETE_TASK = 'delete_task',
     RUN_AUTO_ANNOTATION = 'run_auto_annotation',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
-    BACKUP_TASK = 'backup_task',
+    EXPORT_TASK = 'export_task',
 }
 
 export default function ActionsMenuComponent(props: Props): JSX.Element {
@@ -52,7 +52,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         exportActivities,
         loadActivity,
         taskDimension,
-        backupIsActive,
+        exportIsActive,
     } = props;
 
     let latestParams: MenuInfo | null = null;
@@ -131,9 +131,9 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
                 Automatic annotation
             </Menu.Item>
-            <Menu.Item key={Actions.BACKUP_TASK}>
-                {backupIsActive && <LoadingOutlined style={{ marginLeft: 10 }} />}
-                Backup Task
+            <Menu.Item key={Actions.EXPORT_TASK}>
+                {exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
+                Export Task
             </Menu.Item>
             <hr />
             <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>

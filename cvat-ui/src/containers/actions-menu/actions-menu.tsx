@@ -5,16 +5,19 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
+import { MenuInfo } from 'rc-menu/lib/interface';
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
 import { CombinedState } from 'reducers/interfaces';
 
 import { modelsActions } from 'actions/models-actions';
 import {
-    dumpAnnotationsAsync, loadAnnotationsAsync, exportDatasetAsync, deleteTaskAsync,
-    backupTaskAsync,
+    dumpAnnotationsAsync,
+    loadAnnotationsAsync,
+    exportDatasetAsync,
+    deleteTaskAsync,
+    exportTaskAsync,
 } from 'actions/tasks-actions';
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 
 interface OwnProps {
     taskInstance: any;
@@ -26,7 +29,7 @@ interface StateToProps {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     inferenceIsActive: boolean;
-    backupIsActive: boolean;
+    exportIsActive: boolean;
 }
 
 interface DispatchToProps {
@@ -35,7 +38,7 @@ interface DispatchToProps {
     exportDataset: (taskInstance: any, exporter: any) => void;
     deleteTask: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
-    backupTask: (taskInstance: any) => void;
+    exportTask: (taskInstance: any) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -46,7 +49,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         formats: { annotationFormats },
         tasks: {
-            activities: { dumps, loads, exports: activeExports, backups },
+            activities: {
+                dumps, loads, exports: activeExports, backups,
+            },
         },
     } = state;
 
@@ -56,7 +61,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         loadActivity: tid in loads ? loads[tid] : null,
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
-        backupIsActive: tid in backups,
+        exportIsActive: tid in backups,
     };
 }
 
@@ -77,8 +82,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openRunModelWindow: (taskInstance: any): void => {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
-        backupTask: (taskInstance: any): void => {
-            dispatch(backupTaskAsync(taskInstance));
+        exportTask: (taskInstance: any): void => {
+            dispatch(exportTaskAsync(taskInstance));
         },
     };
 }
@@ -91,14 +96,14 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         dumpActivities,
         exportActivities,
         inferenceIsActive,
-        backupIsActive,
+        exportIsActive,
 
         loadAnnotations,
         dumpAnnotations,
         exportDataset,
         deleteTask,
         openRunModelWindow,
-        backupTask,
+        exportTask,
     } = props;
 
     function onClickMenu(params: MenuInfo, file?: File): void {
@@ -132,8 +137,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
                 window.open(`${taskInstance.bugTracker}`, '_blank');
             } else if (action === Actions.RUN_AUTO_ANNOTATION) {
                 openRunModelWindow(taskInstance);
-            } else if (action === Actions.BACKUP_TASK) {
-                backupTask(taskInstance);
+            } else if (action === Actions.EXPORT_TASK) {
+                exportTask(taskInstance);
             }
         }
     }
@@ -151,7 +156,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
-            backupIsActive={backupIsActive}
+            exportIsActive={exportIsActive}
         />
     );
 }

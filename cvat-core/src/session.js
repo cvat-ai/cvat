@@ -1607,7 +1607,7 @@
 
         /**
          * Method makes a backup of a task
-         * @method backup
+         * @method export
          * @memberof module:API.cvat.classes.Task
          * @readonly
          * @instance
@@ -1615,8 +1615,8 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async backup() {
-            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.backup);
+        async export() {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.export);
             return result;
         }
 
@@ -1630,8 +1630,8 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-         async import(file) {
-            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.import, file);
+        static async import(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.import, file);
             return result;
         }
     }
@@ -1877,12 +1877,12 @@
         return result;
     };
 
-    Job.prototype.annotations.import.implementation = function (data) {
+    Job.prototype.annotations.import.implementation = async function (data) {
         const result = importAnnotations(this, data);
         return result;
     };
 
-    Job.prototype.annotations.export.implementation = function () {
+    Job.prototype.annotations.export.implementation = async function () {
         const result = exportAnnotations(this);
         return result;
     };
@@ -2035,12 +2035,12 @@
         return result;
     };
 
-    Task.prototype.backup.implementation = async function () {
-        const result = await serverProxy.tasks.backupTask(this.id);
+    Task.prototype.export.implementation = async function () {
+        const result = await serverProxy.tasks.exportTask(this.id);
         return result;
     };
 
-    Task.prototype.import.implementation = async function (file) {
+    Task.import.implementation = async function (file) {
         const result = await serverProxy.tasks.importTask(file);
         return result;
     };

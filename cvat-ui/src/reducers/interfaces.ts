@@ -101,7 +101,7 @@ export interface TasksState {
         };
         backups: {
             [tid: number]: boolean;
-        }
+        };
     };
 }
 
@@ -245,9 +245,11 @@ export interface NotificationsState {
             updating: null | ErrorState;
             dumping: null | ErrorState;
             loading: null | ErrorState;
-            exporting: null | ErrorState;
+            exportingAsDataset: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            exporting: null | ErrorState;
+            importing: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -309,6 +311,7 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            importingDone: string;
         };
         models: {
             inferenceDone: string;
