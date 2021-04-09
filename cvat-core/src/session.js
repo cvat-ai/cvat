@@ -1939,12 +1939,12 @@
         return result;
     };
 
-    Job.prototype.annotations.import.implementation = async function (data) {
+    Job.prototype.annotations.import.implementation = function (data) {
         const result = importAnnotations(this, data);
         return result;
     };
 
-    Job.prototype.annotations.export.implementation = async function () {
+    Job.prototype.annotations.export.implementation = function () {
         const result = exportAnnotations(this);
         return result;
     };
