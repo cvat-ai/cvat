@@ -221,7 +221,6 @@ class ClowderApi:
                 return json.loads(response.read().decode())
             else: raise Exception(response.read().decode())
 
-    # TODO:
     def _buildmetadatajson(self, task):
         metadata = dict({'@context': []})
         metadata['@context'].append('https://clowderframework.org/contexts/metadata.jsonld')
