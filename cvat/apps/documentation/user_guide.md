@@ -992,7 +992,7 @@ After that you will be able to assign a corresponding label to an object
  by hovering your mouse cursor over it and pressing `Ctrl + (Num0..9)`.
 
 In case you do not point the cursor to the object, pressing `Ctrl + (Num0..9)` will set a chosen label as default,
- so that the next object you create (use 'N' key) will automatically have this label assigned.
+ so that the next object you create (use `N` key) will automatically have this label assigned.
 
 ![](static/documentation/images/image211.jpg)
 
