@@ -2,9 +2,9 @@ FROM ubuntu:20.04 as build-image
 
 ARG http_proxy
 ARG https_proxy
-ARG no_proxy
+ARG no_proxy="nuclio,${no_proxy}"
 ARG socks_proxy
-ARG DJANGO_CONFIGURATION
+ARG DJANGO_CONFIGURATION="production"
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
@@ -53,9 +53,9 @@ FROM ubuntu:20.04
 
 ARG http_proxy
 ARG https_proxy
-ARG no_proxy
+ARG no_proxy="nuclio,${no_proxy}"
 ARG socks_proxy
-ARG TZ
+ARG TZ="Etc/UTC"
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \
@@ -66,8 +66,8 @@ ENV TERM=xterm \
     LC_ALL='C.UTF-8' \
     TZ=${TZ}
 
-ARG USER
-ARG DJANGO_CONFIGURATION
+ARG USER="django"
+ARG DJANGO_CONFIGURATION="production"
 ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 
 # Install necessary apt packages
