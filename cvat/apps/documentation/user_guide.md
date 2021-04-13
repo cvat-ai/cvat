@@ -983,8 +983,8 @@ this way you will change the label color for all jobs in the task.
 ![](static/documentation/images/image062.jpg)
 
 **Fast label change**
-You can change the label of an object with the help of hot keys. First, you need to assign a number (from 0 to 9) to labels.
- To do this, click on the button next to a label on the sidebar.
+You can change the label of an object using hot keys. In order to do it, you need to assign a number (from 0 to 9) to labels. By default numbers 1,2...0 are assigned to the first ten labels.
+ To assign a number, click on the button placed at the right of a label name on the sidebar.
 
 ![](static/documentation/images/image210.jpg)
 
