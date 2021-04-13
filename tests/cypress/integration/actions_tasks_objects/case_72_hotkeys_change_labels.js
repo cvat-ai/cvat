@@ -69,7 +69,7 @@ context('Hotkeys to change labels feature.', () => {
             });
         });
 
-        it('Changing a lebel for shape via hotkey.', () => {
+        it('Changing a label for a shape using hotkey.', () => {
             const createPolygonShape = {
                 reDraw: false,
                 type: 'Shape',
@@ -96,7 +96,7 @@ context('Hotkeys to change labels feature.', () => {
             testCheckingAlwaysShowObjectDetails();
         });
 
-        it('Changing default lebel before drawing a shape.', () => {
+        it('Changing default label before drawing a shape.', () => {
             cy.interactControlButton('draw-rectangle');
             cy.switchLabel(firstLabelCurrentVal, 'draw-rectangle');
             cy.get('.cvat-draw-rectangle-popover-visible').within(() => {
