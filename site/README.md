@@ -7,11 +7,13 @@ To change documentation files or add a documentation page,
 simply click `Edit this page` on the page you would like to edit.
 If you need to add a child page, click `Create child page`.
 
-If you need to edit the text that has the markup [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet), click on the `Fork this reposytory` button.
+If you need to edit the text that has the markup [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet),
+ click on the `Fork this reposytory` button.
 
 Read how to edit files for githab ([GitHub docs](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-another-users-repository)).
 
-Please note that files have a markup for correct display on the site: the title, the title of the link, the weight (affects the order of files display on the sidebar) and description (optional):
+Please note that files have a markup for correct display on the site: the title, the title of the link,
+ the weight (affects the order of files display on the sidebar) and description (optional):
 
     ---
     title: "Title"
@@ -45,7 +47,10 @@ By default, your site will be available at http://localhost:1313/
 
 Instead of a "hugo server" command, you can use the "hugo" command that generates the site into a "public" folder.
 
-To build or update your site’s CSS resources, you also need [PostCSS](https://postcss.org/) to create the final assets. If you need to install it, you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine so you can use npm, the Node package manager. By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
+To build or update your site’s CSS resources, you also need [PostCSS](https://postcss.org/) to create the final assets.
+If you need to install it, you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine
+ so you can use npm, the Node package manager.
+By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
 
     cd <your local directory>/cvat/site/
     npm install -g postcss-cli
@@ -56,7 +61,7 @@ To make the site work correctly, you need to change `config.toml` to:
 
     base_URL:<your local directory>/public/
 
-Next, you can build a website in the "public" folder
+Next, you can build a website in the "public" folder:
 
     cd <your local directory>/cvat/site/
     hugo
