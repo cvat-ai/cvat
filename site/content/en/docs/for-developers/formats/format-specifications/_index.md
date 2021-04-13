@@ -2,7 +2,7 @@
 title: "Format specifications:"
 linkTitle: "Format specifications"
 weight: 1
-hide_feedback: true
+no_list: true
 ---
 
   - [CVAT](format-cvat)

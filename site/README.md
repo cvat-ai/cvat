@@ -43,4 +43,22 @@ To build and preview your site locally, use:
 
 By default, your site will be available at http://localhost:1313/
 
+Instead of a "hugo server" command, you can use the "hugo" command that generates the site into a "public" folder.
+
+To build or update your site’s CSS resources, you also need [PostCSS](https://postcss.org/) to create the final assets. If you need to install it, you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine so you can use npm, the Node package manager. By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
+
+    cd <your local directory>/cvat/site/
+    npm install -g postcss-cli
+    npm install autoprefixer
+    npm audit fix
+
+To make the site work correctly, you need to change `config.toml` to:
+
+    base_URL:<your local directory>/public/
+
+Next, you can build a website in the "public" folder
+
+    cd <your local directory>/cvat/site/
+    hugo
+
 [Read more](https://www.docsy.dev/docs/getting-started/)
