@@ -8,11 +8,10 @@ menu:
 ---
 
 
-CVAT is free, online, interactive video and image annotation
-tool for computer vision. It is being used by our team to
-annotate million of objects with different properties. Many UI
-and UX decisions are based on feedbacks from professional data
-annotation team. Try it online [cvat.org](https://cvat.org).
+CVAT is free, online, interactive video and image annotation tool for computer vision.
+ It is used by our team to annotate millions of objects with different properties.
+ Many UI and UX decisions are based on feedbacks from professional data annotation team.
+ Try it online [cvat.org](https://cvat.org).
 
 <section id="docs">
 
