@@ -13,8 +13,8 @@ services:
         http_proxy:
         https_proxy:
         socks_proxy:
-        CLAM_AV:
-        INSTALL_SOURCES:
+        # CLAM_AV:
+        # INSTALL_SOURCES:
 
   cvat_ui:
     build:

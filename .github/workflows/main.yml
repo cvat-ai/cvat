@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
         env:
-          cache-name: cvat_cachev2
+          cache-name: cvat_cache
         with:
           path: /tmp/cvat_cache
           key: ${{ runner.os }}-build-${{ env.cache-name }}
@@ -87,7 +87,7 @@ jobs:
           npm run coverage
       - uses: actions/cache@v2
         env:
-          cache-name: cvat_cachev2
+          cache-name: cvat_cache
         with:
           path: /tmp/cvat_cache
           key: ${{ runner.os }}-build-${{ env.cache-name }}
@@ -139,7 +139,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
       env:
-        cache-name: cvat_cachev2
+        cache-name: cvat_cache
       with:
         path: /tmp/cvat_cache
         key: ${{ runner.os }}-build-${{ env.cache-name }}
