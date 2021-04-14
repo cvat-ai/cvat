@@ -2,16 +2,17 @@
 //
 // SPDX-License-Identifier: MIT
 
-import 'antd/dist/antd.css';
+import React from 'react';
+import { Redirect, Route, Switch } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
-import React from 'react';
-import { Redirect, Route, Switch } from 'react-router';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import 'antd/dist/antd.css';
+
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import Header from 'components/header/header';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';

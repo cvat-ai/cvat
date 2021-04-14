@@ -4,8 +4,9 @@
 
 import React, { useCallback, useState } from 'react';
 import ReactDOM from 'react-dom';
-import GlobalHotKeys from 'utils/mousetrap-react';
 import { useSelector } from 'react-redux';
+
+import GlobalHotKeys from 'utils/mousetrap-react';
 import { CombinedState } from 'reducers/interfaces';
 import './styles.scss';
 

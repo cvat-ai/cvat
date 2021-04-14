@@ -13,14 +13,12 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const {
-        annotation: {
-            job: { labels },
-            tabContentHeight: listHeight,
-            annotations: { activatedStateID, states },
-        },
-        shortcuts: { keyMap },
-    } = useSelector((state: CombinedState) => state);
+    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
+    const listHeight = useSelector((state: CombinedState) => state.annotation.tabContentHeight);
+    const activatedStateID = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateID);
+    const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
+    const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
+
     const labelIDs = labels.map((label: any): number => label.id);
 
     const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(

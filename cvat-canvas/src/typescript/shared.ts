@@ -41,6 +41,7 @@ export interface DrawnState {
     occluded?: boolean;
     hidden?: boolean;
     lock: boolean;
+    source: 'AUTO' | 'MANUAL';
     shapeType: string;
     points?: number[];
     attributes: Record<number, string>;
@@ -176,5 +177,7 @@ export function scalarProduct(a: Vector2D, b: Vector2D): number {
 }
 
 export function vectorLength(vector: Vector2D): number {
-    return Math.sqrt((vector.i ** 2) + (vector.j ** 2));
+    const sqrI = vector.i ** 2;
+    const sqrJ = vector.j ** 2;
+    return Math.sqrt(sqrI + sqrJ);
 }

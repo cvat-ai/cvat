@@ -14,12 +14,8 @@ import Moment from 'react-moment';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
 
-import {
-    FilterIcon, FullscreenIcon, InfoIcon, BrainIcon,
-} from 'icons';
-import {
-    CombinedState, DimensionType, Workspace, PredictorState,
-} from 'reducers/interfaces';
+import { FilterIcon, FullscreenIcon, InfoIcon, BrainIcon } from 'icons';
+import { CombinedState, DimensionType, Workspace, PredictorState } from 'reducers/interfaces';
 
 interface Props {
     workspace: Workspace;
@@ -47,8 +43,8 @@ function RightGroup(props: Props): JSX.Element {
         isTrainingActive,
         showFilters,
     } = props;
-    predictor.annotationAmount = predictor.annotationAmount ? predictor.annotationAmount : 0;
-    predictor.mediaAmount = predictor.mediaAmount ? predictor.mediaAmount : 0;
+    const annotationAmount = predictor.annotationAmount || 0;
+    const mediaAmount = predictor.mediaAmount || 0;
     const formattedScore = `${(predictor.projectScore * 100).toFixed(0)}%`;
     const predictorTooltip = (
         <div className='cvat-predictor-tooltip'>
@@ -65,19 +61,17 @@ function RightGroup(props: Props): JSX.Element {
             <br />
             <span>
                 Annotations amount:
-                {predictor.annotationAmount}
+                {annotationAmount}
             </span>
             <br />
             <span>
                 Media amount:
-                {predictor.mediaAmount}
+                {mediaAmount}
             </span>
             <br />
-            {predictor.annotationAmount > 0 ? (
+            {annotationAmount > 0 ? (
                 <span>
-                    Model mAP is
-                    {' '}
-                    {formattedScore}
+                    Model mAP is {formattedScore}
                     <br />
                 </span>
             ) : null}
@@ -89,16 +83,13 @@ function RightGroup(props: Props): JSX.Element {
             ) : null}
             {predictor.message ? (
                 <span>
-                    Status:
-                    {' '}
-                    {predictor.message}
+                    Status: {predictor.message}
                     <br />
                 </span>
             ) : null}
             {predictor.timeRemaining > 0 ? (
                 <span>
-                    Time Remaining:
-                    {' '}
+                    Time Remaining:{' '}
                     <Moment date={moment().add(-predictor.timeRemaining, 's')} format='hh:mm:ss' trim durationFromNow />
                     <br />
                 </span>
@@ -106,9 +97,7 @@ function RightGroup(props: Props): JSX.Element {
             {predictor.progress > 0 ? (
                 <span>
                     Progress:
-                    {predictor.progress.toFixed(1)}
-                    {' '}
-                    %
+                    {predictor.progress.toFixed(1)} %
                 </span>
             ) : null}
         </div>
@@ -139,7 +128,7 @@ function RightGroup(props: Props): JSX.Element {
                     <Tooltip title={predictorTooltip}>
                         <Icon component={BrainIcon} />
                     </Tooltip>
-                    {predictor.annotationAmount ? `mAP ${formattedScore}` : 'not trained'}
+                    {annotationAmount ? `mAP ${formattedScore}` : 'not trained'}
                 </Button>
             )}
             <Button

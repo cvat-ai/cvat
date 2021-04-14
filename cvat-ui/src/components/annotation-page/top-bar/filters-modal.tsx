@@ -4,9 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-    Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils,
-} from 'react-awesome-query-builder';
+import { Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils } from 'react-awesome-query-builder';
 import AntdWidgets from 'react-awesome-query-builder/lib/components/widgets/antd';
 import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 import 'react-awesome-query-builder/lib/css/styles.css';
@@ -23,19 +21,15 @@ const { FieldDropdown } = AntdWidgets;
 
 const FILTERS_HISTORY = 'annotationFiltersHistory';
 
-interface Props {
-    visible: boolean;
-}
-
 interface StoredFilter {
     id: string;
     logic: JsonLogicTree;
 }
 
-export default function FiltersModalComponent(props: Props): JSX.Element {
-    const { visible } = props;
-    const { labels } = useSelector((state: CombinedState) => state.annotation.job);
-    const { filters: activeFilters } = useSelector((state: CombinedState) => state.annotation.annotations);
+function FiltersModalComponent(): JSX.Element {
+    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
+    const activeFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const visible = useSelector((state: CombinedState) => state.annotation.filtersPanelVisible);
 
     const getConvertedInputType = (inputType: string): string => {
         switch (inputType) {
@@ -188,9 +182,9 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (visible) {
-            const treeFromActiveFilters = activeFilters.length ?
-                QbUtils.checkTree(QbUtils.loadFromJsonLogic(activeFilters[0], config), config) :
-                null;
+            const treeFromActiveFilters = activeFilters.length
+                ? QbUtils.checkTree(QbUtils.loadFromJsonLogic(activeFilters[0], config), config)
+                : null;
             setState({
                 tree: treeFromActiveFilters || initialState.tree,
                 config,
@@ -234,18 +228,23 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
     const menu = (
         <Menu>
             {filters
-                .filter((filter: StoredFilter) => {
-                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    return !!QbUtils.queryString(tree, config);
-                })
                 .map((filter: StoredFilter) => {
+                    // if a logic received from local storage does not correspond to current config
+                    // which depends on label specification
+                    // (it can be when history from another task with another specification or when label was removed)
+                    // loadFromJsonLogic() prints a warning to console
+                    // the are not ways to configure this behaviour
+
                     const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    return (
-                        <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
-                            {QbUtils.queryString(tree, config)}
-                        </Menu.Item>
-                    );
-                })}
+                    const queryString = QbUtils.queryString(tree, config);
+                    return { tree, queryString, filter };
+                })
+                .filter(({ queryString }) => !!queryString)
+                .map(({ filter, tree, queryString }) => (
+                    <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
+                        {queryString}
+                    </Menu.Item>
+                ))}
         </Menu>
     );
 
@@ -276,9 +275,7 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
             >
                 <Dropdown overlay={menu}>
                     <Button type='text'>
-                        Recently used
-                        {' '}
-                        <DownOutlined />
+                        Recently used <DownOutlined />
                     </Button>
                 </Dropdown>
             </div>
@@ -286,3 +283,5 @@ export default function FiltersModalComponent(props: Props): JSX.Element {
         </Modal>
     );
 }
+
+export default React.memo(FiltersModalComponent);

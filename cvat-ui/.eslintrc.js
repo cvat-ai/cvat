@@ -21,6 +21,7 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:import/typescript',
         'prettier',
+        'prettier/react',
     ],
     ignorePatterns: ['.eslintrc.js'],
     rules: {
