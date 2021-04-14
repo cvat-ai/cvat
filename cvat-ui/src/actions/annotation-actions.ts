@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { MutableRefObject } from 'react';import {ActionCreator, AnyAction, Dispatch,  Store } from 'redux';
+import { MutableRefObject } from 'react';
+import { ActionCreator, AnyAction, Dispatch, Store } from 'redux';
 import { ThunkAction } from 'utils/redux';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
@@ -624,9 +625,7 @@ export function getPredictionsAsync(): ThunkAction {
             predictor: { enabled, annotatedFrames },
         } = getStore().getState().annotation;
 
-        const {
-            filters, frame, showAllInterpolationTracks, jobInstance: job,
-        } = receiveAnnotationsParameters();
+        const { filters, frame, showAllInterpolationTracks, jobInstance: job } = receiveAnnotationsParameters();
         if (!enabled || currentStates.length || annotatedFrames.includes(frame)) return;
 
         dispatch({
