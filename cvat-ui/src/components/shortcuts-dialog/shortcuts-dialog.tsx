@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { shortcutsActions } from 'actions/shortcuts-actions';
 import Modal from 'antd/lib/modal';
 import Table from 'antd/lib/table';
 import React from 'react';
-import { getApplicationKeyMap } from 'utils/mousetrap-react';
 import { connect } from 'react-redux';
+import { getApplicationKeyMap } from 'utils/mousetrap-react';
+import { shortcutsActions } from 'actions/shortcuts-actions';
 import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
@@ -93,8 +93,9 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
             onOk={switchShortcutsDialog}
             cancelButtonProps={{ style: { display: 'none' } }}
             zIndex={1001} /* default antd is 1000 */
+            className='cvat-shortcuts-modal-window'
         >
-            <Table dataSource={dataSource} columns={columns} size='small' />
+            <Table dataSource={dataSource} columns={columns} size='small' className='cvat-shortcuts-modal-window-table' />
         </Modal>
     );
 }

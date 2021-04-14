@@ -4,7 +4,7 @@
     "cypress:run:firefox": "cypress run --env coverage=false --headless --browser firefox --config-file cypress_cron_type.json"
   },
   "devDependencies": {
-    "@cypress/code-coverage": "^3.8.1",
+    "@cypress/code-coverage": "^3.9.4",
     "cypress": "^6.4.0",
     "cypress-file-upload": "^5.0.2",
     "cypress-localstorage-commands": "^1.3.1",

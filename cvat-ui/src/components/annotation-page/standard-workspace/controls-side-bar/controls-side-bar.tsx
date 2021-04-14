@@ -4,9 +4,9 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import { ActiveControl, Rotation } from 'reducers/interfaces';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';

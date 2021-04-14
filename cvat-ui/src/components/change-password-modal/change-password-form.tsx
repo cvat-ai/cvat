@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -48,7 +48,8 @@ function ChangePasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element
                     {
                         required: true,
                         message: 'Please input new password!',
-                    }, validatePassword,
+                    },
+                    validatePassword,
                 ]}
             >
                 <Input.Password
@@ -66,7 +67,8 @@ function ChangePasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element
                     {
                         required: true,
                         message: 'Please confirm your new password!',
-                    }, validateConfirmation('newPassword1'),
+                    },
+                    validateConfirmation('newPassword1'),
                 ]}
             >
                 <Input.Password

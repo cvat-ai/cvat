@@ -20,11 +20,11 @@ import {
     changeFrameAsync,
     rememberObject,
 } from 'actions/annotation-actions';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
 import LabelSelector from 'components/label-selector/label-selector';
 import getCore from 'cvat-core-wrapper';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ShortcutsSelect from './shortcuts-select';
 
 const cvat = getCore();
@@ -82,7 +82,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
             dispatch(removeObjectAsync(jobInstance, objectState, true));
         },
         onRememberObject(labelID: number): void {
-            dispatch(rememberObject(ObjectType.TAG, labelID));
+            dispatch(rememberObject({ activeObjectType: ObjectType.TAG, activeLabelID: labelID }));
         },
     };
 }
