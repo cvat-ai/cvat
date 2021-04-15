@@ -8,41 +8,21 @@ on:
     branches:
       - '*'
 jobs:
-  # Build_CVAT:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/cache@v2
-  #       env:
-  #         cache-name: cvat_server
-  #       with:
-  #         path: /tmp/cvat_cache
-  #         key: ${{ runner.os }}-build-${{ env.cache-name }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-build-
-  #     - name: Build CVAT server
-  #       uses: docker/build-push-action@v2
-  #       with:
-  #         context: .
-  #         file: ./Dockerfile
-  #         cache-from: type=local,src=/tmp/cvat_cache
-  #         tags: openvino/cvat_server:latest
-  #     - name: For debug
-  #       run: |
-  #         docker images
-  #         docker ps
-
   Unit_testing:
-      # needs: Build_CVAT
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@v2
+      - id: get-sha
+        run: |
+          URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"
+          DEFAULT_BRANCH=$(curl -s -X GET -G ${URL_get_default_branch} | jq -r '.default_branch')
+          URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
+          SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
+          echo ::set-output name=sha::${SHA}
       - uses: actions/cache@v2
-        env:
-          cache-name: cvat_cache
         with:
           path: /tmp/cvat_cache
-          key: ${{ runner.os }}-build-${{ env.cache-name }}
+          key: ${{ runner.os }}-build-${{ steps.get-sha.outputs.sha }}
           restore-keys: |
             ${{ runner.os }}-build-
       - uses: docker/build-push-action@v2
@@ -70,7 +50,6 @@ jobs:
             ${{ github.workspace }}/lcov.info
 
   E2E_testing:
-    # needs: Build_CVAT
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -78,17 +57,22 @@ jobs:
         specs: ['actions_tasks', 'actions_objects', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs']
     steps:
       - uses: actions/checkout@v2
+      - id: get-sha
+        run: |
+          URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"
+          DEFAULT_BRANCH=$(curl -s -X GET -G ${URL_get_default_branch} | jq -r '.default_branch')
+          URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
+          SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
+          echo ::set-output name=sha::${SHA}
+      - uses: actions/cache@v2
+        with:
+          path: /tmp/cvat_cache
+          key: ${{ runner.os }}-build-${{ steps.get-sha.outputs.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-
       - uses: actions/setup-node@v2
         with:
             node-version: 12
-      - uses: actions/cache@v2
-        env:
-          cache-name: cvat_cache
-        with:
-          path: /tmp/cvat_cache
-          key: ${{ runner.os }}-build-${{ env.cache-name }}
-          restore-keys: |
-            ${{ runner.os }}-build-
       - uses: docker/build-push-action@v2
         with:
           context: .
@@ -138,12 +122,17 @@ jobs:
     needs: [Unit_testing, E2E_testing]
     steps:
     - uses: actions/checkout@v2
+    - id: get-sha
+      run: |
+        URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"
+        DEFAULT_BRANCH=$(curl -s -X GET -G ${URL_get_default_branch} | jq -r '.default_branch')
+        URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
+        SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
+        echo ::set-output name=sha::${SHA}
     - uses: actions/cache@v2
-      env:
-        cache-name: cvat_cache
       with:
         path: /tmp/cvat_cache
-        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        key: ${{ runner.os }}-build-${{ steps.get-sha.outputs.sha }}
         restore-keys: |
             ${{ runner.os }}-build-
     - uses: docker/build-push-action@v2
