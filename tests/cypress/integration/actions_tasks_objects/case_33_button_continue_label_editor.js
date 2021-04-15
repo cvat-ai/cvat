@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,6 +28,15 @@ context('Button "Continue" in label editor.', () => {
                 expect(labelNames).to.include(additionalLabels[0]);
                 expect(labelNames).to.include(additionalLabels[1]);
                 expect(labelNames).to.include(additionalLabels[2]);
+            });
+        });
+
+        it('Try add label with empty name. Alert should be visible.', () => {
+            cy.get('.cvat-constructor-viewer-new-item').click();
+            cy.get('.cvat-label-constructor-creator').within(() => {
+                cy.contains('button', 'Continue').click();
+                cy.contains('[role="alert"]', 'Please specify a name').should('be.visible');
+                cy.contains('button', 'Cancel').click();
             });
         });
     });

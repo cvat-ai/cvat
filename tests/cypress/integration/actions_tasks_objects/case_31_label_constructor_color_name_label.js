@@ -125,5 +125,57 @@ context('Label constructor. Color label. Label name editing', () => {
                 });
             });
         });
+
+        it('Cancel/reset button interaction when changing color of the label.', () => {
+            cy.goToTaskList();
+            cy.openTask(taskName);
+            // Adding a label without setting a color
+            cy.addNewLabel(`Case ${caseId}`);
+            cy.get('.cvat-constructor-viewer').should('be.visible');
+            cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`)
+                .invoke('attr', 'style')
+                .then(($labelColor) => {
+                    // Change the label color and press "Cancel"
+                    cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`).find('[data-icon="edit"]').click();
+                    cy.get('.cvat-change-task-label-color-badge')
+                        .children()
+                        .invoke('attr', 'style')
+                        .then(($labelBadgeColor) => {
+                            expect($labelBadgeColor).to.be.equal($labelColor);
+                        });
+                    cy.get('.cvat-change-task-label-color-button').click();
+                    cy.get('.cvat-label-color-picker')
+                        .not('.ant-popover-hidden')
+                        .within(() => {
+                            cy.contains('hex').prev().clear().type(labelColor.yellowHex);
+                            cy.contains('button', 'Cancel').click();
+                        });
+                    cy.get('.cvat-change-task-label-color-badge')
+                        .children()
+                        .invoke('attr', 'style')
+                        .then(($labelBadgeColor) => {
+                            expect($labelBadgeColor).to.be.equal($labelColor);
+                        });
+
+                    // Change the label color
+                    cy.get('.cvat-change-task-label-color-button').click();
+                    cy.changeColorViaBadge(labelColor.yellowHex);
+
+                    // Reset the label color
+                    cy.get('.cvat-change-task-label-color-button').click();
+                    cy.get('.cvat-label-color-picker')
+                        .not('.ant-popover-hidden')
+                        .within(() => {
+                            cy.contains('button', 'Reset').click();
+                        });
+                    cy.get('.cvat-change-task-label-color-badge')
+                        .children()
+                        .should('have.attr', 'style').and('contain', 'rgb(179, 179, 179)');
+                    cy.get('.cvat-label-constructor-updater').contains('button', 'Done').click();
+                    cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`)
+                        .should('have.attr', 'style')
+                        .and('contain', $labelColor);
+                });
+        });
     });
 });

@@ -2,6 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { connect, Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
+
 import { getAboutAsync } from 'actions/about-actions';
 import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
@@ -14,11 +19,7 @@ import CVATApplication from 'components/cvat-app';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
-import React from 'react';
-import ReactDOM from 'react-dom';
 import { KeyMap } from 'utils/mousetrap-react';
-import { connect, Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
 import createRootReducer from 'reducers/root-reducer';
 import { resetErrors, resetMessages } from './actions/notification-actions';
 import { CombinedState, NotificationsState } from './reducers/interfaces';
