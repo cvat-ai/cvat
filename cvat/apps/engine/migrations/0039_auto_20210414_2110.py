@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('engine', '0038_manifest'),
+        ('engine', '0039_auto_training'),
     ]
 
     operations = [
