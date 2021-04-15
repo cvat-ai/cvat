@@ -5,11 +5,12 @@
 import os
 import os.path as osp
 import io
+import json
 import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp
+from tempfile import mkstemp, NamedTemporaryFile
 import cv2
 
 import django_rq
@@ -18,7 +19,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -37,15 +38,17 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views # pylint: disable=unused-import
 from cvat.apps.authentication import auth
+from cvat.apps.engine.cloud_provider import Credentials, CloudStorage
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice, DimensionType, Image,
-    CloudStorage, CredentialsTypeChoice, CloudProviderChoice
+    CredentialsTypeChoice, CloudProviderChoice
 
 )
+from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
@@ -56,11 +59,10 @@ from cvat.apps.engine.serializers import (
     CloudStorageSerializer, BaseCloudStorageSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
+from utils.dataset_manifest import ImageManifestManager
 
 from . import models, task
 from .log import clogger, slogger
-
-from cvat.apps.engine.cloud_provider import Credentials, get_cloud_storage_instance
 
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -981,30 +983,44 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
-    operation_summary='Returns a paginated list of storages according to query parameters',
-    manual_parameters=[
-            openapi.Parameter('provider_type', openapi.IN_QUERY, description="A supported provider of cloud storages",
-                               type=openapi.TYPE_STRING, enum=CloudProviderChoice.list()),
-            openapi.Parameter('resource_name', openapi.IN_QUERY, description="A name of buket or container", type=openapi.TYPE_STRING),
-            openapi.Parameter('owner', openapi.IN_QUERY, description="A resource owner", type=openapi.TYPE_STRING),
-            openapi.Parameter('credentials_type', openapi.IN_QUERY, description="A type of a granting access", type=openapi.TYPE_STRING, enum=CredentialsTypeChoice.list()),
-        ],
-    responses={'200': CloudStorageSerializer(many=True)}
+        operation_summary='Returns a paginated list of storages according to query parameters',
+        manual_parameters=[
+                openapi.Parameter('provider_type', openapi.IN_QUERY, description="A supported provider of cloud storages",
+                                type=openapi.TYPE_STRING, enum=CloudProviderChoice.list()),
+                openapi.Parameter('resource', openapi.IN_QUERY, description="A name of buket or container", type=openapi.TYPE_STRING),
+                openapi.Parameter('owner', openapi.IN_QUERY, description="A resource owner", type=openapi.TYPE_STRING),
+                openapi.Parameter('credentials_type', openapi.IN_QUERY, description="A type of a granting access", type=openapi.TYPE_STRING, enum=CredentialsTypeChoice.list()),
+            ],
+        responses={'200': CloudStorageSerializer(many=True)},
+        tags=['cloud storages']
     )
 )
-@method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific cloud storage'))
+@method_decorator(name='retrieve', decorator=swagger_auto_schema(
+        operation_summary='Method returns details of a specific cloud storage',
+        tags=['cloud storages']
+    )
+)
 @method_decorator(name='create', decorator=swagger_auto_schema(
         operation_summary='Method creates a cloud storage with a specified characteristics',
-        responses={'201': openapi.Response(description='A storage has beed created')}
+        responses={'201': openapi.Response(description='A storage has beed created')},
+        tags=['cloud storages']
     )
 )
-@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific cloud storage'))
-@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a cloud storage instance'))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(
+        operation_summary='Method deletes a specific cloud storage',
+        tags=['cloud storages']
+    )
+)
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(
+        operation_summary='Methods does a partial update of chosen fields in a cloud storage instance',
+        tags=['cloud storages']
+    )
+)
 class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
-    queryset = CloudStorage.objects.all().prefetch_related('data').order_by('-id')
-    search_fields = ("provider_type", "resource_name", "owner__username")
-    filterset_fields = ['provider_type', 'resource_name', 'credentials_type']
+    queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
+    search_fields = ("provider_type", "resource", "owner__username")
+    filterset_fields = ['provider_type', 'resource', 'credentials_type']
 
     def get_permissions(self):
         http_method = self.request.method
@@ -1036,15 +1052,19 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     def perform_create(self, serializer):
         # check that instance of cloud storage exists
         provider_type = serializer.validated_data.get('provider_type')
+        credentials = Credentials(
+            session_token=serializer.validated_data.get('session_token', ''),
+            account_name=serializer.validated_data.get('account_name', ''),
+            key=serializer.validated_data.get('key', ''),
+            secret_key=serializer.validated_data.get('secret_key', '')
+        )
         details = {
-            'resource_name': serializer.validated_data.get('resource_name'),
-            'session_token': serializer.validated_data.get('session_token'),
-            'key': serializer.validated_data.get('key'),
-            'secret_key': serializer.validated_data.get('secret_key'),
+            'resource': serializer.validated_data.get('resource'),
+            'credentials': credentials,
         }
-        cloud_storage_instance = get_cloud_storage_instance(cloud_provider=provider_type, **details)
+        storage = CloudStorage(cloud_provider=provider_type, **details)
         try:
-            cloud_storage_instance.is_exist()
+            storage.is_exist()
         except Exception as ex:
             message = str(ex)
             slogger.glob.error(message)
@@ -1064,33 +1084,68 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     @method_decorator(
         name='retrieve',
         decorator=swagger_auto_schema(
-            operation_summary='Method returns list of available files',
-            responses={'200': openapi.Response(description='A list of a storage content')}
+            operation_summary='Method returns details of a cloud storage',
+            operation_description=
+                "Method returns list of available files, if action is content",
+            manual_parameters=[
+                openapi.Parameter('action', openapi.IN_QUERY, description="",
+                    type=openapi.TYPE_STRING, enum=['content']),
+                openapi.Parameter('manifest_path', openapi.IN_QUERY,
+                    description="Path to the manifest file in a cloud storage",
+                    type=openapi.TYPE_STRING
+                )],
+            responses={
+                '200': openapi.Response(description='A list of a storage content'),
+            },
+            tags=['cloud storages']
         )
     )
-    @action(detail=True, methods=['GET'])
-    def content(self, request, pk):
-        try:
-            db_storage = CloudStorage.objects.get(pk=pk)
-            credentials = Credentials()
-            credentials.convert_from_db({
-                'type': db_storage.credentials_type,
-                'value': db_storage.credentials,
-            })
-            details = {
-                'resource_name': db_storage.resource_name,
-                'session_token': credentials.session_token,
-                'key': credentials.key,
-                'secret_key': credentials.secret_key,
-            }
-            cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-            cloud_storage_instance.initialize_content()
-            return Response(data=cloud_storage_instance.content, content_type="text/plain")
+    def retrieve(self, request, *args, **kwargs):
+        action = request.query_params.get('action', '')
+        if action == 'content':
+            try:
+                pk = kwargs.get('pk')
+                db_storage = CloudStorageModel.objects.get(pk=pk)
+                credentials = Credentials()
+                credentials.convert_from_db({
+                    'type': db_storage.credentials_type,
+                    'value': db_storage.credentials,
+                })
+                details = {
+                    'resource': db_storage.resource,
+                    'credentials': credentials,
+                }
+                storage = CloudStorage(cloud_provider=db_storage.provider_type, **details)
+                storage.initialize_content()
+                storage_files = storage.content
 
-        except CloudStorage.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
+                manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
+                tmp_manifest = NamedTemporaryFile(mode='w+b', suffix='cvat', prefix='manifest')
+                storage.download_file(manifest_path, tmp_manifest.name)
+                manifest = ImageManifestManager(tmp_manifest.name)
+                manifest.init_index()
+                manifest_files = manifest.data
+                tmp_manifest.close()
+                content = {f:[] for f in set(storage_files) & set(manifest_files)}
+                for key, _ in content.items():
+                    if key in storage_files: content[key].append('s') # storage
+                    if key in manifest_files: content[key].append('m') # manifest
+
+                data = json.loads(content)
+                return Response(data=data, content_type="aplication/json")
+
+            except CloudStorageModel.DoesNotExist:
+                message = f"Storage {pk} does not exist"
+                slogger.glob.error(message)
+                return HttpResponseNotFound(message)
+            except Exception as ex:
+                return HttpResponseBadRequest(str(ex))
+        elif not action:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        else:
+            return HttpResponseBadRequest()
 
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(

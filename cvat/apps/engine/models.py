@@ -270,7 +270,7 @@ class ServerFile(models.Model):
     class Meta:
         default_permissions = ()
 
-# For URLs and files on remote cloud storages
+# For URLs
 class RemoteFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='remote_files')
     file = models.CharField(max_length=1024)
@@ -523,9 +523,9 @@ class CloudProviderChoice(str, Enum):
         return self.value
 
 class CredentialsTypeChoice(str, Enum):
-    TOKEN = 'TOKEN'
-    KEY_TOKEN_PAIR = 'KEY_TOKEN_PAIR'
-    KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR'
+    TEMP_KEY_SECRET_KEY_TOKEN_PAIR = 'TEMP_KEY_SECRET_KEY_TOKEN_PAIR'
+    ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR'
+    ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
 
     @classmethod
     def choices(cls):
@@ -540,20 +540,20 @@ class CredentialsTypeChoice(str, Enum):
 
 class CloudStorage(models.Model):
     provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices())
-    resource_name = models.CharField(max_length=50)
+    resource = models.CharField(max_length=50)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="cloud_storages")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    credentials = models.CharField(max_length=100, unique=True)
-    credentials_type = models.CharField(max_length=20, choices=CredentialsTypeChoice.choices())#auth_type
+    credentials = models.CharField(max_length=500)
+    credentials_type = models.CharField(max_length=30, choices=CredentialsTypeChoice.choices())#auth_type
 
     class Meta:
         default_permissions = ()
-        unique_together = (('provider_type', 'resource_name', 'credentials'),)
+        unique_together = (('provider_type', 'resource', 'credentials'),)
 
     def __str__(self):
-        return "{} {} {}".format(self.provider_type, self.resource_name, self.id)
+        return "{} {} {}".format(self.provider_type, self.resource, self.id)
 
     def get_storage_dirname(self):
         return os.path.join(settings.CLOUD_STORAGE_ROOT, str(self.id))

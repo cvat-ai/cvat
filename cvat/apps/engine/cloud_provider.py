@@ -4,7 +4,7 @@ from io import BytesIO
 
 import boto3
 from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import WaiterError
+from botocore.exceptions import WaiterError, NoCredentialsError
 
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError
@@ -13,7 +13,7 @@ from azure.storage.blob import PublicAccess
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
 
-class CloudStorage(ABC):
+class _CloudStorage(ABC):
 
     def __init__(self):
         self._files = []
@@ -64,46 +64,63 @@ class CloudStorage(ABC):
 
     @property
     def content(self):
-        return map(lambda x: x['name'] , self._files)
+        return list(map(lambda x: x['name'] , self._files))
 
-def get_cloud_storage_instance(cloud_provider, **details):
-    instance = None
-    if cloud_provider == CloudProviderChoice.AWS_S3:
-        instance = AWS_S3(
-            bucket=details.get('resource_name'),
-            session_token=details.get('session_token'),
-            key_id=details.get('key'),
-            secret_key=details.get('secret_key')
-        )
-    elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
-        instance = AzureBlobContainer(
-            container_name=details.get('resource_name'),
-            sas_token=details.get('session_token'),
-            accounr_name=details.get('key'),
-            account_access_key=details.get('secret_key')
-        )
-    return instance
+# def get_cloud_storage_instance(cloud_provider, resource, credentials):
+#     instance = None
+#     проверить креденшелы!
+# if cloud_provider == CloudProviderChoice.AWS_S3:
+#         instance = AWS_S3(
+#             bucket=resource,
+#             session_token=credentials.session_token,
+#         )
+#     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
+#         instance = AzureBlobContainer(
+#             container_name=resource,
+#             sas_token=credentials.session_token,
+#         )
+#     return instance
 
-class AWS_S3(CloudStorage):
-    def __init__(self, **kwargs):
+# TODO: подумать возможно оставить функцию provider вместо класса ниже
+class CloudStorage:
+    def __init__(self, cloud_provider, resource, credentials):
+        if cloud_provider == CloudProviderChoice.AWS_S3:
+            self.__instance = AWS_S3(
+                bucket=resource,
+                access_key_id=credentials.key,
+                secret_key=credentials.secret_key,
+                session_token=credentials.session_token,
+            )
+        elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
+            self.__instance = AzureBlobContainer(
+                container=resource,
+                account_name=credentials.account_name,
+                sas_token=credentials.session_token,
+            )
+        else:
+            raise NotImplementedError()
+
+    def __getattr__(self, name):
+        assert hasattr(self.__instance, name), 'Unknown behavior: {}'.format(name)
+        return self.__instance.__getattribute__(name)
+
+class AWS_S3(_CloudStorage):
+    def __init__(self, bucket, access_key_id=None, secret_key=None, session_token=None):
         super().__init__()
-        assert (bucket_name := kwargs.get('bucket')), 'Bucket name was not found'
-        self._bucket_name = bucket_name
-
-        key_id, secret_key = None, None
-        if (session_token := kwargs.get('session_token')):
-            assert (key_id := kwargs.get('key_id')), 'Key id was not found'
-            assert (secret_key := kwargs.get('secret_key')), 'Secret key was not found'
-
-        self._client_s3 = boto3.client(
-            's3',
-            aws_access_key_id=key_id,
-            aws_secret_access_key=secret_key,
-            aws_session_token=session_token
-        )
-
+        if all([access_key_id, secret_key, session_token]):
+            self._client_s3 = boto3.client(
+                's3',
+                aws_access_key_id=access_key_id,
+                aws_secret_access_key=secret_key,
+                aws_session_token=session_token,
+            )
+        elif any([access_key_id, secret_key, session_token]):
+            raise Exception('Insufficient data for authorization')
+        else:
+            # anonymous access
+            self._client_s3 = boto3.client('s3')
         self._s3 = boto3.resource('s3')
-        self._bucket = self._s3.Bucket(bucket_name)
+        self._bucket = self._s3.Bucket(bucket)
 
     @property
     def bucket(self):
@@ -111,7 +128,7 @@ class AWS_S3(CloudStorage):
 
     @property
     def name(self):
-        return self._bucket_name
+        return self._bucket.name
 
     # def is_object_exist(self, verifiable='bucket_exist', config=None):
     #     waiter = self._client_s3.get_waiter(verifiable)
@@ -121,14 +138,14 @@ class AWS_S3(CloudStorage):
         waiter = self._client_s3.get_waiter('bucket_exists')
         try:
             waiter.wait(
-                Bucket=self._bucket_name,
+                Bucket=self.name,
                 WaiterConfig={
                     'Delay': 5, # The amount of time in seconds to wait between attempts. Default: 5
                     'MaxAttempts': 3 # The maximum number of attempts to be made. Default: 20
                 }
             )
         except WaiterError:
-            raise Exception('A resource {} unavailable'.format(self._bucket_name))
+            raise Exception('A resource {} unavailable'.format(self.name))
 
     def is_object_exist(self, key_object):
         waiter = self._client_s3.get_waiter('object_exists')
@@ -183,23 +200,21 @@ class AWS_S3(CloudStorage):
                 },
                 ObjectLockEnabledForBucket=False
             )
-        except Exception as ex:#botocore.errorfactory.BucketAlreadyExists
+        except Exception as ex:
             msg = str(ex)
             slogger.glob.info(msg)
             raise Exception(str(ex))
 
-class AzureBlobContainer(CloudStorage):
+class AzureBlobContainer(_CloudStorage):
 
-    def __init__(self, **kwargs):
+    def __init__(self, container, account_name, sas_token=None):
         super().__init__()
-        assert (container_name := kwargs.get('container_name')), 'Container name was not found'
-        assert (account_name := kwargs.get('account_name')), 'Account name was not found'
-        assert (credentials := kwargs.get('sas_token') if kwargs.get('sas_token') else kwargs.get('account_access_key')), 'Credentials were not granted'
-
-        self._blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credentials)
-        self._container_client = self._blob_service_client.get_container_client(container_name)
-
         self._account_name = account_name
+        if sas_token:
+            self._blob_service_client = BlobServiceClient(account_url=self.account_url, credential=sas_token)
+        else:
+            self._blob_service_client = BlobServiceClient(account_url=self.account_url)
+        self._container_client = self._blob_service_client.get_container_client(container)
 
     @property
     def container(self):
@@ -270,41 +285,44 @@ class AzureBlobContainer(CloudStorage):
         buf.seek(0)
         return buf
 
-class GOOGLE_DRIVE(CloudStorage):
+class GOOGLE_DRIVE(_CloudStorage):
     pass
 
 class Credentials:
-    __slots__ = ('key', 'secret_key', 'session_token', 'credentials_type')
+    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'credentials_type')
 
     def __init__(self, **credentials):
         self.key = credentials.get('key', '')
         self.secret_key = credentials.get('secret_key', '')
         self.session_token = credentials.get('session_token', '')
+        self.account_name = credentials.get('account_name', '')
         self.credentials_type = credentials.get('credentials_type', None)
 
     def convert_to_db(self):
         converted_credentials = {
-            CredentialsTypeChoice.TOKEN : self.session_token,
-            CredentialsTypeChoice.KEY_TOKEN_PAIR : " ".join([self.key, self.session_token]),
-            CredentialsTypeChoice.KEY_SECRET_KEY_PAIR : " ".join([self.key, self.secret_key])
+            CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_PAIR : \
+                " ".join([self.key, self.secret_key, self.session_token]),
+            CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
+            CredentialsTypeChoice.ANONYMOUS_ACCESS: "",
         }
         return converted_credentials[self.credentials_type]
 
     def convert_from_db(self, credentials):
         self.credentials_type = credentials.get('type')
-        if self.credentials_type == CredentialsTypeChoice.TOKEN:
-                self.session_token = credentials.get('value')
+        if self.credentials_type == CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_PAIR:
+            self.key, self.secret_key, self.session_token = credentials.get('value').split()
+        elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
+            self.account_name, self.session_token = credentials.get('value').split()
         else:
-            self.key, second = credentials.get('value').split()
-            if self.credentials_type == CredentialsTypeChoice.KEY_TOKEN_PAIR:
-                self.session_token = second
-            else: self.secret_key = second
+            self.account_name, self.session_token, self.key, self.secret_key = ("", "", "", "")
+            self.credentials_type = None
 
     def mapping_with_new_values(self, credentials):
         self.credentials_type = credentials.get('credentials_type', self.credentials_type)
         self.key = credentials.get('key', self.key)
         self.secret_key = credentials.get('secret_key', self.secret_key)
         self.session_token = credentials.get('session_token', self.session_token)
+        self.account_name = credentials.get('account_name', self.account_name)
 
     def values(self):
-        return [self.key, self.secret_key, self.session_token]
+        return [self.key, self.secret_key, self.session_token, self.account_name]

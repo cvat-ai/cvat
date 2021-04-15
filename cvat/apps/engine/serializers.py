@@ -12,7 +12,7 @@ from django.contrib.auth.models import User, Group
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.engine.cloud_provider import Credentials, get_cloud_storage_instance
+from cvat.apps.engine.cloud_provider import Credentials, CloudStorage
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
@@ -696,54 +696,47 @@ class BaseCloudStorageSerializer(serializers.ModelSerializer):
 
 class CloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
-    session_token = serializers.CharField(max_length=50, allow_blank=True, required=False)
-    key = serializers.CharField(max_length=30, allow_blank=True, required=False)
-    secret_key = serializers.CharField(max_length=50, allow_blank=True, required=False)
+    session_token = serializers.CharField(max_length=400, allow_blank=True, required=False)
+    key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=60, allow_blank=True, required=False)
+    account_name = serializers.CharField(max_length=50, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
         fields = (
-            'provider_type', 'resource_name', 'session_token', 'owner',
-            'key', 'secret_key', 'credentials_type', 'created_date', 'updated_date',
+            'provider_type', 'resource', 'owner', 'credentials_type',
+            'created_date', 'updated_date', 'session_token', 'account_name', 'key',
+            'secret_key'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
     def validate(self, attrs):
-        credentials = Credentials(
-            key = attrs.get('key'),
-            secret_key = attrs.get('secret_key'),
-            session_token = attrs.get('session_token'),
-        )
-        if any(credentials.values()):
-            if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER and not credentials.key:
-                raise serializers.ValidationError('A credentials were not found')
-        else:
-            # no access rights granted
-            raise serializers.ValidationError('A credentials were not found')
+        if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
+            if not attrs.get('account_name', ''):
+                raise exceptions.PermissionDenied('Account name for Azure container was not specified')
         return attrs
 
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
         should_be_created = validated_data.pop('should_be_created', None)
         credentials = Credentials(
-            key = validated_data.pop('key', ''),
-            secret_key = validated_data.pop('secret_key', ''),
-            session_token = validated_data.pop('session_token', ''),
+            account_name=validated_data.pop('account_name', ''),
+            key=validated_data.pop('key', ''),
+            secret_key=validated_data.pop('secret_key', ''),
+            session_token=validated_data.pop('session_token', ''),
             credentials_type = validated_data.get('credentials_type')
         )
         if should_be_created:
             details = {
-                'resource_name': validated_data.get('resource_name'),
-                'session_token': credentials.session_token,
-                'key': credentials.key,
-                'secret_key': credentials.secret_key,
+                'resource': validated_data.get('resource'),
+                'credentials': credentials
             }
-            cloud_storage_instance = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-
+            storage = CloudStorage(cloud_provider=provider_type, **details)
             try:
-                cloud_storage_instance.create()
-            except Exception:
-                pass
+                storage.create()
+            except Exception as ex:
+                slogger.glob.warning("Failed with creating storage\n{}".format(str(ex)))
+                raise
 
         db_storage = models.CloudStorage.objects.create(
             credentials=credentials.convert_to_db(),
@@ -759,11 +752,11 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'type': instance.credentials_type,
             'value': instance.credentials,
         })
-        tmp = {k:v for k,v in validated_data.items() if k in ('key', 'secret_key', 'session_token', 'credentials_type')}
+        tmp = {k:v for k,v in validated_data.items() if k in {'key', 'secret_key', 'account_name', 'session_token', 'credentials_type'}}
         credentials.mapping_with_new_values(tmp)
         instance.credentials = credentials.convert_to_db()
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
-        instance.resource_name = validated_data.get('resource_name', instance.resource_name)
+        instance.resource = validated_data.get('resource', instance.resource)
 
         instance.save()
         return instance

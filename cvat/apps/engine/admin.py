@@ -88,7 +88,7 @@ class CloudStorageAdmin(admin.ModelAdmin):
     date_hierarchy = 'updated_date'
     readonly_fields = ('created_date', 'updated_date', 'provider_type')
     list_display = ('__str__', 'owner', 'created_date', 'updated_date')
-    search_fields = ('provider_type', 'resource_name', 'owner__username', 'owner__first_name',
+    search_fields = ('provider_type', 'resource', 'owner__username', 'owner__first_name',
         'owner__last_name', 'owner__email',)
 
     empty_value_display = 'unknown'

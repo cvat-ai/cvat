@@ -14,7 +14,8 @@ from urllib import request as urlrequest
 import requests
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter, ValidateDimension
-from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
+from cvat.apps.engine.models import (
+    DataChoice, StorageMethodChoice, StorageChoice, RelatedFile)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import DimensionType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
@@ -27,6 +28,7 @@ from distutils.dir_util import copy_tree
 
 from . import models
 from .log import slogger
+from .cloud_provider import CloudStorage, Credentials
 
 ############################# Low Level server API
 
@@ -354,8 +356,8 @@ def _create_thread(tid, data):
                             manifest.validate_frame_numbers()
                             assert len(manifest) > 0, 'No key frames.'
 
-                            all_frames = manifest['properties']['length']
-                            video_size = manifest['properties']['resolution']
+                            all_frames = manifest.video_length
+                            video_size = manifest.video_resolution
                             manifest_is_prepared = True
                         except Exception as ex:
                             if os.path.exists(db_data.get_index_path()):
@@ -399,6 +401,8 @@ def _create_thread(tid, data):
                 db_data.size = len(extractor)
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
+                    if db_data.storage == StorageChoice.CLOUD_STORAGE:
+                        raise Exception('A manifest file was not foud')
                     if db_task.dimension == DimensionType.DIM_2D:
                         meta_info = manifest.prepare_meta(
                             sources=extractor.absolute_source_paths,
@@ -414,14 +418,29 @@ def _create_thread(tid, data):
                                 'extension': ext
                             })
                     manifest.create(content)
+                if db_data.storage == StorageChoice.CLOUD_STORAGE:
+                    db_cloud_storage = db_data.cloud_storage
+                    credentials = Credentials()
+                    credentials.convert_from_db({
+                        'type': db_cloud_storage.credentials_type,
+                        'value': db_cloud_storage.value,
+                    })
+
+                    details = {
+                        'resource': db_cloud_storage.resource,
+                        'credentials': credentials,
+                    }
+                    cloud_storage_instance = CloudStorage(cloud_provider=db_cloud_storage.provider_type, **details)
+                    cloud_storage_instance.download_file(manifest_file[0], db_data.get_manifest_path())
                 manifest.init_index()
                 counter = itertools.count()
                 for _, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
                     chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
                     img_sizes = []
-
-                    for _, frame_id in chunk_paths:
+                    for abs_path, frame_id in chunk_paths:
                         properties = manifest[frame_id]
+                        assert abs_path.endswith(os.path.basename(f"{properties['name']}{properties['extension']}")), \
+                            'Uploaded files don`t mappimg with the uploaded manifest'
                         if db_task.dimension == DimensionType.DIM_2D:
                             resolution = (properties['width'], properties['height'])
                         else:
@@ -434,35 +453,6 @@ def _create_thread(tid, data):
                             frame=frame, width=w, height=h)
                         for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
                     ])
-
-    # def processing_files_on_cloud_storage():
-    #     from .cloud_provider import Credentials, get_cloud_storage_instance
-    #     from cvat.apps.engine.models import CloudProviderChoice
-
-    #     #TODO: only on first iteration of implementation
-    #     if media_type != 'images':
-    #         raise NotImplementedError()
-
-    #     if not meta_info_file:
-    #         raise Exception('A meta information was not found')
-
-    #     db_cloud_storage = db_data.cloud_storage
-    #     credentials = Credentials()
-    #     credentials.convert_from_db({
-    #         'type': db_cloud_storage.credentials_type,
-    #         'value': db_cloud_storage.value,
-    #     })
-
-    #     details = {
-    #         'resource_name': db_cloud_storage.resource_name,
-    #         'session_token': credentials.session_token,
-    #         'key': credentials.key,
-    #         'secret_key': credentials.secret_key,
-    #     }
-    #     cloud_storage_instance = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-    #     meta = cloud_storage_instance.download_file(meta_info_file[0])
-    #     #TODO
-
 
     if db_data.storage_method == StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
         counter = itertools.count()
