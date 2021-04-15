@@ -17,7 +17,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -43,7 +43,7 @@ from cvat.apps.engine.clowder_api import ClowderApi
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
-    Comment, StorageMethodChoice, ReviewStatus, StorageChoice, DimensionType, Image, ClowderFile
+    Comment, StorageMethodChoice, ReviewStatus, StorageChoice, DimensionType, Image
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
