@@ -29,6 +29,7 @@
   - [OpenCV Tools](#opencv-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
+    - [Creating masks](#creating-masks)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
     - [Points in shape mode](#points-in-shape-mode)
@@ -283,6 +284,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
          choose the right person out of the dropdown list.
     - `Jobs` — is a list of all jobs for a particular task. Here you can find the next data:
+
       - Jobs name with a hyperlink to it.
       - Frames — the frame interval.
       - A status of the job. The status is specified by the user in the menu inside the job.
@@ -293,8 +295,10 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
       - Reviewer – a user assigned to carry out the review, read more in the [review](#review) section.
-      - `Copy`. By clicking Copy you will copy the job list to the clipboard.
+      - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
+
+        You can filter or sort jobs by status, as well as by assigner or reviewer.
 
 1.  Follow a link inside `Jobs` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -363,7 +367,7 @@ There are several options how to use the search.
 - Search for specific fields. How to perform:
   - `owner: admin` - all tasks created by the user who has the substring "admin" in his name
   - `assignee: employee` - all tasks which are assigned to a user who has the substring "employee" in his name
-  - `name: mighty` - all tasks with the substring "mighty" in their names
+  - `name: training` - all tasks with the substring "training" in their names
   - `mode: annotation` or `mode: interpolation` - all tasks with images or videos.
   - `status: annotation` or `status: validation` or `status: completed` - search by status
   - `id: 5` - task with id = 5.
@@ -676,11 +680,31 @@ In addition the workspace also has the following functions:
 
   ![](static/documentation/images/image140.jpg)
 
+- `Image settings panel` -  used to set up the grid and set up image brightness contrast saturation.
+
+  - Show `Grid`, change grid size, choose color and transparency:
+
+    ![](static/documentation/images/image068_mapillary_vistas.jpg)
+
+  - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
+    dark images using `F3` — color settings (changes displaying settings and not the
+    image itself).
+
+  Shortcuts:
+
+  - `Shift+B+=`/`Shift+B+-` for brightness.
+  - `Shift+C+=`/`Shift+C+-` for contrast.
+  - `Shift+S+=`/`Shift+S+-` for saturation.
+
+    ![](static/documentation/images/image164_mapillary_vistas.jpg)
+
+  - `Reset color settings` to default values.
+
 ---
 
 ### Settings
 
-To open the settings open the user menu in the header and select the settings item or press `F3`.
+To open the settings open the user menu in the header and select the settings item or press `F2`.
 
 ![](static/documentation/images/image067.jpg)
 
@@ -691,26 +715,9 @@ In tab `Player` you can:
 - Control step of `C` and `V` shortcuts.
 - Control speed of `Space`/`Play` button.
 - Select canvas background color. You can choose a background color or enter manually (in RGB or HEX format).
-- Show `Grid`, change grid size, choose color and transparency:
-
-  ![](static/documentation/images/image068_mapillary_vistas.jpg)
-
-- Show every image in full size or zoomed out like previous
+- `Reset zoom` Show every image in full size or zoomed out like previous
   (it is enabled by default for interpolation mode and disabled for annotation mode).
 - `Rotate all images` checkbox — switch the rotation of all frames or an individual frame.
-- Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-  dark images using `F3` — color settings (changes displaying settings and not the
-  image itself).
-
-Shortcuts:
-
-- `Shift+B+=`/`Shift+B+-` for brightness.
-- `Shift+C+=`/`Shift+C+-` for contrast.
-- `Shift+S+=`/`Shift+S+-` for saturation.
-
-  ![](static/documentation/images/image164_mapillary_vistas.jpg)
-
-- `Reset color settings` to default values.
 
 ---
 
@@ -728,9 +735,12 @@ In tab `Workspace` you can:
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section [annotation with polygons](#Annotation-with-polygons).
+
+- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](#edit-polygon)
+
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
-- Press ` Go back` or `F3` to return to the annotation.
+- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed). Click `Cancel` or press `F2` to return to the annotation.
 
 ---
 
@@ -972,6 +982,20 @@ you need to go to the task page and select the color by clicking the edit button
 this way you will change the label color for all jobs in the task.
 
 ![](static/documentation/images/image062.jpg)
+
+**Fast label change**
+You can change the label of an object using hot keys. In order to do it, you need to assign a number (from 0 to 9) to labels. By default numbers 1,2...0 are assigned to the first ten labels.
+To assign a number, click on the button placed at the right of a label name on the sidebar.
+
+![](static/documentation/images/image210.jpg)
+
+After that you will be able to assign a corresponding label to an object
+by hovering your mouse cursor over it and pressing `Ctrl + Num(0..9)`.
+
+In case you do not point the cursor to the object, pressing `Ctrl + Num(0..9)` will set a chosen label as default,
+so that the next object you create (use `N` key) will automatically have this label assigned.
+
+![](static/documentation/images/image211.jpg)
 
 ---
 
@@ -1258,13 +1282,85 @@ If you need to annotate small objects, increase `Image Quality` to
 
 ### Edit polygon
 
-To edit a polygon you have to click with pressed `Shift`, it will open the polygon editor.
+To edit a polygon you have to click on it while holding `Shift`, it will open the polygon editor.
 
-- There you can create new points or delete part of a polygon closing the line on another point.
-- After closing the polygon, you can select the part of the polygon that you want to leave.
+- In the editor you can create new points or delete part of a polygon by closing the line on another point.
+- When `Intelligent polygon cropping` option is activated in the settings, СVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.
+
+  - The first criteria is a number of cut points.
+  - The second criteria is a length of a cut curve.
+
+  If both criteria recommend to cut the same part, algorithm works automatically, and if not, a user has to make the decision.
+  If you want to choose manually which part of a polygon should be cut off, disable `Intelligent polygon cropping` in the settings. In this case after closing the polygon, you can select the part of the polygon you want to leave.
+
+  ![](static/documentation/images/image209.jpg)
+
 - You can press `Esc` to cancel editing.
 
   ![](static/documentation/images/gif007_mapillary_vistas.gif)
+
+### Cutting holes in polygons
+
+Currently, CVAT does not support cutting transparent holes in polygons. However,
+it is poissble to generate holes in exported instance and class masks.
+To do this, one needs to define a background class in the task and draw holes
+with it as additional shapes above the shapes needed to have holes:
+
+The editor window:
+![The editor](static/documentation/images/mask_export_example1_editor.png)
+
+Remember to use z-axis ordering for shapes by \[\-\] and \[\+\, \=\] keys.
+
+Exported masks:
+![A class mask](static/documentation/images/mask_export_example1_cls_mask.png) ![An instance mask](static/documentation/images/mask_export_example1_inst_mask.png)
+
+Notice that it is currently impossible to have a single instance number for
+internal shapes (they will be merged into the largest one and then covered by
+"holes").
+
+### Creating masks
+
+There are several formats in CVAT that can be used to export masks:
+
+- `Segmentation Mask` (PASCAL VOC masks)
+- `CamVid`
+- `MOTS`
+- `ICDAR`
+- `COCO` (RLE-encoded instance masks, [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#coco))
+- `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#tfrecord)):
+- `Datumaro`
+
+An example of exported masks (in the `Segmentation Mask` format):
+
+![A class mask](static/documentation/images/exported_cls_masks_example.png) ![An instance mask](static/documentation/images/exported_inst_masks_example.png)
+
+Important notices:
+
+- Both boxes and polygons are converted into masks
+- Grouped objects are considered as a single instance and exported as a single
+  mask (label and attributes are taken from the largest object in the group)
+
+#### Class colors
+
+All the labels have associated colors, which are used in the generated masks.
+These colors can be changed in the task label properties:
+
+![](static/documentation/images/label_color_picker.jpg)
+
+Label colors are also displayed in the annotation window on the right panel,
+where you can show or hide specific labels
+(only the presented labels are displayed):
+
+![](static/documentation/images/label_panel_anno_window.jpg)
+
+A background class can be:
+
+- A default class, which is implicitly-added, of black color (RGB 0, 0, 0)
+- `background` class with any color (has a priority, name is case-insensitive)
+- Any class of black color (RGB 0, 0, 0)
+
+To change backgound color in generated masks (default is black),
+change `background` class color to the desired one.
 
 ## Annotation with polylines
 
@@ -1582,17 +1678,17 @@ The "Add rule" button adds a rule for objects display. A rule may use the follow
 
 **Supported properties:**
 
-| Properties  | Supported values                                       | Description                                 |
-| ----------- | ------------------------------------------------------ | --------------------------------------------|
-| `Label`     | all the label names that are in the task               | label name                                  |
-| `Type`      | shape, track or tag                                    | type of object                              |
-| `Shape`     | all shape types                                        | type of shape                               |
-| `Occluded`  | true or false                                          | occluded ([read more](#shape-mode-advanced))|
-| `Width`     | number of px or field                                  | shape width                                 |
-| `Height`    | number of px or field                                  | shape height                                |
-| `ServerID`  | number or field                                        | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu)|
-| `ObjectID`  | number or field                                        | ID of the object in your client <br>(indicated on the objects sidebar)|
-| `Attributes`| some other fields including attributes with a <br>similar type or a specific attribute value| any fields specified by a label |
+| Properties   | Supported values                                                                             | Description                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Label`      | all the label names that are in the task                                                     | label name                                                                                                    |
+| `Type`       | shape, track or tag                                                                          | type of object                                                                                                |
+| `Shape`      | all shape types                                                                              | type of shape                                                                                                 |
+| `Occluded`   | true or false                                                                                | occluded ([read more](#shape-mode-advanced))                                                                  |
+| `Width`      | number of px or field                                                                        | shape width                                                                                                   |
+| `Height`     | number of px or field                                                                        | shape height                                                                                                  |
+| `ServerID`   | number or field                                                                              | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu) |
+| `ObjectID`   | number or field                                                                              | ID of the object in your client <br>(indicated on the objects sidebar)                                        |
+| `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label                                                                               |
 
 **Supported operators for properties:**
 
@@ -1624,7 +1720,7 @@ To add a group, click the "add group" button. Inside the group you can create ru
 
 If there is more than one rule in the group, they can be connected by `And` or `Or` operators.
 The rule group will work as well as a separate rule outside the group and will be joined by an
- operator outside the group.
+operator outside the group.
 You can create groups within other groups, to do so you need to click the add group button within the group.
 
 You can move rules and groups. To move the rule or group, drag it by the button.
@@ -1662,69 +1758,70 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 
 ![](static/documentation/images/image075.jpg)
 
-| Shortcut                   | Common                                                                                                   |
-| -------------------------- | -------------------------------------------------------------------------------------------------------- |
-|                            | _Main functions_                                                                                         |
-| `F1`                       | Open/hide the list of available shortcuts                                                                |
-| `F2`                       | Go to the settings page or go back                                                                       |
-| `Ctrl+S`                   | Go to the settings page or go back                                                                       |
-| `Ctrl+Z`                   | Cancel the latest action related with objects                                                            |
-| `Ctrl+Shift+Z` or `Ctrl+Y` | Cancel undo action                                                                                       |
-| Hold `Mouse Wheel`         | To move an image frame (for example, while drawing)                                                      |
-|                            | _Player_                                                                                                 |
-| `F`                        | Go to the next frame                                                                                     |
-| `D`                        | Go to the previous frame                                                                                 |
-| `V`                        | Go forward with a step                                                                                   |
-| `C`                        | Go backward with a step                                                                                  |
-| `Right`                    | Search the next frame that satisfies to the filters <br> or next frame which contain any objects         |
-| `Left`                     | Search the previous frame that satisfies to the filters <br> or previous frame which contain any objects |
-| `Space`                    | Start/stop automatic changing frames                                                                     |
-| `` ` `` or `~`             | Focus on the element to change the current frame                                                         |
-|                            | _Modes_                                                                                                  |
-| `N`                        | Repeat the latest procedure of drawing with the same parameters                                          |
-| `M`                        | Activate or deactivate mode to merging shapes                                                            |
-| `Alt+M`                    | Activate or deactivate mode to spliting shapes                                                           |
-| `G`                        | Activate or deactivate mode to grouping shapes                                                           |
-| `Shift+G`                  | Reset group for selected shapes (in group mode)                                                          |
-| `Esc`                      | Cancel any active canvas mode                                                                            |
-|                            | _Image operations_                                                                                       |
-| `Ctrl+R`                   | Change image angle (add 90 degrees)                                                                      |
-| `Ctrl+Shift+R`             | Change image angle (substract 90 degrees)                                                                |
-| `Shift+B+=`                | Increase brightness level for the image                                                                  |
-| `Shift+B+-`                | Decrease brightness level for the image                                                                  |
-| `Shift+C+=`                | Increase contrast level for the image                                                                    |
-| `Shift+C+-`                | Decrease contrast level for the image                                                                    |
-| `Shift+S+=`                | Increase saturation level for the image                                                                  |
-| `Shift+S+-`                | Increase contrast level for the image                                                                    |
-| `Shift+G+=`                | Make the grid more visible                                                                               |
-| `Shift+G+-`                | Make the grid less visible                                                                               |
-| `Shift+G+Enter`            | Set another color for the image grid                                                                     |
-|                            | _Operations with objects_                                                                                |
-| `Ctrl`                     | Switch automatic bordering for polygons and polylines during drawing/editing                             |
-| Hold `Ctrl`                | When the shape is active and fix it                                                                      |
-| `Alt+Click` on point       | Deleting a point (used when hovering over a point of polygon, polyline, points)                          |
-| `Shift+Click` on point     | Editing a shape (used when hovering over a point of polygon, polyline or points)                         |
-| `Right-Click` on shape     | Display of an object element from objects sidebar                                                        |
-| `T+L`                      | Change locked state for all objects in the sidebar                                                       |
-| `L`                        | Change locked state for an active object                                                                 |
-| `T+H`                      | Change hidden state for objects in the sidebar                                                           |
-| `H`                        | Change hidden state for an active object                                                                 |
-| `Q` or `/`                 | Change occluded property for an active object                                                            |
-| `Del` or `Shift+Del`       | Delete an active object. Use shift to force delete of locked objects                                     |
-| `-` or `_`                 | Put an active object "farther" from the user (decrease z axis value)                                     |
-| `+` or `=`                 | Put an active object "closer" to the user (increase z axis value)                                        |
-| `Ctrl+C`                   | Copy shape to CVAT internal clipboard                                                                    |
-| `Ctrl+V`                   | Paste a shape from internal CVAT clipboard                                                               |
-| Hold `Ctrl` while pasting  | When pasting shape from the buffer for multiple pasting.                                                 |
-| `Crtl+B`                   | Make a copy of the object on the following frames                                                        |
-|                            | _Operations are available only for track_                                                                |
-| `K`                        | Change keyframe property for an active track                                                             |
-| `O`                        | Change outside property for an active track                                                              |
-| `R`                        | Go to the next keyframe of an active track                                                               |
-| `E`                        | Go to the previous keyframe of an active track                                                           |
-|                            | _Attribute annotation mode_                                                                              |
-| `Up Arrow`                 | Go to the next attribute (up)                                                                            |
-| `Down Arrow`               | Go to the next attribute (down)                                                                          |
-| `Tab`                      | Go to the next annotated object in current frame                                                         |
-| `Shift+Tab`                | Go to the previous annotated object in current frame                                                     |
-| `<number>`                 | Assign a corresponding value to the current attribute                                                    |
+| Shortcut                   | Common                                                                                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|                            | _Main functions_                                                                                                                                                   |
+| `F1`                       | Open/hide the list of available shortcuts                                                                                                                          |
+| `F2`                       | Go to the settings page or go back                                                                                                                                 |
+| `Ctrl+S`                   | Go to the settings page or go back                                                                                                                                 |
+| `Ctrl+Z`                   | Cancel the latest action related with objects                                                                                                                      |
+| `Ctrl+Shift+Z` or `Ctrl+Y` | Cancel undo action                                                                                                                                                 |
+| Hold `Mouse Wheel`         | To move an image frame (for example, while drawing)                                                                                                                |
+|                            | _Player_                                                                                                                                                           |
+| `F`                        | Go to the next frame                                                                                                                                               |
+| `D`                        | Go to the previous frame                                                                                                                                           |
+| `V`                        | Go forward with a step                                                                                                                                             |
+| `C`                        | Go backward with a step                                                                                                                                            |
+| `Right`                    | Search the next frame that satisfies to the filters <br> or next frame which contain any objects                                                                   |
+| `Left`                     | Search the previous frame that satisfies to the filters <br> or previous frame which contain any objects                                                           |
+| `Space`                    | Start/stop automatic changing frames                                                                                                                               |
+| `` ` `` or `~`             | Focus on the element to change the current frame                                                                                                                   |
+|                            | _Modes_                                                                                                                                                            |
+| `N`                        | Repeat the latest procedure of drawing with the same parameters                                                                                                    |
+| `M`                        | Activate or deactivate mode to merging shapes                                                                                                                      |
+| `Alt+M`                    | Activate or deactivate mode to spliting shapes                                                                                                                     |
+| `G`                        | Activate or deactivate mode to grouping shapes                                                                                                                     |
+| `Shift+G`                  | Reset group for selected shapes (in group mode)                                                                                                                    |
+| `Esc`                      | Cancel any active canvas mode                                                                                                                                      |
+|                            | _Image operations_                                                                                                                                                 |
+| `Ctrl+R`                   | Change image angle (add 90 degrees)                                                                                                                                |
+| `Ctrl+Shift+R`             | Change image angle (substract 90 degrees)                                                                                                                          |
+| `Shift+B+=`                | Increase brightness level for the image                                                                                                                            |
+| `Shift+B+-`                | Decrease brightness level for the image                                                                                                                            |
+| `Shift+C+=`                | Increase contrast level for the image                                                                                                                              |
+| `Shift+C+-`                | Decrease contrast level for the image                                                                                                                              |
+| `Shift+S+=`                | Increase saturation level for the image                                                                                                                            |
+| `Shift+S+-`                | Increase contrast level for the image                                                                                                                              |
+| `Shift+G+=`                | Make the grid more visible                                                                                                                                         |
+| `Shift+G+-`                | Make the grid less visible                                                                                                                                         |
+| `Shift+G+Enter`            | Set another color for the image grid                                                                                                                               |
+|                            | _Operations with objects_                                                                                                                                          |
+| `Ctrl`                     | Switch automatic bordering for polygons and polylines during drawing/editing                                                                                       |
+| Hold `Ctrl`                | When the shape is active and fix it                                                                                                                                |
+| `Alt+Click` on point       | Deleting a point (used when hovering over a point of polygon, polyline, points)                                                                                    |
+| `Shift+Click` on point     | Editing a shape (used when hovering over a point of polygon, polyline or points)                                                                                   |
+| `Right-Click` on shape     | Display of an object element from objects sidebar                                                                                                                  |
+| `T+L`                      | Change locked state for all objects in the sidebar                                                                                                                 |
+| `L`                        | Change locked state for an active object                                                                                                                           |
+| `T+H`                      | Change hidden state for objects in the sidebar                                                                                                                     |
+| `H`                        | Change hidden state for an active object                                                                                                                           |
+| `Q` or `/`                 | Change occluded property for an active object                                                                                                                      |
+| `Del` or `Shift+Del`       | Delete an active object. Use shift to force delete of locked objects                                                                                               |
+| `-` or `_`                 | Put an active object "farther" from the user (decrease z axis value)                                                                                               |
+| `+` or `=`                 | Put an active object "closer" to the user (increase z axis value)                                                                                                  |
+| `Ctrl+C`                   | Copy shape to CVAT internal clipboard                                                                                                                              |
+| `Ctrl+V`                   | Paste a shape from internal CVAT clipboard                                                                                                                         |
+| Hold `Ctrl` while pasting  | When pasting shape from the buffer for multiple pasting.                                                                                                           |
+| `Crtl+B`                   | Make a copy of the object on the following frames                                                                                                                  |
+| `Ctrl+Num(0..9)`           | Сhanges the object label if pressed while the cursor is pointed on the object <br> / changes default label if pressed while the cursor is not pointed on an object |
+|                            | _Operations are available only for track_                                                                                                                          |
+| `K`                        | Change keyframe property for an active track                                                                                                                       |
+| `O`                        | Change outside property for an active track                                                                                                                        |
+| `R`                        | Go to the next keyframe of an active track                                                                                                                         |
+| `E`                        | Go to the previous keyframe of an active track                                                                                                                     |
+|                            | _Attribute annotation mode_                                                                                                                                        |
+| `Up Arrow`                 | Go to the next attribute (up)                                                                                                                                      |
+| `Down Arrow`               | Go to the next attribute (down)                                                                                                                                    |
+| `Tab`                      | Go to the next annotated object in current frame                                                                                                                   |
+| `Shift+Tab`                | Go to the previous annotated object in current frame                                                                                                               |
+| `<number>`                 | Assign a corresponding value to the current attribute                                                                                                              |

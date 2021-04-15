@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,12 +18,14 @@ interface Props {
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
+    intelligentPolygonCrop: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchIntelligentPolygonCrop(enabled: boolean): void;
 }
 
 export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -34,12 +36,14 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        intelligentPolygonCrop,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
         onSwitchShowingInterpolatedTracks,
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
+        onSwitchIntelligentPolygonCrop,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -111,9 +115,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>
-                        {' '}
                         Show text for an object on the canvas not only when the object is activated
-                        {' '}
                     </Text>
                 </Col>
             </Row>
@@ -131,10 +133,24 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>
-                        {' '}
                         Enable automatic bordering for polygons and polylines during drawing/editing
-                        {' '}
                     </Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-intelligent-polygon-cropping'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={intelligentPolygonCrop}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchIntelligentPolygonCrop(event.target.checked);
+                        }}
+                    >
+                        Intelligent polygon cropping
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>Try to crop polygons automatically when editing</Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-aam-zoom-margin'>

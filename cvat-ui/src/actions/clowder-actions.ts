@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ActionCreator } from 'redux';
+import { Dispatch } from 'react';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { ActionCreator } from 'redux';
 import { ClowderFileDto } from 'reducers/interfaces';
-import { Dispatch } from 'react';
 
 const cvat = getCore();
 

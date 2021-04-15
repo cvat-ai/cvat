@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import Layout from 'antd/lib/layout';
 
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ActiveControl, Rotation } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas-wrapper';
 
@@ -27,9 +27,7 @@ interface Props {
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
-    const {
-        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, selectIssuePosition,
-    } = props;
+    const { canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, selectIssuePosition } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {

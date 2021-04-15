@@ -7,11 +7,11 @@ import React, { ChangeEvent } from 'react';
 import { Button, Col, Input, Popover, Row } from 'antd';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
+import { useDispatch, useSelector } from 'react-redux';
+import { CloudSyncOutlined, ExclamationCircleOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
 import clowderApiGuide from 'assets/clowder-api-guide.png';
 import { clowderActions, getRootFilesAsync } from 'actions/clowder-actions';
-import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
-import { CloudSyncOutlined, ExclamationCircleOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
 
 function ClowderForm(): JSX.Element {
     const datasetId = useSelector((state: CombinedState) => state.clowder.datasetId);

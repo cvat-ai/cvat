@@ -1,10 +1,11 @@
 # Computer Vision Annotation Tool (CVAT)
 
-[![CI](https://github.com/openvinotoolkit/cvat/workflows/CI/badge.svg?branch=develop)](https://github.com/openvinotoolkit/cvat/actions)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b9899c72f2764df0b5d26390cb872e21)](https://app.codacy.com/gh/openvinotoolkit/cvat?utm_source=github.com&utm_medium=referral&utm_content=openvinotoolkit/cvat&utm_campaign=Badge_Grade_Dashboard)
-[![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
-[![Coverage Status](https://coveralls.io/repos/github/openvinotoolkit/cvat/badge.svg?branch=develop)](https://coveralls.io/github/openvinotoolkit/cvat?branch=develop)
-[![DOI](https://zenodo.org/badge/139156354.svg)](https://zenodo.org/badge/latestdoi/139156354)
+[![CI][ci-img]][ci-url]
+[![Gitter chat][gitter-img]][gitter-url]
+[![Coverage Status][coverage-img]][coverage-url]
+[![server pulls][docker-server-pulls-img]][docker-server-image-url]
+[![ui pulls][docker-ui-pulls-img]][docker-ui-image-url]
+[![DOI][doi-img]][doi-url]
 
 CVAT is free, online, interactive video and image annotation
 tool for computer vision. It is being used by our team to
@@ -57,7 +58,7 @@ For more information about supported formats look at the
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/) | X      | X      |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                    | X      | X      |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)               | X      | X      |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)         | X      | X      |
+| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)           | X      | X      |
 | [MOT](https://motchallenge.net/)                                              | X      | X      |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                        | X      | X      |
 | [ImageNet](http://www.image-net.org)                                          | X      | X      |
@@ -162,3 +163,19 @@ Other ways to ask questions and get our support:
 - [Onepanel](https://github.com/onepanelio/core) - Onepanel is an open source
   vision AI platform that fully integrates CVAT with scalable data processing
   and parallelized training pipelines.
+
+<!-- prettier-ignore-start -->
+<!-- Badges -->
+
+[docker-server-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_server.svg?style=flat-square&label=server%20pulls
+[docker-server-image-url]: https://hub.docker.com/r/openvino/cvat_server
+[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_ui.svg?style=flat-square&label=UI%20pulls
+[docker-ui-image-url]: https://hub.docker.com/r/openvino/cvat_ui
+[ci-img]: https://github.com/openvinotoolkit/cvat/workflows/CI/badge.svg?branch=develop
+[ci-url]: https://github.com/openvinotoolkit/cvat/actions
+[gitter-img]: https://badges.gitter.im/opencv-cvat/gitter.png
+[gitter-url]: https://gitter.im/opencv-cvat
+[coverage-img]: https://coveralls.io/repos/github/openvinotoolkit/cvat/badge.svg?branch=develop
+[coverage-url]: https://coveralls.io/github/openvinotoolkit/cvat?branch=develop
+[doi-img]: https://zenodo.org/badge/139156354.svg
+[doi-url]: https://zenodo.org/badge/latestdoi/139156354

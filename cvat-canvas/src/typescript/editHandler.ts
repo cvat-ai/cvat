@@ -27,6 +27,7 @@ export class EditHandlerImpl implements EditHandler {
     private editLine: SVG.PolyLine;
     private clones: SVG.Polygon[];
     private autobordersEnabled: boolean;
+    private intelligentCutEnabled: boolean;
 
     private setupTrailingPoint(circle: SVG.Circle): void {
         const head = this.editedShape.attr('points').split(' ').slice(0, this.editData.pointID).join(' ');
@@ -259,11 +260,11 @@ export class EditHandlerImpl implements EditHandler {
         this.editLine.remove();
         this.editLine = null;
 
-        if (pointsCriteria && lengthCriteria) {
+        if (pointsCriteria && lengthCriteria && this.intelligentCutEnabled) {
             this.clones.push(this.canvas.polygon(firstPart.join(' ')));
             this.selectPolygon(this.clones[0]);
             // left indexes1 and
-        } else if (!pointsCriteria && !lengthCriteria) {
+        } else if (!pointsCriteria && !lengthCriteria && this.intelligentCutEnabled) {
             this.clones.push(this.canvas.polygon(secondPart.join(' ')));
             this.selectPolygon(this.clones[0]);
         } else {
@@ -384,6 +385,7 @@ export class EditHandlerImpl implements EditHandler {
     ) {
         this.autoborderHandler = autoborderHandler;
         this.autobordersEnabled = false;
+        this.intelligentCutEnabled = false;
         this.onEditDone = onEditDone;
         this.canvas = canvas;
         this.editData = null;
@@ -422,6 +424,10 @@ export class EditHandlerImpl implements EditHandler {
                     this.autoborderHandler.autoborder(false);
                 }
             }
+        }
+
+        if (typeof configuration.intelligentPolygonCrop === 'boolean') {
+            this.intelligentCutEnabled = configuration.intelligentPolygonCrop;
         }
     }
 

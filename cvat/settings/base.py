@@ -20,6 +20,8 @@ import fcntl
 import shutil
 import subprocess
 import mimetypes
+from distutils.util import strtobool
+
 mimetypes.add_type("application/wasm", ".wasm", True)
 
 from pathlib import Path
@@ -128,6 +130,9 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'rest_auth.registration'
 ]
+
+if strtobool(os.environ.get("ADAPTIVE_AUTO_ANNOTATION", 'false')):
+    INSTALLED_APPS.append('cvat.apps.training')
 
 SITE_ID = 1
 

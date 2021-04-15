@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -72,7 +72,9 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { treeData, clowderFiles, getTreeData, withRemote, onChangeActiveKey } = this.props;
+        const {
+            treeData, clowderFiles, getTreeData, withRemote, onChangeActiveKey,
+        } = this.props;
 
         return (
             <FileManagerComponent

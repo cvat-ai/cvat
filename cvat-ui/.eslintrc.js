@@ -21,6 +21,7 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:import/typescript',
         'prettier',
+        'prettier/react',
     ],
     ignorePatterns: ['.eslintrc.js'],
     rules: {
@@ -30,6 +31,7 @@ module.exports = {
         'react/jsx-indent': ['warn', 4],
         'react/jsx-indent-props': ['warn', 4],
         'react/jsx-props-no-spreading': 0,
+        'react/jsx-wrap-multilines': ['error', {'declaration': false, 'assignment': false}],
         'implicit-arrow-linebreak': 0,
         'jsx-quotes': ['error', 'prefer-single'],
         'arrow-parens': ['error', 'always'],

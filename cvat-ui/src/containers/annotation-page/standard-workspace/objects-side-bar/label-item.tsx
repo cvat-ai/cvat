@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,8 @@ import { CombinedState, ObjectType } from 'reducers/interfaces';
 
 interface OwnProps {
     labelID: number;
+    keyToLabelMapping: Record<string, number>;
+    updateLabelShortcutKey(updatedKey: string, labelID: number): void;
 }
 
 interface StateToProps {
@@ -20,7 +22,7 @@ interface StateToProps {
     labelColor: string;
     objectStates: any[];
     jobInstance: any;
-    frameNumber: any;
+    frameNumber: number;
 }
 
 interface DispatchToProps {
@@ -127,35 +129,38 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
 
     private switchHidden(value: boolean): void {
         const { updateAnnotations } = this.props;
-
         const { ownObjectStates } = this.state;
-        for (const state of ownObjectStates) {
-            state.hidden = value;
-        }
 
-        updateAnnotations(ownObjectStates);
+        if (ownObjectStates.length) {
+            // false alarm
+            // eslint-disable-next-line
+            updateAnnotations(ownObjectStates.map((state: any) => ((state.hidden = value), state)));
+        }
     }
 
     private switchLock(value: boolean): void {
         const { updateAnnotations } = this.props;
-
         const { ownObjectStates } = this.state;
-        for (const state of ownObjectStates) {
-            state.lock = value;
-        }
 
-        updateAnnotations(ownObjectStates);
+        if (ownObjectStates.length) {
+            // false alarm
+            // eslint-disable-next-line
+            updateAnnotations(ownObjectStates.map((state: any) => ((state.lock = value), state)));
+        }
     }
 
     public render(): JSX.Element {
+        const {
+            labelName, labelColor, keyToLabelMapping, labelID, updateLabelShortcutKey,
+        } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
-
-        const { labelName, labelColor } = this.props;
 
         return (
             <LabelItemComponent
                 labelName={labelName}
                 labelColor={labelColor}
+                labelID={labelID}
+                keyToLabelMapping={keyToLabelMapping}
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
@@ -163,6 +168,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
                 showStates={this.showStates}
                 lockStates={this.lockStates}
                 unlockStates={this.unlockStates}
+                updateLabelShortcutKey={updateLabelShortcutKey}
             />
         );
     }

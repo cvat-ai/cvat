@@ -2,23 +2,23 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import os
 import os.path as osp
-import io
 import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
-import cv2
 
+import cv2
 import django_rq
-from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -27,7 +27,7 @@ from drf_yasg import openapi
 from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
@@ -35,10 +35,11 @@ from rest_framework.response import Response
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views # pylint: disable=unused-import
+import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
+from cvat.apps.engine.clowder_api import ClowderApi
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
@@ -53,7 +54,6 @@ from cvat.apps.engine.serializers import (
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer, ClowderFileSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
-
 from . import models, task
 from .log import clogger, slogger
 
@@ -188,6 +188,7 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS':       False,
             'MODELS':          False,
+            'PREDICT':         apps.is_installed('cvat.apps.training')
         }
         if strtobool(os.environ.get("CVAT_ANALYTICS", '0')):
             response['ANALYTICS'] = True
@@ -289,6 +290,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True,
             context={"request": request})
         return Response(serializer.data)
+
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -977,8 +979,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
 # TODO: document for swagger
-from rest_framework.decorators import api_view
-from cvat.apps.engine.clowder_api import ClowderApi
 @api_view(['POST'])
 def clowder_dataset_root_contents(request, dataset_id):
     try:
@@ -1010,14 +1010,12 @@ def _clowder_get_content(api_key, datasetid, folderid=None):
             file['srcdatasetid'] = datasetid
             file['is_file'] = True
         folders_raw = clowder.get_folders(datasetid, folderid)
-        folders = []
-        for raw in folders_raw:
-            folder = dict()
-            folder['clowderid'] = raw['id']
-            folder['name'] = raw['path'][-1]
-            folder['is_file'] = False
-            folder['srcdatasetid'] = datasetid
-            folders.append(folder)
+        folders = [{
+            'clowderid': raw['id'],
+            'name': raw['path'][-1],
+            'is_file': False,
+            'srcdatasetid': datasetid
+        } for raw in folders_raw]
         return folders + files
 
 @api_view(['GET'])
@@ -1166,3 +1164,5 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
+
+

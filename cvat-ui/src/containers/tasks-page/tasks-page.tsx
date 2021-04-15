@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,9 +31,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gettingQuery: tasks.gettingQuery,
         numberOfTasks: state.tasks.count,
         numberOfVisibleTasks: state.tasks.current.length,
-        numberOfHiddenTasks: tasks.hideEmpty
-            ? tasks.current.filter((task: Task): boolean => !task.instance.jobs.length).length
-            : 0,
+        numberOfHiddenTasks: tasks.hideEmpty ?
+            tasks.current.filter((task: Task): boolean => !task.instance.jobs.length).length :
+            0,
     };
 }
 
