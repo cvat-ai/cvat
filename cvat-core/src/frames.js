@@ -286,7 +286,7 @@
                                 if (nextChunkNumber * chunkSize < this.stopFrame) {
                                     provider.setReadyToLoading(nextChunkNumber);
                                     const nextStart = nextChunkNumber * chunkSize;
-                                    const nextStop = (nextChunkNumber + 1) * chunkSize - 1;
+                                    const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
                                     if (!provider.isChunkCached(nextStart, nextStop)) {
                                         if (!frameDataCache[this.tid].activeChunkRequest) {
                                             frameDataCache[this.tid].activeChunkRequest = {
