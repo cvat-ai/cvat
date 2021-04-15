@@ -4,7 +4,7 @@ from io import BytesIO
 
 import boto3
 from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import WaiterError, NoCredentialsError
+from botocore.exceptions import WaiterError
 from botocore.handlers import disable_signing
 
 from azure.storage.blob import BlobServiceClient

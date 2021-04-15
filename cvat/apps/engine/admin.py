@@ -11,7 +11,7 @@ class JobInline(admin.TabularInline):
     can_delete = False
 
     # Don't show extra lines to add an object
-    def has_add_permission(self, request, object=None):
+    def has_add_permission(self, request, obj):
         return False
 
 class SegmentInline(admin.TabularInline):
@@ -21,7 +21,7 @@ class SegmentInline(admin.TabularInline):
     can_delete = False
 
     # Don't show extra lines to add an object
-    def has_add_permission(self, request, object=None):
+    def has_add_permission(self, request, obj):
         return False
 
 
