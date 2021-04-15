@@ -12,6 +12,8 @@ from traceback import print_exception
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 import requests
+import json
+import re
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter, ValidateDimension
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, StorageChoice, RelatedFile
@@ -110,8 +112,10 @@ def _save_task_to_db(db_task):
 def _count_files(data, manifest_file=None):
     share_root = settings.SHARE_ROOT
     server_files = []
+    p = re.compile('(?<!\\\\)\'')
 
     for path in data["server_files"]:
+        path = json.loads(p.sub('\"', path))["file"]
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
