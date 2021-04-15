@@ -217,9 +217,9 @@ class TaskExportTest(_DbTestBase):
         }
         return self._generate_custom_annotations(annotations, task)
 
-    def _generate_task_images(self, count): # pylint: disable=no-self-use
+    def _generate_task_images(self, count, name="image"): # pylint: disable=no-self-use
         images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
+            "client_files[%d]" % i: generate_image_file(name + "_%d.jpg" % i)
             for i in range(count)
         }
         images["image_quality"] = 75
@@ -263,6 +263,21 @@ class TaskExportTest(_DbTestBase):
                 format_name, **export_args)
 
             check(file_path)
+
+    def _test_can_import_annotations(self, task, format_name):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = osp.join(temp_dir, format_name)
+
+            dm.task.export_task(task["id"], file_path, format_name)
+            expected_ann = TaskAnnotation(task["id"])
+            expected_ann.init_from_db()
+
+            dm.task.import_task_annotations(task["id"],
+                file_path, format_name)
+            actual_ann = TaskAnnotation(task["id"])
+            actual_ann.init_from_db()
+
+            self.assertEqual(len(expected_ann.data), len(actual_ann.data))
 
     def test_export_formats_query(self):
         formats = dm.views.get_export_formats()
@@ -495,6 +510,21 @@ class TaskExportTest(_DbTestBase):
         for i, frame in enumerate(task_data.group_by_frame()):
             self.assertTrue(frame.frame in range(6, 10))
         self.assertEqual(i + 1, 4)
+
+    def test_can_import_annotations_for_image_with_dots_in_filename(self):
+        export_formats = [f.DISPLAY_NAME for f in dm.views.get_export_formats()]
+        formats = [f.DISPLAY_NAME for f in dm.views.get_import_formats() if
+            f.DISPLAY_NAME in export_formats]
+        for format_name in formats:
+            if format_name == "VGGFace2 1.0":
+                self.skipTest("Format is disabled")
+
+            images = self._generate_task_images(2, "img0.0.0.")
+            task = self._generate_task(images)
+            self._generate_annotations(task)
+
+            with self.subTest(format=format_name):
+                self._test_can_import_annotations(task, format_name)
 
 class FrameMatchingTest(_DbTestBase):
     def _generate_task_images(self, paths): # pylint: disable=no-self-use
