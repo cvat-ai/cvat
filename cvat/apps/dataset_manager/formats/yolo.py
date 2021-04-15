@@ -40,7 +40,7 @@ def _import(src_file, task_data):
         for frame in frames:
             frame_info = None
             try:
-                frame_id = match_dm_item(DatasetItem(id=frame), task_data,
+                frame_id = match_dm_item(DatasetItem(id=frame + '.'), task_data,
                     root_hint=root_hint)
                 frame_info = task_data.frame_info[frame_id]
             except Exception: # nosec
