@@ -5,6 +5,7 @@ from io import BytesIO
 import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import WaiterError, NoCredentialsError
+from botocore.handlers import disable_signing
 
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError
@@ -116,10 +117,11 @@ class AWS_S3(_CloudStorage):
             )
         elif any([access_key_id, secret_key, session_token]):
             raise Exception('Insufficient data for authorization')
-        else:
-            # anonymous access
-            self._client_s3 = boto3.client('s3')
         self._s3 = boto3.resource('s3')
+        # anonymous access
+        if not any([access_key_id, secret_key, session_token]):
+            self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
+            self._client_s3 = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
 
     @property

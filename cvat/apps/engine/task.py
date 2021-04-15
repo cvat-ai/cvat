@@ -234,7 +234,7 @@ def _create_thread(tid, data):
     if data['server_files']:
         if db_data.storage == StorageChoice.LOCAL:
             _copy_data_from_share(data['server_files'], upload_dir)
-        else:
+        elif db_data.storage == StorageChoice.SHARE:
             upload_dir = settings.SHARE_ROOT
 
     av_scan_paths(upload_dir)

@@ -988,13 +988,12 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
 
-
 @method_decorator(name='list', decorator=swagger_auto_schema(
         operation_summary='Returns a paginated list of storages according to query parameters',
         manual_parameters=[
                 openapi.Parameter('provider_type', openapi.IN_QUERY, description="A supported provider of cloud storages",
                                 type=openapi.TYPE_STRING, enum=CloudProviderChoice.list()),
-                openapi.Parameter('resource', openapi.IN_QUERY, description="A name of buket or container", type=openapi.TYPE_STRING),
+                openapi.Parameter('resource', openapi.IN_QUERY, description="A name of bucket or container", type=openapi.TYPE_STRING),
                 openapi.Parameter('owner', openapi.IN_QUERY, description="A resource owner", type=openapi.TYPE_STRING),
                 openapi.Parameter('credentials_type', openapi.IN_QUERY, description="A type of a granting access", type=openapi.TYPE_STRING, enum=CredentialsTypeChoice.list()),
             ],
@@ -1138,7 +1137,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                     if key in storage_files: content[key].append('s') # storage
                     if key in manifest_files: content[key].append('m') # manifest
 
-                data = json.loads(content)
+                data = json.dumps(content)
                 return Response(data=data, content_type="aplication/json")
 
             except CloudStorageModel.DoesNotExist:
