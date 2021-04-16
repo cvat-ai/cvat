@@ -5,7 +5,7 @@
 from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import AnnotationType, Transform, DatasetItem
+from datumaro.components.extractor import AnnotationType, Transform
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
@@ -48,7 +48,7 @@ def _import(src_file, task_data):
 
         for item in dataset:
             frame_number = task_data.abs_frame_id(
-                match_dm_item(DatasetItem(id=item.id + '.'), task_data, root_hint=root_hint))
+                match_dm_item(item, task_data, root_hint=root_hint))
 
             for ann in item.annotations:
                 if ann.type != AnnotationType.polygon:

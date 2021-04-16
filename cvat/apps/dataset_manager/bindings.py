@@ -14,7 +14,6 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
-from datumaro.components.extractor import DatasetItem
 
 from .annotation import AnnotationManager, TrackManager
 
@@ -436,8 +435,9 @@ class TaskData:
     def _get_filename(path):
         return osp.splitext(path)[0]
 
-    def match_frame(self, path, root_hint=None):
-        path = self._get_filename(path)
+    def match_frame(self, path, root_hint=None, path_has_ext=True):
+        if path_has_ext:
+            path = self._get_filename(path)
         match = self._frame_mapping.get(path)
         if not match and root_hint and not path.startswith(root_hint):
             path = osp.join(root_hint, path)
@@ -612,7 +612,7 @@ def match_dm_item(item, task_data, root_hint=None):
     if frame_number is None and item.has_image:
         frame_number = task_data.match_frame(item.id + item.image.ext, root_hint)
     if frame_number is None:
-        frame_number = task_data.match_frame(item.id, root_hint)
+        frame_number = task_data.match_frame(item.id, root_hint, path_has_ext=False)
     if frame_number is None:
         frame_number = cast(item.attributes.get('frame', item.id), int)
     if frame_number is None and is_video:
@@ -652,7 +652,7 @@ def import_dm_annotations(dm_dataset, task_data):
 
     for item in dm_dataset:
         frame_number = task_data.abs_frame_id(
-            match_dm_item(DatasetItem(id=item.id + '.'), task_data, root_hint=root_hint))
+            match_dm_item(item, task_data, root_hint=root_hint))
 
         # do not store one-item groups
         group_map = {0: 0}
