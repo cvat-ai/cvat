@@ -19,7 +19,6 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - uses: docker/setup-buildx-action@master
       - uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache
@@ -36,11 +35,12 @@ jobs:
       - name: For debug
         run: |
           docker images
-          docker ps
+          docker inspect openvino/cvat_server
       - name: Run unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
+          DEBUG: 1
         run: |
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml build
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
@@ -67,7 +67,6 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - uses: docker/setup-buildx-action@master
       - uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache
@@ -87,7 +86,7 @@ jobs:
       - name: For debug
         run: |
           docker images
-          docker ps
+          docker inspect openvino/cvat_server
       - name: Code instrumentation
         run: |
           npm ci
@@ -98,8 +97,7 @@ jobs:
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
           API_ABOUT_PAGE: "localhost:8080/api/v1/server/about"
-          DOCKER_BUILDKIT: 1
-          COMPOSE_DOCKER_CLI_BUILD: 1
+          DEBUG: 1
         run: |
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
           /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
@@ -133,7 +131,6 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - uses: docker/setup-buildx-action@master
       - uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache
@@ -150,7 +147,7 @@ jobs:
       - name: For debug
         run: |
           docker images
-          docker ps
+          docker inspect openvino/cvat_server
       - name: Download coverage results
         uses: actions/download-artifact@v2
         with:
@@ -168,6 +165,7 @@ jobs:
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
           COVERALLS_SERVICE_NAME: github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEBUG: 1
         run: |
             npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
             docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml build
