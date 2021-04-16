@@ -19,6 +19,10 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+        with:
+          install: true
       - uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache
@@ -26,8 +30,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build-
       - name: Build cvat_server from cache
-        run: |
-          docker build --tag openvino/cvat_server:lastest --file ./Dockerfile --cache-from /tmp/cvat_cache .
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache
+          tags: openvino/cvat_server:latest
+          load: true
       - name: For debug
         run: |
           docker images
@@ -36,7 +45,6 @@ jobs:
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
-          DEBUG: 1
         run: |
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml build
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
