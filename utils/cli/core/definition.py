@@ -113,7 +113,7 @@ task_create_parser.add_argument(
     help='string or file containing JSON labels specification'
 )
 task_create_parser.add_argument(
-    '--project_id',
+    '--project',
     default=None,
     type=int,
     help='project ID if project exists'
