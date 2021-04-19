@@ -10,7 +10,7 @@ jobs:
         env:
           HADOLINT: "${{ github.workspace }}/hadolint"
           HADOLINT_VER: "2.1.0"
-          VERIFICATION_LEVEL: "error"
+          VERIFICATION_LEVEL: "warning"
         run: |
           URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
           PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
@@ -30,6 +30,8 @@ jobs:
             get_verification_level=`cat ./hadolint_report/hadolint_report.json | jq -r '.[] | .level'`
             for line in ${get_verification_level}; do
               if [[ ${line} =~ ${VERIFICATION_LEVEL} ]]; then
+                pip install json2html
+                python ./tests/json_to_html.py ./hadolint_report/hadolint_report.json
                 exit 1
               else
                 exit 0
