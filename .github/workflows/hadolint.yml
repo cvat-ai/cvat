@@ -22,7 +22,11 @@ jobs:
 
           if [[ ! -z ${changed_dockerfiles} ]]; then
             curl -sL -o ${HADOLINT} "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VER}/hadolint-Linux-x86_64" && chmod 700 ${HADOLINT}
-            ${HADOLINT} ${changed_dockerfiles}
+            echo "HadoLint version: "`${HADOLINT} --version`
+            echo "The files will be checked: "`echo ${changed_dockerfiles}`
+            mkdir -p hadolint_report
+
+            ${HADOLINT} --format json ${changed_dockerfiles} > ./hadolint_report/hadolint_report.json
           else
             echo "No files with the \"Dockerfile\" name found"
           fi
