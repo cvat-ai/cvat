@@ -10,13 +10,13 @@ jobs:
         env:
           HADOLINT: "${{ github.workspace }}/hadolint"
           HADOLINT_VER: "2.1.0"
+          VERIFICATION_LEVEL: "error"
         run: |
           URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
           PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
-          for files in $PR_FILES; do
-            filename="${filename%.*}"
-            if [[ ${filename} == 'Dockerfile' ]]; then
-              changed_dockerfiles+=" ${files}"
+          for file in $PR_FILES; do
+            if [[ ${file} =~ 'Dockerfile' ]]; then
+              changed_dockerfiles+=" ${file}"
             fi
           done
 
@@ -26,7 +26,15 @@ jobs:
             echo "The files will be checked: "`echo ${changed_dockerfiles}`
             mkdir -p hadolint_report
 
-            ${HADOLINT} --format json ${changed_dockerfiles} > ./hadolint_report/hadolint_report.json
+            ${HADOLINT} --no-fail --format json ${changed_dockerfiles} > ./hadolint_report/hadolint_report.json
+            get_verification_level=`cat ./hadolint_report/hadolint_report.json | jq -r '.[] | .level'`
+            for line in ${get_verification_level}; do
+              if [[ ${line} =~ ${VERIFICATION_LEVEL} ]]; then
+                exit 1
+              else
+                exit 0
+              fi
+            done
           else
             echo "No files with the \"Dockerfile\" name found"
           fi
