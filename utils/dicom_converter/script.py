@@ -99,4 +99,4 @@ def main(root_dir, output_root_dir):
             logging.error(ex)
 
 if __name__ == '__main__':
-    main(args.input.strip(os.sep), args.output.strip(os.sep))
+    main(args.input.rstrip(os.sep), args.output.rstrip(os.sep))
