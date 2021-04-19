@@ -38,7 +38,7 @@ jobs:
               fi
             done
           else
-            echo "No files with the \"Dockerfile\" name found"
+            echo "No files with the \"Dockerfile*\" name found"
           fi
 
       - name: Upload artifacts
