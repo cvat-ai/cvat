@@ -1068,7 +1068,10 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     setTimeout(updatePredictorStatus, 20 * 1000);
                 }
             };
-            updatePredictorStatus();
+
+            if (state.plugins.list.PREDICT && job.task.projectId !== null) {
+                updatePredictorStatus();
+            }
 
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
