@@ -31,6 +31,13 @@ class Converter:
             self._min_value = ds.pixel_array.min()
             self._max_value = ds.pixel_array.max()
             self._depth = ds.BitsStored
+
+            logging.debug('File: {}'.format(filename))
+            logging.debug('Photometric interpretation: {}'.format(self._photometric_interpretation))
+            logging.debug('Min value: {}'.format(self._min_value))
+            logging.debug('Max value: {}'.format(self._max_value))
+            logging.debug('Depth: {}'.format(self._depth))
+
             try:
                 self._length = ds["NumberOfFrames"].value
             except KeyError:
@@ -41,17 +48,17 @@ class Converter:
 
     def __iter__(self):
         if self._length == 1:
-            np.expand_dims(self._pixel_array, axis=0)
+            self._pixel_array = np.expand_dims(self._pixel_array, axis=0)
 
         for pixel_array in self._pixel_array:
             # Normalization to an output range 0..255, 0..65535
             pixel_array = pixel_array - self._min_value
-            pixel_array = pixel_array * (2 ** self._depth - 1)
+            pixel_array = pixel_array.astype(int) * (2 ** self._depth - 1)
             pixel_array = pixel_array // (self._max_value - self._min_value)
 
             # In some cases we need to convert colors additionally
             if 'YBR' in self._photometric_interpretation:
-                pixel_array = convert_color_space(pixel_array, self._photometric_interpretation, 'RGB')
+                 pixel_array = convert_color_space(pixel_array, self._photometric_interpretation, 'RGB')
 
             if self._depth == 8:
                 image = Image.fromarray(pixel_array.astype(np.uint8))
@@ -76,7 +83,7 @@ def main(root_dir, output_root_dir):
         input_subpath = input_filename.split(os.sep)[1:-1]
         input_basename = os.path.basename(input_filename)
 
-        output_subpath = os.path.join(*input_filename.split(os.sep)[1:-1]) if len(input_subpath) else ''
+        output_subpath = os.path.relpath(os.path.dirname(input_filename), root_dir)
         output_path = os.path.join(output_root_dir, output_subpath)
         output_basename = '{}.png'.format(os.path.splitext(input_basename)[0])
         output_filename = os.path.join(output_path, output_basename)
@@ -99,4 +106,9 @@ def main(root_dir, output_root_dir):
             logging.error(ex)
 
 if __name__ == '__main__':
-    main(args.input.rstrip(os.sep), args.output.rstrip(os.sep))
+    input_root_path = os.path.abspath(args.input.rstrip(os.sep))
+    output_root_path = os.path.abspath(args.output.rstrip(os.sep))
+
+    logging.info('From: {}'.format(input_root_path))
+    logging.info('To: {}'.format(output_root_path))
+    main(input_root_path, output_root_path)
