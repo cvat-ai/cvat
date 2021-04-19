@@ -34,4 +34,6 @@ COPY tests ${HOME}/tests
 
 COPY .coveragerc .
 
+# Coment for adding the file to pr
+
 ENTRYPOINT []
