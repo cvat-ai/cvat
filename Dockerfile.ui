@@ -52,8 +52,6 @@ COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
 RUN npm run build
 
-# Coment for adding the file to pr
-
 FROM nginx:stable-alpine
 # Replace default.conf configuration to remove unnecessary rules
 RUN sed -i "s/}/application\/wasm wasm;\n}/g" /etc/nginx/mime.types

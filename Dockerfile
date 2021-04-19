@@ -21,8 +21,6 @@ RUN apt-get update && \
         python3-venv && \
     rm -rf /var/lib/apt/lists/*
 
-# Coment for adding the file to pr
-
 # Compile Openh264 and FFmpeg
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
