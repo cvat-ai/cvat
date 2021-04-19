@@ -10,7 +10,7 @@ jobs:
         env:
           HADOLINT: "${{ github.workspace }}/hadolint"
           HADOLINT_VER: "2.1.0"
-          VERIFICATION_LEVEL: "warning"
+          VERIFICATION_LEVEL: "error"
         run: |
           URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
           PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
