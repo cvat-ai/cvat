@@ -20,7 +20,7 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - name: Getting cache
+      - name: Getting cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache
@@ -66,7 +66,7 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - name: Getting cache
+      - name: Getting cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache
@@ -130,7 +130,7 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - name: Getting cache
+      - name: Getting cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache
