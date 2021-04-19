@@ -4,14 +4,16 @@ metadata:
   name: {{ .Release.Name }}-backend
   namespace: {{ .Release.Namespace }}
   labels:
+    {{- include "cvat.labels" . | nindent 4 }}
     app: cvat-app
     tier: backend
 spec:
-  replicas: 1
+  replicas: {{ .Values.cvat.backend.replicas }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
       app: cvat-app
       tier: backend
   template:
@@ -19,46 +21,57 @@ spec:
       labels:
         app: cvat-app
         tier: backend
+        {{- include "cvat.labels" . | nindent 8 }}
+        {{- with .Values.cvat.backend.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.cvat.backend.annotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - name: cvat-backend-app-container
-          image: openvino/cvat_server:v1.2.0
-          imagePullPolicy: Always
+          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          {{- with .Values.cvat.backend.resources }}
           resources:
-            requests:
-              cpu: 10m
-              memory: 100Mi
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
           - name: DJANGO_MODWSGI_EXTRA_ARGS
             value: ""
           - name: UI_PORT
             value: "80"
           - name: UI_HOST
-            value: "cvat-frontend-service"
+            value: "{{ .Release.Name }}-frontend-service"
           - name: ALLOWED_HOSTS
             value: "*"
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
-            value: "cvat-redis-service"
+            value: "{{ .Release.Name }}-redis-master"
           {{- end }}
-          {{- if .Values.redis.enabled }}
           - name: CVAT_POSTGRES_HOST
-            value: "cvat-postgres-service"
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                key: postgresql-hostname
           - name: CVAT_POSTGRES_USER
             valueFrom:
               secretKeyRef:
-                name: cvat-postgres-secret
-                key: POSTGRES_USER
+                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                key: postgresql-username
           - name: CVAT_POSTGRES_DBNAME
             valueFrom:
               secretKeyRef:
-                name: cvat-postgres-secret
-                key: POSTGRES_DB
+                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                key: postgresql-database
           - name: CVAT_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: cvat-postgres-secret
-                key: POSTGRES_PASSWORD
+                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                key: postgresql-password
+          {{- with .Values.cvat.backend.additionalEnv }}
+          {{- toYaml . | nindent 10 }}
           {{- end }}
           ports:
           - containerPort: 8080
@@ -75,10 +88,17 @@ spec:
           - mountPath: /home/django/models
             name: cvat-backend-data
             subPath: models
+          {{- with .Values.cvat.backend.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
       initContainers:
         - name: user-data-permission-fix
           image: busybox
           command: ["/bin/chmod", "-R", "777", "/home/django"]
+          {{- with .Values.cvat.backend.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
           - mountPath: /home/django/data
             name: cvat-backend-data
@@ -92,10 +112,20 @@ spec:
           - mountPath: /home/django/models
             name: cvat-backend-data
             subPath: models
+          {{- with .Values.cvat.backend.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- with .Values.cvat.frontend.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: cvat-backend-data
           persistentVolumeClaim:
-            claimName: cvat-backend-data
+            claimName: "{{ .Release.Name }}-backend-data"
+        {{- with .Values.cvat.backend.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

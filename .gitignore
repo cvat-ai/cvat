@@ -35,3 +35,8 @@ yarn-error.log*
 /tests/cypress/fixtures
 /tests/cypress/screenshots
 .idea/
+
+#Ignore helm-related files
+/helm-chart/Chart.lock
+/helm-chart/values.override.yaml
+/helm-chart/charts/*

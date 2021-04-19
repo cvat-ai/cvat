@@ -1,15 +1,17 @@
-{{- if .Values.database.enabled -}}
+{{- if .Values.postgresql.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: cvat-backend-service
+  name: {{ .Release.Name }}-backend-service
   namespace: {{ .Release.Namespace }}
   labels:
+    {{- include "cvat.labels" . | nindent 4 }}
     app: cvat-app
     tier: backend
 spec:
   type: ClusterIP
   selector:
+      {{- include "cvat.labels" . | nindent 6 }}
       app: cvat-app
       tier: backend
   ports:

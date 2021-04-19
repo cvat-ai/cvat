@@ -1,20 +1,20 @@
-{{- if .Values.cvat_proxy.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: cvat-proxy-service
+  name: {{ .Release.Name }}-frontend-service
   namespace: {{ .Release.Namespace }}
   labels:
+    {{- include "cvat.labels" . | nindent 4 }}
     app: cvat-app
-    tier: proxy
+    tier: frontend
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
+      {{- include "cvat.labels" . | nindent 6 }}
       app: cvat-app
-      tier: proxy
+      tier: frontend
   ports:
     - port: 80
       targetPort: 80
       protocol: TCP
       name: http
-{{- end}}

@@ -1,8 +1,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cvat-backend-data
+  name: {{ .Release.Name }}-backend-data
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: backend
 spec:
   accessModes:
     - ReadWriteOnce
