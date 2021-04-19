@@ -11,5 +11,11 @@ DICOM files with series (multi-frame) are saved under the same name with a numbe
 python3 -m venv .env
 . .env/bin/activate
 pip install -r requirements.txt
-python3 script.py input_data output_data
+```
+
+# Running
+
+```
+. .env/bin/activate # if not activated
+python script.py input_data output_data
 ```

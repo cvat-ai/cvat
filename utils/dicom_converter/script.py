@@ -80,7 +80,6 @@ def main(root_dir, output_root_dir):
     pbar = tqdm(dicom_files)
     for input_filename in pbar:
         pbar.set_description('Conversion: ' + input_filename)
-        input_subpath = input_filename.split(os.sep)[1:-1]
         input_basename = os.path.basename(input_filename)
 
         output_subpath = os.path.relpath(os.path.dirname(input_filename), root_dir)
