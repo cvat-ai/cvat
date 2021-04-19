@@ -982,6 +982,20 @@ this way you will change the label color for all jobs in the task.
 
 ![](static/documentation/images/image062.jpg)
 
+**Fast label change**
+You can change the label of an object using hot keys. In order to do it, you need to assign a number (from 0 to 9) to labels. By default numbers 1,2...0 are assigned to the first ten labels.
+ To assign a number, click on the button placed at the right of a label name on the sidebar.
+
+![](static/documentation/images/image210.jpg)
+
+After that you will be able to assign a corresponding label to an object
+ by hovering your mouse cursor over it and pressing `Ctrl + Num(0..9)`.
+
+In case you do not point the cursor to the object, pressing `Ctrl + Num(0..9)` will set a chosen label as default,
+ so that the next object you create (use `N` key) will automatically have this label assigned.
+
+![](static/documentation/images/image211.jpg)
+
 ---
 
 #### Appearance
@@ -1795,6 +1809,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Ctrl+V`                   | Paste a shape from internal CVAT clipboard                                                               |
 | Hold `Ctrl` while pasting  | When pasting shape from the buffer for multiple pasting.                                                 |
 | `Crtl+B`                   | Make a copy of the object on the following frames                                                        |
+| `Ctrl+Num(0..9)`           | Сhanges the object label if pressed while the cursor is pointed on the object <br> / changes default label if pressed while the cursor is not pointed on an object|
 |                            | _Operations are available only for track_                                                                |
 | `K`                        | Change keyframe property for an active track                                                             |
 | `O`                        | Change outside property for an active track                                                              |
