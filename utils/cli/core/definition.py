@@ -309,13 +309,6 @@ export_task_parser.add_argument(
     type=str,
     help='output file'
 )
-export_task_parser.add_argument(
-    '--export_verification_period',
-    default=3,
-    type=int,
-    help='''number of seconds to wait until checking
-            if the export of the task is completed'''
-)
 
 #######################################################################
 # Import task
@@ -329,11 +322,4 @@ import_task_parser.add_argument(
     'filename',
     type=str,
     help='upload file'
-)
-import_task_parser.add_argument(
-    '--import_verification_period',
-    default=3,
-    type=int,
-    help='''number of seconds to wait until checking
-            if the import of the task is completed'''
 )

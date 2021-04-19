@@ -202,16 +202,14 @@ class CLI():
         """ Export and download a whole task """
         url = self.api.tasks_id(task_id)
         export_url = url + '?action=export'
-        response = self.session.get(export_url)
-        response.raise_for_status()
 
         while True:
-            sleep(export_verification_period)
             response = self.session.get(export_url)
             response.raise_for_status()
             log.info('STATUS {}'.format(response.status_code))
             if response.status_code == 201:
                 break
+            sleep(export_verification_period)
 
         response = self.session.get(url + '?action=download')
         response.raise_for_status()

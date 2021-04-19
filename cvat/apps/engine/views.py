@@ -42,27 +42,14 @@ from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import (Comment, DimensionType, Image, Issue, Job,
-                                     Project, Review, ReviewStatus,
-                                     StatusChoice, StorageChoice,
-                                     StorageMethodChoice, Task)
-from cvat.apps.engine.serializers import (AboutSerializer,
-                                          AnnotationFileSerializer,
-                                          BasicUserSerializer,
-                                          CombinedIssueSerializer,
-                                          CombinedReviewSerializer,
-                                          CommentSerializer,
-                                          DataMetaSerializer, DataSerializer,
-                                          ExceptionSerializer,
-                                          FileInfoSerializer, IssueSerializer,
-                                          JobSerializer, LabeledDataSerializer,
-                                          LogEventSerializer,
-                                          PluginsSerializer,
-                                          ProjectSearchSerializer,
-                                          ProjectSerializer,
-                                          ProjectWithoutTaskSerializer,
-                                          ReviewSerializer, RqStatusSerializer,
-                                          TaskFileSerializer, TaskSerializer,
-                                          UserSerializer)
+    Project, Review, ReviewStatus, StatusChoice, StorageChoice,
+    StorageMethodChoice, Task)
+from cvat.apps.engine.serializers import (AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
+    CombinedIssueSerializer, CombinedReviewSerializer, CommentSerializer, DataMetaSerializer, DataSerializer,
+    ExceptionSerializer, FileInfoSerializer, IssueSerializer, JobSerializer, LabeledDataSerializer,
+    LogEventSerializer, PluginsSerializer, ProjectSearchSerializer, ProjectSerializer,
+    ProjectWithoutTaskSerializer, ReviewSerializer, RqStatusSerializer, TaskFileSerializer, TaskSerializer,
+    UserSerializer)
 from cvat.apps.engine.backup import import_task
 from cvat.apps.engine.utils import av_scan_paths
 from . import models, task

@@ -517,18 +517,18 @@
             async function importTask(file) {
                 const { backendAPI } = config;
 
-                let annotationData = new FormData();
-                annotationData.append('task_file', file);
+                let taskData = new FormData();
+                taskData.append('task_file', file);
 
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.post(`${backendAPI}/tasks?action=import`, annotationData, {
+                            const response = await Axios.post(`${backendAPI}/tasks?action=import`, taskData, {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
-                                annotationData = new FormData();
-                                annotationData.append('rq_id', response.data.rq_id);
+                                taskData = new FormData();
+                                taskData.append('rq_id', response.data.rq_id);
                                 setTimeout(request, 3000);
                             } else {
                                 const importedTask = await getTasks(`?id=${response.data.id}`);

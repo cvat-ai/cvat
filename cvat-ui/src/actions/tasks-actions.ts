@@ -359,11 +359,10 @@ export function exportTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
             const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
             downloadAnchor.href = url;
             downloadAnchor.click();
+            dispatch(exportTaskSuccess(taskInstance.id));
         } catch (error) {
             dispatch(exportTaskFailed(taskInstance.id, error));
         }
-
-        dispatch(exportTaskSuccess(taskInstance.id));
     };
 }
 

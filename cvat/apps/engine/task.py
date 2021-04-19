@@ -20,12 +20,8 @@ from django.db import transaction
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter,
-                                               Mpeg4CompressedChunkWriter,
-                                               ValidateDimension,
-                                               ZipChunkWriter,
-                                               ZipCompressedChunkWriter,
-                                               get_mime)
+from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
+    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
 from cvat.apps.engine.utils import av_scan_paths
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.core import VideoManifestValidator
