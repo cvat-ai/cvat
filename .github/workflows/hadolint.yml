@@ -1,0 +1,35 @@
+name: Linter
+on: pull_request
+jobs:
+  HadoLint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run checks
+        env:
+          HADOLINT: "${{ github.workspace }}/hadolint"
+          HADOLINT_VER: "2.1.0"
+        run: |
+          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
+          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
+          for files in $PR_FILES; do
+            filename="${filename%.*}"
+            if [[ ${filename} == 'Dockerfile' ]]; then
+              changed_dockerfiles+=" ${files}"
+            fi
+          done
+
+          if [[ ! -z ${changed_dockerfiles} ]]; then
+            curl -sL -o ${HADOLINT} "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VER}/hadolint-Linux-x86_64" && chmod 700 ${HADOLINT}
+            ${HADOLINT} ${changed_dockerfiles}
+          else
+            echo "No files with the \"Dockerfile\" name found"
+          fi
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: hadolint_report
+          path: hadolint_report
