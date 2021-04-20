@@ -113,6 +113,12 @@ task_create_parser.add_argument(
     help='string or file containing JSON labels specification'
 )
 task_create_parser.add_argument(
+    '--project',
+    default=None,
+    type=int,
+    help='project ID if project exists'
+)
+task_create_parser.add_argument(
     '--overlap',
     default=0,
     type=int,
@@ -175,6 +181,7 @@ task_create_parser.add_argument(
     action='store_true',
     help='using lfs for dataset repository (default: %(default)s)'
 )
+
 #######################################################################
 # Delete
 #######################################################################

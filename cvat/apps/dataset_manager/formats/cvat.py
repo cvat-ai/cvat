@@ -441,8 +441,9 @@ def load(file_object, annotations):
             elif el.tag == 'image':
                 image_is_opened = True
                 frame_id = annotations.abs_frame_id(match_dm_item(
-                    DatasetItem(id=el.attrib['name'],
-                        attributes={'frame': el.attrib['id']}
+                    DatasetItem(id=osp.splitext(el.attrib['name'])[0],
+                        attributes={'frame': el.attrib['id']},
+                        image=el.attrib['name']
                     ),
                     task_data=annotations
                 ))

@@ -66,16 +66,20 @@ class CLI():
                      completion_verification_period=20,
                      git_completion_verification_period=2,
                      dataset_repository_url='',
+                     project_id=None,
                      lfs=False, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
         url = self.api.tasks
+        labels = [] if project_id is not None else labels
         data = {'name': name,
                 'labels': labels,
                 'overlap': overlap,
                 'segment_size': segment_size,
                 'bug_tracker': bug,
         }
+        if project_id:
+            data.update({'project_id': project_id})
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
