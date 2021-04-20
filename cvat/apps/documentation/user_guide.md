@@ -284,7 +284,6 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
          choose the right person out of the dropdown list.
     - `Jobs` — is a list of all jobs for a particular task. Here you can find the next data:
-
       - Jobs name with a hyperlink to it.
       - Frames — the frame interval.
       - A status of the job. The status is specified by the user in the menu inside the job.
@@ -687,8 +686,8 @@ In addition the workspace also has the following functions:
     ![](static/documentation/images/image068_mapillary_vistas.jpg)
 
   - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-    dark images using `F3` — color settings (changes displaying settings and not the
-    image itself).
+  dark images using `F3` — color settings (changes displaying settings and not the
+  image itself).
 
   Shortcuts:
 
@@ -740,7 +739,7 @@ In tab `Workspace` you can:
 
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
-- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed). Click `Cancel` or press `F2` to return to the annotation.
+- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed). Click `Cancel`  or press `F2` to return to the annotation.
 
 ---
 
@@ -1286,7 +1285,6 @@ To edit a polygon you have to click on it while holding `Shift`, it will open th
 
 - In the editor you can create new points or delete part of a polygon by closing the line on another point.
 - When `Intelligent polygon cropping` option is activated in the settings, СVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.
-
   - The first criteria is a number of cut points.
   - The second criteria is a length of a cut curve.
 
@@ -1307,12 +1305,12 @@ To do this, one needs to define a background class in the task and draw holes
 with it as additional shapes above the shapes needed to have holes:
 
 The editor window:
-![The editor](static/documentation/images/mask_export_example1_editor.png)
+  ![The editor](static/documentation/images/mask_export_example1_editor.png)
 
 Remember to use z-axis ordering for shapes by \[\-\] and \[\+\, \=\] keys.
 
 Exported masks:
-![A class mask](static/documentation/images/mask_export_example1_cls_mask.png) ![An instance mask](static/documentation/images/mask_export_example1_inst_mask.png)
+  ![A class mask](static/documentation/images/mask_export_example1_cls_mask.png)  ![An instance mask](static/documentation/images/mask_export_example1_inst_mask.png)
 
 Notice that it is currently impossible to have a single instance number for
 internal shapes (they will be merged into the largest one and then covered by
@@ -1321,7 +1319,6 @@ internal shapes (they will be merged into the largest one and then covered by
 ### Creating masks
 
 There are several formats in CVAT that can be used to export masks:
-
 - `Segmentation Mask` (PASCAL VOC masks)
 - `CamVid`
 - `MOTS`
@@ -1332,10 +1329,9 @@ There are several formats in CVAT that can be used to export masks:
 
 An example of exported masks (in the `Segmentation Mask` format):
 
-![A class mask](static/documentation/images/exported_cls_masks_example.png) ![An instance mask](static/documentation/images/exported_inst_masks_example.png)
+  ![A class mask](static/documentation/images/exported_cls_masks_example.png) ![An instance mask](static/documentation/images/exported_inst_masks_example.png)
 
 Important notices:
-
 - Both boxes and polygons are converted into masks
 - Grouped objects are considered as a single instance and exported as a single
   mask (label and attributes are taken from the largest object in the group)
@@ -1345,22 +1341,22 @@ Important notices:
 All the labels have associated colors, which are used in the generated masks.
 These colors can be changed in the task label properties:
 
-![](static/documentation/images/label_color_picker.jpg)
+  ![](static/documentation/images/label_color_picker.jpg)
 
 Label colors are also displayed in the annotation window on the right panel,
 where you can show or hide specific labels
 (only the presented labels are displayed):
 
-![](static/documentation/images/label_panel_anno_window.jpg)
+  ![](static/documentation/images/label_panel_anno_window.jpg)
 
 A background class can be:
-
 - A default class, which is implicitly-added, of black color (RGB 0, 0, 0)
 - `background` class with any color (has a priority, name is case-insensitive)
 - Any class of black color (RGB 0, 0, 0)
 
 To change backgound color in generated masks (default is black),
 change `background` class color to the desired one.
+
 
 ## Annotation with polylines
 

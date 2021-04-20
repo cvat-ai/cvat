@@ -536,13 +536,14 @@ archive.zip/
   - `score` (number) - the annotation `score` field
   - arbitrary attributes - will be stored in the `attributes` annotation section
 
-_Note_: there is also a [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582)
+
+*Note*: there is also a [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582)
 
 1. Install [Datumaro](https://github.com/openvinotoolkit/datumaro)
-   `pip install datumaro`
+  `pip install datumaro`
 1. Export the task in the `Datumaro` format, unzip
 1. Export the Datumaro project in `coco` / `coco_person_keypoints` formats
-   `datum export -f coco -p path/to/project [-- --save-images]`
+  `datum export -f coco -p path/to/project [-- --save-images]`
 
 This way, one can export CVAT points as single keypoints or
 keypoint lists (without the `visibility` COCO flag).
@@ -625,20 +626,16 @@ item {
 - supported annotations: Rectangles, Polygons (as masks, manually over [Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md))
 
 How to export masks:
-
 1. Export annotations in `Datumaro` format
 1. Apply `polygons_to_masks` and `boxes_to_masks` transforms
-
-```bash
-datum transform -t polygons_to_masks -p path/to/proj -o ptm
-datum transform -t boxes_to_masks -p ptm -o btm
-```
-
+  ```bash
+  datum transform -t polygons_to_masks -p path/to/proj -o ptm
+  datum transform -t boxes_to_masks -p ptm -o btm
+  ```
 1. Export in the `TF Detection API` format
-
-```bash
-datum export -f tf_detection_api -p btm [-- --save-images]
-```
+  ```bash
+  datum export -f tf_detection_api -p btm [-- --save-images]
+  ```
 
 #### TFRecord import
 
