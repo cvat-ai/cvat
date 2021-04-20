@@ -8,7 +8,7 @@ import { ViewType } from './canvas3dModel';
 export class CuboidModel {
     public perspective: THREE.Mesh;
     public top: THREE.Mesh;
-    public side: THREE.Mesh;
+    public side: THREE.Mesh; 
     public front: THREE.Mesh;
 
     public constructor(outline: string, outlineColor: string) {
