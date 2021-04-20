@@ -27,7 +27,7 @@ jobs:
 
             echo "Remark version: "`npx remark --version`
             echo "The files will be checked: "`echo ${changed_files_remark}`
-            npx remark --silent --report json --no-stdout ${changed_files_remark} 2> ./remark_report/remark_report.json
+            npx remark --report json --no-stdout ${changed_files_remark} 2> ./remark_report/remark_report.json
             get_report=`cat ./remark_report/remark_report.json  | jq -r '.[]'`
              if [[ ! -z ${get_report} ]]; then
               pip install json2html
