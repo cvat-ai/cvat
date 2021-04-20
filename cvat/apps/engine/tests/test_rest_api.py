@@ -2913,6 +2913,49 @@ class JobAnnotationAPITestCase(APITestCase):
                     },
                 ]
             }]
+        elif annotation_format in ["ICDAR Recognition 1.0",
+                "ICDAR Localization 1.0"]:
+            data["labels"] = [{
+                "name": "icdar",
+                "attributes": [
+                    {
+                        "name": "text",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["word_1", "word_2", "word_3"]
+                    },
+                ]
+            }]
+        elif annotation_format == "ICDAR Segmentation 1.0":
+            data["labels"] = [{
+                "name": "icdar",
+                "attributes": [
+                    {
+                        "name": "text",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["word_1", "word_2", "word_3"]
+                    },
+                    {
+                        "name": "index",
+                        "mutable": False,
+                        "input_type": "number",
+                        "values": ["0", "1", "2"]
+                    },
+                    {
+                        "name": "color",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["100 110 240", "10 15 20", "120 128 64"]
+                    },
+                    {
+                        "name": "center",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["1 2", "2 4", "10 45"]
+                    },
+                ]
+            }]
 
         with ForceLogin(owner, self.client):
             response = self.client.post('/api/v1/tasks', data=data, format="json")
@@ -3892,7 +3935,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
-            if annotation_format != "Market-1501 1.0":
+            if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
+                    "ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4237,6 +4281,116 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 }]
                 annotations["tags"] = tags_with_attrs
 
+            elif annotation_format == "ICDAR Recognition 1.0":
+                tags_with_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        }
+                    ],
+                }]
+
+                annotations["tags"] = tags_with_attrs
+
+            elif annotation_format == "ICDAR Localization 1.0":
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + polygon_shapes_with_attrs
+
+            elif annotation_format == "ICDAR Segmentation 1.0":
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][2]["id"],
+                            "value": task["labels"][0]["attributes"][2]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][3]["id"],
+                            "value": task["labels"][0]["attributes"][3]["values"][2]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][2]["id"],
+                            "value": task["labels"][0]["attributes"][2]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][3]["id"],
+                            "value": task["labels"][0]["attributes"][3]["values"][1]
+                        }
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + polygon_shapes_with_attrs
+
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
@@ -4333,7 +4487,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 # 7. check annotation
-                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0", "CamVid 1.0"}:
+                if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
+                        "CamVid 1.0", "ICDAR Segmentation 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)
