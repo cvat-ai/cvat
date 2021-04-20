@@ -48,9 +48,25 @@ def files_to_ignore(directory):
         return True
     return False
 
+
+def detect_related_paths(image_paths, root_path):
+    related_paths = {}
+    for path in image_paths:
+        name, ext = os.path.splitext(os.path.basename(path))
+        if name and ext:
+            converted_name = '_'.join((name, ext[1:]))
+            related_images_dir = os.path.join(os.path.dirname(path), 'related_images', converted_name)
+            if os.path.isdir(related_images_dir):
+                relpath = os.path.relpath(path, root_path)
+                related_paths[relpath] = sorted(
+                    filter(lambda x: get_mime(x) == 'image', os.listdir(related_images_dir))
+                )
+    return related_paths
+
 class IMediaReader(ABC):
-    def __init__(self, source_path, step, start, stop):
+    def __init__(self, source_path, related_path, step, start, stop):
         self._source_path = sorted(source_path)
+        self._related_path = related_path
         self._step = step
         self._start = start
         self._stop = stop
@@ -90,7 +106,7 @@ class IMediaReader(ABC):
         return range(self._start, self._stop, self._step)
 
 class ImageListReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=None):
+    def __init__(self, source_path, related_path=None, step=1, start=0, stop=None):
         if not source_path:
             raise Exception('No image found')
 
@@ -103,6 +119,7 @@ class ImageListReader(IMediaReader):
 
         super().__init__(
             source_path=source_path,
+            related_path=related_path,
             step=step,
             start=start,
             stop=stop,
@@ -133,16 +150,23 @@ class ImageListReader(IMediaReader):
     def absolute_source_paths(self):
         return [self.get_path(idx) for idx, _ in enumerate(self._source_path)]
 
+    @property
+    def absolute_related_paths(self):
+        return {k:v[:] for k,v in (self._related_path or {}).items()}
+
 class DirectoryReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
         image_paths = []
         for source in source_path:
             for root, _, files in os.walk(source):
                 paths = [os.path.join(root, f) for f in files]
-                paths = filter(lambda x: get_mime(x) == 'image', paths)
+                paths = list(
+                    filter(lambda x: get_mime(x) == 'image' and 'related_images{}'.format(os.sep) not in x, paths)
+                )
                 image_paths.extend(paths)
         super().__init__(
             source_path=image_paths,
+            related_path=detect_related_paths(image_paths, source),
             step=step,
             start=start,
             stop=stop,
@@ -188,6 +212,7 @@ class PdfReader(ImageListReader):
 
         super().__init__(
             source_path=paths,
+            related_path=None,
             step=step,
             start=start,
             stop=stop,
@@ -198,8 +223,10 @@ class ZipReader(ImageListReader):
         self._dimension = DimensionType.DIM_2D
         self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
-        file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
-        super().__init__(file_list, step, start, stop)
+        file_list = [f for f in self._zip_source.namelist()
+            if files_to_ignore(f) and get_mime(f) == 'image' and 'related_images{}'.format(os.sep) not in f
+        ]
+        super().__init__(file_list, related_path=None, step=step, start=start, stop=stop)
 
     def __del__(self):
         self._zip_source.close()
@@ -247,7 +274,10 @@ class ZipReader(ImageListReader):
             return self._source_path[i]
 
     def extract(self):
-        self._zip_source.extractall(self.extract_dir if self.extract_dir else os.path.dirname(self._zip_source.filename))
+        extract_dir = self.extract_dir if self.extract_dir else os.path.dirname(self._zip_source.filename)
+        self._zip_source.extractall(extract_dir)
+        # after unzipping we can detect related paths
+        self._related_path = detect_related_paths(map(lambda x: os.path.join(extract_dir, x), self._source_path), extract_dir)
         if not self.extract_dir:
             os.remove(self._zip_source.filename)
 
@@ -255,6 +285,7 @@ class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=None):
         super().__init__(
             source_path=source_path,
+            related_path=None,
             step=step,
             start=start,
             stop=stop + 1 if stop is not None else stop,

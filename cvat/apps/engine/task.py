@@ -273,7 +273,6 @@ def _create_thread(tid, data):
                 start=db_data.start_frame,
                 stop=data['stop_frame'],
                 dimension=DimensionType.DIM_3D,
-
             )
             extractor.add_files(validate_dimension.converted_files)
 
@@ -394,7 +393,7 @@ def _create_thread(tid, data):
                     base_msg = str(ex) if isinstance(ex, AssertionError) \
                         else "Uploaded video does not support a quick way of task creating."
                     _update_status("{} The task will be created using the old method".format(base_msg))
-            else:# images, archive, pdf
+            else: # images, archive, pdf
                 db_data.size = len(extractor)
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
@@ -467,6 +466,15 @@ def _create_thread(tid, data):
     if db_task.mode == 'annotation':
         if validate_dimension.dimension == DimensionType.DIM_2D:
             models.Image.objects.bulk_create(db_images)
+            created_images = models.Image.objects.filter(data_id=db_task.data_id)
+            related_images = extractor.absolute_related_paths
+
+            db_related_files = [
+                RelatedFile(data=image.data, primary_image=image, path=related_file_path)
+                for image in created_images
+                for related_file_path in related_images.get(image.path, [])
+            ]
+            RelatedFile.objects.bulk_create(db_related_files)
         else:
             related_file = []
             for image_data in db_images:
