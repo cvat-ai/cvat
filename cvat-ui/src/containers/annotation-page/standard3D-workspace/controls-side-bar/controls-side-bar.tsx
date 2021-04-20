@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { KeyMap } from 'utils/mousetrap-react';
 import { connect } from 'react-redux';
 
+import { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { hideShowContextImage } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard3D-workspace/controls-side-bar/controls-side-bar';
@@ -20,7 +20,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    hideShowContextImage(hidden: boolean): void;
+    switchContextImageVisibility(hidden: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -28,7 +28,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
             player: {
-                contextImage: { hidden: contextImageHide, loaded },
+                contextImage: { hidden: contextImageHidden },
             },
         },
         shortcuts: { keyMap, normalizedKeyMap },
@@ -39,14 +39,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
         normalizedKeyMap,
         keyMap,
-        contextImageHide,
-        loaded,
+        contextImageHidden,
     };
 }
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        hideShowContextImage(hidden: boolean): void {
+        switchContextImageVisibility(hidden: boolean): void {
             dispatch(hideShowContextImage(hidden));
         },
     };

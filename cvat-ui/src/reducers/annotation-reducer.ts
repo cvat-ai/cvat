@@ -58,8 +58,9 @@ const defaultState: AnnotationState = {
         playing: false,
         frameAngles: [],
         contextImage: {
-            loaded: false,
-            data: '',
+            fetching: false,
+            failed: false,
+            data: null,
             hidden: false,
         },
     },
@@ -226,11 +227,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.player.frame,
                         fetching: false,
                     },
-                    contextImage: {
-                        loaded: false,
-                        data: '',
-                        hidden: state.player.contextImage.hidden,
-                    },
                 },
             };
         }
@@ -275,7 +271,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     },
                     contextImage: {
                         ...state.player.contextImage,
-                        loaded: false,
+                        data: null,
                     },
                 },
                 annotations: {
@@ -1170,30 +1166,54 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
             const { hidden } = action.payload;
-            const { loaded, data } = state.player.contextImage;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     contextImage: {
-                        loaded,
-                        data,
+                        ...state.player.contextImage,
                         hidden,
                     },
                 },
             };
         }
         case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
-            const { context, loaded } = action.payload;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contextImage: {
+                        ...state.player.contextImage,
+                        fetching: true,
+                        failed: false,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS: {
+            const { contextImageData } = action.payload;
 
             return {
                 ...state,
                 player: {
                     ...state.player,
                     contextImage: {
-                        loaded,
-                        data: context,
-                        hidden: state.player.contextImage.hidden,
+                        ...state.player.contextImage,
+                        fetching: false,
+                        data: contextImageData,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contextImage: {
+                        ...state.player.contextImage,
+                        fetching: false,
+                        failed: true,
                     },
                 },
             };

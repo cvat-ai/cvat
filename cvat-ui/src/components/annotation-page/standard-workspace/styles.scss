@@ -41,6 +41,7 @@
 
 .cvat-cursor-control,
 .cvat-move-control,
+.cvat-context-image-control,
 .cvat-rotate-canvas-control,
 .cvat-fit-control,
 .cvat-resize-control,
@@ -75,7 +76,7 @@
     }
 }
 
-.cvat-extra-controls-control {
+.cvat-antd-icon-control {
     > svg {
         width: 40px;
         height: 40px;

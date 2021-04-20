@@ -8,7 +8,7 @@
     height: 100%;
 }
 
-.cvat-contextImage {
+.cvat-context-image-wrapper {
     width: $grid-unit-size * 32;
     position: absolute;
     background: $border-color-3;
@@ -20,16 +20,13 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: $grid-unit-size/2;
+    padding: $grid-unit-size / 2;
+    user-select: none;
 }
 
-.cvat-contextImage-show {
+.cvat-context-image {
     max-width: 100%;
     max-height: 100%;
-}
-
-.cvat-contextImage-loading {
-    text-align: center;
 }
 
 .cvat-objects-sidebar-filter-input {
@@ -165,10 +162,6 @@
     overflow: hidden;
     width: 100%;
     height: 100%;
-}
-
-.cvat-control-side-bar-icon-size {
-    font-size: $grid-unit-size * 5;
 }
 
 .cvat-canvas3d-perspective {

@@ -59,7 +59,7 @@ def detect_related_paths(image_paths, root_path):
             if os.path.isdir(related_images_dir):
                 relpath = os.path.relpath(path, root_path)
                 related_paths[relpath] = sorted(
-                    filter(lambda x: get_mime(x) == 'image', os.listdir(related_images_dir))
+                    filter(lambda x: get_mime(x) == 'image', map(lambda x: os.path.join(related_images_dir, x), os.listdir(related_images_dir)))
                 )
     return related_paths
 

@@ -14,6 +14,7 @@ import {
     repeatDrawShapeAsync,
     pasteShapeAsync,
     resetAnnotationsGroup,
+    hideShowContextImage,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
@@ -37,6 +38,7 @@ interface DispatchToProps {
     repeatDrawShape(): void;
     pasteShape(): void;
     redrawShape(): void;
+    switchContextImageVisibility(hidden: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -44,6 +46,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
             job: { labels },
+            player: {
+                contextImage: { hidden: contextImageHidden },
+            },
         },
         settings: {
             player: { rotateAll },
@@ -57,6 +62,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
         labels,
         normalizedKeyMap,
+        contextImageHidden,
         keyMap,
     };
 }
@@ -86,6 +92,9 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         redrawShape(): void {
             dispatch(redrawShapeAsync());
+        },
+        switchContextImageVisibility(hidden: boolean): void {
+            dispatch(hideShowContextImage(hidden));
         },
     };
 }

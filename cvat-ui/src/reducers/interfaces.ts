@@ -425,9 +425,10 @@ export interface AnnotationState {
         playing: boolean;
         frameAngles: number[];
         contextImage: {
-            loaded: boolean;
-            data: string;
+            fetching: boolean;
+            data: string | null;
             hidden: boolean;
+            failed: boolean;
         };
     };
     drawing: {
