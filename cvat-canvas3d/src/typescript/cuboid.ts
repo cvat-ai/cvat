@@ -97,7 +97,7 @@ export function setTranslationHelper(instance: THREE.Mesh): void {
         instance.add(helpers[i]);
     }
     // eslint-disable-next-line no-param-reassign
-    instance.userData = { ...instance.userData, resizeHelpers: helpers};
+    instance.userData = { ...instance.userData, resizeHelpers: helpers };
 }
 
 
@@ -113,7 +113,7 @@ export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): 
                 instance.position.z);
             instance.add(rotationHelper.clone());
             // eslint-disable-next-line no-param-reassign
-            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone()};
+            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone() };
             break;
         case 'side':
         case 'front':
@@ -123,7 +123,7 @@ export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): 
             );
             instance.add(rotationHelper.clone());
             // eslint-disable-next-line no-param-reassign
-            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone()};
+            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone() };
             break;
         default:
             break;

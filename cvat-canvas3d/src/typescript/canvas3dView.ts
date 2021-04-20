@@ -677,8 +677,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector,
                     viewType.camera);
                 // First Scan
-                if (this.action.scan === view && 
-                    !(this.action.translation.status || this.action.resize.status || this.action.rotation.status)) {
+                if (this.action.scan === view
+                    && !(this.action.translation.status || this.action.resize.status || this.action.rotation.status)) {
                     this.initiateAction(view, viewType);
                 }
                 // Action Operations
