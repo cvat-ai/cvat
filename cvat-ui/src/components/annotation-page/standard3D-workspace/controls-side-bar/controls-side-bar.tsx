@@ -7,15 +7,18 @@ import Layout from 'antd/lib/layout';
 import { ActiveControl } from 'reducers/interfaces';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
+import MoveControl, {
+    Props as MoveControlProps,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/move-control';
+import CursorControl, {
+    Props as CursorControlProps,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/cursor-control';
+import DrawCuboidControl, {
+    Props as DrawCuboidControlProps,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/draw-cuboid-control';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import CursorControl from './cursor-control';
-import MoveControl from './move-control';
-import DrawCuboidControl from './draw-cuboid-control';
+import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 import PhotoContextControl from './photo-context';
-import ControlVisibilityObserver from '../../standard-workspace/controls-side-bar/control-visibility-observer';
-import { Props as MoveControlProps } from '../../standard-workspace/controls-side-bar/move-control';
-import { Props as CursorControlProps } from '../../standard-workspace/controls-side-bar/cursor-control';
-import { Props as DrawCuboidControlProps } from '../../standard-workspace/controls-side-bar/draw-cuboid-control';
 
 interface Props {
     keyMap: KeyMap;
@@ -101,12 +104,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-            <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
             />
+            <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedDrawCuboidControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}

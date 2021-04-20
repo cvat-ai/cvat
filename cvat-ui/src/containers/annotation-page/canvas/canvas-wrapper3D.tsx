@@ -29,10 +29,11 @@ import {
 } from 'reducers/interfaces';
 
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { KeyMap } from '../../../utils/mousetrap-react';
 
 interface StateToProps {
-    canvasInstance: Canvas3d;
+    canvasInstance: Canvas3d | Canvas;
     jobInstance: any;
     frameData: any;
     curZLayer: number;

@@ -10,7 +10,7 @@ export interface Size {
 }
 
 export interface ActiveElement {
-    clientID: number | null;
+    clientID: string | null;
     attributeID: number | null;
 }
 
@@ -24,6 +24,7 @@ export interface DrawData {
     enabled: boolean;
     initialState?: any;
     redraw?: number;
+    shapeType?: string;
 }
 
 export enum FrameZoom {
@@ -45,8 +46,7 @@ export enum MouseInteraction {
 }
 
 export interface FocusData {
-    clientID: any;
-    padding: number;
+    clientID: string | null;
 }
 
 export interface ShapeProperties {
@@ -67,7 +67,7 @@ export enum UpdateReasons {
     DRAG_CANVAS = 'drag_canvas',
     SHAPE_ACTIVATED = 'shape_activated',
     GROUP = 'group',
-    FITTED_CANVAS = 'fitted_canvas'
+    FITTED_CANVAS = 'fitted_canvas',
 }
 
 export enum Mode {
@@ -92,7 +92,6 @@ export interface Canvas3dDataModel {
     mode: Mode;
     exception: Error | null;
     objects: any[];
-    zLayer: number | null;
     focusData: FocusData;
     selected: any;
     shapeProperties: ShapeProperties;
@@ -101,13 +100,12 @@ export interface Canvas3dDataModel {
 export interface Canvas3dModel {
     mode: Mode;
     data: Canvas3dDataModel;
-    setup(frameData: any, objectStates: any[], zLayer: number): void;
+    setup(frameData: any, objectStates: any[]): void;
     isAbleToChangeFrame(): boolean;
     draw(drawData: DrawData): void;
     cancel(): void;
     dragCanvas(enable: boolean): void;
-    updateObject(): void;
-    activate(clientID: number | null, attributeID: number | null): void;
+    activate(clientID: string | null, attributeID: number | null): void;
     configureShapes(shapeProperties: any): void;
     fit(): void;
 }
@@ -127,7 +125,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 width: 0,
             },
             objects: [],
-            zLayer: null,
             image: null,
             imageID: null,
             imageOffset: 0,
@@ -143,7 +140,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             exception: null,
             focusData: {
                 clientID: null,
-                padding: 0,
             },
             selected: null,
             shapeProperties: {
@@ -156,11 +152,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         };
     }
 
-    public updateObject(): void {
-        this.notify(UpdateReasons.OBJECTS_UPDATED);
-    }
-
-    public setup(frameData: any, objectStates: any[], zLayer: number): void {
+    public setup(frameData: any, objectStates: any[]): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -168,7 +160,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         }
 
         if (frameData.number === this.data.imageID) {
-            this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
@@ -193,7 +184,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
                 this.data.image = data;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
-                this.data.zLayer = zLayer;
                 this.data.objects = objectStates;
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
@@ -224,7 +214,24 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         }
         this.data.drawData.enabled = drawData.enabled;
         this.data.mode = Mode.DRAW;
-        this.data.drawData = { ...drawData };
+
+        if (typeof drawData.redraw === 'number') {
+            const clientID = drawData.redraw;
+            const [state] = this.data.objects.filter((_state: any): boolean => _state.clientID === clientID);
+
+            if (state) {
+                this.data.drawData = { ...drawData };
+                this.data.drawData.initialState = { ...this.data.drawData.initialState, label: state.label };
+                this.data.drawData.shapeType = state.shapeType;
+            } else {
+                return;
+            }
+        } else {
+            this.data.drawData = { ...drawData };
+            if (this.data.drawData.initialState) {
+                this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
+            }
+        }
         this.notify(UpdateReasons.DRAW);
     }
 
@@ -245,11 +252,11 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.DRAG_CANVAS);
     }
 
-    public activate(clientID: number | null, attributeID: number | null): void {
+    public activate(clientID: string, attributeID: number | null): void {
         if (this.data.activeElement.clientID === clientID && this.data.activeElement.attributeID === attributeID) {
             return;
         }
-        if (this.data.mode !== Mode.IDLE && clientID !== null) {
+        if (this.data.mode !== Mode.IDLE) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
         if (typeof clientID === 'number') {

@@ -10,7 +10,7 @@ import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
 import {
-    SettingsState, GridColor, FrameSpeed, ColorBy,
+    SettingsState, GridColor, FrameSpeed, ColorBy, DimensionType,
 } from './interfaces';
 
 const defaultState: SettingsState = {
@@ -301,8 +301,12 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    opacity: (job.task.dimension === '3d') ? 40 : 3,
-                    selectedOpacity: (job.task.dimension === '3d') ? 60 : 30,
+                    ...(job.task.dimension === DimensionType.DIM_3D ?
+                        {
+                            opacity: 40,
+                            selectedOpacity: 60,
+                        } :
+                        {}),
                 },
             };
         }

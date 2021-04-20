@@ -20,12 +20,9 @@ import {
 import {
     CombinedState, DimensionType, Workspace, PredictorState,
 } from 'reducers/interfaces';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface Props {
     workspace: Workspace;
-    canvasInstance : Canvas | Canvas3d;
     predictor: PredictorState;
     isTrainingActive: boolean;
     showStatistics(): void;
@@ -46,7 +43,6 @@ function RightGroup(props: Props): JSX.Element {
         jobInstance,
         isTrainingActive,
         showFilters,
-        canvasInstance,
     } = props;
     const annotationAmount = predictor.annotationAmount || 0;
     const mediaAmount = predictor.mediaAmount || 0;
@@ -152,9 +148,6 @@ function RightGroup(props: Props): JSX.Element {
                             window.document.exitFullscreen();
                         } else {
                             window.document.documentElement.requestFullscreen();
-                        }
-                        if (canvasInstance instanceof Canvas3d) {
-                            canvasInstance.fit();
                         }
                     }
                 }}

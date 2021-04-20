@@ -164,11 +164,6 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
             key: 'cuboid',
         },
         {
-            title: <Text strong> Manually </Text>,
-            dataIndex: 'manually',
-            key: 'manually',
-        },
-        {
             title: <Text strong> Total </Text>,
             dataIndex: 'total',
             key: 'total',

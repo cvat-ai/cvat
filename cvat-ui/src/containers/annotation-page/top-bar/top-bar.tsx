@@ -616,7 +616,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             <>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 <AnnotationTopBarComponent
-                    canvasInstance={canvasInstance}
                     showStatistics={this.showStatistics}
                     showFilters={this.showFilters}
                     onSwitchPlay={this.onSwitchPlay}

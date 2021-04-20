@@ -94,10 +94,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.selected = this.cube;
         this.model = model;
         this.action = {
-            topScan: false,
+            scan: null,
+            detected: false,
             translation: {
                 status: false,
                 helper: null,
+                coordinates: null,
             },
             rotation: {
                 status: false,
@@ -146,138 +148,88 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
         CameraControls.install({ THREE });
 
-        this.views.perspective.renderer.domElement.addEventListener('contextmenu', (e: MouseEvent): void => {
+        const canvasPerspectiveView = this.views.perspective.renderer.domElement;
+        const canvasTopView = this.views.top.renderer.domElement;
+        const canvasSideView = this.views.side.renderer.domElement;
+        const canvasFrontView = this.views.front.renderer.domElement;
+
+        canvasPerspectiveView.addEventListener('contextmenu', (e: MouseEvent): void => {
             if (this.controller.focused.clientID !== null) {
-                const event: CustomEvent = new CustomEvent('canvas.contextmenu', {
+                this.dispatchEvent(new CustomEvent('canvas.contextmenu', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
-                        clientID: this.controller.focused.clientID,
+                        clientID: Number(this.controller.focused.clientID),
                         clientX: e.clientX,
                         clientY: e.clientY,
                     },
-                });
-                this.views.perspective.renderer.domElement.dispatchEvent(event);
+                }));
             }
         });
 
-        this.views.top.renderer.domElement.addEventListener('mousedown', (event: MouseEvent): void => {
-            const canvas = this.views.top.renderer.domElement;
-            const rect = canvas.getBoundingClientRect();
-            const { mouseVector } = this.views.top.rayCaster;
-            mouseVector.x = ((event.clientX - rect.left) / canvas.clientWidth) * 2 - 1;
-            mouseVector.y = -((event.clientY - rect.top) / canvas.clientHeight) * 2 + 1;
-            this.action.topScan = true;
-        });
+        canvasTopView.addEventListener('mousedown', this.startAction.bind(this, 'top'));
+        canvasSideView.addEventListener('mousedown', this.startAction.bind(this, 'side'));
+        canvasFrontView.addEventListener('mousedown', this.startAction.bind(this, 'front'));
 
-        this.views.top.renderer.domElement.addEventListener('mousemove', (event: MouseEvent): void => {
-            event.preventDefault();
-            if (!this.action.topScan) return;
-            const canvas = this.views.top.renderer.domElement;
-            const rect = canvas.getBoundingClientRect();
-            const { mouseVector } = this.views.top.rayCaster;
-            mouseVector.x = ((event.clientX - rect.left) / canvas.clientWidth) * 2 - 1;
-            mouseVector.y = -((event.clientY - rect.top) / canvas.clientHeight) * 2 + 1;
-        });
+        canvasTopView.addEventListener('mousemove', this.moveAction.bind(this, 'top'));
+        canvasSideView.addEventListener('mousemove', this.moveAction.bind(this, 'side'));
+        canvasFrontView.addEventListener('mousemove', this.moveAction.bind(this, 'front'));
 
-        this.views.top.renderer.domElement.addEventListener('mouseup', (): void => {
-            this.action = {
-                topScan: false,
-                translation: {
-                    status: false,
-                    helper: null,
-                },
-                rotation: {
-                    status: false,
-                    helper: null,
-                },
-                resize: {
-                    status: false,
-                    helper: null,
-                },
-            };
-        });
+        canvasTopView.addEventListener('mouseup', this.resetActions.bind(this));
+        canvasSideView.addEventListener('mouseup', this.resetActions.bind(this));
+        canvasFrontView.addEventListener('mouseup', this.resetActions.bind(this));
 
-        this.views.perspective.renderer.domElement.addEventListener('mousemove', (event: MouseEvent): void => {
+        canvasPerspectiveView.addEventListener('mousemove', (event: MouseEvent): void => {
             event.preventDefault();
             if (this.mode === Mode.DRAG_CANVAS) return;
             const canvas = this.views.perspective.renderer.domElement;
             const rect = canvas.getBoundingClientRect();
-            const { mouseVector } = this.views.perspective.rayCaster;
+            const { mouseVector } = this.views.perspective.rayCaster as { mouseVector: THREE.Vector2 };
             mouseVector.x = ((event.clientX - (canvas.offsetLeft + rect.left)) / canvas.clientWidth) * 2 - 1;
             mouseVector.y = -((event.clientY - (canvas.offsetTop + rect.top)) / canvas.clientHeight) * 2 + 1;
         });
 
-        this.views.perspective.renderer.domElement.addEventListener('click', (e: MouseEvent): void => {
+
+        canvasPerspectiveView.addEventListener('click', (e: MouseEvent): void => {
             e.preventDefault();
-            if (this.mode !== Mode.IDLE) return;
+            if (this.mode !== Mode.IDLE || !this.views.perspective.rayCaster) return;
             const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
                 this.views.perspective.scene.children[0].children,
                 false,
             );
-            if (intersects.length !== 0) {
-                const event: CustomEvent = new CustomEvent('canvas.selected', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        clientID: intersects[0].object.name,
-                    },
-                });
-                this.views.perspective.renderer.domElement.dispatchEvent(event);
-            }
+            this.dispatchEvent(new CustomEvent('canvas.selected', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    clientID: intersects.length !== 0 ? Number(intersects[0].object.name) : null,
+                },
+            }));
         });
 
-        this.views.perspective.renderer.domElement.addEventListener('dblclick', (e: MouseEvent): void => {
+        canvasPerspectiveView.addEventListener('dblclick', (e: MouseEvent): void => {
             e.preventDefault();
             if (this.mode !== Mode.DRAW) return;
             this.controller.drawData.enabled = false;
             this.mode = Mode.IDLE;
-            // @ts-ignore
             const { x, y, z } = this.cube.perspective.position;
-            // @ts-ignore
-            const { width, height, depth } = this.cube.perspective.geometry.parameters;
-            // @ts-ignore
-            const { _x: rotationX, _y: rotationY, _x: rotationZ } = this.cube.perspective.rotation;
+            const { width, height, depth } = (this.cube.perspective.geometry as THREE.BoxGeometry).parameters;
+            const { x: rotationX, y: rotationY, z: rotationZ } = this.cube.perspective.rotation;
             const points = [x, y, z, rotationX, rotationY, rotationZ, width, height, depth, 0, 0, 0, 0, 0, 0, 0];
-            if (this.model.data.drawData.initialState) {
-                const event: CustomEvent = new CustomEvent('canvas.drawn', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        state: {
-                            shapeType: this.model.data.drawData.initialState.shapeType,
-                            objectType: this.model.data.drawData.initialState.objectType,
-                            points,
-                            occluded: this.model.data.drawData.initialState.occluded,
-                            attributes: { ...this.model.data.drawData.initialState.attributes },
-                            label: this.model.data.drawData.initialState.label,
-                            color: this.model.data.drawData.initialState.color,
-                            zOrder: 0 || 0,
-                        },
-                        continue: undefined,
-                        duration: 0,
+            this.dispatchEvent(new CustomEvent('canvas.drawn', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    state: {
+                        shapeType: 'cuboid',
+                        frame: this.model.data.imageID,
+                        ...this.model.data.drawData.initialState,
+                        points,
                     },
-                });
-                this.views.perspective.renderer.domElement.dispatchEvent(event);
-            } else {
-                const event: CustomEvent = new CustomEvent('canvas.drawn', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        state: {
-                            shapeType: 'cuboid',
-                            frame: this.model.data.imageID,
-                            points,
-                            zOrder: 0 || 0,
-                        },
-                        continue: undefined,
-                        duration: 0,
-                    },
-                });
-                this.views.perspective.renderer.domElement.dispatchEvent(event);
-            }
-            const cancelEvent: CustomEvent = new CustomEvent('canvas.canceled');
-            this.views.perspective.renderer.domElement.dispatchEvent(cancelEvent);
+                    continue: undefined,
+                    duration: 0,
+                },
+            }));
+            this.dispatchEvent(new CustomEvent('canvas.canceled'));
         });
 
 
@@ -337,142 +289,212 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         Object.keys(this.views).forEach((view: string): void => {
             const viewType = this.views[view as keyof Views];
-            viewType.renderer.setSize(width, height);
-            if (view !== ViewType.PERSPECTIVE) {
-                viewType.controls = new CameraControls(viewType.camera, viewType.renderer.domElement);
-                viewType.controls.mouseButtons.left = CameraControls.ACTION.NONE;
-                viewType.controls.mouseButtons.right = CameraControls.ACTION.NONE;
-            } else {
-                viewType.controls = new CameraControls(viewType.camera, viewType.renderer.domElement);
+            if (viewType.camera) {
+                viewType.renderer.setSize(width, height);
+                if (view !== ViewType.PERSPECTIVE) {
+                    viewType.controls = new CameraControls(viewType.camera, viewType.renderer.domElement);
+                    viewType.controls.mouseButtons.left = CameraControls.ACTION.NONE;
+                    viewType.controls.mouseButtons.right = CameraControls.ACTION.NONE;
+                } else {
+                    viewType.controls = new CameraControls(viewType.camera, viewType.renderer.domElement);
+                }
+                viewType.controls.minDistance = CONST.MIN_DISTANCE;
+                viewType.controls.maxDistance = CONST.MAX_DISTANCE;
             }
-            viewType.controls.minDistance = CONST.MIN_DISTANCE;
-            viewType.controls.maxDistance = CONST.MAX_DISTANCE;
         });
 
         model.subscribe(this);
     }
 
+    private startAction(view: any, event: MouseEvent): void {
+        const canvas = this.views[view as keyof Views].renderer.domElement;
+        const rect = canvas.getBoundingClientRect();
+        const { mouseVector } = this.views[view as keyof Views].rayCaster as { mouseVector: THREE.Vector2 };
+        mouseVector.x = ((event.clientX - rect.left) / canvas.clientWidth) * 2 - 1;
+        mouseVector.y = -((event.clientY - rect.top) / canvas.clientHeight) * 2 + 1;
+        this.action.scan = view;
+    }
+
+    private moveAction(view: any, event: MouseEvent): void {
+        event.preventDefault();
+        const canvas = this.views[view as keyof Views].renderer.domElement;
+        const rect = canvas.getBoundingClientRect();
+        const { mouseVector } = this.views[view as keyof Views].rayCaster as { mouseVector: THREE.Vector2 };
+        mouseVector.x = ((event.clientX - rect.left) / canvas.clientWidth) * 2 - 1;
+        mouseVector.y = -((event.clientY - rect.top) / canvas.clientHeight) * 2 + 1;
+    }
+
+    private translateReferencePlane(coordinates: any): void {
+        const topPlane = this.views.top.scene.getObjectByName('topPlane');
+        if (topPlane) {
+            topPlane.position.x = coordinates.x;
+            topPlane.position.y = coordinates.y;
+            topPlane.position.z = coordinates.z;
+        }
+        const sidePlane = this.views.top.scene.getObjectByName('sidePlane');
+        if (sidePlane) {
+            sidePlane.position.x = coordinates.x;
+            sidePlane.position.y = coordinates.y;
+            sidePlane.position.z = coordinates.z;
+        }
+        const frontPlane = this.views.top.scene.getObjectByName('frontPlane');
+        if (frontPlane) {
+            frontPlane.position.x = coordinates.x;
+            frontPlane.position.y = coordinates.y;
+            frontPlane.position.z = coordinates.z;
+        }
+    }
+
+    private resetActions(): void {
+        const {
+            scan, detected, translation,
+        } = this.action;
+        if (scan !== null && detected) {
+            if (translation.status && this.views.top.controls && this.views.side.controls
+                && this.views.front.controls) {
+                this.translateReferencePlane(translation.coordinates);
+                this.views.top.controls.moveTo(translation.coordinates.x, translation.coordinates.y,
+                    translation.coordinates.z + 5, false);
+                this.views.side.controls.moveTo(translation.coordinates.x, translation.coordinates.y + 5,
+                    translation.coordinates.z, false);
+                this.views.front.controls.moveTo(translation.coordinates.x + 5, translation.coordinates.y,
+                    translation.coordinates.z, false);
+            }
+        }
+        this.action = {
+            scan: null,
+            detected: false,
+            translation: {
+                status: false,
+                helper: null,
+            },
+            rotation: {
+                status: false,
+                helper: null,
+            },
+            resize: {
+                status: false,
+                helper: null,
+            },
+        };
+    }
+
+    private setupObjects(): void {
+        if (this.views.perspective.scene.children[0]) {
+            const {
+                opacity,
+                outlined,
+                outlineColor,
+                selectedOpacity,
+                colorBy,
+            } = this.model.data.shapeProperties;
+            this.clearSceneObjects();
+            for (let i = 0; i < this.model.data.objects.length; i++) {
+                const object = this.model.data.objects[i];
+                const clientID = String(object.clientID);
+                if (object.hidden) {
+                    continue;
+                }
+                const cuboid = new CuboidModel(object.occluded ? 'dashed' : 'line',
+                    outlined ? outlineColor : '#ffffff');
+                cuboid.setName(clientID);
+                cuboid.perspective.userData = object;
+                let color = '';
+                if (colorBy === 'Label') {
+                    ({ color } = object.label);
+                } else if (colorBy === 'Instance') {
+                    ({ color } = object.label);
+                } else {
+                    ({ color } = object.group);
+                }
+                cuboid.setOriginalColor(color);
+                cuboid.setColor(color);
+                cuboid.setOpacity(opacity);
+                if (this.model.data.activeElement.clientID === clientID) {
+                    cuboid.setOpacity(selectedOpacity);
+                    if (!object.lock) {
+                        createRotationHelper(cuboid.top, ViewType.TOP);
+                        createRotationHelper(cuboid.side, ViewType.SIDE);
+                        createRotationHelper(cuboid.front, ViewType.FRONT);
+                        setTranslationHelper(cuboid.top);
+                        setTranslationHelper(cuboid.side);
+                        setTranslationHelper(cuboid.front);
+                    }
+                    this.model.data.selected = cuboid;
+                } else {
+                    cuboid.top.visible = false;
+                    cuboid.side.visible = false;
+                    cuboid.front.visible = false;
+                }
+                this.addSceneChildren(cuboid);
+                cuboid.setPosition(object.points[0],
+                    object.points[1], object.points[2]);
+            }
+        }
+    }
+
+    private addSceneChildren(shapeObject: CuboidModel): void {
+        this.views.perspective.scene.children[0].add(shapeObject.perspective);
+        this.views.top.scene.children[0].add(shapeObject.top);
+        this.views.side.scene.children[0].add(shapeObject.side);
+        this.views.front.scene.children[0].add(shapeObject.front);
+    }
+
+    private dispatchEvent(event: CustomEvent): void {
+        this.views.perspective.renderer.domElement.dispatchEvent(event);
+    }
+
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
         if (reason === UpdateReasons.IMAGE_CHANGED) {
+            if (!model.data.image) return;
             const loader = new PCDLoader();
-            this.clearScene();
             const objectURL = URL.createObjectURL(model.data.image.imageData);
-            loader.load(objectURL, this.addScene.bind(this, model));
+            this.clearScene();
+            loader.load(objectURL, this.addScene.bind(this));
             URL.revokeObjectURL(objectURL);
-            const event: CustomEvent = new CustomEvent('canvas.setup');
-            this.views.perspective.renderer.domElement.dispatchEvent(event);
+            this.dispatchEvent(new CustomEvent('canvas.setup'));
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             const { clientID } = this.model.data.activeElement;
             Object.keys(this.views).forEach((view: string): void => {
                 const viewType = this.views[view as keyof Views];
-                // @ts-ignore
-                const object = viewType.scene.getObjectByName(clientID);
-                if (view !== ViewType.PERSPECTIVE) {
-                    if (object !== undefined) {
-                        viewType.controls.fitToBox(object, false);
-                        viewType.controls.zoom(-4, false);
-                    }
+                const object = viewType.scene.getObjectByName(clientID as string);
+                if (view !== ViewType.PERSPECTIVE && object !== undefined && viewType.controls) {
+                    viewType.controls.fitToBox(object, false);
+                    viewType.controls.zoom(-4, false);
                 }
             });
-            this.model.updateObject();
+            this.setupObjects();
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
-            if (data.enabled && this.mode === Mode.IDLE) {
-                this.mode = Mode.DRAW;
-                this.cube = new CuboidModel('line', '#ffffff');
-                this.views.perspective.renderer.domElement.style.cursor = 'copy';
-            } else if (this.mode !== Mode.IDLE) {
-                this.cube = new CuboidModel('line', '#ffffff');
-            }
-        } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
-            if (this.views.perspective.scene.children[0]) {
-                const {
-                    opacity,
-                    outlined,
-                    outlineColor,
-                    selectedOpacity,
-                    colorBy,
-                } = this.model.data.shapeProperties;
-                this.views.perspective.scene.children[0].children = [];
-                this.views.top.scene.children[0].children = [];
-                this.views.side.scene.children[0].children = [];
-                this.views.front.scene.children[0].children = [];
-                for (let i = 0; i < model.data.objects.length; i++) {
-                    const object = model.data.objects[i];
-                    if (object.hidden) {
-                        continue;
-                    }
-                    const cuboid = new CuboidModel(object.occluded ? 'dashed' : 'line',
-                        outlined ? outlineColor : '#ffffff');
-                    cuboid.setName(object.clientID);
-                    let color = '';
-                    if (colorBy === 'Label') {
-                        // eslint-disable-next-line prefer-destructuring
-                        color = object.label.color;
-                    } else if (colorBy === 'Instance') {
-                        // eslint-disable-next-line prefer-destructuring
-                        color = object.color;
-                    } else {
-                        // eslint-disable-next-line prefer-destructuring
-                        color = object.group.color;
-                    }
-                    cuboid.setOriginalColor(color);
-                    cuboid.setColor(color);
-                    cuboid.setOpacity(opacity);
-                    if (this.model.data.activeElement.clientID === object.clientID) {
-                        cuboid.setOpacity(selectedOpacity);
-                        if (!object.lock) {
-                            createRotationHelper(cuboid.top, ViewType.TOP);
-                            createRotationHelper(cuboid.side, ViewType.SIDE);
-                            createRotationHelper(cuboid.front, ViewType.FRONT);
-                            setTranslationHelper(cuboid.top);
-                            setTranslationHelper(cuboid.side);
-                            setTranslationHelper(cuboid.front);
-                        }
-                        this.model.data.selected = cuboid;
-                    } else {
-                        cuboid.top.visible = false;
-                        cuboid.side.visible = false;
-                        cuboid.front.visible = false;
-                    }
-                    this.views.perspective.scene.children[0].add(cuboid.perspective);
-                    this.views.top.scene.children[0].add(cuboid.top);
-                    this.views.side.scene.children[0].add(cuboid.side);
-                    this.views.front.scene.children[0].add(cuboid.front);
-                    cuboid.setPosition(object.points[0],
-                        object.points[1], object.points[2]);
+            if (data.redraw) {
+                const object = this.views.perspective.scene.getObjectByName(String(data.redraw));
+                if (object) {
+                    object.visible = false;
                 }
             }
+            this.cube = new CuboidModel('line', '#ffffff');
+        } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
+            this.setupObjects();
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
-            if (this.mode === Mode.DRAG_CANVAS) {
-                this.views.perspective.renderer.domElement.dispatchEvent(
-                    new CustomEvent('canvas.dragstart', {
+            this.dispatchEvent(
+                new CustomEvent(this.mode === Mode.DRAG_CANVAS ? 'canvas.dragstart' : 'canvas.dragstop',
+                    {
                         bubbles: false,
                         cancelable: true,
                     }),
-                );
-            } else {
-                this.views.perspective.renderer.domElement.dispatchEvent(
-                    new CustomEvent('canvas.dragstop', {
-                        bubbles: false,
-                        cancelable: true,
-                    }),
-                );
-            }
+            );
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
                 this.controller.drawData.enabled = false;
+                this.controller.drawData.redraw = undefined;
                 Object.keys(this.views).forEach((view: string): void => {
                     this.views[view as keyof Views].scene.children[0].remove(this.cube[view as keyof Views]);
                 });
             }
-            this.views.perspective.renderer.domElement.style.cursor = '';
             this.mode = Mode.IDLE;
-            const event: CustomEvent = new CustomEvent('canvas.canceled');
-            this.views.perspective.renderer.domElement.dispatchEvent(event);
+            this.dispatchEvent(new CustomEvent('canvas.canceled'));
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
-            const event: CustomEvent = new CustomEvent('canvas.fit');
-            this.views.perspective.renderer.domElement.dispatchEvent(event);
+            this.dispatchEvent(new CustomEvent('canvas.fit'));
         }
     }
 
@@ -482,13 +504,19 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         });
     }
 
-    private addScene(model: Canvas3dModel & Master, points: any): void {
+    private clearSceneObjects(): void {
+        Object.keys(this.views).forEach((view: string): void => {
+            this.views[view as keyof Views].scene.children[0].children = [];
+        });
+    }
+
+    private addScene(points: any): void {
         // eslint-disable-next-line no-param-reassign
         points.material.size = 0.08;
-        // eslint-disable-next-line no-param-reassign
-        points.material.color = new THREE.Color(0x0000ff);
+        points.material.color.set(new THREE.Color(0x0000ff));
         const sphereCenter = points.geometry.boundingSphere.center;
         const { radius } = points.geometry.boundingSphere;
+        if (!this.views.perspective.camera) return;
         const xRange = -radius / 2 < this.views.perspective.camera.position.x - sphereCenter.x
             && radius / 2 > this.views.perspective.camera.position.x - sphereCenter.x;
         const yRange = -radius / 2 < this.views.perspective.camera.position.y - sphereCenter.y
@@ -511,26 +539,68 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.positionAllViews(newX, newY, newZ);
         }
         this.views.perspective.scene.add(points);
+        // Setup TopView
+        const canvasTopView = this.views.top.renderer.domElement;
+        const topScenePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasTopView.offsetHeight,
+            canvasTopView.offsetWidth, canvasTopView.offsetHeight, canvasTopView.offsetWidth),
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0.03,
+            }));
+        topScenePlane.position.set(0, 0, 0);
+        topScenePlane.name = 'topPlane';
+        (topScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
+        (topScenePlane as any).verticesNeedUpdate = true;
         this.views.top.scene.add(points.clone());
+        this.views.top.scene.add(topScenePlane);
+        // Setup Side View
+        const canvasSideView = this.views.side.renderer.domElement;
+        const sideScenePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasSideView.offsetHeight,
+            canvasSideView.offsetWidth, canvasSideView.offsetHeight, canvasSideView.offsetWidth),
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0.03,
+            }));
+        sideScenePlane.position.set(0, 0, 0);
+        sideScenePlane.rotation.set(-Math.PI / 2, Math.PI / 2000, Math.PI);
+        sideScenePlane.name = 'sidePlane';
+        (sideScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
+        (sideScenePlane as any).verticesNeedUpdate = true;
         this.views.side.scene.add(points.clone());
+        this.views.side.scene.add(sideScenePlane);
+        // Setup front View
+        const canvasFrontView = this.views.front.renderer.domElement;
+        const frontScenePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasFrontView.offsetHeight,
+            canvasFrontView.offsetWidth, canvasFrontView.offsetHeight, canvasFrontView.offsetWidth),
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0.03,
+            }));
+        frontScenePlane.position.set(0, 0, 0);
+        frontScenePlane.rotation.set(0, Math.PI / 2, 0);
+        frontScenePlane.name = 'frontPlane';
+        (frontScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
+        (frontScenePlane as any).verticesNeedUpdate = true;
         this.views.front.scene.add(points.clone());
-        model.updateObject();
+        this.views.front.scene.add(frontScenePlane);
+        this.setupObjects();
     }
 
     private positionAllViews(x: number, y: number, z: number): void {
-        this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, false);
-        this.views.top.controls.setLookAt(x, y, z + 8, x, y, z, false);
-        this.views.side.controls.setLookAt(x, y + 8, z, x, y, z, false);
-        this.views.front.controls.setLookAt(x + 8, y, z, x, y, z, false);
+        if (this.views.perspective.controls && this.views.top.controls && this.views.side.controls
+            && this.views.front.controls) {
+            this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, false);
+            this.views.top.controls.setLookAt(x, y, z + 8, x, y, z, false);
+            this.views.side.controls.setLookAt(x, y + 8, z, x, y, z, false);
+            this.views.front.controls.setLookAt(x + 8, y, z, x, y, z, false);
+        }
     }
 
     private static resizeRendererToDisplaySize(viewName: string, view: RenderView): void {
         const { camera, renderer } = view;
         const canvas = renderer.domElement;
+        if (!canvas.parentElement) return;
         const width = canvas.parentElement.clientWidth;
         const height = canvas.parentElement.clientHeight;
         const needResize = canvas.clientWidth !== width || canvas.clientHeight !== height;
-        if (needResize) {
+        if (needResize && camera && view.camera) {
             if (camera instanceof THREE.PerspectiveCamera) {
                 camera.aspect = width / height;
             } else {
@@ -562,10 +632,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.views.perspective.scene.children[0].add(this.cube.perspective);
                 const newPoints = intersects[0].point;
                 this.cube.perspective.position.copy(newPoints);
+                this.views.perspective.renderer.domElement.style.cursor = 'default';
             }
         } else if (this.mode === Mode.IDLE) {
+            const { children } = this.views.perspective.scene.children[0];
             const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
-                this.views.perspective.scene.children[0].children,
+                children,
                 false,
             );
             if (intersects.length !== 0) {
@@ -575,15 +647,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const object = this.views.perspective.scene.getObjectByName(clientID);
                 if (object === undefined) return;
                 this.model.data.focusData.clientID = clientID;
-                // @ts-ignore
-                object.material.color.set('#ffffff');
+                ((object as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set('#ffffff');
             } else if (this.model.data.focusData.clientID !== null) {
                 try {
                     const object = this.views.perspective.scene.getObjectByName(
                         this.model.data.focusData.clientID,
                     );
-                    // @ts-ignore
-                    object.material.color.set(object.originalColor);
+                    ((object as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set((object as
+                        any).originalColor);
                 } catch {
                     this.model.data.focusData.clientID = null;
                 }
@@ -594,29 +665,95 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public render(): void {
         Object.keys(this.views).forEach((view: string): void => {
             const viewType = this.views[view as keyof Views];
+            if (!(viewType.controls && viewType.camera && viewType.rayCaster)) return;
             Canvas3dViewImpl.resizeRendererToDisplaySize(view, viewType);
             viewType.controls.update(this.clock.getDelta());
             viewType.renderer.render(viewType.scene, viewType.camera);
             if (view === ViewType.PERSPECTIVE && viewType.scene.children.length !== 0) {
                 this.renderRayCaster(viewType);
             }
+            // Action Management
             if (this.controller.activeElement.clientID !== null && view !== ViewType.PERSPECTIVE) {
-                if (this.action.topScan && view === ViewType.TOP) {
-                    viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector,
-                        viewType.camera);
-                    const intersectsBox = viewType.rayCaster.renderer.intersectObjects(
-                        this.views.top.scene.children, false,
-                    );
-                    if (intersectsBox.length !== 0) {
-                        this.action.translation.status = true;
+                viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector,
+                    viewType.camera);
+                // First Scan
+                if (this.action.scan === view && 
+                    !(this.action.translation.status || this.action.resize.status || this.action.rotation.status)) {
+                    this.initiateAction(view, viewType);
+                }
+                // Action Operations
+                if (this.action.scan === view && this.action.detected) {
+                    if (this.action.translation) {
+                        this.renderTranslateAction(view, viewType);
+                    } else if (this.action.resize) {
+                        this.renderResizeAction(view, viewType);
+                    } else {
+                        this.renderRotateAction(view, viewType);
                     }
                 }
             }
         });
     }
 
+
+    private renderTranslateAction(view: ViewType, viewType: any): void {
+        const intersects = viewType.rayCaster.renderer.intersectObjects([
+            viewType.scene.getObjectByName(`${view}Plane`)], true);
+        if (intersects.length !== 0 && intersects[0].point) {
+            const coordinates = intersects[0].point;
+            this.action.translation.coordinates = coordinates;
+            const {
+                perspective, top, side, front,
+            } = this.model.data.selected;
+            perspective.position.copy(coordinates.clone());
+            top.position.copy(coordinates.clone());
+            side.position.copy(coordinates.clone());
+            front.position.copy(coordinates.clone());
+        }
+    }
+
+    // eslint-disable-next-line class-methods-use-this
+    private renderResizeAction(): void {
+        // Resize Action TBD
+    }
+
+    // eslint-disable-next-line class-methods-use-this
+    private renderRotateAction(): void {
+        // Rotate Action TBD
+    }
+
+    private initiateAction(view: string, viewType: any): void {
+        const intersectsHelperResize = viewType.rayCaster.renderer.intersectObjects(
+            this.model.data.selected[view].userData.resizeHelpers, false,
+        );
+        if (intersectsHelperResize.length !== 0) {
+            this.action.resize.helper = viewType.rayCaster.mouseVector.clone();
+            this.action.resize.status = true;
+            this.action.detected = true;
+            return;
+        }
+        const intersectsHelperRotation = viewType.rayCaster.renderer.intersectObjects(
+            [this.model.data.selected[view].getObjectByName('rotationHelper')], false,
+        );
+        if (intersectsHelperRotation.length !== 0) {
+            this.action.rotation.helper = viewType.rayCaster.mouseVector.clone();
+            this.action.rotation.status = true;
+            this.action.detected = true;
+            return;
+        }
+        const intersectsBox = viewType.rayCaster.renderer.intersectObjects(
+            [this.model.data.selected[view]], false,
+        );
+        if (intersectsBox.length !== 0) {
+            this.action.translation.helper = viewType.rayCaster.mouseVector.clone();
+            this.action.translation.status = true;
+            this.action.detected = true;
+        }
+    }
+
     public keyControls(key: any): void {
         const { controls } = this.views.perspective;
+        if (!controls) return;
         switch (key.code) {
             case CAMERA_ACTION.ROTATE_RIGHT:
                 controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);

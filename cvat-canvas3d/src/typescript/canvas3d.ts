@@ -22,7 +22,7 @@ const Canvas3dVersion = pjson.version;
 
 interface Canvas3d {
     html(): ViewsDOM;
-    setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    setup(frameData: any, objectStates: any[]): void;
     isAbleToChangeFrame(): boolean;
     mode(): Mode;
     render(): void;
@@ -37,8 +37,8 @@ interface Canvas3d {
 }
 
 class Canvas3dImpl implements Canvas3d {
-    private model: Canvas3dModel & Master;
-    private controller: Canvas3dController;
+    private readonly model: Canvas3dModel & Master;
+    private readonly controller: Canvas3dController;
     private view: Canvas3dView;
 
     public constructor() {
@@ -63,8 +63,8 @@ class Canvas3dImpl implements Canvas3d {
         this.model.draw(drawData);
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0): void {
-        this.model.setup(frameData, objectStates, zLayer);
+    public setup(frameData: any, objectStates: any[]): void {
+        this.model.setup(frameData, objectStates);
     }
 
     public mode(): Mode {
@@ -88,7 +88,7 @@ class Canvas3dImpl implements Canvas3d {
     }
 
     public activate(clientID: number | null, attributeID: number | null = null): void {
-        this.model.activate(clientID, attributeID);
+        this.model.activate(String(clientID), attributeID);
     }
 
     public fit(): void {
@@ -101,5 +101,5 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CAMERA_ACTION,
+    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CAMERA_ACTION, ViewsDOM,
 };

@@ -8,7 +8,7 @@ import { ViewType } from './canvas3dModel';
 export class CuboidModel {
     public perspective: THREE.Mesh;
     public top: THREE.Mesh;
-    public side: THREE.Mesh; 
+    public side: THREE.Mesh;
     public front: THREE.Mesh;
 
     public constructor(outline: string, outlineColor: string) {
@@ -49,36 +49,24 @@ export class CuboidModel {
     }
 
     public setOriginalColor(color: string): void {
-        // @ts-ignore
-        this.perspective.originalColor = color;
-        // @ts-ignore
-        this.top.originalColor = color;
-        // @ts-ignore
-        this.side.originalColor = color;
-        // @ts-ignore
-        this.front.originalColor = color;
+        (this.perspective as any).originalColor = color;
+        (this.top as any).originalColor = color;
+        (this.side as any).originalColor = color;
+        (this.front as any).originalColor = color;
     }
 
     public setColor(color: string): void {
-        // @ts-ignore
-        this.perspective.material.color.set(color);
-        // @ts-ignore
-        this.top.material.color.set(color);
-        // @ts-ignore
-        this.side.material.color.set(color);
-        // @ts-ignore
-        this.front.material.color.set(color);
+        (this.perspective.material as THREE.MeshBasicMaterial).color.set(color);
+        (this.top.material as THREE.MeshBasicMaterial).color.set(color);
+        (this.side.material as THREE.MeshBasicMaterial).color.set(color);
+        (this.front.material as THREE.MeshBasicMaterial).color.set(color);
     }
 
     public setOpacity(opacity: number): void {
-        // @ts-ignore
-        this.perspective.material.opacity = opacity / 100;
-        // @ts-ignore
-        this.top.material.opacity = opacity / 100;
-        // @ts-ignore
-        this.side.material.opacity = opacity / 100;
-        // @ts-ignore
-        this.front.material.opacity = opacity / 100;
+        (this.perspective.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
+        (this.top.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
+        (this.side.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
+        (this.front.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
     }
 }
 
@@ -108,6 +96,8 @@ export function setTranslationHelper(instance: THREE.Mesh): void {
             1);
         instance.add(helpers[i]);
     }
+    // eslint-disable-next-line no-param-reassign
+    instance.userData = { ...instance.userData, resizeHelpers: helpers};
 }
 
 
@@ -118,21 +108,22 @@ export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): 
     rotationHelper.name = 'rotationHelper';
     switch (viewType) {
         case 'top':
-            // @ts-ignore
-            rotationHelper.position.set(instance.geometry.parameters.height / 2 + 0.1,
+            rotationHelper.position.set((instance.geometry as THREE.BoxGeometry).parameters.height / 2 + 0.1,
                 instance.position.y,
                 instance.position.z);
             instance.add(rotationHelper.clone());
+            // eslint-disable-next-line no-param-reassign
+            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone()};
             break;
         case 'side':
         case 'front':
-
             rotationHelper.position.set(
                 instance.position.x,
-                // @ts-ignore
-                instance.position.y, instance.geometry.parameters.depth / 2 + 0.1,
+                instance.position.y, (instance.geometry as THREE.BoxGeometry).parameters.depth / 2 + 0.1,
             );
             instance.add(rotationHelper.clone());
+            // eslint-disable-next-line no-param-reassign
+            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone()};
             break;
         default:
             break;

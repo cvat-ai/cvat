@@ -13,7 +13,10 @@ import { ResizableBox } from 'react-resizable';
 import {
     ColorBy, ContextMenuType, ObjectType, Workspace,
 } from 'reducers/interfaces';
-import { CAMERA_ACTION, Canvas3d, ViewType } from 'cvat-canvas3d-wrapper';
+import {
+    CAMERA_ACTION, Canvas3d, ViewType, ViewsDOM,
+} from 'cvat-canvas3d-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 import ContextImage from '../standard3D-workspace/context-image/context-image';
 import CVATTooltip from '../../common/cvat-tooltip';
 import { LogType } from '../../../cvat-logger';
@@ -27,7 +30,7 @@ interface Props {
     outlined: boolean;
     outlineColor: string;
     colorBy: ColorBy;
-    canvasInstance: Canvas3d;
+    canvasInstance: Canvas3d | Canvas;
     jobInstance: any;
     frameData: any;
     curZLayer: number;
@@ -50,7 +53,6 @@ interface Props {
     onDragCanvas: (enabled: boolean) => void;
     onShapeDrawn: () => void;
     workspace: Workspace;
-    animateID: any;
     automaticBordering: boolean;
     showObjectsTextAlways: boolean;
     frame: number;
@@ -58,6 +60,7 @@ interface Props {
 
 interface ViewSize {
     fullHeight: number;
+    fullWidth: number;
     vertical: number;
     top: number;
     side: number;
@@ -66,7 +69,7 @@ interface ViewSize {
 
 function viewSizeReducer(
     state: ViewSize,
-    action: { type: ViewType | 'set'; e?: SyntheticEvent; data?: ViewSize },
+    action: { type: ViewType | 'set' | 'resize'; e?: SyntheticEvent; data?: ViewSize },
 ): ViewSize {
     const event = (action.e as unknown) as MouseEvent;
     const canvas3dContainer = document.getElementById('canvas3d-container');
@@ -119,6 +122,33 @@ function viewSizeReducer(
                 };
             case 'set':
                 return action.data as ViewSize;
+            case 'resize': {
+                const canvasPerspectiveContainer = document.getElementById('cvat-canvas3d-perspective');
+                let midState = { ...state };
+                if (canvasPerspectiveContainer) {
+                    if (state.fullHeight !== canvas3dContainer.clientHeight) {
+                        const diff = canvas3dContainer.clientHeight - state.fullHeight;
+                        midState = {
+                            ...midState,
+                            fullHeight: canvas3dContainer.clientHeight,
+                            vertical: state.vertical + diff,
+                        };
+                    }
+                    if (state.fullWidth !== canvasPerspectiveContainer.clientWidth) {
+                        const oldWidth = state.fullWidth;
+                        const width = canvasPerspectiveContainer.clientWidth;
+                        midState = {
+                            ...midState,
+                            fullWidth: width,
+                            top: (state.top / oldWidth) * width,
+                            side: (state.side / oldWidth) * width,
+                            front: (state.front / oldWidth) * width,
+                        };
+                    }
+                    return midState;
+                }
+                return state;
+            }
             default:
                 throw new Error();
         }
@@ -130,6 +160,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     const animateId = useRef(0);
     const [viewSize, setViewSize] = useReducer(viewSizeReducer, {
         fullHeight: 0,
+        fullWidth: 0,
         vertical: 0,
         top: 0,
         side: 0,
@@ -155,15 +186,14 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         loaded,
         data,
         annotations,
-        curZLayer,
         frame,
         jobInstance,
         activeLabelID,
         activeObjectType,
         onShapeDrawn,
         onCreateAnnotations,
-        canvasInstance,
     } = props;
+    const { canvasInstance } = props as { canvasInstance: Canvas3d };
 
     const onCanvasSetup = (): void => {
         onSetupCanvas();
@@ -189,7 +219,6 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             canvasInstance.setup(
                 frameData,
                 annotations.filter((e) => e.objectType !== ObjectType.TAG),
-                curZLayer,
             );
         }
     };
@@ -215,6 +244,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         state.label = state.label || jobInstance.task.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.occluded = state.occluded || false;
         state.frame = frame;
+        state.zOrder = 0;
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
     };
@@ -227,7 +257,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     };
 
     const initialSetup = (): void => {
-        const canvasInstanceDOM = canvasInstance.html();
+        const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
         canvasInstanceDOM.perspective.addEventListener('canvas.setup', onCanvasSetup);
         canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstart', onCanvasDragStart);
@@ -239,12 +269,10 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     };
 
     const onCanvasShapeSelected = (event: any): void => {
-        const { onActivateObject, activatedStateID } = props;
+        const { onActivateObject } = props;
         const { clientID } = event.detail;
-        if (activatedStateID !== clientID) {
-            onActivateObject(clientID);
-            canvasInstance.activate(clientID);
-        }
+        onActivateObject(clientID);
+        canvasInstance.activate(clientID);
     };
 
     const onCanvasEditDone = (event: any): void => {
@@ -278,6 +306,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     type: 'set',
                     data: {
                         fullHeight: canvas3dContainer.clientHeight,
+                        fullWidth: canvas3dContainer.clientWidth,
                         vertical: canvas3dContainer.clientHeight / 2,
                         top: width,
                         side: width,
@@ -298,14 +327,13 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.canceled', onCanvasCancel);
             canvasInstanceDOM.perspective.removeEventListener('canvas.dragstart', onCanvasDragStart);
             canvasInstanceDOM.perspective.removeEventListener('canvas.dragstop', onCanvasDragDone);
-
             document.removeEventListener('keydown', keyControls);
             cancelAnimationFrame(animateId.current);
         };
     }, []);
 
     const updateShapesView = (): void => {
-        canvasInstance.configureShapes({
+        (canvasInstance as Canvas3d).configureShapes({
             opacity,
             outlined,
             outlineColor,
@@ -325,26 +353,37 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         );
     };
 
+    const onResize = () => {
+        setViewSize({
+            type: 'resize',
+        });
+    };
+
     useEffect(() => {
         updateShapesView();
     }, [opacity, outlined, outlineColor, selectedOpacity, colorBy]);
 
     useEffect(() => {
-        const canvasInstanceDOM = canvasInstance.html();
+        const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
         updateCanvas();
         canvasInstanceDOM.perspective.addEventListener('canvas.drawn', onCanvasShapeDrawn);
         canvasInstanceDOM.perspective.addEventListener('canvas.selected', onCanvasShapeSelected);
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
+        canvasInstanceDOM.perspective.addEventListener('canvas.fit', onResize);
+        window.addEventListener('resize', onResize);
+
         return () => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.drawn', onCanvasShapeDrawn);
             canvasInstanceDOM.perspective.removeEventListener('canvas.selected', onCanvasShapeSelected);
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.fit', onResize);
+            window.removeEventListener('resize', onResize);
         };
-    }, [frameData, annotations, curZLayer, activeLabelID, contextMenuVisibility]);
+    }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
 
     const screenKeyControl = (code: CAMERA_ACTION): void => {
         canvasInstance.keyControls(new KeyboardEvent('keydown', { code, altKey: true }));
@@ -469,7 +508,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 handle={<span className='cvat-resizable-handle-horizontal' />}
                 onResize={(e: SyntheticEvent) => setViewSize({ type: ViewType.PERSPECTIVE, e })}
             >
-                <div className='cvat-canvas3d-perspective'>
+                <div className='cvat-canvas3d-perspective' id='cvat-canvas3d-perspective'>
                     <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
                     <ArrowGroup />
                     <ControlGroup />
