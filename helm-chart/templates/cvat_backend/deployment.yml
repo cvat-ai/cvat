@@ -4,9 +4,16 @@ metadata:
   name: {{ .Release.Name }}-backend
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cvat.labels" . | nindent 4 }}
     app: cvat-app
     tier: backend
+    {{- include "cvat.labels" . | nindent 4 }}
+    {{- with .Values.cvat.backend.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.cvat.backend.annotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.cvat.backend.replicas }}
   strategy:
@@ -14,6 +21,9 @@ spec:
   selector:
     matchLabels:
       {{- include "cvat.labels" . | nindent 6 }}
+      {{- with .Values.cvat.backend.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       app: cvat-app
       tier: backend
   template:
@@ -39,16 +49,19 @@ spec:
           {{- end }}
           env:
           - name: DJANGO_MODWSGI_EXTRA_ARGS
-            value: ""
-          - name: UI_PORT
-            value: "80"
+            value: {{ .Values.cvat.backend.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
+          - name: ALLOWED_HOSTS
+            value: {{ .Values.cvat.backend.envs.ALLOWED_HOSTS | squote}}
           - name: UI_HOST
             value: "{{ .Release.Name }}-frontend-service"
-          - name: ALLOWED_HOSTS
-            value: "*"
+          - name: UI_PORT
+            value: "{{ .Values.cvat.frontend.service.ports }}"
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
             value: "{{ .Release.Name }}-redis-master"
+          {{- else }}
+          - name: CVAT_REDIS_HOST
+            value: "{{ .Values.redis.external.host }}"
           {{- end }}
           - name: CVAT_POSTGRES_HOST
             valueFrom:
@@ -100,6 +113,7 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+          {{- if .Values.cvat.backend.defaultStorage.enabled }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -112,6 +126,7 @@ spec:
           - mountPath: /home/django/models
             name: cvat-backend-data
             subPath: models
+          {{- end }}
           {{- with .Values.cvat.backend.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -120,9 +135,11 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
+        {{- if .Values.cvat.backend.defaultStorage.enabled }}
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
+        {{- end }}
         {{- with .Values.cvat.backend.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

@@ -1,4 +1,3 @@
-{{- if .Values.postgresql.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,14 +8,10 @@ metadata:
     app: cvat-app
     tier: backend
 spec:
-  type: ClusterIP
   selector:
-      {{- include "cvat.labels" . | nindent 6 }}
-      app: cvat-app
-      tier: backend
-  ports:
-    - port: 8080
-      targetPort: 8080
-      protocol: TCP
-      name: http
-{{- end }}
+    app: cvat-app
+    tier: backend
+    {{- include "cvat.labels" . | nindent 4 }}
+  {{- with .Values.cvat.backend.service }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}

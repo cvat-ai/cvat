@@ -8,13 +8,10 @@ metadata:
     app: cvat-app
     tier: frontend
 spec:
-  type: ClusterIP
   selector:
-      {{- include "cvat.labels" . | nindent 6 }}
-      app: cvat-app
-      tier: frontend
-  ports:
-    - port: 80
-      targetPort: 80
-      protocol: TCP
-      name: http
+    app: cvat-app
+    tier: frontend
+    {{- include "cvat.labels" . | nindent 4 }}
+  {{- with .Values.cvat.frontend.service }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
