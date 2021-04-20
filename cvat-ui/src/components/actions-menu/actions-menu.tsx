@@ -131,7 +131,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
                 Automatic annotation
             </Menu.Item>
-            <Menu.Item key={Actions.EXPORT_TASK}>
+            <Menu.Item key={Actions.EXPORT_TASK} disabled={exportIsActive}>
                 {exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
                 Export Task
             </Menu.Item>

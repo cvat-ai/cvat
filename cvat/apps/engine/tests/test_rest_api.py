@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -1886,6 +1886,135 @@ class TaskCreateAPITestCase(APITestCase):
             }]
         }
         self._check_api_v1_tasks(None, data)
+
+
+
+class TaskImportExportAPITestCase(APITestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _create_tasks(self):
+        self.tasks = []
+        data = {
+            "name": "my task #1",
+            "owner_id": self.owner.id,
+            "assignee_id": self.assignee.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "image_quality": 75,
+            "size": 100,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+            }, {
+                "name": "person",
+            }]
+        }
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+
+            images = {
+                "client_files[0]": generate_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "image_quality": 75,
+            }
+            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            self.tasks.append(tid)
+
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+            video = {
+                "client_files[0]": generate_video_file("test_video.mp4")[1],
+                "image_quality": 75,
+            }
+            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=video)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            self.tasks.append(tid)
+
+    def _run_api_v1_tasks_id_export(self, tid, user, query_params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/tasks/{}?{}'.format(tid, query_params), format="json")
+
+        return response
+
+    def _run_api_v1_tasks_id_import(self, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/tasks?action=import', data=data, format="multipart")
+
+        return response
+
+    def _run_api_v1_tasks_id_export_import(self, user):
+        if user:
+            if user is self.user or user is self.annotator:
+                HTTP_200_OK = status.HTTP_403_FORBIDDEN
+                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+            else:
+                HTTP_200_OK = status.HTTP_200_OK
+                HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
+                HTTP_201_CREATED = status.HTTP_201_CREATED
+        else:
+            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
+            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
+            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
+
+        self._create_tasks()
+        for tid in self.tasks:
+            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+
+            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+            response = self._run_api_v1_tasks_id_export(tid, user, "action=download")
+            self.assertEqual(response.status_code, HTTP_200_OK)
+
+            if user and user is not self.observer and user is not self.user and user is not self.annotator:
+                self.assertTrue(response.streaming)
+                content = io.BytesIO(b"".join(response.streaming_content))
+                content.seek(0)
+
+                uploaded_data = {
+                    "task_file": content,
+                }
+                response = self._run_api_v1_tasks_id_import(user, uploaded_data)
+                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                if user is not self.observer and user is not self.user and user is not self.annotator:
+                    rq_id = response.data["rq_id"]
+                    response = self._run_api_v1_tasks_id_import(user, {"rq_id": rq_id})
+                    self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+    def test_api_v1_tasks_id_export_admin(self):
+        self._run_api_v1_tasks_id_export_import(self.admin)
+
+    def test_api_v1_tasks_id_export_user(self):
+        self._run_api_v1_tasks_id_export_import(self.user)
+
+    def test_api_v1_tasks_id_export_annotator(self):
+        self._run_api_v1_tasks_id_export_import(self.annotator)
+
+    def test_api_v1_tasks_id_export_observer(self):
+        self._run_api_v1_tasks_id_export_import(self.observer)
+
+    def test_api_v1_tasks_id_export_no_auth(self):
+        self._run_api_v1_tasks_id_export_import(None)
 
 def generate_image_file(filename):
     f = BytesIO()

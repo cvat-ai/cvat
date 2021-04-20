@@ -5,13 +5,14 @@
 import math
 from enum import Enum
 from io import BytesIO
+import os
 
 import cv2
 import numpy as np
 from PIL import Image
 
 from cvat.apps.engine.cache import CacheInteraction
-from cvat.apps.engine.media_extractors import VideoReader, ZipReader
+from cvat.apps.engine.media_extractors import VideoReader, ZipReader, IMediaReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
 
@@ -159,7 +160,12 @@ class FrameProvider:
             raise Exception('unsupported output type')
 
     def get_preview(self):
-        return self._db_data.get_preview_path()
+        preview_path = self._db_data.get_preview_path()
+        if not os.path.exists(preview_path):
+            preview, _ = self.get_frame(frame_number=0)
+            preview = IMediaReader._get_preview(preview)
+            preview.save(preview_path)
+        return preview_path
 
     def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
         chunk_number = self._validate_chunk_number(chunk_number)

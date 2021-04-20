@@ -5,6 +5,7 @@
 import io
 import os
 from enum import Enum
+import shutil
 from zipfile import ZipFile
 
 from rest_framework.parsers import JSONParser
@@ -14,34 +15,113 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
-                                          FrameMetaSerializer,
-                                          LabeledDataSerializer,
-                                          RelatedFileSerializer,
-                                          SegmentSerializer,
-                                          SimpleJobSerializer, TaskSerializer)
+    FrameMetaSerializer, LabeledDataSerializer, RelatedFileSerializer, SegmentSerializer,
+    SimpleJobSerializer, TaskSerializer)
 from cvat.apps.engine.utils import av_scan_paths
 
-
-class TaskExporter():
-    class Version(Enum):
+class Version(Enum):
         V1 = 'v1'
 
-    MANIFEST_FILENAME = 'manifest.json'
+class _TaskBackupBase():
+    MANIFEST_FILENAME = 'task.json'
+    ANNOTATIONS_FILENAME = 'annotations.json'
     DATA_DIRNAME = 'data'
     TASK_DIRNAME = 'task'
 
+    def _prepare_meta(self, allowed_keys, meta):
+        keys_to_drop = set(meta.keys()) - allowed_keys
+        logger = slogger.task[self._db_task.id] if hasattr(self, '_db_task') else slogger.glob
+        logger.warning('the following keys are dropped {}'.format(keys_to_drop))
+        for key in keys_to_drop:
+            del meta[key]
+
+        return meta
+
+    def _prepare_task_meta(self, task):
+        allowed_fields = {
+            'name',
+            'mode',
+            'bug_tracker',
+            'overlap',
+            'segment_size',
+            'status',
+            'dimension',
+            'subset',
+            'labels',
+        }
+
+        return self._prepare_meta(allowed_fields, task)
+
+    def _prepare_data_meta(self, data):
+        allowed_fields = {
+            'chunk_size',
+            'size',
+            'image_quality',
+            'start_frame',
+            'stop_frame',
+            'frame_filter',
+            'compressed_chunk_type',
+            'original_chunk_type',
+            'storage_method',
+            'storage',
+        }
+        self._prepare_meta(allowed_fields, data)
+        if not data['frame_filter']:
+            data.pop('frame_filter')
+        return data
+
+    def _prepare_segment_meta(self, segments):
+        allowed_fields = {
+            'start_frame',
+            'stop_frame',
+        }
+        return self._prepare_meta(allowed_fields, segments)
+
+    def _prepare_job_meta(self, jobs):
+        allowed_fields = {
+            'id',
+            'status',
+        }
+        return self._prepare_meta(allowed_fields, jobs)
+
+    def _prepare_annotations(self, annotations):
+        allowed_fields = {
+            'label_id',
+            'type',
+            'occluded',
+            'z_order',
+            'points',
+            'frame',
+            'group',
+            'source',
+            'attributes',
+            'shapes',
+        }
+
+        for tag in annotations['tags']:
+            self._prepare_meta(allowed_fields, tag)
+        for shape in annotations['shapes']:
+            self._prepare_meta(allowed_fields, shape)
+        for track in annotations['tracks']:
+            self._prepare_meta(allowed_fields, track)
+
+        return annotations
+
+class TaskExporter(_TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         self._db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
         self._db_task.segment_set.all().prefetch_related('job_set')
         self._db_data = self._db_task.data
         self._version = version
 
-    def _write_directory(self, source_dir, zip_object, target_dir, recursive=True):
+    def _write_directory(self, source_dir, zip_object, target_dir, recursive=True, exclude_files=None):
         for root, dirs, files in os.walk(source_dir, topdown=True):
             if not recursive:
                 dirs.clear()
             for filename in files:
                 file_path = os.path.join(root, filename)
+                if exclude_files and file_path in exclude_files:
+                    continue
                 arcname = os.path.normpath(os.path.join(target_dir, os.path.relpath(root, source_dir), filename))
                 zip_object.write(filename=file_path, arcname=arcname)
 
@@ -51,6 +131,8 @@ class TaskExporter():
             source_dir=data_dir,
             zip_object=zip_object,
             target_dir=self.DATA_DIRNAME,
+            exclude_files=tuple(os.path.join(data_dir, f) for f in \
+                ('preview.jpeg', os.path.join('raw', 'index.json'))),
         )
 
     def _write_task(self, zip_object):
@@ -66,41 +148,27 @@ class TaskExporter():
         def serialize_task():
             task_serializer = TaskSerializer(self._db_task)
             task_serializer.fields.pop('url')
-            task_serializer.fields['owner'].fields.pop('url')
+            task_serializer.fields.pop('owner')
+            task_serializer.fields.pop('assignee')
             task_serializer.fields.pop('segments')
 
-            return task_serializer.data
+            return self._prepare_task_meta(task_serializer.data)
 
         def serialize_segmetnts():
-            def serialize_annotations(segments):
-                job_annotations = {}
-                for db_segment in self._db_task.segment_set.all():
-                    for db_job in db_segment.job_set.all():
-                        annotations = dm.task.get_job_data(db_job.id)
-                        annotations_serializer = LabeledDataSerializer(data=annotations)
-                        annotations_serializer.is_valid(raise_exception=True)
-                        job_annotations[db_job.id] = annotations_serializer.data
-
-                for segment in segments:
-                    for job in segment['jobs']:
-                        job['annotations'] = job_annotations[job['id']]
-
-                return segments
-
             segments = []
             for db_segment in self._db_task.segment_set.all():
                 jobs = []
                 for db_job in db_segment.job_set.all():
                     job_serializer = SimpleJobSerializer(db_job)
                     job_serializer.fields.pop('url')
-                    jobs.append(job_serializer.data)
+                    jobs.append(self._prepare_job_meta(job_serializer.data))
                 segment_serailizer = SegmentSerializer(db_segment)
                 segment_serailizer.fields.pop('jobs')
                 segment = segment_serailizer.data
                 segment['jobs'] = jobs
                 segments.append(segment)
 
-            return serialize_annotations(segments)
+            return segments
 
         def serialize_data():
             def serialize_related_files(image):
@@ -143,114 +211,55 @@ class TaskExporter():
 
             return data
 
-        manifest = serialize_task()
-        manifest['version'] = self._version.value
-        manifest['data'] = serialize_data()
-        manifest['segments'] = serialize_segmetnts()
+        task = serialize_task()
+        task['version'] = self._version.value
+        task['data'] = serialize_data()
+        task['segments'] = serialize_segmetnts()
 
-        zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(manifest))
+        zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(task))
+
+    def _write_annotations(self, zip_object):
+        def serialize_annotations():
+            job_annotations = {}
+            for db_segment in self._db_task.segment_set.all():
+                for db_job in db_segment.job_set.all():
+                    annotations = dm.task.get_job_data(db_job.id)
+                    annotations_serializer = LabeledDataSerializer(data=annotations)
+                    annotations_serializer.is_valid(raise_exception=True)
+                    job_annotations[db_job.id] = self._prepare_annotations(annotations_serializer.data)
+
+            return job_annotations
+
+        annotations = serialize_annotations()
+        zip_object.writestr(self.ANNOTATIONS_FILENAME, data=JSONRenderer().render(annotations))
 
     def export_to(self, filename):
         with ZipFile(filename, 'w') as output_file:
             self._write_data(output_file)
             self._write_task(output_file)
             self._write_manifest(output_file)
+            self._write_annotations(output_file)
 
-class TaskImporter():
-    class Version(Enum):
-        V1 = 'v1'
-
-    MANIFEST_FILENAME = 'manifest.json'
-    DATA_DIRNAME = 'data'
-    TASK_DIRNAME = 'task'
-
+class TaskImporter(_TaskBackupBase):
     def __init__(self, filename):
         self._filename = filename
-        self._manifest = self._read_manifest()
+        self._manifest, self._annotations = self._read_meta()
         self._version = self._read_version()
 
-    def _read_manifest(self):
+    def _read_meta(self):
         with ZipFile(self._filename, 'r') as input_file:
-            return JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
+            manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
+            annotations = JSONParser().parse(io.BytesIO(input_file.read(self.ANNOTATIONS_FILENAME)))
+            annotations = {int(job_id): job_annotations for job_id, job_annotations in annotations.items()}
+
+            return manifest, annotations
 
     def _read_version(self):
         version = self._manifest.pop('version')
         try:
-            return self.Version(version)
+            return Version(version)
         except ValueError:
             raise ValueError('{} version is not supported'.format(version))
-
-    def _prepare_meta(self, allowed_keys, meta):
-        keys_to_drop = set(meta.keys()) - allowed_keys
-        logger = slogger.task[self._db_task.id] if hasattr(self, '_db_task') else slogger.glob
-        logger.warning('the following keys are dropped {}'.format(keys_to_drop))
-        for key in keys_to_drop:
-            del meta[key]
-
-    def _prepare_task_meta(self, task):
-        allowed_fields = {
-            'name',
-            'mode',
-            'bug_tracker',
-            'overlap',
-            'segment_size',
-            'status',
-            'dimension',
-            'subset',
-        }
-
-        self._prepare_meta(allowed_fields, task)
-
-    def _prepare_data_meta(self, data):
-        allowed_fields = {
-            'chunk_size',
-            'size',
-            'image_quality',
-            'start_frame',
-            'stop_frame',
-            'frame_filter',
-            'compressed_chunk_type',
-            'original_chunk_type',
-            'storage_method',
-            'storage',
-        }
-        self._prepare_meta(allowed_fields, data)
-        if not data['frame_filter']:
-            data.pop('frame_filter')
-
-    def _prepare_segment_meta(self, segments):
-        allowed_fields = {
-            'start_frame',
-            'stop_frame',
-        }
-        self._prepare_meta(allowed_fields, segments)
-
-    def _prepare_job_meta(self, jobs):
-        allowed_fields = {
-            'status',
-        }
-        self._prepare_meta(allowed_fields, jobs)
-
-    def _prepare_annotations(self, annotations):
-        allowed_fields = {
-            'label_id',
-            'type',
-            'occluded',
-            'z_order',
-            'points',
-            'frame',
-            'group',
-            'source',
-            'attributes',
-            'shapes',
-        }
-
-        for tag in annotations['tags']:
-            self._prepare_meta(allowed_fields, tag)
-        for shape in annotations['shapes']:
-            self._prepare_meta(allowed_fields, shape)
-        for track in annotations['tracks']:
-            self._prepare_meta(allowed_fields, track)
 
     @staticmethod
     def _prepare_dirs(filepath):
@@ -312,9 +321,9 @@ class TaskImporter():
             self._prepare_segment_meta(segment)
             db_segment = models.Segment.objects.create(task=db_task, **segment)
             for job in jobs:
-                annotations = job.pop('annotations')
+                job_id = job.pop('id')
                 db_job = self._create_job(db_segment, job)
-                self._create_annotations(db_job, labels_mapping, attributes_mapping, annotations)
+                self._create_annotations(db_job, labels_mapping, attributes_mapping, self._annotations[job_id])
 
     def _create_data(self, data):
         self._prepare_data_meta(data)
