@@ -19,6 +19,7 @@ import {
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/review-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
+import { KeyMap } from 'utils/mousetrap-react';
 
 interface StateToProps {
     canvasInstance: Canvas;

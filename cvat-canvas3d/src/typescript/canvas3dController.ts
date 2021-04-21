@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Canvas3dModel, Mode } from './canvas3dModel';
+import { Canvas3dModel, Mode, DrawData } from './canvas3dModel';
 
 export interface Canvas3dController {
+    readonly drawData: DrawData;
     mode: Mode;
 }
 
@@ -21,5 +22,9 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public get mode(): Mode {
         return this.model.mode;
+    }
+
+    public get drawData(): DrawData {
+        return this.model.data.drawData;
     }
 }

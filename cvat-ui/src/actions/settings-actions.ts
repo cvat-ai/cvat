@@ -1,9 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { GridColor, ColorBy } from 'reducers/interfaces';
+import { GridColor, ColorBy, SettingsState } from 'reducers/interfaces';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -27,10 +27,12 @@ export enum SettingsActionTypes {
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
+    SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
+    SET_SETTINGS = 'SET_SETTINGS',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -241,6 +243,15 @@ export function switchAutomaticBordering(automaticBordering: boolean): AnyAction
     };
 }
 
+export function switchIntelligentPolygonCrop(intelligentPolygonCrop: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_INTELLIGENT_POLYGON_CROP,
+        payload: {
+            intelligentPolygonCrop,
+        },
+    };
+}
+
 export function changeCanvasBackgroundColor(color: string): AnyAction {
     return {
         type: SettingsActionTypes.CHANGE_CANVAS_BACKGROUND_COLOR,
@@ -255,6 +266,15 @@ export function switchSettingsDialog(show?: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_SETTINGS_DIALOG,
         payload: {
             show,
+        },
+    };
+}
+
+export function setSettings(settings: Partial<SettingsState>): AnyAction {
+    return {
+        type: SettingsActionTypes.SET_SETTINGS,
+        payload: {
+            settings,
         },
     };
 }

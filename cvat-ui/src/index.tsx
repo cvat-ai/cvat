@@ -6,6 +6,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
+
 import { getAboutAsync } from 'actions/about-actions';
 import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';

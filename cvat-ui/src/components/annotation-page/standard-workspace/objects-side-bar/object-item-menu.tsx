@@ -231,7 +231,7 @@ export default function ItemMenu(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Menu className='cvat-object-item-menu'>
+        <Menu className='cvat-object-item-menu' selectable={false}>
             <CreateURLItem toolProps={props} />
             {!readonly && <MakeCopyItem toolProps={props} />}
             {!readonly && <PropagateItem toolProps={props} />}

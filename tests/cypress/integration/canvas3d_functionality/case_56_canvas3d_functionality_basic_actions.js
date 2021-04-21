@@ -5,48 +5,55 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const_canvas3d';
+
 // Firefox does not yet support WebGL in headless mode: https://bugzilla.mozilla.org/show_bug.cgi?id=1375585 (disabled in the cypress_cron_type.json)
 context('Canvas 3D functionality. Basic actions.', () => {
     const caseId = '56';
     const screenshotsPath =
         'cypress/screenshots/canvas3d_functionality/case_56_canvas3d_functionality_basic_actions.js';
 
-    function compareImages(imgBefore, imgAfter) {
-        cy.compareImages(`${screenshotsPath}/${imgBefore}`, `${screenshotsPath}/${imgAfter}`).then((diffPercent) => {
-            expect(diffPercent).to.be.gt(0);
-        });
-    }
-
     function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(`{alt}${key}`);
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
         cy.get('body').type(key);
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     function testPerspectiveChangeOnWheel(screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameBefore);
-        for (let i = 0; i < 5; i++) {
-            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -200 });
+        for (let i = 0; i < 3; i++) {
+            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -50 });
         }
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
-    function testTopSideFrontChangeOnWheel(element, deltaY, screenshotNameBefore, screenshotNameAfter) {
-        cy.get(element).screenshot(screenshotNameBefore);
-        for (let i = 0; i < 10; i++) {
-            cy.get(element).trigger('wheel', { deltaY: deltaY });
+    function testTopSideFrontChangeOnWheel(element, screenshotNameBefore, screenshotNameAfter) {
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameBefore);
+        for (let i = 0; i < 3; i++) {
+            cy.get(element).trigger('wheel', { deltaY: -100 });
         }
-        cy.get(element).screenshot(screenshotNameAfter);
-        compareImages(`${screenshotNameBefore}.png`, `${screenshotNameAfter}.png`);
+        cy.get(element).find('.cvat-canvas3d-fullsize').screenshot(screenshotNameAfter);
+        cy.compareImagesAndCheckResult(
+            `${screenshotsPath}/${screenshotNameBefore}.png`,
+            `${screenshotsPath}/${screenshotNameAfter}.png`,
+        );
     }
 
     function testContextImage() {
@@ -58,11 +65,6 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
-    });
-
-    after(() => {
-        cy.goToTaskList();
-        cy.deleteTask(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -152,7 +154,6 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
 
         it('Testing perspective visual regressions.', () => {
-            testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
@@ -163,24 +164,14 @@ context('Canvas 3D functionality. Basic actions.', () => {
             testPerspectiveChangeOnArrowKeyPress('{downarrow}', 'before_press_downarrow', 'after_press_downarrow');
             testPerspectiveChangeOnArrowKeyPress('{leftarrow}', 'before_press_leftarrow', 'after_press_leftarrow');
             testPerspectiveChangeOnArrowKeyPress('{rightarrow}', 'before_press_rightarrow', 'after_press_rightarrow');
+            testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
         });
 
         it('Testing top/side/front views visual regressions.', () => {
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-topview',
-                -1000,
-                'topview_before_wheel',
-                'topview_after_wheel',
-            );
-            testTopSideFrontChangeOnWheel(
-                '.cvat-canvas3d-sideview',
-                -1000,
-                'sideview_before_wheel',
-                'sideview_after_wheel',
-            );
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-topview', 'topview_before_wheel', 'topview_after_wheel');
+            testTopSideFrontChangeOnWheel('.cvat-canvas3d-sideview', 'sideview_before_wheel', 'sideview_after_wheel');
             testTopSideFrontChangeOnWheel(
                 '.cvat-canvas3d-frontview',
-                -1000,
                 'frontview_before_wheel',
                 'frontview_after_wheel',
             );

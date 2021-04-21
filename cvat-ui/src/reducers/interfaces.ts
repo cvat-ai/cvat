@@ -115,6 +115,7 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
+    PREDICT = 'PREDICT',
 }
 
 export type PluginsList = {
@@ -306,6 +307,9 @@ export interface NotificationsState {
             commentingIssue: null | ErrorState;
             submittingReview: null | ErrorState;
         };
+        predictor: {
+            prediction: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -372,6 +376,19 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
+export interface PredictorState {
+    timeRemaining: number;
+    progress: number;
+    projectScore: number;
+    message: string;
+    error: Error | null;
+    enabled: boolean;
+    fetching: boolean;
+    annotationAmount: number;
+    mediaAmount: number;
+    annotatedFrames: number[];
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -393,6 +410,7 @@ export interface AnnotationState {
         activeControl: ActiveControl;
     };
     job: {
+        openTime: null | number;
         labels: any[];
         requestedId: number | null;
         instance: any | null | undefined;
@@ -433,8 +451,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
-        filters: string[];
-        filtersHistory: string[];
+        filters: any[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];
@@ -461,12 +478,14 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
+    filtersPanelVisible: boolean;
     requestReviewDialogVisible: boolean;
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
     workspace: Workspace;
+    predictor: PredictorState;
     aiToolsRef: MutableRefObject<any>;
 }
 
@@ -523,6 +542,7 @@ export interface WorkspaceSettingsState {
     automaticBordering: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
+    intelligentPolygonCrop: boolean;
 }
 
 export interface ShapesSettingsState {
