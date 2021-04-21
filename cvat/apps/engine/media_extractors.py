@@ -94,6 +94,10 @@ class ImageListReader(IMediaReader):
         if not source_path:
             raise Exception('No image found')
 
+        source_path = list(
+            filter(lambda x: 'related_images{}'.format(os.sep) not in x, source_path)
+        )
+
         if stop is None:
             stop = len(source_path)
         else:
@@ -139,9 +143,7 @@ class DirectoryReader(ImageListReader):
         for source in source_path:
             for root, _, files in os.walk(source):
                 paths = [os.path.join(root, f) for f in files]
-                paths = list(
-                    filter(lambda x: get_mime(x) == 'image' and 'related_images{}'.format(os.sep) not in x, paths)
-                )
+                paths = filter(lambda x: get_mime(x) == 'image', paths)
                 image_paths.extend(paths)
         super().__init__(
             source_path=image_paths,
@@ -200,9 +202,7 @@ class ZipReader(ImageListReader):
         self._dimension = DimensionType.DIM_2D
         self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
-        file_list = [f for f in self._zip_source.namelist()
-            if files_to_ignore(f) and get_mime(f) == 'image' and 'related_images{}'.format(os.sep) not in f
-        ]
+        file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
         super().__init__(file_list, step=step, start=start, stop=stop)
 
     def __del__(self):
@@ -251,8 +251,7 @@ class ZipReader(ImageListReader):
             return self._source_path[i]
 
     def extract(self):
-        extract_dir = self.extract_dir if self.extract_dir else os.path.dirname(self._zip_source.filename)
-        self._zip_source.extractall(extract_dir)
+        self._zip_source.extractall(self.extract_dir if self.extract_dir else os.path.dirname(self._zip_source.filename))
         if not self.extract_dir:
             os.remove(self._zip_source.filename)
 
