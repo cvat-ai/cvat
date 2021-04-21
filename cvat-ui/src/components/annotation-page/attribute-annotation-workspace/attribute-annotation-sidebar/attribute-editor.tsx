@@ -8,7 +8,6 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Select, { SelectValue } from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 

@@ -7,7 +7,6 @@ import { useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import { CombinedState } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
