@@ -19,6 +19,7 @@ from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import DimensionType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.core import VideoManifestValidator
+from utils.dataset_manifest.utils import detect_related_images
 
 import django_rq
 from django.conf import settings
@@ -327,6 +328,7 @@ def _create_thread(tid, data):
         job.meta['status'] = msg
         job.save_meta()
 
+    related_images = detect_related_images(extractor.absolute_source_paths, upload_dir, use_abs_paths=True)
     if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
        for media_type, media_files in media.items():
 
@@ -400,6 +402,7 @@ def _create_thread(tid, data):
                     if db_task.dimension == DimensionType.DIM_2D:
                         meta_info = manifest.prepare_meta(
                             sources=extractor.absolute_source_paths,
+                            meta={ k: {'related_images': related_images[k] } for k in related_images },
                             data_dir=upload_dir
                         )
                         content = meta_info.content
@@ -467,7 +470,6 @@ def _create_thread(tid, data):
         if validate_dimension.dimension == DimensionType.DIM_2D:
             models.Image.objects.bulk_create(db_images)
             created_images = models.Image.objects.filter(data_id=db_task.data_id)
-            related_images = extractor.absolute_related_paths
 
             db_related_files = [
                 RelatedFile(data=image.data, primary_image=image, path=related_file_path)

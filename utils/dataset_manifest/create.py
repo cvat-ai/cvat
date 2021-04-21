@@ -2,21 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 import argparse
-import mimetypes
 import os
 import sys
 from glob import glob
 
-def _define_data_type(media):
-    media_type, _ = mimetypes.guess_type(media)
-    if media_type:
-        return media_type.split('/')[0]
-
-def _is_video(media_file):
-    return _define_data_type(media_file) == 'video'
-
-def _is_image(media_file):
-    return _define_data_type(media_file) == 'image'
+from utils import detect_related_images, is_image, is_video
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -41,7 +31,7 @@ def main():
         if os.path.isdir(source):
             data_dir = source
             for root, _, files in os.walk(source):
-                sources.extend([os.path.join(root, f) for f in files if _is_image(f)])
+                sources.extend([os.path.join(root, f) for f in files if is_image(f)])
         else:
             items = source.lstrip('/').split('/')
             position = 0
@@ -56,18 +46,22 @@ def main():
                 data_dir = source.split(items[position])[0]
             except Exception as ex:
                 sys.exit(str(ex))
-            sources = list(filter(_is_image, glob(source, recursive=True)))
+            sources = list(filter(is_image, glob(source, recursive=True)))
+
+        sources = list(filter(lambda x: 'related_images{}'.format(os.sep) not in x, sources))
+        related_images = detect_related_images(sources, source, use_abs_paths=False)
+        meta = { k: {'related_images': related_images[k] } for k in related_images }
         try:
             assert len(sources), 'A images was not found'
             manifest = ImageManifestManager(manifest_path=manifest_directory)
-            meta_info = manifest.prepare_meta(sources=sources, is_sorted=False,
+            meta_info = manifest.prepare_meta(sources=sources, meta=meta, is_sorted=False,
                 use_image_hash=True, data_dir=data_dir)
             manifest.create(meta_info)
         except Exception as ex:
             sys.exit(str(ex))
     else: # video
         try:
-            assert _is_video(source), 'You can specify a video path or a directory/pattern with images'
+            assert is_video(source), 'You can specify a video path or a directory/pattern with images'
             manifest = VideoManifestManager(manifest_path=manifest_directory)
             try:
                 meta_info = manifest.prepare_meta(media_file=source, force=args.force)
