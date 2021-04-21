@@ -9,6 +9,7 @@ import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
 } from 'reducers/interfaces';
@@ -61,6 +62,7 @@ interface Props {
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
+    intelligentPolygonCrop: boolean;
     keyMap: KeyMap;
     canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
@@ -98,7 +100,12 @@ interface Props {
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
-            automaticBordering, showObjectsTextAlways, canvasInstance, workspace,
+            automaticBordering,
+            intelligentPolygonCrop,
+            showObjectsTextAlways,
+            canvasInstance,
+            workspace,
+            showProjections,
         } = this.props;
 
         // It's awful approach from the point of view React
@@ -111,6 +118,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
+            intelligentPolygonCrop,
+            showProjections,
         });
 
         this.initialSetup();
@@ -147,6 +156,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showObjectsTextAlways,
             showAllInterpolationTracks,
             automaticBordering,
+            intelligentPolygonCrop,
             showProjections,
             canvasBackgroundColor,
             onFetchAnnotation,
@@ -155,13 +165,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (
             prevProps.showObjectsTextAlways !== showObjectsTextAlways ||
             prevProps.automaticBordering !== automaticBordering ||
-            prevProps.showProjections !== showProjections
+            prevProps.showProjections !== showProjections ||
+            prevProps.intelligentPolygonCrop !== intelligentPolygonCrop
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
                 showProjections,
+                intelligentPolygonCrop,
             });
         }
 

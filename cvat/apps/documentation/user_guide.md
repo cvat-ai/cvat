@@ -29,6 +29,7 @@
   - [OpenCV Tools](#opencv-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
+    - [Creating masks](#creating-masks)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
     - [Points in shape mode](#points-in-shape-mode)
@@ -153,8 +154,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Select files**. Press tab `My computer` to choose some files for annotation from your PC.
     If you select tab `Connected file share` you can choose files for annotation from your network.
     If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
-    If you upload a video data and select `Use cache` option, you can along with the video file attach a file with meta information.
-    You can find how to prepare it [here](/utils/prepare_meta_information/README.md).
+    If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
+    You can find how to prepare it [here](/utils/dataset_manifest/README.md).
 
     ![](static/documentation/images/image127.jpg)
 
@@ -293,8 +294,10 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
       - Reviewer – a user assigned to carry out the review, read more in the [review](#review) section.
-      - `Copy`. By clicking Copy you will copy the job list to the clipboard.
+      - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
+
+        You can filter or sort jobs by status, as well as by assigner or reviewer.
 
 1.  Follow a link inside `Jobs` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -363,7 +366,7 @@ There are several options how to use the search.
 - Search for specific fields. How to perform:
   - `owner: admin` - all tasks created by the user who has the substring "admin" in his name
   - `assignee: employee` - all tasks which are assigned to a user who has the substring "employee" in his name
-  - `name: mighty` - all tasks with the substring "mighty" in their names
+  - `name: training` - all tasks with the substring "training" in their names
   - `mode: annotation` or `mode: interpolation` - all tasks with images or videos.
   - `status: annotation` or `status: validation` or `status: completed` - search by status
   - `id: 5` - task with id = 5.
@@ -676,11 +679,31 @@ In addition the workspace also has the following functions:
 
   ![](static/documentation/images/image140.jpg)
 
+- `Image settings panel` -  used to set up the grid and set up image brightness contrast saturation.
+
+  - Show `Grid`, change grid size, choose color and transparency:
+
+    ![](static/documentation/images/image068_mapillary_vistas.jpg)
+
+  - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
+  dark images using `F3` — color settings (changes displaying settings and not the
+  image itself).
+
+  Shortcuts:
+
+  - `Shift+B+=`/`Shift+B+-` for brightness.
+  - `Shift+C+=`/`Shift+C+-` for contrast.
+  - `Shift+S+=`/`Shift+S+-` for saturation.
+
+    ![](static/documentation/images/image164_mapillary_vistas.jpg)
+
+  - `Reset color settings` to default values.
+
 ---
 
 ### Settings
 
-To open the settings open the user menu in the header and select the settings item or press `F3`.
+To open the settings open the user menu in the header and select the settings item or press `F2`.
 
 ![](static/documentation/images/image067.jpg)
 
@@ -691,26 +714,9 @@ In tab `Player` you can:
 - Control step of `C` and `V` shortcuts.
 - Control speed of `Space`/`Play` button.
 - Select canvas background color. You can choose a background color or enter manually (in RGB or HEX format).
-- Show `Grid`, change grid size, choose color and transparency:
-
-  ![](static/documentation/images/image068_mapillary_vistas.jpg)
-
-- Show every image in full size or zoomed out like previous
+- `Reset zoom` Show every image in full size or zoomed out like previous
   (it is enabled by default for interpolation mode and disabled for annotation mode).
 - `Rotate all images` checkbox — switch the rotation of all frames or an individual frame.
-- Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-  dark images using `F3` — color settings (changes displaying settings and not the
-  image itself).
-
-Shortcuts:
-
-- `Shift+B+=`/`Shift+B+-` for brightness.
-- `Shift+C+=`/`Shift+C+-` for contrast.
-- `Shift+S+=`/`Shift+S+-` for saturation.
-
-  ![](static/documentation/images/image164_mapillary_vistas.jpg)
-
-- `Reset color settings` to default values.
 
 ---
 
@@ -728,9 +734,12 @@ In tab `Workspace` you can:
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section [annotation with polygons](#Annotation-with-polygons).
+
+- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](#edit-polygon)
+
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
-- Press ` Go back` or `F3` to return to the annotation.
+- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed). Click `Cancel`  or press `F2` to return to the annotation.
 
 ---
 
@@ -973,6 +982,20 @@ this way you will change the label color for all jobs in the task.
 
 ![](static/documentation/images/image062.jpg)
 
+**Fast label change**
+You can change the label of an object using hot keys. In order to do it, you need to assign a number (from 0 to 9) to labels. By default numbers 1,2...0 are assigned to the first ten labels.
+ To assign a number, click on the button placed at the right of a label name on the sidebar.
+
+![](static/documentation/images/image210.jpg)
+
+After that you will be able to assign a corresponding label to an object
+ by hovering your mouse cursor over it and pressing `Ctrl + Num(0..9)`.
+
+In case you do not point the cursor to the object, pressing `Ctrl + Num(0..9)` will set a chosen label as default,
+ so that the next object you create (use `N` key) will automatically have this label assigned.
+
+![](static/documentation/images/image211.jpg)
+
 ---
 
 #### Appearance
@@ -1196,13 +1219,6 @@ Press `Esc` to cancel editing.
 
 It is used for semantic / instance segmentation.
 
-The Z-Order flag defines the order of drawing. It is necessary to
-get the right annotation mask without extra work (additional drawing of borders).
-Z-Order can be changed by pressing `+`/`-` which set maximum/minimum z-order
-accordingly.
-
-![](static/documentation/images/image074.jpg)
-
 Before starting, you need to select `Polygon` on the controls sidebar and choose the correct Label.
 
 ![](static/documentation/images/image084.jpg)
@@ -1265,13 +1281,82 @@ If you need to annotate small objects, increase `Image Quality` to
 
 ### Edit polygon
 
-To edit a polygon you have to click with pressed `Shift`, it will open the polygon editor.
+To edit a polygon you have to click on it while holding `Shift`, it will open the polygon editor.
 
-- There you can create new points or delete part of a polygon closing the line on another point.
-- After closing the polygon, you can select the part of the polygon that you want to leave.
+- In the editor you can create new points or delete part of a polygon by closing the line on another point.
+- When `Intelligent polygon cropping` option is activated in the settings, СVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.
+  - The first criteria is a number of cut points.
+  - The second criteria is a length of a cut curve.
+
+  If both criteria recommend to cut the same part, algorithm works automatically, and if not, a user has to make the decision.
+  If you want to choose manually which part of a polygon should be cut off, disable `Intelligent polygon cropping` in the settings. In this case after closing the polygon, you can select the part of the polygon you want to leave.
+
+  ![](static/documentation/images/image209.jpg)
+
 - You can press `Esc` to cancel editing.
 
   ![](static/documentation/images/gif007_mapillary_vistas.gif)
+
+### Cutting holes in polygons
+
+Currently, CVAT does not support cutting transparent holes in polygons. However,
+it is poissble to generate holes in exported instance and class masks.
+To do this, one needs to define a background class in the task and draw holes
+with it as additional shapes above the shapes needed to have holes:
+
+The editor window:
+  ![The editor](static/documentation/images/mask_export_example1_editor.png)
+
+Remember to use z-axis ordering for shapes by \[\-\] and \[\+\, \=\] keys.
+
+Exported masks:
+  ![A class mask](static/documentation/images/mask_export_example1_cls_mask.png)  ![An instance mask](static/documentation/images/mask_export_example1_inst_mask.png)
+
+Notice that it is currently impossible to have a single instance number for
+internal shapes (they will be merged into the largest one and then covered by
+"holes").
+
+### Creating masks
+
+There are several formats in CVAT that can be used to export masks:
+- `Segmentation Mask` (PASCAL VOC masks)
+- `CamVid`
+- `MOTS`
+- `ICDAR`
+- `COCO` (RLE-encoded instance masks, [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#coco))
+- `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#tfrecord)):
+- `Datumaro`
+
+An example of exported masks (in the `Segmentation Mask` format):
+
+  ![A class mask](static/documentation/images/exported_cls_masks_example.png) ![An instance mask](static/documentation/images/exported_inst_masks_example.png)
+
+Important notices:
+- Both boxes and polygons are converted into masks
+- Grouped objects are considered as a single instance and exported as a single
+  mask (label and attributes are taken from the largest object in the group)
+
+#### Class colors
+
+All the labels have associated colors, which are used in the generated masks.
+These colors can be changed in the task label properties:
+
+  ![](static/documentation/images/label_color_picker.jpg)
+
+Label colors are also displayed in the annotation window on the right panel,
+where you can show or hide specific labels
+(only the presented labels are displayed):
+
+  ![](static/documentation/images/label_panel_anno_window.jpg)
+
+A background class can be:
+- A default class, which is implicitly-added, of black color (RGB 0, 0, 0)
+- `background` class with any color (has a priority, name is case-insensitive)
+- Any class of black color (RGB 0, 0, 0)
+
+To change backgound color in generated masks (default is black),
+change `background` class color to the desired one.
+
 
 ## Annotation with polylines
 
@@ -1564,70 +1649,86 @@ Shapes that don't have `group_id`, will be highlighted in white.
 
 ## Filter
 
-![](static/documentation/images/image059.jpg)
-
 There are some reasons to use the feature:
 
 1. When you use a filter, objects that don't match the filter will be hidden.
 1. The fast navigation between frames which have an object of interest.
    Use the `Left Arrow` / `Right Arrow` keys for this purpose
-   or customize the UI buttons by right-clicking and select "switching by filter".
+   or customize the UI buttons by right-clicking and select `switching by filter`.
    If there are no objects which correspond to the filter,
    you will go to the previous / next frame which contains any annotated objects.
-1. The list contains frequently used and recent filters.
 
-To use the function, it is enough to specify a value inside the `Filter` text
-field and press `Enter`. After that, the filter will be applied.
+To apply filters you need to click on the button on the top panel.
 
----
+![](static/documentation/images/image059.jpg)
+
+It will open a window for filter input. Here you will find two buttons: `Add rule` and `Add group`.
+
+![](static/documentation/images/image202.jpg)
+
+### Rules
+
+The "Add rule" button adds a rule for objects display. A rule may use the following properties:
+
+![](static/documentation/images/image204.jpg)
 
 **Supported properties:**
 
-| Properties | Supported values                                       | Description                                                                                                |
-| ---------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `width`    | number of px or `height`                               | shape width                                                                                                |
-| `height`   | number of px or `width`                                | shape height                                                                                               |
-| `label`    | `"text"` or `["text"]`                                 | label name                                                                                                 |
-| `serverID` | number                                                 | ID of the object on server <br> (You can find out by forming a link to the object through the Action menu) |
-| `clientID` | number                                                 | ID of the object in your client (indicated on the objects sidebar)                                         |
-| `type`     | `"shape"`, `"track"`, `"tag"`                          | type of object                                                                                             |
-| `shape`    | `"rectangle"`,`"polygon"`, <br>`"polyline"`,`"points"` | type of shape                                                                                              |
-| `occluded` | `true` or `false`                                      | occluded properties                                                                                        |
-| `attr`     | `"text"`                                               | attribute name                                                                                             |
+| Properties   | Supported values                                                                             | Description                                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Label`      | all the label names that are in the task                                                     | label name                                                                                                    |
+| `Type`       | shape, track or tag                                                                          | type of object                                                                                                |
+| `Shape`      | all shape types                                                                              | type of shape                                                                                                 |
+| `Occluded`   | true or false                                                                                | occluded ([read more](#shape-mode-advanced))                                                                  |
+| `Width`      | number of px or field                                                                        | shape width                                                                                                   |
+| `Height`     | number of px or field                                                                        | shape height                                                                                                  |
+| `ServerID`   | number or field                                                                              | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu) |
+| `ObjectID`   | number or field                                                                              | ID of the object in your client <br>(indicated on the objects sidebar)                                        |
+| `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label                                                                               |
 
-**Supported operators:**
+**Supported operators for properties:**
 
-`==` - Equally; `!=` - Not equal; `>` - More; `>=` - More or equal; `<` - Less; `<=` - Less or equal;
-`()` - Brackets; `&` - And; `|`- Or.
+`==` - Equally; `!=` - Not equal; `>` - More; `>=` - More or equal; `<` - Less; `<=` - Less or equal;
 
-If you have double quotes in your query string, please escape them using backslash: `\"` (see the latest example)
-All properties and values are case-sensitive. CVAT uses json queries to perform search.
+`Any in`; `Not in` - these operators allow you to set multiple values in one rule;
 
----
+![](static/documentation/images/image203.jpg)
 
-**Examples filters**
+`Is empty`; `is not empty` – these operators don't require to input a value.
 
-- `label=="car" | label==["road sign"]` - this filter will show only objects with the car or road sign label.
-- `shape == "polygon"` - this filter will show only polygons.
-- `width >= height` - this filter will show only those objects whose width will be greater than
-  or equal to the height.
-- `attr["color"] == "black"` - this filter will show objects whose color attribute is black.
-- `clientID == 50` - this filter will show the object with id equal to 50 (e.g. rectangle 50).
-- `(label=="car" & attr["parked"]==true) | (label=="pedestrian" & width > 150)` - this filter will display objects
-  with the “car” label and the parking attribute enabled or objects with the “pedestrian” label with a height of more
-  than 150 pixels
-- `(( label==["car \"mazda\""]) | (attr["parked"]==true & width > 150)) & (height > 150 & (clientID == serverID)))` -
-  This filter will show objects with the label "car" mazda "" or objects that have the parked attribute turned on
-  and have a width of more than 150 pixels, and those listed should have a height of more than 150 pixels
-  and their clientID is equal to serverID.
+`Between`; `Not between` – these operators allow you to choose a range between two values.
 
-**Filter history**
+Some properties support two types of values that you can choose:
 
-![](static/documentation/images/image175.jpg)
+![](static/documentation/images/image205.jpg)
 
-You can add previously entered filters and combine them. To do so, click on the input field and a list of previously
-entered filters will open. Click on the filters to add them to the input field.
-Combined filters occur with the "or" operator.
+You can add multiple rules, to do so click the add rule button and set another rule. Once you've set a new rule, you'll be able to choose which operator they will be connected by: `And` or `Or`.
+
+![](static/documentation/images/image206.jpg)
+
+All subsequent rules will be joined by the chosen operator. Click `Submit` to apply the filter or if you want multiple rules to be connected by different operators, use groups.
+
+### Groups
+
+To add a group, click the "add group" button. Inside the group you can create rules or groups.
+
+![](static/documentation/images/image207.jpg)
+
+If there is more than one rule in the group, they can be connected by `And` or `Or` operators.
+The rule group will work as well as a separate rule outside the group and will be joined by an
+operator outside the group.
+You can create groups within other groups, to do so you need to click the add group button within the group.
+
+You can move rules and groups. To move the rule or group, drag it by the button.
+To remove the rule or group, click on the `Delete` button.
+
+![](static/documentation/images/image208.jpg)
+
+If you activate the `Not` button, objects that don't match the group will be filtered out.
+Click `Submit` to apply the filter.
+The "Cancel" button undoes the filter. The `Clear filter` button removes the filter.
+
+Once applied filter automatically appears in `Recent used` list. Maximum length of the list is 10.
 
 ---
 
@@ -1708,6 +1809,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Ctrl+V`                   | Paste a shape from internal CVAT clipboard                                                               |
 | Hold `Ctrl` while pasting  | When pasting shape from the buffer for multiple pasting.                                                 |
 | `Crtl+B`                   | Make a copy of the object on the following frames                                                        |
+| `Ctrl+Num(0..9)`           | Сhanges the object label if pressed while the cursor is pointed on the object <br> / changes default label if pressed while the cursor is not pointed on an object|
 |                            | _Operations are available only for track_                                                                |
 | `K`                        | Change keyframe property for an active track                                                             |
 | `O`                        | Change outside property for an active track                                                              |

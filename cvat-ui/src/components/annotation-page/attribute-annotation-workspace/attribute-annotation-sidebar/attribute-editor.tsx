@@ -10,6 +10,8 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+
 import consts from 'consts';
 
 interface InputElementParameters {

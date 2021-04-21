@@ -10,6 +10,7 @@ import Select from 'antd/lib/select';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import { CombinedState } from 'reducers/interfaces';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { shift } from 'utils/math';
 
 interface ShortcutLabelMap {

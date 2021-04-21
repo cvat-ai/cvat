@@ -93,8 +93,9 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
             onOk={switchShortcutsDialog}
             cancelButtonProps={{ style: { display: 'none' } }}
             zIndex={1001} /* default antd is 1000 */
+            className='cvat-shortcuts-modal-window'
         >
-            <Table dataSource={dataSource} columns={columns} size='small' />
+            <Table dataSource={dataSource} columns={columns} size='small' className='cvat-shortcuts-modal-window-table' />
         </Modal>
     );
 }

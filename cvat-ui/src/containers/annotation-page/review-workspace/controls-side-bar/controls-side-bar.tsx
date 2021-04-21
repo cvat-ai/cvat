@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
-import { KeyMap } from 'utils/mousetrap-react';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import {
@@ -19,6 +18,7 @@ import {
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/review-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
+import { KeyMap } from 'utils/mousetrap-react';
 
 interface StateToProps {
     canvasInstance: Canvas;

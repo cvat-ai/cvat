@@ -113,6 +113,12 @@ task_create_parser.add_argument(
     help='string or file containing JSON labels specification'
 )
 task_create_parser.add_argument(
+    '--project',
+    default=None,
+    type=int,
+    help='project ID if project exists'
+)
+task_create_parser.add_argument(
     '--overlap',
     default=0,
     type=int,
@@ -161,6 +167,19 @@ task_create_parser.add_argument(
     type=int,
     help='''number of seconds to wait until checking
             if data compression finished (necessary before uploading annotations)'''
+)
+task_create_parser.add_argument(
+    '--dataset_repository_url',
+    default='',
+    type=str,
+    help=('git repository to store annotations e.g.'
+          ' https://github.com/user/repos [annotation/<anno_file_name.zip>]')
+)
+task_create_parser.add_argument(
+    '--lfs',
+    default=False,
+    action='store_true',
+    help='using lfs for dataset repository (default: %(default)s)'
 )
 
 #######################################################################

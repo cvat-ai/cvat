@@ -41,7 +41,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             points?: number,
             rectDrawingMethod?: RectDrawingMethod,
         ): void {
-            dispatch(rememberObject(objectType, labelID, shapeType, points, rectDrawingMethod));
+            dispatch(
+                rememberObject({
+                    activeObjectType: objectType,
+                    activeShapeType: shapeType,
+                    activeLabelID: labelID,
+                    activeNumOfPoints: points,
+                    activeRectDrawingMethod: rectDrawingMethod,
+                }),
+            );
         },
     };
 }
@@ -156,10 +164,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints,
         } = this.state;
 
-        const { normalizedKeyMap, labels, shapeType } = this.props;
+        const {
+            normalizedKeyMap, labels, shapeType, canvasInstance,
+        } = this.props;
 
         return (
             <DrawShapePopoverComponent
+                canvasInstance={canvasInstance}
                 labels={labels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}

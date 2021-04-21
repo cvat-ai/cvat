@@ -159,7 +159,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 resetZoom,
             },
             workspace: {
-                aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering,
+                aamZoomMargin,
+                showObjectsTextAlways,
+                showAllInterpolationTracks,
+                automaticBordering,
+                intelligentPolygonCrop,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
@@ -207,6 +211,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         automaticBordering,
+        intelligentPolygonCrop,
         workspace,
         keyMap,
         canvasBackgroundColor,
