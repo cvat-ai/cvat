@@ -1,0 +1,42 @@
+name: Linter
+on: pull_request
+jobs:
+  StyleLint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+
+      - name: Run checks
+        run: |
+          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
+          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
+          for files in $PR_FILES; do
+            extension="${files##*.}"
+            if [[ $extension == 'css' || $extension == 'scss' ]]; then
+              changed_files_stylelint+=" ${files}"
+            fi
+          done
+
+          if [[ ! -z ${changed_files_stylelint} ]]; then
+            npm ci
+            mkdir -p stylelint_report
+
+            echo "StyleLint version: "`npx stylelint --version`
+            echo "The files will be checked: "`echo ${changed_files_stylelint}`
+            npx stylelint --formatter json --output-file ./stylelint_report/stylelint_report.json ${changed_files_stylelint} || exit_code=`echo $?` || true
+            pip install json2html
+            python ./tests/json_to_html.py ./stylelint_report/stylelint_report.json
+            exit ${exit_code}
+          else
+            echo "No files with the \"css|scss\" extension found"
+          fi
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: stylelint_report
+          path: stylelint_report

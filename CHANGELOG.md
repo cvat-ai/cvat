@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Documentation on mask annotation (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 - Hotkeys to switch a label of existing object or to change default label (for objects created with N) (<https://github.com/openvinotoolkit/cvat/pull/3070>)
+- A script to convert some kinds of DICOM files to regular images (<https://github.com/openvinotoolkit/cvat/pull/3095>)
 
 ### Changed
 
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Export of instance masks with holes (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 - Changing a label on canvas does not work when 'Show object details' enabled (<https://github.com/openvinotoolkit/cvat/pull/3084>)
+- Make sure frame unzip web worker correctly terminates after unzipping all images in a requested chunk (<https://github.com/openvinotoolkit/cvat/pull/3096>)
 
 ### Security
 
