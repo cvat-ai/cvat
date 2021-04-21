@@ -132,22 +132,28 @@ redis:
 
 ingress:
   enabled: false
-#  annotations:
-#    kubernetes.io/ingress.class: nginx
-#    # cert-manager.io/cluster-issuer:"your-issuer-name"
-#    ingress.kubernetes.io/ssl-redirect: "true"
-#  hosts:
-#    - host: cvat.example.com
-#      paths:
-#        - match: "/api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*"
-#          service:
-#            name: cvat-backend-service
-#            port: 8080
-#        - match : "/"
-#          service:
-#            name: cvat-frontend-service
-#            port: 80
-#  tls:
-#    - hosts:
-#      - cvat.example.com
-#      secretName: ingress-tls-cvat
+# Example for nginx ingress and cert manager
+#    annotations:
+#        kubernetes.io/ingress.class: nginx
+#        nginx.ingress.kubernetes.io/use-regex: "true"
+#        nginx.ingress.kubernetes.io/secure-backends: "true"
+#        kubernetes.io/tls-acme: "true"
+#        cert-manager.io/cluster-issuer: example.issuer.name
+#        ingress.kubernetes.io/ssl-redirect: "true"
+#    hosts:
+#        - host: cvat.example.com
+#          paths:
+#              - path: "/api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*"
+#                service:
+#                    name: cvt-test-backend-service
+#                    port: 8080
+#              - path : "/"
+#                pathType: "Prefix"
+#                service:
+#                    name: cvt-test-frontend-service
+#                    port: 80
+#
+#    tls:
+#        - hosts:
+#              - cvat.example.com
+#          secretName: ingress-tls-cvat
