@@ -277,6 +277,10 @@ def _create_thread(tid, data):
             )
             extractor.add_files(validate_dimension.converted_files)
 
+    related_images = detect_related_images(extractor.absolute_source_paths, upload_dir, use_abs_paths=True)
+    if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
+        extractor.filter(lambda x: 'related_images{}'.format(os.sep) not in x)
+
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
@@ -328,7 +332,6 @@ def _create_thread(tid, data):
         job.meta['status'] = msg
         job.save_meta()
 
-    related_images = detect_related_images(extractor.absolute_source_paths, upload_dir, use_abs_paths=True)
     if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
        for media_type, media_files in media.items():
 

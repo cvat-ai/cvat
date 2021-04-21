@@ -94,10 +94,6 @@ class ImageListReader(IMediaReader):
         if not source_path:
             raise Exception('No image found')
 
-        source_path = list(
-            filter(lambda x: 'related_images{}'.format(os.sep) not in x, source_path)
-        )
-
         if stop is None:
             stop = len(source_path)
         else:
@@ -115,6 +111,10 @@ class ImageListReader(IMediaReader):
     def __iter__(self):
         for i in range(self._start, self._stop, self._step):
             yield (self.get_image(i), self.get_path(i), i)
+
+    def filter(self, callback):
+        source_path = list(filter(callback, self._source_path))
+        ImageListReader.__init__(self, source_path, step=self._step, start=self._start, stop=self._stop)
 
     def get_path(self, i):
         return self._source_path[i]
