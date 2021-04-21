@@ -418,6 +418,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
+            hasRelatedContext: boolean;
             data: any | null;
             fetching: boolean;
             delay: number;
@@ -429,7 +430,6 @@ export interface AnnotationState {
             fetching: boolean;
             data: string | null;
             hidden: boolean;
-            failed: boolean;
         };
     };
     drawing: {

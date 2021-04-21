@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 
@@ -10,20 +10,25 @@ import { CombinedState } from 'reducers/interfaces';
 import { getContextImage } from 'actions/annotation-actions';
 
 export default function ContextImage(): JSX.Element | null {
-    const frame = useSelector((state: CombinedState) => state.annotation.player.frame.number);
+    const { number: frame, hasRelatedContext } = useSelector((state: CombinedState) => state.annotation.player.frame);
+    const [requested, setRequested] = useState(false);
     const contextImageData = useSelector((state: CombinedState) => state.annotation.player.contextImage.data);
     const contextImageHidden = useSelector((state: CombinedState) => state.annotation.player.contextImage.hidden);
     const contextImageFetching = useSelector((state: CombinedState) => state.annotation.player.contextImage.fetching);
-    const contextImageFetchingFailed = useSelector(
-        (state: CombinedState) => state.annotation.player.contextImage.failed,
-    );
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (!contextImageHidden && contextImageData === null && !contextImageFetching && !contextImageFetchingFailed) {
-            dispatch(getContextImage());
+        if (requested) {
+            setRequested(false);
         }
-    }, [contextImageHidden, frame, contextImageFetching]);
+    }, [frame]);
+
+    useEffect(() => {
+        if (hasRelatedContext && !contextImageHidden && !requested) {
+            dispatch(getContextImage());
+            setRequested(true);
+        }
+    }, [contextImageHidden, requested, hasRelatedContext]);
 
     if (contextImageFetching) {
         return (

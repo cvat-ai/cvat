@@ -51,6 +51,7 @@ const defaultState: AnnotationState = {
             number: 0,
             filename: '',
             data: null,
+            hasRelatedContext: false,
             fetching: false,
             delay: 0,
             changeTime: null,
@@ -59,7 +60,6 @@ const defaultState: AnnotationState = {
         frameAngles: [],
         contextImage: {
             fetching: false,
-            failed: false,
             data: null,
             hidden: false,
         },
@@ -146,6 +146,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
+                frameHasRelatedContext,
                 colors,
                 filters,
                 frameData: data,
@@ -190,6 +191,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         filename,
+                        hasRelatedContext: frameHasRelatedContext,
                         number,
                         data,
                     },
@@ -248,7 +250,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             const {
-                number, data, filename, states, minZ, maxZ, curZ, delay, changeTime,
+                number,
+                data,
+                filename,
+                hasRelatedContext,
+                states,
+                minZ,
+                maxZ,
+                curZ,
+                delay,
+                changeTime,
             } = action.payload;
 
             const activatedStateID = states
@@ -264,6 +275,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         data,
                         filename,
+                        hasRelatedContext,
                         number,
                         fetching: false,
                         changeTime,
@@ -1185,7 +1197,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     contextImage: {
                         ...state.player.contextImage,
                         fetching: true,
-                        failed: false,
                     },
                 },
             };
@@ -1213,7 +1224,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     contextImage: {
                         ...state.player.contextImage,
                         fetching: false,
-                        failed: true,
                     },
                 },
             };

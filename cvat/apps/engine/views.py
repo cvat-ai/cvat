@@ -632,7 +632,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=DataMetaSerializer,
         url_path='data/meta')
     def data_info(request, pk):
-        db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
+        db_task = models.Task.objects.prefetch_related('data__images__related_files').select_related('data__video').get(pk=pk)
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
@@ -643,6 +643,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             'width': item.width,
             'height': item.height,
             'name': item.path,
+            'has_related_context': hasattr(item, 'related_files') and bool(len(item.related_files.all()))
         } for item in media]
 
         db_data = db_task.data
