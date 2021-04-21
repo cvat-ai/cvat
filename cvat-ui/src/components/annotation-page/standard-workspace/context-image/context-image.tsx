@@ -10,12 +10,12 @@ import { CombinedState } from 'reducers/interfaces';
 import { getContextImage } from 'actions/annotation-actions';
 
 export default function ContextImage(): JSX.Element | null {
-    const { number: frame, hasRelatedContext } = useSelector((state: CombinedState) => state.annotation.player.frame);
-    const [requested, setRequested] = useState(false);
-    const contextImageData = useSelector((state: CombinedState) => state.annotation.player.contextImage.data);
-    const contextImageHidden = useSelector((state: CombinedState) => state.annotation.player.contextImage.hidden);
-    const contextImageFetching = useSelector((state: CombinedState) => state.annotation.player.contextImage.fetching);
     const dispatch = useDispatch();
+    const { number: frame, hasRelatedContext } = useSelector((state: CombinedState) => state.annotation.player.frame);
+    const { data: contextImageData, hidden: contextImageHidden, fetching: contextImageFetching } = useSelector(
+        (state: CombinedState) => state.annotation.player.contextImage,
+    );
+    const [requested, setRequested] = useState(false);
 
     useEffect(() => {
         if (requested) {
