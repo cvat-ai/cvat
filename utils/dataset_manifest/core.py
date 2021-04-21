@@ -180,7 +180,7 @@ class DatasetImagesReader:
 
 class _Manifest:
     FILE_NAME = 'manifest.jsonl'
-    VERSION = '1.0'
+    VERSION = '1.1'
 
     def __init__(self, path, is_created=False):
         assert path, 'A path to manifest file not found'

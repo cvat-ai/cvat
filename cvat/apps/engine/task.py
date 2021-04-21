@@ -277,7 +277,7 @@ def _create_thread(tid, data):
             )
             extractor.add_files(validate_dimension.converted_files)
 
-    related_images = detect_related_images(extractor.absolute_source_paths, upload_dir, use_abs_paths=True)
+    related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
         extractor.filter(lambda x: 'related_images{}'.format(os.sep) not in x)
 
@@ -475,7 +475,7 @@ def _create_thread(tid, data):
             created_images = models.Image.objects.filter(data_id=db_task.data_id)
 
             db_related_files = [
-                RelatedFile(data=image.data, primary_image=image, path=related_file_path)
+                RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
                 for image in created_images
                 for related_file_path in related_images.get(image.path, [])
             ]

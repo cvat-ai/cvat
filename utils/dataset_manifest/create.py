@@ -49,7 +49,7 @@ def main():
             sources = list(filter(is_image, glob(source, recursive=True)))
 
         sources = list(filter(lambda x: 'related_images{}'.format(os.sep) not in x, sources))
-        related_images = detect_related_images(sources, source, use_abs_paths=False)
+        related_images = detect_related_images(sources, source)
         meta = { k: {'related_images': related_images[k] } for k in related_images }
         try:
             assert len(sources), 'A images was not found'
