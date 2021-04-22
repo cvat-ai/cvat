@@ -11,7 +11,7 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import Credentials, CloudStorage
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.engine.log import slogger
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -725,7 +725,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         fields = (
             'provider_type', 'resource', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key'
+            'secret_key', 'specific_attributes', 'description'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
@@ -748,9 +748,14 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         if should_be_created:
             details = {
                 'resource': validated_data.get('resource'),
-                'credentials': credentials
+                'credentials': credentials,
+                'specific_attributes': {
+                    item.split('=')[0].strip(): item.split('=')[1].strip()
+                        for item in validated_data.get('specific_attributes').split('&')
+                    } if len(validated_data.get('specific_attributes', ''))
+                        else dict()
             }
-            storage = CloudStorage(cloud_provider=provider_type, **details)
+            storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
             try:
                 storage.create()
             except Exception as ex:

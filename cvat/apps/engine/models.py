@@ -554,8 +554,9 @@ class CloudProviderChoice(str, Enum):
         return self.value
 
 class CredentialsTypeChoice(str, Enum):
-    TEMP_KEY_SECRET_KEY_TOKEN_PAIR = 'TEMP_KEY_SECRET_KEY_TOKEN_PAIR'
-    ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR'
+    # ignore bandit issues because false positives
+    TEMP_KEY_SECRET_KEY_TOKEN_PAIR = 'TEMP_KEY_SECRET_KEY_TOKEN_PAIR' # nosec
+    ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
 
     @classmethod
@@ -578,6 +579,8 @@ class CloudStorage(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     credentials = models.CharField(max_length=500)
     credentials_type = models.CharField(max_length=30, choices=CredentialsTypeChoice.choices())#auth_type
+    specific_attributes = models.CharField(max_length=50, blank=True)
+    description = models.TextField(default='')
 
     class Meta:
         default_permissions = ()
@@ -594,3 +597,10 @@ class CloudStorage(models.Model):
 
     def get_log_path(self):
         return os.path.join(self.get_storage_dirname(), "storage.log")
+
+    def get_specific_attributes(self):
+        attributes = self.specific_attributes.split('&')
+        return {
+            item.split('=')[0].strip(): item.split('=')[1].strip()
+                for item in attributes
+        } if len(attributes) else dict()

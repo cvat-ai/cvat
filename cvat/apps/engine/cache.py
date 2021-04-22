@@ -13,7 +13,7 @@ from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType
-from cvat.apps.engine.cloud_provider import CloudStorage, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.engine.utils import md5_hash
 class CacheInteraction:
     def __init__(self, dimension=DimensionType.DIM_2D):
@@ -50,7 +50,8 @@ class CacheInteraction:
         buff = BytesIO()
         upload_dir = {
                 StorageChoice.LOCAL: db_data.get_upload_dirname(),
-                StorageChoice.SHARE: settings.SHARE_ROOT
+                StorageChoice.SHARE: settings.SHARE_ROOT,
+                StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname()
             }[db_data.storage]
         if hasattr(db_data, 'video'):
             source_path = os.path.join(upload_dir, db_data.video.path)
@@ -75,9 +76,10 @@ class CacheInteraction:
                 })
                 details = {
                     'resource': db_cloud_storage.resource,
-                    'credentials': credentials
+                    'credentials': credentials,
+                    'specific_attributes': db_cloud_storage.get_specific_attributes()
                 }
-                cloud_storage_instance = CloudStorage(cloud_provider=db_cloud_storage.provider_type, **details)
+                cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
                 cloud_storage_instance.initialize_content()
                 for item in reader:
                     name = f"{item['name']}{item['extension']}"

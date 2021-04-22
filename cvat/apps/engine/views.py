@@ -38,7 +38,7 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
-from cvat.apps.engine.cloud_provider import Credentials, CloudStorage
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -1067,8 +1067,13 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
         details = {
             'resource': serializer.validated_data.get('resource'),
             'credentials': credentials,
+            'specific_attributes': {
+                    item.split('=')[0].strip(): item.split('=')[1].strip()
+                        for item in serializer.validated_data.get('specific_attributes').split('&')
+                    } if len(serializer.validated_data.get('specific_attributes', ''))
+                        else dict()
         }
-        storage = CloudStorage(cloud_provider=provider_type, **details)
+        storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
         try:
             storage.is_exist()
         except Exception as ex:
@@ -1120,8 +1125,9 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 details = {
                     'resource': db_storage.resource,
                     'credentials': credentials,
+                    'specific_attributes': db_storage.get_specific_attributes()
                 }
-                storage = CloudStorage(cloud_provider=db_storage.provider_type, **details)
+                storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
                 storage.initialize_content()
                 storage_files = storage.content
 

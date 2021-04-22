@@ -58,7 +58,7 @@ class _CloudStorage(ABC):
         pass
 
     def __contains__(self, file_name):
-        return file_name in (item['name'] for item in self._files.values())
+        return file_name in (item['name'] for item in self._files)
 
     def __len__(self):
         return len(self._files)
@@ -67,46 +67,33 @@ class _CloudStorage(ABC):
     def content(self):
         return list(map(lambda x: x['name'] , self._files))
 
-# def get_cloud_storage_instance(cloud_provider, resource, credentials):
-#     instance = None
-#     проверить креденшелы!
-# if cloud_provider == CloudProviderChoice.AWS_S3:
-#         instance = AWS_S3(
-#             bucket=resource,
-#             session_token=credentials.session_token,
-#         )
-#     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
-#         instance = AzureBlobContainer(
-#             container_name=resource,
-#             sas_token=credentials.session_token,
-#         )
-#     return instance
-
-# TODO: подумать возможно оставить функцию provider вместо класса ниже
-class CloudStorage:
-    def __init__(self, cloud_provider, resource, credentials):
-        if cloud_provider == CloudProviderChoice.AWS_S3:
-            self.__instance = AWS_S3(
-                bucket=resource,
-                access_key_id=credentials.key,
-                secret_key=credentials.secret_key,
-                session_token=credentials.session_token,
-            )
-        elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
-            self.__instance = AzureBlobContainer(
-                container=resource,
-                account_name=credentials.account_name,
-                sas_token=credentials.session_token,
-            )
-        else:
-            raise NotImplementedError()
-
-    def __getattr__(self, name):
-        assert hasattr(self.__instance, name), 'Unknown behavior: {}'.format(name)
-        return self.__instance.__getattribute__(name)
+def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_attributes=None):
+    instance = None
+    if cloud_provider == CloudProviderChoice.AWS_S3:
+        instance = AWS_S3(
+            bucket=resource,
+            access_key_id=credentials.key,
+            secret_key=credentials.secret_key,
+            session_token=credentials.session_token,
+            region=specific_attributes.get('region', 'us-east-2')
+        )
+    elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
+        instance = AzureBlobContainer(
+            container=resource,
+            account_name=credentials.account_name,
+            sas_token=credentials.session_token
+        )
+    else:
+        raise NotImplementedError()
+    return instance
 
 class AWS_S3(_CloudStorage):
-    def __init__(self, bucket, access_key_id=None, secret_key=None, session_token=None):
+    def __init__(self,
+                bucket,
+                region,
+                access_key_id=None,
+                secret_key=None,
+                session_token=None):
         super().__init__()
         if all([access_key_id, secret_key, session_token]):
             self._client_s3 = boto3.client(
@@ -114,6 +101,7 @@ class AWS_S3(_CloudStorage):
                 aws_access_key_id=access_key_id,
                 aws_secret_access_key=secret_key,
                 aws_session_token=session_token,
+                region_name=region
             )
         elif any([access_key_id, secret_key, session_token]):
             raise Exception('Insufficient data for authorization')
@@ -123,6 +111,7 @@ class AWS_S3(_CloudStorage):
             self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
             self._client_s3 = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
+        self.region = region
 
     @property
     def bucket(self):
@@ -195,13 +184,18 @@ class AWS_S3(_CloudStorage):
 
     def create(self):
         try:
-            _ = self._bucket.create(
+            responce = self._bucket.create(
                 ACL='private',
                 CreateBucketConfiguration={
-                    'LocationConstraint': 'us-east-2',#TODO
+                    'LocationConstraint': self.region,
                 },
                 ObjectLockEnabledForBucket=False
             )
+            slogger.glob.info(
+                'Bucket {} has been created on {} region'.format(
+                    self.name,
+                    responce['Location']
+                ))
         except Exception as ex:
             msg = str(ex)
             slogger.glob.info(msg)

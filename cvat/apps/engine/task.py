@@ -28,7 +28,7 @@ from distutils.dir_util import copy_tree
 
 from . import models
 from .log import slogger
-from .cloud_provider import CloudStorage, Credentials
+from .cloud_provider import get_cloud_storage_instance, Credentials
 
 ############################# Low Level server API
 
@@ -236,6 +236,23 @@ def _create_thread(tid, data):
             _copy_data_from_share(data['server_files'], upload_dir)
         elif db_data.storage == StorageChoice.SHARE:
             upload_dir = settings.SHARE_ROOT
+        else: # cloud storage
+            if not manifest_file: raise Exception('A manifest file not found')
+            db_cloud_storage = db_data.cloud_storage
+            credentials = Credentials()
+            credentials.convert_from_db({
+               'type': db_cloud_storage.credentials_type,
+               'value': db_cloud_storage.value,
+            })
+
+            details = {
+                'resource': db_cloud_storage.resource,
+                'credentials': credentials,
+                'specific_attributes': db_cloud_storage.get_specific_attributes()
+            }
+            cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
+            cloud_storage_instance.download_file(manifest_file[0], db_data.get_manifest_path())
+            cloud_storage_instance.download_file(media['image'][0], os.path.join(upload_dir, media['image'][0]))
 
     av_scan_paths(upload_dir)
 
@@ -317,7 +334,13 @@ def _create_thread(tid, data):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            w, h = extractor.get_image_size(0)
+            if not (db_data.storage == StorageChoice.CLOUD_STORAGE):
+                w, h = extractor.get_image_size(0)
+            else:
+                manifest = ImageManifestManager(db_data.get_manifest_path())
+                manifest.init_index()
+                img_properties = manifest[0]
+                w, h = img_properties['width'], img_properties['height']
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
@@ -401,8 +424,6 @@ def _create_thread(tid, data):
                 db_data.size = len(extractor)
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
-                    if db_data.storage == StorageChoice.CLOUD_STORAGE:
-                        raise Exception('A manifest file was not foud')
                     if db_task.dimension == DimensionType.DIM_2D:
                         meta_info = manifest.prepare_meta(
                             sources=extractor.absolute_source_paths,
@@ -418,20 +439,6 @@ def _create_thread(tid, data):
                                 'extension': ext
                             })
                     manifest.create(content)
-                if db_data.storage == StorageChoice.CLOUD_STORAGE:
-                    db_cloud_storage = db_data.cloud_storage
-                    credentials = Credentials()
-                    credentials.convert_from_db({
-                        'type': db_cloud_storage.credentials_type,
-                        'value': db_cloud_storage.value,
-                    })
-
-                    details = {
-                        'resource': db_cloud_storage.resource,
-                        'credentials': credentials,
-                    }
-                    cloud_storage_instance = CloudStorage(cloud_provider=db_cloud_storage.provider_type, **details)
-                    cloud_storage_instance.download_file(manifest_file[0], db_data.get_manifest_path())
                 manifest.init_index()
                 counter = itertools.count()
                 for _, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
