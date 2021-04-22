@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,15 +13,15 @@ import { ShapeType } from 'reducers/interfaces';
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     isDrawing: boolean;
+    disabled?: boolean;
 }
 
+const CustomPopover = withVisibilityHandling(Popover, 'draw-points');
 function DrawPointsControl(props: Props): JSX.Element {
-    const { canvasInstance, isDrawing } = props;
-    const CustomPopover = withVisibilityHandling(Popover, 'draw-points');
-
+    const { canvasInstance, isDrawing, disabled } = props;
     const dynamcPopoverPros = isDrawing ?
         {
             overlayStyle: {
@@ -41,7 +41,9 @@ function DrawPointsControl(props: Props): JSX.Element {
             className: 'cvat-draw-points-control',
         };
 
-    return (
+    return disabled ? (
+        <Icon className='cvat-draw-points-control cvat-disabled-canvas-control' component={PointIcon} />
+    ) : (
         <CustomPopover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'

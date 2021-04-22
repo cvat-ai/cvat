@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -57,6 +57,7 @@ export interface Configuration {
     undefinedAttrValue?: string;
     showProjections?: boolean;
     forceDisableEditing?: boolean;
+    intelligentPolygonCrop?: boolean;
 }
 
 export interface DrawData {
@@ -76,6 +77,10 @@ export interface InteractionData {
     crosshair?: boolean;
     minPosVertices?: number;
     minNegVertices?: number;
+    enableNegVertices?: boolean;
+    enableThreshold?: boolean;
+    enableSliding?: boolean;
+    allowRemoveOnlyLast?: boolean;
 }
 
 export interface InteractionResult {
@@ -617,23 +622,27 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public configure(configuration: Configuration): void {
-        if (typeof configuration.displayAllText !== 'undefined') {
+        if (typeof configuration.displayAllText === 'boolean') {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
-        if (typeof configuration.showProjections !== 'undefined') {
+        if (typeof configuration.showProjections === 'boolean') {
             this.data.configuration.showProjections = configuration.showProjections;
         }
-        if (typeof configuration.autoborders !== 'undefined') {
+        if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
         }
 
-        if (typeof configuration.undefinedAttrValue !== 'undefined') {
+        if (typeof configuration.undefinedAttrValue === 'string') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
         }
 
-        if (typeof configuration.forceDisableEditing !== 'undefined') {
+        if (typeof configuration.forceDisableEditing === 'boolean') {
             this.data.configuration.forceDisableEditing = configuration.forceDisableEditing;
+        }
+
+        if (typeof configuration.intelligentPolygonCrop === 'boolean') {
+            this.data.configuration.intelligentPolygonCrop = configuration.intelligentPolygonCrop;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

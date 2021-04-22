@@ -1,8 +1,7 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -18,13 +17,15 @@ import {
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
+import { KeyMap } from 'utils/mousetrap-react';
 
 interface StateToProps {
     canvasInstance: Canvas;
     rotateAll: boolean;
     activeControl: ActiveControl;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    labels: any[];
 }
 
 interface DispatchToProps {
@@ -42,6 +43,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
+            job: { labels },
         },
         settings: {
             player: { rotateAll },
@@ -53,6 +55,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         rotateAll,
         canvasInstance,
         activeControl,
+        labels,
         normalizedKeyMap,
         keyMap,
     };

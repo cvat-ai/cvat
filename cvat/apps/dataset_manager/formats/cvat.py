@@ -9,10 +9,11 @@ from collections import OrderedDict
 from glob import glob
 from tempfile import TemporaryDirectory
 
+from datumaro.components.extractor import DatasetItem
+
 from cvat.apps.dataset_manager.bindings import match_dm_item
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
-from datumaro.components.extractor import DatasetItem
 
 from .registry import exporter, importer
 
@@ -440,8 +441,9 @@ def load(file_object, annotations):
             elif el.tag == 'image':
                 image_is_opened = True
                 frame_id = annotations.abs_frame_id(match_dm_item(
-                    DatasetItem(id=el.attrib['name'],
-                        attributes={'frame': el.attrib['id']}
+                    DatasetItem(id=osp.splitext(el.attrib['name'])[0],
+                        attributes={'frame': el.attrib['id']},
+                        image=el.attrib['name']
                     ),
                     task_data=annotations
                 ))

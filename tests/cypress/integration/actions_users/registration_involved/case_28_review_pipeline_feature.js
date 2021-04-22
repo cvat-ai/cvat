@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -129,9 +129,9 @@ context('Review pipeline feature', () => {
 
     after(() => {
         cy.goToTaskList();
-        cy.getTaskID(taskName).then(($taskID) => {
-            cy.deleteTask(taskName, $taskID);
-        });
+        cy.deleteTask(taskName);
+        cy.logout();
+        cy.deletingRegisteredUsers([secondUserName, thirdUserName]);
     });
 
     describe(`Testing "${labelName}"`, () => {
@@ -189,7 +189,7 @@ context('Review pipeline feature', () => {
 
         it('Second user login. Open the task, open the job and annotates it.', () => {
             cy.login(secondUserName, secondUser.password);
-            cy.openTaskJob(taskName);
+            cy.openTaskJob(taskName, 0, false);
             cy.createRectangle(createRectangleShape2PointsSecond);
             for (let i = 1; i < 4; i++) {
                 cy.createRectangle(createRectangleShape2Points);
@@ -198,14 +198,14 @@ context('Review pipeline feature', () => {
         });
 
         it('Second user sends the job to review.', () => {
-            cy.server().route('POST', '/api/v1/server/logs').as('sendLogs');
+            cy.intercept('POST', '/api/v1/server/logs').as('sendLogs');
             cy.interactMenu('Request a review');
             cy.contains('.cvat-modal-content-save-job', 'The job has unsaved annotations')
                 .should('exist')
                 .within(() => {
                     cy.contains('[type="button"]', 'OK').click();
                 });
-            cy.wait('@sendLogs').its('status').should('equal', 201);
+            cy.wait('@sendLogs').its('response.statusCode').should('equal', 201);
             cy.get('.cvat-request-review-dialog')
                 .should('exist')
                 .within(() => {
@@ -223,7 +223,7 @@ context('Review pipeline feature', () => {
         });
 
         it('Second user opens the job again, switches to standard mode and tried to change anything and save changes. The request will be rejected with 403 code.', () => {
-            cy.openJob();
+            cy.openJob(0, false);
             cy.get('.cvat-workspace-selector').should('have.text', 'Review');
             cy.changeWorkspace('Standard', labelName);
             cy.createPoint(createPointsShape);
@@ -239,7 +239,7 @@ context('Review pipeline feature', () => {
 
         it('The third user opens the job. Review mode is opened automatically.', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.openTaskJob(taskName);
+            cy.openTaskJob(taskName, 0, false);
             cy.get('.cvat-workspace-selector').should('have.text', 'Review');
         });
 
@@ -310,7 +310,7 @@ context('Review pipeline feature', () => {
         });
 
         it("Reopen the job. Change something there. Save work. That saving wasn't successful. The third user logout.", () => {
-            cy.openJob();
+            cy.openJob(0, false);
             cy.createPoint(createPointsShapeSecond);
             cy.saveJob('PATCH', 403);
             cy.get('.cvat-notification-notice-save-annotations-failed')
@@ -324,7 +324,7 @@ context('Review pipeline feature', () => {
 
         it('The second user login. Opens the job again. All issues are visible.', () => {
             cy.login(secondUserName, secondUser.password);
-            cy.openTaskJob(taskName);
+            cy.openTaskJob(taskName, 0, false);
             cy.get('.cvat-workspace-selector').should('have.text', 'Standard');
             for (const j of [
                 customeIssueDescription,
@@ -351,25 +351,15 @@ context('Review pipeline feature', () => {
         });
 
         it('Select an issue on sidebar. Issue indication has changed the color for highlighted issue', () => {
-            let index = 0;
             cy.collectIssueRegionId().then(($issueRegionList) => {
-                cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
-                    for (let i = 0; i < sidebarIssueItems.length; i++) {
-                        cy.get(sidebarIssueItems[i]).trigger('mousemove').trigger('mouseover');
-                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`).should(
-                            'have.attr',
-                            'fill',
-                            'url(#cvat_issue_region_pattern_2)',
-                        );
-                        cy.get(sidebarIssueItems[i]).trigger('mouseout');
-                        cy.get(`#cvat_canvas_issue_region_${$issueRegionList[index]}`).should(
-                            'have.attr',
-                            'fill',
-                            'url(#cvat_issue_region_pattern_1)',
-                        );
-                        index++;
-                    }
-                });
+                for (const issueRegionID of $issueRegionList) {
+                    const objectsSidebarIssueItem = `#cvat-objects-sidebar-issue-item-${issueRegionID}`;
+                    const canvasIssueRegion = `#cvat_canvas_issue_region_${issueRegionID}`;
+                    cy.get(objectsSidebarIssueItem).trigger('mousemove').trigger('mouseover');
+                    cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_2)');
+                    cy.get(objectsSidebarIssueItem).trigger('mouseout');
+                    cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_1)');
+                }
             });
         });
 
@@ -426,7 +416,7 @@ context('Review pipeline feature', () => {
 
         it('The third user login, opens the job, goes to menu, "Submit review" => "Review next" => Assign the first user => Submit.', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.openTaskJob(taskName);
+            cy.openTaskJob(taskName, 0, false);
             cy.interactMenu('Submit the review');
             cy.submitReview('Review next', Cypress.env('user'));
             cy.get('.cvat-not-found').should('exist');
@@ -434,7 +424,7 @@ context('Review pipeline feature', () => {
         it('The third user logout. The first user login and opens the job, goes to menu, "Submit review" => Accept => Submit', () => {
             cy.logout(thirdUserName);
             cy.login();
-            cy.openTaskJob(taskName);
+            cy.openTaskJob(taskName, 0, false);
             cy.interactMenu('Submit the review');
             cy.submitReview('Accept');
             cy.url().should('include', '/tasks');
@@ -443,13 +433,13 @@ context('Review pipeline feature', () => {
         });
 
         it("The first user can change annotations. The second users can't change annotations. For the third user the task is not visible.", () => {
-            cy.openJob();
+            cy.openJob(0, false);
             cy.createPoint(createPointsShapeThird);
             cy.saveJob();
             cy.get('.cvat-notification-notice-save-annotations-failed').should('not.exist');
             cy.logout();
             cy.login(secondUserName, secondUser.password);
-            cy.openTaskJob(taskName);
+            cy.openTaskJob(taskName, 0, false);
             cy.createPoint(createPointsShapeFourth);
             cy.saveJob();
             cy.get('.cvat-notification-notice-save-annotations-failed').should('exist');
@@ -463,7 +453,7 @@ context('Review pipeline feature', () => {
 
         it('The first user opens the job and presses "Renew the job".', () => {
             cy.login();
-            cy.openTaskJob(taskName);
+            cy.openTaskJob(taskName, 0, false);
             cy.interactMenu('Renew the job');
             cy.get('.cvat-modal-content-renew-job').within(() => {
                 cy.contains('button', 'Continue').click();
@@ -474,7 +464,7 @@ context('Review pipeline feature', () => {
         });
 
         it('The first user opens the job and presses "Finish the job".', () => {
-            cy.openJob();
+            cy.openJob(0, false);
             cy.interactMenu('Finish the job');
             cy.get('.cvat-modal-content-finish-job').within(() => {
                 cy.contains('button', 'Continue').click();

@@ -3,7 +3,7 @@ exports.settings = { bullet: '*', paddedTable: false };
 exports.plugins = [
     'remark-preset-lint-recommended',
     'remark-preset-lint-consistent',
-    ['remark-preset-lint-markdown-style-guide', 'mixed'],
+    ['remark-lint-list-item-indent', 'space'],
     ['remark-lint-no-dead-urls', { skipOffline: true }],
     ['remark-lint-maximum-line-length', 120],
     ['remark-lint-maximum-heading-length', 120],

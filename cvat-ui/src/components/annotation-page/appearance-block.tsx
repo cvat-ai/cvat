@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Slider from 'antd/lib/slider';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
+import Button from 'antd/lib/button';
 
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
@@ -26,7 +27,6 @@ import {
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
 } from 'actions/settings-actions';
-import Button from 'antd/lib/button';
 
 interface StateToProps {
     appearanceCollapsed: boolean;
@@ -152,7 +152,14 @@ function AppearanceBlock(props: Props): JSX.Element {
             activeKey={appearanceCollapsed ? [] : ['appearance']}
             className='cvat-objects-appearance-collapse'
         >
-            <Collapse.Panel header={<Text strong className='cvat-objects-appearance-collapse-header'>Appearance</Text>} key='appearance'>
+            <Collapse.Panel
+                header={(
+                    <Text strong className='cvat-objects-appearance-collapse-header'>
+                        Appearance
+                    </Text>
+                )}
+                key='appearance'
+            >
                 <div className='cvat-objects-appearance-content'>
                     <Text type='secondary'>Color by</Text>
                     <Radio.Group

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -44,9 +44,7 @@ context('Cannot read property label of undefined', () => {
 
     after(() => {
         cy.goToTaskList();
-        cy.getTaskID(taskName).then(($taskID) => {
-            cy.deleteTask(taskName, $taskID);
-        });
+        cy.deleteTask(taskName);
     });
 
     describe(`Testing "${labelName}"`, () => {

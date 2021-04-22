@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -101,6 +101,9 @@ const defaultState: NotificationsState = {
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
+        },
+        predictor: {
+            prediction: null,
         },
     },
     messages: {
@@ -345,6 +348,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not upload annotation for the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-load-annotation-failed',
                         },
                     },
                 },
@@ -664,6 +668,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         jobFetching: {
                             message: 'Error during fetching a job',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-job-failed',
                         },
                     },
                 },
@@ -1096,6 +1101,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         jobFetching: {
                             message: 'Could not fetch frame data from the server',
+                            reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    predictor: {
+                        ...state.errors.predictor,
+                        prediction: {
+                            message: 'Could not fetch prediction data',
                             reason: action.payload.error,
                         },
                     },

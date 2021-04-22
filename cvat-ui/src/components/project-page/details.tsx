@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,7 +29,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const [projectName, setProjectName] = useState(project.name);
 
     return (
-        <div className='cvat-project-details'>
+        <div cvat-project-id={project.id} className='cvat-project-details'>
             <Row>
                 <Col>
                     <Title
@@ -41,13 +41,13 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                                 dispatch(updateProjectAsync(project));
                             },
                         }}
-                        className='cvat-text-color'
+                        className='cvat-text-color cvat-project-name'
                     >
                         {projectName}
                     </Title>
                 </Col>
             </Row>
-            <Row justify='space-between'>
+            <Row justify='space-between' className='cvat-project-description'>
                 <Col>
                     <Text type='secondary'>
                         {`Project #${project.id} created`}

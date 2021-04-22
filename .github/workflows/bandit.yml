@@ -1,0 +1,41 @@
+name: Linter
+on: pull_request
+jobs:
+  Bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run checks
+        run: |
+          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
+          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
+          for files in $PR_FILES; do
+            extension="${files##*.}"
+            if [[ $extension == 'py' ]]; then
+              changed_files_bandit+=" ${files}"
+            fi
+          done
+
+          if [[ ! -z ${changed_files_bandit} ]]; then
+            sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv
+            python3 -m venv .env
+            . .env/bin/activate
+            pip install -U pip wheel setuptools
+            pip install bandit
+            mkdir -p bandit_report
+
+            echo "Bandit version: "`bandit --version | head -1`
+            echo "The files will be checked: "`echo ${changed_files_bandit}`
+            bandit ${changed_files_bandit} --exclude '**/tests/**' -a file --ini ./.bandit -f html -o ./bandit_report/bandit_checks.html
+            deactivate
+          else
+            echo "No files with the \"py\" extension found"
+          fi
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: bandit_report
+          path: bandit_report

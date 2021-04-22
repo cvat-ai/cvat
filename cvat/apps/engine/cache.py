@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,9 +9,9 @@ from diskcache import Cache
 from django.conf import settings
 
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
-    Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter)
+    Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
+    ImageDatasetManifestReader, VideoDatasetManifestReader)
 from cvat.apps.engine.models import DataChoice, StorageChoice
-from cvat.apps.engine.prepare import PrepareInfo
 from cvat.apps.engine.models import DimensionType
 
 class CacheInteraction:
@@ -51,17 +51,24 @@ class CacheInteraction:
                 StorageChoice.LOCAL: db_data.get_upload_dirname(),
                 StorageChoice.SHARE: settings.SHARE_ROOT
             }[db_data.storage]
-        if os.path.exists(db_data.get_meta_path()):
+        if hasattr(db_data, 'video'):
             source_path = os.path.join(upload_dir, db_data.video.path)
-            meta = PrepareInfo(source_path=source_path, meta_path=db_data.get_meta_path())
-            for frame in meta.decode_needed_frames(chunk_number, db_data):
-                images.append(frame)
-            writer.save_as_chunk([(image, source_path, None) for image in images], buff)
+            reader = VideoDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
+                source_path=source_path, chunk_number=chunk_number,
+                chunk_size=db_data.chunk_size, start=db_data.start_frame,
+                stop=db_data.stop_frame, step=db_data.get_frame_step())
+            for frame in reader:
+                images.append((frame, source_path, None))
         else:
-            with open(db_data.get_dummy_chunk_path(chunk_number), 'r') as dummy_file:
-                images = [os.path.join(upload_dir, line.strip()) for line in dummy_file]
-            writer.save_as_chunk([(image, image, None) for image in images], buff)
+            reader = ImageDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
+                chunk_number=chunk_number, chunk_size=db_data.chunk_size,
+                start=db_data.start_frame, stop=db_data.stop_frame,
+                step=db_data.get_frame_step())
+            for item in reader:
+                source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
+                images.append((source_path, source_path, None))
 
+        writer.save_as_chunk(images, buff)
         buff.seek(0)
         return buff, mime_type
 

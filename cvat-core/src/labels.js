@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -133,6 +133,7 @@
                 id: undefined,
                 name: undefined,
                 color: undefined,
+                deleted: false,
             };
 
             for (const key in data) {
@@ -171,17 +172,21 @@
                      * @name name
                      * @type {string}
                      * @memberof module:API.cvat.classes.Label
-                     * @readonly
                      * @instance
                      */
                     name: {
                         get: () => data.name,
+                        set: (name) => {
+                            if (typeof name !== 'string') {
+                                throw new ArgumentError(`Name must be a string, but ${typeof name} was given`);
+                            }
+                            data.name = name;
+                        },
                     },
                     /**
                      * @name color
                      * @type {string}
                      * @memberof module:API.cvat.classes.Label
-                     * @readonly
                      * @instance
                      */
                     color: {
@@ -204,6 +209,12 @@
                     attributes: {
                         get: () => [...data.attributes],
                     },
+                    deleted: {
+                        get: () => data.deleted,
+                        set: (value) => {
+                            data.deleted = value;
+                        },
+                    },
                 }),
             );
         }
@@ -217,6 +228,10 @@
 
             if (typeof this.id !== 'undefined') {
                 object.id = this.id;
+            }
+
+            if (this.deleted) {
+                object.deleted = this.deleted;
             }
 
             return object;

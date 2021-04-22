@@ -1,10 +1,12 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { MutableRefObject } from 'react';
+import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
+import { KeyMap } from 'utils/mousetrap-react';
 
 export type StringObject = {
     [index: string]: string;
@@ -112,6 +114,7 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
+    PREDICT = 'PREDICT',
 }
 
 export type PluginsList = {
@@ -176,6 +179,7 @@ export interface Model {
     };
 }
 
+export type OpenCVTool = IntelligentScissors;
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',
@@ -301,6 +305,9 @@ export interface NotificationsState {
             commentingIssue: null | ErrorState;
             submittingReview: null | ErrorState;
         };
+        predictor: {
+            prediction: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -333,6 +340,8 @@ export enum ActiveControl {
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
+    PHOTO_CONTEXT = 'PHOTO_CONTEXT',
+    OPENCV_TOOLS = 'opencv_tools',
 }
 
 export enum ShapeType {
@@ -365,6 +374,19 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
+export interface PredictorState {
+    timeRemaining: number;
+    progress: number;
+    projectScore: number;
+    message: string;
+    error: Error | null;
+    enabled: boolean;
+    fetching: boolean;
+    annotationAmount: number;
+    mediaAmount: number;
+    annotatedFrames: number[];
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -381,11 +403,12 @@ export interface AnnotationState {
             pointID: number | null;
             clientID: number | null;
         };
-        instance: Canvas;
+        instance: Canvas | Canvas3d;
         ready: boolean;
         activeControl: ActiveControl;
     };
     job: {
+        openTime: null | number;
         labels: any[];
         requestedId: number | null;
         instance: any | null | undefined;
@@ -404,9 +427,14 @@ export interface AnnotationState {
         };
         playing: boolean;
         frameAngles: number[];
+        contextImage: {
+            loaded: boolean;
+            data: string;
+            hidden: boolean;
+        };
     };
     drawing: {
-        activeInteractor?: Model;
+        activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeNumOfPoints?: number;
@@ -421,8 +449,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
-        filters: string[];
-        filtersHistory: string[];
+        filters: any[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];
@@ -449,16 +476,19 @@ export interface AnnotationState {
         data: any;
     };
     colors: any[];
+    filtersPanelVisible: boolean;
     requestReviewDialogVisible: boolean;
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     tabContentHeight: number;
     workspace: Workspace;
+    predictor: PredictorState;
     aiToolsRef: MutableRefObject<any>;
 }
 
 export enum Workspace {
+    STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
     ATTRIBUTE_ANNOTATION = 'Attribute annotation',
     TAG_ANNOTATION = 'Tag annotation',
@@ -510,6 +540,7 @@ export interface WorkspaceSettingsState {
     automaticBordering: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
+    intelligentPolygonCrop: boolean;
 }
 
 export interface ShapesSettingsState {
@@ -531,7 +562,7 @@ export interface SettingsState {
 
 export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 

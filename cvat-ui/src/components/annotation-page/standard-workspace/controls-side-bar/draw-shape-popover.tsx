@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,15 +7,17 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
-import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
+import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
-import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
+    canvasInstance: Canvas | Canvas3d;
     shapeType: ShapeType;
     labels: any[];
     minimumPoints: number;
@@ -48,7 +50,10 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onChangePoints,
         onChangeRectDrawingMethod,
         onChangeCuboidDrawingMethod,
+        canvasInstance,
     } = props;
+
+    const is2D = canvasInstance instanceof Canvas;
 
     return (
         <div className='cvat-draw-shape-popover-content'>
@@ -72,7 +77,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            {shapeType === ShapeType.RECTANGLE && (
+            {is2D && shapeType === ShapeType.RECTANGLE && (
                 <>
                     <Row>
                         <Col>
@@ -97,7 +102,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Row>
                 </>
             )}
-            {shapeType === ShapeType.CUBOID && (
+            {is2D && shapeType === ShapeType.CUBOID && (
                 <>
                     <Row>
                         <Col>
@@ -122,18 +127,18 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Row>
                 </>
             )}
-            {shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
+            {is2D && shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
                 <Row justify='space-around' align='middle'>
                     <Col span={14}>
                         <Text className='cvat-text-color'> Number of points: </Text>
                     </Col>
                     <Col span={10}>
                         <InputNumber
-                            onChange={(value: number | undefined | string) => {
-                                if (typeof value !== 'undefined') {
-                                    onChangePoints(Math.floor(clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER)));
-                                } else if (!value) {
+                            onChange={(value: number | undefined | string | null) => {
+                                if (typeof value === 'undefined' || value === null) {
                                     onChangePoints(undefined);
+                                } else {
+                                    onChangePoints(Math.floor(clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER)));
                                 }
                             }}
                             className='cvat-draw-shape-popover-points-selector'
@@ -146,15 +151,17 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             )}
             <Row justify='space-around'>
                 <Col span={12}>
-                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`} mouseLeaveDelay={0}>
+                    <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
                         <Button onClick={onDrawShape}>Shape</Button>
-                    </Tooltip>
+                    </CVATTooltip>
                 </Col>
-                <Col span={12}>
-                    <Tooltip title={`Press ${repeatShapeShortcut} to draw again`} mouseLeaveDelay={0}>
-                        <Button onClick={onDrawTrack}>Track</Button>
-                    </Tooltip>
-                </Col>
+                {is2D && (
+                    <Col span={12}>
+                        <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
+                            <Button onClick={onDrawTrack}>Track</Button>
+                        </CVATTooltip>
+                    </Col>
+                )}
             </Row>
         </div>
     );

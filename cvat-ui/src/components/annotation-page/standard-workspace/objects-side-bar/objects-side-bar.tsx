@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ import Layout from 'antd/lib/layout';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState } from 'reducers/interfaces';
-import LabelsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/labels-list';
+import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import {
     collapseSidebar as collapseSidebarAction,
     updateTabContentHeight as updateTabContentHeightAction,
@@ -123,8 +123,8 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 <Tabs.TabPane tab={<Text strong>Objects</Text>} key='objects'>
                     {objectsList}
                 </Tabs.TabPane>
-                <Tabs.TabPane tab={<Text strong>Labels</Text>} key='labels'>
-                    <LabelsListContainer />
+                <Tabs.TabPane forceRender tab={<Text strong>Labels</Text>} key='labels'>
+                    <LabelsList />
                 </Tabs.TabPane>
                 <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
                     <IssuesListComponent />

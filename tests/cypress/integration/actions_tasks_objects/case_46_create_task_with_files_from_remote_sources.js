@@ -20,9 +20,7 @@ context('Create a task with files from remote sources.', () => {
 
     after(() => {
         cy.goToTaskList();
-        cy.getTaskID(taskName).then(($taskID) => {
-            cy.deleteTask(taskName, $taskID);
-        });
+        cy.deleteTask(taskName);
     });
 
     describe(`Testing "${labelName}"`, () => {

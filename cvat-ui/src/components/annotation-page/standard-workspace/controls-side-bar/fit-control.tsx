@@ -1,15 +1,15 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import Icon from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 
 import { FitIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
 }
 
@@ -17,9 +17,9 @@ function FitControl(props: Props): JSX.Element {
     const { canvasInstance } = props;
 
     return (
-        <Tooltip title='Fit the image [Double Click]' placement='right' mouseLeaveDelay={0}>
+        <CVATTooltip title='Fit the image [Double Click]' placement='right'>
             <Icon className='cvat-fit-control' component={FitIcon} onClick={(): void => canvasInstance.fit()} />
-        </Tooltip>
+        </CVATTooltip>
     );
 }
 

@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { labelName, taskName } from '../../support/const';
 
 context('Navigation to empty frames', () => {
     const issueId = '2485';
@@ -33,8 +33,16 @@ context('Navigation to empty frames', () => {
             cy.createRectangle(createRectangleShape2Points);
         });
 
-        it('Input a filter to see the created objects.', () => {
-            cy.writeFilterValue(false, 'shape=="rectangle"');
+        it('Set a filter to see the created objects.', () => {
+            cy.addFiltersRule(0);
+            cy.setFilter({
+                groupIndex: 0,
+                ruleIndex: 0,
+                field: 'Shape',
+                operator: '==',
+                value: 'rectangle',
+                submit: true,
+            });
             cy.get('#cvat_canvas_shape_2').should('exist');
         });
 

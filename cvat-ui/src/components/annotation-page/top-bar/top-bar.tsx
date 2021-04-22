@@ -1,17 +1,16 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
-import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
+import { Col, Row } from 'antd/lib/grid';
 
-import { Workspace } from 'reducers/interfaces';
+import { PredictorState, Workspace } from 'reducers/interfaces';
 import LeftGroup from './left-group';
-import RightGroup from './right-group';
-import PlayerNavigation from './player-navigation';
 import PlayerButtons from './player-buttons';
+import PlayerNavigation from './player-navigation';
+import RightGroup from './right-group';
 
 interface Props {
     playing: boolean;
@@ -36,8 +35,12 @@ interface Props {
     prevButtonType: string;
     nextButtonType: string;
     focusFrameInputShortcut: string;
+    predictor: PredictorState;
+    isTrainingActive: boolean;
     changeWorkspace(workspace: Workspace): void;
+    switchPredictor(predictorEnabled: boolean): void;
     showStatistics(): void;
+    showFilters(): void;
     onSwitchPlay(): void;
     onSaveAnnotation(): void;
     onPrevFrame(): void;
@@ -53,6 +56,8 @@ interface Props {
     onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
+    jobInstance: any;
+    hideShowContextImage(): any;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -78,8 +83,11 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         backwardShortcut,
         prevButtonType,
         nextButtonType,
+        predictor,
         focusFrameInputShortcut,
         showStatistics,
+        switchPredictor,
+        showFilters,
         changeWorkspace,
         onSwitchPlay,
         onSaveAnnotation,
@@ -96,6 +104,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onURLIconClick,
         onUndoClick,
         onRedoClick,
+        jobInstance,
+        isTrainingActive,
     } = props;
 
     return (
@@ -146,7 +156,16 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     />
                 </Row>
             </Col>
-            <RightGroup workspace={workspace} changeWorkspace={changeWorkspace} showStatistics={showStatistics} />
+            <RightGroup
+                predictor={predictor}
+                workspace={workspace}
+                switchPredictor={switchPredictor}
+                jobInstance={jobInstance}
+                changeWorkspace={changeWorkspace}
+                showStatistics={showStatistics}
+                isTrainingActive={isTrainingActive}
+                showFilters={showFilters}
+            />
         </Row>
     );
 }

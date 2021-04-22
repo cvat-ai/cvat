@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,18 +10,35 @@ context('Search task feature.', () => {
     const caseId = '35';
 
     function searchTask(option, result) {
-        cy.server().route('GET', '/api/v1/tasks**').as('searchTask');
+        cy.intercept('GET', '/api/v1/tasks**').as('searchTask');
         cy.get('.cvat-task-page-search-task').find('[placeholder="Search"]').clear().type(`${option}{Enter}`);
-        cy.wait('@searchTask').its('status').should('equal', 200);
+        cy.wait('@searchTask').its('response.statusCode').should('equal', 200);
         cy.contains('.cvat-item-task-name', taskName).should(result);
     }
 
+    before(() => {
+        cy.openTask(taskName);
+        cy.assignTaskToUser(Cypress.env('user')); // Assign a task to an ures to check filter
+        cy.goToTaskList();
+    });
+
+    after(() => {
+        cy.goToTaskList();
+        cy.openTask(taskName);
+        cy.assignTaskToUser('');
+    });
+
     describe(`Testing case "${caseId}"`, () => {
-        it('Type to task search some field and check result.', () => {
+        it('Tooltip task filter contain all the possible options.', () => {
+            cy.get('.cvat-task-page-search-task').trigger('mouseover');
+            cy.get('.cvat-tasks-search-tooltip').should('be.visible');
+        });
+
+        it('Type to task search some filter and check result.', () => {
             searchTask(`${taskName.substring(0, 3)}`, 'exist');
             searchTask('121212', 'not.exist');
             searchTask(`owner: ${Cypress.env('user')}`, 'exist');
-            searchTask('mode: annotation', 'exist');
+            searchTask(`mode: annotation AND assignee: ${Cypress.env('user')}`, 'exist');
             searchTask('status: annotation', 'exist');
             searchTask(`mode: interpolation AND owner: ${Cypress.env('user')}`, 'not.exist');
         });

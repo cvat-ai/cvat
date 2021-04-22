@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,6 +32,8 @@
                 bug_tracker: undefined,
                 created_date: undefined,
                 updated_date: undefined,
+                task_subsets: undefined,
+                training_project: undefined,
             };
 
             for (const property in data) {
@@ -55,6 +57,16 @@
                     const taskInstance = new Task(task);
                     data.tasks.push(taskInstance);
                 }
+            }
+            if (!data.task_subsets && data.tasks.length) {
+                const subsetsSet = new Set();
+                for (const task in data.tasks) {
+                    if (task.subset) subsetsSet.add(task.subset);
+                }
+                data.task_subsets = Array.from(subsetsSet);
+            }
+            if (typeof initialData.training_project === 'object') {
+                data.training_project = { ...initialData.training_project };
             }
 
             Object.defineProperties(
@@ -86,6 +98,7 @@
                             data.name = value;
                         },
                     },
+
                     /**
                      * @name status
                      * @type {module:API.cvat.enums.TaskStatus}
@@ -178,7 +191,13 @@
                                 );
                             }
 
-                            data.labels = [...labels];
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
+
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -191,6 +210,45 @@
                      */
                     tasks: {
                         get: () => [...data.tasks],
+                    },
+                    /**
+                     * Subsets array for linked tasks
+                     * @name subsets
+                     * @type {string[]}
+                     * @memberof module:API.cvat.classes.Project
+                     * @readonly
+                     * @instance
+                     */
+                    subsets: {
+                        get: () => [...data.task_subsets],
+                    },
+                    /**
+                     * Training project associated with this annotation project
+                     * This is a simple object which contains
+                     * keys like host, username, password, enabled, project_class
+                     * @name trainingProject
+                     * @type {object}
+                     * @memberof module:API.cvat.classes.Project
+                     * @readonly
+                     * @instance
+                     */
+                    trainingProject: {
+                        get: () => {
+                            if (typeof data.training_project === 'object') {
+                                return { ...data.training_project };
+                            }
+                            return data.training_project;
+                        },
+                        set: (updatedProject) => {
+                            if (typeof training === 'object') {
+                                data.training_project = { ...updatedProject };
+                            } else {
+                                data.training_project = updatedProject;
+                            }
+                        },
+                    },
+                    _internalData: {
+                        get: () => data,
                     },
                 }),
             );
@@ -233,18 +291,25 @@
     };
 
     Project.prototype.save.implementation = async function () {
+        const trainingProjectCopy = this.trainingProject;
         if (typeof this.id !== 'undefined') {
+            // project has been already created, need to update some data
             const projectData = {
                 name: this.name,
                 assignee_id: this.assignee ? this.assignee.id : null,
                 bug_tracker: this.bugTracker,
-                labels: [...this.labels.map((el) => el.toJSON())],
+                labels: [...this._internalData.labels.map((el) => el.toJSON())],
             };
+
+            if (trainingProjectCopy) {
+                projectData.training_project = trainingProjectCopy;
+            }
 
             await serverProxy.projects.save(this.id, projectData);
             return this;
         }
 
+        // initial creating
         const projectSpec = {
             name: this.name,
             labels: [...this.labels.map((el) => el.toJSON())],
@@ -252,6 +317,10 @@
 
         if (this.bugTracker) {
             projectSpec.bug_tracker = this.bugTracker;
+        }
+
+        if (trainingProjectCopy) {
+            projectSpec.training_project = trainingProjectCopy;
         }
 
         const project = await serverProxy.projects.create(projectSpec);

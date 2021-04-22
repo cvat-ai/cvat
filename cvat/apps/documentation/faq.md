@@ -13,12 +13,11 @@
 - [How to upload annotations to an entire task from UI when there are multiple jobs in the task](#how-to-upload-annotations-to-an-entire-task-from-ui-when-there-are-multiple-jobs-in-the-task)
 - [How to specify multiple hostnames for CVAT_HOST](#how-to-specify-multiple-hostnames-for-cvat_host)
 - [How to create a task with multiple jobs](#how-to-create-a-task-with-multiple-jobs)
-
+- [How to transfer CVAT to another machine](#how-to-transfer-cvat-to-another-machine)
 
 ## How to update CVAT
 
-Before upgrading, please follow the official docker
-[manual](https://docs.docker.com/storage/volumes/#backup-restore-or-migrate-data-volumes) and backup all CVAT volumes.
+Before upgrading, please follow the [backup guide](backup_guide.md) and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
 
@@ -149,3 +148,7 @@ services:
 
 Set the segment size when you create a new task, this option is available in the
 [Advanced configuration](user_guide.md#advanced-configuration) section.
+
+## How to transfer CVAT to another machine
+
+Follow the [backup/restore guide](backup_guide.md#how-to-backup-all-cvat-data).

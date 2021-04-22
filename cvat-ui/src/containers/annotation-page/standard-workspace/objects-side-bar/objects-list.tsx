@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
@@ -34,14 +34,13 @@ interface StateToProps {
     statesCollapsedAll: boolean;
     collapsedStates: Record<number, boolean>;
     objectStates: any[];
-    annotationsFilters: string[];
+    annotationsFilters: any[];
     colors: string[];
     colorBy: ColorBy;
     activatedStateID: number | null;
     minZLayer: number;
     maxZLayer: number;
-    annotationsFiltersHistory: string[];
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
 }
@@ -62,7 +61,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: objectStates,
                 filters: annotationsFilters,
-                filtersHistory: annotationsFiltersHistory,
                 collapsed,
                 collapsedAll,
                 activatedStateID,
@@ -110,7 +108,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         minZLayer,
         maxZLayer,
-        annotationsFiltersHistory,
         keyMap,
         normalizedKeyMap,
         canvasInstance,
@@ -442,7 +439,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 <ObjectsListComponent
                     listHeight={listHeight}
                     statesHidden={statesHidden}
