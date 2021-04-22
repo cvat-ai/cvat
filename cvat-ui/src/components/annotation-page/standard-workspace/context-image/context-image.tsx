@@ -4,10 +4,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { ArrowsAltOutlined, ShrinkOutlined } from '@ant-design/icons';
 import Spin from 'antd/lib/spin';
+import Image from 'antd/lib/image';
 
 import { CombinedState } from 'reducers/interfaces';
-import { getContextImage } from 'actions/annotation-actions';
+import { hideShowContextImage, getContextImage } from 'actions/annotation-actions';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 export default function ContextImage(): JSX.Element | null {
     const dispatch = useDispatch();
@@ -30,21 +33,27 @@ export default function ContextImage(): JSX.Element | null {
         }
     }, [contextImageHidden, requested, hasRelatedContext]);
 
-    if (contextImageFetching) {
-        return (
-            <div className='cvat-context-image-wrapper'>
-                <Spin size='small' />
-            </div>
-        );
+    if (!hasRelatedContext) {
+        return null;
     }
 
-    if (!contextImageHidden && contextImageData !== null) {
-        return (
-            <div className='cvat-context-image-wrapper'>
-                <img src={contextImageData} alt='Context is not available' className='cvat-context-image' />
-            </div>
-        );
-    }
-
-    return null;
+    return (
+        <div className='cvat-context-image-wrapper'>
+            {contextImageFetching ? <Spin size='small' /> : null}
+            {contextImageHidden ? (
+                <CVATTooltip title='A context image is available'>
+                    <ArrowsAltOutlined onClick={() => dispatch(hideShowContextImage(false))} />
+                </CVATTooltip>
+            ) : (
+                <>
+                    <ShrinkOutlined onClick={() => dispatch(hideShowContextImage(true))} />
+                    <Image
+                        {...(contextImageData ? { src: contextImageData } : {})}
+                        alt='Could not get context'
+                        className='cvat-context-image'
+                    />
+                </>
+            )}
+        </div>
+    );
 }

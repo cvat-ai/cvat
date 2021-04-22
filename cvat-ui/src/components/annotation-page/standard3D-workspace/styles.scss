@@ -9,24 +9,45 @@
 }
 
 .cvat-context-image-wrapper {
+    height: auto;
     width: $grid-unit-size * 32;
     position: absolute;
-    background: $border-color-3;
     top: $grid-unit-size;
     right: $grid-unit-size;
     z-index: 100;
-    border-radius: $grid-unit-size;
-    border: 1px solid $border-color-3;
+    background: black;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: $grid-unit-size / 2;
     user-select: none;
+
+    > .ant-image {
+        margin: $grid-unit-size / 2;
+    }
+
+    > span {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 200;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 4px;
+
+        > svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+    }
 }
 
 .cvat-context-image {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 .cvat-objects-sidebar-filter-input {

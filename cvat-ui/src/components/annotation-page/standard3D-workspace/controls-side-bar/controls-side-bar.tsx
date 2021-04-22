@@ -6,7 +6,6 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 import { ActiveControl } from 'reducers/interfaces';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
-import ContextImageControl from 'components/annotation-page/standard-workspace/controls-side-bar/context-image-control';
 import CursorControl from './cursor-control';
 import MoveControl from './move-control';
 import DrawCuboidControl from './draw-cuboid-control';
@@ -15,14 +14,10 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
-    contextImageHidden: boolean;
-    switchContextImageVisibility: (hidden: boolean) => void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
-    const {
-        canvasInstance, activeControl, normalizedKeyMap, contextImageHidden, switchContextImageVisibility,
-    } = props;
+    const { canvasInstance, activeControl, normalizedKeyMap } = props;
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
@@ -36,11 +31,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <DrawCuboidControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
-            />
-            <ContextImageControl
-                canvasInstance={canvasInstance}
-                contextImageHidden={contextImageHidden}
-                switchContextImageVisibility={switchContextImageVisibility}
             />
         </Layout.Sider>
     );

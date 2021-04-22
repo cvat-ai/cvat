@@ -14,7 +14,6 @@ import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
 import MoveControl, { Props as MoveControlProps } from './move-control';
 import FitControl, { Props as FitControlProps } from './fit-control';
-import ContextImageControl, { Props as ContextImageProps } from './context-image-control';
 import ResizeControl, { Props as ResizeControlProps } from './resize-control';
 import ToolsControl from './tools-control';
 import OpenCVControl from './opencv-control';
@@ -31,7 +30,6 @@ import SplitControl, { Props as SplitControlProps } from './split-control';
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
-    contextImageHidden: boolean;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     labels: any[];
@@ -44,14 +42,12 @@ interface Props {
     pasteShape(): void;
     resetGroup(): void;
     redrawShape(): void;
-    switchContextImageVisibility: (hidden: boolean) => void;
 }
 
 // We use the observer to see if these controls are in the viewport
 // They automatically put to extra if not
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
-const ObservedContextImageControl = ControlVisibilityObserver<ContextImageProps>(ContextImageControl);
 const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl);
 const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl);
 const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl);
@@ -74,7 +70,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         normalizedKeyMap,
         keyMap,
         labels,
-        contextImageHidden,
         mergeObjects,
         groupObjects,
         splitTrack,
@@ -83,7 +78,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         pasteShape,
         resetGroup,
         redrawShape,
-        switchContextImageVisibility,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -217,11 +211,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION}
                 clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION}
                 rotateFrame={rotateFrame}
-            />
-            <ObservedContextImageControl
-                canvasInstance={canvasInstance}
-                contextImageHidden={contextImageHidden}
-                switchContextImageVisibility={switchContextImageVisibility}
             />
 
             <hr />
