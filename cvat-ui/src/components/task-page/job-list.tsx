@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,8 @@ import Tooltip from 'antd/lib/tooltip';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
+import { CombinedState } from 'reducers/interfaces';
+import { connect } from 'react-redux';
 
 import getCore from 'cvat-core-wrapper';
 import UserSelector, { User } from './user-selector';
@@ -24,6 +26,19 @@ const baseURL = core.config.backendAPI.slice(0, -7);
 interface Props {
     taskInstance: any;
     onJobUpdate(jobInstance: any): void;
+    currentJobsPage: number;
+    setCurrentJobsPage(taskID: number, pageNumber: number): void;
+}
+
+interface StateToProps {
+    currentJobsPage: number;
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    console.log('State2:', state);
+    return {
+        currentJobsPage: state.tasks.current[0].currentJobsPage,
+    };
 }
 
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
@@ -97,6 +112,8 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
         taskInstance,
         onJobUpdate,
         history: { push },
+        currentJobsPage,
+        setCurrentJobsPage,
     } = props;
 
     const { jobs, id: taskId } = taskInstance;
@@ -198,6 +215,12 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
         },
     ];
 
+    const onChange = function (newPage: number): void {
+        // console.log("props.currentJobsPAge:", currentJobsPage);
+        // console.log("update page to:", newPage);
+        setCurrentJobsPage(taskId, newPage);
+    };
+
     let completed = 0;
     const data = jobs.reduce((acc: any[], job: any) => {
         if (job.status === 'completed') {
@@ -264,9 +287,22 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     <Text className='cvat-text-color'>{`${completed} of ${data.length} jobs`}</Text>
                 </Col>
             </Row>
-            <Table className='cvat-task-jobs-table' rowClassName={() => 'cvat-task-jobs-table-row'} columns={columns} dataSource={data} size='small' />
+            <Table
+                className='cvat-task-jobs-table'
+                rowClassName={() => 'cvat-task-jobs-table-row'}
+                columns={columns}
+                dataSource={data}
+                size='small'
+                pagination={{
+                    current: currentJobsPage,
+                    onChange,
+                    position: ['topRight', 'bottomRight'],
+                    defaultPageSize: 10,
+                    showSizeChanger: true,
+                }}
+            />
         </div>
     );
 }
 
-export default withRouter(JobListComponent);
+export default withRouter(connect(mapStateToProps)(JobListComponent));
