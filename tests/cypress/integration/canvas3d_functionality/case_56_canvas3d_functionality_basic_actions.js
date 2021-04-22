@@ -57,10 +57,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
     }
 
     function testContextImage() {
-        cy.get('.cvat-contextImage-show').should('exist').and('be.visible');
-        cy.get('[data-icon="camera"]').click(); // Context image hide
-        cy.get('.cvat-contextImage-show').should('not.exist');
-        cy.get('[data-icon="camera"]').click(); // Context image show
+        cy.get('.cvat-context-image-wrapper img').should('exist').and('be.visible');
+        cy.get('.cvat-context-image-switcher').click(); // Context image hide
+        cy.get('.cvat-context-image-wrapper img').should('not.exist');
+        cy.get('.cvat-context-image-switcher').click(); // Context image show
     }
 
     function testControlButtonTooltip(button, expectedTooltipText) {
@@ -107,7 +107,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-canvas-controls-sidebar')
                 .find('[role="img"]')
                 .then(($controlButtons) => {
-                    expect($controlButtons.length).to.be.equal(4);
+                    expect($controlButtons.length).to.be.equal(3);
                 });
             cy.get('.cvat-canvas-controls-sidebar')
                 .should('exist')

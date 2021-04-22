@@ -43,11 +43,17 @@ export default function ContextImage(): JSX.Element | null {
             {contextImageFetching ? <Spin size='small' /> : null}
             {contextImageHidden ? (
                 <CVATTooltip title='A context image is available'>
-                    <ArrowsAltOutlined onClick={() => dispatch(hideShowContextImage(false))} />
+                    <ArrowsAltOutlined
+                        className='cvat-context-image-switcher'
+                        onClick={() => dispatch(hideShowContextImage(false))}
+                    />
                 </CVATTooltip>
             ) : (
                 <>
-                    <ShrinkOutlined onClick={() => dispatch(hideShowContextImage(true))} />
+                    <ShrinkOutlined
+                        className='cvat-context-image-switcher'
+                        onClick={() => dispatch(hideShowContextImage(true))}
+                    />
                     <Image
                         {...(contextImageData ? { src: contextImageData } : {})}
                         alt='Could not get context'
