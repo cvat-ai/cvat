@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -64,6 +64,9 @@ export interface TasksQuery {
 
 export interface Task {
     instance: any; // cvat-core instance
+    currentJobsPage: number;
+    // appliedJobsFilters: any;
+    // appliedJobsSortings: any;
     preview: string;
 }
 
