@@ -277,8 +277,9 @@ def _create_thread(tid, data):
             )
             extractor.add_files(validate_dimension.converted_files)
 
-    related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
+    related_images = {}
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
+        related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
         extractor.filter(lambda x: 'related_images{}'.format(os.sep) not in x)
 
     db_task.mode = task_mode
