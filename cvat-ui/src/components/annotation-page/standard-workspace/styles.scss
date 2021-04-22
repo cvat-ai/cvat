@@ -8,6 +8,59 @@
     height: 100%;
 }
 
+.cvat-context-image-wrapper {
+    height: auto;
+    width: $grid-unit-size * 32;
+    position: absolute;
+    top: $grid-unit-size;
+    right: $grid-unit-size;
+    z-index: 100;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    user-select: none;
+
+    > .cvat-context-image-wrapper-header {
+        height: $grid-unit-size * 5;
+        width: 100%;
+        z-index: 101;
+        background: rgba(0, 0, 0, 0.2);
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    > .ant-image {
+        margin: $grid-unit-size / 2;
+    }
+
+    > span {
+        position: absolute;
+        top: $grid-unit-size;
+        right: $grid-unit-size;
+        z-index: 102;
+        color: white;
+
+        > svg {
+            width: $grid-unit-size * 3;
+            height: $grid-unit-size * 3;
+        }
+
+        &:hover {
+            > svg {
+                transform: scale(1.2);
+            }
+        }
+    }
+}
+
+.cvat-context-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
 .cvat-objects-sidebar-sider {
     top: 0;
     right: 0;

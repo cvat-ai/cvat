@@ -38,7 +38,8 @@ export default function ContextImage(): JSX.Element | null {
     }
 
     return (
-        <div className='cvat-context-image-wrapper'>
+        <div className='cvat-context-image-wrapper' {...(contextImageHidden ? { style: { width: '40px' } } : {})}>
+            <div className='cvat-context-image-wrapper-header' />
             {contextImageFetching ? <Spin size='small' /> : null}
             {contextImageHidden ? (
                 <CVATTooltip title='A context image is available'>
