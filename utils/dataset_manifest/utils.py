@@ -38,9 +38,7 @@ def is_image(media_file):
     return _define_data_type(media_file) == 'image'
 
 
-# TODO: This code selects related images correct for velodyne, pointcloud and 2D. But need finish it for 3D default
-# Then need to update core.py/create.py because now it does not see any .bin and .pcd files, so, the format is incorrect
-# Also need to update code of _create_thread a bit to use this code when search related images
+# TODO: Need to update create.py because right now it does not support 3D data at all
 def detect_related_images_for(image_path, root_path):
     dirname = os.path.dirname(image_path).rstrip(os.sep)
     dirname_before = os.path.split(dirname)[0]
