@@ -763,24 +763,6 @@ class ValidateDimension:
                 self.image_files[file_name] = file_path
         return pcd_files
 
-    def validate_default(self, *args):
-        root, actual_path, files = args
-        pcd_files = self.process_files(root, actual_path, files)
-        if len(list(pcd_files.keys())):
-
-            for image in self.image_files.keys():
-                if pcd_files.get(image, None):
-                    self.related_files[pcd_files[image]].append(self.image_files[image])
-
-            current_directory_name = os.path.split(root)
-
-            if len(pcd_files.keys()) == 1:
-                pcd_name = list(pcd_files.keys())[0].rsplit(".", 1)[0]
-                if current_directory_name[1] == pcd_name:
-                    for related_image in self.image_files.values():
-                        if root == os.path.split(related_image)[0]:
-                            self.related_files[pcd_files[pcd_name]].append(related_image)
-
     def validate(self):
         """
             Validate the directory structure for kitty and point cloud format.
@@ -792,15 +774,14 @@ class ValidateDimension:
             if not files_to_ignore(root):
                 continue
 
-            if root.endswith("data"):
-                if os.path.split(os.path.split(root)[0])[1] == "velodyne_points":
+            if root.rstrip(os.sep).endswith("velodyne_points/data"):
                     self.process_files(root, actual_path, files)
 
             elif os.path.split(root)[-1] == "pointcloud":
                 self.process_files(root, actual_path, files)
 
             else:
-                self.validate_default(root, actual_path, files)
+                self.process_files(root, actual_path, files)
 
         if len(self.related_files.keys()):
             self.dimension = DimensionType.DIM_3D
