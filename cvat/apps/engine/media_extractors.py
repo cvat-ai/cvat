@@ -794,10 +794,10 @@ class ValidateDimension:
 
             if root.endswith("data"):
                 if os.path.split(os.path.split(root)[0])[1] == "velodyne_points":
-                    pass
+                    self.process_files(root, actual_path, files)
 
             elif os.path.split(root)[-1] == "pointcloud":
-                pass
+                self.process_files(root, actual_path, files)
 
             else:
                 self.validate_default(root, actual_path, files)
