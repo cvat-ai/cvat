@@ -773,14 +773,7 @@ class ValidateDimension:
             if not files_to_ignore(root):
                 continue
 
-            if root.rstrip(os.sep).endswith("velodyne_points/data"):
-                    self.process_files(root, actual_path, files)
-
-            elif os.path.split(root)[-1] == "pointcloud":
-                self.process_files(root, actual_path, files)
-
-            else:
-                self.process_files(root, actual_path, files)
+            self.process_files(root, actual_path, files)
 
         if len(self.related_files.keys()):
             self.dimension = DimensionType.DIM_3D
