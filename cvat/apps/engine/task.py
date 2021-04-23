@@ -416,6 +416,7 @@ def _create_thread(tid, data):
                             name, ext = os.path.splitext(os.path.relpath(source, upload_dir))
                             content.append({
                                 'name': name,
+                                'meta': { 'related_images': related_images[''.join((name, ext))] },
                                 'extension': ext
                             })
                     manifest.create(content)
@@ -471,35 +472,15 @@ def _create_thread(tid, data):
             update_progress(progress)
 
     if db_task.mode == 'annotation':
-        if validate_dimension.dimension == DimensionType.DIM_2D:
-            models.Image.objects.bulk_create(db_images)
-            created_images = models.Image.objects.filter(data_id=db_task.data_id)
+        models.Image.objects.bulk_create(db_images)
+        created_images = models.Image.objects.filter(data_id=db_task.data_id)
 
-            db_related_files = [
-                RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
-                for image in created_images
-                for related_file_path in related_images.get(image.path, [])
-            ]
-            RelatedFile.objects.bulk_create(db_related_files)
-        else:
-            related_file = []
-            for image_data in db_images:
-                image_model = models.Image(
-                    data=image_data.data,
-                    path=image_data.path,
-                    frame=image_data.frame,
-                    width=image_data.width,
-                    height=image_data.height
-                )
-
-                image_model.save()
-                image_data = models.Image.objects.get(id=image_model.id)
-
-                if validate_dimension.related_files.get(image_data.path, None):
-                    for related_image_file in validate_dimension.related_files[image_data.path]:
-                        related_file.append(
-                            RelatedFile(data=db_data, primary_image_id=image_data.id, path=related_image_file))
-            RelatedFile.objects.bulk_create(related_file)
+        db_related_files = [
+            RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
+            for image in created_images
+            for related_file_path in related_images.get(image.path, [])
+        ]
+        RelatedFile.objects.bulk_create(db_related_files)
         db_images = []
     else:
         models.Video.objects.create(
