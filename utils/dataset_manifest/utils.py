@@ -54,7 +54,7 @@ def detect_related_images_for(image_path, root_path):
     #         image_01.bin
     # IMAGE_00 # any number?
     #     data/
-    #         image_01.png # or other image
+    #         image_01.png
     if dirname.endswith('velodyne_points/data'):
         matches = [re.search(r'image_\d.*', directory, re.IGNORECASE)
             for directory in os.listdir(dirname_before_before)
