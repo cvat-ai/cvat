@@ -148,7 +148,7 @@ Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => 
             ? cy.contains('button', 'Reopen').click()
             : cy.contains('button', 'Resolve').click();
     });
-    reopen ? cy.get('.cvat-issue-dialog-header').find('[aria-label="close"]').click() : null;
+    if (reopen) cy.get('.cvat-issue-dialog-header').find('[aria-label="close"]').click();
     cy.wait('@postComment').its('response.statusCode').should('equal', 201);
     cy.wait('@resolveReopenIssue').its('response.statusCode').should('equal', 200);
 });
