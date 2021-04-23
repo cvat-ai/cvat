@@ -9,7 +9,6 @@ import zipfile
 import io
 import itertools
 import struct
-import re
 from abc import ABC, abstractmethod
 from contextlib import closing
 
