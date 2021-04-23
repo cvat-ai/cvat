@@ -4,7 +4,7 @@ exports.plugins = [
     'remark-preset-lint-recommended',
     'remark-preset-lint-consistent',
     ['remark-lint-list-item-indent', 'space'],
-    ['remark-lint-no-dead-urls', { skipOffline: true }],
+    ['remark-lint-no-dead-urls', false], // Does not work weel because of github protection
     ['remark-lint-maximum-line-length', 120],
     ['remark-lint-maximum-heading-length', 120],
     ['remark-lint-strong-marker', '*'],
