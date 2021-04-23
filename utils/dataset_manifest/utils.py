@@ -52,8 +52,3 @@ def detect_related_images(image_paths, root_path):
                 filter(is_image, map(lambda x: os.path.join(base_related_path, x), os.listdir(related_images_dir)))
             )
     return related_images
-
-# TODO, find related images pointcloud
-# TODO, find related images pcd
-# TODO, find related images 3D default
-# TODO, find related images 2D default
