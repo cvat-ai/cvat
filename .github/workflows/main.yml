@@ -44,17 +44,17 @@ jobs:
             echo "Number of attempts expired!"
             echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
           fi
-      - name: Getting cache from the default branch
+      - name: Getting cache CVAT server from the default branch
         uses: actions/cache@v2
         with:
-          path: /tmp/cvat_cache
-          key: ${{ runner.os }}-build-${{ steps.get-sha.outputs.sha }}
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache
+          cache-from: type=local,src=/tmp/cvat_cache_server
           tags: openvino/cvat_server:latest
           load: true
       - name: Runing unit tests
@@ -116,8 +116,8 @@ jobs:
       - name: Getting cache CVAT server from the default branch
         uses: actions/cache@v2
         with:
-          path: /tmp/cvat_cache
-          key: ${{ runner.os }}-build-${{ steps.get-sha.outputs.sha }}
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
       - name: Getting cache CVAT UI from the default branch
         uses: actions/cache@v2
         with:
@@ -131,7 +131,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache
+          cache-from: type=local,src=/tmp/cvat_cache_server
           tags: openvino/cvat_server:latest
           load: true
       - name: Building CVAT UI image
@@ -142,14 +142,11 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           tags: openvino/cvat_ui:latest
           load: true
-      - name: Code instrumentation
+      - name: Code instrumentation and re-building CVAT ui
         if: github.ref == 'refs/heads/develop'
         run: |
           npm ci
           npm run coverage
-      - name: Re-building CVAT ui
-        if: github.ref == 'refs/heads/develop'
-        run: |
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_ui
       - name: Running e2e tests
         env:
@@ -196,17 +193,17 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - name: Getting cache from the default branch
+      - name: Getting cache CVAT server from the default branch
         uses: actions/cache@v2
         with:
-          path: /tmp/cvat_cache
-          key: ${{ runner.os }}-build-${{ steps.get-sha.outputs.sha }}
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache
+          cache-from: type=local,src=/tmp/cvat_cache_server
           tags: openvino/cvat_server:latest
           load: true
       - name: Downloading coverage results
