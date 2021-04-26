@@ -63,6 +63,13 @@ context('Canvas 3D functionality. Basic actions.', () => {
         cy.get('[data-icon="camera"]').click(); // Context image show
     }
 
+    function testControlButtonTooltip(button, expectedTooltipText) {
+        cy.get(button).trigger('mouseover');
+        cy.contains(expectedTooltipText).should('exist').and('be.visible'); // Check tooltip
+        cy.get(button).trigger('mouseout');
+        cy.contains(expectedTooltipText).should('not.exist');
+    }
+
     before(() => {
         cy.openTaskJob(taskName);
     });
@@ -97,6 +104,9 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-canvas3d-topview').should('exist').and('be.visible');
             cy.get('.cvat-canvas3d-sideview').should('exist').and('be.visible');
             cy.get('.cvat-canvas3d-frontview').should('exist').and('be.visible');
+            cy.get('.cvat-canvas-controls-sidebar').find('[role="img"]').then(($controlButtons) => {
+                expect($controlButtons.length).to.be.equal(4);
+            });
             cy.get('.cvat-canvas-controls-sidebar')
                 .should('exist')
                 .and('be.visible')
@@ -104,8 +114,15 @@ context('Canvas 3D functionality. Basic actions.', () => {
                     cy.get('.cvat-move-control').should('exist').and('be.visible');
                     cy.get('.cvat-cursor-control').should('exist').and('be.visible');
                     cy.get('.cvat-draw-cuboid-control').should('exist').and('be.visible');
-                    cy.get('[aria-label="camera"]').should('exist').and('be.visible');
+                    cy.get('.cvat-context-image-control').should('exist').and('be.visible');
                 });
+            [
+                ['.cvat-move-control', 'Move the image'],
+                ['.cvat-cursor-control', 'Cursor [Esc]'],
+                ['.cvat-context-image-control', 'Photo context show/hide']
+            ].forEach(([button, tooltip]) => {
+                testControlButtonTooltip(button, tooltip);
+            });
         });
 
         it('Check workspace selector.', () => {

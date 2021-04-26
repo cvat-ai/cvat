@@ -137,13 +137,20 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
     cy.checkIssueRegion();
 });
 
-Cypress.Commands.add('resolveIssue', (issueLabel, resolveText) => {
+Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => {
     cy.get(issueLabel).click();
+    cy.intercept('POST', '/api/v1/comments').as('postComment');
+    cy.intercept('PATCH', '/api/v1/issues/**').as('resolveReopenIssue');
     cy.get('.cvat-issue-dialog-input').type(resolveText);
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.contains('button', 'Comment').click();
-        cy.contains('button', 'Resolve').click();
+        reopen
+            ? cy.contains('button', 'Reopen').click()
+            : cy.contains('button', 'Resolve').click();
     });
+    if (reopen) cy.get('.cvat-issue-dialog-header').find('[aria-label="close"]').click();
+    cy.wait('@postComment').its('response.statusCode').should('equal', 201);
+    cy.wait('@resolveReopenIssue').its('response.statusCode').should('equal', 200);
 });
 
 Cypress.Commands.add('submitReview', (decision, user) => {
