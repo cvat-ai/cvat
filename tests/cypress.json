@@ -13,8 +13,10 @@
   "testFiles": [
     "auth_page.js",
     "actions_tasks/**/*.js",
+    "actions_tasks2/**/*.js",
     "actions_objects/**/*.js",
     "issues_prs/**/*.js",
+    "issues_prs2/**/*.js",
     "actions_users/**/*.js",
     "actions_projects/**/*.js",
     "canvas3d_functionality/*.js",
