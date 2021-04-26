@@ -78,7 +78,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_objects', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs']
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_objects', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs', 'issues_prs2']
     steps:
       - uses: actions/checkout@v2
       - name: Getting SHA from the default branch
