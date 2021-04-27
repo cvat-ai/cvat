@@ -16,7 +16,7 @@
     "actions_tasks2/**/*.js",
     "actions_tasks3/**/*.js",
     "actions_objects/**/*.js",
-    "actions_objects3/**/*.js",
+    "actions_objects2/**/*.js",
     "issues_prs/**/*.js",
     "issues_prs2/**/*.js",
     "actions_users/**/*.js",
