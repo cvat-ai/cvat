@@ -17,9 +17,7 @@
 ## User story
 
 - Architecture of a serverless functions in CVAT (function.yaml, entry point)
-- Choose a dataset which you want to annotate
-- Choose a custom model which you want to integrate
-- Prepare necessary files (function.yaml, main.py)
+- Choose a dataset which you want to annotate -[x] Choose a custom model which you want to integrate -[x] Prepare necessary files (function.yaml, main.py)
 - Automatically annotate data using the prepared model
 - Compare results with the ground truth using Datumaro
 - Conclusion
@@ -35,8 +33,8 @@
 ## Choose a DL model
 
 In my case I will choose a popular AI library with a lot of models inside.
-In you case it can be your own model. If it is based on detectron2 it
-will be easy to integrate.
+In your case it can be your own model. If it is based on detectron2 it
+will be easy to integrate. Just follow the tutorial.
 
 [Detectron2][detectron2-github] is Facebook AI Research's next generation
 library that provides state-of-the-art detection and segmentation algorithms.
@@ -44,7 +42,7 @@ It is the successor of Detectron and maskrcnn-benchmark. It supports a number
 of computer vision research projects and production applications in Facebook.
 
 Clone the repository somewhere. I assume that all other experiments will be
-run from `detectron2` directory.
+run from the cloned `detectron2` directory.
 
 ```sh
 git clone https://github.com/facebookresearch/detectron2
@@ -151,9 +149,10 @@ function which can be used by CVAT to annotate data. Let's see how function.yaml
 will look like...
 
 Let's look at [faster_rcnn_inception_v2_coco][faster-rcnn-function] serverless
-function as an example and try adapting it to our case. First of all let's
-invent an unique name for the new function: `pth-retinanet-R101`.
-Section `annotations` describes our function for CVAT serverless subsystem:
+function configuration as an example and try adapting it to our case.
+First of all let's invent an unique name for the new function:
+`pth.facebookresearch.detectron2.retinanet_r101`. Section `annotations`
+describes our function for CVAT serverless subsystem:
 
 - `annotations.name` is a display name
 - `annotations.type` is a type of the serverless function. It can have
@@ -161,154 +160,52 @@ Section `annotations` describes our function for CVAT serverless subsystem:
   In our case it has `detector` type and it means that the integrated DL model can
   generate shapes with labels for an image.
 - `annotations.framework` is used for information only and can have arbitrary
-  value.
+  value. Usually it has values like OpenVINO, PyTorch, TensorFlow, etc.
 - `annotations.spec` describes the list of labels which the model supports. In
   the case the DL model was trained on MS COCO dataset and the list of labels
   correspond to the dataset.
-- `spec.description` will be used to provide basic information for the model.
+- `spec.description` is used to provide basic information for the model.
 
 All other parameters are described in [nuclio documentation][nuclio-doc].
 
 - `spec.handler` is the entry point to your function.
 - `spec.runtime` is the name of the language runtime.
-- `spec.eventTimeout` is the global event timeout.
+- `spec.eventTimeout` is the global event timeout
 
-```yaml
-metadata:
-  name: pth-retinanet-R101
-  namespace: cvat
-  annotations:
-    name: RetinaNet R101
-    type: detector
-    framework: pytorch
-    spec: |
-      [
-        { "id": 1, "name": "person" },
-        { "id": 2, "name": "bicycle" },
-        { "id": 3, "name": "car" },
-        { "id": 4, "name": "motorcycle" },
-        { "id": 5, "name": "airplane" },
-        { "id": 6, "name": "bus" },
-        { "id": 7, "name": "train" },
-        { "id": 8, "name": "truck" },
-        { "id": 9, "name": "boat" },
-        { "id":10, "name": "traffic_light" },
-        { "id":11, "name": "fire_hydrant" },
-        { "id":13, "name": "stop_sign" },
-        { "id":14, "name": "parking_meter" },
-        { "id":15, "name": "bench" },
-        { "id":16, "name": "bird" },
-        { "id":17, "name": "cat" },
-        { "id":18, "name": "dog" },
-        { "id":19, "name": "horse" },
-        { "id":20, "name": "sheep" },
-        { "id":21, "name": "cow" },
-        { "id":22, "name": "elephant" },
-        { "id":23, "name": "bear" },
-        { "id":24, "name": "zebra" },
-        { "id":25, "name": "giraffe" },
-        { "id":27, "name": "backpack" },
-        { "id":28, "name": "umbrella" },
-        { "id":31, "name": "handbag" },
-        { "id":32, "name": "tie" },
-        { "id":33, "name": "suitcase" },
-        { "id":34, "name": "frisbee" },
-        { "id":35, "name": "skis" },
-        { "id":36, "name": "snowboard" },
-        { "id":37, "name": "sports_ball" },
-        { "id":38, "name": "kite" },
-        { "id":39, "name": "baseball_bat" },
-        { "id":40, "name": "baseball_glove" },
-        { "id":41, "name": "skateboard" },
-        { "id":42, "name": "surfboard" },
-        { "id":43, "name": "tennis_racket" },
-        { "id":44, "name": "bottle" },
-        { "id":46, "name": "wine_glass" },
-        { "id":47, "name": "cup" },
-        { "id":48, "name": "fork" },
-        { "id":49, "name": "knife" },
-        { "id":50, "name": "spoon" },
-        { "id":51, "name": "bowl" },
-        { "id":52, "name": "banana" },
-        { "id":53, "name": "apple" },
-        { "id":54, "name": "sandwich" },
-        { "id":55, "name": "orange" },
-        { "id":56, "name": "broccoli" },
-        { "id":57, "name": "carrot" },
-        { "id":58, "name": "hot_dog" },
-        { "id":59, "name": "pizza" },
-        { "id":60, "name": "donut" },
-        { "id":61, "name": "cake" },
-        { "id":62, "name": "chair" },
-        { "id":63, "name": "couch" },
-        { "id":64, "name": "potted_plant" },
-        { "id":65, "name": "bed" },
-        { "id":67, "name": "dining_table" },
-        { "id":70, "name": "toilet" },
-        { "id":72, "name": "tv" },
-        { "id":73, "name": "laptop" },
-        { "id":74, "name": "mouse" },
-        { "id":75, "name": "remote" },
-        { "id":76, "name": "keyboard" },
-        { "id":77, "name": "cell_phone" },
-        { "id":78, "name": "microwave" },
-        { "id":79, "name": "oven" },
-        { "id":80, "name": "toaster" },
-        { "id":81, "name": "sink" },
-        { "id":83, "name": "refrigerator" },
-        { "id":84, "name": "book" },
-        { "id":85, "name": "clock" },
-        { "id":86, "name": "vase" },
-        { "id":87, "name": "scissors" },
-        { "id":88, "name": "teddy_bear" },
-        { "id":89, "name": "hair_drier" },
-        { "id":90, "name": "toothbrush" }
-      ]
+Next step is to describe how to build our serverless function:
 
-spec:
-  description: RetinaNet R101 from Detectron2
-  runtime: 'python:3.8'
-  handler: main:handler
-  eventTimeout: 30s
+- `spec.build.image` is the name of your docker image
+- `spec.build.baseImage` is the name of a base container image from which to build the function
+- `spec.build.directives` are commands to build your docker image
 
-  build:
-    image: cvat/pth.detectron2.retinanet-R101
-    baseImage: ubuntu:20.04
+In our case we start from Ubuntu 20.04 base image, install `curl` to download
+weights for our model, `git` to clone detectron2 project from GitHub, and
+`python` together with `pip`. Repeat installation steps which we used to setup
+the DL model locally with minor modifications.
 
-    directives:
-      preCopy:
-        - kind: ENV
-          value: DEBIAN_FRONTEND=noninteractive
-        - kind: RUN
-          value: apt-get update && apt-get install curl git python3 python3-pip
-        - kind: WORKDIR
-          value: /opt/nuclio
-        - kind: RUN
-          value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
-        - kind: RUN
-          value: git clone https://github.com/facebookresearch/detectron2
-        - kind: WORKDIR
-          value: /opt/nuclio/detectron2
-        - kind: RUN
-          value: pip3 install -e detectron2
-        - kind: RUN
-          value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
+For Nuclio platform we have to specify a couple of more parameters:
 
-  triggers:
-    myHttpTrigger:
-      maxWorkers: 2
-      kind: 'http'
-      workerAvailabilityTimeoutMilliseconds: 10000
-      attributes:
-        maxRequestBodySize: 33554432 # 32MB
+- `spec.triggers.myHttpTrigger` describes [HTTP trigger][nuclio-http-trigger-doc]
+  to handle incoming HTTP requests.
+- `spec.platform` describes some important parameters to run your functions like
+  `restartPolicy` and `mountMode`. Read nuclio documentation for more details.
 
-  platform:
-    attributes:
-      restartPolicy:
-        name: always
-        maximumRetryCount: 3
-      mountMode: volume
-```
+At the end we should get something like that:
+serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
+
+Next step is to adapt our source code which we implemented to run the DL model
+locally to requirements of nuclio platform. First step is to load the model
+into memory using `init_context(context)` function. Read more about the function
+in [Best Practices and Common Pitfalls][nuclio-bkms-doc].
+
+After that we need to accept incoming HTTP requests, run inference,
+reply with detection results. For the process our entry point is resposible
+which we specified in our function specification `handler(context, event)`.
+Again in accordance to function specification the entry point should be
+located inside `main.py`.
+
+Full code for `main.py` can be found here:
+serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
 
 [detectron2-github]: https://github.com/facebookresearch/detectron2
 [detectron2-requirements]: https://detectron2.readthedocs.io/en/latest/tutorials/install.html
@@ -318,3 +215,5 @@ spec:
 [retinanet-model-zoo]: https://github.com/facebookresearch/detectron2/blob/master/MODEL_ZOO.md#retinanet
 [faster-rcnn-function]: https://raw.githubusercontent.com/openvinotoolkit/cvat/38b774046d41d604ed85a521587e4bacce61b69c/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio/function.yaml
 [nuclio-doc]: https://nuclio.io/docs/latest/reference/function-configuration/function-configuration-reference/
+[nuclio-http-trigger-doc]: https://nuclio.io/docs/latest/reference/triggers/http/
+[nuclio-bkms-doc]: https://nuclio.io/docs/latest/concepts/best-practices-and-common-pitfalls/
