@@ -17,7 +17,11 @@
 ## User story
 
 - Architecture of a serverless functions in CVAT (function.yaml, entry point)
-- Choose a dataset which you want to annotate -[x] Choose a custom model which you want to integrate -[x] Prepare necessary files (function.yaml, main.py)
+- Choose a dataset which you want to annotate
+
+- Choose a custom model which you want to integrate - DONE
+- Prepare necessary files (function.yaml, main.py) - DONE
+
 - Automatically annotate data using the prepared model
 - Compare results with the ground truth using Datumaro
 - Conclusion
@@ -190,8 +194,71 @@ For Nuclio platform we have to specify a couple of more parameters:
 - `spec.platform` describes some important parameters to run your functions like
   `restartPolicy` and `mountMode`. Read nuclio documentation for more details.
 
-At the end we should get something like that:
-serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
+```yaml
+metadata:
+  name: pth.facebookresearch.detectron2.retinanet_r101
+  namespace: cvat
+  annotations:
+    name: RetinaNet R101
+    type: detector
+    framework: pytorch
+    spec: |
+      [
+        { "id": 1, "name": "person" },
+        { "id": 2, "name": "bicycle" },
+
+        ...
+
+        { "id":89, "name": "hair_drier" },
+        { "id":90, "name": "toothbrush" }
+      ]
+
+spec:
+  description: RetinaNet R101 from Detectron2
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat/pth.facebookresearch.detectron2.retinanet_r101
+    baseImage: ubuntu:20.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl git python3 python3-pip
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+        - kind: RUN
+          value: git clone https://github.com/facebookresearch/detectron2
+        - kind: RUN
+          value: pip3 install -e detectron2
+        - kind: RUN
+          value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/local/bin/pip
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
+```
+
+Full code can be found here: [detectron2/retinanet/nuclio/function.yaml][retinanet-function-yaml]
 
 Next step is to adapt our source code which we implemented to run the DL model
 locally to requirements of nuclio platform. First step is to load the model
@@ -204,8 +271,59 @@ which we specified in our function specification `handler(context, event)`.
 Again in accordance to function specification the entry point should be
 located inside `main.py`.
 
-Full code for `main.py` can be found here:
-serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
+```python
+
+def init_context(context):
+    cfg = get_cfg()
+    cfg.merge_from_file(CONFIG_FILE)
+    cfg.merge_from_list(CONFIG_OPTS)
+    cfg.MODEL.RETINANET.SCORE_THRESH_TEST = CONFIDENCE_THRESHOLD
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONFIDENCE_THRESHOLD
+    cfg.MODEL.PANOPTIC_FPN.COMBINE.INSTANCES_CONFIDENCE_THRESH = CONFIDENCE_THRESHOLD
+    cfg.freeze()
+    predictor = DefaultPredictor(cfg)
+
+    setattr(context.user_data, 'model_handler', predictor)
+    functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+    labels_spec = functionconfig['metadata']['annotations']['spec']
+    labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
+    setattr(context.user_data, "labels", labels)
+
+def handler(context, event):
+    data = event.body
+    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    threshold = float(data.get("threshold", 0.5))
+    image = convert_PIL_to_numpy(Image.open(buf), format="BGR")
+
+    predictions = context.user_data.model_handler(image)
+
+    instances = predictions['instances']
+    pred_boxes = instances.pred_boxes
+    scores = instances.scores
+    pred_classes = instances.pred_classes
+    results = []
+    for box, score, label in zip(pred_boxes, scores, pred_classes):
+        label = COCO_CATEGORIES[int(label)]["name"]
+        if score >= threshold:
+            results.append({
+                "confidence": str(float(score)),
+                "label": label,
+                "points": box.tolist(),
+                "type": "rectangle",
+            })
+
+    return context.Response(body=json.dumps(results), headers={},
+        content_type='application/json', status_code=200)
+
+```
+
+Full code can be found here: [detectron2/retinanet/nuclio/main.py][retinanet-main-py]
+
+## Deploy RetinaNet serverless function
+
+To use the new serverless function you have to deploy it using `nuctl` command.
+The actual deployment process is described in
+[automatic annotation guide][cvat-auto-annotation-guide]
 
 [detectron2-github]: https://github.com/facebookresearch/detectron2
 [detectron2-requirements]: https://detectron2.readthedocs.io/en/latest/tutorials/install.html
@@ -217,3 +335,5 @@ serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
 [nuclio-doc]: https://nuclio.io/docs/latest/reference/function-configuration/function-configuration-reference/
 [nuclio-http-trigger-doc]: https://nuclio.io/docs/latest/reference/triggers/http/
 [nuclio-bkms-doc]: https://nuclio.io/docs/latest/concepts/best-practices-and-common-pitfalls/
+[retinanet-function-yaml]: https://github.com/openvinotoolkit/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
+[retinanet-main-py]: https://github.com/openvinotoolkit/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
