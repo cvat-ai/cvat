@@ -23,8 +23,8 @@ jobs:
           echo ::set-output name=sha::${SHA}
       - name: Waiting a cache creation in the default branch
         run: |
-          URL_runs="https://api.github.com/repos/${{ github.repository }}/actions/runs"
-          SLEEP=30
+          URL_runs="https://api.github.com/repos/${{ github.repository }}/actions/workflows/cache.yml/runs"
+          SLEEP=45
           NUMBER_ATTEMPTS=10
           while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
             RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[] | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
@@ -44,11 +44,13 @@ jobs:
             echo "Number of attempts expired!"
             echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
           fi
-      - name: Getting cache CVAT server from the default branch
+      - name: Getting CVAT server cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1.1.2
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
         with:
@@ -78,7 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_objects', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs', 'issues_prs2']
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_objects', 'actions_objects2', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs', 'issues_prs2']
     steps:
       - uses: actions/checkout@v2
       - name: Getting SHA from the default branch
@@ -92,8 +94,8 @@ jobs:
           echo ::set-output name=sha::${SHA}
       - name: Waiting a cache creation in the default branch
         run: |
-          URL_runs="https://api.github.com/repos/${{ github.repository }}/actions/runs"
-          SLEEP=30
+          URL_runs="https://api.github.com/repos/${{ github.repository }}/actions/workflows/cache.yml/runs"
+          SLEEP=45
           NUMBER_ATTEMPTS=10
           while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
             RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[] | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
@@ -113,7 +115,7 @@ jobs:
             echo "Number of attempts expired!"
             echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
           fi
-      - name: Getting cache CVAT server from the default branch
+      - name: Getting CVAT server cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_server
@@ -126,6 +128,8 @@ jobs:
       - uses: actions/setup-node@v2
         with:
             node-version: 12
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1.1.2
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
         with:
@@ -142,7 +146,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           tags: openvino/cvat_ui:latest
           load: true
-      - name: Code instrumentation and re-building CVAT ui
+      - name: Instrumentation of the code then rebuilding the CVAT UI
         if: github.ref == 'refs/heads/develop'
         run: |
           npm ci
@@ -193,11 +197,13 @@ jobs:
           URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
           SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
           echo ::set-output name=sha::${SHA}
-      - name: Getting cache CVAT server from the default branch
+      - name: Getting CVAT server cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1.1.2
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
         with:
