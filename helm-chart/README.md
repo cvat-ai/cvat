@@ -16,7 +16,7 @@
 7. Deploy cvat using command below
 ## How to deploy new version of chart to cluster?
 Execute following command:
-`helm upgrade <release_name> --install ./helm-chart -f ./helm-chart/values.yaml  -f values.override.yaml(if exists) --namespace <desired namespace>`
+```helm upgrade <release_name> --install ./helm-chart -f ./helm-chart/values.yaml  -f values.override.yaml(if exists) --namespace <desired namespace>```
 ## How to create superuser?
 ```
 HELM_RELEASE_NAMESPACE="<insert>" &&\
