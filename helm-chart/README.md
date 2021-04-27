@@ -48,7 +48,7 @@ You can use https://github.com/databus23/helm-diff#install for that
 Just set `postgresql.enabled` or `redis.enabled` to `false`, as described below.
 Then - put your instance params to "external" field
 ## I want to override some settings in values.yaml.
-Just create file values.override.yaml and place your changes here, using same stracture as in values.yaml.
+Just create file `values.override.yaml` and place your changes here, using same structure as in `values.yaml`.
 Then reference it in helm update/install command using `-f` flag
 ## Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
