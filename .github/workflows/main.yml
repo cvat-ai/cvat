@@ -27,7 +27,7 @@ jobs:
           SLEEP=45
           NUMBER_ATTEMPTS=10
           while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
-            RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[] | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
+            RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[]? | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
             if [[ ${RUN_status} == "completed" ]]; then
               echo "The cache creation on the '${{ steps.get-sha.outputs.default_branch }}' branch has finished. Status: ${RUN_status}"
               break
@@ -98,7 +98,7 @@ jobs:
           SLEEP=45
           NUMBER_ATTEMPTS=10
           while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
-            RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[] | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
+            RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[]? | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
             if [[ ${RUN_status} == "completed" ]]; then
               echo "The cache creation on the '${{ steps.get-sha.outputs.default_branch }}' branch has finished. Status: ${RUN_status}"
               break
