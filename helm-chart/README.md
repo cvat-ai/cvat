@@ -13,6 +13,11 @@
 ## How to deploy new version of chart to cluster?
 Execute following command:
 `helm upgrade <release_name> --install ./helm-chart -f ./helm-chart/values.yaml  -f values.override.yaml(if exists) --namespace <desired namespace>`
+## How to create superuser?
+`HELM_RELEASE_NAMESPACE="<insert>" &&
+HELM_RELEASE_NAME="<insert>" &&
+BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=backend,app.kubernetes.io/instance=$HELM_RELEASE_NAME -o jsonpath='{.items[0].metadata.name}') &&
+kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-backend-app-container -- python manage.py createsuperuser`
 ## How to understand what diff will be inflicted by 'helm upgrade'?
 You can use https://github.com/databus23/helm-diff#install for that
 ## I want to use my own postgresql/redis with your chart.

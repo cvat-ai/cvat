@@ -135,11 +135,14 @@ ingress:
 # Example for nginx ingress and cert manager
 #    annotations:
 #        kubernetes.io/ingress.class: nginx
+#        kubernetes.io/tls-acme: "true"
+#        ingress.kubernetes.io/ssl-redirect: "true"
 #        nginx.ingress.kubernetes.io/use-regex: "true"
 #        nginx.ingress.kubernetes.io/secure-backends: "true"
-#        kubernetes.io/tls-acme: "true"
+#        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+#        nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+#        nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
 #        cert-manager.io/cluster-issuer: example.issuer.name
-#        ingress.kubernetes.io/ssl-redirect: "true"
 #    hosts:
 #        - host: cvat.example.com
 #          paths:
