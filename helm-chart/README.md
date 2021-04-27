@@ -41,7 +41,7 @@ postgresql:
        existingSecret: cvat-postgres-secret
 ```
 ## How to describe ingress:
-  Just set `ingress.enabled:` to 'true', then copy example, uncomment it and change values there
+  Just set `ingress.enabled:` to `true`, then copy example, uncomment it and change values there
 ## How to understand what diff will be inflicted by 'helm upgrade'?
 You can use https://github.com/databus23/helm-diff#install for that
 ## I want to use my own postgresql/redis with your chart.
