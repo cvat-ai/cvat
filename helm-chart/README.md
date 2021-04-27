@@ -51,7 +51,7 @@ Then - put your instance params to "external" field
 Just create file values.override.yaml and place your changes here, using same stracture as in values.yaml.
 Then reference it in helm update/install command using -f
 ## Why you used external charts to provide redis and postgres?
-Because they defenetly know what they do better then we are, so we are getting more qulity and less support
+Because they definitely know what they do better then we are, so we are getting more quality and less support
 ## What is kubernetes and how it is working?
 See https://kubernetes.io/
 ## What is helm and how it is working?
