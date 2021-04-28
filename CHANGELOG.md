@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export of instance masks with holes (<https://github.com/openvinotoolkit/cvat/pull/3044>)
 - Changing a label on canvas does not work when 'Show object details' enabled (<https://github.com/openvinotoolkit/cvat/pull/3084>)
 - Make sure frame unzip web worker correctly terminates after unzipping all images in a requested chunk (<https://github.com/openvinotoolkit/cvat/pull/3096>)
+- Reset password link was unavailable before login (<https://github.com/openvinotoolkit/cvat/pull/3140>)
 
 ### Security
 
