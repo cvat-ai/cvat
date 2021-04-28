@@ -62,8 +62,8 @@ context('Merge/split features', () => {
             cy.get('#cvat_canvas_shape_2').click(); // Select the shape
             cy.get('#cvat_canvas_shape_2').click(); // Unselect the shape
             cy.get('#cvat_canvas_shape_2').click(); // Repeat select the shape
-            cy.get('.cvat-objects-sidebar-states-header').find('[aria-label="eye"]').click(); // this.highlightedShapes[objectState.clientID] = shape;
-            cy.get('.cvat-objects-sidebar-states-header').find('[aria-label="eye-invisible"]').click(); // unhide
+            cy.get('.cvat-objects-sidebar-states-header').find('[aria-label="eye"]').click(); // To cover "this.highlightedShapes[objectState.clientID] = shape;"
+            cy.get('.cvat-objects-sidebar-states-header').find('[aria-label="eye-invisible"]').click(); // Unhide
             cy.goCheckFrameNumber(frameNum);
             cy.get('#cvat_canvas_shape_1').click();
             cy.get('.cvat-merge-control').click();
