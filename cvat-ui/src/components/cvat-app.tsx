@@ -129,12 +129,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user == null || !user.isVerified) {
-            return;
-        }
-
         if (!authActionsInitialized && !authActionsFetching) {
             loadAuthActions();
+        }
+
+        if (user == null || !user.isVerified) {
+            return;
         }
 
         if (!formatsInitialized && !formatsFetching) {
