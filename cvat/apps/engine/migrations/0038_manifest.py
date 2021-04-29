@@ -11,6 +11,7 @@ from django.db import migrations
 
 from cvat.apps.engine.models import (DimensionType, StorageChoice,
                                      StorageMethodChoice)
+from cvat.apps.engine.media_extractors import get_mime
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 def get_logger():
@@ -104,7 +105,7 @@ def migrate2manifest(apps, shema_editor):
                 sources = []
                 if db_data.storage == StorageChoice.LOCAL:
                     for (root, _, files) in os.walk(data_dir):
-                        sources.extend([os.path.join(root, f) for f in files])
+                        sources.extend([os.path.join(root, f) for f in files if get_mime(f) == 'image'])
                     sources.sort()
                 # using share, this means that we can not explicitly restore the entire data structure
                 else:
