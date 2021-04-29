@@ -26,6 +26,7 @@ context('Overlap size.', () => {
         segmentSize: 5,
         overlapSize: 3,
     };
+    const calculatedOverlapSize = advancedConfigurationParams.segmentSize - advancedConfigurationParams.overlapSize;
 
     before(() => {
         cy.visit('auth/login');
@@ -36,11 +37,16 @@ context('Overlap size.', () => {
         cy.openTask(taskName);
     });
 
+    after(() => {
+        cy.goToTaskList();
+        cy.deleteTask(taskName);
+    });
+
     describe(`Testing case "${caseId}"`, () => {
         it('The task parameters is correct.', () => {
             cy.get('.cvat-task-parameters').within(() => {
                 cy.get('table').find('tr').last().find('td').then(($taskParameters) => {
-                    expect(Number($taskParameters[0].innerText)).equal(advancedConfigurationParams.segmentSize - advancedConfigurationParams.overlapSize);
+                    expect(Number($taskParameters[0].innerText)).equal(calculatedOverlapSize);
                     expect(Number($taskParameters[1].innerText)).equal(advancedConfigurationParams.segmentSize);
                 });
             });
@@ -57,6 +63,26 @@ context('Overlap size.', () => {
                     expect(Number($frameRange.text().split('-')[0])).equal(advancedConfigurationParams.segmentSize - 2); // expected 3 to equal 3
                 });
             });
+        });
+
+        it('The range of frame values in a job corresponds to the parameters.', () => {
+            cy.openJob(0);
+            cy.get('.cvat-player-frame-selector')
+                .find('input[role="spinbutton"]')
+                .should('have.value', '0');
+            cy.get('.cvat-player-last-button').click();
+            cy.get('.cvat-player-frame-selector')
+                .find('input[role="spinbutton"]')
+                .should('have.value', advancedConfigurationParams.segmentSize - 1); // expected <input.ant-input-number-input> to have value '4'
+            cy.interactMenu('Open the task');
+            cy.openJob(1);
+            cy.get('.cvat-player-frame-selector')
+                .find('input[role="spinbutton"]')
+                .should('have.value', advancedConfigurationParams.segmentSize - calculatedOverlapSize); // expected <input.ant-input-number-input> to have value '3'
+            cy.get('.cvat-player-last-button').click();
+            cy.get('.cvat-player-frame-selector')
+                .find('input[role="spinbutton"]')
+                .should('have.value', advancedConfigurationParams.segmentSize + calculatedOverlapSize); // expected <input.ant-input-number-input> to have value '7'
         });
     });
 });
