@@ -260,20 +260,19 @@ def _create_thread(tid, data):
     validate_dimension = ValidateDimension()
     if extractor.__class__ == MEDIA_TYPES['zip']['extractor']:
         extractor.extract()
-        validate_dimension.set_path(os.path.split(extractor.get_zip_filename())[0])
-        validate_dimension.validate()
-        if validate_dimension.dimension == models.DimensionType.DIM_3D:
-            db_task.dimension = models.DimensionType.DIM_3D
+    validate_dimension.set_path(upload_dir)
+    validate_dimension.validate()
+    if validate_dimension.dimension == models.DimensionType.DIM_3D:
+        db_task.dimension = models.DimensionType.DIM_3D
 
-            extractor.reconcile(
-                source_files=list(validate_dimension.related_files.keys()),
-                step=db_data.get_frame_step(),
-                start=db_data.start_frame,
-                stop=data['stop_frame'],
-                dimension=models.DimensionType.DIM_3D,
+        extractor.reconcile(
+            source_files=[os.path.join(upload_dir, f) for f in validate_dimension.related_files.keys()],
+            step=db_data.get_frame_step(),
+            start=db_data.start_frame,
+            stop=data['stop_frame'],
+            dimension=models.DimensionType.DIM_3D,
 
-            )
-            extractor.add_files(validate_dimension.converted_files)
+        )
 
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET

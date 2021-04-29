@@ -22,11 +22,8 @@ API endpoints:
   ```
    .
    ├── data
-   │   ├── compressed
-   │   ├── original
-   │   ├── raw
-   │   │   ├── {user uploaded data}
-   │   │   ├── manifest.jsonl
+   │   ├── {user uploaded data}
+   │   ├── manifest.jsonl
    ├── task.json
    └── annotations.json
   ```

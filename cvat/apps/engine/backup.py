@@ -8,6 +8,7 @@ from enum import Enum
 import shutil
 from zipfile import ZipFile
 
+from django.conf import settings
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 
@@ -15,12 +16,14 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
-    FrameMetaSerializer, LabeledDataSerializer, RelatedFileSerializer, SegmentSerializer,
-    SimpleJobSerializer, TaskSerializer)
+    LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer)
 from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice, Job
+from cvat.apps.engine.task import _create_thread
+
 
 class Version(Enum):
-        V1 = 'v1'
+        V1 = '1.0'
 
 class _TaskBackupBase():
     MANIFEST_FILENAME = 'task.json'
@@ -30,22 +33,20 @@ class _TaskBackupBase():
 
     def _prepare_meta(self, allowed_keys, meta):
         keys_to_drop = set(meta.keys()) - allowed_keys
-        logger = slogger.task[self._db_task.id] if hasattr(self, '_db_task') else slogger.glob
-        logger.warning('the following keys are dropped {}'.format(keys_to_drop))
-        for key in keys_to_drop:
-            del meta[key]
+        if keys_to_drop:
+            logger = slogger.task[self._db_task.id] if hasattr(self, '_db_task') else slogger.glob
+
+            logger.warning('the following keys are dropped {}'.format(keys_to_drop))
+            for key in keys_to_drop:
+                del meta[key]
 
         return meta
 
     def _prepare_task_meta(self, task):
         allowed_fields = {
             'name',
-            'mode',
             'bug_tracker',
-            'overlap',
-            'segment_size',
             'status',
-            'dimension',
             'subset',
             'labels',
         }
@@ -55,19 +56,19 @@ class _TaskBackupBase():
     def _prepare_data_meta(self, data):
         allowed_fields = {
             'chunk_size',
-            'size',
             'image_quality',
             'start_frame',
             'stop_frame',
             'frame_filter',
-            'compressed_chunk_type',
-            'original_chunk_type',
+            'chunk_type',
             'storage_method',
             'storage',
         }
+
         self._prepare_meta(allowed_fields, data)
-        if not data['frame_filter']:
+        if 'frame_filter' in data and not data['frame_filter']:
             data.pop('frame_filter')
+
         return data
 
     def _prepare_segment_meta(self, segments):
@@ -114,26 +115,49 @@ class TaskExporter(_TaskBackupBase):
         self._db_data = self._db_task.data
         self._version = version
 
+    def _write_files(self, source_dir, zip_object, files, target_dir):
+        for filename in files:
+            arcname = os.path.normpath(
+                os.path.join(
+                    target_dir,
+                    os.path.relpath(filename, source_dir),
+                )
+            )
+            zip_object.write(filename=filename, arcname=arcname)
+
     def _write_directory(self, source_dir, zip_object, target_dir, recursive=True, exclude_files=None):
         for root, dirs, files in os.walk(source_dir, topdown=True):
             if not recursive:
                 dirs.clear()
-            for filename in files:
-                file_path = os.path.join(root, filename)
-                if exclude_files and file_path in exclude_files:
-                    continue
-                arcname = os.path.normpath(os.path.join(target_dir, os.path.relpath(root, source_dir), filename))
-                zip_object.write(filename=file_path, arcname=arcname)
+
+            if files:
+                self._write_files(
+                    source_dir=source_dir,
+                    zip_object=zip_object,
+                    files=(os.path.join(root, f) for f in files if not exclude_files or f not in exclude_files),
+                    target_dir=target_dir,
+                )
 
     def _write_data(self, zip_object):
-        data_dir = self._db_data.get_data_dirname()
-        self._write_directory(
-            source_dir=data_dir,
-            zip_object=zip_object,
-            target_dir=self.DATA_DIRNAME,
-            exclude_files=tuple(os.path.join(data_dir, f) for f in \
-                ('preview.jpeg', os.path.join('raw', 'index.json'))),
-        )
+        if self._db_data.storage == StorageChoice.LOCAL:
+            self._write_directory(
+                source_dir=self._db_data.get_upload_dirname(),
+                zip_object=zip_object,
+                target_dir=self.DATA_DIRNAME,
+            )
+        else:
+            data_dir = settings.SHARE_ROOT
+            if hasattr(self._db_data, 'video'):
+                media_files = (os.path.join(data_dir, self._db_data.video.path), )
+            else:
+                media_files = (os.path.join(data_dir, im.path) for im in self._db_data.images.all().order_by('frame'))
+
+            self._write_files(
+                source_dir=data_dir,
+                zip_object=zip_object,
+                files=media_files,
+                target_dir=self.DATA_DIRNAME
+            )
 
     def _write_task(self, zip_object):
         task_dir = self._db_task.get_task_dirname()
@@ -154,67 +178,32 @@ class TaskExporter(_TaskBackupBase):
 
             return self._prepare_task_meta(task_serializer.data)
 
-        def serialize_segmetnts():
-            segments = []
+        def serialize_jobs():
+            task_jobs = []
             for db_segment in self._db_task.segment_set.all():
-                jobs = []
-                for db_job in db_segment.job_set.all():
-                    job_serializer = SimpleJobSerializer(db_job)
-                    job_serializer.fields.pop('url')
-                    jobs.append(self._prepare_job_meta(job_serializer.data))
+                db_job = db_segment.job_set.first()
+                job_serializer = SimpleJobSerializer(db_job)
+                job_serializer.fields.pop('url')
+                job_data = self._prepare_job_meta(job_serializer.data)
                 segment_serailizer = SegmentSerializer(db_segment)
                 segment_serailizer.fields.pop('jobs')
                 segment = segment_serailizer.data
-                segment['jobs'] = jobs
-                segments.append(segment)
+                segment.update(job_data)
+                task_jobs.append(segment)
 
-            return segments
+            return task_jobs
 
         def serialize_data():
-            def serialize_related_files(image):
-                related_files_serializer = RelatedFileSerializer(image.related_files.all(), many=True)
-                related_files = related_files_serializer.data
-                for f in related_files:
-                    f['path'] = os.path.relpath(f['path'], image.data.get_upload_dirname())
-
-                return related_files
-
-            def serialize_frames():
-                if hasattr(self._db_task.data, 'video'):
-                    media = [self._db_task.data.video]
-                else:
-                    media = list(self._db_task.data.images.order_by('frame'))
-
-                frame_meta = []
-                for item in media:
-                    frame = {
-                        'width': item.width,
-                        'height': item.height,
-                        'name': item.path,
-                    }
-
-                    frame_meta_serializer = FrameMetaSerializer(data=frame)
-                    frame_meta_serializer.is_valid(raise_exception=True)
-                    frame = frame_meta_serializer.data
-
-                    if self._db_task.dimension == models.DimensionType.DIM_3D:
-                        frame['related_files'] = serialize_related_files(item)
-
-                    frame_meta.append(frame)
-
-                return frame_meta
-
             data_serializer = DataSerializer(self._db_data)
-
             data = data_serializer.data
-            data['frames'] = serialize_frames()
-
-            return data
+            data['chunk_type'] = data.pop('compressed_chunk_type')
+            data['storage'] = StorageChoice.LOCAL
+            return self._prepare_data_meta(data)
 
         task = serialize_task()
         task['version'] = self._version.value
         task['data'] = serialize_data()
-        task['segments'] = serialize_segmetnts()
+        task['jobs'] = serialize_jobs()
 
         zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(task))
 
@@ -234,6 +223,9 @@ class TaskExporter(_TaskBackupBase):
         zip_object.writestr(self.ANNOTATIONS_FILENAME, data=JSONRenderer().render(annotations))
 
     def export_to(self, filename):
+        if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
+           self._db_task.data.storage == StorageChoice.SHARE:
+           raise Exception('The task cannot be exported because it does not contain any raw data')
         with ZipFile(filename, 'w') as output_file:
             self._write_data(output_file)
             self._write_task(output_file)
@@ -286,11 +278,6 @@ class TaskImporter(_TaskBackupBase):
 
         return label_mapping, attribute_mapping
 
-    def _create_job(self, db_segment, job):
-        self._prepare_job_meta(job)
-        db_job = models.Job.objects.create(segment=db_segment, **job)
-        return db_job
-
     def _update_annotations(self, labels_mapping, attributes_mapping, annotations):
         def update_ids(objects):
             for obj in objects:
@@ -315,81 +302,27 @@ class TaskImporter(_TaskBackupBase):
         serializer.is_valid(raise_exception=True)
         dm.task.put_job_data(db_job.id, serializer.data)
 
-    def _create_segments(self, db_task, labels_mapping, attributes_mapping, segments):
-        for segment in segments:
-            jobs = segment.pop('jobs')
-            self._prepare_segment_meta(segment)
-            db_segment = models.Segment.objects.create(task=db_task, **segment)
-            for job in jobs:
-                job_id = job.pop('id')
-                db_job = self._create_job(db_segment, job)
-                self._create_annotations(db_job, labels_mapping, attributes_mapping, self._annotations[job_id])
-
     def _create_data(self, data):
-        self._prepare_data_meta(data)
         data_serializer = DataSerializer(data=data)
         data_serializer.is_valid(raise_exception=True)
         db_data = data_serializer.save()
         return db_data
 
-    def _create_frames(self, db_data, frames):
-        def _prepare_frame(frame, frame_number=None):
-            frame['data'] = db_data
-            frame['path'] = frame.pop('name')
-            if frame_number is not None:
-                frame['frame'] = frame_number
+    @staticmethod
+    def _calculate_segment_size(jobs):
+        segment_size = jobs[0]['stop_frame'] - jobs[0]['start_frame'] + 1
+        overlap = 0 if len(jobs) == 1 else jobs[0]['stop_frame'] - jobs[1]['start_frame'] + 1
 
-            return frame
-
-        def _prepare_related_file(related_file, rf_id):
-            related_file['data'] = db_data
-            related_file.pop('primary_image')
-            related_file.pop('id')
-            related_file['primary_image_id'] = rf_id
-            related_file['path'] = os.path.join(db_data.get_upload_dirname(), related_file['path'])
-
-            return related_file
-
-        if self._db_task.mode == 'annotation':
-            db_frames = []
-            db_related_files = []
-            for idx, frame in enumerate(frames):
-                related_files = frame.pop('related_files', [])
-                frame = _prepare_frame(frame, idx)
-
-                for related_file in related_files:
-                    related_file = _prepare_related_file(related_file, len(db_frames))
-                    db_related_file = models.RelatedFile(**related_file)
-                    db_related_files.append(db_related_file)
-
-                db_frames.append(models.Image(**frame))
-
-            db_frames = dm.task.bulk_create(
-                db_model=models.Image,
-                objects=db_frames,
-                flt_param={'data_id': db_data.id},
-            )
-
-            for db_related_file in db_related_files:
-                db_related_file.primary_image = db_frames[db_related_file.primary_image_id]
-
-            dm.task.bulk_create(
-                db_model=models.RelatedFile,
-                objects=db_related_files,
-                flt_param={}
-            )
-
-        else:
-            frame = _prepare_frame(frames[0])
-            models.Video.objects.create(**frame)
+        return segment_size, overlap
 
     def _import_task(self):
         data = self._manifest.pop('data')
-        frames = data.pop('frames')
         labels = self._manifest.pop('labels')
-        self._segments = self._manifest.pop('segments')
+        self._jobs = self._manifest.pop('jobs')
 
         self._prepare_task_meta(self._manifest)
+        self._manifest['segment_size'], self._manifest['overlap'] = self._calculate_segment_size(self._jobs)
+
         self._db_task = models.Task.objects.create(**self._manifest)
         task_path = self._db_task.get_task_dirname()
         if os.path.isdir(task_path):
@@ -398,22 +331,17 @@ class TaskImporter(_TaskBackupBase):
         os.makedirs(self._db_task.get_task_logs_dirname())
         os.makedirs(self._db_task.get_task_artifacts_dirname())
 
-        db_data = self._create_data(data)
+        self._labels_mapping, self._attributes_mapping = self._create_labels(self._db_task, labels)
+
+        self._prepare_data_meta(data)
+        data_serializer = DataSerializer(data=data)
+        data_serializer.is_valid(raise_exception=True)
+        db_data = data_serializer.save()
         self._db_task.data = db_data
         self._db_task.save()
 
-        self._create_frames(db_data, frames)
-
-        self._labels_mapping, self._attributes_mapping = self._create_labels(self._db_task, labels)
-
-        return self._db_task.id
-
-    def _import_annotations(self):
-        self._create_segments(self._db_task, self._labels_mapping, self._attributes_mapping, self._segments)
-
-    def _import_media(self):
-        data_path = self._db_task.data.get_data_dirname()
-
+        data_path = self._db_task.data.get_upload_dirname()
+        uploaded_files = []
         with ZipFile(self._filename, 'r') as input_file:
             for f in input_file.namelist():
                 if f.startswith(self.DATA_DIRNAME + os.path.sep):
@@ -421,19 +349,35 @@ class TaskImporter(_TaskBackupBase):
                     self._prepare_dirs(target_file)
                     with open(target_file, "wb") as out:
                         out.write(input_file.read(f))
+                    uploaded_files.append(os.path.relpath(f, self.DATA_DIRNAME))
                 elif f.startswith(self.TASK_DIRNAME + os.path.sep):
                     target_file = os.path.join(task_path, os.path.relpath(f, self.TASK_DIRNAME))
                     self._prepare_dirs(target_file)
                     with open(target_file, "wb") as out:
                         out.write(input_file.read(f))
 
+        data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
+        data = data_serializer.data
+        data['client_files'] = uploaded_files
+        _create_thread(self._db_task.pk, data)
+
+    def _import_annotations(self):
+        job_mapping = {}
+        for db_segment in self._db_task.segment_set.all():
+            for db_job in db_segment.job_set.all():
+                for job in self._jobs:
+                    if db_segment.start_frame == job['start_frame']:
+                        job_mapping[job['id']] = db_job.id
+
+        for job in self._jobs:
+            db_job = Job.objects.get(pk=job_mapping[job['id']])
+            self._create_annotations(db_job, self._labels_mapping, self._attributes_mapping, self._annotations[job['id']])
+
+
     def import_task(self):
         self._import_task()
         self._import_annotations()
-        self._import_media()
         return self._db_task
-
-
 
 def import_task(filename):
     av_scan_paths(filename)

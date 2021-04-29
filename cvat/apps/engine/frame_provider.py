@@ -160,12 +160,7 @@ class FrameProvider:
             raise Exception('unsupported output type')
 
     def get_preview(self):
-        preview_path = self._db_data.get_preview_path()
-        if not os.path.exists(preview_path):
-            preview, _ = self.get_frame(frame_number=0)
-            preview = IMediaReader._get_preview(preview)
-            preview.save(preview_path)
-        return preview_path
+        return self._db_data.get_preview_path()
 
     def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
         chunk_number = self._validate_chunk_number(chunk_number)
