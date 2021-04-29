@@ -381,10 +381,12 @@ context('Review pipeline feature', () => {
         });
 
         it('Display all the issues again. Comment a couple of issues and resolve all them.', () => {
-            function resolveIssue() {
+            function resolveReopenIssue(reopen) {
                 cy.collectIssueLabel().then((issueLabelList) => {
                     for (let label = 0; label < issueLabelList.length; label++) {
-                        cy.resolveIssue(issueLabelList[label], 'Done');
+                        reopen
+                            ? cy.resolveReopenIssue(issueLabelList[label], 'Please fix', true)
+                            : cy.resolveReopenIssue(issueLabelList[label], 'Done');
                     }
                 });
             }
@@ -395,12 +397,17 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-hidden-issue-label').should('exist').and('have.length', 1);
             cy.get('.cvat-issues-sidebar-previous-frame').click();
 
-            resolveIssue();
+            resolveReopenIssue();
             cy.checkIssueLabel('Done', 'resolved');
             cy.goCheckFrameNumber(2);
-            resolveIssue();
+            resolveReopenIssue();
             cy.checkIssueLabel('Done', 'resolved');
             cy.goCheckFrameNumber(0);
+
+            // Reopen issues
+            resolveReopenIssue(true);
+            // Resolve again
+            resolveReopenIssue();
         });
 
         it('Request a review again. Assign the third user again. The second user logout.', () => {

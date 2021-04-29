@@ -14,8 +14,6 @@ services:
       dockerfile: Dockerfile.ci
     depends_on:
       - cvat
-      - cvat_ui
-      - cvat_proxy
     environment:
       COVERALLS_SERVICE_NAME:
       CONTAINER_COVERAGE_DATA_DIR:

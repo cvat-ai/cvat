@@ -22,7 +22,7 @@ function PhotoContextControl(props: Props): JSX.Element {
     return (
         <CVATTooltip title='Photo context show/hide' placement='right'>
             <CameraIcon
-                className={`cvat-move-control
+                className={`cvat-context-image-control
     cvat-control-side-bar-icon-size ${
         activeControl === ActiveControl.PHOTO_CONTEXT ? 'cvat-active-canvas-control' : ''
         }`}
