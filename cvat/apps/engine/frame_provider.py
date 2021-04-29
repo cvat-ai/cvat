@@ -5,14 +5,13 @@
 import math
 from enum import Enum
 from io import BytesIO
-import os
 
 import cv2
 import numpy as np
 from PIL import Image
 
 from cvat.apps.engine.cache import CacheInteraction
-from cvat.apps.engine.media_extractors import VideoReader, ZipReader, IMediaReader
+from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
 
