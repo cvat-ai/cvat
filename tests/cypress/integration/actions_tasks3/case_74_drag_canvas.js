@@ -21,7 +21,7 @@ context('Drag canvas.', () => {
                 topBefore = Number($style.split(';')[0].split(' ')[1].replace('px', ''));
                 leftBefore = Number($style.split(';')[1].split(' ')[2].replace('px', ''));
             });
-            cy.get('.cvat-move-control').click();
+            cy.get('.cvat-move-control').click(); // Without this action, the function is not covered
             cy.get('.cvat-canvas-container').trigger('mousedown', {button: 0}).trigger('mousemove', 500, 500);
         });
 
