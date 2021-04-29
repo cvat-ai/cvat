@@ -6,6 +6,7 @@
 
 context('Reset password notification.', () => {
     const caseId = '73';
+    const dummyEmail = 'admin@local.local'
 
     before(() => {
         cy.visit('auth/login');
@@ -17,7 +18,7 @@ context('Reset password notification.', () => {
         });
 
         it('Sending a password reset request', () => {
-            cy.get('#email').type(Cypress.env('email'));
+            cy.get('#email').type(dummyEmail);
             cy.get('.cvat-reset-password-form-button').click();
             cy.contains('Check your email').should('be.visible');
         });
