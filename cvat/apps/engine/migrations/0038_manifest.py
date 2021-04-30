@@ -4,6 +4,7 @@ import glob
 import itertools
 import logging
 import os
+import sys
 from re import search
 
 from django.conf import settings
@@ -22,6 +23,8 @@ def get_logger():
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.addHandler(logging.StreamHandler(sys.stderr))
     return logger
 
 def _get_query_set(apps):
