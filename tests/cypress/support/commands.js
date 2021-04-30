@@ -485,6 +485,10 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.chunkSize) {
         cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
+
+    if (advancedConfigurationParams.overlapSize) {
+        cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
+    }
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
