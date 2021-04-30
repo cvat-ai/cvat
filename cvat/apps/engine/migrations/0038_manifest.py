@@ -55,7 +55,6 @@ def migrate2meta(apps, shema_editor):
                 with open(meta_path, "w") as meta_file:
                     for idx, pts, _ in meta:
                         meta_file.write(f"{idx} {pts}\n")
-                    meta_file.write(str(meta.frames))
                 logger.info('Succesfull migration for the data({})'.format(db_data.id))
             else:
                 name_format = "dummy_{}.txt"
