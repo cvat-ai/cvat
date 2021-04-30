@@ -55,17 +55,18 @@ def migrate2meta(apps, shema_editor):
                 with open(meta_path, "w") as meta_file:
                     for idx, pts, _ in meta:
                         meta_file.write(f"{idx} {pts}\n")
-                logger.info('Succesfull migration for the data({})'.format(db_data.id))
             else:
                 name_format = "dummy_{}.txt"
                 sources = [db_image.path for db_image in db_data.images.all().order_by('frame')]
                 counter = itertools.count()
+                logger.info('Preparing of the dummy chunks has begun')
                 for idx, img_paths in itertools.groupby(sources, lambda x: next(counter) // db_data.chunk_size):
                     if os.path.exists(os.path.join(upload_dir, name_format.format(idx))):
                         logger.info(name_format.format(idx) + " alredy exists")
                         continue
                     with open(os.path.join(upload_dir, name_format.format(idx)), "w") as dummy_chunk:
                         dummy_chunk.writelines([f"{img_path}\n" for img_path in img_paths])
+            logger.info('Succesfull migration for the data({})'.format(db_data.id))
         except Exception as ex:
             logger.error(str(ex))
 
@@ -137,7 +138,6 @@ def migrate2manifest(apps, shema_editor):
                         item = content.pop(0) if i in images_range else dict()
                         result_content.append(item)
                     content = result_content
-                    logger.info('')
                 logger.info('Manifest creating has begun')
                 manifest.create(content)
                 logger.info('Index creating has begun')
