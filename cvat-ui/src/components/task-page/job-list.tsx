@@ -166,7 +166,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Frames',
             dataIndex: 'frames',
             key: 'frames',
-            className: 'cvat-text-color',
+            className: 'cvat-text-color cvat-job-item-frames',
         },
         {
             title: 'Status',

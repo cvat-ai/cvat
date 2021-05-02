@@ -846,6 +846,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not upload annotations for the ' +
                                 `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
                             reason: error.toString(),
+                            className: 'cvat-notification-notice-upload-annotations-fail',
                         },
                     },
                 },
