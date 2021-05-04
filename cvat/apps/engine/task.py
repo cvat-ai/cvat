@@ -206,14 +206,11 @@ def _download_data(urls, upload_dir):
     return list(local_files.keys())
 
 @transaction.atomic
-def _create_thread(tid, data):
+def _create_thread(tid, data, isImport=False):
     slogger.glob.info("create task #{}".format(tid))
 
     db_task = models.Task.objects.select_for_update().get(pk=tid)
     db_data = db_task.data
-    if db_task.data.size != 0:
-        raise NotImplementedError("Adding more data is not implemented")
-
     upload_dir = db_data.get_upload_dirname()
 
     if data['remote_files']:
@@ -250,6 +247,11 @@ def _create_thread(tid, data):
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()
                 db_data.storage = models.StorageChoice.LOCAL
+            if isImport and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
+                db_data.start_frame = 0
+                data['stop_frame'] = None
+                db_data.frame_filter = ''
+
             extractor = MEDIA_TYPES[media_type]['extractor'](
                 source_path=source_paths,
                 step=db_data.get_frame_step(),

@@ -526,6 +526,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def data(self, request, pk):
         if request.method == 'POST':
             db_task = self.get_object() # call check_object_permissions as well
+            if db_task.data:
+                return Response(data='Adding more data is not supported',
+                    status=status.HTTP_400_BAD_REQUEST)
             serializer = DataSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             db_data = serializer.save()

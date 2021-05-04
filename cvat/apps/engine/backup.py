@@ -159,6 +159,14 @@ class TaskExporter(_TaskBackupBase):
                 target_dir=self.DATA_DIRNAME
             )
 
+            upload_dir = self._db_data.get_upload_dirname()
+            self._write_files(
+                source_dir=upload_dir,
+                zip_object=zip_object,
+                files=(os.path.join(upload_dir, f) for f in ('manifest.jsonl', 'index.json')),
+                target_dir=self.DATA_DIRNAME
+            )
+
     def _write_task(self, zip_object):
         task_dir = self._db_task.get_task_dirname()
         self._write_directory(
@@ -197,7 +205,6 @@ class TaskExporter(_TaskBackupBase):
             data_serializer = DataSerializer(self._db_data)
             data = data_serializer.data
             data['chunk_type'] = data.pop('compressed_chunk_type')
-            data['storage'] = StorageChoice.LOCAL
             return self._prepare_data_meta(data)
 
         task = serialize_task()
@@ -359,7 +366,12 @@ class TaskImporter(_TaskBackupBase):
         data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data
         data['client_files'] = uploaded_files
-        _create_thread(self._db_task.pk, data)
+        _create_thread(self._db_task.pk, data.copy(), True)
+        db_data.start_frame = data['start_frame']
+        db_data.stop_frame = data['stop_frame']
+        db_data.frame_filter = data['frame_filter']
+        db_data.storage = StorageChoice.LOCAL
+        db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage'])
 
     def _import_annotations(self):
         job_mapping = {}
