@@ -7,7 +7,6 @@ import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {

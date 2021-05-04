@@ -14,6 +14,7 @@
             }
         }
     }
+
     > .ant-modal-header .anticon {
         margin-left: $grid-unit-size;
 
@@ -21,13 +22,13 @@
             color: $text-color-secondary;
         }
     }
-}
-
-.cvat-move-task-label-mapper-item {
-    margin: $grid-unit-size * 2 0;
 
     .ant-select {
         margin: 0 $grid-unit-size;
         width: $grid-unit-size * 25;
     }
+}
+
+.cvat-move-task-label-mapper-item {
+    margin: $grid-unit-size * 2 0;
 }

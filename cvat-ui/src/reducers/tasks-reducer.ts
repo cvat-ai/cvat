@@ -378,19 +378,19 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case TasksActionTypes.MOVE_TASK_TO_PROJECT: {
             return {
                 ...state,
-                // updating: true,
+                updating: true,
             };
         }
         case TasksActionTypes.MOVE_TASK_TO_PROJECT_FAILED: {
             return {
                 ...state,
-                // updating: false,
+                updating: false,
             };
         }
         case TasksActionTypes.MOVE_TASK_TO_PROJECT_SUCCESS: {
             return {
                 ...state,
-                // updating: false,
+                updating: false,
                 current: state.current.map(
                     (task): Task => {
                         if (task.instance.id === action.payload.task.id) {
