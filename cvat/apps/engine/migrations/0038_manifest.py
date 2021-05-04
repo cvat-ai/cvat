@@ -65,7 +65,7 @@ def migrate2meta(apps, shema_editor):
                 logger.info('Preparing of the dummy chunks has begun')
                 for idx, img_paths in itertools.groupby(sources, lambda x: next(counter) // db_data.chunk_size):
                     if os.path.exists(os.path.join(upload_dir, name_format.format(idx))):
-                        logger.info(name_format.format(idx) + " alredy exists")
+                        logger.info(name_format.format(idx) + " already exists")
                         continue
                     with open(os.path.join(upload_dir, name_format.format(idx)), "w") as dummy_chunk:
                         dummy_chunk.writelines([f"{img_path}\n" for img_path in img_paths])
