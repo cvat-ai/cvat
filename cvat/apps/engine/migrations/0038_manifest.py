@@ -91,7 +91,7 @@ def migrate2manifest(apps, shema_editor):
                     logger.info(f"{path} has been deleted")
             # it's necessary for case with long data migration
             if os.path.exists(os.path.join(upload_dir, 'manifest.jsonl')):
-                logger.info('Manifest file alredy exists')
+                logger.info('Manifest file already exists')
                 continue
             data_dir = upload_dir if db_data.storage == StorageChoice.LOCAL else settings.SHARE_ROOT
             if hasattr(db_data, 'video'):
