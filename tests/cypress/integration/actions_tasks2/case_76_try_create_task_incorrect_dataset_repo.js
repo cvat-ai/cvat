@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Try to create a task with dummy dataset repository.', () => {
+context('Try to create a task with an incorrect dataset repository.', () => {
     const caseId = '76';
     const labelName = `Case ${caseId}`;
     const taskName = labelName;
@@ -31,11 +31,6 @@ context('Try to create a task with dummy dataset repository.', () => {
         cy.get('#cvat-create-task-button').click();
     });
 
-    // after(() => {
-    //     cy.goToTaskList();
-    //     cy.deleteTask(taskName);
-    // });
-
     describe(`Testing "${labelName}"`, () => {
         it('Try create task with incorrect dataset repo URL.', () => {
             cy.get('[id="name"]').type(taskName);
@@ -59,7 +54,7 @@ context('Try to create a task with dummy dataset repository.', () => {
             cy.get('#repository').type(repositoryWithMissingAccess);
             cy.get('.cvat-create-task-submit-section').click();
             cy.get('.cvat-notification-notice-create-task-failed').should('exist');
-            cy.get('.cvat-create-task-clone-reposytory-fail').should('exist');
+            cy.get('.cvat-create-task-clone-repository-fail').should('exist');
         });
     });
 });
