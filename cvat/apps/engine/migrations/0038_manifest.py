@@ -49,7 +49,7 @@ def migrate2meta(apps, shema_editor):
             data_dir = upload_dir if db_data.storage == StorageChoice.LOCAL else settings.SHARE_ROOT
             if hasattr(db_data, 'video'):
                 if os.path.exists(meta_path):
-                    logger.info('A meta_info.txt alredy exists')
+                    logger.info('A meta_info.txt already exists')
                     continue
                 media_file = os.path.join(data_dir, db_data.video.path)
                 logger.info('Preparing of the video meta has begun')
