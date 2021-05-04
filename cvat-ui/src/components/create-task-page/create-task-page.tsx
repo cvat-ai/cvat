@@ -52,6 +52,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                 Modal.error({
                     width: 800,
                     title: 'Could not clone the repository',
+                    className: 'cvat-create-task-clone-reposytory-fail',
                     content: (
                         <>
                             <Paragraph>
