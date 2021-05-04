@@ -31,14 +31,6 @@ class _CloudStorage(ABC):
     def is_exist(self):
         pass
 
-    # @abstractmethod
-    # def head(self):
-    #     pass
-
-    # @abstractproperty
-    # def supported_files(self):
-    #    pass
-
     @abstractmethod
     def initialize_content(self):
         pass
@@ -52,6 +44,8 @@ class _CloudStorage(ABC):
         if isinstance(file_obj, BytesIO):
             with open(path, 'wb') as f:
                 f.write(file_obj.getvalue())
+        else:
+            raise NotImplementedError("Unsupported type {} was found".format(type(file_obj)))
 
     @abstractmethod
     def upload_file(self, file_obj, file_name):
@@ -88,6 +82,13 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
     return instance
 
 class AWS_S3(_CloudStorage):
+    waiter_config = {
+        'Delay': 5, # The amount of time in seconds to wait between attempts. Default: 5
+        'MaxAttempts': 3, # The maximum number of attempts to be made. Default: 20
+    }
+    transfer_config = {
+        'max_io_queue': 10,
+    }
     def __init__(self,
                 bucket,
                 region,
@@ -121,19 +122,12 @@ class AWS_S3(_CloudStorage):
     def name(self):
         return self._bucket.name
 
-    # def is_object_exist(self, verifiable='bucket_exist', config=None):
-    #     waiter = self._client_s3.get_waiter(verifiable)
-    #     waiter.wait(**config)
-
     def is_exist(self):
         waiter = self._client_s3.get_waiter('bucket_exists')
         try:
             waiter.wait(
                 Bucket=self.name,
-                WaiterConfig={
-                    'Delay': 5, # The amount of time in seconds to wait between attempts. Default: 5
-                    'MaxAttempts': 3 # The maximum number of attempts to be made. Default: 20
-                }
+                WaiterConfig=self.waiter_config
             )
         except WaiterError:
             raise Exception('A resource {} unavailable'.format(self.name))
@@ -144,26 +138,16 @@ class AWS_S3(_CloudStorage):
             waiter.wait(
                 Bucket=self._bucket,
                 Key=key_object,
-                WaiterConfig={
-                    'Delay': 5,
-                    'MaxAttempts': 3,
-                },
+                WaiterConfig=self.waiter_config
             )
         except WaiterError:
             raise Exception('A file {} unavailable'.format(key_object))
-
-    def head(self):
-        pass
-
-    # @property
-    # def supported_files(self):
-    #     pass
 
     def upload_file(self, file_obj, file_name):
         self._bucket.upload_fileobj(
             Fileobj=file_obj,
             Key=file_name,
-            Config=TransferConfig(max_io_queue=10)
+            Config=TransferConfig(**self.transfer_config)
         )
 
     def initialize_content(self):
@@ -177,7 +161,7 @@ class AWS_S3(_CloudStorage):
         self.bucket.download_fileobj(
             Key=key,
             Fileobj=buf,
-            Config=TransferConfig(max_io_queue=10)
+            Config=TransferConfig(**self.transfer_config)
         )
         buf.seek(0)
         return buf
@@ -199,7 +183,7 @@ class AWS_S3(_CloudStorage):
         except Exception as ex:
             msg = str(ex)
             slogger.glob.info(msg)
-            raise Exception(str(ex))
+            raise Exception(msg)
 
 class AzureBlobContainer(_CloudStorage):
 
@@ -248,13 +232,6 @@ class AzureBlobContainer(_CloudStorage):
     def is_object_exist(self, file_name):
         blob_client = self._container_client.get_blob_client(file_name)
         return blob_client.exists()
-
-    def head(self):
-        pass
-
-    # @property
-    # def supported_files(self):
-    #     pass
 
     def upload_file(self, file_obj, file_name):
         self._container_client.upload_blob(name=file_name, data=file_obj)

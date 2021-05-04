@@ -51,7 +51,7 @@ class CacheInteraction:
         upload_dir = {
                 StorageChoice.LOCAL: db_data.get_upload_dirname(),
                 StorageChoice.SHARE: settings.SHARE_ROOT,
-                StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname()
+                StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname(),
             }[db_data.storage]
         if hasattr(db_data, 'video'):
             source_path = os.path.join(upload_dir, db_data.video.path)

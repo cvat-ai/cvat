@@ -1050,10 +1050,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
         queryset = super().get_queryset()
         if (provider_type := self.request.query_params.get('provider_type', None)):
             if provider_type in CloudProviderChoice.list():
-                queryset = queryset.filter(provider_type=provider_type)
-            else:
-                raise ValidationError('Unsupported type of cloud provider')
-        return queryset
+                return queryset.filter(provider_type=provider_type)
+            raise ValidationError('Unsupported type of cloud provider')
 
     def perform_create(self, serializer):
         # check that instance of cloud storage exists
