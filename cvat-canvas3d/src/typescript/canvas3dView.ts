@@ -637,9 +637,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const canvasTopView = this.views.top.renderer.domElement;
         const topScenePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasTopView.offsetHeight,
             canvasTopView.offsetWidth, canvasTopView.offsetHeight, canvasTopView.offsetWidth),
-        new THREE.MeshBasicMaterial({
-            color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0,
-        }));
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0,
+            }));
         topScenePlane.position.set(0, 0, 0);
         topScenePlane.name = Planes.TOP;
         (topScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
@@ -650,9 +650,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const canvasSideView = this.views.side.renderer.domElement;
         const sideScenePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasSideView.offsetHeight,
             canvasSideView.offsetWidth, canvasSideView.offsetHeight, canvasSideView.offsetWidth),
-        new THREE.MeshBasicMaterial({
-            color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0,
-        }));
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0,
+            }));
         sideScenePlane.position.set(0, 0, 0);
         sideScenePlane.rotation.set(-Math.PI / 2, Math.PI / 2000, Math.PI);
         sideScenePlane.name = Planes.SIDE;
@@ -664,9 +664,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const canvasFrontView = this.views.front.renderer.domElement;
         const frontScenePlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasFrontView.offsetHeight,
             canvasFrontView.offsetWidth, canvasFrontView.offsetHeight, canvasFrontView.offsetWidth),
-        new THREE.MeshBasicMaterial({
-            color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0,
-        }));
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff, alphaTest: 0, visible: true, transparent: true, opacity: 0,
+            }));
         frontScenePlane.position.set(0, 0, 0);
         frontScenePlane.rotation.set(0, Math.PI / 2, 0);
         frontScenePlane.name = Planes.FRONT;
@@ -1159,18 +1159,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const canvasTopView = this.views.top.renderer.domElement;
                 const planeTop = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasTopView.offsetHeight,
                     canvasTopView.offsetWidth, canvasTopView.offsetHeight, canvasTopView.offsetWidth),
-                new THREE.MeshBasicMaterial({
-                    color: 0xff0000, alphaTest: 0, visible: false, transparent: true, opacity: 0.1,
-                }));
+                    new THREE.MeshBasicMaterial({
+                        color: 0xff0000, alphaTest: 0, visible: false, transparent: true, opacity: 0.1,
+                    }));
                 planeTop.name = Planes.TOP;
                 (planeTop.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
 
                 const canvasSideView = this.views.side.renderer.domElement;
                 const planeSide = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasSideView.offsetHeight,
                     canvasSideView.offsetWidth, canvasSideView.offsetHeight, canvasSideView.offsetWidth),
-                new THREE.MeshBasicMaterial({
-                    color: 0x00ff00, alphaTest: 0, visible: false, transparent: true, opacity: 0.1,
-                }));
+                    new THREE.MeshBasicMaterial({
+                        color: 0x00ff00, alphaTest: 0, visible: false, transparent: true, opacity: 0.1,
+                    }));
                 planeSide.name = Planes.SIDE;
                 (planeSide.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
 
@@ -1178,9 +1178,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const canvasFrontView = this.views.front.renderer.domElement;
                 const planeFront = new THREE.Mesh(new THREE.PlaneBufferGeometry(canvasFrontView.offsetHeight,
                     canvasFrontView.offsetWidth, canvasFrontView.offsetHeight, canvasFrontView.offsetWidth),
-                new THREE.MeshBasicMaterial({
-                    color: 0x0000ff, alphaTest: 0, visible: false, transparent: true, opacity: 0.5,
-                }));
+                    new THREE.MeshBasicMaterial({
+                        color: 0x0000ff, alphaTest: 0, visible: false, transparent: true, opacity: 0.5,
+                    }));
                 planeFront.name = Planes.FRONT;
                 (planeFront.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
 

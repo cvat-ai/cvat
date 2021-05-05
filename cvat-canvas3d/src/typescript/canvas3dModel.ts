@@ -33,7 +33,7 @@ export enum FrameZoom {
 }
 
 export enum Planes {
-    TOP= 'topPlane',
+    TOP = 'topPlane',
     SIDE = 'sidePlane',
     FRONT = 'frontPlane',
     PERSPECTIVE = 'perspectivePlane'
