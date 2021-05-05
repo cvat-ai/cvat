@@ -5,6 +5,10 @@ import * as THREE from 'three';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { ViewType } from './canvas3dModel';
 
+export interface Indexable {
+    [key: string]: any;
+}
+
 export class CuboidModel {
     public perspective: THREE.Mesh;
     public top: THREE.Mesh;
@@ -29,45 +33,89 @@ export class CuboidModel {
         wireframe.computeLineDistances();
         wireframe.renderOrder = 1;
         this.perspective.add(wireframe);
+
         this.top = new THREE.Mesh(geometry, material);
         this.side = new THREE.Mesh(geometry, material);
         this.front = new THREE.Mesh(geometry, material);
     }
 
     public setPosition(x: number, y: number, z: number): void {
-        this.perspective.position.set(x, y, z);
-        this.top.position.set(x, y, z);
-        this.side.position.set(x, y, z);
-        this.front.position.set(x, y, z);
+        ['perspective', 'top', 'side', 'front'].forEach((view): void => {
+            (this as Indexable)[view].position.set(x, y, z);
+        });
+    }
+
+    public setScale(x: number, y: number, z: number): void {
+        ['perspective', 'top', 'side', 'front'].forEach((view): void => {
+            (this as Indexable)[view].scale.set(x, y, z);
+        });
+    }
+
+    public setRotation(x: number, y: number, z: number): void {
+        ['perspective', 'top', 'side', 'front'].forEach((view): void => {
+            (this as Indexable)[view].rotation.set(x, y, z);
+        });
+    }
+
+    public attachCameraReference(): void {
+        // Attach Cam Reference
+        const topCameraReference = new THREE.Object3D();
+        topCameraReference.translateZ(2);
+        topCameraReference.name = 'camRef';
+        this.top.add(topCameraReference);
+        this.top.userData = { ...this.top.userData, camReference: topCameraReference };
+
+        const sideCameraReference = new THREE.Object3D();
+        sideCameraReference.translateY(2);
+        sideCameraReference.name = 'camRef';
+        this.side.add(sideCameraReference);
+        this.side.userData = { ...this.side.userData, camReference: sideCameraReference };
+
+        const frontCameraReference = new THREE.Object3D();
+        frontCameraReference.translateX(2);
+        frontCameraReference.name = 'camRef'; // To be removed
+        this.front.add(frontCameraReference);
+        this.front.userData = { ...this.front.userData, camReference: frontCameraReference };
+    }
+
+
+    public getReferenceCoordinates(viewType: string): THREE.Vector3 {
+        const { elements } = (this as Indexable)[viewType].getObjectByName('camRef').matrixWorld;
+        return new THREE.Vector3(elements[12], elements[13], elements[14]);
     }
 
     public setName(clientId: any): void {
-        this.perspective.name = clientId;
-        this.top.name = clientId;
-        this.side.name = clientId;
-        this.front.name = clientId;
+        ['perspective', 'top', 'side', 'front'].forEach((view): void => {
+            (this as Indexable)[view].name = clientId;
+        });
     }
 
     public setOriginalColor(color: string): void {
-        (this.perspective as any).originalColor = color;
-        (this.top as any).originalColor = color;
-        (this.side as any).originalColor = color;
-        (this.front as any).originalColor = color;
+        ['perspective', 'top', 'side', 'front'].forEach((view): void => {
+            ((this as Indexable)[view] as any).originalColor = color;
+        });
     }
 
     public setColor(color: string): void {
-        (this.perspective.material as THREE.MeshBasicMaterial).color.set(color);
-        (this.top.material as THREE.MeshBasicMaterial).color.set(color);
-        (this.side.material as THREE.MeshBasicMaterial).color.set(color);
-        (this.front.material as THREE.MeshBasicMaterial).color.set(color);
+        ['perspective', 'top', 'side', 'front'].forEach((view): void => {
+            ((this as Indexable)[view].material as THREE.MeshBasicMaterial).color.set(color);
+        });
     }
 
     public setOpacity(opacity: number): void {
-        (this.perspective.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
-        (this.top.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
-        (this.side.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
-        (this.front.material as THREE.MeshBasicMaterial).opacity = opacity / 100;
+        ['perspective', 'top', 'side', 'front'].forEach((view): void => {
+            ((this as Indexable)[view].material as THREE.MeshBasicMaterial).opacity = opacity / 100;
+        });
     }
+}
+
+
+export function setEdges(instance: THREE.Mesh): THREE.LineSegments {
+    const edges = new THREE.EdgesGeometry(instance.geometry);
+    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: '#ffffff', linewidth: 3 }));
+    line.name = 'edges';
+    instance.add(line);
+    return line;
 }
 
 

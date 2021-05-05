@@ -32,6 +32,13 @@ export enum FrameZoom {
     MAX = 10,
 }
 
+export enum Planes {
+    TOP= 'topPlane',
+    SIDE = 'sidePlane',
+    FRONT = 'frontPlane',
+    PERSPECTIVE = 'perspectivePlane'
+}
+
 export enum ViewType {
     PERSPECTIVE = 'perspective',
     TOP = 'top',
