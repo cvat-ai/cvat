@@ -1001,17 +1001,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         tags=['cloud storages']
     )
 )
-@method_decorator(name='retrieve', decorator=swagger_auto_schema(
-        operation_summary='Method returns details of a specific cloud storage',
-        tags=['cloud storages']
-    )
-)
-@method_decorator(name='create', decorator=swagger_auto_schema(
-        operation_summary='Method creates a cloud storage with a specified characteristics',
-        responses={'201': openapi.Response(description='A storage has beed created')},
-        tags=['cloud storages']
-    )
-)
 @method_decorator(name='destroy', decorator=swagger_auto_schema(
         operation_summary='Method deletes a specific cloud storage',
         tags=['cloud storages']
@@ -1090,10 +1079,27 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
         super().perform_destroy(instance)
         shutil.rmtree(cloud_storage_dirname, ignore_errors=True)
 
+    @method_decorator(name='create', decorator=swagger_auto_schema(
+            operation_summary='Method creates a cloud storage with a specified characteristics',
+            responses={
+                '201': openapi.Response(description='A storage has beed created')
+            },
+            tags=['cloud storages']
+        )
+    )
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+        except IntegrityError:
+            response = HttpResponseBadRequest('Same storage already exists')
+        except Exception as ex:
+            response = HttpResponseBadRequest(str(ex))
+        return response
+
     @method_decorator(
         name='retrieve',
         decorator=swagger_auto_schema(
-            operation_summary='Method returns details of a cloud storage',
+            operation_summary='Method returns details of a specific cloud storage',
             operation_description=
                 "Method returns list of available files, if action is content",
             manual_parameters=[
