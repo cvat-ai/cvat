@@ -325,7 +325,7 @@ class _ManifestManager(ABC):
         return self._index
 
 class VideoManifestManager(_ManifestManager):
-    def __init__(self, manifest_path, *args, **kwargs):
+    def __init__(self, manifest_path):
         super().__init__(manifest_path)
         setattr(self._manifest, 'TYPE', 'video')
         self.BASE_INFORMATION['properties'] = 3
@@ -381,9 +381,15 @@ class ManifestValidator:
             assert self._manifest.TYPE != json.loads(manifest_file.readline())['type']
 
 class VideoManifestValidator(VideoManifestManager):
-    def __init__(self, **kwargs):
-        self.source_path = kwargs.pop('source_path')
-        super().__init__(self, **kwargs)
+    def __init__(self, source_path, manifest_path):
+        self.source_path = source_path
+        super().__init__(manifest_path)
+
+    @staticmethod
+    def _get_video_stream(container):
+        video_stream = next(stream for stream in container.streams if stream.type == 'video')
+        video_stream.thread_type = 'AUTO'
+        return video_stream
 
     def validate_key_frame(self, container, video_stream, key_frame):
         for packet in container.demux(video_stream):
