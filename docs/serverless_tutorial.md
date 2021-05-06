@@ -8,11 +8,44 @@
 
 ## Introduction
 
-- What is automatic and semi-automatic annotation?
-- When does it work? Limitations.
+Now computers become our partners. They help us to solve routine tasks,
+fix mistakes, find information, etc. It is a natural idea to use their
+compute power to annotate datasets. There are multiple DL models for
+classification, object detection, semantic segmentation which can do
+data annotation for us. And it is relatively simple to integrate your
+own ML/DL solution into CVAT.
+
+But the world is not perfect and we don't have a silver bullet which can
+solve all our problems. Usually available DL models are trained on public
+datasets which cannot cover all specific cases. Very often you want to
+detect objects which cannot be recognized by these models or add new
+attributes. Our annotation requirements can be so strict that automatically
+annotated objects cannot be accepted as is. You always need to keep in mind
+all these mentioned limitations. Even if you have a DL solution which can
+_perfectly_ annotate 50% of your data, it means that manual work will be
+reduced only twice.
+
+When we know that DL models can help us to annotate data faster, the next
+question is how to use them? In CVAT all such DL models are implemented
+as serverless functions for [nuclio][nuclio-homepage] serverless platform.
+And there are multiple implemented functions out of the box which can be
+found in [serverless][cvat-builtin-serverless] directory on GitHub. Follow
+[the installation guide][cvat-auto-annotation-guide] to build and deploy
+builtin serverless functions.
+
+What is a serverless function and why is it used for automatic annotation
+in CVAT? Let's assume that you have a DL model and want to use it for
+AI assisted annotation. The naive approach is to implement a python
+script which uses the DL model to prepare a file with annotations in a
+public format like [MS COCO][mscoco-format] or [Pascal VOC][pascal-voc-format].
+After that you can upload the annotation file into CVAT. It works but it is
+not user-friendly. How to force CVAT to run the script for you?
+
+Basically a serverless function is a container which packs your python script
+together with DL model and provides standard interface to interact with it.
+
 - The idea behind serverless functions? What is it?
 - Nuclio introduction and basic links.
-- How to install CVAT with serverless functions?
 
 ## User story
 
@@ -337,3 +370,8 @@ The actual deployment process is described in
 [nuclio-bkms-doc]: https://nuclio.io/docs/latest/concepts/best-practices-and-common-pitfalls/
 [retinanet-function-yaml]: https://github.com/openvinotoolkit/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
 [retinanet-main-py]: https://github.com/openvinotoolkit/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
+[nuclio-homepage]: https://nuclio.io/
+[cvat-builtin-serverless]: https://github.com/openvinotoolkit/cvat/tree/develop/serverless
+[cvat-auto-annotation-guide]: https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/documentation/installation_automatic_annotation.md
+[mscoco-format]: https://cocodataset.org/#format-data
+[pascal-voc-format]: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/index.html
