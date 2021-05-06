@@ -72,8 +72,9 @@ def _save_task_to_db(db_task):
 
     segment_size = db_task.segment_size
     segment_step = segment_size
-    if segment_size == 0:
+    if segment_size == 0 or segment_size > db_task.data.size:
         segment_size = db_task.data.size
+        db_task.segment_size = segment_size
 
         # Segment step must be more than segment_size + overlap in single-segment tasks
         # Otherwise a task contains an extra segment
@@ -205,6 +206,9 @@ def _download_data(urls, upload_dir):
 
     return list(local_files.keys())
 
+def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
+    return lambda frame_id: start_frame + frame_id * frame_step
+
 @transaction.atomic
 def _create_thread(tid, data, isImport=False):
     slogger.glob.info("create task #{}".format(tid))
@@ -237,6 +241,7 @@ def _create_thread(tid, data, isImport=False):
 
     db_images = []
     extractor = None
+    manifest_index = _get_manifest_frame_indexer()
 
     for media_type, media_files in media.items():
         if media_files:
@@ -248,6 +253,7 @@ def _create_thread(tid, data, isImport=False):
                 upload_dir = db_data.get_upload_dirname()
                 db_data.storage = models.StorageChoice.LOCAL
             if isImport and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
+                manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
                 db_data.start_frame = 0
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
@@ -273,7 +279,6 @@ def _create_thread(tid, data, isImport=False):
             start=db_data.start_frame,
             stop=data['stop_frame'],
             dimension=models.DimensionType.DIM_3D,
-
         )
 
     db_task.mode = task_mode
@@ -419,7 +424,7 @@ def _create_thread(tid, data, isImport=False):
                     img_sizes = []
 
                     for _, frame_id in chunk_paths:
-                        properties = manifest[frame_id]
+                        properties = manifest[manifest_index(frame_id)]
                         if db_task.dimension == models.DimensionType.DIM_2D:
                             resolution = (properties['width'], properties['height'])
                         else:

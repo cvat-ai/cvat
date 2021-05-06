@@ -390,7 +390,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         f.write(chunk)
                 rq_job = queue.enqueue_call(
                     func=import_task,
-                    args=(filename,),
+                    args=(filename, request.user.id),
                     job_id=rq_id,
                 )
                 rq_job.meta['tmp_file'] = filename

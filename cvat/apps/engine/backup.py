@@ -240,8 +240,9 @@ class TaskExporter(_TaskBackupBase):
             self._write_annotations(output_file)
 
 class TaskImporter(_TaskBackupBase):
-    def __init__(self, filename):
+    def __init__(self, filename, user_id):
         self._filename = filename
+        self._user_id = user_id
         self._manifest, self._annotations = self._read_meta()
         self._version = self._read_version()
 
@@ -329,6 +330,7 @@ class TaskImporter(_TaskBackupBase):
 
         self._prepare_task_meta(self._manifest)
         self._manifest['segment_size'], self._manifest['overlap'] = self._calculate_segment_size(self._jobs)
+        self._manifest["owner_id"] = self._user_id
 
         self._db_task = models.Task.objects.create(**self._manifest)
         task_path = self._db_task.get_task_dirname()
@@ -391,8 +393,8 @@ class TaskImporter(_TaskBackupBase):
         self._import_annotations()
         return self._db_task
 
-def import_task(filename):
+def import_task(filename, user):
     av_scan_paths(filename)
-    task_importer = TaskImporter(filename)
+    task_importer = TaskImporter(filename, user)
     db_task = task_importer.import_task()
     return db_task.id
