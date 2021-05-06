@@ -87,32 +87,46 @@ context('Actions on Cuboid', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.get('.cvat-canvas-container').trigger('mousemove', 300, 400);
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated')
+
+            // Increase code coverage for cvat-canvas/src/typescript/svg.patch.ts. Block start
+            // Checking for changes in the size and orientation of the shape is based on
+            // checking the occurrence of the "cvat_canvas_selected_point" class
             cy.get('.cvat-canvas-container') // DR
-                .trigger('mouseenter', 360, 340)
+                .trigger('mouseenter', 360, 340);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
                 .trigger('mousedown', 360, 340, {button: 0})
                 .trigger('mousemove', 360, 240)
                 .trigger('mouseup', 360, 240);
 
             cy.get('.cvat-canvas-container') // drCenter
-                .trigger('mouseenter', 360, 340)
+                .trigger('mouseenter', 360, 340);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
                 .trigger('mousedown', 360, 340, {which: 1})
                 .trigger('mousemove', 430, 340)
                 .trigger('mouseup', 430, 340);
 
             cy.get('.cvat-canvas-container') // FL
-                .trigger('mouseenter', 250, 248)
-                .trigger('mousedown', 250, 248, {button: 0})
-                .trigger('mousemove', 200, 248)
-                .trigger('mouseup', 200, 248);
+                .trigger('mouseenter', 250, 250);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
+                .trigger('mousedown', 250, 250, {button: 0})
+                .trigger('mousemove', 200, 250)
+                .trigger('mouseup', 200, 250);
 
             cy.get('.cvat-canvas-container') // FR
-                .trigger('mouseenter', 350, 248)
-                .trigger('mousedown', 350, 248, {button: 0})
-                .trigger('mousemove', 300, 248)
-                .trigger('mouseup', 300, 248);
+                .trigger('mouseenter', 350, 250);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
+                .trigger('mousedown', 350, 250, {button: 0})
+                .trigger('mousemove', 300, 250)
+                .trigger('mouseup', 300, 250);
 
             cy.get('.cvat-canvas-container') // flCenter
-                .trigger('mouseenter', 200, 350)
+                .trigger('mouseenter', 200, 350);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
                 .trigger('mousedown', 200, 350, {which: 1})
                 .trigger('mousemove', 150, 350)
                 .trigger('mouseup', 150, 350);
@@ -124,13 +138,17 @@ context('Actions on Cuboid', () => {
                 .trigger('mouseup', 150, 200);
 
             cy.get('.cvat-canvas-container') // dlCenter
-                .trigger('mouseenter', 85, 270)
+                .trigger('mouseenter', 85, 270);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
                 .trigger('mousedown', 85, 270, {which: 1})
                 .trigger('mousemove', 120, 270)
                 .trigger('mouseup', 120, 270);
 
             cy.get('.cvat-canvas-container') // DL
-                .trigger('mouseenter', 120, 410)
+                .trigger('mouseenter', 120, 410);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
                 .trigger('mousedown', 120, 410, {button: 0})
                 .trigger('mousemove', 120, 350)
                 .trigger('mouseup', 120, 350);
@@ -148,7 +166,9 @@ context('Actions on Cuboid', () => {
                 .trigger('mouseup', 280, 200);
 
             cy.get('.cvat-canvas-container') // computeSideEdgeConstraints()
-                .trigger('mouseenter', 90, 215)
+                .trigger('mouseenter', 90, 215);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
                 .trigger('mousedown', 90, 215, {button: 0, shiftKey: true})
                 .trigger('mousemove', 90, 270, {shiftKey: true})
                 .trigger('mouseup', 90, 270);
@@ -167,7 +187,9 @@ context('Actions on Cuboid', () => {
                 .trigger('mouseup', 400, 200);
 
             cy.get('.cvat-canvas-container') // if (this.cuboidModel.orientation === Orientation.LEFT) ecle{}
-                .trigger('mouseenter', 260, 250)
+                .trigger('mouseenter', 260, 250);
+            cy.get('.cvat_canvas_selected_point').should('exist');
+            cy.get('.cvat-canvas-container')
                 .dblclick(260, 250, {shiftKey: true})
 
             cy.get('.cvat-canvas-container') // Change orientation to left
@@ -215,7 +237,7 @@ context('Actions on Cuboid', () => {
                 .trigger('mousemove', 400, 100)
                 .trigger('mouseup', 400, 100)
                 .trigger('mouseout', 400, 100);
-
+            // Increase code coverage for cvat-canvas/src/typescript/svg.patch.ts. Block end.
 
             cy.createCuboid(createCuboidShape4Points);
         });
