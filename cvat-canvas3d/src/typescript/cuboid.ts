@@ -46,19 +46,19 @@ export class CuboidModel {
     }
 
     public setPosition(x: number, y: number, z: number): void {
-        Object.keys(ViewType).forEach((view): void => {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].position.set(x, y, z);
         });
     }
 
     public setScale(x: number, y: number, z: number): void {
-        Object.keys(ViewType).forEach((view): void => {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].scale.set(x, y, z);
         });
     }
 
     public setRotation(x: number, y: number, z: number): void {
-        Object.keys(ViewType).forEach((view): void => {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].rotation.set(x, y, z);
         });
     }
@@ -90,25 +90,25 @@ export class CuboidModel {
     }
 
     public setName(clientId: any): void {
-        Object.keys(ViewType).forEach((view): void => {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].name = clientId;
         });
     }
 
     public setOriginalColor(color: string): void {
-        Object.keys(ViewType).forEach((view): void => {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             ((this as Indexable)[view] as any).originalColor = color;
         });
     }
 
     public setColor(color: string): void {
-        Object.keys(ViewType).forEach((view): void => {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             ((this as Indexable)[view].material as THREE.MeshBasicMaterial).color.set(color);
         });
     }
 
     public setOpacity(opacity: number): void {
-        Object.keys(ViewType).forEach((view): void => {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             ((this as Indexable)[view].material as THREE.MeshBasicMaterial).opacity = opacity / 100;
         });
     }
