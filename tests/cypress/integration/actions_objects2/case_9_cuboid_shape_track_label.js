@@ -75,8 +75,6 @@ context('Actions on Cuboid', () => {
         fourthX: createCuboidShape4Points.fourthX,
         fourthY: createCuboidShape4Points.fourthY + 150,
     };
-    let svgJsPolygonId = [];
-    let svgJsCircleId = [];
 
     before(() => {
         cy.openTask(taskName);
@@ -87,25 +85,8 @@ context('Actions on Cuboid', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Draw a Cuboid shape in two ways (From rectangle, by 4 points)', () => {
             cy.createCuboid(createCuboidShape2Points);
-            cy.get('polygon').then(($polygon) => {
-                for (let i = 0; i < $polygon.length; i++) {
-                    if ($polygon[i].id.match(/^SvgjsPolygon\d+$/)) {
-                        svgJsPolygonId.push($polygon[i].id);
-                    }
-                }
-                // cy.get(`#${svgJsPolygonId[1]}`).invoke('attr', 'points').then(($svgjsPolygonPointsCoords) => {
-                //     cy.log($svgjsPolygonPointsCoords.split(' '))
-                // });
-            });
             cy.get('.cvat-canvas-container').trigger('mousemove', 300, 400);
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated')
-            cy.get('circle').then(($circle) => {
-                for (let i = 0; i < $circle.length; i++) {
-                    if ($circle[i].id.match(/^SvgjsCircle\d+$/)) {
-                        svgJsCircleId.push($circle[i].id);
-                    }
-                }
-            });
             cy.get('.cvat-canvas-container') // DR
                 .trigger('mouseenter', 360, 340)
                 .trigger('mousedown', 360, 340, {button: 0})
@@ -124,7 +105,7 @@ context('Actions on Cuboid', () => {
                 .trigger('mousemove', 200, 248)
                 .trigger('mouseup', 200, 248);
 
-            cy.get('.cvat-canvas-container') // FR cvat-canvas/src/typescript/svg.patch.ts
+            cy.get('.cvat-canvas-container') // FR
                 .trigger('mouseenter', 350, 248)
                 .trigger('mousedown', 350, 248, {button: 0})
                 .trigger('mousemove', 300, 248)
@@ -228,7 +209,7 @@ context('Actions on Cuboid', () => {
                 .trigger('mouseup', 600, 150)
                 .dblclick(600, 150, {shiftKey: true});
 
-            cy.get('.cvat-canvas-container') //
+            cy.get('.cvat-canvas-container') // this.left
                 .trigger('mouseenter', 400, 130)
                 .trigger('mousedown', 400, 130, {which: 1})
                 .trigger('mousemove', 400, 100)
@@ -236,15 +217,17 @@ context('Actions on Cuboid', () => {
                 .trigger('mouseout', 400, 100);
 
 
-        //     cy.createCuboid(createCuboidShape4Points);
+            cy.createCuboid(createCuboidShape4Points);
         });
-        // it('Draw a Cuboid track in two ways (From rectangle, by 4 points)', () => {
-        //     cy.createCuboid(createCuboidTrack2Points);
-        //     cy.createCuboid(createCuboidTrack4Points);
-        // });
-        // it('Draw a new Cuboid shape in two ways (From rectangle, by 4 points) with second label', () => {
-        //     cy.createCuboid(createCuboidShape2PointsNewLabel);
-        //     cy.createCuboid(createCuboidShape4PointsNewLabel);
-        // });
+
+        it('Draw a Cuboid track in two ways (From rectangle, by 4 points)', () => {
+            cy.createCuboid(createCuboidTrack2Points);
+            cy.createCuboid(createCuboidTrack4Points);
+        });
+
+        it('Draw a new Cuboid shape in two ways (From rectangle, by 4 points) with second label', () => {
+            cy.createCuboid(createCuboidShape2PointsNewLabel);
+            cy.createCuboid(createCuboidShape4PointsNewLabel);
+        });
     });
 });
