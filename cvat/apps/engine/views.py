@@ -488,7 +488,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
                 elif data_type == 'context_image':
                     data_id = int(data_id)
-                    image = Image.objects.get(data_id=db_task.data_id, frame=data_id)
+                    image = Image.objects.get(data_id=db_data.id, frame=data_id)
                     for i in image.related_files.all():
                         path = os.path.realpath(str(i.path))
                         image = cv2.imread(path)

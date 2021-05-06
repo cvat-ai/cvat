@@ -23,7 +23,7 @@ def main():
 
     manifest_directory = os.path.abspath(args.output_dir)
     os.makedirs(manifest_directory, exist_ok=True)
-    source = os.path.abspath(args.source)
+    source = os.path.abspath(os.path.expanduser(args.source))
 
     sources = []
     if not os.path.isfile(source): # directory/pattern with images
@@ -49,7 +49,13 @@ def main():
             sources = list(filter(is_image, glob(source, recursive=True)))
 
         sources = list(filter(lambda x: 'related_images{}'.format(os.sep) not in x, sources))
-        related_images = detect_related_images(sources, source)
+
+        # If the source is a glob expression, we need additional processing
+        abs_root = source
+        while abs_root and '*' in abs_root:
+            abs_root = os.path.split(abs_root)[0]
+
+        related_images = detect_related_images(sources, abs_root)
         meta = { k: {'related_images': related_images[k] } for k in related_images }
         try:
             assert len(sources), 'A images was not found'

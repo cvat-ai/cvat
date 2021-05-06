@@ -473,7 +473,7 @@ def _create_thread(tid, data):
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
-        created_images = models.Image.objects.filter(data_id=db_task.data_id)
+        created_images = models.Image.objects.filter(data_id=db_data.id)
 
         db_related_files = [
             RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
