@@ -34,3 +34,10 @@ yarn-error.log*
 #Ignore Cypress tests temp files
 /tests/cypress/fixtures
 /tests/cypress/screenshots
+.idea/
+
+#Ignore helm-related files
+/helm-chart/Chart.lock
+/helm-chart/values.*.yaml
+/helm-chart/*.values.yaml
+/helm-chart/charts/*
