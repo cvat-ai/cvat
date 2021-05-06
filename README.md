@@ -165,7 +165,6 @@ Other ways to ask questions and get our support:
   and parallelized training pipelines.
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) - DataIsKey uses CVAT as their prime data labeling tool to offer annotation services for projects of any size. 
 
-
 <!-- prettier-ignore-start -->
 <!-- Badges -->
 
