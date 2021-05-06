@@ -4,6 +4,7 @@
 import argparse
 import os
 import sys
+import re
 from glob import glob
 
 from utils import detect_related_images, is_image, is_video
@@ -52,7 +53,7 @@ def main():
 
         # If the source is a glob expression, we need additional processing
         abs_root = source
-        while abs_root and '*' in abs_root:
+        while abs_root and re.search('[*?\[\]]', abs_root):
             abs_root = os.path.split(abs_root)[0]
 
         related_images = detect_related_images(sources, abs_root)
