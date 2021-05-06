@@ -450,22 +450,6 @@
                 }
             }
 
-            async function moveTaskToProject(id, data) {
-                const { backendAPI } = config;
-
-                try {
-                    const response = await Axios.post(`${backendAPI}/tasks/${id}/move`, JSON.stringify(data), {
-                        proxy: config.proxy,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    });
-                    return response.data.results;
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-            }
-
             async function deleteTask(id) {
                 const { backendAPI } = config;
 
@@ -1102,7 +1086,9 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
+                    const predicate = () => (
+                        !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId
+                    );
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
@@ -1177,7 +1163,6 @@
                             createTask,
                             deleteTask,
                             exportDataset,
-                            moveToProject: moveTaskToProject,
                         }),
                         writable: false,
                     },
