@@ -591,14 +591,15 @@ export function moveTaskToProjectAsync(
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(moveTaskToProject());
         try {
-            labelMap.forEach((mapper) => {
+            // eslint-disable-next-line no-param-reassign
+            taskInstance.labels = labelMap.map((mapper) => {
                 const [label] = taskInstance.labels.filter((_label: any) => mapper.label_id === _label.id);
                 label.name = mapper.new_label_name;
+                return label;
             });
             // eslint-disable-next-line no-param-reassign
             taskInstance.projectId = projectId;
-            console.log(taskInstance);
-            // await taskInstance.save();
+            await taskInstance.save();
             const [task] = await cvat.tasks.get({ id: taskInstance.id });
             dispatch(moveTaskToProjectSuccess(task));
         } catch (error) {

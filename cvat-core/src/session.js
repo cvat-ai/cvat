@@ -1046,6 +1046,7 @@
                 bug_tracker: false,
                 subset: false,
                 labels: false,
+                project_id: false,
             };
 
             for (const property in data) {
@@ -1135,6 +1136,7 @@
                                 throw new ArgumentError('Value must be a positive integer');
                             }
 
+                            updatedFields.project_id = true;
                             data.project_id = projectId;
                         },
                     },
@@ -2006,6 +2008,9 @@
                     case 'subset':
                         taskData.subset = this.subset;
                         break;
+                    case 'project_id':
+                        taskData.project_id = this.projectId;
+                        break;
                     case 'labels':
                         taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
                         break;
@@ -2023,6 +2028,7 @@
                 bugTracker: false,
                 subset: false,
                 labels: false,
+                project_id: false,
             };
 
             return this;

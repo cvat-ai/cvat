@@ -407,6 +407,24 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         labels = validated_data.get('label_set', [])
         for label in labels:
             LabelSerializer.update_instance(label, instance)
+        if validated_data.get('project_id', None) != instance.project_id:
+            # TODO: check if project not exists this will not fail
+            project = models.Project.objects.get(id=validated_data.get('project_id', None))
+            for old_label in instance.label_set.all():
+                try:
+                    new_label = project.label_set.filter(name=old_label.name).first()
+                except ValueError:
+                    raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
+                for attribute_spec in old_label.attributespec_set.all():
+                    attribute_spec.delete()
+                for segment in instance.segment_set.all():
+                    for job in segment.job_set.all():
+                        for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
+                            for annotation in model.objects.filter(job=job, label=old_label).all():
+                                annotation.label = new_label
+                                annotation.save()
+            instance.labels = []
+            instance.project = project
 
         instance.save()
         return instance
@@ -416,6 +434,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if len(label_names) != len(set(label_names)):
             raise serializers.ValidationError('All label names must be unique for the task')
         return value
+
 
 
 class ProjectSearchSerializer(serializers.ModelSerializer):
