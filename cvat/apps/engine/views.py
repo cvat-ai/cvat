@@ -1136,12 +1136,11 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 storage_files = storage.content
 
                 manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
-                tmp_manifest = NamedTemporaryFile(mode='w+b', suffix='cvat', prefix='manifest')
-                storage.download_file(manifest_path, tmp_manifest.name)
-                manifest = ImageManifestManager(tmp_manifest.name)
-                manifest.init_index()
-                manifest_files = manifest.data
-                tmp_manifest.close()
+                with NamedTemporaryFile(mode='w+b', suffix='cvat', prefix='manifest') as tmp_manifest:
+                    storage.download_file(manifest_path, tmp_manifest.name)
+                    manifest = ImageManifestManager(tmp_manifest.name)
+                    manifest.init_index()
+                    manifest_files = manifest.data
                 content = {f:[] for f in set(storage_files) & set(manifest_files)}
                 for key, _ in content.items():
                     if key in storage_files: content[key].append('s') # storage

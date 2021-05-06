@@ -715,10 +715,10 @@ class BaseCloudStorageSerializer(serializers.ModelSerializer):
 
 class CloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
-    session_token = serializers.CharField(max_length=400, allow_blank=True, required=False)
-    key = serializers.CharField(max_length=40, allow_blank=True, required=False)
-    secret_key = serializers.CharField(max_length=60, allow_blank=True, required=False)
-    account_name = serializers.CharField(max_length=50, allow_blank=True, required=False)
+    session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
+    key = serializers.CharField(max_length=20, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage

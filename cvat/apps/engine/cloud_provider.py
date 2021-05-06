@@ -147,7 +147,7 @@ class AWS_S3(_CloudStorage):
         self._bucket.upload_fileobj(
             Fileobj=file_obj,
             Key=file_name,
-            Config=TransferConfig(**self.transfer_config)
+            Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
 
     def initialize_content(self):
@@ -161,7 +161,7 @@ class AWS_S3(_CloudStorage):
         self.bucket.download_fileobj(
             Key=key,
             Fileobj=buf,
-            Config=TransferConfig(**self.transfer_config)
+            Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
         buf.seek(0)
         return buf
@@ -186,7 +186,7 @@ class AWS_S3(_CloudStorage):
             raise Exception(msg)
 
 class AzureBlobContainer(_CloudStorage):
-
+    MAX_CONCURRENCY = 3
     def __init__(self, container, account_name, sas_token=None):
         super().__init__()
         self._account_name = account_name
@@ -237,6 +237,7 @@ class AzureBlobContainer(_CloudStorage):
         self._container_client.upload_blob(name=file_name, data=file_obj)
 
 
+    # TODO:
     # def multipart_upload(self, file_obj):
     #     pass
 
@@ -247,14 +248,13 @@ class AzureBlobContainer(_CloudStorage):
         } for item in files]
 
     def download_fileobj(self, key):
-        MAX_CONCURRENCY = 3
         buf = BytesIO()
         storage_stream_downloader = self._container_client.download_blob(
             blob=key,
             offset=None,
             length=None,
         )
-        storage_stream_downloader.download_to_stream(buf, max_concurrency=MAX_CONCURRENCY)
+        storage_stream_downloader.download_to_stream(buf, max_concurrency=self.MAX_CONCURRENCY)
         buf.seek(0)
         return buf
 
@@ -273,7 +273,7 @@ class Credentials:
 
     def convert_to_db(self):
         converted_credentials = {
-            CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_PAIR : \
+            CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET : \
                 " ".join([self.key, self.secret_key, self.session_token]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "",
@@ -282,12 +282,12 @@ class Credentials:
 
     def convert_from_db(self, credentials):
         self.credentials_type = credentials.get('type')
-        if self.credentials_type == CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_PAIR:
+        if self.credentials_type == CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET:
             self.key, self.secret_key, self.session_token = credentials.get('value').split()
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
             self.account_name, self.session_token = credentials.get('value').split()
         else:
-            self.account_name, self.session_token, self.key, self.secret_key = ("", "", "", "")
+            self.account_name, self.session_token, self.key, self.secret_key = ('', '', '', '')
             self.credentials_type = None
 
     def mapping_with_new_values(self, credentials):

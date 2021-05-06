@@ -555,7 +555,7 @@ class CloudProviderChoice(str, Enum):
 
 class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
-    TEMP_KEY_SECRET_KEY_TOKEN_PAIR = 'TEMP_KEY_SECRET_KEY_TOKEN_PAIR' # nosec
+    TEMP_KEY_SECRET_KEY_TOKEN_SET = 'TEMP_KEY_SECRET_KEY_TOKEN_SET' # nosec
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
 
@@ -571,14 +571,22 @@ class CredentialsTypeChoice(str, Enum):
         return self.value
 
 class CloudStorage(models.Model):
+    # restrictions:
+    # AWS bucket name, Azure container name - 63
+    # AWS access key id - 20
+    # AWS secret access key - 40
+    # AWS temporary session tocken - None
+    # The size of the security token that AWS STS API operations return is not fixed.
+    # We strongly recommend that you make no assumptions about the maximum size.
+    # The typical token size is less than 4096 bytes, but that can vary.
     provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices())
-    resource = models.CharField(max_length=50)
+    resource = models.CharField(max_length=63)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="cloud_storages")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     credentials = models.CharField(max_length=500)
-    credentials_type = models.CharField(max_length=30, choices=CredentialsTypeChoice.choices())#auth_type
+    credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=50, blank=True)
     description = models.TextField(default='')
 
