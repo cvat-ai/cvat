@@ -609,7 +609,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private addScene(points: any): void {
         // eslint-disable-next-line no-param-reassign
         points.material.size = 0.08;
-        points.material.color.set(new THREE.Color(0x0000ff));
+        points.material.color.set(new THREE.Color(0xffffff));
         const sphereCenter = points.geometry.boundingSphere.center;
         const { radius } = points.geometry.boundingSphere;
         if (!this.views.perspective.camera) return;
