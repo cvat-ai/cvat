@@ -25,6 +25,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
             cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
             cy.get('.cvat-draw-shape-popover').find('button').click();
             cy.get('.cvat-canvas3d-perspective').dblclick();
+            cy.wait(1000);
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboid'); // The cuboid displayed
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_before_all.png`,
