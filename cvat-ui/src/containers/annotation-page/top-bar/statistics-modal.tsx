@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import { CombinedState } from 'reducers/interfaces';
 import { showStatistics } from 'actions/annotation-actions';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface StateToProps {
     visible: boolean;
@@ -16,7 +17,7 @@ interface StateToProps {
     jobInstance: any;
     jobStatus: string;
     savingJobStatus: boolean;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
 }
 
 interface DispatchToProps {
