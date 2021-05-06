@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
+import { notification } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowsAltOutlined, ShrinkOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined, ShrinkOutlined } from '@ant-design/icons';
 import Spin from 'antd/lib/spin';
 import Image from 'antd/lib/image';
 
@@ -38,12 +39,12 @@ export default function ContextImage(): JSX.Element | null {
     }
 
     return (
-        <div className='cvat-context-image-wrapper' {...(contextImageHidden ? { style: { width: '40px' } } : {})}>
+        <div className='cvat-context-image-wrapper' {...(contextImageHidden ? { style: { width: '32px' } } : {})}>
             <div className='cvat-context-image-wrapper-header' />
             {contextImageFetching ? <Spin size='small' /> : null}
             {contextImageHidden ? (
                 <CVATTooltip title='A context image is available'>
-                    <ArrowsAltOutlined
+                    <QuestionCircleOutlined
                         className='cvat-context-image-switcher'
                         onClick={() => dispatch(hideShowContextImage(false))}
                     />
@@ -56,7 +57,14 @@ export default function ContextImage(): JSX.Element | null {
                     />
                     <Image
                         {...(contextImageData ? { src: contextImageData } : {})}
-                        alt='Could not get context'
+                        onError={() => {
+                            notification.error({
+                                message: 'Could not display context image',
+                                description: `Source is  ${
+                                    contextImageData === null ? 'empty' : contextImageData.slice(0, 100)
+                                }`,
+                            });
+                        }}
                         className='cvat-context-image'
                     />
                 </>

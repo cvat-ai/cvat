@@ -22,7 +22,7 @@
     user-select: none;
 
     > .cvat-context-image-wrapper-header {
-        height: $grid-unit-size * 5;
+        height: $grid-unit-size * 4;
         width: 100%;
         z-index: 101;
         background: rgba(0, 0, 0, 0.2);
@@ -37,15 +37,11 @@
 
     > span {
         position: absolute;
-        top: $grid-unit-size;
-        right: $grid-unit-size;
+        font-size: 18px;
+        top: 7px;
+        right: 7px;
         z-index: 102;
         color: white;
-
-        > svg {
-            width: $grid-unit-size * 3;
-            height: $grid-unit-size * 3;
-        }
 
         &:hover {
             > svg {
