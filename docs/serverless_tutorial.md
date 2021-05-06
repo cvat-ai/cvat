@@ -20,8 +20,9 @@ solve all our problems. Usually available DL models are trained on public
 datasets which cannot cover all specific cases. Very often you want to
 detect objects which cannot be recognized by these models. Our annotation
 requirements can be so strict that automatically
-annotated objects cannot be accepted as is. You always need to keep in mind
-all these mentioned limitations. Even if you have a DL solution which can
+annotated objects cannot be accepted as is and it is easy to annotate them
+from scratch. You always need to keep in mind all these mentioned limitations.
+Even if you have a DL solution which can
 _perfectly_ annotate 50% of your data, it means that manual work will be
 reduced only twice in the best case.
 
