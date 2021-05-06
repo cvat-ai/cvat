@@ -14,7 +14,7 @@ import {
     ShapeProperties,
 } from './canvas3dModel';
 import {
-    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CAMERA_ACTION,
+    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
 } from './canvas3dView';
 import { Master } from './master';
 
@@ -101,5 +101,5 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CAMERA_ACTION, ViewsDOM,
+    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CameraAction, ViewsDOM,
 };

@@ -21,7 +21,7 @@ export interface Canvas3dView {
     keyControls(keys: KeyboardEvent): void;
 }
 
-export enum CAMERA_ACTION {
+export enum CameraAction {
     ZOOM_IN = 'KeyI',
     MOVE_UP = 'KeyU',
     MOVE_DOWN = 'KeyO',
@@ -558,9 +558,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             });
             this.setupObjects();
-            // if (clientID !== '') {
-            //     this.detachCamera(null);
-            // }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (data.redraw) {
@@ -871,7 +868,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private setSelectedChildScale(x: number, y: number, z: number): void {
         [ViewType.TOP, ViewType.SIDE, ViewType.SIDE].forEach((view: ViewType): void => {
             this.model.data.selected[view].children.forEach((element: any): void => {
-                if (element.name !== 'edges') {
+                if (element.name !== CONST.CUBOID_EDGE_NAME) {
                     element.scale.set(
                         x == null ? element.scale.x : x,
                         y == null ? element.scale.y : y,
@@ -1124,7 +1121,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             default: {
                 sideCamera.position.setFromSpherical(sphericalside);
                 sideCamera.lookAt(objectSideView.position.x, objectSideView.position.y, objectSideView.position.z);
-                sideCamera.rotation.z = this.views.side.scene.getObjectByName('sidePlane').rotation.z;
+                sideCamera.rotation.z = this.views.side.scene.getObjectByName(Planes.SIDE).rotation.z;
                 sideCamera.scale.set(1, 1, 1);
 
                 topCamera.position.setFromSpherical(sphericaltop);
@@ -1134,7 +1131,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
                 frontCamera.position.setFromSpherical(sphericalfront);
                 frontCamera.lookAt(objectFrontView.position.x, objectFrontView.position.y, objectFrontView.position.z);
-                frontCamera.rotation.z = this.views.front.scene.getObjectByName('frontPlane').rotation.x;
+                frontCamera.rotation.z = this.views.front.scene.getObjectByName(Planes.FRONT).rotation.x;
                 frontCamera.scale.set(1, 1, 1);
             }
         }
@@ -1264,7 +1261,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private renderRotateAction(view: ViewType, viewType: any): void {
-        const rotationSpeed = Math.PI / 80;
+        const rotationSpeed = Math.PI / CONST.ROTATION_SPEED;
         const { renderer } = viewType;
         const canvas = renderer.domElement;
         if (!canvas) return;
@@ -1337,16 +1334,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const { controls } = this.views.perspective;
         if (!controls) return;
         switch (key.code) {
-            case CAMERA_ACTION.ROTATE_RIGHT:
+            case CameraAction.ROTATE_RIGHT:
                 controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
                 break;
-            case CAMERA_ACTION.ROTATE_LEFT:
+            case CameraAction.ROTATE_LEFT:
                 controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
                 break;
-            case CAMERA_ACTION.TILT_UP:
+            case CameraAction.TILT_UP:
                 controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
                 break;
-            case CAMERA_ACTION.TILT_DOWN:
+            case CameraAction.TILT_DOWN:
                 controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
                 break;
             default:
@@ -1354,22 +1351,22 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
         if (key.altKey === true) {
             switch (key.code) {
-                case CAMERA_ACTION.ZOOM_IN:
+                case CameraAction.ZOOM_IN:
                     controls.dolly(CONST.DOLLY_FACTOR, true);
                     break;
-                case CAMERA_ACTION.ZOOM_OUT:
+                case CameraAction.ZOOM_OUT:
                     controls.dolly(-CONST.DOLLY_FACTOR, true);
                     break;
-                case CAMERA_ACTION.MOVE_LEFT:
+                case CameraAction.MOVE_LEFT:
                     controls.truck(-0.01 * this.speed, 0, true);
                     break;
-                case CAMERA_ACTION.MOVE_RIGHT:
+                case CameraAction.MOVE_RIGHT:
                     controls.truck(0.01 * this.speed, 0, true);
                     break;
-                case CAMERA_ACTION.MOVE_DOWN:
+                case CameraAction.MOVE_DOWN:
                     controls.truck(0, -0.01 * this.speed, true);
                     break;
-                case CAMERA_ACTION.MOVE_UP:
+                case CameraAction.MOVE_UP:
                     controls.truck(0, 0.01 * this.speed, true);
                     break;
                 default:
