@@ -97,7 +97,7 @@ export default function MoveTaskModal(): JSX.Element {
                         ));
                         labelValues[id] = {
                             labelId: label.labelId,
-                            newLabelName: autoNewLabel ? autoNewLabel.name : label.newLabelName,
+                            newLabelName: autoNewLabel ? autoNewLabel.name : null,
                             clearAtrributes: true,
                         };
                     });
