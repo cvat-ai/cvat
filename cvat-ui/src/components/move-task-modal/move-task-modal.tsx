@@ -85,7 +85,24 @@ export default function MoveTaskModal(): JSX.Element {
     useEffect(() => {
         if (projectId) {
             core.projects.get({ id: projectId }).then((_project: any) => {
-                if (projectId) setProject(_project[0]);
+                if (projectId) {
+                    setProject(_project[0]);
+                    const { labels } = _project[0];
+                    const labelValues: { [key: string]: LabelMapperItemValue } = {};
+                    Object.entries(values).forEach(([id, label]) => {
+                        const [autoNewLabel] = labels.filter((_label: any) => (
+                            _label.name === task.labels.filter((_taskLabel: any) => (
+                                _taskLabel.id === label.labelId
+                            ))[0].name
+                        ));
+                        labelValues[id] = {
+                            labelId: label.labelId,
+                            newLabelName: autoNewLabel ? autoNewLabel.name : label.newLabelName,
+                            clearAtrributes: true,
+                        };
+                    });
+                    setValues(labelValues);
+                }
             });
         } else {
             setProject(null);

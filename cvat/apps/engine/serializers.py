@@ -408,7 +408,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         for label in labels:
             LabelSerializer.update_instance(label, instance)
         if validated_data.get('project_id', None) != instance.project_id:
-            # TODO: check if project not exists this will not fail
             project = models.Project.objects.get(id=validated_data.get('project_id', None))
             for old_label in instance.label_set.all():
                 try:
@@ -435,6 +434,9 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError('All label names must be unique for the task')
         return value
 
+    def validate_project_id(self, value):
+        if value is not None and not models.Project.objects.filter(id=value).count():
+            raise serializers.ValidationError(f'Cannot find project with ID {value}')
 
 
 class ProjectSearchSerializer(serializers.ModelSerializer):
