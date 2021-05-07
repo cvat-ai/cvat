@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Kubernetes templates from (<https://github.com/openvinotoolkit/cvat/pull/1962>) due to helm charts (<https://github.com/openvinotoolkit/cvat/pull/3171>)
+
 ### Fixed
 
 - Export of instance masks with holes (<https://github.com/openvinotoolkit/cvat/pull/3044>)
