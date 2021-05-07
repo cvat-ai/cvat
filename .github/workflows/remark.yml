@@ -22,7 +22,7 @@ jobs:
 
           if [[ ! -z ${changed_files_remark} ]]; then
             npm ci
-            npm install remark-cli vfile-reporter-json
+            npm install remark-cli@9.0.0 vfile-reporter-json@2.0.2
             mkdir -p remark_report
 
             echo "Remark version: "`npx remark --version`
