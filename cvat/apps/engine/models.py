@@ -581,6 +581,7 @@ class CloudStorage(models.Model):
     # The typical token size is less than 4096 bytes, but that can vary.
     provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices())
     resource = models.CharField(max_length=63)
+    display_name = models.CharField(max_length=63, unique=True)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="cloud_storages")
     created_date = models.DateTimeField(auto_now_add=True)

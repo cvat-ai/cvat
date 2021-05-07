@@ -1092,6 +1092,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             response = super().create(request, *args, **kwargs)
         except IntegrityError:
             response = HttpResponseBadRequest('Same storage already exists')
+        except APIException as ex:
+                return Response(data=ex.get_full_details(), status=ex.status_code)
         except Exception as ex:
             response = HttpResponseBadRequest(str(ex))
         return response

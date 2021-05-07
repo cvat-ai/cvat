@@ -723,7 +723,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CloudStorage
         fields = (
-            'provider_type', 'resource', 'owner', 'credentials_type',
+            'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
             'secret_key', 'specific_attributes', 'description'
         )
@@ -781,6 +781,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         instance.credentials = credentials.convert_to_db()
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
+        instance.display_name = validated_data.get('display_name', instance.display_name)
 
         instance.save()
         return instance
