@@ -133,7 +133,30 @@ nuctl get functions
   nuclio    | pth-foolwood-siammask | cvat    | ready |     49155 | 1/1
 ```
 
-https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
+Let's see how it works in UI. First of all go to http://localhost:8080/models
+and check that you can see SiamMask in the list. If you cannot by a reason it
+means that there are some problems. Go to one of our public channels and ask
+for help.
+
+![Models list with SiamMask](images/models_list_with_siammask.png)
+
+After that go to http://localhost:8080/tasks/create and create an annotation
+task with [the video file][vtest-avi]. You can choose any task name, any
+labels, and even another video file if you like. In this case `Remote sources`
+option was used to specify the video file. Press submit button at the end to
+finish the process.
+
+![Create a video annotation task](images/create_video_task.png)
+
+Open the task and use [AI tools][cvat-ai-tools-user-guide] to start tracking
+an object. Draw a bounding box around the object and it will be tracked during
+a couple of frames forward.
+
+![Start tracking an object](images/start_tracking.png)
+
+Finally you will get bounding boxes for 10 frames by default.
+
+![SiamMask results](images/siammask_results.gif)
 
 ### Object detection using YOLO-v3
 
@@ -471,3 +494,4 @@ The actual deployment process is described in
 [cvat-ai-tools-user-guide]: https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/documentation/user_guide.md#ai-tools
 [cvat-github]: https://github.com/openvinotoolkit/cvat
 [siammask-serverless]: https://github.com/openvinotoolkit/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio
+[vtest-avi]: https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
