@@ -408,7 +408,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if instance.project_id is None:
             for label in labels:
                 LabelSerializer.update_instance(label, instance)
-        if validated_data.get('project_id', None) != instance.project_id:
+        validated_project_id = validated_data.get('project_id', None)
+        if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_data.get('project_id', None))
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
@@ -424,7 +425,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                                 for annotation in model.objects.filter(job=job, label=old_label).all():
                                     annotation.label = new_label
                                     annotation.save()
-                instance.labels = []
+                    old_label.delete()
             else:
                 for old_label in instance.project.label_set.all():
                     if new_label_for_name := list(filter(lambda x: x.get('id', None) == old_label.id, labels)):
@@ -451,16 +452,33 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def validate_labels(self, value):
-        label_names = [label['name'] for label in value]
-        if len(label_names) != len(set(label_names)):
-            raise serializers.ValidationError('All label names must be unique for the task')
-        return value
+    def validate(self, attrs):
+        # When moving task labels can be mapped to one, but when not names must be unique
+        if 'project_id' in attrs.keys() and self.instance is not None:
+            project_id = attrs.get('project_id')
+            if project_id is not None and not models.Project.objects.filter(id=project_id).count():
+                raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+            # Check that all labels can be mapped
+            new_label_names = set()
+            old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
+            for old_label in old_labels:
+                if len(new_labels := tuple(filter(lambda x: x.get('id') == old_label.id, attrs.get('label_set', [])))):
+                    new_label_names.add(new_labels[0].get('name', old_label.name))
+                else:
+                    new_label_names.add(old_label.name)
+            target_project = models.Project.objects.get(id=project_id)
+            target_project_label_names = set()
+            for label in target_project.label_set.all():
+                target_project_label_names.add(label.name)
+            if not new_label_names.issubset(target_project_label_names):
+                raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+        else:
+            if 'label_set' in attrs.keys():
+                label_names = [label['name'] for label in attrs.get('label_set')]
+                if len(label_names) != len(set(label_names)):
+                    raise serializers.ValidationError('All label names must be unique for the task')
 
-    def validate_project_id(self, value):
-        if value is not None and not models.Project.objects.filter(id=value).count():
-            raise serializers.ValidationError(f'Cannot find project with ID {value}')
-        return value
+        return attrs
 
 
 class ProjectSearchSerializer(serializers.ModelSerializer):
