@@ -169,15 +169,11 @@ jobs:
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
             npx cypress run --headless --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
-            if [[ $? != 0 ]]; then
-              echo $?
-              mkdir -r ./cvat_container_logs
-              docker logs cvat > ./cvat_container_logs/cvat_tmp.log
-              sed -n '/^ERROR -/,${p;/^$/q}' ./cvat_container_logs/cvat_tmp.log > ./cvat_container_logs/cvat_error_${{ matrix.specs }}.log
-              ls -l ./cvat_container_logs
-              cat ./cvat_container_logs/cvat_error_${{ matrix.specs }}.log
-            fi
           fi
+      - name: Creating a log file from "cvat" container
+        if: failure()
+        run: |
+            docker logs cvat > ${{ github.workspace }}/tests/cvat_error_${{ matrix.specs }}.log
       - name: Uploading cypress screenshots as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
@@ -189,7 +185,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: cvat_error_logs
-          path: ${{ github.workspace }}/tests/cvat_container_logs
+          path: ${{ github.workspace }}/tests/cvat_error_${{ matrix.specs }}.log
       - name: Uploading code coverage results as an artifact
         if: github.ref == 'refs/heads/develop'
         uses: actions/upload-artifact@v2
