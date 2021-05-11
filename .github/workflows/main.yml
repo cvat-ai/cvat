@@ -170,8 +170,12 @@ jobs:
           else
             npx cypress run --headless --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
             if [[ $? != 0 ]]; then
-              docker logs cvat > ./cvat_tmp.log
-              sed -n '/^ERROR -/,${p;/^$/q}' ./cvat_tmp.log > ./cvat_error_${{ matrix.specs }}.log
+              echo $?
+              mkdir -r ./cvat_container_logs
+              docker logs cvat > ./cvat_container_logs/cvat_tmp.log
+              sed -n '/^ERROR -/,${p;/^$/q}' ./cvat_container_logs/cvat_tmp.log > ./cvat_container_logs/cvat_error_${{ matrix.specs }}.log
+              ls -l ./cvat_container_logs
+              cat ./cvat_container_logs/cvat_error_${{ matrix.specs }}.log
             fi
           fi
       - name: Uploading cypress screenshots as an artifact
@@ -184,8 +188,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: cvat_error_${{ matrix.specs }}
-          path: ${{ github.workspace }}/tests/cvat_error_${{ matrix.specs }}.log
+          name: cvat_error_logs
+          path: ${{ github.workspace }}/tests/cvat_container_logs
       - name: Uploading code coverage results as an artifact
         if: github.ref == 'refs/heads/develop'
         uses: actions/upload-artifact@v2
