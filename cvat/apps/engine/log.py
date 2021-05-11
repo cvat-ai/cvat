@@ -1,8 +1,9 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import logging
+import sys
 from cvat.settings.base import LOGGING
 from .models import Job, Task, Project, CloudStorage
 
@@ -29,6 +30,17 @@ def _get_storage(storage_id):
         return CloudStorage.objects.get(pk=storage_id)
     except Exception:
         raise Exception('{} key must be a cloud storage identifier'.format(storage_id))
+
+def get_logger(logger_name, log_file):
+    logger = logging.getLogger(name=logger_name)
+    logger.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(log_file)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.addHandler(logging.StreamHandler(sys.stderr))
+    return logger
 
 class ProjectLoggerStorage:
     def __init__(self):

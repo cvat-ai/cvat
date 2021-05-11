@@ -14,12 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A script to convert some kinds of DICOM files to regular images (<https://github.com/openvinotoolkit/cvat/pull/3095>)
 - Helm chart prototype (<https://github.com/openvinotoolkit/cvat/pull/3102>)
 
-
 ### Changed
+
+- Place of migration logger initialization (<https://github.com/openvinotoolkit/cvat/pull/3170>)
 
 ### Deprecated
 
 ### Removed
+
+- Kubernetes templates from (<https://github.com/openvinotoolkit/cvat/pull/1962>) due to helm charts (<https://github.com/openvinotoolkit/cvat/pull/3171>)
 
 ### Fixed
 
