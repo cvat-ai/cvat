@@ -43,6 +43,13 @@ export class CuboidModel {
         this.top = new THREE.Mesh(geometry, material);
         this.side = new THREE.Mesh(geometry, material);
         this.front = new THREE.Mesh(geometry, material);
+
+        const camRotateHelper = new THREE.Object3D();
+        camRotateHelper.translateX(-2);
+        camRotateHelper.name = 'camRefRot';
+        camRotateHelper.up = new THREE.Vector3(0, 0, 1);
+        camRotateHelper.lookAt(new THREE.Vector3(0, 0, 0));
+        this.front.add(camRotateHelper.clone());
     }
 
     public setPosition(x: number, y: number, z: number): void {
@@ -123,7 +130,7 @@ export function setEdges(instance: THREE.Mesh): THREE.LineSegments {
 }
 
 export function setTranslationHelper(instance: THREE.Mesh): void {
-    const sphereGeometry = new THREE.SphereGeometry(0.05);
+    const sphereGeometry = new THREE.SphereGeometry(0.1);
     const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
     instance.geometry.deleteAttribute('normal');
     instance.geometry.deleteAttribute('uv');
@@ -142,13 +149,14 @@ export function setTranslationHelper(instance: THREE.Mesh): void {
         helpers[i].position.set(vertices[i].x, vertices[i].y, vertices[i].z);
         helpers[i].up.set(0, 0, 1);
         instance.add(helpers[i]);
+        helpers[i].scale.set(1 / instance.scale.x, 1 / instance.scale.y, 1 / instance.scale.z);
     }
     // eslint-disable-next-line no-param-reassign
     instance.userData = { ...instance.userData, resizeHelpers: helpers };
 }
 
 export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
-    const sphereGeometry = new THREE.SphereGeometry(0.05);
+    const sphereGeometry = new THREE.SphereGeometry(0.1);
     const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
     const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
     rotationHelper.name = constants.ROTATION_HELPER;
