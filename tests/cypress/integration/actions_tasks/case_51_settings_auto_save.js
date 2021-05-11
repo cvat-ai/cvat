@@ -16,7 +16,7 @@ context('Settings. "Auto save" option.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Check "Enable auto save". Change the interval.', () => {
             cy.openSettings();
-            cy.contains('Workspace').click();
+            cy.contains('Workspacee').click();
             cy.get('.cvat-workspace-settings-auto-save').within(() => {
                 cy.get('[type="checkbox"]').check();
                 cy.get('.ant-checkbox-checked').should('exist');
