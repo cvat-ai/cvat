@@ -434,19 +434,18 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
-                    for segment in instance.segment_set.all():
-                        for job in segment.job_set.all():
-                            for (model, attr, attr_name) in (
-                                (models.LabeledTrack, models.LabeledTrackAttributeVal, 'track'),
-                                (models.LabeledShape, models.LabeledShapeAttributeVal, 'shape'),
-                                (models.LabeledImage, models.LabeledImageAttributeVal, 'image')
-                            ):
-                                for annotation in model.objects.filter(job=job, label=old_label).all():
-                                    for attributeVal in attr.objects.filter(**{attr_name: annotation}).all():
-                                        attributeVal.delete()
-                                    annotation.label = new_label
-                                    annotation.save()
-
+                    for (model, attr, attr_name) in (
+                        (models.LabeledTrack, models.LabeledTrackAttributeVal, 'track'),
+                        (models.LabeledShape, models.LabeledShapeAttributeVal, 'shape'),
+                        (models.LabeledImage, models.LabeledImageAttributeVal, 'image')
+                    ):
+                        attr.objects.filter(**{
+                            f'{attr_name}__job__segment__task': instance,
+                            f'{attr_name}__label': old_label
+                        }).delete()
+                        model.objects.filter(job__segment__task=self.instance, label=old_label).update(
+                            label=new_label
+                        )
             instance.project = project
 
         instance.save()
