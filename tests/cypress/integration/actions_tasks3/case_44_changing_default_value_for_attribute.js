@@ -59,7 +59,7 @@ context('Changing a default value for an attribute.', () => {
                     cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click().wait(500); // Wait for the dropdown menu to transition.
                 });
             });
-            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
+            cy.get('.ant-select-dropdown').within(() => {
                 cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
             });
             cy.contains('[type="submit"]', 'Done').click();
