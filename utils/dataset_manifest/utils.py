@@ -65,15 +65,16 @@ def detect_related_images(image_paths, root_path):
             #     data/
             #         image_01.png
             name, ext = os.path.splitext(filename)
+            # actually format contains .bin data, NOT .pcd, but .bin files were converted before this code execution to .pcd
             velodyne_path = os.path.normpath(
-                os.path.join(root, '..', '..', 'velodyne_points', 'data', '{}.bin'.format(name))
+                os.path.join(root, '..', '..', 'velodyne_points', 'data', '{}.pcd'.format(name))
             ) if root.endswith('data') else None
 
             if _append_to_related_images(related_images, related_image_path, velodyne_path):
                 continue
 
             try:
-                name, ext = os.path.basename(root).split('_')
+                name, ext = os.path.basename(root).rsplit('_', 1)
                 # 3D POINTCLOUD DATA FORMAT
                 # pointcloud/
                 #     00001.pcd
@@ -94,7 +95,7 @@ def detect_related_images(image_paths, root_path):
                 #         00001_png/
                 #             context_image_1.jpeg
                 #             context_image_2.png
-                default_2d_path =  os.path.normpath(
+                default_2d_path = os.path.normpath(
                     os.path.join(root, '..', '..', '{}.{}'.format(name, ext))
                 ) if os.path.split(root)[0].endswith('related_images') else None
 
@@ -110,7 +111,7 @@ def detect_related_images(image_paths, root_path):
             # data/
             #     image.pcd
             #     image.png
-            default_3d_1_path =  os.path.join(root, '{}.pcd'.format(name))
+            default_3d_1_path = os.path.join(root, '{}.pcd'.format(name))
             if _append_to_related_images(related_images, related_image_path, default_3d_1_path):
                 continue
 
@@ -120,8 +121,8 @@ def detect_related_images(image_paths, root_path):
             #        image_1.pcd
             #        context_1.png
             #        context_2.jpg
-            default_3d_2_path =  os.path.join(root, '{}.pcd'.format(os.path.basename(root)))
+            default_3d_2_path = os.path.join(root, '{}.pcd'.format(os.path.basename(root)))
             if _append_to_related_images(related_images, related_image_path, default_3d_2_path):
                 continue
 
-    return related_images
+    return {k: sorted(v) for k, v in related_images.items()}
