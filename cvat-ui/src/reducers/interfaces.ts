@@ -314,6 +314,7 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            movingDone: string;
         };
         models: {
             inferenceDone: string;

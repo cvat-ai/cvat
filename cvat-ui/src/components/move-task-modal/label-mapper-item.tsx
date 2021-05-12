@@ -8,10 +8,11 @@ import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
 import Checkbox from 'antd/lib/checkbox';
 import { ArrowRightOutlined } from '@ant-design/icons';
+import { Tooltip } from 'antd';
 
 export interface LabelMapperItemValue {
     labelId: number;
-    newLabelId: number | null;
+    newLabelName: string | null;
     clearAtrributes: boolean;
 }
 
@@ -19,37 +20,47 @@ export interface LabelMapperItemProps {
     label: any;
     projectLabels?: any[];
     value: LabelMapperItemValue;
+    labelMappers: LabelMapperItemValue[];
     onChange: (value: LabelMapperItemValue) => void;
 }
 
 export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Element {
     const {
-        label, value, onChange, projectLabels,
+        label, value, onChange, projectLabels, labelMappers,
     } = props;
+
+    const labelNames = labelMappers.map((mapper) => mapper.newLabelName).filter((el) => el);
 
     return (
         <Row className='cvat-move-task-label-mapper-item' align='middle'>
             <Col span={6}>
-                <Tag color={label.color}>{label.name}</Tag>
+                {label.name.length > 12 ? (
+                    <Tooltip overlay={label.name}>
+                        <Tag color={label.color}>
+                            {`${label.name.slice(0, 12)}...`}
+                        </Tag>
+                    </Tooltip>
+                ) : (
+                    <Tag color={label.color}>
+                        {label.name}
+                    </Tag>
+                )}
                 <ArrowRightOutlined />
             </Col>
             <Col>
                 <Select
                     disabled={typeof projectLabels === 'undefined'}
+                    value={value.newLabelName || ''}
                     onChange={(_value) =>
                         onChange({
                             ...value,
-                            newLabelId: +_value,
+                            newLabelName: _value as string,
                         })}
                 >
-                    <Select.Option value={-1}>
-                        <i>Create</i>
-                    </Select.Option>
-                    <Select.Option value={-2}>
-                        <i>Delete</i>
-                    </Select.Option>
-                    {projectLabels?.map((_label) => (
-                        <Select.Option key={_label.id} value={`${_label.id}`}>
+                    {projectLabels?.filter((_label) => (
+                        !labelNames.includes(_label.name)
+                    )).map((_label) => (
+                        <Select.Option key={_label.id} value={_label.name}>
                             {_label.name}
                         </Select.Option>
                     ))}
@@ -57,8 +68,8 @@ export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Elemen
             </Col>
             <Col>
                 <Checkbox
+                    disabled
                     checked={value.clearAtrributes}
-                    disabled={(value.newLabelId || 0) <= 0}
                     onChange={(_value) =>
                         onChange({
                             ...value,

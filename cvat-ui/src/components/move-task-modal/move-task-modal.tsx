@@ -7,12 +7,12 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
-import ProjectSearch from 'components/create-task-page/project-search-field';
 import Divider from 'antd/lib/divider';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleFilled } from '@ant-design/icons';
 
+import ProjectSearch from 'components/create-task-page/project-search-field';
 import { CombinedState } from 'reducers/interfaces';
 import { closeMoveTaskModal, moveTaskToProjectAsync } from 'actions/tasks-actions';
 import getCore from 'cvat-core-wrapper';
@@ -26,6 +26,7 @@ export default function MoveTaskModal(): JSX.Element {
         const [taskInstance] = state.tasks.current.filter((_task) => _task.instance.id === state.tasks.moveTask.taskId);
         return taskInstance?.instance;
     });
+    const taskUpdating = useSelector((state: CombinedState) => state.tasks.updating);
     const dispatch = useDispatch();
 
     const [projectId, setProjectId] = useState<number | null>(null);
@@ -38,12 +39,19 @@ export default function MoveTaskModal(): JSX.Element {
             task.labels.forEach((label: any) => {
                 labelValues[label.id] = {
                     labelId: label.id,
-                    newLabelId: null,
-                    clearAtrributes: false,
+                    newLabelName: null,
+                    clearAtrributes: true,
                 };
             });
             setValues(labelValues);
         }
+    };
+
+    const onCancel = (): void => {
+        dispatch(closeMoveTaskModal());
+        initValues();
+        setProject(null);
+        setProjectId(null);
     };
 
     const submitMove = async (): Promise<void> => {
@@ -53,10 +61,10 @@ export default function MoveTaskModal(): JSX.Element {
             });
             return;
         }
-        if (!Object.values(values).every((_value) => _value.newLabelId !== null)) {
+        if (!Object.values(values).every((_value) => _value.newLabelName !== null)) {
             notification.error({
                 message: 'Not all labels mapped',
-                description: 'Please choose any action to not mapped label first',
+                description: 'Please choose any action to not mapped labels first',
             });
             return;
         }
@@ -66,19 +74,35 @@ export default function MoveTaskModal(): JSX.Element {
                 projectId,
                 Object.values(values).map((value) => ({
                     label_id: value.labelId,
-                    new_label_id: (value.newLabelId || 0) > 0 ? value.newLabelId : null,
+                    new_label_name: value.newLabelName,
                     clear_attributes: value.clearAtrributes,
-                    delete: value.newLabelId === -2,
-                    create: value.newLabelId === -1,
                 })),
             ),
         );
+        onCancel();
     };
 
     useEffect(() => {
         if (projectId) {
             core.projects.get({ id: projectId }).then((_project: any) => {
-                if (projectId) setProject(_project[0]);
+                if (projectId) {
+                    setProject(_project[0]);
+                    const { labels } = _project[0];
+                    const labelValues: { [key: string]: LabelMapperItemValue } = {};
+                    Object.entries(values).forEach(([id, label]) => {
+                        const [autoNewLabel] = labels.filter((_label: any) => (
+                            _label.name === task.labels.filter((_taskLabel: any) => (
+                                _taskLabel.id === label.labelId
+                            ))[0].name
+                        ));
+                        labelValues[id] = {
+                            labelId: label.labelId,
+                            newLabelName: autoNewLabel ? autoNewLabel.name : null,
+                            clearAtrributes: true,
+                        };
+                    });
+                    setValues(labelValues);
+                }
             });
         } else {
             setProject(null);
@@ -92,13 +116,9 @@ export default function MoveTaskModal(): JSX.Element {
     return (
         <Modal
             visible={visible}
-            onCancel={() => {
-                dispatch(closeMoveTaskModal());
-                initValues();
-                setProject(null);
-                setProjectId(null);
-            }}
+            onCancel={onCancel}
             onOk={submitMove}
+            okButtonProps={{ disabled: taskUpdating }}
             title={(
                 <span>
                     {`Move task ${task?.id} to project`}
@@ -117,13 +137,14 @@ export default function MoveTaskModal(): JSX.Element {
                 </Col>
             </Row>
             <Divider orientation='left'>Label mapping</Divider>
-            {!!Object.keys(values).length &&
+            {!!Object.keys(values).length && !taskUpdating &&
                 task?.labels.map((label: any) => (
                     <LabelMapperItem
                         label={label}
                         key={label.id}
                         projectLabels={project?.labels}
                         value={values[label.id]}
+                        labelMappers={Object.values(values)}
                         onChange={(value) => {
                             setValues({
                                 ...values,

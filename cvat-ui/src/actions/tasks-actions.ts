@@ -579,10 +579,8 @@ function moveTaskToProjectSuccess(task: any): AnyAction {
 
 interface LabelMap {
     label_id: number;
-    new_label_id: number | null;
+    new_label_name: string | null;
     clear_attributes: boolean;
-    delete: boolean;
-    create: boolean;
 }
 
 export function moveTaskToProjectAsync(
@@ -593,7 +591,15 @@ export function moveTaskToProjectAsync(
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(moveTaskToProject());
         try {
-            await taskInstance.moveToProject(projectId, labelMap);
+            // eslint-disable-next-line no-param-reassign
+            taskInstance.labels = labelMap.map((mapper) => {
+                const [label] = taskInstance.labels.filter((_label: any) => mapper.label_id === _label.id);
+                label.name = mapper.new_label_name;
+                return label;
+            });
+            // eslint-disable-next-line no-param-reassign
+            taskInstance.projectId = projectId;
+            await taskInstance.save();
             const [task] = await cvat.tasks.get({ id: taskInstance.id });
             dispatch(moveTaskToProjectSuccess(task));
         } catch (error) {

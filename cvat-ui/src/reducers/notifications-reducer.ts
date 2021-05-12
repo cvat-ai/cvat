@@ -110,6 +110,7 @@ const defaultState: NotificationsState = {
     messages: {
         tasks: {
             loadingDone: '',
+            movingDone: '',
         },
         models: {
             inferenceDone: '',
@@ -454,6 +455,20 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-create-task-failed',
                         },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.MOVE_TASK_TO_PROJECT_SUCCESS: {
+            const { task } = action.payload;
+
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        movingDone: `Successfully moved task #${task.id} to the project #${task.projectId}`,
                     },
                 },
             };
@@ -865,6 +880,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not upload annotations for the ' +
                                 `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
                             reason: error.toString(),
+                            className: 'cvat-notification-notice-upload-annotations-fail',
                         },
                     },
                 },
