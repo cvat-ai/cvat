@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 import os
-import re
 import hashlib
 import mimetypes
 import cv2 as cv
@@ -37,99 +36,92 @@ def is_video(media_file):
 def is_image(media_file):
     return _define_data_type(media_file) == 'image'
 
-
 # TODO: Need to update create.py because right now it does not support 3D data at all
-def detect_related_images_for(image_path, root_path):
-    dirname = os.path.dirname(image_path).rstrip(os.sep)
-    dirname_before = os.path.split(dirname)[0]
-    dirname_before_before = os.path.split(dirname_before)[0]
-    dirname_related_images_exist = os.path.isdir(os.path.join(dirname, 'related_images'))
-    dirname_before_related_image_exist = os.path.isdir(os.path.join(dirname_before, 'related_images'))
-    relative_image_path = os.path.relpath(image_path, root_path)
-    name, ext = os.path.splitext(os.path.basename(image_path))
-
-    # 3D VELODYNE DATA FORMAT
-    # velodyne_points/
-    #     data/
-    #         image_01.bin
-    # IMAGE_00 # any number?
-    #     data/
-    #         image_01.png
-    if dirname.endswith('velodyne_points/data'):
-        matches = [re.search(r'image_\d.*', directory, re.IGNORECASE)
-            for directory in os.listdir(dirname_before_before)
-            if os.path.isdir(os.path.join(dirname_before_before, directory))
-        ]
-        context_dirs = (os.path.join(dirname_before_before, match.group(), 'data') for match in matches if match)
-        potentially_related_images = (
-            os.path.join(context_dir, context_image) for context_dir in context_dirs for context_image in os.listdir(context_dir)
-        )
-        potentially_related_images = filter(is_image, potentially_related_images)
-        related_images = filter(lambda x: os.path.splitext(os.path.basename(x))[0] == name, potentially_related_images)
-        related_images = map(lambda x: os.path.relpath(x, root_path), related_images)
-        return relative_image_path, sorted(list(related_images))
-
-    # 3D POINTCLOUD DATA FORMAT
-    # pointcloud/
-    #     00001.pcd
-    # related_images/
-    #     00001_pcd/
-    #         image_01.png # or other image
-
-    # 2D DATFORMAT
-    # data/
-    #     00001.png
-    #     related_images/
-    #         00001_png/
-    #             context_image_1.jpeg
-    #             context_image_2.png
-    elif dirname_related_images_exist or dirname_before_related_image_exist:
-        converted_name = '_'.join((name, ext[1:])) if ext else name
-        related_images_dir = os.path.join(dirname if dirname_related_images_exist else dirname_before, 'related_images', converted_name)
-        if os.path.isdir(related_images_dir):
-            relative_related_path = os.path.relpath(related_images_dir, root_path)
-            return relative_image_path, sorted(
-                list(
-                    map(
-                        lambda x: os.path.join(relative_related_path, x),
-                        filter(lambda x: is_image(os.path.join(related_images_dir, x)), os.listdir(related_images_dir))
-                    )
-                )
-            )
-
-    # 3D, DEFAULT DATAFORMAT
-    # Option 1
-    # data/
-    #     image.pcd
-    #     image.png
-
-    # Option 2
-    # data/
-    #    image_1/
-    #        image_1.pcd
-    #        context_1.png
-    #        context_2.jpg
-    else:
-        base_path = os.path.relpath(dirname, root_path)
-        all_files = filter(lambda x: x != ''.join((name, ext)), os.listdir(dirname))
-
-        if os.path.basename(dirname) != name: # Option 1
-            all_files = filter(lambda x: os.path.splitext(x)[0] == name, all_files)
-
-        return relative_image_path, sorted(
-            list(
-                map(
-                    lambda x: os.path.join(base_path, x),
-                    filter(lambda x: is_image(os.path.join(dirname, x)), all_files)
-                )
-            )
-        )
-
-    return relative_image_path, []
-
-
 # image_path is expected to be a list of absolute path to images
 # root_path is expected to be a string (dataset root)
 def detect_related_images(image_paths, root_path):
-    related_images = {k: v for k, v in map(lambda path: detect_related_images_for(path, root_path), image_paths)}
+    def _append_to_related_images(related_images, related_image, image):
+        if image is not None and image in image_paths:
+            rel_image = os.path.relpath(image, root_path)
+            rel_related_image = os.path.relpath(related_image, root_path)
+            related_images[rel_image] = related_images[rel_image] if rel_image in related_images else []
+            related_images[rel_image].append(rel_related_image)
+            return True
+        return False
+
+    related_images = {}
+    for root, _, filenames in os.walk(root_path):
+        for filename in filenames:
+            related_image_path = os.path.join(root, filename)
+            is_possible_context_image = related_image_path not in image_paths and is_image(related_image_path)
+            if not is_possible_context_image:
+                continue
+
+            # 3D VELODYNE DATA FORMAT
+            # velodyne_points/
+            #     data/
+            #         image_01.bin
+            # IMAGE_00 # any number?
+            #     data/
+            #         image_01.png
+            name, ext = os.path.splitext(filename)
+            velodyne_path = os.path.normpath(
+                os.path.join(root, '..', '..', 'velodyne_points', 'data', '{}.bin'.format(name))
+            ) if root.endswith('data') else None
+
+            if _append_to_related_images(related_images, related_image_path, velodyne_path):
+                continue
+
+            try:
+                name, ext = os.path.basename(root).split('_')
+                # 3D POINTCLOUD DATA FORMAT
+                # pointcloud/
+                #     00001.pcd
+                # related_images/
+                #     00001_pcd/
+                #         image_01.png # or other image
+                pointcloud_path = os.path.normpath(
+                    os.path.join(root, '..', '..', 'pointcloud', '{}.{}'.format(name, ext))
+                ) if os.path.split(root)[0].endswith('related_images') else None
+
+                if _append_to_related_images(related_images, related_image_path, pointcloud_path):
+                    continue
+
+                # 2D DATFORMAT
+                # data/
+                #     00001.png
+                #     related_images/
+                #         00001_png/
+                #             context_image_1.jpeg
+                #             context_image_2.png
+                default_2d_path =  os.path.normpath(
+                    os.path.join(root, '..', '..', '{}.{}'.format(name, ext))
+                ) if os.path.split(root)[0].endswith('related_images') else None
+
+                if _append_to_related_images(related_images, related_image_path, default_2d_path):
+                    continue
+            except ValueError:
+                # basename does not inlude extension
+                pass
+
+            name, ext = os.path.splitext(filename)
+            # 3D, DEFAULT DATAFORMAT
+            # Option 1
+            # data/
+            #     image.pcd
+            #     image.png
+            default_3d_1_path =  os.path.join(root, '{}.pcd'.format(name))
+            if _append_to_related_images(related_images, related_image_path, default_3d_1_path):
+                continue
+
+            # Option 2
+            # data/
+            #    image_1/
+            #        image_1.pcd
+            #        context_1.png
+            #        context_2.jpg
+            default_3d_2_path =  os.path.join(root, '{}.pcd'.format(os.path.basename(root)))
+            if _append_to_related_images(related_images, related_image_path, default_3d_2_path):
+                continue
+
     return related_images
