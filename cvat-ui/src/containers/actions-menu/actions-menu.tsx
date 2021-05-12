@@ -4,6 +4,8 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
 import { CombinedState } from 'reducers/interfaces';
@@ -16,8 +18,6 @@ import {
     deleteTaskAsync,
     showMoveTaskModal,
 } from 'actions/tasks-actions';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 
 interface OwnProps {
     taskInstance: any;
