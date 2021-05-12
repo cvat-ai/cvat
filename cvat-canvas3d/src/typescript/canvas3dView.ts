@@ -650,7 +650,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private addScene(points: any): void {
         // eslint-disable-next-line no-param-reassign
-        points.material.size = 0.08;
+        points.material.size = 0.05;
         points.material.color.set(new THREE.Color(0xffffff));
         const material = points.material.clone();
         const sphereCenter = points.geometry.boundingSphere.center;
@@ -701,7 +701,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (topScenePlane as any).verticesNeedUpdate = true;
         // eslint-disable-next-line no-param-reassign
         points.material = material;
-        material.size = 2;
+        material.size = 0.5;
         this.views.top.scene.add(points.clone());
         this.views.top.scene.add(topScenePlane);
         // Setup Side View
@@ -763,9 +763,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             && this.views.front.controls
         ) {
             this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, false);
-            this.views.top.controls.setLookAt(x, y, z + 8, x, y, z, false);
-            this.views.side.controls.setLookAt(x, y + 8, z, x, y, z, false);
-            this.views.front.controls.setLookAt(x + 8, y, z, x, y, z, false);
+            this.views.top.camera.position.set(x, y, z + 8);
+            this.views.top.camera.lookAt(x, y, z);
+            this.views.side.camera.position.set(x, y + 8, z);
+            this.views.side.camera.lookAt(x, y, z);
+            this.views.front.camera.position.set(x + 8, y, z);
+            this.views.top.camera.lookAt(x, y, z);
         }
     }
 
