@@ -417,12 +417,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
-                    old_label.attributespec_set.delete()
+                    old_label.attributespec_set.all().delete()
                     for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
                         model.objects.filter(job__segment__task=instance, label=old_label).update(
                             label=new_label
                         )
-                instance.label_set.delete()
+                instance.label_set.all().delete()
             else:
                 for old_label in instance.project.label_set.all():
                     if new_label_for_name := list(filter(lambda x: x.get('id', None) == old_label.id, labels)):
