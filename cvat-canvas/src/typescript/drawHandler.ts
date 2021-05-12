@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-// prettier-ignore
-
 import * as SVG from 'svg.js';
 import 'svg.draw.js';
 import './svg.patch';
