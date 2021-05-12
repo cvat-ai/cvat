@@ -55,11 +55,16 @@ context('Changing a default value for an attribute.', () => {
                     }
                     const minId = Math.min(...wrapperId);
                     const maxId = Math.max(...wrapperId);
-                    cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
-                    cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click().wait(500); // Wait for the dropdown menu to transition.
+                    if (minId > 0 && maxId > 0 ) {
+                        cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
+                        cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
+                    } else {
+                        cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
+                        cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').click();
+                    }
                 });
             });
-            cy.get('.ant-select-dropdown').within(() => {
+            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
                 cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
             });
             cy.contains('[type="submit"]', 'Done').click();
