@@ -51,20 +51,19 @@ context('Changing a default value for an attribute.', () => {
             cy.get('.cvat-label-constructor-updater').within(() => {
                 cy.get('.cvat-attribute-inputs-wrapper').then((wrapper) => {
                     for (let i = 0; i < wrapper.length; i++) {
+                        // Waiting for "cvat-attribute-id" value be greater then 0
+                        while (Number(wrapper[i].getAttribute('cvat-attribute-id')) < 0) {
+                            cy.task('log', wrapper[i].getAttribute('cvat-attribute-id'))
+                            cy.wait(500);
+                        }
                         wrapperId.push(wrapper[i].getAttribute('cvat-attribute-id'));
                     }
                     const minId = Math.min(...wrapperId);
                     const maxId = Math.max(...wrapperId);
                     cy.task('log', `minId: ${minId}`)
                     cy.task('log', `maxId: ${maxId}`)
-                    // Since the id value can be less than 0, change the fields for clicking and entering the value
-                    if(minId > 0 && maxId > 0) {
-                        cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
-                        cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
-                    } else {
-                        cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
-                        cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').click();
-                    }
+                    cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
+                    cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
                 });
             });
             cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
