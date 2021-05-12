@@ -57,13 +57,11 @@ context('Changing a default value for an attribute.', () => {
                     const maxId = Math.max(...wrapperId);
                     cy.task('log', `minId: ${minId}`)
                     cy.task('log', `maxId: ${maxId}`)
+
                     // Waiting for the value to become greater than zero.
-                    cy.get(`[cvat-attribute-id="${minId}"]`).invoke('attr', 'cvat-attribute-id').should(($id) => {
-                        expect(Number($id)).to.be.gt(0);
-                    });
-                    cy.get(`[cvat-attribute-id="${maxId}"]`).invoke('attr', 'cvat-attribute-id').should(($id) => {
-                        expect(Number($id)).to.be.gt(0);
-                    });
+                    cy.get(`[cvat-attribute-id="${minId}"]`).invoke('attr', 'cvat-attribute-id').then(parseInt).should('be.gt', 0);
+                    cy.get(`[cvat-attribute-id="${maxId}"]`).invoke('attr', 'cvat-attribute-id').then(parseInt).should('be.gt', 0);
+
                     cy.task('log', `minId after waiting: ${minId}`)
                     cy.task('log', `maxId after waiting: ${maxId}`)
                     cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
