@@ -227,10 +227,11 @@ class CLI():
     def tasks_import(self, filename, import_verification_period=3, **kwargs):
         """ Import a task"""
         url = self.api.tasks + '?action=import'
-        response = self.session.post(
-                url,
-                files={'task_file': open(filename, 'rb')}
-            )
+        with open(filename, 'rb') as input_file:
+            response = self.session.post(
+                    url,
+                    files={'task_file': input_file}
+                )
         response.raise_for_status()
         response_json = response.json()
         rq_id = response_json['rq_id']

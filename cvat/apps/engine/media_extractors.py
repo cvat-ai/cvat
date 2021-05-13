@@ -755,15 +755,15 @@ class ValidateDimension:
         pcd_files = {}
 
         for file in files:
-            file_name, file_extension = file.rsplit('.', maxsplit=1)
+            file_name, file_extension = os.path.splitext(file)
             file_path = os.path.abspath(os.path.join(root, file))
 
-            if file_extension == "bin":
+            if file_extension == ".bin":
                 path = self.bin_operation(file_path, actual_path)
                 pcd_files[file_name] = path
                 self.related_files[path] = []
 
-            elif file_extension == "pcd":
+            elif file_extension == ".pcd":
                 path = ValidateDimension.pcd_operation(file_path, actual_path)
                 if path == file_path:
                     self.image_files[file_name] = file_path
@@ -771,7 +771,8 @@ class ValidateDimension:
                     pcd_files[file_name] = path
                     self.related_files[path] = []
             else:
-                self.image_files[file_name] = file_path
+                if _is_image(file_path):
+                    self.image_files[file_name] = file_path
         return pcd_files
 
     def validate_velodyne_points(self, *args):

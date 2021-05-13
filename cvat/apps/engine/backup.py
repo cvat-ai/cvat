@@ -145,7 +145,7 @@ class TaskExporter(_TaskBackupBase):
                 zip_object=zip_object,
                 target_dir=self.DATA_DIRNAME,
             )
-        else:
+        elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
             if hasattr(self._db_data, 'video'):
                 media_files = (os.path.join(data_dir, self._db_data.video.path), )
@@ -166,6 +166,8 @@ class TaskExporter(_TaskBackupBase):
                 files=(os.path.join(upload_dir, f) for f in ('manifest.jsonl', 'index.json')),
                 target_dir=self.DATA_DIRNAME
             )
+        else:
+            raise NotImplementedError()
 
     def _write_task(self, zip_object):
         task_dir = self._db_task.get_task_dirname()

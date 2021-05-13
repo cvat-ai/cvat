@@ -265,11 +265,17 @@ def _create_thread(tid, data, isImport=False):
                 stop=data['stop_frame'],
             )
 
+
     validate_dimension = ValidateDimension()
-    if extractor.__class__ == MEDIA_TYPES['zip']['extractor']:
+    if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
         extractor.extract()
-    validate_dimension.set_path(upload_dir)
-    validate_dimension.validate()
+
+    if db_data.storage == models.StorageChoice.LOCAL or \
+        (db_data.storage == models.StorageChoice.SHARE and \
+        isinstance(extractor, MEDIA_TYPES['zip']['extractor'])):
+        validate_dimension.set_path(upload_dir)
+        validate_dimension.validate()
+
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         db_task.dimension = models.DimensionType.DIM_3D
 
@@ -323,7 +329,6 @@ def _create_thread(tid, data, isImport=False):
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
             db_data.chunk_size = 36
-
 
     video_path = ""
     video_size = (0, 0)
