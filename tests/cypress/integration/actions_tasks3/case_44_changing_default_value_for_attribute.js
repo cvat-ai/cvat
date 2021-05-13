@@ -26,6 +26,7 @@ context('Changing a default value for an attribute.', () => {
     const newTextValue = `${additionalLabel} text`;
     const newCheckboxValue = 'True';
     let wrapperId = [];
+    let wrapper;
 
     before(() => {
         cy.openTask(taskName);
@@ -48,22 +49,21 @@ context('Changing a default value for an attribute.', () => {
                     .find('[aria-label="edit"]')
                     .click({ force: true });
             });
+
+            cy.get('.cvat-label-constructor-updater')
+                .find('.cvat-attribute-inputs-wrapper')
+                .first()
+                .invoke('attr', 'cvat-attribute-id')
+                .then(parseInt)
+                .should('be.gt', 0);
+
             cy.get('.cvat-label-constructor-updater').within(() => {
                 cy.get('.cvat-attribute-inputs-wrapper').then((wrapper) => {
                     for (let i = 0; i < wrapper.length; i++) {
-                        cy.task('log', `Before while ${wrapper[i].getAttribute('cvat-attribute-id')}`)
-                        // Waiting for "cvat-attribute-id" value be greater then 0
-                        while (Number(wrapper[i].getAttribute('cvat-attribute-id')) < 0) {
-                            cy.wait(500);
-                            cy.task('log', `In while ${wrapper[i].getAttribute('cvat-attribute-id')}`)
-                        }
-                        cy.task('log', `After while ${wrapper[i].getAttribute('cvat-attribute-id')}`)
                         wrapperId.push(wrapper[i].getAttribute('cvat-attribute-id'));
                     }
                     const minId = Math.min(...wrapperId);
                     const maxId = Math.max(...wrapperId);
-                    cy.task('log', `minId: ${minId}`)
-                    cy.task('log', `maxId: ${maxId}`)
                     cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
                     cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
                 });
