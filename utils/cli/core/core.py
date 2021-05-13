@@ -92,7 +92,7 @@ class CLI():
         response_json = response.json()
         log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
         task_id = response_json['id']
-        self.tasks_data(task_id, resource_type, resources)
+        self.tasks_data(task_id, resource_type, resources, **kwargs)
 
         if annotation_path != '':
             url = self.api.tasks_id_status(task_id)
