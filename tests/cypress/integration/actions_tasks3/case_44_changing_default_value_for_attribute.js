@@ -46,23 +46,8 @@ context('Changing a default value for an attribute.', () => {
                 cy.contains(new RegExp(`^${additionalLabel}$`))
                     .parents('.cvat-constructor-viewer-item')
                     .find('[aria-label="edit"]')
-                    .click({ force: true });
+                    .click();
             });
-
-            cy.get('.cvat-label-constructor-updater')
-                .find('.cvat-attribute-inputs-wrapper')
-                .first()
-                .invoke('attr', 'cvat-attribute-id')
-                .then(($wrapperId) => {
-                    cy.task('log', `####### First ID of cvat-attribute-id: ${$wrapperId}`);
-                });
-
-            cy.get('.cvat-label-constructor-updater')
-                .find('.cvat-attribute-inputs-wrapper')
-                .first()
-                .invoke('attr', 'cvat-attribute-id')
-                .then(parseInt)
-                .should('be.gt', 0);
 
             cy.get('.cvat-label-constructor-updater').within(() => {
                 cy.get('.cvat-attribute-inputs-wrapper').then((wrapper) => {
@@ -71,8 +56,6 @@ context('Changing a default value for an attribute.', () => {
                     }
                     const minId = Math.min(...wrapperId);
                     const maxId = Math.max(...wrapperId);
-                    cy.task('log', `####### minId: ${minId}`);
-                    cy.task('log', `####### maxId: ${maxId}`);
                     cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
                     cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
                 });
