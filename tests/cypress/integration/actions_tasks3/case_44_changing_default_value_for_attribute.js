@@ -47,7 +47,9 @@ context('Changing a default value for an attribute.', () => {
                     .parents('.cvat-constructor-viewer-item')
                     .find('[aria-label="edit"]')
                     .should('be.visible')
-                    .click();
+                    .then((e) => {
+                        cy.get(e).click();
+                    });
             });
 
             cy.get('.cvat-label-constructor-updater').within(() => {
