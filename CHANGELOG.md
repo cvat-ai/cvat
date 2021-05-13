@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make sure frame unzip web worker correctly terminates after unzipping all images in a requested chunk (<https://github.com/openvinotoolkit/cvat/pull/3096>)
 - Reset password link was unavailable before login (<https://github.com/openvinotoolkit/cvat/pull/3140>)
 - Manifest: migration (<https://github.com/openvinotoolkit/cvat/pull/3146>)
+- Fixed cropping polygon in some corner cases (<https://github.com/openvinotoolkit/cvat/pull/3184>)
 
 ### Security
 
