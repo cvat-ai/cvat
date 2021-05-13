@@ -46,6 +46,7 @@ context('Changing a default value for an attribute.', () => {
                 cy.contains(new RegExp(`^${additionalLabel}$`))
                     .parents('.cvat-constructor-viewer-item')
                     .find('[aria-label="edit"]')
+                    .should('be.visible')
                     .click();
             });
 
