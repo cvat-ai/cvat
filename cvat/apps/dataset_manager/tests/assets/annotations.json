@@ -942,5 +942,114 @@
         "attributes": []
       }
     ]
+  },
+   "CVAT for images 1.1 tag": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 1,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "frame": 8,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [],
+    "tracks": []
+  },
+  "CVAT for video 1.1 slice track keyframe": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [66.45, 147.08, 182.16, 204.56],
+            "frame": 0,
+            "outside": false,
+            "outside": true,
+            "attributes": []
+          },
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [66.45, 147.08, 182.16, 204.56],
+            "frame": 1,
+            "outside": false,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      }
+    ]
+  },
+  "empty annotation": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": []
+  },
+    "CVAT for images 1.1 different types": {
+    "version": 0,
+    "tags": [
+    ],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [11.545, 11.7, 19.44, 17.4],
+        "frame": 3,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [4.54, 19.59, 21.34, 26.89],
+            "frame": 0,
+            "outside": false,
+            "attributes": []
+          },
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [4.54, 19.59, 21.34, 26.89],
+            "frame": 6,
+            "outside": true,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      }
+    ]
   }
 }
