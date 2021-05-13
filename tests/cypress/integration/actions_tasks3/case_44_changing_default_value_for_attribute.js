@@ -26,7 +26,6 @@ context('Changing a default value for an attribute.', () => {
     const newTextValue = `${additionalLabel} text`;
     const newCheckboxValue = 'True';
     let wrapperId = [];
-    let wrapper;
 
     before(() => {
         cy.openTask(taskName);
@@ -55,7 +54,10 @@ context('Changing a default value for an attribute.', () => {
                 .first()
                 .invoke('attr', 'cvat-attribute-id')
                 .then(parseInt)
-                .should('be.gt', 0);
+                .should('be.gt', 0)
+                .then(($wrapperId) => {
+                    cy.task('log', `####### First ID of cvat-attribute-id: ${$wrapperId}`);
+                })
 
             cy.get('.cvat-label-constructor-updater').within(() => {
                 cy.get('.cvat-attribute-inputs-wrapper').then((wrapper) => {
