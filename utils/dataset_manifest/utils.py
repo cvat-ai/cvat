@@ -153,13 +153,14 @@ def detect_related_images_3D(image_paths, root_path):
             for context_images_dir in velodyne_context_images_dirs:
                 listdir = _list_and_join(os.path.join(context_images_dir, 'data'))
                 listdir = list(
-                    filter(lambda x: os.path.splitext(os.path.basename((x))[0] == name), listdir)
+                    filter(lambda x: os.path.splitext(os.path.basename((x))[0]) == name, listdir)
                 )
                 related_images[rel_image_path].extend(
                     _prepare_context_list(listdir, root_path)
                 )
 
         related_images[rel_image_path].sort()
+    return related_images
 
 # This function is expected to be called only for images tasks
 # image_path is expected to be a list of absolute path to images
