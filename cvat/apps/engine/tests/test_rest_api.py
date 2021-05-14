@@ -4044,7 +4044,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                             "points": [1.0, 2.1, 51, 36.6, 8.0, 11.0],
                             "type": "polygon",
                             "occluded": False,
-                            "outside": False
+                            "outside": True
                         },
                         {
                             "frame": 2,
@@ -4052,7 +4052,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                             "points": [1.0, 2.1, 51, 36.6, 14.0, 15.0],
                             "type": "polygon",
                             "occluded": False,
-                            "outside": True,
+                            "outside": False,
                         }
                     ]
                 }]
