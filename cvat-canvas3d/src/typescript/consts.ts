@@ -13,6 +13,10 @@ const CAMERA_REFERENCE = 'camRef';
 const CUBOID_EDGE_NAME = 'edges';
 const ROTATION_HELPER = 'rotationHelper';
 const ROTATION_SPEED = 80;
+const FOV_DEFAULT = 1;
+const FOV_MAX = 2;
+const FOV_MIN = 0;
+const FOV_INC = 0.08;
 
 export default {
     BASE_GRID_WIDTH,
@@ -26,4 +30,8 @@ export default {
     CUBOID_EDGE_NAME,
     ROTATION_HELPER,
     ROTATION_SPEED,
+    FOV_DEFAULT,
+    FOV_MAX,
+    FOV_MIN,
+    FOV_INC,
 };

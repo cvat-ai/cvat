@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -324,11 +324,12 @@
                 checkObjectType('points', data.points, null, Array);
                 checkNumberOfPoints(this.shapeType, data.points);
                 // cut points
-                const { width, height } = this.frameMeta[frame];
+                const { width, height, filename } = this.frameMeta[frame];
                 fittedPoints = fitPoints(this.shapeType, data.points, width, height);
-
-                if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
-                    fittedPoints = [];
+                if (filename.slice(filename.length - 3) !== 'pcd') {
+                    if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
+                        fittedPoints = [];
+                    }
                 }
             }
 
