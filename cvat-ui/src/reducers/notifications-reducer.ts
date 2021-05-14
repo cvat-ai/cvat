@@ -468,7 +468,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     tasks: {
                         ...state.messages.tasks,
-                        movingDone: `Successfully moved task #${task.id} to the project #${task.projectId}`,
+                        movingDone: `The task #${task.id} has been successfully moved to the project #${task.projectId}`,
                     },
                 },
             };
