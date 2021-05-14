@@ -326,7 +326,7 @@
                 // cut points
                 const { width, height, filename } = this.frameMeta[frame];
                 fittedPoints = fitPoints(this.shapeType, data.points, width, height);
-                if (filename.slice(filename.length - 3) !== 'pcd') {
+                if (filename && filename.slice(filename.length - 3) !== 'pcd') {
                     if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
                         fittedPoints = [];
                     }
