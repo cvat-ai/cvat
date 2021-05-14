@@ -399,7 +399,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         moving: {
                             message:
                                 'Could not move  the' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a> to project`,
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a> to a project`,
                             reason: action.payload.error.toString(),
                         },
                     },
