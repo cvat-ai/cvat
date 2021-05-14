@@ -181,3 +181,4 @@ def detect_related_images(image_paths, root_path):
         return detect_related_images_2D(image_paths, root_path)
     elif data_are_3d:
         return detect_related_images_3D(image_paths, root_path)
+    return {}
