@@ -8,50 +8,238 @@ on:
     branches:
       - '*'
 jobs:
-  build:
+  Unit_testing:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v2
+      - name: Getting SHA from the default branch
+        id: get-sha
+        run: |
+          URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"
+          DEFAULT_BRANCH=$(curl -s -X GET -G ${URL_get_default_branch} | jq -r '.default_branch')
+          URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
+          SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
+          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
+          echo ::set-output name=sha::${SHA}
+      - name: Waiting a cache creation in the default branch
+        run: |
+          URL_runs="https://api.github.com/repos/${{ github.repository }}/actions/workflows/cache.yml/runs"
+          SLEEP=45
+          NUMBER_ATTEMPTS=10
+          while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
+            RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[]? | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
+            if [[ ${RUN_status} == "completed" ]]; then
+              echo "The cache creation on the '${{ steps.get-sha.outputs.default_branch }}' branch has finished. Status: ${RUN_status}"
+              break
+            else
+              echo "The creation of the cache is not yet complete."
+              echo "There are still attempts to check the cache: ${NUMBER_ATTEMPTS}"
+              echo "Status of caching in the '${{ steps.get-sha.outputs.default_branch }}' branch: ${RUN_status}"
+              echo "sleep ${SLEEP}"
+              sleep ${SLEEP}
+              ((NUMBER_ATTEMPTS--))
+            fi
+          done
+          if [[ ${NUMBER_ATTEMPTS} -eq 0 ]]; then
+            echo "Number of attempts expired!"
+            echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
+          fi
+      - name: Getting CVAT server cache from the default branch
+        uses: actions/cache@v2
+        with:
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1.1.2
+      - name: Building CVAT server image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache_server
+          tags: openvino/cvat_server:latest
+          load: true
+      - name: Runing unit tests
+        env:
+          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
+      - name: Uploading code coverage results as an artifact
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/.coverage
+            ${{ github.workspace }}/lcov.info
+
+  E2E_testing:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_objects', 'actions_objects2', 'actions_users', 'actions_projects', 'canvas3d_functionality', 'issues_prs', 'issues_prs2']
     steps:
       - uses: actions/checkout@v2
+      - name: Getting SHA from the default branch
+        id: get-sha
+        run: |
+          URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"
+          DEFAULT_BRANCH=$(curl -s -X GET -G ${URL_get_default_branch} | jq -r '.default_branch')
+          URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
+          SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
+          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
+          echo ::set-output name=sha::${SHA}
+      - name: Waiting a cache creation in the default branch
+        run: |
+          URL_runs="https://api.github.com/repos/${{ github.repository }}/actions/workflows/cache.yml/runs"
+          SLEEP=45
+          NUMBER_ATTEMPTS=10
+          while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
+            RUN_status=$(curl -s -X GET -G ${URL_runs} | jq -r '.workflow_runs[]? | select((.head_sha == "${{ steps.get-sha.outputs.sha }}") and (.event == "push") and (.name == "Cache") and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")) | .status')
+            if [[ ${RUN_status} == "completed" ]]; then
+              echo "The cache creation on the '${{ steps.get-sha.outputs.default_branch }}' branch has finished. Status: ${RUN_status}"
+              break
+            else
+              echo "The creation of the cache is not yet complete."
+              echo "There are still attempts to check the cache: ${NUMBER_ATTEMPTS}"
+              echo "Status of caching in the '${{ steps.get-sha.outputs.default_branch }}' branch: ${RUN_status}"
+              echo "sleep ${SLEEP}"
+              sleep ${SLEEP}
+              ((NUMBER_ATTEMPTS--))
+            fi
+          done
+          if [[ ${NUMBER_ATTEMPTS} -eq 0 ]]; then
+            echo "Number of attempts expired!"
+            echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
+          fi
+      - name: Getting CVAT server cache from the default branch
+        uses: actions/cache@v2
+        with:
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+      - name: Getting cache CVAT UI from the default branch
+        uses: actions/cache@v2
+        with:
+          path: /tmp/cvat_cache_ui
+          key: ${{ runner.os }}-build-ui-${{ steps.get-sha.outputs.sha }}
       - uses: actions/setup-node@v2
         with:
             node-version: 12
-      - name: Build CVAT
-        env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: '/coverage_data'
-          DJANGO_SU_NAME: 'admin'
-          DJANGO_SU_EMAIL: 'admin@localhost.company'
-          DJANGO_SU_PASSWORD: '12qwaszx'
-        run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml build
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
-          docker-compose up -d
-          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-      - name: Code instrumentation
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1.1.2
+      - name: Building CVAT server image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache_server
+          tags: openvino/cvat_server:latest
+          load: true
+      - name: Building CVAT UI image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.ui
+          cache-from: type=local,src=/tmp/cvat_cache_ui
+          tags: openvino/cvat_ui:latest
+          load: true
+      - name: Instrumentation of the code then rebuilding the CVAT UI
+        if: github.ref == 'refs/heads/develop'
         run: |
           npm ci
           npm run coverage
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-      - name: End-to-end testing
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_ui
+      - name: Running e2e tests
+        env:
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+          API_ABOUT_PAGE: "localhost:8080/api/v1/server/about"
         run: |
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+          /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
+          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
           npm ci
-          npx cypress run --headless --browser chrome
+          if [[ ${{ github.ref }} == 'refs/heads/develop' ]]; then
+            npx cypress run --headless --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
+          else
+            npx cypress run --headless --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+          fi
+      - name: Creating a log file from "cvat" container logs
+        if: failure()
+        run: |
+            docker logs cvat > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
       - name: Uploading cypress screenshots as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: cypress_screenshots
+          name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
-      - name: Collect coverage data
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cvat_container_logs
+          path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+      - name: Uploading code coverage results as an artifact
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: ${{ github.workspace }}/tests/.nyc_output
+
+  Coveralls:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    needs: [Unit_testing, E2E_testing]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Geting SHA from the default branch
+        id: get-sha
+        run: |
+          URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"
+          DEFAULT_BRANCH=$(curl -s -X GET -G ${URL_get_default_branch} | jq -r '.default_branch')
+          URL_get_sha_default_branch="https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH}"
+          SHA=$(curl -s -X GET -G ${URL_get_sha_default_branch}  | jq .object.sha | tr -d '"')
+          echo ::set-output name=sha::${SHA}
+      - name: Getting CVAT server cache from the default branch
+        uses: actions/cache@v2
+        with:
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1.1.2
+      - name: Building CVAT server image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache_server
+          tags: openvino/cvat_server:latest
+          load: true
+      - name: Downloading coverage results
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage_results
+      - name: Combining coverage results
+        run: |
+          mkdir -p ./nyc_output_tmp
+          mv ./out_*.json ./nyc_output_tmp
+          mkdir -p ./.nyc_output
+          npm ci
+          npx nyc merge ./nyc_output_tmp ./.nyc_output/out.json
+      - name: Sending results to Coveralls
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
           COVERALLS_SERVICE_NAME: github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mv ./tests/.nyc_output ./
-          npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
-          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
-          docker-compose -f docker-compose.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
+            npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
+            docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
+            docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
