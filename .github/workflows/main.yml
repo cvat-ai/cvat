@@ -170,12 +170,22 @@ jobs:
           else
             npx cypress run --headless --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
           fi
+      - name: Creating a log file from "cvat" container logs
+        if: failure()
+        run: |
+            docker logs cvat > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
       - name: Uploading cypress screenshots as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cvat_container_logs
+          path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
       - name: Uploading code coverage results as an artifact
         if: github.ref == 'refs/heads/develop'
         uses: actions/upload-artifact@v2
