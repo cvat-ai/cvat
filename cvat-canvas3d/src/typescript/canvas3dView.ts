@@ -758,7 +758,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.side.camera.position.set(x, y + 8, z);
             this.views.side.camera.lookAt(x, y, z);
             this.views.front.camera.position.set(x + 8, y, z);
-            this.views.top.camera.lookAt(x, y, z);
+            this.views.front.camera.lookAt(x, y, z);
+            this.setDefaultZoom();
         }
     }
 
