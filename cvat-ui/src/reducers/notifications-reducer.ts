@@ -460,7 +460,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case TasksActionTypes.MOVE_TASK_TO_PROJECT_SUCCESS: {
-            const { task } = action.payload;
+            const { id: taskId, projectId } = action.payload.task;
 
             return {
                 ...state,
@@ -468,7 +468,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     tasks: {
                         ...state.messages.tasks,
-                        movingDone: `The task #${task.id} has been successfully moved to the project #${task.projectId}`,
+                        movingDone: `The task #${taskId} has been successfully moved to the project #${projectId}`,
                     },
                 },
             };
