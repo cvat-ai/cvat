@@ -46,8 +46,12 @@ context('Changing a default value for an attribute.', () => {
                 cy.contains(new RegExp(`^${additionalLabel}$`))
                     .parents('.cvat-constructor-viewer-item')
                     .find('[aria-label="edit"]')
-                    .click({ force: true });
+                    .should('be.visible')
+                    .then((e) => {
+                        cy.get(e).click();
+                    });
             });
+
             cy.get('.cvat-label-constructor-updater').within(() => {
                 cy.get('.cvat-attribute-inputs-wrapper').then((wrapper) => {
                     for (let i = 0; i < wrapper.length; i++) {
@@ -56,10 +60,10 @@ context('Changing a default value for an attribute.', () => {
                     const minId = Math.min(...wrapperId);
                     const maxId = Math.max(...wrapperId);
                     cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
-                    cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click().wait(500); // Wait for the dropdown menu to transition.
+                    cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
                 });
             });
-            cy.get('.ant-select-dropdown').within(() => {
+            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
                 cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
             });
             cy.contains('[type="submit"]', 'Done').click();
