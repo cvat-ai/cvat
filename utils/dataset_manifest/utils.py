@@ -45,135 +45,139 @@ def _list_and_join(root):
 def _prepare_context_list(files, base_dir):
     return sorted(map(lambda x: os.path.relpath(x, base_dir), filter(is_image, files)))
 
+# Expected 2D format is:
+# data/
+#   00001.png
+#   related_images/
+#     00001_png/
+#       context_image_1.jpeg
+#       context_image_2.png
+def detect_related_images_2D(image_paths, root_path):
+    related_images = {}
+    latest_dirname = ''
+    related_images_exist = False
+
+    for image_path in sorted(image_paths):
+        rel_image_path = os.path.relpath(image_path, root_path)
+        dirname = os.path.dirname(image_path)
+        related_images_dirname = os.path.join(dirname, 'related_images')
+        related_images[rel_image_path] = []
+
+        if latest_dirname == dirname and not related_images_exist:
+            continue
+        elif latest_dirname != dirname:
+            # Update some data applicable for a subset of paths (within the current dirname)
+            latest_dirname = dirname
+            related_images_exist = os.path.isdir(related_images_dirname)
+
+        if related_images_exist:
+            related_images_dirname = os.path.join(
+                related_images_dirname, '_'.join(os.path.basename(image_path).rsplit('.', 1))
+            )
+
+            if os.path.isdir(related_images_dirname):
+                related_images[rel_image_path] = _prepare_context_list(_list_and_join(related_images_dirname), root_path)
+    return related_images
+
+# Possible 3D formats are:
+# velodyne_points/
+#     data/
+#         image_01.bin
+# IMAGE_00 # any number?
+#     data/
+#         image_01.png
+
+# pointcloud/
+#     00001.pcd
+# related_images/
+#     00001_pcd/
+#         image_01.png # or other image
+
+# Default formats
+# Option 1
+# data/
+#     image.pcd
+#     image.png
+
+# Option 2
+# data/
+#    image_1/
+#        image_1.pcd
+#        context_1.png
+#        context_2.jpg
+def detect_related_images_3D(image_paths, root_path):
+    related_images = {}
+    latest_dirname = ''
+    related_images_exist = False
+    velodyne_context_images_dirs = []
+
+    for image_path in sorted(image_paths):
+        rel_image_path = os.path.relpath(image_path, root_path)
+        name = os.path.splitext(os.path.basename(image_path))[0]
+        dirname = os.path.dirname(image_path)
+        related_images_dirname = os.path.normpath(os.path.join(dirname, '..', 'related_images'))
+        listdir = _list_and_join(dirname)
+        related_images[rel_image_path] = []
+
+        if latest_dirname != dirname:
+            # Update some data applicable for a subset of paths (within the current dirname)
+            latest_dirname = dirname
+            related_images_exist = os.path.isdir(related_images_dirname)
+            velodyne_context_images_dirs = [directory for directory
+                in _list_and_join(os.path.normpath(os.path.join(dirname, '..', '..')))
+                if os.path.isdir(os.path.join(directory, 'data')) and re.search(r'image_\d.*', directory, re.IGNORECASE)
+            ]
+
+        if dirname == name:
+            # default format (option 2)
+            related_images[rel_image_path].extend(_prepare_context_list(listdir, root_path))
+
+        listdir = list(
+            filter(lambda x: x != image_path and os.path.splitext(os.path.basename((x))[0] == name), listdir)
+        )
+        if len(listdir):
+            # default format (option 1)
+            related_images[rel_image_path].extend(_prepare_context_list(listdir, root_path))
+
+        if related_images_exist:
+            related_images_dirname = os.path.join(
+                related_images_dirname, '_'.join(os.path.basename(image_path).rsplit('.', 1))
+            )
+            if os.path.isdir(related_images_dirname):
+                related_images[rel_image_path].extend(
+                    _prepare_context_list(_list_and_join(related_images_dirname), root_path)
+                )
+
+        if dirname.endswith(os.path.join('velodyne_points', 'data')):
+            # velodynepoints format
+            for context_images_dir in velodyne_context_images_dirs:
+                listdir = _list_and_join(os.path.join(context_images_dir, 'data'))
+                listdir = list(
+                    filter(lambda x: os.path.splitext(os.path.basename((x))[0] == name), listdir)
+                )
+                related_images[rel_image_path].extend(
+                    _prepare_context_list(listdir, root_path)
+                )
+
+        related_images[rel_image_path].sort()
+
 # This function is expected to be called only for images tasks
 # image_path is expected to be a list of absolute path to images
 # root_path is expected to be a string (dataset root)
 def detect_related_images(image_paths, root_path):
     data_are_2d = False
     data_are_3d = False
-    related_images = {}
 
+    # First of all need to define data type we are working with
     for image_path in image_paths:
         # .bin files are expected to be converted to .pcd before this code
-        if os.path.splitext(image_paths)[1].lower() == '.pcd':
+        if os.path.splitext(image_path)[1].lower() == '.pcd':
             data_are_3d = True
         else:
             data_are_2d = True
-
     assert not (data_are_3d and data_are_2d), 'Combined data types 2D and 3D are not supported'
 
     if data_are_2d:
-        # Expected 2D format is:
-        # data/
-        #   00001.png
-        #   related_images/
-        #     00001_png/
-        #       context_image_1.jpeg
-        #       context_image_2.png
-        latest_dirname = ''
-        related_images_exist = False
-
-        for image_path in sorted(image_paths):
-            rel_image_path = os.path.relpath(image_path, root_path)
-            dirname = os.path.dirname(image_path)
-            related_images_dirname = os.path.join(dirname, 'related_images')
-            related_images[rel_image_path] = []
-
-            if latest_dirname == dirname and not related_images_exist:
-                continue
-            elif latest_dirname != dirname:
-                # Update some data applicable for a subset of paths (within the current dirname)
-                latest_dirname = dirname
-                related_images_exist = os.path.isdir(related_images_dirname)
-
-            if related_images_exist:
-                related_images_dirname = os.path.join(
-                    related_images_dirname, '_'.join(os.path.basename(image_path).rsplit('.', 1))
-                )
-
-                if os.path.isdir(related_images_dirname):
-                    related_images[rel_image_path] = _prepare_context_list(_list_and_join(related_images_dirname), root_path)
+        return detect_related_images_2D(image_paths, root_path)
     elif data_are_3d:
-        # Possible 3D formats are:
-        # velodyne_points/
-        #     data/
-        #         image_01.bin
-        # IMAGE_00 # any number?
-        #     data/
-        #         image_01.png
-
-        # pointcloud/
-        #     00001.pcd
-        # related_images/
-        #     00001_pcd/
-        #         image_01.png # or other image
-
-        # Default formats
-        # Option 1
-        # data/
-        #     image.pcd
-        #     image.png
-
-        # Option 2
-        # data/
-        #    image_1/
-        #        image_1.pcd
-        #        context_1.png
-        #        context_2.jpg
-
-        latest_dirname = ''
-        related_images_exist = False
-        velodyne_context_images_dirs = []
-
-        for image_path in sorted(image_paths):
-            rel_image_path = os.path.relpath(image_path, root_path)
-            name = os.path.splitext(os.path.basename(image_path))[0]
-            dirname = os.path.dirname(image_path)
-            related_images_dirname = os.path.normpath(os.path.join(dirname, '..', 'related_images'))
-            listdir = _list_and_join(dirname)
-
-            if latest_dirname != dirname:
-                # Update some data applicable for a subset of paths (within the current dirname)
-                latest_dirname = dirname
-                related_images_exist = os.path.isdir(related_images_dirname)
-                velodyne_context_images_dirs = [re.search(r'image_\d.*', directory, re.IGNORECASE)
-                    for directory in _list_and_join(os.path.normpath(os.path.join(dirname, '..', '..')))
-                    if os.path.isdir(os.path.join(directory, 'data'))
-                ]
-
-            related_images[rel_image_path] = related_images[rel_image_path] if rel_image_path in related_images else []
-
-            if dirname == name:
-                # default format (option 2)
-                related_images[rel_image_path].extend(_prepare_context_list(listdir, root_path))
-
-            listdir = list(
-                filter(lambda x: x != image_path and os.path.splitext(os.path.basename((x))[0] == name), listdir)
-            )
-            if len(listdir):
-                # default format (option 1)
-                related_images[rel_image_path].extend(_prepare_context_list(listdir, root_path))
-
-            if related_images_exist:
-                related_images_dirname = os.path.join(
-                    related_images_dirname, '_'.join(os.path.basename(image_path).rsplit('.', 1))
-                )
-                if os.path.isdir(related_images_dirname):
-                    related_images[rel_image_path].extend(
-                        _prepare_context_list(_list_and_join(related_images_dirname), root_path)
-                    )
-
-            if dirname.endswith(os.path.join('velodyne_points', 'data')):
-                # velodynepoints format
-                for context_images_dir in velodyne_context_images_dirs:
-                    listdir = _list_and_join(os.path.join(context_images_dir, 'data'))
-                    listdir = list(
-                        filter(lambda x: os.path.splitext(os.path.basename((x))[0] == name), listdir)
-                    )
-                    related_images[rel_image_path].extend(
-                        _prepare_context_list(listdir, root_path)
-                    )
-
-            related_images[rel_image_path].sort()
-
-    return related_images
+        return detect_related_images_3D(image_paths, root_path)
