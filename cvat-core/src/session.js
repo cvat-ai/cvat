@@ -16,6 +16,7 @@
     const User = require('./user');
     const Issue = require('./issue');
     const Review = require('./review');
+    const { FieldUpdateTrigger } = require('./common');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -734,11 +735,11 @@
                 task: undefined,
             };
 
-            let updatedFields = {
+            const updatedFields = new FieldUpdateTrigger({
                 assignee: false,
                 reviewer: false,
                 status: false,
-            };
+            });
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property)) {
@@ -865,9 +866,6 @@
                     },
                     __updatedFields: {
                         get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
                     },
                 }),
             );
@@ -1040,14 +1038,14 @@
                 dimension: undefined,
             };
 
-            let updatedFields = {
+            const updatedFields = new FieldUpdateTrigger({
                 name: false,
                 assignee: false,
                 bug_tracker: false,
                 subset: false,
                 labels: false,
                 project_id: false,
-            };
+            });
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -1566,9 +1564,6 @@
                     },
                     __updatedFields: {
                         get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
                     },
                 }),
             );
@@ -1729,11 +1724,7 @@
 
             await serverProxy.jobs.save(this.id, jobData);
 
-            this.__updatedFields = {
-                status: false,
-                assignee: false,
-                reviewer: false,
-            };
+            this.__updatedFields.reset();
 
             return this;
         }
@@ -2022,14 +2013,7 @@
 
             await serverProxy.tasks.saveTask(this.id, taskData);
 
-            this.updatedFields = {
-                assignee: false,
-                name: false,
-                bugTracker: false,
-                subset: false,
-                labels: false,
-                project_id: false,
-            };
+            this.__updatedFields.reset();
 
             return this;
         }
