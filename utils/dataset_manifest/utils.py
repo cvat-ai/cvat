@@ -52,7 +52,7 @@ def _prepare_context_list(files, base_dir):
 #     00001_png/
 #       context_image_1.jpeg
 #       context_image_2.png
-def detect_related_images_2D(image_paths, root_path):
+def _detect_related_images_2D(image_paths, root_path):
     related_images = {}
     latest_dirname = ''
     related_images_exist = False
@@ -105,7 +105,7 @@ def detect_related_images_2D(image_paths, root_path):
 #        image_1.pcd
 #        context_1.png
 #        context_2.jpg
-def detect_related_images_3D(image_paths, root_path):
+def _detect_related_images_3D(image_paths, root_path):
     related_images = {}
     latest_dirname = ''
     dirname_files = []
@@ -178,7 +178,7 @@ def detect_related_images(image_paths, root_path):
     assert not (data_are_3d and data_are_2d), 'Combined data types 2D and 3D are not supported'
 
     if data_are_2d:
-        return detect_related_images_2D(image_paths, root_path)
+        return _detect_related_images_2D(image_paths, root_path)
     elif data_are_3d:
-        return detect_related_images_3D(image_paths, root_path)
+        return _detect_related_images_3D(image_paths, root_path)
     return {}
