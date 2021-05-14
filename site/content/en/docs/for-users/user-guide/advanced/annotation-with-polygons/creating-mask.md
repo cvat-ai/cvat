@@ -32,8 +32,8 @@ There are several formats in CVAT that can be used to export masks:
 - `CamVid`
 - `MOTS`
 - `ICDAR`
-- `COCO` (RLE-encoded instance masks, [guide](../../../../../../docs/for-developers/formats/format-specifications/format-coco))
-- `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](../../../../../../docs/for-developers/formats/format-specifications/format-tfrecord)):
+- `COCO` (RLE-encoded instance masks, [guide](../../../../../../docs/for-users/formats/format-specifications/format-coco))
+- `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](../../../../../../docs/for-users/formats/format-specifications/format-tfrecord)):
 - `Datumaro`
 
 An example of exported masks (in the `Segmentation Mask` format):
