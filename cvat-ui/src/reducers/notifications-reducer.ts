@@ -398,7 +398,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.tasks,
                         moving: {
                             message:
-                                'Could not move ' +
+                                'Could not move  the' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a> to project`,
                             reason: action.payload.error.toString(),
                         },
