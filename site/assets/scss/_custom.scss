@@ -1,10 +1,10 @@
-/*Increased left padding on the sidebar of documentation*/
+/* Increased left padding on the sidebar of documentation */
 
 .td-sidebar-nav__section-title .td-sidebar-nav__section {
     padding-left: 0.3rem;
 }
 
-/*Main documentation page*/
+/* Main documentation page */
 
 #docs section {
     padding-top: 2rem;
@@ -15,39 +15,39 @@
     margin-top: 1rem;
 }
 
-/*Footer*/
+/* Footer */
 
 .footer-disclaimer {
-    font-size: .83rem;
+    font-size: 0.83rem;
     line-height: 1.25;
-    margin-top: .5rem;
-    margin-bottom: .5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .container-fluid footer {
     min-height: inherit;
-    padding-bottom: .5rem !important;
+    padding-bottom: 0.5rem !important;
     padding-top: 2rem !important;
 }
 
-/*Icon color for temporary page*/
+/* Icon color for temporary page */
 
 #temporary-page i {
-    color:lightgrey
+    color: lightgrey;
 }
 
-/*About page*/
+/* About page */
 
 .logo-2 {
     opacity: 0.8;
 }
 
 .history #year h2 {
-    text-shadow: 0px 0px 3px rgb(27, 27, 27);
+    text-shadow: 0 0 3px rgb(27, 27, 27);
 }
 
 .avatar:hover img {
-    box-shadow: 0px 0px 15px gray;
+    box-shadow: 0 0 15px gray;
 }
 
 .developer-info-list-item {
@@ -62,7 +62,7 @@
     color: lightgray;
 }
 
-/*World map block "the team"*/
+/* World map block "the team" */
 
 .team-container {
     margin: auto;
@@ -71,21 +71,20 @@
 
 .world-map-container {
     width: 100%;
-
 }
 
 #world-map {
-    z-index:1;
+    z-index: 1;
     width: 100%;
     height: 100%;
 }
 
 #world-map-marker {
-    z-index:2;
+    z-index: 2;
     position: absolute;
     border-radius: 50%;
     border: 2px white solid;
-    box-shadow: 2px 2px 1px gray ;
+    box-shadow: 2px 2px 1px gray;
     max-height: 25px;
 }
 
@@ -93,7 +92,7 @@
     border: 4px white solid;
 }
 
-#world-map-marker:hover #tooltip div{
+#world-map-marker:hover #tooltip div {
     visibility: visible;
 }
 
