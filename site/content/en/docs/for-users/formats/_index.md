@@ -1,7 +1,7 @@
 ---
 title: "Dataset and annotation formats"
 linkTitle: "Formats"
-weight: 2
+weight: 6
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats)
 ---
 
