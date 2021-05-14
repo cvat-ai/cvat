@@ -1,6 +1,6 @@
 ---
-title: "AWS-Deployment Guide"
-linkTitle: "AWS-Deployment Guide"
+title: 'AWS-Deployment Guide'
+linkTitle: 'AWS-Deployment Guide'
 weight: 4
 ---
 

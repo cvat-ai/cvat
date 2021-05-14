@@ -1,6 +1,6 @@
 ---
-title: "Data preparation on the fly"
-linkTitle: "Data preparation on the fly"
+title: 'Data preparation on the fly'
+linkTitle: 'Data preparation on the fly'
 weight: 9
 ---
 

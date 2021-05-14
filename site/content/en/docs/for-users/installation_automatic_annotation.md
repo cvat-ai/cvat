@@ -1,8 +1,8 @@
 ---
-title: "Semi-automatic and Automatic Annotation"
-linkTitle: "Semi-automatic and Automatic Annotation"
+title: 'Semi-automatic and Automatic Annotation'
+linkTitle: 'Semi-automatic and Automatic Annotation'
 weight: 5
-description: "This page provides information about the installation of components needed for semi-automatic and automatic annotation"
+description: 'This page provides information about the installation of components needed for semi-automatic and automatic annotation'
 ---
 
 > **⚠ WARNING: Do not use `docker-compose up`**
@@ -58,6 +58,7 @@ description: "This page provides information about the installation of component
   - See [deploy_cpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_cpu.sh) for more examples.
 
   #### GPU Support
+
   You will need to install [Nvidia Container Toolkit](https://www.tensorflow.org/install/docker#gpu_support).
   Also you will need to add `--resource-limit nvidia.com/gpu=1 --triggers '{"myHttpTrigger": {"maxWorkers": 1}}'` to
   the nuclio deployment command. You can increase the maxWorker if you have enough GPU memory.
@@ -74,6 +75,7 @@ description: "This page provides information about the installation of component
   ```
 
   **Note:**
+
   - The number of GPU deployed functions will be limited to your GPU memory.
   - See [deploy_gpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_gpu.sh) script for more examples.
 
@@ -120,12 +122,14 @@ description: "This page provides information about the installation of component
       }
   ]
   ```
+
   </details>
 
 - To check for internal server errors, run `docker ps -a` to see the list of containers.
   Find the container that you are interested, e.g., `nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu`.
   Then check its logs by `docker logs <name of your container>`
   e.g.,
+
   ```bash
   docker logs nuclio-nuclio-tf-faster-rcnn-inception-v2-coco-gpu
   ```

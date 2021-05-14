@@ -1,5 +1,5 @@
 ---
-linkTitle: "MS COCO"
+linkTitle: 'MS COCO'
 weight: 5
 ---
 
@@ -31,14 +31,13 @@ archive.zip/
   - `score` (number) - the annotation `score` field
   - arbitrary attributes - will be stored in the `attributes` annotation section
 
-
-*Note*: there is also a [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582)
+_Note_: there is also a [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582)
 
 1. Install [Datumaro](https://github.com/openvinotoolkit/datumaro)
-  `pip install datumaro`
+   `pip install datumaro`
 1. Export the task in the `Datumaro` format, unzip
 1. Export the Datumaro project in `coco` / `coco_person_keypoints` formats
-  `datum export -f coco -p path/to/project [-- --save-images]`
+   `datum export -f coco -p path/to/project [-- --save-images]`
 
 This way, one can export CVAT points as single keypoints or
 keypoint lists (without the `visibility` COCO flag).

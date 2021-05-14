@@ -1,6 +1,6 @@
 ---
-title: "XML annotation format"
-linkTitle: "XML annotation format"
+title: 'XML annotation format'
+linkTitle: 'XML annotation format'
 weight: 3
 ---
 

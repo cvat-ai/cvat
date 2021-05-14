@@ -1,11 +1,13 @@
 ---
-title: "Mounting cloud storage"
-linkTitle: "Mounting cloud storage"
+title: 'Mounting cloud storage'
+linkTitle: 'Mounting cloud storage'
 weight: 10
 ---
 
 ## AWS S3 bucket as filesystem
+
 ### <a name="aws_s3_ubuntu_2004">Ubuntu 20.04</a>
+
 #### <a name="aws_s3_mount">Mount</a>
 
 1.  Install s3fs:
@@ -14,7 +16,7 @@ weight: 10
     sudo apt install s3fs
     ```
 
-1.  Enter your credentials in a file  `${HOME}/.passwd-s3fs`  and set owner-only permissions:
+1.  Enter your credentials in a file `${HOME}/.passwd-s3fs` and set owner-only permissions:
 
     ```bash
     echo ACCESS_KEY_ID:SECRET_ACCESS_KEY > ${HOME}/.passwd-s3fs
@@ -31,6 +33,7 @@ weight: 10
 For more details see [here](https://github.com/s3fs-fuse/s3fs-fuse).
 
 #### <a name="aws_s3_automatically_mount">Automatically mount</a>
+
 Follow the first 3 mounting steps above.
 
 ##### <a name="aws_s3_using_fstab">Using fstab</a>
@@ -88,12 +91,15 @@ Follow the first 3 mounting steps above.
     ```
 
 #### <a name="aws_s3_check">Check</a>
+
 A file `/etc/mtab` contains records of currently mounted filesystems.
+
 ```bash
 cat /etc/mtab | grep 's3fs'
 ```
 
 #### <a name="aws_s3_unmount_filesystem">Unmount filesystem</a>
+
 ```bash
 fusermount -u <mount_point>
 ```
@@ -106,8 +112,11 @@ sudo systemctl disable s3fs.service
 ```
 
 ## Microsoft Azure container as filesystem
+
 ### <a name="azure_ubuntu_2004">Ubuntu 20.04</a>
+
 #### <a name="azure_mount">Mount</a>
+
 1.  Set up the Microsoft package repository.(More [here](https://docs.microsoft.com/en-us/windows-server/administration/Linux-Package-Repository-for-Microsoft-Software#configuring-the-repositories))
 
     ```bash
@@ -121,6 +130,7 @@ sudo systemctl disable s3fs.service
     ```bash
     sudo apt-get install blobfuse fuse
     ```
+
     For more details see [here](https://github.com/Azure/azure-storage-fuse/wiki/1.-Installation)
 
 1.  Create enviroments(replace `account_name`, `account_key`, `mount_point`):
@@ -132,16 +142,19 @@ sudo systemctl disable s3fs.service
     ```
 
 1.  Create a folder for cache:
+
     ```bash
     sudo mkdir -p /mnt/blobfusetmp
     ```
 
 1.  Make sure the file must be owned by the user who mounts the container:
+
     ```bash
     sudo chown <user> /mnt/blobfusetmp
     ```
 
 1.  Create the mount point, if it doesn't exists:
+
     ```bash
     mkdir -p ${MOUNT_POINT}
     ```
@@ -154,7 +167,9 @@ sudo systemctl disable s3fs.service
     ```
 
 #### <a name="azure_automatically_mount">Automatically mount</a>
+
 Follow the first 7 mounting steps above.
+
 ##### <a name="azure_using_fstab">Using fstab</a>
 
 1.  Create configuration file `connection.cfg` with same content, change accountName,
@@ -180,11 +195,13 @@ Follow the first 7 mounting steps above.
     ```
 
 1.  Give it the execution permission:
+
     ```bash
     sudo chmod +x /usr/bin/azure_fuse
     ```
 
 1.  Edit `/etc/fstab` with the blobfuse script. Add the following line(replace paths):
+
 ```bash
 /absolute/path/to/azure_fuse </path/to/desired/mountpoint> fuse allow_other,user,_netdev
 ```
@@ -219,15 +236,19 @@ Follow the first 7 mounting steps above.
     sudo systemctl enable blobfuse.service
     sudo systemctl start blobfuse.service
     ```
+
     Or for more detail [see here](https://github.com/Azure/azure-storage-fuse/tree/master/systemd)
 
 #### <a name="azure_check">Check</a>
+
 A file `/etc/mtab` contains records of currently mounted filesystems.
+
 ```bash
 cat /etc/mtab | grep 'blobfuse'
 ```
 
 #### <a name="azure_unmount_filesystem">Unmount filesystem</a>
+
 ```bash
 fusermount -u <mount_point>
 ```
@@ -243,8 +264,11 @@ If you have any mounting problems, check out the [answers](https://github.com/Az
 to common problems
 
 ## Google Drive as filesystem
+
 ### <a name="google_drive_ubuntu_2004">Ubuntu 20.04</a>
+
 #### <a name="google_drive_mount">Mount</a>
+
 To mount a google drive as a filesystem in user space(FUSE)
 you can use [google-drive-ocamlfuse](https://github.com/astrada/google-drive-ocamlfuse)
 To do this follow the instructions below:
@@ -286,7 +310,9 @@ To do this follow the instructions below:
     ```
 
 #### <a name="google_drive_automatically_mount">Automatically mount</a>
+
 Follow the first 4 mounting steps above.
+
 ##### <a name="google_drive_using_fstab">Using fstab</a>
 
 1.  Create a bash script named gdfuse(e.g in /usr/bin, as root) with this content
@@ -346,12 +372,15 @@ Follow the first 4 mounting steps above.
     For more details see [here](https://github.com/astrada/google-drive-ocamlfuse/wiki/Automounting)
 
 #### <a name="google_drive_check">Check</a>
+
 A file `/etc/mtab` contains records of currently mounted filesystems.
+
 ```bash
 cat /etc/mtab | grep 'google-drive-ocamlfuse'
 ```
 
 #### <a name="google_drive_unmount_filesystem">Unmount filesystem</a>
+
 ```bash
 fusermount -u <mount_point>
 ```

@@ -8,12 +8,12 @@ simply click `Edit this page` on the page you would like to edit.
 If you need to add a child page, click `Create child page`.
 
 If you need to edit the text that has the markup [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet),
- click on the `Fork this reposytory` button.
+click on the `Fork this reposytory` button.
 
 Read how to edit files for githab ([GitHub docs](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-another-users-repository)).
 
 Please note that files have a markup for correct display on the site: the title, the title of the link,
- the weight (affects the order of files display on the sidebar) and description (optional):
+the weight (affects the order of files display on the sidebar) and description (optional):
 
     ---
     title: "Title"

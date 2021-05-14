@@ -1,8 +1,8 @@
 ---
-title: "Frequently asked questions"
-linkTitle: "FAQ"
+title: 'Frequently asked questions'
+linkTitle: 'FAQ'
 weight: 20
-description: "Answers to frequently asked questions"
+description: 'Answers to frequently asked questions'
 ---
 
 ## How to update CVAT
@@ -140,4 +140,5 @@ Set the segment size when you create a new task, this option is available in the
 [Advanced configuration](../../../docs/for-users/user-guide/creating_an_annotation_task/#advanced-configuration) section.
 
 ## How to transfer CVAT to another machine
+
 Follow the [backup/restore guide](../../../docs/for-developers/backup_guide/#how-to-backup-all-cvat-data).

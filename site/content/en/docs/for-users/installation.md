@@ -1,8 +1,8 @@
 ---
-title: "Installation"
-linkTitle: "Installation"
+title: 'Installation'
+linkTitle: 'Installation'
 weight: 1
-description: "CVAT installation guide for different operating systems"
+description: 'CVAT installation guide for different operating systems'
 ---
 
 # Quick installation guide
