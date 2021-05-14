@@ -1,4 +1,4 @@
-baseURL = "/"
+baseURL = "/cvat/"
 title = "CVAT"
 
 enableRobotsTXT = true
@@ -92,13 +92,13 @@ cvat_terms_of_use = "https://cvat.org/api/v1/restrictions/terms-of-use"
 # This menu appears only if you have at least one [params.versions] set.
 version_menu = "Releases"
 
-# Flag used in the "version-banner" partial to decide whether to display a 
+# Flag used in the "version-banner" partial to decide whether to display a
 # banner on every page indicating that this is an archived version of the docs.
 # Set this flag to "true" if you want to display the banner.
 archived_version = false
 
 # The version number for the version of the docs represented in this doc set.
-# Used in the "version-banner" partial to display a version number for the 
+# Used in the "version-banner" partial to display a version number for the
 # current doc set.
 version = "0.0"
 
@@ -155,7 +155,7 @@ yes = 'Glad to hear it! Please <a href="https://github.com/USERNAME/REPOSITORY/i
 no = 'Sorry to hear that. Please <a href="https://github.com/USERNAME/REPOSITORY/issues/new">tell us how we can improve</a>.'
 
 # Adds a reading time to the top of each doc.
-# If you want this feature, but occasionally need to remove the Reading time from a single page, 
+# If you want this feature, but occasionally need to remove the Reading time from a single page,
 # add "hide_readingtime: true" to the page's front matter
 [params.ui.readingtime]
 enable = false
