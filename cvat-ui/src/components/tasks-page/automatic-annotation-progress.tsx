@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,8 +7,9 @@ import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
-import Tooltip from 'antd/lib/tooltip';
 import Modal from 'antd/lib/modal';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { ActiveInference } from 'reducers/interfaces';
 
 interface Props {
@@ -41,7 +42,7 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                     />
                 </Col>
                 <Col span={1} className='close-auto-annotation-icon'>
-                    <Tooltip title='Cancel automatic annotation' mouseLeaveDelay={0}>
+                    <CVATTooltip title='Cancel automatic annotation'>
                         <CloseOutlined
                             onClick={() => {
                                 Modal.confirm({
@@ -57,7 +58,7 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                                 });
                             }}
                         />
-                    </Tooltip>
+                    </CVATTooltip>
                 </Col>
             </Row>
         </>

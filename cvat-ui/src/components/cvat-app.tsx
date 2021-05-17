@@ -1,14 +1,18 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import 'antd/dist/antd.css';
+import React from 'react';
+import { Redirect, Route, Switch } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
+import 'antd/dist/antd.css';
+
 import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
 import Header from 'components/header/header';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
@@ -26,10 +30,7 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import getCore from 'cvat-core-wrapper';
-import React from 'react';
-import { configure, ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
-import { Redirect, Route, Switch } from 'react-router';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers/interfaces';
 import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
@@ -47,7 +48,7 @@ interface CVATAppProps {
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
     pluginsInitialized: boolean;
@@ -71,7 +72,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public componentDidMount(): void {
         const core = getCore();
         const { verifyAuthorized, history, location } = this.props;
-        configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
+        // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
@@ -128,12 +129,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user == null || !user.isVerified) {
-            return;
-        }
-
         if (!authActionsInitialized && !authActionsFetching) {
             loadAuthActions();
+        }
+
+        if (user == null || !user.isVerified) {
+            return;
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -256,12 +257,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         };
 
         const handlers = {
-            SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
+            SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
 
                 switchShortcutsDialog();
             },
-            SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
+            SWITCH_SETTINGS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
 
                 switchSettingsDialog();
@@ -326,7 +327,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
-                                <a id='downloadAnchor' style={{ display: 'none' }} download />
+                                <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                             </Layout.Content>
                         </Layout>
                     </GlobalErrorBoundary>

@@ -1,12 +1,12 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
 import Autocomplete from 'antd/lib/auto-complete';
+import { SelectValue } from 'antd/lib/select';
 
 import getCore from 'cvat-core-wrapper';
-import { SelectValue } from 'antd/lib/select';
 
 const core = getCore();
 
@@ -59,19 +59,23 @@ export default function ProjectSearchField(props: Props): JSX.Element {
     };
 
     useEffect(() => {
-        if (value && !projects.filter((project) => project.id === value).length) {
-            core.projects.get({ id: value }).then((result: Project[]) => {
-                const [project] = result;
-                setProjects([
-                    ...projects,
-                    {
-                        id: project.id,
-                        name: project.name,
-                    },
-                ]);
-                setSearchPhrase(project.name);
-                onSelect(project.id);
-            });
+        if (value) {
+            if (!projects.filter((project) => project.id === value).length) {
+                core.projects.get({ id: value }).then((result: Project[]) => {
+                    const [project] = result;
+                    setProjects([
+                        ...projects,
+                        {
+                            id: project.id,
+                            name: project.name,
+                        },
+                    ]);
+                    setSearchPhrase(project.name);
+                    onSelect(project.id);
+                });
+            }
+        } else {
+            setSearchPhrase('');
         }
     }, [value]);
 

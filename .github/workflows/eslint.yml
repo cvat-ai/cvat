@@ -1,0 +1,42 @@
+name: Linter
+on: pull_request
+jobs:
+  ESLint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+
+      - name: Run checks
+        run: |
+          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
+          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
+          for files in $PR_FILES; do
+            extension="${files##*.}"
+            if [[ $extension == 'js' || $extension == 'ts' || $extension == 'jsx' || $extension == 'tsx' ]]; then
+              changed_files_eslint+=" ${files}"
+            fi
+          done
+
+          if [[ ! -z ${changed_files_eslint} ]]; then
+            for package_files in `find -maxdepth 2 -name "package.json" -type f`; do
+              cd $(dirname $package_files) && npm ci && cd ${{ github.workspace }}
+            done
+            npm install eslint-detailed-reporter --save-dev
+            mkdir -p eslint_report
+
+            echo "ESLint version: "`npx eslint --version`
+            echo "The files will be checked: "`echo ${changed_files_eslint}`
+            npx eslint ${changed_files_eslint} -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
+          else
+            echo "No files with the \"js|ts|jsx|tsx\" extension found"
+          fi
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: eslint_report
+          path: eslint_report

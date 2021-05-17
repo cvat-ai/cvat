@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,12 +6,10 @@
 
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
-        cy.get('.cvat-user-search-field').click();
+        user !== ''
+            ? cy.get('.cvat-user-search-field').find('[type="search"]').type(`${user}{Enter}`)
+            : cy.get('.cvat-user-search-field').find('[type="search"]').clear().type('{Enter}');
     });
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .contains(new RegExp(`^${user}$`, 'g'))
-        .click();
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
@@ -26,6 +24,18 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
+});
+
+Cypress.Commands.add('reviewJobToUser', (jobID, user) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`)
+            .parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-reviewer-selector')
+            .find('[type="search"]')
+            .clear()
+            .type(`${user}{Enter}`);
+    });
 });
 
 Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {
@@ -75,21 +85,17 @@ Cypress.Commands.add('collectIssueRegionId', () => {
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
         for (let i = 0; i < issueRegionList.length; i++) {
-            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\d+$/)));
+            issueRegionIdList.push(Number(issueRegionList[i].id.match(/-?\d+$/)));
         }
         return issueRegionIdList;
     });
 });
 
-Cypress.Commands.add('checkIssueRegion', (afterSave = false) => {
+Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
     cy.collectIssueRegionId().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        if (!afterSave) {
-            cy.get(`${sccSelectorIssueRegionId}-${maxId}`).trigger('mousemove').should('exist').and('be.visible');
-        } else {
-            cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').should('exist').and('be.visible');
-        }
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').should('exist').and('be.visible');
     });
 });
 
@@ -120,7 +126,9 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
             .trigger('mousemove', createIssueParams.secondX, createIssueParams.secondY)
             .trigger('mouseup');
     } else if (createIssueParams.type === 'point') {
-        cy.get('.cvat-canvas-container').click(createIssueParams.firstX, createIssueParams.firstY);
+        cy.get('.cvat-canvas-container')
+            .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 })
+            .trigger('mouseup');
     }
     cy.get('.cvat-create-issue-dialog').within(() => {
         cy.get('#issue_description').type(createIssueParams.description);
@@ -129,23 +137,30 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
     cy.checkIssueRegion();
 });
 
-Cypress.Commands.add('resolveIssue', (issueLabel, resolveText) => {
+Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => {
     cy.get(issueLabel).click();
+    cy.intercept('POST', '/api/v1/comments').as('postComment');
+    cy.intercept('PATCH', '/api/v1/issues/**').as('resolveReopenIssue');
     cy.get('.cvat-issue-dialog-input').type(resolveText);
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.contains('button', 'Comment').click();
-        cy.contains('button', 'Resolve').click();
+        reopen
+            ? cy.contains('button', 'Reopen').click()
+            : cy.contains('button', 'Resolve').click();
     });
+    if (reopen) cy.get('.cvat-issue-dialog-header').find('[aria-label="close"]').click();
+    cy.wait('@postComment').its('response.statusCode').should('equal', 201);
+    cy.wait('@resolveReopenIssue').its('response.statusCode').should('equal', 200);
 });
 
 Cypress.Commands.add('submitReview', (decision, user) => {
     cy.get('.cvat-submit-review-dialog').within(() => {
         cy.contains(new RegExp(`^${decision}$`, 'g')).click();
         if (decision === 'Review next') {
-            cy.server().route('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
+            cy.intercept('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {
                 cy.get('input[type="search"]').clear().type(`${user}`);
-                cy.wait('@searchUsers').its('status').should('equal', 200);
+                cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
                 cy.get('input[type="search"]').type('{Enter}');
             });
         }

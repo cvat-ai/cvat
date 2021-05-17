@@ -2,15 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
-import re
 import os
+import re
+from enum import Enum
 
-from django.db import models
 from django.conf import settings
-
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -18,6 +19,18 @@ class SafeCharField(models.CharField):
         if value:
             return value[:self.max_length]
         return value
+
+
+class DimensionType(str, Enum):
+    DIM_3D = '3d'
+    DIM_2D = '2d'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
 
 class StatusChoice(str, Enum):
     ANNOTATION = 'annotation'
@@ -127,11 +140,10 @@ class Data(models.Model):
     def get_preview_path(self):
         return os.path.join(self.get_data_dirname(), 'preview.jpeg')
 
-    def get_meta_path(self):
-        return os.path.join(self.get_upload_dirname(), 'meta_info.txt')
-
-    def get_dummy_chunk_path(self, chunk_number):
-        return os.path.join(self.get_upload_dirname(), 'dummy_{}.txt'.format(chunk_number))
+    def get_manifest_path(self):
+        return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
+    def get_index_path(self):
+        return os.path.join(self.get_upload_dirname(), 'index.json')
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
@@ -141,6 +153,7 @@ class Video(models.Model):
 
     class Meta:
         default_permissions = ()
+
 
 class Image(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="images", null=True)
@@ -152,17 +165,32 @@ class Image(models.Model):
     class Meta:
         default_permissions = ()
 
+
+class TrainingProject(models.Model):
+    class ProjectClass(models.TextChoices):
+        DETECTION = 'OD', _('Object Detection')
+
+    host = models.CharField(max_length=256)
+    username = models.CharField(max_length=256)
+    password = models.CharField(max_length=256)
+    training_id = models.CharField(max_length=64)
+    enabled = models.BooleanField(null=True)
+    project_class = models.CharField(max_length=2, choices=ProjectClass.choices, null=True, blank=True)
+
+
 class Project(models.Model):
+
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="+")
-    assignee = models.ForeignKey(User, null=True,  blank=True,
-        on_delete=models.SET_NULL, related_name="+")
+                              on_delete=models.SET_NULL, related_name="+")
+    assignee = models.ForeignKey(User, null=True, blank=True,
+                                 on_delete=models.SET_NULL, related_name="+")
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-        default=StatusChoice.ANNOTATION)
+                              default=StatusChoice.ANNOTATION)
+    training_project = models.ForeignKey(TrainingProject, null=True, blank=True, on_delete=models.SET_NULL)
 
     def get_project_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -200,8 +228,10 @@ class Task(models.Model):
     # Zero means that there are no limits (default)
     segment_size = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-        default=StatusChoice.ANNOTATION)
+                              default=StatusChoice.ANNOTATION)
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
+    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
+    subset = models.CharField(max_length=64, blank=True, default="")
 
     # Extend default permission model
     class Meta:
@@ -224,6 +254,13 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TrainingProjectImage(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    idx = models.PositiveIntegerField()
+    training_image_id = models.CharField(max_length=64)
+
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
@@ -265,6 +302,17 @@ class RemoteFile(models.Model):
     class Meta:
         default_permissions = ()
 
+
+class RelatedFile(models.Model):
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
+    path = models.FileField(upload_to=upload_path_handler,
+                            max_length=1024, storage=MyFileSystemStorage())
+    primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ("data", "path")
+
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     start_frame = models.IntegerField()
@@ -295,6 +343,12 @@ class Label(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ('task', 'name')
+
+
+class TrainingProjectLabel(models.Model):
+    cvat_label = models.ForeignKey(Label, on_delete=models.CASCADE, related_name='training_project_label')
+    training_label_id = models.CharField(max_length=64)
+
 
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'

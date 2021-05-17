@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,18 +15,26 @@ import {
     pointsToNumberArray,
     BBox,
     Box,
+    Point,
 } from './shared';
 import Crosshair from './crosshair';
 import consts from './consts';
-import { DrawData, Geometry, RectDrawingMethod, Configuration, CuboidDrawingMethod } from './canvasModel';
+import {
+    DrawData, Geometry, RectDrawingMethod, Configuration, CuboidDrawingMethod,
+} from './canvasModel';
 
-import { cuboidFrom4Points } from './cuboid';
+import { cuboidFrom4Points, intersection } from './cuboid';
 
 export interface DrawHandler {
     configurate(configuration: Configuration): void;
     draw(drawData: DrawData, geometry: Geometry): void;
     transform(geometry: Geometry): void;
     cancel(): void;
+}
+
+interface FinalCoordinates {
+    points: number[];
+    box: Box;
 }
 
 export class DrawHandlerImpl implements DrawHandler {
@@ -70,27 +78,115 @@ export class DrawHandlerImpl implements DrawHandler {
         return [xtl, ytl, xbr, ybr];
     }
 
-    private getFinalPolyshapeCoordinates(
-        targetPoints: number[],
-    ): {
-        points: number[];
-        box: Box;
-    } {
+    private getFinalPolyshapeCoordinates(targetPoints: number[]): FinalCoordinates {
         const { offset } = this.geometry;
-        const points = targetPoints.map((coord: number): number => coord - offset);
+        let points = targetPoints.map((coord: number): number => coord - offset);
         const box = {
             xtl: Number.MAX_SAFE_INTEGER,
             ytl: Number.MAX_SAFE_INTEGER,
-            xbr: Number.MAX_SAFE_INTEGER,
-            ybr: Number.MAX_SAFE_INTEGER,
+            xbr: Number.MIN_SAFE_INTEGER,
+            ybr: Number.MIN_SAFE_INTEGER,
         };
 
         const frameWidth = this.geometry.image.width;
         const frameHeight = this.geometry.image.height;
-        for (let i = 0; i < points.length - 1; i += 2) {
-            points[i] = Math.min(Math.max(points[i], 0), frameWidth);
-            points[i + 1] = Math.min(Math.max(points[i + 1], 0), frameHeight);
 
+        enum Direction {
+            Horizontal,
+            Vertical,
+        }
+
+        function isBetween(x1: number, x2: number, c: number): boolean {
+            return c >= Math.min(x1, x2) && c <= Math.max(x1, x2);
+        }
+
+        const isInsideFrame = (p: Point, direction: Direction): boolean => {
+            if (direction === Direction.Horizontal) {
+                return isBetween(0, frameWidth, p.x);
+            }
+            return isBetween(0, frameHeight, p.y);
+        };
+
+        const findInersection = (p1: Point, p2: Point, p3: Point, p4: Point): number[] => {
+            const intersectionPoint = intersection(p1, p2, p3, p4);
+            if (
+                intersectionPoint
+                && isBetween(p1.x, p2.x, intersectionPoint.x)
+                && isBetween(p1.y, p2.y, intersectionPoint.y)
+            ) {
+                return [intersectionPoint.x, intersectionPoint.y];
+            }
+            return [];
+        };
+
+        const findIntersectionsWithFrameBorders = (p1: Point, p2: Point, direction: Direction): number[] => {
+            const resultPoints = [];
+            const leftLine = [
+                { x: 0, y: 0 },
+                { x: 0, y: frameHeight },
+            ];
+            const topLine = [
+                { x: frameWidth, y: 0 },
+                { x: 0, y: 0 },
+            ];
+            const rightLine = [
+                { x: frameWidth, y: frameHeight },
+                { x: frameWidth, y: 0 },
+            ];
+            const bottomLine = [
+                { x: 0, y: frameHeight },
+                { x: frameWidth, y: frameHeight },
+            ];
+
+            if (direction === Direction.Horizontal) {
+                resultPoints.push(...findInersection(p1, p2, leftLine[0], leftLine[1]));
+                resultPoints.push(...findInersection(p1, p2, rightLine[0], rightLine[1]));
+            } else {
+                resultPoints.push(...findInersection(p1, p2, bottomLine[0], bottomLine[1]));
+                resultPoints.push(...findInersection(p1, p2, topLine[0], topLine[1]));
+            }
+
+            if (resultPoints.length === 4) {
+                if (
+                    (p1.x === p2.x || Math.sign(resultPoints[0] - resultPoints[2]) !== Math.sign(p1.x - p2.x))
+                    && (p1.y === p2.y || Math.sign(resultPoints[1] - resultPoints[3]) !== Math.sign(p1.y - p2.y))
+                ) {
+                    [resultPoints[0], resultPoints[2]] = [resultPoints[2], resultPoints[0]];
+                    [resultPoints[1], resultPoints[3]] = [resultPoints[3], resultPoints[1]];
+                }
+            }
+            return resultPoints;
+        };
+
+        const crop = (shapePoints: number[], direction: Direction): number[] => {
+            const resultPoints = [];
+            const isPolyline = this.drawData.shapeType === 'polyline';
+            const isPolygon = this.drawData.shapeType === 'polygon';
+
+            for (let i = 0; i < shapePoints.length - 1; i += 2) {
+                const curPoint = { x: shapePoints[i], y: shapePoints[i + 1] };
+                if (isInsideFrame(curPoint, direction)) {
+                    resultPoints.push(shapePoints[i], shapePoints[i + 1]);
+                }
+                const isLastPoint = i === shapePoints.length - 2;
+                if (isLastPoint && (isPolyline || (isPolygon && shapePoints.length === 4))) {
+                    break;
+                }
+                const nextPoint = isLastPoint
+                    ? { x: shapePoints[0], y: shapePoints[1] }
+                    : { x: shapePoints[i + 2], y: shapePoints[i + 3] };
+                const intersectionPoints = findIntersectionsWithFrameBorders(curPoint, nextPoint, direction);
+                if (intersectionPoints.length !== 0) {
+                    resultPoints.push(...intersectionPoints);
+                }
+            }
+            return resultPoints;
+        };
+
+        points = crop(points, Direction.Horizontal);
+        points = crop(points, Direction.Vertical);
+
+        for (let i = 0; i < points.length - 1; i += 2) {
             box.xtl = Math.min(box.xtl, points[i]);
             box.ytl = Math.min(box.ytl, points[i + 1]);
             box.xbr = Math.max(box.xbr, points[i]);
@@ -103,20 +199,15 @@ export class DrawHandlerImpl implements DrawHandler {
         };
     }
 
-    private getFinalCuboidCoordinates(
-        targetPoints: number[],
-    ): {
-        points: number[];
-        box: Box;
-    } {
+    private getFinalCuboidCoordinates(targetPoints: number[]): FinalCoordinates {
         const { offset } = this.geometry;
         let points = targetPoints;
 
         const box = {
-            xtl: 0,
-            ytl: 0,
-            xbr: Number.MAX_SAFE_INTEGER,
-            ybr: Number.MAX_SAFE_INTEGER,
+            xtl: Number.MAX_SAFE_INTEGER,
+            ytl: Number.MAX_SAFE_INTEGER,
+            xbr: Number.MIN_SAFE_INTEGER,
+            ybr: Number.MIN_SAFE_INTEGER,
         };
 
         const frameWidth = this.geometry.image.width;
@@ -154,26 +245,33 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (cuboidOffsets.length === points.length / 2) {
             cuboidOffsets.forEach((offsetCoords: number[]): void => {
-                if (Math.sqrt(offsetCoords[0] ** 2 + offsetCoords[1] ** 2) < minCuboidOffset.d) {
-                    minCuboidOffset.d = Math.sqrt(offsetCoords[0] ** 2 + offsetCoords[1] ** 2);
+                const dx = offsetCoords[0] ** 2;
+                const dy = offsetCoords[1] ** 2;
+                if (Math.sqrt(dx + dy) < minCuboidOffset.d) {
+                    minCuboidOffset.d = Math.sqrt(dx + dy);
                     [minCuboidOffset.dx, minCuboidOffset.dy] = offsetCoords;
                 }
             });
 
             points = points.map((coord: number, i: number): number => {
-                const finalCoord = coord + (i % 2 === 0 ? minCuboidOffset.dx : minCuboidOffset.dy);
-
-                if (i % 2 === 0) {
-                    box.xtl = Math.max(box.xtl, finalCoord);
-                    box.xbr = Math.min(box.xbr, finalCoord);
-                } else {
-                    box.ytl = Math.max(box.ytl, finalCoord);
-                    box.ybr = Math.min(box.ybr, finalCoord);
+                if (i % 2) {
+                    return coord + minCuboidOffset.dy;
                 }
-
-                return finalCoord;
+                return coord + minCuboidOffset.dx;
             });
         }
+
+        points.forEach((coord: number, i: number): number => {
+            if (i % 2 === 0) {
+                box.xtl = Math.min(box.xtl, coord);
+                box.xbr = Math.max(box.xbr, coord);
+            } else {
+                box.ytl = Math.min(box.ytl, coord);
+                box.ybr = Math.max(box.ybr, coord);
+            }
+
+            return coord;
+        });
 
         return {
             points: points.map((coord: number): number => coord - offset),
@@ -213,8 +311,8 @@ export class DrawHandlerImpl implements DrawHandler {
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
             if (
-                this.drawData.shapeType !== 'rectangle' &&
-                this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC
+                this.drawData.shapeType !== 'rectangle'
+                && this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC
             ) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
@@ -365,7 +463,9 @@ export class DrawHandlerImpl implements DrawHandler {
                 } else {
                     this.drawInstance.draw('update', e);
                     const deltaTreshold = 15;
-                    const delta = Math.sqrt((e.clientX - lastDrawnPoint.x) ** 2 + (e.clientY - lastDrawnPoint.y) ** 2);
+                    const dx = (e.clientX - lastDrawnPoint.x) ** 2;
+                    const dy = (e.clientY - lastDrawnPoint.y) ** 2;
+                    const delta = Math.sqrt(dx + dy);
                     if (delta > deltaTreshold) {
                         this.drawInstance.draw('point', e);
                     }
@@ -386,48 +486,26 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToNumberArray((e.target as SVGElement).getAttribute('points'));
             const { shapeType, redraw: clientID } = this.drawData;
-            const { points, box } =
-                shapeType === 'cuboid'
-                    ? this.getFinalCuboidCoordinates(targetPoints)
-                    : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points, box } = shapeType === 'cuboid'
+                ? this.getFinalCuboidCoordinates(targetPoints)
+                : this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
 
             if (this.canceled) return;
             if (
-                shapeType === 'polygon' &&
-                (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD &&
-                points.length >= 3 * 2
+                shapeType === 'polygon'
+                && (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD
+                && points.length >= 3 * 2
             ) {
-                this.onDrawDone(
-                    {
-                        clientID,
-                        shapeType,
-                        points,
-                    },
-                    Date.now() - this.startTimestamp,
-                );
+                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
             } else if (
-                shapeType === 'polyline' &&
-                (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD) &&
-                points.length >= 2 * 2
+                shapeType === 'polyline'
+                && (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD)
+                && points.length >= 2 * 2
             ) {
-                this.onDrawDone(
-                    {
-                        clientID,
-                        shapeType,
-                        points,
-                    },
-                    Date.now() - this.startTimestamp,
-                );
+                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'points' && (e.target as any).getAttribute('points') !== '0,0') {
-                this.onDrawDone(
-                    {
-                        clientID,
-                        shapeType,
-                        points,
-                    },
-                    Date.now() - this.startTimestamp,
-                );
+                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
                 // TODO: think about correct constraign for cuboids
             } else if (shapeType === 'cuboid' && points.length === 4 * 2) {
                 this.onDrawDone(
@@ -527,10 +605,9 @@ export class DrawHandlerImpl implements DrawHandler {
                 .split(/[,\s]/g)
                 .map((coord: string): number => +coord);
 
-            const { points } =
-                this.drawData.initialState.shapeType === 'cuboid'
-                    ? this.getFinalCuboidCoordinates(targetPoints)
-                    : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points } = this.drawData.initialState.shapeType === 'cuboid'
+                ? this.getFinalCuboidCoordinates(targetPoints)
+                : this.getFinalPolyshapeCoordinates(targetPoints);
 
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();

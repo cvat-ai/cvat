@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,10 +9,10 @@ import { CloseOutlined } from '@ant-design/icons';
 import Comment from 'antd/lib/comment';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
-import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import moment from 'moment';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     id: number;
@@ -67,9 +67,9 @@ export default function IssueDialog(props: Props): JSX.Element {
                     author={<Text strong>{_comment.author ? _comment.author.username : 'Unknown'}</Text>}
                     content={<p>{_comment.message}</p>}
                     datetime={(
-                        <Tooltip title={created.format('MMMM Do YYYY')}>
+                        <CVATTooltip title={created.format('MMMM Do YYYY')}>
                             <span>{diff}</span>
-                        </Tooltip>
+                        </CVATTooltip>
                     )}
                 />
             );
@@ -93,9 +93,9 @@ export default function IssueDialog(props: Props): JSX.Element {
                     <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>
                 </Col>
                 <Col>
-                    <Tooltip title='Collapse the chat'>
+                    <CVATTooltip title='Collapse the chat'>
                         <CloseOutlined onClick={collapse} />
-                    </Tooltip>
+                    </CVATTooltip>
                 </Col>
             </Row>
             <Row className='cvat-issue-dialog-chat' justify='start'>

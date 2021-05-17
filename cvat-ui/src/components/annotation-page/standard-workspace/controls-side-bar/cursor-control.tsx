@@ -1,16 +1,16 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import Icon from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 
 import { CursorIcon } from 'icons';
 import { ActiveControl } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     cursorShortkey: string;
     activeControl: ActiveControl;
@@ -20,7 +20,7 @@ function CursorControl(props: Props): JSX.Element {
     const { canvasInstance, activeControl, cursorShortkey } = props;
 
     return (
-        <Tooltip title={`Cursor ${cursorShortkey}`} placement='right' mouseLeaveDelay={0}>
+        <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>
             <Icon
                 component={CursorIcon}
                 className={
@@ -30,7 +30,7 @@ function CursorControl(props: Props): JSX.Element {
                 }
                 onClick={activeControl !== ActiveControl.CURSOR ? (): void => canvasInstance.cancel() : undefined}
             />
-        </Tooltip>
+        </CVATTooltip>
     );
 }
 

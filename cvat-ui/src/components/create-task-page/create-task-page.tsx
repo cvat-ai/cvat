@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -52,6 +52,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                 Modal.error({
                     width: 800,
                     title: 'Could not clone the repository',
+                    className: 'cvat-create-task-clone-repository-fail',
                     content: (
                         <>
                             <Paragraph>

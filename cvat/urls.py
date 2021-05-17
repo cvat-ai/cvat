@@ -38,5 +38,11 @@ if apps.is_installed('cvat.apps.log_viewer'):
 if apps.is_installed('cvat.apps.lambda_manager'):
     urlpatterns.append(path('', include('cvat.apps.lambda_manager.urls')))
 
+if apps.is_installed('cvat.apps.opencv'):
+    urlpatterns.append(path('opencv/', include('cvat.apps.opencv.urls')))
+
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
+
+if apps.is_installed('cvat.apps.training'):
+    urlpatterns.append(path('api/v1/predict/', include('cvat.apps.training.urls')))

@@ -15,7 +15,7 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("call handler")
     data = event.body
-    points = data["points"]
+    points = data["pos_points"]
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     image = Image.open(buf)
 

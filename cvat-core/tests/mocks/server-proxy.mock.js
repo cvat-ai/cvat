@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -97,7 +97,11 @@ class ServerProxy {
                     Object.prototype.hasOwnProperty.call(projectData, prop)
                     && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
-                    object[prop] = projectData[prop];
+                    if (prop === 'labels') {
+                        object[prop] = projectData[prop].filter((label) => !label.deleted);
+                    } else {
+                        object[prop] = projectData[prop];
+                    }
                 }
             }
         }
@@ -156,7 +160,11 @@ class ServerProxy {
                     Object.prototype.hasOwnProperty.call(taskData, prop)
                     && Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
-                    object[prop] = taskData[prop];
+                    if (prop === 'labels') {
+                        object[prop] = taskData[prop].filter((label) => !label.deleted);
+                    } else {
+                        object[prop] = taskData[prop];
+                    }
                 }
             }
         }

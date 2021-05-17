@@ -1,14 +1,14 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
-
-import Tooltip from 'antd/lib/tooltip';
 import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
+import Dropdown from 'antd/lib/dropdown';
+import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
 } from 'reducers/interfaces';
@@ -16,7 +16,8 @@ import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
-import { PlusCircleOutlined } from '@ant-design/icons';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import ImageSetupsContent from './image-setups-content';
 
 const cvat = getCore();
 
@@ -60,7 +61,8 @@ interface Props {
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    intelligentPolygonCrop: boolean;
+    keyMap: KeyMap;
     canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
     onSetupCanvas: () => void;
@@ -97,7 +99,12 @@ interface Props {
 export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
-            automaticBordering, showObjectsTextAlways, canvasInstance, workspace,
+            automaticBordering,
+            intelligentPolygonCrop,
+            showObjectsTextAlways,
+            canvasInstance,
+            workspace,
+            showProjections,
         } = this.props;
 
         // It's awful approach from the point of view React
@@ -110,6 +117,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
+            intelligentPolygonCrop,
+            showProjections,
         });
 
         this.initialSetup();
@@ -146,6 +155,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showObjectsTextAlways,
             showAllInterpolationTracks,
             automaticBordering,
+            intelligentPolygonCrop,
             showProjections,
             canvasBackgroundColor,
             onFetchAnnotation,
@@ -154,13 +164,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (
             prevProps.showObjectsTextAlways !== showObjectsTextAlways ||
             prevProps.automaticBordering !== automaticBordering ||
-            prevProps.showProjections !== showProjections
+            prevProps.showProjections !== showProjections ||
+            prevProps.intelligentPolygonCrop !== intelligentPolygonCrop
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
                 showProjections,
+                intelligentPolygonCrop,
             });
         }
 
@@ -763,21 +775,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             minZLayer,
             onSwitchZLayer,
             onAddZLayer,
-            brightnessLevel,
-            contrastLevel,
-            saturationLevel,
             keyMap,
-            grid,
-            gridColor,
-            gridOpacity,
             switchableAutomaticBordering,
             automaticBordering,
-            onChangeBrightnessLevel,
-            onChangeSaturationLevel,
-            onChangeContrastLevel,
-            onChangeGridColor,
-            onChangeGridOpacity,
-            onSwitchGrid,
             onSwitchAutomaticBordering,
         } = this.props;
 
@@ -788,91 +788,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         };
 
         const subKeyMap = {
-            INCREASE_BRIGHTNESS: keyMap.INCREASE_BRIGHTNESS,
-            DECREASE_BRIGHTNESS: keyMap.DECREASE_BRIGHTNESS,
-            INCREASE_CONTRAST: keyMap.INCREASE_CONTRAST,
-            DECREASE_CONTRAST: keyMap.DECREASE_CONTRAST,
-            INCREASE_SATURATION: keyMap.INCREASE_SATURATION,
-            DECREASE_SATURATION: keyMap.DECREASE_SATURATION,
-            INCREASE_GRID_OPACITY: keyMap.INCREASE_GRID_OPACITY,
-            DECREASE_GRID_OPACITY: keyMap.DECREASE_GRID_OPACITY,
-            CHANGE_GRID_COLOR: keyMap.CHANGE_GRID_COLOR,
             SWITCH_AUTOMATIC_BORDERING: keyMap.SWITCH_AUTOMATIC_BORDERING,
         };
 
-        const step = 10;
         const handlers = {
-            INCREASE_BRIGHTNESS: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const maxLevel = 200;
-                if (brightnessLevel < maxLevel) {
-                    onChangeBrightnessLevel(Math.min(brightnessLevel + step, maxLevel));
-                }
-            },
-            DECREASE_BRIGHTNESS: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const minLevel = 50;
-                if (brightnessLevel > minLevel) {
-                    onChangeBrightnessLevel(Math.max(brightnessLevel - step, minLevel));
-                }
-            },
-            INCREASE_CONTRAST: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const maxLevel = 200;
-                if (contrastLevel < maxLevel) {
-                    onChangeContrastLevel(Math.min(contrastLevel + step, maxLevel));
-                }
-            },
-            DECREASE_CONTRAST: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const minLevel = 50;
-                if (contrastLevel > minLevel) {
-                    onChangeContrastLevel(Math.max(contrastLevel - step, minLevel));
-                }
-            },
-            INCREASE_SATURATION: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const maxLevel = 300;
-                if (saturationLevel < maxLevel) {
-                    onChangeSaturationLevel(Math.min(saturationLevel + step, maxLevel));
-                }
-            },
-            DECREASE_SATURATION: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const minLevel = 0;
-                if (saturationLevel > minLevel) {
-                    onChangeSaturationLevel(Math.max(saturationLevel - step, minLevel));
-                }
-            },
-            INCREASE_GRID_OPACITY: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const maxLevel = 100;
-                if (!grid) {
-                    onSwitchGrid(true);
-                }
-
-                if (gridOpacity < maxLevel) {
-                    onChangeGridOpacity(Math.min(gridOpacity + step, maxLevel));
-                }
-            },
-            DECREASE_GRID_OPACITY: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const minLevel = 0;
-                if (gridOpacity - step <= minLevel) {
-                    onSwitchGrid(false);
-                }
-
-                if (gridOpacity > minLevel) {
-                    onChangeGridOpacity(Math.max(gridOpacity - step, minLevel));
-                }
-            },
-            CHANGE_GRID_COLOR: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const colors = [GridColor.Black, GridColor.Blue, GridColor.Green, GridColor.Red, GridColor.White];
-                const indexOf = colors.indexOf(gridColor) + 1;
-                const color = colors[indexOf >= colors.length ? 0 : indexOf];
-                onChangeGridColor(color);
-            },
             SWITCH_AUTOMATIC_BORDERING: (event: KeyboardEvent | undefined) => {
                 if (switchableAutomaticBordering) {
                     preventDefault(event);
@@ -883,7 +802,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         return (
             <Layout.Content style={{ position: 'relative' }}>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 {/*
                     This element doesn't have any props
                     So, React isn't going to rerender it
@@ -897,6 +816,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         height: '100%',
                     }}
                 />
+
+                <Dropdown trigger='click' placement='topCenter' overlay={<ImageSetupsContent />}>
+                    <UpOutlined className='cvat-canvas-image-setups-trigger' />
+                </Dropdown>
+
                 <div className='cvat-canvas-z-axis-wrapper'>
                     <Slider
                         disabled={minZLayer === maxZLayer}
@@ -908,9 +832,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         defaultValue={0}
                         onChange={(value: number): void => onSwitchZLayer(value as number)}
                     />
-                    <Tooltip title={`Add new layer ${maxZLayer + 1} and switch to it`} mouseLeaveDelay={0}>
+                    <CVATTooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
                         <PlusCircleOutlined onClick={onAddZLayer} />
-                    </Tooltip>
+                    </CVATTooltip>
                 </div>
             </Layout.Content>
         );
