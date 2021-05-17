@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset password link was unavailable before login (<https://github.com/openvinotoolkit/cvat/pull/3140>)
 - Manifest: migration (<https://github.com/openvinotoolkit/cvat/pull/3146>)
 - Fixed cropping polygon in some corner cases (<https://github.com/openvinotoolkit/cvat/pull/3184>)
+- Update of COCO format documentation (<https://github.com/openvinotoolkit/cvat/pull/3197>)
 
 ## [1.3.0] - 3/31/2021
 
