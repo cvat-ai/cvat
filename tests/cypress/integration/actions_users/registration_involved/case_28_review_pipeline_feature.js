@@ -313,9 +313,6 @@ context('Review pipeline feature', () => {
             cy.openJob(0, false);
             cy.createPoint(createPointsShapeSecond);
             cy.saveJob('PATCH', 403);
-            cy.get('.cvat-notification-notice-save-annotations-failed').then((notice) => {
-                cy.task('log', `Notice modal count: ${notice.length}`)
-            });
             cy.get('.cvat-notification-notice-save-annotations-failed')
                 .should('exist')
                 .within(() => {
