@@ -355,23 +355,13 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 hideEmpty: action.payload.hideEmpty,
             };
         }
-        case TasksActionTypes.SHOW_MOVE_TASK_MODAL: {
+        case TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE: {
             return {
                 ...state,
                 moveTask: {
                     ...state.moveTask,
-                    modalVisible: true,
-                    taskId: action.payload.taskInstance.id,
-                },
-            };
-        }
-        case TasksActionTypes.CLOSE_MOVE_TASK_MODAL: {
-            return {
-                ...state,
-                moveTask: {
-                    ...state.moveTask,
-                    modalVisible: false,
-                    taskId: null,
+                    modalVisible: !state.moveTask.modalVisible,
+                    taskId: action.payload.taskId,
                 },
             };
         }

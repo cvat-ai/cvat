@@ -38,8 +38,7 @@ export enum TasksActionTypes {
     MOVE_TASK_TO_PROJECT = 'MOVE_TASK_TO_PROJECT',
     MOVE_TASK_TO_PROJECT_SUCCESS = 'MOVE_TASK_TO_PROJECT_SUCCESS',
     MOVE_TASK_TO_PROJECT_FAILED = 'MOVE_TASK_TO_PROJECT_FAILED',
-    SHOW_MOVE_TASK_MODAL = 'SHOW_MOVE_TASK_MODAL',
-    CLOSE_MOVE_TASK_MODAL = 'CLOSE_MOVE_TASK_MODAL',
+    SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
 function getTasks(): AnyAction {
@@ -525,26 +524,17 @@ export function hideEmptyTasks(hideEmpty: boolean): AnyAction {
     return action;
 }
 
-export function showMoveTaskModal(taskInstance: any): AnyAction {
+export function switchMoveTaskModalVisible(taskId: number | null = null): AnyAction {
     const action = {
-        type: TasksActionTypes.SHOW_MOVE_TASK_MODAL,
+        type: TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE,
         payload: {
-            taskInstance,
+            taskId,
         },
     };
 
     return action;
 }
 
-export function closeMoveTaskModal(): AnyAction {
-    const action = {
-        type: TasksActionTypes.CLOSE_MOVE_TASK_MODAL,
-    };
-
-    return action;
-}
-
-// TODO: should be options type here?
 function moveTaskToProject(): AnyAction {
     const action = {
         type: TasksActionTypes.MOVE_TASK_TO_PROJECT,
