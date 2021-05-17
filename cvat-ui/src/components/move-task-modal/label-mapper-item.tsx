@@ -8,7 +8,7 @@ import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
 import Checkbox from 'antd/lib/checkbox';
 import { ArrowRightOutlined } from '@ant-design/icons';
-import { Tooltip } from 'antd';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 export interface LabelMapperItemValue {
     labelId: number;
@@ -35,11 +35,11 @@ export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Elemen
         <Row className='cvat-move-task-label-mapper-item' align='middle'>
             <Col span={6}>
                 {label.name.length > 12 ? (
-                    <Tooltip overlay={label.name}>
+                    <CVATTooltip overlay={label.name}>
                         <Tag color={label.color}>
                             {`${label.name.slice(0, 12)}...`}
                         </Tag>
-                    </Tooltip>
+                    </CVATTooltip>
                 ) : (
                     <Tag color={label.color}>
                         {label.name}

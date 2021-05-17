@@ -12,8 +12,8 @@ const core = getCore();
 
 type Props = {
     value: number | null;
-    excludeId?: number;
     onSelect: (id: number | null) => void;
+    filter?: (value: Project, index: number, array: Project[]) => unknown
 };
 
 type Project = {
@@ -22,7 +22,7 @@ type Project = {
 };
 
 export default function ProjectSearchField(props: Props): JSX.Element {
-    const { value, excludeId, onSelect } = props;
+    const { value, filter, onSelect } = props;
     const [searchPhrase, setSearchPhrase] = useState('');
 
     const [projects, setProjects] = useState<Project[]>([]);
@@ -44,7 +44,10 @@ export default function ProjectSearchField(props: Props): JSX.Element {
     const handleFocus = (open: boolean): void => {
         if (!projects.length && open) {
             core.projects.searchNames().then((result: Project[]) => {
-                const projectsResponse = result.filter((project) => project.id !== excludeId);
+                let projectsResponse = result;
+                if (typeof filter === 'function') {
+                    projectsResponse = projectsResponse.filter(filter);
+                }
                 if (projectsResponse) {
                     setProjects(projectsResponse);
                 }

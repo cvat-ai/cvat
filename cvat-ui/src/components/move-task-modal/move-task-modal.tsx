@@ -9,12 +9,12 @@ import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import notification from 'antd/lib/notification';
-import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleFilled } from '@ant-design/icons';
 
 import ProjectSearch from 'components/create-task-page/project-search-field';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
-import { closeMoveTaskModal, moveTaskToProjectAsync } from 'actions/tasks-actions';
+import { switchMoveTaskModalVisible, moveTaskToProjectAsync } from 'actions/tasks-actions';
 import getCore from 'cvat-core-wrapper';
 import LabelMapperItem, { LabelMapperItemValue } from './label-mapper-item';
 
@@ -48,7 +48,7 @@ export default function MoveTaskModal(): JSX.Element {
     };
 
     const onCancel = (): void => {
-        dispatch(closeMoveTaskModal());
+        dispatch(switchMoveTaskModalVisible(false));
         initValues();
         setProject(null);
         setProjectId(null);
@@ -90,10 +90,11 @@ export default function MoveTaskModal(): JSX.Element {
                     const { labels } = _project[0];
                     const labelValues: { [key: string]: LabelMapperItemValue } = {};
                     Object.entries(values).forEach(([id, label]) => {
+                        const taskLabelName = task.labels.filter(
+                            (_label: any) => (_label.id === label.labelId),
+                        )[0].name;
                         const [autoNewLabel] = labels.filter((_label: any) => (
-                            _label.name === task.labels.filter((_taskLabel: any) => (
-                                _taskLabel.id === label.labelId
-                            ))[0].name
+                            _label.name === taskLabelName
                         ));
                         labelValues[id] = {
                             labelId: label.labelId,
@@ -123,9 +124,9 @@ export default function MoveTaskModal(): JSX.Element {
                 <span>
                     {`Move task ${task?.id} to project`}
                     {/* TODO: replace placeholder */}
-                    <Tooltip title='Some moving proccess description here'>
+                    <CVATTooltip title='Some moving proccess description here'>
                         <QuestionCircleFilled className='ant-typography-secondary' />
-                    </Tooltip>
+                    </CVATTooltip>
                 </span>
             )}
             className='cvat-task-move-modal'
@@ -133,7 +134,11 @@ export default function MoveTaskModal(): JSX.Element {
             <Row align='middle'>
                 <Col>Project:</Col>
                 <Col>
-                    <ProjectSearch excludeId={task?.projectId} value={projectId} onSelect={setProjectId} />
+                    <ProjectSearch
+                        value={projectId}
+                        onSelect={setProjectId}
+                        filter={(_project) => _project.id !== task?.projectId}
+                    />
                 </Col>
             </Row>
             <Divider orientation='left'>Label mapping</Divider>

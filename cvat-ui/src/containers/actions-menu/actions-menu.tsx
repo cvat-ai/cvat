@@ -16,7 +16,7 @@ import {
     loadAnnotationsAsync,
     exportDatasetAsync,
     deleteTaskAsync,
-    showMoveTaskModal,
+    switchMoveTaskModalVisible,
 } from 'actions/tasks-actions';
 
 interface OwnProps {
@@ -78,8 +78,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openRunModelWindow: (taskInstance: any): void => {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
-        openMoveTaskToProjectWindow: (taskInstance: any): void => {
-            dispatch(showMoveTaskModal(taskInstance));
+        openMoveTaskToProjectWindow: (taskId: number): void => {
+            dispatch(switchMoveTaskModalVisible(true, taskId));
         },
     };
 }
@@ -132,7 +132,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             } else if (action === Actions.RUN_AUTO_ANNOTATION) {
                 openRunModelWindow(taskInstance);
             } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
-                openMoveTaskToProjectWindow(taskInstance);
+                openMoveTaskToProjectWindow(taskInstance.id);
             }
         }
     }

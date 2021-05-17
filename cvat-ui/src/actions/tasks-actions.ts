@@ -35,9 +35,6 @@ export enum TasksActionTypes {
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
-    MOVE_TASK_TO_PROJECT = 'MOVE_TASK_TO_PROJECT',
-    MOVE_TASK_TO_PROJECT_SUCCESS = 'MOVE_TASK_TO_PROJECT_SUCCESS',
-    MOVE_TASK_TO_PROJECT_FAILED = 'MOVE_TASK_TO_PROJECT_FAILED',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
@@ -524,43 +521,12 @@ export function hideEmptyTasks(hideEmpty: boolean): AnyAction {
     return action;
 }
 
-export function switchMoveTaskModalVisible(taskId: number | null = null): AnyAction {
+export function switchMoveTaskModalVisible(visible: boolean, taskId: number | null = null): AnyAction {
     const action = {
         type: TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE,
         payload: {
             taskId,
-        },
-    };
-
-    return action;
-}
-
-function moveTaskToProject(): AnyAction {
-    const action = {
-        type: TasksActionTypes.MOVE_TASK_TO_PROJECT,
-        payload: {},
-    };
-
-    return action;
-}
-
-function moveTaskToProjectFailed(error: any, task: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.MOVE_TASK_TO_PROJECT_FAILED,
-        payload: {
-            error,
-            task,
-        },
-    };
-
-    return action;
-}
-
-function moveTaskToProjectSuccess(task: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.MOVE_TASK_TO_PROJECT_SUCCESS,
-        payload: {
-            task,
+            visible,
         },
     };
 
@@ -579,7 +545,7 @@ export function moveTaskToProjectAsync(
     labelMap: LabelMap[],
 ): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(moveTaskToProject());
+        dispatch(updateTask());
         try {
             // eslint-disable-next-line no-param-reassign
             taskInstance.labels = labelMap.map((mapper) => {
@@ -591,9 +557,9 @@ export function moveTaskToProjectAsync(
             taskInstance.projectId = projectId;
             await taskInstance.save();
             const [task] = await cvat.tasks.get({ id: taskInstance.id });
-            dispatch(moveTaskToProjectSuccess(task));
+            dispatch(updateTaskSuccess(task, task.id));
         } catch (error) {
-            dispatch(moveTaskToProjectFailed(error, taskInstance));
+            dispatch(updateTaskFailed(error, taskInstance));
         }
     };
 }

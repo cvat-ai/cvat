@@ -360,39 +360,9 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 ...state,
                 moveTask: {
                     ...state.moveTask,
-                    modalVisible: !state.moveTask.modalVisible,
+                    modalVisible: action.payload.visible,
                     taskId: action.payload.taskId,
                 },
-            };
-        }
-        case TasksActionTypes.MOVE_TASK_TO_PROJECT: {
-            return {
-                ...state,
-                updating: true,
-            };
-        }
-        case TasksActionTypes.MOVE_TASK_TO_PROJECT_FAILED: {
-            return {
-                ...state,
-                updating: false,
-            };
-        }
-        case TasksActionTypes.MOVE_TASK_TO_PROJECT_SUCCESS: {
-            return {
-                ...state,
-                updating: false,
-                current: state.current.map(
-                    (task): Task => {
-                        if (task.instance.id === action.payload.task.id) {
-                            return {
-                                ...task,
-                                instance: action.payload.task,
-                            };
-                        }
-
-                        return task;
-                    },
-                ),
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
