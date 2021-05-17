@@ -1,4 +1,4 @@
-<!--lint disable maximum-line-length-->
+<!--lint disable maximum-heading-length-->
 
 ---
 
@@ -9,6 +9,8 @@ description: 'This page provides information about the installation of component
 semi-automatic and automatic annotation'
 
 ---
+
+<!--lint disable maximum-line-length-->
 
 > **⚠ WARNING: Do not use `docker-compose up`**
 > If you did, make sure all containers are stopped by `docker-compose down`.

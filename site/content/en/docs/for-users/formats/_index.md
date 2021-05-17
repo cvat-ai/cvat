@@ -1,13 +1,11 @@
-<!--lint disable heading-style-->
-
 ---
-
 title: 'Dataset and annotation formats'
 linkTitle: 'Formats'
 weight: 6
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats)
-
 ---
+
+<!-- lint disable heading-style -->
 
 ## How to add a new annotation format support<a id="how-to-add"></a>
 

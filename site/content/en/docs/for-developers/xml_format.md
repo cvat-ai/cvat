@@ -1,12 +1,10 @@
-<!--lint disable heading-style-->
-
 ---
-
 title: 'XML annotation format'
 linkTitle: 'XML annotation format'
 weight: 3
-
 ---
+
+<!--lint disable heading-style-->
 
 When you want to download annotations from Computer Vision Annotation Tool (CVAT)
 you can choose one of several data formats. The document describes XML annotation format.

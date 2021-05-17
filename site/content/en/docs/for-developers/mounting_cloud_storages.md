@@ -1,12 +1,10 @@
-<!--lint disable heading-style-->
-
 ---
-
 title: 'Mounting cloud storage'
 linkTitle: 'Mounting cloud storage'
 weight: 10
-
 ---
+
+<!--lint disable heading-style-->
 
 ## AWS S3 bucket as filesystem
 

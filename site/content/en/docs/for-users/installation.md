@@ -1,4 +1,4 @@
-<!--lint disable heading-style-->
+<!--lint disable maximum-heading-length-->
 
 ---
 
@@ -8,6 +8,8 @@ weight: 1
 description: 'CVAT installation guide for different operating systems'
 
 ---
+
+<!--lint disable heading-style-->
 
 # Quick installation guide
 

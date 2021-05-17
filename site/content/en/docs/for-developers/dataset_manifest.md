@@ -1,4 +1,4 @@
-<!--lint disable heading-style-->
+<!--lint disable maximum-heading-length-->
 
 ---
 
@@ -8,6 +8,8 @@ weight: 10
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest)
 
 ---
+
+<!--lint disable heading-style-->
 
 ### Steps before use
 
