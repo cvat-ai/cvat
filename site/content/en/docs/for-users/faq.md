@@ -11,7 +11,8 @@ description: 'Answers to frequently asked questions'
 
 ## How to update CVAT
 
-Before upgrading, please follow the [backup guide](../../../docs/for-developers/backup_guide/) and backup all CVAT volumes.
+Before upgrading, please follow the [backup guide](../../../docs/for-developers/backup_guide/)
+and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
 
@@ -90,7 +91,8 @@ volumes:
 
 ## How to make unassigned tasks not visible to all users
 
-Set [reduce_task_visibility](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py#L424) variable to `True`.
+Set [reduce_task_visibility](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py#L424)
+variable to `True`.
 
 ## Where are uploaded images/videos stored
 
@@ -112,7 +114,8 @@ volumes:
 
 ## How to mark job/task as completed
 
-The status is set by the user in the [Info window](../../../docs/for-users/user-guide/top-panel/#info) of the job annotation view.
+The status is set by the user in the [Info window](../../../docs/for-users/user-guide/top-panel/#info)
+of the job annotation view.
 There are three types of status: annotation, validation or completed.
 The status of the job changes the progress bar of the task.
 
@@ -141,7 +144,8 @@ services:
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-[Advanced configuration](../../../docs/for-users/user-guide/creating_an_annotation_task/#advanced-configuration) section.
+[Advanced configuration](../../../docs/for-users/user-guide/creating_an_annotation_task/#advanced-configuration)
+section.
 
 ## How to transfer CVAT to another machine
 
