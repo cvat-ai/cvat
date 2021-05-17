@@ -1,8 +1,12 @@
+<!--lint disable heading-style-->
+
 ---
+
 title: 'Analytics for Computer Vision Annotation Tool (CVAT)'
 linkTitle: 'Analytics'
 weight: 2
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics)
+
 ---
 
 ![](../../../images/image097.jpg)

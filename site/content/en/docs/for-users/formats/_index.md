@@ -1,8 +1,12 @@
+<!--lint disable heading-style-->
+
 ---
+
 title: 'Dataset and annotation formats'
 linkTitle: 'Formats'
 weight: 6
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats)
+
 ---
 
 ## How to add a new annotation format support<a id="how-to-add"></a>
@@ -14,7 +18,8 @@ description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tr
 Each format is supported by an importer and exporter.
 
 It can be a function or a class decorated with
-`importer` or `exporter` from [registry.py](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py). Examples:
+`importer` or `exporter` from [registry.py](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py).
+Examples:
 
 ```python
 @importer(name="MyFormat", version="1.0", ext="ZIP")
@@ -55,8 +60,8 @@ Exporter arguments:
 - _options_ - format-specific options. `save_images` is the option to
   distinguish if dataset or just annotations are requested.
 
-[`TaskData`](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/bindings.py) provides many task properties and interfaces
-to add and read task annotations.
+[`TaskData`](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/bindings.py) provides
+many task properties and interfaces to add and read task annotations.
 
 Public members:
 

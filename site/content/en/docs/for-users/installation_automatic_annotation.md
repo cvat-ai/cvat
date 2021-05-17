@@ -1,8 +1,13 @@
+<!--lint disable maximum-line-length-->
+
 ---
+
 title: 'Semi-automatic and Automatic Annotation'
 linkTitle: 'Semi-automatic and Automatic Annotation'
 weight: 5
-description: 'This page provides information about the installation of components needed for semi-automatic and automatic annotation'
+description: 'This page provides information about the installation of components needed for
+semi-automatic and automatic annotation'
+
 ---
 
 > **⚠ WARNING: Do not use `docker-compose up`**
@@ -33,7 +38,9 @@ description: 'This page provides information about the installation of component
   sudo ln -sf $(pwd)/nuctl-<version>-linux-amd64 /usr/local/bin/nuctl
   ```
 
-- Create `cvat` project inside nuclio dashboard where you will deploy new serverless functions and deploy a couple of DL models. Commands below should be run only after CVAT has been installed using `docker-compose` because it runs nuclio dashboard which manages all serverless functions.
+- Create `cvat` project inside nuclio dashboard where you will deploy new serverless functions
+  and deploy a couple of DL models. Commands below should be run only after CVAT has been installed
+  using `docker-compose` because it runs nuclio dashboard which manages all serverless functions.
 
   ```bash
   nuctl create project cvat
@@ -55,7 +62,8 @@ description: 'This page provides information about the installation of component
 
   **Note:**
 
-  - See [deploy_cpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_cpu.sh) for more examples.
+  - See [deploy_cpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_cpu.sh)
+    for more examples.
 
   #### GPU Support
 
@@ -77,11 +85,13 @@ description: 'This page provides information about the installation of component
   **Note:**
 
   - The number of GPU deployed functions will be limited to your GPU memory.
-  - See [deploy_gpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_gpu.sh) script for more examples.
+  - See [deploy_gpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_gpu.sh)
+    script for more examples.
 
 **Troubleshooting Nuclio Functions:**
 
-- You can open nuclio dashboard at [localhost:8070](http://localhost:8070). Make sure status of your functions are up and running without any error.
+- You can open nuclio dashboard at [localhost:8070](http://localhost:8070).
+  Make sure status of your functions are up and running without any error.
 - Test your deployed DL model as a serverless function. The command below should work on Linux and Mac OS.
 
   ```bash

@@ -1,8 +1,12 @@
+<!--lint disable heading-style-->
+
 ---
+
 title: 'Installation'
 linkTitle: 'Installation'
 weight: 1
 description: 'CVAT installation guide for different operating systems'
+
 ---
 
 # Quick installation guide
@@ -342,7 +346,8 @@ your cloud storage as a FUSE and use it later as a share.
 ### Email verification
 
 You can enable email verification for newly registered users.
-Specify these options in the [settings file](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py) to configure Django allauth
+Specify these options in the
+[settings file](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py) to configure Django allauth
 to enable email verification (ACCOUNT_EMAIL_VERIFICATION = 'mandatory').
 Access is denied until the user's email address is verified.
 
@@ -363,7 +368,8 @@ for details.
 
 ### Deploy CVAT on the Scaleway public cloud
 
-Please follow [this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/) to install and set up remote access to CVAT on a Scaleway cloud instance with data in a mounted object storage bucket.
+Please follow [this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/)
+to install and set up remote access to CVAT on a Scaleway cloud instance with data in a mounted object storage bucket.
 
 ### Deploy secure CVAT instance with HTTPS
 
@@ -440,7 +446,8 @@ services:
       ALLOWED_HOSTS: '*'
 ```
 
-Update a CVAT site proxy template `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` on docker(system) host. Site config updates from this template each time `cvat_proxy` container start.
+Update a CVAT site proxy template `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` on docker(system) host.
+Site config updates from this template each time `cvat_proxy` container start.
 
 Add a location to server with `server_name ${CVAT_HOST};` ahead others:
 
@@ -466,7 +473,9 @@ Your server should be available (and unsecured) at `http://CVAT.example.com`
 Something went wrong ? The most common cause is a containers and images cache which were builded earlier.
 
 This will enable serving `http://CVAT.example.com/.well-known/acme-challenge/`
-route from `/var/tmp/letsencrypt-webroot` directory on the container's filesystem which is bind mounted from docker host `$HOME/cvat/letsencrypt-webroot`. That volume needed for issue and renewing certificates only.
+route from `/var/tmp/letsencrypt-webroot` directory on the container's filesystem
+which is bind mounted from docker host `$HOME/cvat/letsencrypt-webroot`.
+That volume needed for issue and renewing certificates only.
 
 Another volume `/etc/ssl/private` should be used within web server according to [acme.sh](https://github.com/acmesh-official/acme.sh#3-install-the-cert-to-apachenginx-etc) documentation
 
@@ -480,7 +489,9 @@ At this point your deployment is up and running, ready for run acme-challenge fo
 
 Point you shell in cvat repository directory, usually `cd $HOME/cvat` on docker host.
 
-Let’s Encrypt provides rate limits to ensure fair usage by as many people as possible. They recommend utilize their staging environment instead of the production API during testing. So first try to get a test certificate.
+Let’s Encrypt provides rate limits to ensure fair usage by as many people as possible.
+They recommend utilize their staging environment instead of the production API during testing.
+So first try to get a test certificate.
 
 ```
 ~/.acme.sh/acme.sh --issue --staging -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug

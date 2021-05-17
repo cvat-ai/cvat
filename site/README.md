@@ -25,7 +25,8 @@ the weight (affects the order of files display on the sidebar) and description (
 
 ### Start site localy
 
-To start the site locally, you need a recent [extended version hugo](https://github.com/gohugoio/hugo/releases) (recommend version 0.75.0 or later).
+To start the site locally, you need a recent [extended version hugo](https://github.com/gohugoio/hugo/releases)
+(recommend version 0.75.0 or later).
 Open the most recent release and scroll down until you find a list of Extended versions. [Read more](https://gohugo.io/getting-started/installing/#quick-install)
 
 Add a path to "hugo" in the "Path" environment variable.
@@ -48,13 +49,12 @@ By default, your site will be available at http://localhost:1313/
 Instead of a "hugo server" command, you can use the "hugo" command that generates the site into a "public" folder.
 
 To build or update your site’s CSS resources you will need [PostCSS](https://postcss.org/) to create final assets.
-To install it you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine, so you can use npm, the Node package manager.
+To install it you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine,
+so you can use npm, the Node package manager.
 By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
 
     cd <your local directory>/cvat/site/
-    npm install -g postcss-cli
-    npm install autoprefixer
-    npm audit fix
+    npm install ci
 
 To make the site work correctly, you need to change `config.toml` to:
 

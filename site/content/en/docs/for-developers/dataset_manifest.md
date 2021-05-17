@@ -1,8 +1,12 @@
+<!--lint disable heading-style-->
+
 ---
+
 title: 'Simple command line to prepare dataset manifest file'
 linkTitle: 'Dataset manifest'
 weight: 10
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest)
+
 ---
 
 ### Steps before use

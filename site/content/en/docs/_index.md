@@ -34,6 +34,8 @@ Answers to frequently asked questions.
 
 {{% /blocks/feature %}}
 
+<!--lint disable maximum-line-length-->
+
 {{% blocks/feature icon="fa-magic" title="[Installation Auto Annotation](../docs/for-users/installation_automatic_annotation/)" %}}
 
 This page provides information about the installation of components needed for semi-automatic and automatic annotation.

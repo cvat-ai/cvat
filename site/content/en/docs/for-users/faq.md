@@ -1,8 +1,12 @@
+<!--lint disable heading-style-->
+
 ---
+
 title: 'Frequently asked questions'
 linkTitle: 'FAQ'
 weight: 20
 description: 'Answers to frequently asked questions'
+
 ---
 
 ## How to update CVAT
