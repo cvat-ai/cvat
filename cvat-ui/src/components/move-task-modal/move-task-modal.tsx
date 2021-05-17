@@ -31,7 +31,7 @@ export default function MoveTaskModal(): JSX.Element {
 
     const [projectId, setProjectId] = useState<number | null>(null);
     const [project, setProject] = useState<any>(null);
-    const [values, setValues] = useState<{ [key: string]: LabelMapperItemValue }>({});
+    const [labelMap, setLabelMap] = useState<{ [key: string]: LabelMapperItemValue }>({});
 
     const initValues = (): void => {
         if (task) {
@@ -43,7 +43,7 @@ export default function MoveTaskModal(): JSX.Element {
                     clearAtrributes: true,
                 };
             });
-            setValues(labelValues);
+            setLabelMap(labelValues);
         }
     };
 
@@ -61,7 +61,7 @@ export default function MoveTaskModal(): JSX.Element {
             });
             return;
         }
-        if (!Object.values(values).every((_value) => _value.newLabelName !== null)) {
+        if (!Object.values(labelMap).every((map) => map.newLabelName !== null)) {
             notification.error({
                 message: 'Not all labels mapped',
                 description: 'Please choose any action to not mapped labels first',
@@ -72,10 +72,10 @@ export default function MoveTaskModal(): JSX.Element {
             moveTaskToProjectAsync(
                 task,
                 projectId,
-                Object.values(values).map((value) => ({
-                    label_id: value.labelId,
-                    new_label_name: value.newLabelName,
-                    clear_attributes: value.clearAtrributes,
+                Object.values(labelMap).map((map) => ({
+                    label_id: map.labelId,
+                    new_label_name: map.newLabelName,
+                    clear_attributes: map.clearAtrributes,
                 })),
             ),
         );
@@ -89,7 +89,7 @@ export default function MoveTaskModal(): JSX.Element {
                     setProject(_project[0]);
                     const { labels } = _project[0];
                     const labelValues: { [key: string]: LabelMapperItemValue } = {};
-                    Object.entries(values).forEach(([id, label]) => {
+                    Object.entries(labelMap).forEach(([id, label]) => {
                         const taskLabelName = task.labels.filter(
                             (_label: any) => (_label.id === label.labelId),
                         )[0].name;
@@ -102,7 +102,7 @@ export default function MoveTaskModal(): JSX.Element {
                             clearAtrributes: true,
                         };
                     });
-                    setValues(labelValues);
+                    setLabelMap(labelValues);
                 }
             });
         } else {
@@ -142,17 +142,17 @@ export default function MoveTaskModal(): JSX.Element {
                 </Col>
             </Row>
             <Divider orientation='left'>Label mapping</Divider>
-            {!!Object.keys(values).length && !taskUpdating &&
+            {!!Object.keys(labelMap).length && !taskUpdating &&
                 task?.labels.map((label: any) => (
                     <LabelMapperItem
                         label={label}
                         key={label.id}
                         projectLabels={project?.labels}
-                        value={values[label.id]}
-                        labelMappers={Object.values(values)}
+                        value={labelMap[label.id]}
+                        labelMappers={Object.values(labelMap)}
                         onChange={(value) => {
-                            setValues({
-                                ...values,
+                            setLabelMap({
+                                ...labelMap,
                                 [value.labelId]: value,
                             });
                         }}
