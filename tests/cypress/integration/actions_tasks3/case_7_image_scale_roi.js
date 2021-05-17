@@ -36,7 +36,7 @@ context('Check if image was scaled to ROI', () => {
                     cy.expect(scaleAfter).to.be.greaterThan(scaleBefore);
                 });
             cy.get('body').type('{Esc}'); // cvat-canvas/src/typescript/zoomHandler.ts "public cancel():"
-            cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control')
+            cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
         });
     });
 });
