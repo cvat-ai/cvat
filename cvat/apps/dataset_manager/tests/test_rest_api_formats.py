@@ -361,7 +361,7 @@ Need to write REST API tests for server (dataset manager):
  # Unit test on normalize_shape function
  # Unit test on export_job function
 """
-# coverage run -a manage.py test --settings=cvat.settings.testing cvat.apps.dataset_manager.tests.test_rest_api_formats.TaskDumpUploadTest
+
 class TaskDumpUploadTest(_DbTestBase):
     @classmethod
     def setUpClass(cls):
@@ -430,7 +430,6 @@ class TaskDumpUploadTest(_DbTestBase):
                                 copyfile(file_zip_name, osp.join(self.assets_path, new_name))
                                 self.dumped_files_names.append(new_name)
 
-    # 3, 4
     def test_api_v1_upload_annotations_with_objects_type_is_shape(self):
         upload_formats = dm.views.get_import_formats()
 
@@ -472,7 +471,6 @@ class TaskDumpUploadTest(_DbTestBase):
                                 response = self._upload_file(url, binary_file, user)
                                 self.assertEqual(response.status_code, edata['code'])
 
-    # 5, 6
     def test_api_v1_dump_annotations_with_objects_type_is_track(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
@@ -538,7 +536,6 @@ class TaskDumpUploadTest(_DbTestBase):
                                 copyfile(file_zip_name, osp.join(self.assets_path, new_name))
                                 self.dumped_files_names.append(new_name)
 
-    # 7,8
     def test_api_v1_upload_annotations_with_objects_type_is_track(self):
         upload_formats = dm.views.get_import_formats()
         expected = {
@@ -579,7 +576,6 @@ class TaskDumpUploadTest(_DbTestBase):
                                     response = self._upload_file(url, binary_file, user)
                                     self.assertEqual(response.status_code, edata['code'])
 
-    # 9, 10
     def test_api_v1_dump_tag_annotations(self):
         dump_format_name = "CVAT for images 1.1"
         data = {
@@ -613,8 +609,6 @@ class TaskDumpUploadTest(_DbTestBase):
                         response = self._download_file(url, data, user, file_zip_name)
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
-
-
 
     def test_api_v1_dump_and_upload_annotations_with_objects_are_different_images(self):
         test_name = self._testMethodName
@@ -703,7 +697,6 @@ class TaskDumpUploadTest(_DbTestBase):
                         self.assertEqual(len(response.data["shapes"]), 0)
                         self.assertEqual(len(response.data["tracks"]), 2)
 
-
     def test_api_v1_dump_and_upload_with_objects_type_is_track_and_outside_property(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
@@ -727,7 +720,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
                 response = self._upload_file(url, binary_file, self.admin)
                 self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
 
     def test_api_v1_dump_and_upload_with_objects_type_is_track_and_keyframe_property(self):
         test_name = self._testMethodName
@@ -818,7 +810,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     response = self._upload_file(url, binary_file, self.admin)
                     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    # # # 20, 21 TODO
     # def test_api_v1_dump_annotations_with_objects_type_is_track_from_several_jobs(self):
     #     test_name = self._testMethodName
     #     dump_format_name = "CVAT for video 1.1"
@@ -957,6 +948,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             self.assertIsNone(response.data)
 
     def test_api_v1_rewriting_annotations(self):
+        test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
         with TestDir(path=TEST_DATA_ROOT) as test_dir:
             for dump_format in dump_formats:
@@ -997,7 +989,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             "format": dump_format_name,
                             "action": "download",
                         }
-                        file_zip_name = osp.join(test_dir, f'empty_{dump_format_name}.zip')
+                        file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                         response = self._download_file(url, data, self.admin, file_zip_name)
                         self.assertEqual(response.status_code, status.HTTP_200_OK)
                         self.assertEqual(osp.exists(file_zip_name), True)
@@ -1049,10 +1041,6 @@ class TaskDumpUploadTest(_DbTestBase):
     #                         with open(file_zip_name, 'rb') as binary_file:
     #                             response = self._upload_file(url, binary_file, self.admin)
 
-    # def test_api_v1_unit_test_on_to_track_function(self):
-    #     pass
-    #
-
     def test_api_v1_unit_test_on_normalize_shape_function(self):
         # 3 points
         norm_shape = TrackManager.normalize_shape({
@@ -1086,8 +1074,37 @@ class TaskDumpUploadTest(_DbTestBase):
             "points": [1, 2, 9, 4],
         })
 
-    def test_api_v1_unit_test_on_export_job_function(self):
-        pass
+    def test_api_v1_check_duplicated_polygon_points(self):
+        # issue 2924
+        test_name = self._testMethodName
+        images = self._generate_task_images(10)
+        task = self._create_task(tasks["main"], images)
+        task_id = task["id"]
+        annotation_name = "CVAT for video 1.1 polygon"
+        data = {
+            "format": "CVAT for video 1.1",
+            "action": "download",
+        }
+        self._create_annotations(task, annotation_name, "default")
+        annotation_points = annotations[annotation_name]["tracks"][0]["shapes"][0]['points']
+        with TestDir(path=TEST_DATA_ROOT) as test_dir:
+            url = self._generate_url_dump_tasks_annotations(task_id)
+            file_zip_name = osp.join(test_dir, f'{test_name}.zip')
+            response = self._download_file(url, data, self.admin, file_zip_name)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(osp.exists(file_zip_name), True)
+            # extract zip
+            folder_name = osp.join(test_dir, f'{test_name}')
+            with zipfile.ZipFile(file_zip_name, 'r') as zip_ref:
+                zip_ref.extractall(folder_name)
+
+            tree = ET.parse(osp.join(folder_name, 'annotations.xml'))
+            root = tree.getroot()
+            for polygon in root.findall("./track[@id='0']/polygon"):
+                polygon_points = polygon.attrib["points"].replace(",", ";")
+                polygon_points = polygon_points.split(";")
+                polygon_points = [float(p) for p in polygon_points]
+                self.assertEqual(polygon_points, annotation_points)
 
     # def test_api_v1_tasks_annotations_dump_and_upload_with_datumaro(self):
     #     test_name = self._testMethodName
@@ -1164,124 +1181,126 @@ class TaskDumpUploadTest(_DbTestBase):
     #                         data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
     #                         compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
-    # 24
-    def test_api_v1_tasks_annotations_update_wrong_label(self):
-        test_name = self._testMethodName
-        dump_format_name = "CVAT for images 1.1"
-        upload_format_name = "CVAT 1.1"
-
-        # create task with annotations
-        images = self._generate_task_images(3)
-        task = self._create_task(tasks["main"], images)
-        self._create_annotations(task, dump_format_name, "default")
-        task_id = task["id"]
-        task_ann = TaskAnnotation(task_id)
-        task_ann.init_from_db()
-
-        # dump annotations
-        url = self._generate_url_dump_tasks_annotations(task_id)
-        data = {
-            "format": dump_format_name,
-            "action": "download",
-        }
-        with TestDir(path = TEST_DATA_ROOT) as test_dir:
-            file_zip_name_before_change = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-            file_zip_name_after_change = osp.join(test_dir, f'{test_name}_{dump_format_name}_wrong_label.zip')
-
-            # download zip file
-            self._download_file(url, data, self.admin, file_zip_name_before_change)
-            self._check_downloaded_file(file_zip_name_before_change)
-
-            # remove annotations
-            self._remove_annotations(url, self.admin)
-
-            # extract zip
-            folder_name = osp.join(test_dir, f'{test_name}_{dump_format_name}')
-            with zipfile.ZipFile(file_zip_name_before_change, 'r') as zip_ref:
-                zip_ref.extractall(folder_name)
-
-            # change right label to wrong
-            wrong_label = "wrong_label"
-            tree = ET.parse(osp.join(folder_name, 'annotations.xml'))
-            root = tree.getroot()
-            element = root.find("./image[@id='0']/box[@label='car']")
-            element.attrib["label"] = wrong_label
-            tree.write(osp.join(folder_name, 'annotations.xml'))
-            with zipfile.ZipFile(file_zip_name_after_change, 'w') as zip_ref:
-                zip_ref.write(osp.join(folder_name, 'annotations.xml'), 'annotations.xml')
-
-            # upload annotations
-            url_upload = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
-            with open(file_zip_name_after_change, 'rb') as binary_file:
-                with self.assertRaisesRegex(ValueError, f"Label '{wrong_label}' is not registered for this task"):
-                    self._upload_file(url_upload, binary_file, self.admin)
-
-        # check for missing annotations
-        response = self._get_request(url, self.admin)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["tags"]), 0)
-        self.assertEqual(len(response.data["shapes"]), 0)
-        self.assertEqual(len(response.data["tracks"]), 0)
-
-    # 25
-    def test_api_v1_tasks_annotations_update_wrong_value_in_checkbox(self):
-        test_name = self._testMethodName
-        dump_format_name = "CVAT for images 1.1"
-        upload_format_name = "CVAT 1.1"
-
-        # create task with annotations
-        images = self._generate_task_images(3)
-        task = self._create_task(tasks["wrong_checkbox_value"], images)
-        self._create_annotations(task, dump_format_name, "random")
-        task_id = task["id"]
-        task_ann = TaskAnnotation(task_id)
-        task_ann.init_from_db()
-
-        # dump annotations
-        url = self._generate_url_dump_tasks_annotations(task_id)
-        data = {
-            "format": dump_format_name,
-            "action": "download",
-        }
-        with TestDir(path = TEST_DATA_ROOT) as test_dir:
-            file_zip_name_before_change = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-            file_zip_name_after_change = osp.join(test_dir, f'{test_name}_{dump_format_name}_wrong_checkbox_value.zip')
-
-            # download zip file
-            self._download_file(url, data, self.admin, file_zip_name_before_change)
-            self._check_downloaded_file(file_zip_name_before_change)
-
-            # remove annotations
-            self._remove_annotations(url, self.admin)
-
-            # extract zip
-            folder_name = osp.join(test_dir, f'{test_name}_{dump_format_name}')
-            with zipfile.ZipFile(file_zip_name_before_change, 'r') as zip_ref:
-                zip_ref.extractall(folder_name)
-
-            # change right label to wrong
-            wrong_checkbox_value = "wrong_checkbox_value"
-            tree = ET.parse(osp.join(folder_name, 'annotations.xml'))
-            root = tree.getroot()
-            element = root.find("./image[@id='0']/box[@label='car']/attribute[@name='check_name']")
-            element.text = wrong_checkbox_value
-            tree.write(osp.join(folder_name, 'annotations.xml'))
-            with zipfile.ZipFile(file_zip_name_after_change, 'w') as zip_ref:
-                zip_ref.write(osp.join(folder_name, 'annotations.xml'), 'annotations.xml')
-
-            # upload annotations
-            url_upload = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
-            with open(file_zip_name_after_change, 'rb') as binary_file:
-                with self.assertRaisesRegex(Exception, f"Failed to convert attribute 'car'='{wrong_checkbox_value}'"):
-                    self._upload_file(url_upload, binary_file, self.admin)
-                #with self.assertRaises(ValueError):#, f"Label '{wrong_label}' is not registered for this task"):
-                #    self._upload_file(url_upload, binary_file, self.admin)
-            # check for missing annotations
-            response = self._get_request(url, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertEqual(len(response.data["tags"]), 0)
-            self.assertEqual(len(response.data["shapes"]), 0)
-            self.assertEqual(len(response.data["tracks"]), 0)
+    # # 24
+    # def test_api_v1_tasks_annotations_update_wrong_label(self):
+    #     test_name = self._testMethodName
+    #     dump_format_name = "CVAT for images 1.1"
+    #     upload_format_name = "CVAT 1.1"
+    #
+    #     # create task with annotations
+    #     images = self._generate_task_images(3)
+    #     task = self._create_task(tasks["main"], images)
+    #     self._create_annotations(task, dump_format_name, "default")
+    #     task_id = task["id"]
+    #     task_ann = TaskAnnotation(task_id)
+    #     task_ann.init_from_db()
+    #
+    #     # dump annotations
+    #     url = self._generate_url_dump_tasks_annotations(task_id)
+    #     data = {
+    #         "format": dump_format_name,
+    #         "action": "download",
+    #     }
+    #     with TestDir(path = TEST_DATA_ROOT) as test_dir:
+    #         file_zip_name_before_change = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+    #         file_zip_name_after_change = osp.join(test_dir, f'{test_name}_{dump_format_name}_wrong_label.zip')
+    #
+    #         # download zip file
+    #         self._download_file(url, data, self.admin, file_zip_name_before_change)
+    #         self._check_downloaded_file(file_zip_name_before_change)
+    #
+    #         # remove annotations
+    #         self._remove_annotations(url, self.admin)
+    #
+    #         # extract zip
+    #         folder_name = osp.join(test_dir, f'{test_name}_{dump_format_name}')
+    #         with zipfile.ZipFile(file_zip_name_before_change, 'r') as zip_ref:
+    #             zip_ref.extractall(folder_name)
+    #
+    #         # change right label to wrong
+    #         wrong_label = "wrong_label"
+    #         tree = ET.parse(osp.join(folder_name, 'annotations.xml'))
+    #         root = tree.getroot()
+    #         element = root.find("./image[@id='0']/box[@label='car']")
+    #         element.attrib["label"] = wrong_label
+    #         tree.write(osp.join(folder_name, 'annotations.xml'))
+    #         with zipfile.ZipFile(file_zip_name_after_change, 'w') as zip_ref:
+    #             zip_ref.write(osp.join(folder_name, 'annotations.xml'), 'annotations.xml')
+    #
+    #         # upload annotations
+    #         url_upload = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+    #         with open(file_zip_name_after_change, 'rb') as binary_file:
+    #             #with self.assertRaisesRegex(ValueError, f"Label '{wrong_label}' is not registered for this task"):
+    #             #    self._upload_file(url_upload, binary_file, self.admin)
+    #             response = self._upload_file(url_upload, binary_file, self.admin)
+    #             self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #
+    #     # check for missing annotations
+    #     response = self._get_request(url, self.admin)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(len(response.data["tags"]), 0)
+    #     self.assertEqual(len(response.data["shapes"]), 0)
+    #     self.assertEqual(len(response.data["tracks"]), 0)
+    #
+    # # 25
+    # def test_api_v1_tasks_annotations_update_wrong_value_in_checkbox(self):
+    #     test_name = self._testMethodName
+    #     dump_format_name = "CVAT for images 1.1"
+    #     upload_format_name = "CVAT 1.1"
+    #
+    #     # create task with annotations
+    #     images = self._generate_task_images(3)
+    #     task = self._create_task(tasks["wrong_checkbox_value"], images)
+    #     self._create_annotations(task, dump_format_name, "random")
+    #     task_id = task["id"]
+    #     task_ann = TaskAnnotation(task_id)
+    #     task_ann.init_from_db()
+    #
+    #     # dump annotations
+    #     url = self._generate_url_dump_tasks_annotations(task_id)
+    #     data = {
+    #         "format": dump_format_name,
+    #         "action": "download",
+    #     }
+    #     with TestDir(path = TEST_DATA_ROOT) as test_dir:
+    #         file_zip_name_before_change = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+    #         file_zip_name_after_change = osp.join(test_dir, f'{test_name}_{dump_format_name}_wrong_checkbox_value.zip')
+    #
+    #         # download zip file
+    #         self._download_file(url, data, self.admin, file_zip_name_before_change)
+    #         self._check_downloaded_file(file_zip_name_before_change)
+    #
+    #         # remove annotations
+    #         self._remove_annotations(url, self.admin)
+    #
+    #         # extract zip
+    #         folder_name = osp.join(test_dir, f'{test_name}_{dump_format_name}')
+    #         with zipfile.ZipFile(file_zip_name_before_change, 'r') as zip_ref:
+    #             zip_ref.extractall(folder_name)
+    #
+    #         # change right label to wrong
+    #         wrong_checkbox_value = "wrong_checkbox_value"
+    #         tree = ET.parse(osp.join(folder_name, 'annotations.xml'))
+    #         root = tree.getroot()
+    #         element = root.find("./image[@id='0']/box[@label='car']/attribute[@name='check_name']")
+    #         element.text = wrong_checkbox_value
+    #         tree.write(osp.join(folder_name, 'annotations.xml'))
+    #         with zipfile.ZipFile(file_zip_name_after_change, 'w') as zip_ref:
+    #             zip_ref.write(osp.join(folder_name, 'annotations.xml'), 'annotations.xml')
+    #
+    #         # upload annotations
+    #         url_upload = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+    #         with open(file_zip_name_after_change, 'rb') as binary_file:
+    #             #with self.assertRaisesRegex(Exception, f"Failed to convert attribute 'car'='{wrong_checkbox_value}'"):
+    #             #    self._upload_file(url_upload, binary_file, self.admin)
+    #             response = self._upload_file(url_upload, binary_file, self.admin)
+    #             self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #         # check for missing annotations
+    #         response = self._get_request(url, self.admin)
+    #         self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #         self.assertEqual(len(response.data["tags"]), 0)
+    #         self.assertEqual(len(response.data["shapes"]), 0)
+    #         self.assertEqual(len(response.data["tracks"]), 0)
 
     # def test_api_v1_tasks_annotations_dump_others_user(self):
     #     test_name = self._testMethodName
