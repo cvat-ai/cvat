@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Support of context images for 2D image tasks (<https://github.com/openvinotoolkit/cvat/pull/3122>)
 
 ### Changed
 
--
+- Updated manifest format, added meta with related images (<https://github.com/openvinotoolkit/cvat/pull/3122>)
 
 ### Deprecated
 
@@ -39,10 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hotkeys to switch a label of existing object or to change default label (for objects created with N) (<https://github.com/openvinotoolkit/cvat/pull/3070>)
 - A script to convert some kinds of DICOM files to regular images (<https://github.com/openvinotoolkit/cvat/pull/3095>)
 - Helm chart prototype (<https://github.com/openvinotoolkit/cvat/pull/3102>)
-- Support of context images for 2D image tasks (<https://github.com/openvinotoolkit/cvat/pull/3122>)
 
 ### Changed
-- Updated manifest format, added meta with related images (<https://github.com/openvinotoolkit/cvat/pull/3122>)
 
 - Place of migration logger initialization (<https://github.com/openvinotoolkit/cvat/pull/3170>)
 
