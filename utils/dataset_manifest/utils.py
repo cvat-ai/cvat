@@ -27,15 +27,17 @@ def md5_hash(frame):
     return hashlib.md5(frame.tobytes()).hexdigest() # nosec
 
 def _define_data_type(media):
-    media_type, _ = mimetypes.guess_type(media)
-    if media_type:
-        return media_type.split('/')[0]
+    return mimetypes.guess_type(media)[0]
 
 def is_video(media_file):
-    return _define_data_type(media_file) == 'video'
+    data_type = _define_data_type(media_file)
+    return data_type is not None and data_type.startswith('video')
 
 def is_image(media_file):
-    return _define_data_type(media_file) == 'image'
+    data_type = _define_data_type(media_file)
+    return data_type is not None and data_type.startswith('image') and \
+        not data_type.startswith('image/svg')
+
 
 def _list_and_join(root):
     files = os.listdir(root)
