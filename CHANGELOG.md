@@ -5,7 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] - Unreleased
+## [1.5.0] - Unreleased
+
+### Added
+
+-
+
+### Changed
+
+-
+
+### Deprecated
+
+-
+
+### Removed
+
+-
+
+### Fixed
+
+-
+
+### Security
+
+-
+
+## [1.4.0] - 2021-05-18
 
 ### Added
 
@@ -20,8 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Place of migration logger initialization (<https://github.com/openvinotoolkit/cvat/pull/3170>)
 
-### Deprecated
-
 ### Removed
 
 - Kubernetes templates from (<https://github.com/openvinotoolkit/cvat/pull/1962>) due to helm charts (<https://github.com/openvinotoolkit/cvat/pull/3171>)
@@ -34,8 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset password link was unavailable before login (<https://github.com/openvinotoolkit/cvat/pull/3140>)
 - Manifest: migration (<https://github.com/openvinotoolkit/cvat/pull/3146>)
 - Fixed cropping polygon in some corner cases (<https://github.com/openvinotoolkit/cvat/pull/3184>)
-
-### Security
 
 ## [1.3.0] - 3/31/2021
 
