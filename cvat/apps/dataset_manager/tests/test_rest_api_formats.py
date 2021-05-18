@@ -319,9 +319,6 @@ class _DbTestBase(APITestCase):
     def _generate_url_dump_dataset(self, task_id):
         return f"/api/v1/tasks/{task_id}/dataset"
 
-    def _generate_url_dump_dataset_with_name(self, task_id, dataset_name):
-        return f"/api/v1/tasks/{task_id}/dataset&format={dataset_name}"
-
     def _remove_annotations(self, url, user):
         response = self._delete_request(url, user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -845,51 +842,49 @@ class TaskDumpUploadTest(_DbTestBase):
     #             with open(file_zip_name, 'rb') as binary_file:
     #                 response = self._upload_file(url, binary_file, self.admin)
     #                 self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    # #
-    # #22, 23 TODO
-    # def test_api_v1_export_dataset(self):
-    #     test_name = self._testMethodName
-    #     dump_formats = dm.views.get_export_formats()
-    #
-    #     expected = {
-    #         self.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'file_exists': True},
-    #         self.user: {'name': 'user', 'code': status.HTTP_200_OK, 'file_exists': True},
-    #         None: {'name': 'none', 'code': status.HTTP_401_UNAUTHORIZED, 'file_exists': False},
-    #     }
-    #
-    #     with TestDir(path=TEST_DATA_ROOT) as test_dir:
-    #         # Dump annotations with objects type is shape
-    #         for dump_format in dump_formats:
-    #             if dump_format.ENABLED:
-    #                 with self.subTest():
-    #                     dump_format_name = dump_format.DISPLAY_NAME
-    #                     images = self._generate_task_images(3)
-    #                     # create task with annotations
-    #                     if dump_format_name == "Market-1501 1.0":
-    #                         task = self._create_task(tasks["market1501"], images)
-    #                     elif dump_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
-    #                         task = self._create_task(tasks["icdar_localization_and_recognition"], images)
-    #                     elif dump_format_name == "ICDAR Segmentation 1.0":
-    #                         task = self._create_task(tasks["icdar_segmentation"], images)
-    #                     else:
-    #                         task = self._create_task(tasks["main"], images)
-    #                     task_id = task["id"]
-    #                     # dump annotations
-    #                     url = self._generate_url_dump_dataset_with_name(task_id, dump_format_name)
-    #                     data = {
-    #                         "format": dump_format_name,
-    #                         "action": "download",
-    #                     }
-    #                     for user, edata in list(expected.items()):
-    #                         user_name = edata['name']
-    #                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-    #                         response = self._download_file(url, data, user, file_zip_name)
-    #                         self.assertEqual(response.status_code, edata['code'])
-    #                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
-    #                         if osp.exists(file_zip_name) and user == self.admin:
-    #                             new_name = f'shape_{dump_format_name}.zip'
-    #                             copyfile(file_zip_name, osp.join(self.assets_path, new_name))
-    #                             self.dumped_files_names.append(new_name)
+
+    def test_api_v1_export_dataset(self):
+        test_name = self._testMethodName
+        dump_formats = dm.views.get_export_formats()
+
+        expected = {
+            self.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'file_exists': True},
+            self.user: {'name': 'user', 'code': status.HTTP_200_OK, 'file_exists': True},
+            None: {'name': 'none', 'code': status.HTTP_401_UNAUTHORIZED, 'file_exists': False},
+        }
+
+        with TestDir(path=TEST_DATA_ROOT) as test_dir:
+            # Dump annotations with objects type is shape
+            for dump_format in dump_formats:
+                if dump_format.ENABLED:
+                    if dump_format.DISPLAY_NAME != "CVAT for images 1.1":
+                        continue
+                    with self.subTest():
+                        dump_format_name = dump_format.DISPLAY_NAME
+                        images = self._generate_task_images(3)
+                        # create task with annotations
+                        if dump_format_name == "Market-1501 1.0":
+                            task = self._create_task(tasks["market1501"], images)
+                        elif dump_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
+                            task = self._create_task(tasks["icdar_localization_and_recognition"], images)
+                        elif dump_format_name == "ICDAR Segmentation 1.0":
+                            task = self._create_task(tasks["icdar_segmentation"], images)
+                        else:
+                            task = self._create_task(tasks["main"], images)
+                        task_id = task["id"]
+                        # dump annotations
+                        url = self._generate_url_dump_dataset(task_id)
+                        data = {
+                            "format": dump_format_name,
+                            "action": "download",
+                        }
+                        for user, edata in list(expected.items()):
+                            user_name = edata['name']
+                            file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
+                            response = self._download_file(url, data, user, file_zip_name)
+                            # print(response.description)
+                            self.assertEqual(response.status_code, edata['code'])
+                            self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
     def test_api_v1_dump_empty_frames(self):
         dump_formats = dm.views.get_export_formats()
