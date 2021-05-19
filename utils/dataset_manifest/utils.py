@@ -125,17 +125,18 @@ def _detect_related_images_3D(image_paths, root_path):
             # Update some data applicable for a subset of paths (within the current dirname)
             latest_dirname = dirname
             related_images_exist = os.path.isdir(related_images_dirname)
-            dirname_files = list(filter(lambda x: x != image_path, _list_and_join(dirname)))
+            dirname_files = list(_list_and_join(dirname))
             velodyne_context_images_dirs = [directory for directory
                 in _list_and_join(os.path.normpath(os.path.join(dirname, '..', '..')))
                 if os.path.isdir(os.path.join(directory, 'data')) and re.search(r'image_\d.*', directory, re.IGNORECASE)
             ]
 
-        if os.path.basename(dirname) == name:
+        filtered_dirname_files = list(filter(lambda x: x != image_path, dirname_files))
+        if len(filtered_dirname_files) and os.path.basename(dirname) == name:
             # default format (option 2)
-            related_images[rel_image_path].extend(_prepare_context_list(dirname_files, root_path))
+            related_images[rel_image_path].extend(_prepare_context_list(filtered_dirname_files, root_path))
 
-        filtered_dirname_files = list(filter(lambda x: os.path.splitext(os.path.basename(x))[0] == name, dirname_files))
+        filtered_dirname_files = list(filter(lambda x: os.path.splitext(os.path.basename(x))[0] == name, filtered_dirname_files))
         if len(filtered_dirname_files):
             # default format (option 1)
             related_images[rel_image_path].extend(_prepare_context_list(filtered_dirname_files, root_path))
