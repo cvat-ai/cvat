@@ -7,6 +7,7 @@ import itertools
 import os
 import sys
 import rq
+import re
 import shutil
 from traceback import print_exception
 from urllib import parse as urlparse
@@ -279,7 +280,7 @@ def _create_thread(tid, data):
 
     related_images = {}
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
-        extractor.filter(lambda x: '{0}related_images{0}'.format(os.sep) not in x)
+        extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
         related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
 
     db_task.mode = task_mode
