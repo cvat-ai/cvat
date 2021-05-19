@@ -17,6 +17,10 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
     cy.url().should('match', /\/tasks$/);
+    cy.document().then((doc) => {
+        const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
+        loadSettingFailNotice.length > 0 ? cy.closeNotification('.cvat-notification-notice-load-settings-fail') : null;
+    });
 });
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
@@ -322,6 +326,12 @@ Cypress.Commands.add('closeSettings', () => {
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
+Cypress.Commands.add('saveSettings', () => {
+    cy.get('.cvat-settings-modal').within(() => {
+        cy.contains('button', 'Save').click();
+    });
+});
+
 Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
@@ -410,6 +420,10 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
                     cy.get(`.ant-select-item-option[title="${multiAttrParams.additionalValue}"]`).click();
                 });
         }
+        if (multiAttrParams.mutable) {
+            cy.get('.cvat-attribute-mutable-checkbox')
+                .find('[type="checkbox"]').should('not.be.checked').check().should('be.checked');
+        }
     });
 });
 
@@ -471,6 +485,10 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.chunkSize) {
         cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
+
+    if (advancedConfigurationParams.overlapSize) {
+        cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
+    }
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
@@ -531,7 +549,7 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
 Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
     cy.collectLabelsName().then((labelsNames) => {
         if (additionalLabels.some((el) => labelsNames.indexOf(el) === -1)) {
-            cy.contains('button', 'Add label').click();
+            cy.get('.cvat-constructor-viewer-new-item').click();
             for (let j = 0; j < additionalLabels.length; j++) {
                 cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
                 if (j !== additionalLabels.length - 1) {

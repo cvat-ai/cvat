@@ -29,6 +29,7 @@
   - [OpenCV Tools](#opencv-tools)
   - [Annotation with rectangle by 4 points](#annotation-with-rectangle-by-4-points)
   - [Annotation with polygons](#annotation-with-polygons)
+    - [Creating masks](#creating-masks)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
     - [Points in shape mode](#points-in-shape-mode)
@@ -293,8 +294,10 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
       - Reviewer – a user assigned to carry out the review, read more in the [review](#review) section.
-      - `Copy`. By clicking Copy you will copy the job list to the clipboard.
+      - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
+
+        You can filter or sort jobs by status, as well as by assigner or reviewer.
 
 1.  Follow a link inside `Jobs` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -363,7 +366,7 @@ There are several options how to use the search.
 - Search for specific fields. How to perform:
   - `owner: admin` - all tasks created by the user who has the substring "admin" in his name
   - `assignee: employee` - all tasks which are assigned to a user who has the substring "employee" in his name
-  - `name: mighty` - all tasks with the substring "mighty" in their names
+  - `name: training` - all tasks with the substring "training" in their names
   - `mode: annotation` or `mode: interpolation` - all tasks with images or videos.
   - `status: annotation` or `status: validation` or `status: completed` - search by status
   - `id: 5` - task with id = 5.
@@ -979,6 +982,20 @@ this way you will change the label color for all jobs in the task.
 
 ![](static/documentation/images/image062.jpg)
 
+**Fast label change**
+You can change the label of an object using hot keys. In order to do it, you need to assign a number (from 0 to 9) to labels. By default numbers 1,2...0 are assigned to the first ten labels.
+ To assign a number, click on the button placed at the right of a label name on the sidebar.
+
+![](static/documentation/images/image210.jpg)
+
+After that you will be able to assign a corresponding label to an object
+ by hovering your mouse cursor over it and pressing `Ctrl + Num(0..9)`.
+
+In case you do not point the cursor to the object, pressing `Ctrl + Num(0..9)` will set a chosen label as default,
+ so that the next object you create (use `N` key) will automatically have this label assigned.
+
+![](static/documentation/images/image211.jpg)
+
 ---
 
 #### Appearance
@@ -1279,6 +1296,67 @@ To edit a polygon you have to click on it while holding `Shift`, it will open th
 - You can press `Esc` to cancel editing.
 
   ![](static/documentation/images/gif007_mapillary_vistas.gif)
+
+### Cutting holes in polygons
+
+Currently, CVAT does not support cutting transparent holes in polygons. However,
+it is poissble to generate holes in exported instance and class masks.
+To do this, one needs to define a background class in the task and draw holes
+with it as additional shapes above the shapes needed to have holes:
+
+The editor window:
+  ![The editor](static/documentation/images/mask_export_example1_editor.png)
+
+Remember to use z-axis ordering for shapes by \[\-\] and \[\+\, \=\] keys.
+
+Exported masks:
+  ![A class mask](static/documentation/images/mask_export_example1_cls_mask.png)  ![An instance mask](static/documentation/images/mask_export_example1_inst_mask.png)
+
+Notice that it is currently impossible to have a single instance number for
+internal shapes (they will be merged into the largest one and then covered by
+"holes").
+
+### Creating masks
+
+There are several formats in CVAT that can be used to export masks:
+- `Segmentation Mask` (PASCAL VOC masks)
+- `CamVid`
+- `MOTS`
+- `ICDAR`
+- `COCO` (RLE-encoded instance masks, [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#coco))
+- `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/formats/README.md#tfrecord)):
+- `Datumaro`
+
+An example of exported masks (in the `Segmentation Mask` format):
+
+  ![A class mask](static/documentation/images/exported_cls_masks_example.png) ![An instance mask](static/documentation/images/exported_inst_masks_example.png)
+
+Important notices:
+- Both boxes and polygons are converted into masks
+- Grouped objects are considered as a single instance and exported as a single
+  mask (label and attributes are taken from the largest object in the group)
+
+#### Class colors
+
+All the labels have associated colors, which are used in the generated masks.
+These colors can be changed in the task label properties:
+
+  ![](static/documentation/images/label_color_picker.jpg)
+
+Label colors are also displayed in the annotation window on the right panel,
+where you can show or hide specific labels
+(only the presented labels are displayed):
+
+  ![](static/documentation/images/label_panel_anno_window.jpg)
+
+A background class can be:
+- A default class, which is implicitly-added, of black color (RGB 0, 0, 0)
+- `background` class with any color (has a priority, name is case-insensitive)
+- Any class of black color (RGB 0, 0, 0)
+
+To change backgound color in generated masks (default is black),
+change `background` class color to the desired one.
+
 
 ## Annotation with polylines
 
@@ -1731,6 +1809,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Ctrl+V`                   | Paste a shape from internal CVAT clipboard                                                               |
 | Hold `Ctrl` while pasting  | When pasting shape from the buffer for multiple pasting.                                                 |
 | `Crtl+B`                   | Make a copy of the object on the following frames                                                        |
+| `Ctrl+Num(0..9)`           | Сhanges the object label if pressed while the cursor is pointed on the object <br> / changes default label if pressed while the cursor is not pointed on an object|
 |                            | _Operations are available only for track_                                                                |
 | `K`                        | Change keyframe property for an active track                                                             |
 | `O`                        | Change outside property for an active track                                                              |

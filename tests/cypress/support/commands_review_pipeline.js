@@ -6,12 +6,10 @@
 
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
-        cy.get('.cvat-user-search-field').click();
+        user !== ''
+            ? cy.get('.cvat-user-search-field').find('[type="search"]').type(`${user}{Enter}`)
+            : cy.get('.cvat-user-search-field').find('[type="search"]').clear().type('{Enter}');
     });
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .contains(new RegExp(`^${user}$`, 'g'))
-        .click();
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
@@ -26,6 +24,18 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
+});
+
+Cypress.Commands.add('reviewJobToUser', (jobID, user) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`)
+            .parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-reviewer-selector')
+            .find('[type="search"]')
+            .clear()
+            .type(`${user}{Enter}`);
+    });
 });
 
 Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {
@@ -75,7 +85,7 @@ Cypress.Commands.add('collectIssueRegionId', () => {
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
         for (let i = 0; i < issueRegionList.length; i++) {
-            issueRegionIdList.push(Number(issueRegionList[i].id.match(/\-?\d+$/)));
+            issueRegionIdList.push(Number(issueRegionList[i].id.match(/-?\d+$/)));
         }
         return issueRegionIdList;
     });
@@ -127,13 +137,20 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
     cy.checkIssueRegion();
 });
 
-Cypress.Commands.add('resolveIssue', (issueLabel, resolveText) => {
+Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => {
     cy.get(issueLabel).click();
+    cy.intercept('POST', '/api/v1/comments').as('postComment');
+    cy.intercept('PATCH', '/api/v1/issues/**').as('resolveReopenIssue');
     cy.get('.cvat-issue-dialog-input').type(resolveText);
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.contains('button', 'Comment').click();
-        cy.contains('button', 'Resolve').click();
+        reopen
+            ? cy.contains('button', 'Reopen').click()
+            : cy.contains('button', 'Resolve').click();
     });
+    if (reopen) cy.get('.cvat-issue-dialog-header').find('[aria-label="close"]').click();
+    cy.wait('@postComment').its('response.statusCode').should('equal', 201);
+    cy.wait('@resolveReopenIssue').its('response.statusCode').should('equal', 200);
 });
 
 Cypress.Commands.add('submitReview', (decision, user) => {

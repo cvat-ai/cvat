@@ -78,7 +78,7 @@ Cypress.Commands.add(
                         .not('.ant-dropdown-hidden')
                         .contains('[role="menuitem"]', field)
                         .trigger('mouseover');
-                    cy.get('.ant-dropdown-menu-sub').contains(label).trigger('mouseover', { force: true });
+                    cy.get('.ant-dropdown-menu-sub').contains(label).trigger('mouseover');
                     cy.contains('.ant-dropdown-menu-item-only-child', labelAttr).click();
                 } else {
                     cy.get('.ant-dropdown').not('.ant-dropdown-hidden').contains('[role="menuitem"]', field).click();

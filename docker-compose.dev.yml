@@ -12,11 +12,7 @@ services:
       args:
         http_proxy:
         https_proxy:
-        no_proxy: nuclio,${no_proxy}
         socks_proxy:
-        USER: 'django'
-        DJANGO_CONFIGURATION: 'production'
-        TZ: 'Etc/UTC'
         CLAM_AV:
         INSTALL_SOURCES:
 

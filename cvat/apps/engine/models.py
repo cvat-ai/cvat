@@ -2,15 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
-import re
 import os
+import re
+from enum import Enum
 
-from django.db import models
 from django.conf import settings
-
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -18,6 +19,7 @@ class SafeCharField(models.CharField):
         if value:
             return value[:self.max_length]
         return value
+
 
 class DimensionType(str, Enum):
     DIM_3D = '3d'
@@ -152,6 +154,7 @@ class Video(models.Model):
     class Meta:
         default_permissions = ()
 
+
 class Image(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="images", null=True)
     path = models.CharField(max_length=1024, default='')
@@ -162,17 +165,32 @@ class Image(models.Model):
     class Meta:
         default_permissions = ()
 
+
+class TrainingProject(models.Model):
+    class ProjectClass(models.TextChoices):
+        DETECTION = 'OD', _('Object Detection')
+
+    host = models.CharField(max_length=256)
+    username = models.CharField(max_length=256)
+    password = models.CharField(max_length=256)
+    training_id = models.CharField(max_length=64)
+    enabled = models.BooleanField(null=True)
+    project_class = models.CharField(max_length=2, choices=ProjectClass.choices, null=True, blank=True)
+
+
 class Project(models.Model):
+
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="+")
-    assignee = models.ForeignKey(User, null=True,  blank=True,
-        on_delete=models.SET_NULL, related_name="+")
+                              on_delete=models.SET_NULL, related_name="+")
+    assignee = models.ForeignKey(User, null=True, blank=True,
+                                 on_delete=models.SET_NULL, related_name="+")
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-        default=StatusChoice.ANNOTATION)
+                              default=StatusChoice.ANNOTATION)
+    training_project = models.ForeignKey(TrainingProject, null=True, blank=True, on_delete=models.SET_NULL)
 
     def get_project_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -210,7 +228,7 @@ class Task(models.Model):
     # Zero means that there are no limits (default)
     segment_size = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-        default=StatusChoice.ANNOTATION)
+                              default=StatusChoice.ANNOTATION)
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
     dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
     subset = models.CharField(max_length=64, blank=True, default="")
@@ -236,6 +254,13 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TrainingProjectImage(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    idx = models.PositiveIntegerField()
+    training_image_id = models.CharField(max_length=64)
+
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
@@ -318,6 +343,12 @@ class Label(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ('task', 'name')
+
+
+class TrainingProjectLabel(models.Model):
+    cvat_label = models.ForeignKey(Label, on_delete=models.CASCADE, related_name='training_project_label')
+    training_label_id = models.CharField(max_length=64)
+
 
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'

@@ -2,23 +2,23 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import os
 import os.path as osp
-import io
 import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
-import cv2
 
+import cv2
 import django_rq
-from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -35,7 +35,7 @@ from rest_framework.response import Response
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views # pylint: disable=unused-import
+import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -53,7 +53,6 @@ from cvat.apps.engine.serializers import (
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer
 )
 from cvat.apps.engine.utils import av_scan_paths
-
 from . import models, task
 from .log import clogger, slogger
 
@@ -188,6 +187,7 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS':       False,
             'MODELS':          False,
+            'PREDICT':         apps.is_installed('cvat.apps.training')
         }
         if strtobool(os.environ.get("CVAT_ANALYTICS", '0')):
             response['ANALYTICS'] = True
@@ -289,6 +289,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True,
             context={"request": request})
         return Response(serializer.data)
+
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -1109,3 +1110,5 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
+
+
