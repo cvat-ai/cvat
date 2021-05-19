@@ -135,11 +135,13 @@ def _detect_related_images_3D(image_paths, root_path):
         if len(filtered_dirname_files) and os.path.basename(dirname) == name:
             # default format (option 2)
             related_images[rel_image_path].extend(_prepare_context_list(filtered_dirname_files, root_path))
-
-        filtered_dirname_files = list(filter(lambda x: os.path.splitext(os.path.basename(x))[0] == name, filtered_dirname_files))
-        if len(filtered_dirname_files):
-            # default format (option 1)
-            related_images[rel_image_path].extend(_prepare_context_list(filtered_dirname_files, root_path))
+        else:
+            filtered_dirname_files = list(
+                filter(lambda x: os.path.splitext(os.path.basename(x))[0] == name, filtered_dirname_files)
+            )
+            if len(filtered_dirname_files):
+                # default format (option 1)
+                related_images[rel_image_path].extend(_prepare_context_list(filtered_dirname_files, root_path))
 
         if related_images_exist:
             related_images_dirname = os.path.join(
