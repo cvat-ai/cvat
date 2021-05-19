@@ -39,6 +39,10 @@ If you want to build and/or serve your site locally, you also need to get loca
 
     git submodule update --init --recursive
 
+To make the site work correctly, you need to change `config.toml` to:
+
+    base_URL = "/"
+
 To build and preview your site locally, use:
 
     cd <your local directory>/cvat/site/
@@ -58,7 +62,7 @@ By default npm installs tools under the directory where you run [npm install](ht
 
 To make the site work correctly, you need to change `config.toml` to:
 
-    base_URL:<your local directory>/public/
+    base_URL = "<your local directory>/public/"
 
 Then you can build a website in the "public" folder:
 
