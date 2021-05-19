@@ -9,7 +9,7 @@ description: 'Answers to frequently asked questions'
 
 ## How to update CVAT
 
-Before upgrading, please follow the [backup guide](../../../docs/for-developers/backup_guide/)
+Before updating, please follow the [backup guide](../../../docs/for-developers/backup_guide/)
 and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
