@@ -11,7 +11,7 @@ description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tr
 
 <!--lint disable heading-style-->
 
-![](../../../images/image097.jpg)
+![](/images/image097.jpg)
 
 It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
 

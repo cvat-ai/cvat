@@ -29,4 +29,4 @@ during task creation, which may take some time.
 #### Uploading a manifest with data
 
 When creating a task, you can upload a `manifest.jsonl` file along with the video or dataset with images.
-You can see how to prepare it [here](../../../docs/for-developers/dataset_manifest/).
+You can see how to prepare it [here](/docs/for-developers/dataset_manifest/).

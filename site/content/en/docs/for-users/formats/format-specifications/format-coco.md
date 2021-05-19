@@ -62,7 +62,7 @@ Uploaded file: a single unpacked `*.json` or a zip archive with the structure ab
    ```
 
 1. Select val2017.zip as data
-   (See [Creating an annotation task](../../../../../docs/for-users/user-guide/creating_an_annotation_task/)
+   (See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task/)
    guide for details)
 
 1. Unpack `annotations_trainval2017.zip`

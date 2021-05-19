@@ -5,7 +5,7 @@ weight: 2
 ---
 
 1.  Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
-    ![](../../../../images/image004.jpg)
+    ![](/images/image004.jpg)
 
 1.  Specify parameters of the task:
 
@@ -13,24 +13,24 @@ weight: 2
 
     **Name** The name of the task to be created.
 
-    ![](../../../../images/image005.jpg)
+    ![](/images/image005.jpg)
 
     **Projects** The project that this task will be related with.
 
-    ![](../../../../images/image193.jpg)
+    ![](/images/image193.jpg)
 
     **Labels**. There are two ways of working with labels (available only if the task is not related to the project):
 
     - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
-      ![](../../../../images/image123.jpg)
+      ![](/images/image123.jpg)
 
       You can set a name of the label in the `Label name` field and choose a color for each label.
 
-      ![](../../../../images/image124.jpg)
+      ![](/images/image124.jpg)
 
       If necessary you can add an attribute and set its properties by clicking `Add an attribute`:
 
-      ![](../../../../images/image125.jpg)
+      ![](/images/image125.jpg)
 
       The following actions are available here:
 
@@ -58,7 +58,7 @@ weight: 2
     - The `Raw` is a way of working with labels for an advanced user.
       Raw presents label data in _json_ format with an option of editing and copying labels as a text.
       The `Done` button applies the changes and the `Reset` button cancels the changes.
-      ![](../../../../images/image126.jpg)
+      ![](/images/image126.jpg)
 
     In `Raw` and `Constructor` mode, you can press the `Copy` button to copy the list of labels.
 
@@ -66,20 +66,20 @@ weight: 2
     If you select tab `Connected file share` you can choose files for annotation from your network.
     If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
     If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
-    You can find how to prepare it [here](../../../../docs/for-developers/dataset_manifest/).
+    You can find how to prepare it [here](/docs/for-developers/dataset_manifest/).
 
-    ![](../../../../images/image127.jpg)
+    ![](/images/image127.jpg)
 
     #### Advanced configuration
 
-    ![](../../../../images/image128_use_cache.jpg)
+    ![](/images/image128_use_cache.jpg)
 
     **Use zip chunks**. Force to use zip chunks as compressed data. Actual for videos only.
 
     **Use cache**. Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
     which will reduce the task creation time (by preparing chunks when requests are received)
     and store data in a cache of limited size with a policy of evicting less popular items.
-    See more [here](../../../../docs/for-developers/data_on_fly/).
+    See more [here](/docs/for-developers/data_on_fly/).
 
     **Image Quality**. Use this option to specify quality of uploaded images.
     The option helps to load high resolution datasets faster.
@@ -150,7 +150,7 @@ weight: 2
     Push `Submit` button and it will be added into the list of annotation tasks.
     Then, the created task will be displayed on a tasks page:
 
-    ![](../../../../images/image006_detrac.jpg)
+    ![](/images/image006_detrac.jpg)
 
 1.  The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
     Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
@@ -158,9 +158,9 @@ weight: 2
 
     - `Dump Annotation` and `Export as a dataset` — download annotations or
       annotations and images in a specific format. The following formats are available:
-      - [CVAT for video](../../../../docs/for-developers/xml_format/#interpolation)
+      - [CVAT for video](/docs/for-developers/xml_format/#interpolation)
         is highlighted if a task has the interpolation mode.
-      - [CVAT for images](../../../../docs/for-developers/xml_format/#annotation)
+      - [CVAT for images](/docs/for-developers/xml_format/#annotation)
         is highlighted if a task has the annotation mode.
       - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/) —
@@ -173,7 +173,7 @@ weight: 2
       - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
       - [Datumaro](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/datumaro)
     - `Upload annotation` is available in the same formats as in `Dump annotation`.
-      - [CVAT](../../../../docs/for-developers/xml_format/) accepts both video and image sub-formats.
+      - [CVAT](/docs/for-developers/xml_format/) accepts both video and image sub-formats.
     - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
     - `Delete` — delete task.
@@ -183,7 +183,7 @@ weight: 2
 1.  Task details is a task page which contains a preview, a progress bar
     and the details of the task (specified when the task was created) and the jobs section.
 
-    ![](../../../../images/image131_detrac.jpg)
+    ![](/images/image131_detrac.jpg)
 
     - The next actions are available on this page:
       1. Change the task’s title.
@@ -204,7 +204,7 @@ weight: 2
       - Duration — is the amount of time the job is being worked.
       - Assignee is the user who is working on the job.
         You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
-      - Reviewer – a user assigned to carry out the review, read more in the [review](../../../../docs/for-users/user-guide/advanced/review/) section.
+      - Reviewer – a user assigned to carry out the review, read more in the [review](/docs/for-users/user-guide/advanced/review/) section.
       - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
         The job list contains direct links to jobs.
 
@@ -216,4 +216,4 @@ weight: 2
     UX, only the first chunk of several frames will be loaded and you will be able
     to annotate first images. Other frames will be loaded in background.
 
-    ![](../../../../images/image007_detrac.jpg)
+    ![](/images/image007_detrac.jpg)

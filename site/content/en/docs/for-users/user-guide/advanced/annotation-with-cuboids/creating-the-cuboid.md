@@ -7,7 +7,7 @@ weight: 1
 Before you start, you have to make sure that Cuboid is selected
 and choose a drawing method ”from rectangle” or “by 4 points”.
 
-![](../../../../../../images/image091.jpg)
+![](/images/image091.jpg)
 
 #### Drawing cuboid by 4 points
 
@@ -18,7 +18,7 @@ For the first 3 points, it is recommended to only draw the 2 closest side faces,
 
 A few examples:
 
-![](../../../../../../images/image177_mapillary_vistas.jpg)
+![](/images/image177_mapillary_vistas.jpg)
 
 ### Drawing cuboid from rectangle
 
@@ -28,4 +28,4 @@ The depth and perspective of the resulting cuboid can be edited.
 
 Example:
 
-![](../../../../../../images/image182_mapillary_vistas.jpg)
+![](/images/image182_mapillary_vistas.jpg)

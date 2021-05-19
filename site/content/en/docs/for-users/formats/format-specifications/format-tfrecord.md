@@ -183,7 +183,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
    ```
 
    Select images. zip as data.
-   See [Creating an annotation task](../../../../docs/for-users/user-guide/creating_an_annotation_task/)
+   See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task/)
    guide for details.
 
 1. Zip `pascal.tfrecord` and `label_map.pbtxt` files together

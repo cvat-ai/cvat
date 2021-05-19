@@ -22,4 +22,4 @@ There are several options how to use the search.
 
 The search is case insensitive.
 
-![](../../../../images/image100_detrac.jpg)
+![](/images/image100_detrac.jpg)

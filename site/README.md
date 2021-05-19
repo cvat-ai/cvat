@@ -59,6 +59,6 @@ By default npm installs tools under the directory where you run [npm install](ht
 Then you can build a website in the "public" folder:
 
     cd <your local directory>/cvat/site/
-    hugo --baseURL="<your local directory>/public/"
+    hugo
 
 [Read more](https://www.docsy.dev/docs/getting-started/)

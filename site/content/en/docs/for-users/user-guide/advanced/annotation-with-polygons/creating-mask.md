@@ -13,13 +13,13 @@ with it as additional shapes above the shapes needed to have holes:
 
 The editor window:
 
-  ![The editor](../../../../../../images/mask_export_example1_editor.png)
+  ![The editor](/images/mask_export_example1_editor.png)
 
 Remember to use z-axis ordering for shapes by \[\-\] and \[\+\, \=\] keys.
 
 Exported masks:
 
-  ![A class mask](../../../../../../images/mask_export_example1_cls_mask.png)  ![An instance mask](../../../../../../images/mask_export_example1_inst_mask.png)
+  ![A class mask](/images/mask_export_example1_cls_mask.png)  ![An instance mask](/images/mask_export_example1_inst_mask.png)
 
 Notice that it is currently impossible to have a single instance number for
 internal shapes (they will be merged into the largest one and then covered by
@@ -32,13 +32,13 @@ There are several formats in CVAT that can be used to export masks:
 - `CamVid`
 - `MOTS`
 - `ICDAR`
-- `COCO` (RLE-encoded instance masks, [guide](../../../../../../docs/for-users/formats/format-specifications/format-coco))
-- `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](../../../../../../docs/for-users/formats/format-specifications/format-tfrecord)):
+- `COCO` (RLE-encoded instance masks, [guide](/docs/for-users/formats/format-specifications/format-coco))
+- `TFRecord` ([over Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md), [guide](/docs/for-users/formats/format-specifications/format-tfrecord)):
 - `Datumaro`
 
 An example of exported masks (in the `Segmentation Mask` format):
 
-  ![A class mask](../../../../../../images/exported_cls_masks_example.png) ![An instance mask](../../../../../../images/exported_inst_masks_example.png)
+  ![A class mask](/images/exported_cls_masks_example.png) ![An instance mask](/images/exported_inst_masks_example.png)
 
 Important notices:
 - Both boxes and polygons are converted into masks
@@ -50,13 +50,13 @@ Important notices:
 All the labels have associated colors, which are used in the generated masks.
 These colors can be changed in the task label properties:
 
-  ![](../../../../../../images/label_color_picker.jpg)
+  ![](/images/label_color_picker.jpg)
 
 Label colors are also displayed in the annotation window on the right panel,
 where you can show or hide specific labels
 (only the presented labels are displayed):
 
-  ![](../../../../../../images/label_panel_anno_window.jpg)
+  ![](/images/label_panel_anno_window.jpg)
 
 A background class can be:
 - A default class, which is implicitly-added, of black color (RGB 0, 0, 0)

@@ -21,6 +21,6 @@ You have to switch `Color By Group` checkbox for that.
 
 Shapes that don't have `group_id`, will be highlighted in white.
 
-![](../../../../../images/image078_detrac.jpg)
+![](/images/image078_detrac.jpg)
 
-![](../../../../../images/image077_detrac.jpg)
+![](/images/image077_detrac.jpg)

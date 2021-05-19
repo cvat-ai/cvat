@@ -16,19 +16,19 @@ Try it online [cvat.org](https://cvat.org).
 
 {{< blocks/section color="docs" >}}
 
-{{% blocks/feature icon="fa-server" title="[Installation Guide](../docs/for-users/installation/)" %}}
+{{% blocks/feature icon="fa-server" title="[Installation Guide](/docs/for-users/installation/)" %}}
 
 CVAT installation guide for different operating systems.
 
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fa-book" title="[User's Guide](../docs/for-users/user-guide/)" %}}
+{{% blocks/feature icon="fa-book" title="[User's Guide](/docs/for-users/user-guide/)" %}}
 
 This multipage document contains information on how to work with the CVAT user interface.
 
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fa-question" title="[FAQ](../docs/for-users/faq/)" %}}
+{{% blocks/feature icon="fa-question" title="[FAQ](/docs/for-users/faq/)" %}}
 
 Answers to frequently asked questions.
 
@@ -36,13 +36,13 @@ Answers to frequently asked questions.
 
 <!--lint disable maximum-line-length-->
 
-{{% blocks/feature icon="fa-magic" title="[Installation Auto Annotation](../docs/for-users/installation_automatic_annotation/)" %}}
+{{% blocks/feature icon="fa-magic" title="[Installation Auto Annotation](/docs/for-users/installation_automatic_annotation/)" %}}
 
 This page provides information about the installation of components needed for semi-automatic and automatic annotation.
 
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fa-terminal" title="[For Developers](../docs/for-developers/)" %}}
+{{% blocks/feature icon="fa-terminal" title="[For Developers](/docs/for-developers/)" %}}
 
 This section contains documents for system administrators, AI researchers and any other advanced users.
 
