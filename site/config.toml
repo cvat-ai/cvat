@@ -1,4 +1,4 @@
-baseURL = "/cvat/"
+baseURL = "/"
 title = "CVAT"
 
 enableRobotsTXT = true
