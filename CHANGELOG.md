@@ -5,7 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] - Unreleased
+## [1.5.0] - Unreleased
+
+### Added
+
+- Support of context images for 2D image tasks (<https://github.com/openvinotoolkit/cvat/pull/3122>)
+
+### Changed
+
+- Updated manifest format, added meta with related images (<https://github.com/openvinotoolkit/cvat/pull/3122>)
+
+### Deprecated
+
+-
+
+### Removed
+
+-
+
+### Fixed
+
+-
+
+### Security
+
+-
+
+## [1.4.0] - 2021-05-18
 
 ### Added
 
@@ -17,8 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Place of migration logger initialization (<https://github.com/openvinotoolkit/cvat/pull/3170>)
-
-### Deprecated
 
 ### Removed
 
@@ -32,8 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset password link was unavailable before login (<https://github.com/openvinotoolkit/cvat/pull/3140>)
 - Manifest: migration (<https://github.com/openvinotoolkit/cvat/pull/3146>)
 - Fixed cropping polygon in some corner cases (<https://github.com/openvinotoolkit/cvat/pull/3184>)
-
-### Security
 
 ## [1.3.0] - 3/31/2021
 
@@ -89,7 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed filters select overflow (<https://github.com/openvinotoolkit/cvat/pull/2614>)
 - Fixed tasks in project auto annotation (<https://github.com/openvinotoolkit/cvat/pull/2725>)
 - Cuboids are missed in annotations statistics (<https://github.com/openvinotoolkit/cvat/pull/2704>)
-- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pul
+- The list of files attached to the task is not displayed (<https://github.com/openvinotoolkit/cvat/pull/2706>)
 - A couple of css-related issues (top bar disappear, wrong arrow position on collapse elements) (<https://github.com/openvinotoolkit/cvat/pull/2736>)
 - Issue with point region doesn't work in Firefox (<https://github.com/openvinotoolkit/cvat/pull/2727>)
 - Fixed cuboid perspective change (<https://github.com/openvinotoolkit/cvat/pull/2733>)
