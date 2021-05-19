@@ -732,7 +732,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
-                raise exceptions.PermissionDenied('Account name for Azure container was not specified')
+                raise serializers.ValidationError('Account name for Azure container was not specified')
         return attrs
 
     def create(self, validated_data):

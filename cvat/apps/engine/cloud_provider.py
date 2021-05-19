@@ -28,7 +28,7 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def is_exist(self):
+    def exists(self):
         pass
 
     @abstractmethod
@@ -97,7 +97,7 @@ class AWS_S3(_CloudStorage):
                 session_token=None):
         super().__init__()
         if all([access_key_id, secret_key, session_token]):
-            self._client_s3 = boto3.client(
+            self._s3 = boto3.resource(
                 's3',
                 aws_access_key_id=access_key_id,
                 aws_secret_access_key=secret_key,
@@ -106,11 +106,11 @@ class AWS_S3(_CloudStorage):
             )
         elif any([access_key_id, secret_key, session_token]):
             raise Exception('Insufficient data for authorization')
-        self._s3 = boto3.resource('s3')
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
+            self._s3 = boto3.resource('s3', region_name=region)
             self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
-            self._client_s3 = self._s3.meta.client
+        self._client_s3 = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
         self.region = region
 
@@ -122,7 +122,7 @@ class AWS_S3(_CloudStorage):
     def name(self):
         return self._bucket.name
 
-    def is_exist(self):
+    def exists(self):
         waiter = self._client_s3.get_waiter('bucket_exists')
         try:
             waiter.wait(
@@ -217,17 +217,12 @@ class AzureBlobContainer(_CloudStorage):
                public_access=PublicAccess.OFF
             )
         except ResourceExistsError:
-            msg = f"{self._container_client.container_name} alredy exists"
+            msg = f"{self._container_client.container_name} already exists"
             slogger.glob.info(msg)
             raise Exception(msg)
 
-    def is_exist(self):
-        try:
-            self._container_client.create_container()
-            self._container_client.delete_container()
-            return False
-        except ResourceExistsError:
-            return True
+    def exists(self):
+        return self._container_client.exists(timeout=5)
 
     def is_object_exist(self, file_name):
         blob_client = self._container_client.get_blob_client(file_name)

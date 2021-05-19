@@ -596,7 +596,7 @@ class CloudStorage(models.Model):
         unique_together = (('provider_type', 'resource', 'credentials'),)
 
     def __str__(self):
-        return "{} {} {}".format(self.provider_type, self.resource, self.id)
+        return "{} {} {}".format(self.provider_type, self.display_name, self.id)
 
     def get_storage_dirname(self):
         return os.path.join(settings.CLOUD_STORAGE_ROOT, str(self.id))

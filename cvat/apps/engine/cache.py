@@ -7,7 +7,9 @@ from io import BytesIO
 
 from diskcache import Cache
 from django.conf import settings
+from tempfile import NamedTemporaryFile
 
+from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
@@ -83,21 +85,27 @@ class CacheInteraction:
                 cloud_storage_instance.initialize_content()
                 for item in reader:
                     name = f"{item['name']}{item['extension']}"
-                    source_path = os.path.join(upload_dir, name)
                     if name not in cloud_storage_instance:
                         raise Exception('{} file was not found on a {} storage'.format(name, cloud_storage_instance.name))
-                    cloud_storage_instance.download_file(name, source_path)
-                    assert item.get('checksum', None), \
-                        'A manifest file does not contain checksum for image {}'.format(item.get('name'))
-                    assert md5_hash(source_path) == item.get('checksum'), \
-                        'Hash sums of files {} do not match'.format(name)
-                    images.append((source_path, source_path, None))
+                    with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=name, delete=False) as temp_file:
+                        source_path = temp_file.name
+                        buf = cloud_storage_instance.download_fileobj(name)
+                        temp_file.write(buf.getvalue())
+                        if not (checksum := item.get('checksum', None)):
+                            slogger.glob.warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
+                        if checksum and not md5_hash(source_path) == checksum:
+                            slogger.glob.warning('Hash sums of files {} do not match'.format(name))
+                        images.append((source_path, source_path, None))
             else:
                 for item in reader:
                     source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
                     images.append((source_path, source_path, None))
         writer.save_as_chunk(images, buff)
         buff.seek(0)
+        if db_data.storage == StorageChoice.CLOUD_STORAGE:
+            images = [image_path for image in images if os.path.exists((image_path := image[0]))]
+            for image_path in images:
+                os.remove(image_path)
         return buff, mime_type
 
     def save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):
