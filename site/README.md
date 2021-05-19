@@ -8,7 +8,7 @@ simply click `Edit this page` on the page you would like to edit.
 If you need to add a child page, click `Create child page`.
 
 If you need to edit the text that has the markup [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet),
-click on the `Fork this reposytory` button.
+click on the `Fork this repository` button.
 
 Read how to edit files for github ([GitHub docs](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-another-users-repository)).
 
@@ -59,6 +59,6 @@ By default npm installs tools under the directory where you run [npm install](ht
 Then you can build a website in the "public" folder:
 
     cd <your local directory>/cvat/site/
-    hugo --baseURL= "<your local directory>/public/"
+    hugo --baseURL="<your local directory>/public/"
 
 [Read more](https://www.docsy.dev/docs/getting-started/)
