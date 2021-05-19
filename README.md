@@ -18,7 +18,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 ## Documentation
 
 - [Installation guide](site/content/en/docs/for-users/installation.md)
-- [User's guide](https://cvat.org/docs/for-users/user-guide/)
+- [User's guide](https://openvinotoolkit.github.io/cvat/docs/for-users/user-guide/)
 - [Django REST API documentation](#rest-api)
 - [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
 - [Command line interface](site/content/en/docs/for-developers/cli.md)
