@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('credentials', models.CharField(max_length=500)),
                 ('credentials_type', models.CharField(choices=[('TEMP_KEY_SECRET_KEY_TOKEN_SET', 'TEMP_KEY_SECRET_KEY_TOKEN_SET'), ('ACCOUNT_NAME_TOKEN_PAIR', 'ACCOUNT_NAME_TOKEN_PAIR'), ('ANONYMOUS_ACCESS', 'ANONYMOUS_ACCESS')], max_length=29)),
                 ('specific_attributes', models.CharField(blank=True, max_length=50)),
-                ('description', models.TextField(default='')),
+                ('description', models.TextField(blank=True)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='cloud_storages', to=settings.AUTH_USER_MODEL)),
             ],
             options={

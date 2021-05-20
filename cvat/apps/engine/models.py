@@ -589,7 +589,7 @@ class CloudStorage(models.Model):
     credentials = models.CharField(max_length=500)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=50, blank=True)
-    description = models.TextField(default='')
+    description = models.TextField(blank=True)
 
     class Meta:
         default_permissions = ()
