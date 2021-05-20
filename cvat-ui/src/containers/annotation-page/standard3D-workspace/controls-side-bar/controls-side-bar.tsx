@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
-import { KeyMap } from 'utils/mousetrap-react';
 
 import { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
