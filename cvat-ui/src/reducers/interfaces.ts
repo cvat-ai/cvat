@@ -274,6 +274,7 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
+            contextImageFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;
             creating: null | ErrorState;
@@ -423,6 +424,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
+            hasRelatedContext: boolean;
             data: any | null;
             fetching: boolean;
             delay: number;
@@ -431,8 +433,8 @@ export interface AnnotationState {
         playing: boolean;
         frameAngles: number[];
         contextImage: {
-            loaded: boolean;
-            data: string;
+            fetching: boolean;
+            data: string | null;
             hidden: boolean;
         };
     };
