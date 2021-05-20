@@ -29,7 +29,7 @@ jobs:
         working-directory: ./site
         run: |
           npm ci
-          hugo --baseURL "/cvat/" --minify
+          hugo --minify
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
