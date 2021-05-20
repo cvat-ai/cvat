@@ -54,7 +54,7 @@ so you can use npm, the Node package manager.
 By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
 
     cd <your local directory>/cvat/site/
-    npm install ci
+    npm ci
 
 Then you can build a website in the "public" folder:
 
