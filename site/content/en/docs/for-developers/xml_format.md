@@ -287,7 +287,7 @@ Example:
 
 ## Version 1
 
-There are two different formats for annotation and interpolation modes at the moment.
+There are two different formats for images and video tasks at the moment.
 Both formats has a common part which is described below:
 
 ```xml
