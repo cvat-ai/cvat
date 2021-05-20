@@ -45,6 +45,7 @@ const defaultState: NotificationsState = {
             exporting: null,
             deleting: null,
             creating: null,
+            moving: null,
         },
         formats: {
             fetching: null,
@@ -110,6 +111,7 @@ const defaultState: NotificationsState = {
     messages: {
         tasks: {
             loadingDone: '',
+            movingDone: '',
         },
         models: {
             inferenceDone: '',
@@ -387,6 +389,24 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case TasksActionTypes.MOVE_TASK_TO_PROJECT_FAILED: {
+            const taskID = action.payload.task.id;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        moving: {
+                            message:
+                                'Could not move  the' +
+                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a> to a project`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
             const taskID = action.payload.task.id;
             return {
@@ -436,6 +456,20 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-create-task-failed',
                         },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.MOVE_TASK_TO_PROJECT_SUCCESS: {
+            const { id: taskId, projectId } = action.payload.task;
+
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        movingDone: `The task #${taskId} has been successfully moved to the project #${projectId}`,
                     },
                 },
             };

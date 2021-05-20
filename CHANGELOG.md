@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hotkeys to switch a label of existing object or to change default label (for objects created with N) (<https://github.com/openvinotoolkit/cvat/pull/3070>)
 - A script to convert some kinds of DICOM files to regular images (<https://github.com/openvinotoolkit/cvat/pull/3095>)
 - Helm chart prototype (<https://github.com/openvinotoolkit/cvat/pull/3102>)
+- Initial implementation of moving tasks between projects (<https://github.com/openvinotoolkit/cvat/pull/3164>)
 
 ### Changed
 
