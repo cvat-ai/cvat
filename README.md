@@ -13,7 +13,7 @@ annotate million of objects with different properties. Many UI
 and UX decisions are based on feedbacks from professional data
 annotation team. Try it online [cvat.org](https://cvat.org).
 
-![CVAT screenshot](cvat/apps/documentation/static/documentation/images/cvat.jpg)
+![CVAT screenshot](site/content/en/images/cvat.jpg)
 
 ## Documentation
 
