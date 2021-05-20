@@ -26,7 +26,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cvat.apps.engine.urls')),
     path('django-rq/', include('django_rq.urls')),
-    path('documentation/', include('cvat.apps.documentation.urls')),
 ]
 
 if apps.is_installed('cvat.apps.dataset_repo'):

@@ -1,0 +1,22 @@
+{
+  "name": "cvat-docs",
+  "version": "0.0.1",
+  "description": "Hugo dependencies that should be installed separately",
+  "main": "none.js",
+  "dependencies": {},
+  "devDependencies": {
+    "autoprefixer": "^10.2.5",
+    "postcss-cli": "^8.3.1",
+    "postcss": "^8.2.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openvinotoolkit/cvat.git"
+  },
+  "author": "Intel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/openvinotoolkit/cvat/issues"
+  },
+  "homepage": "https://github.com/openvinotoolkit/cvat#readme"
+}

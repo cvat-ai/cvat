@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -232,7 +232,11 @@ function HeaderContainer(props: Props): JSX.Element {
                 About
             </Menu.Item>
             {renderChangePasswordItem && (
-                <Menu.Item className='cvat-header-menu-change-password' onClick={(): void => switchChangePasswordDialog(true)} disabled={changePasswordFetching}>
+                <Menu.Item
+                    className='cvat-header-menu-change-password'
+                    onClick={(): void => switchChangePasswordDialog(true)}
+                    disabled={changePasswordFetching}
+                >
                     {changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
                     Change password
                 </Menu.Item>
@@ -320,12 +324,12 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Button
                     className='cvat-header-button'
                     type='link'
-                    href={`${tool.server.host}/documentation/user_guide.html`}
+                    href='https://openvinotoolkit.github.io/cvat/docs'
                     onClick={(event: React.MouseEvent): void => {
                         event.preventDefault();
                         // false positive
                         // eslint-disable-next-line
-                        window.open(`${tool.server.host}/documentation/user_guide.html`, '_blank');
+                        window.open('https://openvinotoolkit.github.io/cvat/docs');
                     }}
                 >
                     <QuestionCircleOutlined />
