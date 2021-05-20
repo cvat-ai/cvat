@@ -730,6 +730,15 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
+    # pylint: disable=no-self-use
+    def validate_specific_attributes(self, value):
+        if value:
+            attributes = value.split('&')
+            for attribute in attributes:
+                if not len(attribute.split('=')) == 2:
+                    raise serializers.ValidationError('Invalid specific attributes')
+        return value
+
     def validate(self, attrs):
         if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
