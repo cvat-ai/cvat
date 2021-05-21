@@ -1074,7 +1074,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
         except Exception as ex:
             message = str(ex)
             slogger.glob.error(message)
-            raise serializers.ValidationError(message)
+            raise
 
         owner = self.request.data.get('owner')
         if owner:
