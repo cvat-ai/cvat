@@ -12,6 +12,8 @@ import {
     dragCanvas,
     editShape,
     getContextImage,
+    groupAnnotationsAsync,
+    groupObjects,
     resetCanvas,
     shapeDrawn,
     updateAnnotationsAsync,
@@ -83,9 +85,11 @@ interface DispatchToProps {
     onDragCanvas: (enabled: boolean) => void;
     onSetupCanvas(): void;
     getContextImage(): void;
+    onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onUpdateAnnotations(states: any[]): void;
+    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onShapeDrawn: () => void;
     onEditShape: (enabled: boolean) => void;
@@ -206,11 +210,17 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onResetCanvas(): void {
             dispatch(resetCanvas());
         },
+        onGroupObjects(enabled: boolean): void {
+            dispatch(groupObjects(enabled));
+        },
         onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
             dispatch(createAnnotationsAsync(sessionInstance, frame, states));
         },
         onShapeDrawn(): void {
             dispatch(shapeDrawn());
+        },
+        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
         },
         onActivateObject(activatedStateID: number | null): void {
             if (activatedStateID === null) {

@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
-import { ColorBy, CombinedState } from 'reducers/interfaces';
+import { ColorBy, CombinedState, DimensionType } from 'reducers/interfaces';
 import {
     collapseAppearance as collapseAppearanceAction,
     updateTabContentHeight as updateTabContentHeightAction,
@@ -27,8 +27,6 @@ import {
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
 } from 'actions/settings-actions';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface StateToProps {
     appearanceCollapsed: boolean;
@@ -39,7 +37,7 @@ interface StateToProps {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
-    canvasInstance: Canvas | Canvas3d;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -71,7 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             appearanceCollapsed,
-            canvas: { instance: canvasInstance },
+            job: { instance: jobInstance },
         },
         settings: {
             shapes: {
@@ -89,7 +87,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlineColor,
         showBitmap,
         showProjections,
-        canvasInstance,
+        jobInstance,
     };
 }
 
@@ -151,10 +149,10 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShapesOutlinedBorders,
         changeShowBitmap,
         changeShowProjections,
-        canvasInstance,
+        jobInstance,
     } = props;
 
-    const is2D = canvasInstance instanceof Canvas;
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
         <Collapse

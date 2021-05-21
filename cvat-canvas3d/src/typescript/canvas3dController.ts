@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    Canvas3dModel, Mode, DrawData, ActiveElement, FocusData,
+    Canvas3dModel, Mode, DrawData, ActiveElement, FocusData, GroupData,
 } from './canvas3dModel';
 
 export interface Canvas3dController {
@@ -11,7 +11,9 @@ export interface Canvas3dController {
     readonly activeElement: ActiveElement;
     readonly selected: any;
     readonly focused: FocusData;
+    readonly groupData: GroupData;
     mode: Mode;
+    group(groupData: GroupData): void;
 }
 
 export class Canvas3dControllerImpl implements Canvas3dController {
@@ -43,5 +45,13 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public get focused(): any {
         return this.model.data.focusData;
+    }
+
+    public get groupData(): GroupData {
+        return this.model.groupData;
+    }
+
+    public group(groupData: GroupData): void {
+        this.model.group(groupData);
     }
 }

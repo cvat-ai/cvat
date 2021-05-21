@@ -43,12 +43,14 @@ interface Props {
     activatedStateID: number | null;
     activeObjectType: ObjectType;
     onSetupCanvas: () => void;
+    onGroupObjects: (enabled: boolean) => void;
     getContextImage(): void;
     onResetCanvas(): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onActivateObject(activatedStateID: number | null): void;
     onUpdateAnnotations(states: any[]): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
+    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onEditShape: (enabled: boolean) => void;
     onDragCanvas: (enabled: boolean) => void;
     onShapeDrawn: () => void;
@@ -359,6 +361,15 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         });
     };
 
+    const onCanvasObjectsGroupped = (event: any): void => {
+        const { onGroupAnnotations, onGroupObjects } = props;
+
+        onGroupObjects(false);
+
+        const { states } = event.detail;
+        onGroupAnnotations(jobInstance, frame, states);
+    };
+
     useEffect(() => {
         updateShapesView();
     }, [opacity, outlined, outlineColor, selectedOpacity, colorBy]);
@@ -372,6 +383,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
         canvasInstanceDOM.perspective.addEventListener('canvas.fit', onResize);
+        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped);
         window.addEventListener('resize', onResize);
 
         return () => {
@@ -381,6 +393,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
             canvasInstanceDOM.perspective.removeEventListener('canvas.fit', onResize);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped);
             window.removeEventListener('resize', onResize);
         };
     }, [frameData, annotations, activeLabelID, contextMenuVisibility]);

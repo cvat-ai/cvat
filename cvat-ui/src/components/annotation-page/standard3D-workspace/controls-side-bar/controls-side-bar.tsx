@@ -16,6 +16,9 @@ import CursorControl, {
 import DrawCuboidControl, {
     Props as DrawCuboidControlProps,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/draw-cuboid-control';
+import GroupControl, {
+    Props as GroupControlProps,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/group-control';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 import PhotoContextControl from './photo-context';
@@ -31,11 +34,14 @@ interface Props {
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
+    groupObjects(enabled: boolean): void;
+    resetGroup(): void;
 }
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
 const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
+const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -49,6 +55,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         labels,
         redrawShape,
         repeatDrawShape,
+        groupObjects,
+        resetGroup,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -93,11 +101,32 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     canvasInstance.draw({ enabled: false });
                 }
             },
+            SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const grouping = activeControl === ActiveControl.GROUP;
+                if (!grouping) {
+                    canvasInstance.cancel();
+                }
+                canvasInstance.group({ enabled: !grouping });
+                groupObjects(!grouping);
+            },
+            RESET_GROUP: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const grouping = activeControl === ActiveControl.GROUP;
+                if (!grouping) {
+                    return;
+                }
+                resetGroup();
+                canvasInstance.group({ enabled: false });
+                groupObjects(false);
+            },
         };
         subKeyMap = {
             ...subKeyMap,
             PASTE_SHAPE: keyMap.PASTE_SHAPE,
             SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
+            SWITCH_GROUP_MODE: keyMap.SWITCH_GROUP_MODE,
+            RESET_GROUP: keyMap.RESET_GROUP,
         };
     }
 
@@ -120,6 +149,15 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 activeControl={activeControl}
                 contextImageHide={contextImageHide}
                 hideShowContextImage={hideShowContextImage}
+            />
+            <hr />
+            <ObservedGroupControl
+                switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
+                resetGroupShortcut={normalizedKeyMap.RESET_GROUP}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                groupObjects={groupObjects}
+                disabled={!labels.length}
             />
         </Layout.Sider>
     );
