@@ -60,9 +60,9 @@
                     data.tasks.push(taskInstance);
                 }
             }
-            if (!data.task_subsets && data.tasks.length) {
+            if (!data.task_subsets) {
                 const subsetsSet = new Set();
-                for (const task in data.tasks) {
+                for (const task of data.tasks) {
                     if (task.subset) subsetsSet.add(task.subset);
                 }
                 data.task_subsets = Array.from(subsetsSet);

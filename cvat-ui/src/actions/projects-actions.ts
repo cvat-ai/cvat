@@ -90,26 +90,22 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
         }
 
         const array = Array.from(result);
-        const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
 
         // Appropriate tasks fetching proccess needs with retrieving only a single project
         if (Object.keys(filteredQuery).includes('id')) {
             const tasks: any[] = [];
-            const taskPreviewPromises: Promise<any>[] = [];
-
-            for (const project of array) {
-                taskPreviewPromises.push(
-                    ...(project as any).tasks.map((task: any): string => {
-                        tasks.push(task);
-                        return (task as any).frames.preview().catch(() => '');
-                    }),
-                );
-            }
+            const [project] = array;
+            const taskPreviewPromises: Promise<string>[] = (project as any).tasks.map((task: any): string => {
+                tasks.push(task);
+                return (task as any).frames.preview().catch(() => '');
+            });
 
             const taskPreviews = await Promise.all(taskPreviewPromises);
 
             const store = getCVATStore();
             const state: CombinedState = store.getState();
+
+            dispatch(projectActions.getProjectsSuccess(array, taskPreviews, result.count));
 
             if (!state.tasks.fetching) {
                 dispatch(
@@ -125,9 +121,10 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
                     }),
                 );
             }
+        } else {
+            const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
+            dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
         }
-
-        dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
     };
 }
 
