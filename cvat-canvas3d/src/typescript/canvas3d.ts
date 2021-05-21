@@ -12,6 +12,7 @@ import {
     ViewType,
     MouseInteraction,
     ShapeProperties,
+    GroupData,
 } from './canvas3dModel';
 import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
@@ -34,6 +35,7 @@ interface Canvas3d {
     configureShapes(shapeProperties: ShapeProperties): void;
     fitCanvas(): void;
     fit(): void;
+    group(groupData: GroupData): void;
 }
 
 class Canvas3dImpl implements Canvas3d {
@@ -69,6 +71,10 @@ class Canvas3dImpl implements Canvas3d {
 
     public mode(): Mode {
         return this.model.mode;
+    }
+
+    public group(groupData: GroupData): void {
+        this.model.group(groupData);
     }
 
     public isAbleToChangeFrame(): boolean {

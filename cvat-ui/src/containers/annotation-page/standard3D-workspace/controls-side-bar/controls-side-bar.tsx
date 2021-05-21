@@ -8,10 +8,12 @@ import { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
+    groupObjects,
     hideShowContextImage,
     pasteShapeAsync,
     redrawShapeAsync,
     repeatDrawShapeAsync,
+    resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard3D-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState } from 'reducers/interfaces';
@@ -31,6 +33,8 @@ interface DispatchToProps {
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
+    resetGroup(): void;
+    groupObjects(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -69,6 +73,12 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         pasteShape(): void {
             dispatch(pasteShapeAsync());
+        },
+        groupObjects(enabled: boolean): void {
+            dispatch(groupObjects(enabled));
+        },
+        resetGroup(): void {
+            dispatch(resetAnnotationsGroup());
         },
     };
 }

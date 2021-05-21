@@ -7,11 +7,12 @@ import Icon from '@ant-design/icons';
 
 import { GroupIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 export interface Props {
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
     switchGroupShortcut: string;
     resetGroupShortcut: string;

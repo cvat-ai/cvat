@@ -14,6 +14,11 @@ export interface ActiveElement {
     attributeID: number | null;
 }
 
+export interface GroupData {
+    enabled: boolean;
+    grouped?: [];
+}
+
 export interface Image {
     renderWidth: number;
     renderHeight: number;
@@ -36,7 +41,7 @@ export enum Planes {
     TOP = 'topPlane',
     SIDE = 'sidePlane',
     FRONT = 'frontPlane',
-    PERSPECTIVE = 'perspectivePlane'
+    PERSPECTIVE = 'perspectivePlane',
 }
 
 export enum ViewType {
@@ -99,14 +104,17 @@ export interface Canvas3dDataModel {
     mode: Mode;
     exception: Error | null;
     objects: any[];
+    groupedObjects: any[];
     focusData: FocusData;
     selected: any;
     shapeProperties: ShapeProperties;
+    groupData: GroupData;
 }
 
 export interface Canvas3dModel {
     mode: Mode;
     data: Canvas3dDataModel;
+    readonly groupData: GroupData;
     setup(frameData: any, objectStates: any[]): void;
     isAbleToChangeFrame(): boolean;
     draw(drawData: DrawData): void;
@@ -115,6 +123,7 @@ export interface Canvas3dModel {
     activate(clientID: string | null, attributeID: number | null): void;
     configureShapes(shapeProperties: any): void;
     fit(): void;
+    group(groupData: GroupData): void;
 }
 
 export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
@@ -132,6 +141,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 width: 0,
             },
             objects: [],
+            groupedObjects: [],
             image: null,
             imageID: null,
             imageOffset: 0,
@@ -147,6 +157,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             exception: null,
             focusData: {
                 clientID: null,
+            },
+            groupData: {
+                enabled: false,
+                grouped: [],
             },
             selected: null,
             shapeProperties: {
@@ -219,6 +233,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         if (drawData.enabled && this.data.drawData.enabled) {
             throw new Error('Drawing has been already started');
         }
+        if (this.data.mode === Mode.DRAW) {
+            return;
+        }
         this.data.drawData.enabled = drawData.enabled;
         this.data.mode = Mode.DRAW;
 
@@ -279,6 +296,23 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
+    public group(groupData: GroupData): void {
+        if (![Mode.IDLE, Mode.GROUP].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (this.data.groupData.enabled && groupData.enabled) {
+            return;
+        }
+
+        if (!this.data.groupData.enabled && !groupData.enabled) {
+            return;
+        }
+        this.data.mode = groupData.enabled ? Mode.GROUP : Mode.IDLE;
+        this.data.groupData = { ...this.data.groupData, ...groupData };
+        this.notify(UpdateReasons.GROUP);
+    }
+
     public configureShapes(shapeProperties: ShapeProperties): void {
         this.data.shapeProperties = {
             ...shapeProperties,
@@ -288,5 +322,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public fit(): void {
         this.notify(UpdateReasons.FITTED_CANVAS);
+    }
+
+    public get groupData(): GroupData {
+        return { ...this.data.groupData };
     }
 }
