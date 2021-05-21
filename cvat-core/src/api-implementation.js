@@ -238,6 +238,7 @@
             // prettier-ignore
             const projects = projectsData.map((project) => {
                 if (filter.withoutTasks) {
+                    project.task_ids = project.tasks;
                     project.tasks = [];
                 }
                 return project;

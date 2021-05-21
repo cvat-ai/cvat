@@ -31,8 +31,8 @@ export enum ProjectsActionTypes {
 // prettier-ignore
 const projectActions = {
     getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
-    getProjectsSuccess: (array: any[], count: number) => (
-        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
+    getProjectsSuccess: (array: any[], previews: string[], count: number) => (
+        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, previews, count })
     ),
     getProjectsFailed: (error: any) => createAction(ProjectsActionTypes.GET_PROJECTS_FAILED, { error }),
     updateProjectsGettingQuery: (query: Partial<ProjectsQuery>) => (
@@ -69,6 +69,12 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
             page: 1,
             ...query,
         };
+
+        // Check if we try to retrive single project of projects list
+        if (!Object.keys(filteredQuery).includes('id')) {
+            filteredQuery.withoutTasks = true;
+        }
+
         for (const key in filteredQuery) {
             if (filteredQuery[key] === null || typeof filteredQuery[key] === 'undefined') {
                 delete filteredQuery[key];
@@ -84,40 +90,44 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
         }
 
         const array = Array.from(result);
+        const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
 
-        const tasks: any[] = [];
-        const taskPreviewPromises: Promise<any>[] = [];
+        // Appropriate tasks fetching proccess needs with retrieving only a single project
+        if (Object.keys(filteredQuery).includes('id')) {
+            const tasks: any[] = [];
+            const taskPreviewPromises: Promise<any>[] = [];
 
-        for (const project of array) {
-            taskPreviewPromises.push(
-                ...(project as any).tasks.map((task: any): string => {
-                    tasks.push(task);
-                    return (task as any).frames.preview().catch(() => '');
-                }),
-            );
+            for (const project of array) {
+                taskPreviewPromises.push(
+                    ...(project as any).tasks.map((task: any): string => {
+                        tasks.push(task);
+                        return (task as any).frames.preview().catch(() => '');
+                    }),
+                );
+            }
+
+            const taskPreviews = await Promise.all(taskPreviewPromises);
+
+            const store = getCVATStore();
+            const state: CombinedState = store.getState();
+
+            if (!state.tasks.fetching) {
+                dispatch(
+                    getTasksSuccess(tasks, taskPreviews, tasks.length, {
+                        page: 1,
+                        assignee: null,
+                        id: null,
+                        mode: null,
+                        name: null,
+                        owner: null,
+                        search: null,
+                        status: null,
+                    }),
+                );
+            }
         }
 
-        const taskPreviews = await Promise.all(taskPreviewPromises);
-
-        dispatch(projectActions.getProjectsSuccess(array, result.count));
-
-        const store = getCVATStore();
-        const state: CombinedState = store.getState();
-
-        if (!state.tasks.fetching) {
-            dispatch(
-                getTasksSuccess(tasks, taskPreviews, tasks.length, {
-                    page: 1,
-                    assignee: null,
-                    id: null,
-                    mode: null,
-                    name: null,
-                    owner: null,
-                    search: null,
-                    status: null,
-                }),
-            );
-        }
+        dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
     };
 }
 

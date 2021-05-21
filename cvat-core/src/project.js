@@ -8,6 +8,7 @@
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
     const { Label } = require('./labels');
+    const { getPreview } = require('./frames');
     const User = require('./user');
 
     /**
@@ -34,6 +35,7 @@
                 updated_date: undefined,
                 task_subsets: undefined,
                 training_project: undefined,
+                task_ids: undefined,
             };
 
             for (const property in data) {
@@ -255,6 +257,22 @@
         }
 
         /**
+         * Get the first frame of the first task of a project for preview
+         * @method preview
+         * @memberof Project
+         * @returns {string} - jpeg encoded image
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.ArgumentError}
+         */
+        async preview() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.preview);
+            return result;
+        }
+
+        /**
          * Method updates data of a created project or creates new project from scratch
          * @method save
          * @returns {module:API.cvat.classes.Project}
@@ -330,5 +348,18 @@
     Project.prototype.delete.implementation = async function () {
         const result = await serverProxy.projects.delete(this.id);
         return result;
+    };
+
+    Project.prototype.preview.implementation = async function () {
+        let taskId;
+        if (this.tasks.length) {
+            taskId = this.tasks[0].id;
+        } else if (Array.isArray(this._internalData.task_ids) && this._internalData.task_ids.length) {
+            [taskId] = this._internalData.task_ids;
+        } else {
+            return '';
+        }
+        const frameData = await getPreview(taskId);
+        return frameData;
     };
 })();
