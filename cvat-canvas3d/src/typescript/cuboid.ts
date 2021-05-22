@@ -148,6 +148,7 @@ export function setTranslationHelper(instance: THREE.Mesh): void {
         helpers[i] = new THREE.Mesh(sphereGeometry.clone(), sphereMaterial.clone());
         helpers[i].position.set(vertices[i].x, vertices[i].y, vertices[i].z);
         helpers[i].up.set(0, 0, 1);
+        helpers[i].name = 'resizeHelper';
         instance.add(helpers[i]);
         helpers[i].scale.set(1 / instance.scale.x, 1 / instance.scale.y, 1 / instance.scale.z);
     }

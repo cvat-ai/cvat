@@ -78,6 +78,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private selected: CubeObject;
     private model: Canvas3dModel & Master;
     private action: any;
+    private globalHelpers: any;
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -95,6 +96,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.highlighted = false;
         this.selected = this.cube;
         this.model = model;
+        this.globalHelpers = {
+            top: {
+                resize: [],
+                rotate: [],
+            },
+            side: {
+                resize: [],
+                rotate: [],
+            },
+            front: {
+                resize: [],
+                rotate: [],
+            },
+        };
         this.action = {
             scan: null,
             frameCoordinates: {
@@ -109,6 +124,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 status: false,
                 helper: null,
                 coordinates: null,
+                offset: new THREE.Vector3(),
+                inverseMatrix: new THREE.Matrix4(),
             },
             rotation: {
                 status: false,
@@ -250,6 +267,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     intersects[0].object.material.color.set('#ffffff');
                 }
             } else if (this.mode === Mode.IDLE) {
+                if (intersects.length === 0) {
+                    this.setHelperVisibility(false);
+                }
                 this.dispatchEvent(
                     new CustomEvent('canvas.selected', {
                         bubbles: false,
@@ -398,6 +418,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     } else if (event.deltaY > CONST.FOV_MIN && camera.zoom > CONST.FOV_MIN + 0.1) {
                         camera.zoom -= CONST.FOV_INC;
                     }
+                    this.setHelperSize(view);
                 },
                 { passive: false },
             );
@@ -425,6 +446,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.top.camera.zoom = x1 / 100;
             this.views.top.camera.updateProjectionMatrix();
             this.views.top.camera.updateMatrix();
+            this.setHelperSize(ViewType.TOP);
 
             const canvasFront = this.views.top.renderer.domElement;
             const bboxfront = new THREE.Box3().setFromObject(this.model.data.selected.front);
@@ -435,6 +457,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.front.camera.zoom = x2 / 100;
             this.views.front.camera.updateProjectionMatrix();
             this.views.front.camera.updateMatrix();
+            this.setHelperSize(ViewType.FRONT);
 
             const canvasSide = this.views.side.renderer.domElement;
             const bboxside = new THREE.Box3().setFromObject(this.model.data.selected.side);
@@ -445,6 +468,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.side.camera.zoom = x3 / 100;
             this.views.side.camera.updateProjectionMatrix();
             this.views.side.camera.updateMatrix();
+            this.setHelperSize(ViewType.SIDE);
         }
     }
 
@@ -595,16 +619,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } = this.model.data.shapeProperties;
         const clientID = String(object.clientID);
         const cuboid = new CuboidModel(object.occluded ? 'dashed' : 'line', outlined ? outlineColor : '#ffffff');
-        if (object.hidden) {
-            return cuboid;
-        }
+
         cuboid.setName(clientID);
         cuboid.perspective.userData = object;
         let color = '';
         if (colorBy === 'Label') {
             ({ color } = object.label);
         } else if (colorBy === 'Instance') {
-            ({ color } = object.label);
+            ({ color } = object);
         } else {
             ({ color } = object.group);
         }
@@ -630,10 +652,17 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             setEdges(cuboid.front);
             this.translateReferencePlane(new THREE.Vector3(object.points[0], object.points[1], object.points[2]));
             this.model.data.selected = cuboid;
+            if (object.hidden) {
+                this.setHelperVisibility(false);
+                return cuboid;
+            }
         } else {
             cuboid.top.visible = false;
             cuboid.side.visible = false;
             cuboid.front.visible = false;
+        }
+        if (object.hidden) {
+            return cuboid;
         }
         cuboid.setPosition(object.points[0], object.points[1], object.points[2]);
         cuboid.setScale(object.points[6], object.points[7], object.points[8]);
@@ -647,6 +676,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.action.detachCam = true;
             if (!object.lock) {
                 this.setSelectedChildScale(1 / cuboid.top.scale.x, 1 / cuboid.top.scale.y, 1 / cuboid.top.scale.z);
+                this.setHelperVisibility(true);
+                this.updateRotationHelperPos();
+                this.updateResizeHelperPos();
+            } else {
+                this.setHelperVisibility(false);
             }
         }
         return cuboid;
@@ -655,6 +689,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private setupObjects(): void {
         if (this.views.perspective.scene.children[0]) {
             this.clearSceneObjects();
+            this.setHelperVisibility(false);
             for (let i = 0; i < this.model.data.objects.length; i++) {
                 const object = this.model.data.objects[i];
                 this.setupObject(object, true);
@@ -702,6 +737,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.setupObjects();
                 this.cube = this.setupObject(data.initialState, false);
             }
+            this.setHelperVisibility(false);
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
             this.setupObjects();
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
@@ -722,6 +758,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 });
             }
             this.model.data.groupData.grouped = [];
+            this.setHelperVisibility(false);
             this.mode = Mode.IDLE;
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
@@ -746,6 +783,88 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private clearSceneObjects(): void {
         Object.keys(this.views).forEach((view: string): void => {
             this.views[view as keyof Views].scene.children[0].children = [];
+        });
+    }
+
+    private setHelperVisibility(visibility: boolean): void {
+        [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((viewType: ViewType): void => {
+            const globalRotationObject = this.views[viewType].scene.getObjectByName('globalRotationHelper');
+            if (globalRotationObject) {
+                globalRotationObject.visible = visibility;
+            }
+            for (let i = 0; i < 8; i++) {
+                const resizeObject = this.views[viewType].scene.getObjectByName(`globalResizeHelper${i}`);
+                if (resizeObject) {
+                    resizeObject.visible = visibility;
+                }
+            }
+        });
+    }
+
+    private static setupRotationHelper(): THREE.Mesh {
+        const sphereGeometry = new THREE.SphereGeometry(0.15);
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1, visible: true });
+        const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        rotationHelper.name = 'globalRotationHelper';
+        return rotationHelper;
+    }
+
+    private updateRotationHelperPos(): void {
+        [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
+            const point = new THREE.Vector3(0, 0, 0);
+            this.model.data.selected[view].getObjectByName('rotationHelper').getWorldPosition(point);
+            const globalRotationObject = this.views[view].scene.getObjectByName('globalRotationHelper');
+            if (globalRotationObject) {
+                globalRotationObject.position.set(point.x, point.y, point.z);
+            }
+        });
+    }
+
+    private setHelperSize(viewType: ViewType): void {
+        if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
+            const { camera } = this.views[viewType];
+            if (!camera || camera instanceof THREE.PerspectiveCamera) return;
+            const factor = (camera.top - camera.bottom) / camera.zoom;
+            const rotationObject = this.views[viewType].scene.getObjectByName('globalRotationHelper');
+            if (rotationObject) {
+                rotationObject.scale.set(1, 1, 1).multiplyScalar(factor / 10);
+            }
+            for (let i = 0; i < 8; i++) {
+                const resizeObject = this.views[viewType].scene.getObjectByName(`globalResizeHelper${i}`);
+                if (resizeObject) {
+                    resizeObject.scale.set(1, 1, 1).multiplyScalar(factor / 10);
+                }
+            }
+        }
+    }
+
+    private setupResizeHelper(viewType: ViewType): void {
+        const sphereGeometry = new THREE.SphereGeometry(0.15);
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1, visible: true });
+        const helpers = [];
+        for (let i = 0; i < 8; i++) {
+            helpers[i] = new THREE.Mesh(sphereGeometry.clone(), sphereMaterial.clone());
+            helpers[i].name = `globalResizeHelper${i}`;
+            this.globalHelpers[viewType].resize.push(helpers[i]);
+            this.views[viewType].scene.add(helpers[i]);
+        }
+    }
+
+    private updateResizeHelperPos(): void {
+        [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
+            let i = 0;
+            this.model.data.selected[view].children.forEach((element: any): void => {
+                if (element.name === 'resizeHelper') {
+                    const p = new THREE.Vector3(0, 0, 0);
+                    element.getWorldPosition(p);
+                    const name = `globalResizeHelper${i}`;
+                    const object = this.views[view].scene.getObjectByName(name);
+                    if (object) {
+                        object.position.set(p.x, p.y, p.z);
+                    }
+                    i++;
+                }
+            });
         });
     }
 
@@ -779,6 +898,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.action.frameCoordinates = { x: newX, y: newY, z: newZ };
             this.positionAllViews(newX, newY, newZ, false);
         }
+
+        [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
+            this.globalHelpers[view].resize = [];
+            this.globalHelpers[view].rotation = [];
+        });
+
         this.views.perspective.scene.add(points.clone());
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
@@ -806,6 +931,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         material.size = 0.5;
         this.views.top.scene.add(points.clone());
         this.views.top.scene.add(topScenePlane);
+        const topRotationHelper = Canvas3dViewImpl.setupRotationHelper();
+        this.globalHelpers.top.rotation.push(topRotationHelper);
+        this.views.top.scene.add(topRotationHelper);
+        this.setupResizeHelper(ViewType.TOP);
         // Setup Side View
         const canvasSideView = this.views.side.renderer.domElement;
         const sideScenePlane = new THREE.Mesh(
@@ -830,6 +959,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (sideScenePlane as any).verticesNeedUpdate = true;
         this.views.side.scene.add(points.clone());
         this.views.side.scene.add(sideScenePlane);
+        const sideRotationHelper = Canvas3dViewImpl.setupRotationHelper();
+        this.globalHelpers.side.rotation.push(sideRotationHelper);
+        this.views.side.scene.add(sideRotationHelper);
+        this.setupResizeHelper(ViewType.SIDE);
         // Setup front View
         const canvasFrontView = this.views.front.renderer.domElement;
         const frontScenePlane = new THREE.Mesh(
@@ -854,6 +987,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (frontScenePlane as any).verticesNeedUpdate = true;
         this.views.front.scene.add(points.clone());
         this.views.front.scene.add(frontScenePlane);
+        const frontRotationHelper = Canvas3dViewImpl.setupRotationHelper();
+        this.globalHelpers.front.rotation.push(frontRotationHelper);
+        this.views.front.scene.add(frontRotationHelper);
+        this.setupResizeHelper(ViewType.FRONT);
+        this.setHelperVisibility(false);
         this.setupObjects();
     }
 
@@ -989,6 +1127,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         } else {
                             this.renderRotateAction(view as ViewType, viewType);
                         }
+                        this.updateRotationHelperPos();
+                        this.updateResizeHelperPos();
                     }
                 }
             }
@@ -1042,10 +1182,17 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const {
             perspective, top, side, front,
         } = this.model.data.selected;
-        perspective.position.copy(coordinates.clone());
-        top.position.copy(coordinates.clone());
-        side.position.copy(coordinates.clone());
-        front.position.copy(coordinates.clone());
+        let localCoordinates = coordinates;
+        if (this.action.translation.status) {
+            localCoordinates = coordinates
+                .clone()
+                .sub(this.action.translation.offset)
+                .applyMatrix4(this.action.translation.inverseMatrix);
+        }
+        perspective.position.copy(localCoordinates.clone());
+        top.position.copy(localCoordinates.clone());
+        side.position.copy(localCoordinates.clone());
+        front.position.copy(localCoordinates.clone());
     }
 
     private setSelectedChildScale(x: number, y: number, z: number): void {
@@ -1510,9 +1657,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private initiateAction(view: string, viewType: any): void {
         const intersectsHelperResize = viewType.rayCaster.renderer.intersectObjects(
-            this.model.data.selected[view].userData.resizeHelpers,
+            this.globalHelpers[view].resize,
             false,
         );
+        const [state] = this.model.data.objects.filter(
+            (_state: any): boolean => _state.clientID === Number(this.model.data.selected[view].name),
+        );
+        if (state.lock) return;
 
         if (intersectsHelperResize.length !== 0) {
             this.action.resize.helper = viewType.rayCaster.mouseVector.clone();
@@ -1529,7 +1680,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             return;
         }
         const intersectsHelperRotation = viewType.rayCaster.renderer.intersectObjects(
-            [this.model.data.selected[view].getObjectByName('rotationHelper')],
+            this.globalHelpers[view].rotation,
             false,
         );
         if (intersectsHelperRotation.length !== 0) {
@@ -1542,13 +1693,22 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.attachCamera(view as ViewType);
             return;
         }
+
         const intersectsBox = viewType.rayCaster.renderer.intersectObjects([this.model.data.selected[view]], false);
+        const intersectsPointCloud = viewType.rayCaster.renderer.intersectObjects(
+            [viewType.scene.getObjectByName(`${view}Plane`)],
+            true,
+        );
         if (intersectsBox.length !== 0) {
-            const [state] = this.model.data.objects.filter(
-                (_state: any): boolean => _state.clientID === Number(this.model.data.selected[view].name),
-            );
+            // const [state] = this.model.data.objects.filter(
+            //     (_state: any): boolean => _state.clientID === Number(this.model.data.selected[view].name),
+            // );
             if (state.pinned) return;
             this.action.translation.helper = viewType.rayCaster.mouseVector.clone();
+            this.action.translation.inverseMatrix = intersectsBox[0].object.parent.matrixWorld.invert();
+            this.action.translation.offset = intersectsPointCloud[0].point.sub(
+                new THREE.Vector3().setFromMatrixPosition(intersectsBox[0].object.matrixWorld),
+            );
             this.action.translation.status = true;
             this.action.detected = true;
             this.views.top.controls.enabled = false;
