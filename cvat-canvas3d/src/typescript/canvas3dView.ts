@@ -120,6 +120,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             detected: false,
             initialMouseVector: new THREE.Vector2(),
             detachCam: false,
+            detachCamRef: 'null',
             translation: {
                 status: false,
                 helper: null,
@@ -674,6 +675,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             cuboid.attachCameraReference();
             this.rotatePlane(null, null);
             this.action.detachCam = true;
+            this.action.detachCamRef = this.model.data.activeElement.clientID;
             if (!object.lock) {
                 this.setSelectedChildScale(1 / cuboid.top.scale.x, 1 / cuboid.top.scale.y, 1 / cuboid.top.scale.z);
                 this.setHelperVisibility(true);
@@ -1133,7 +1135,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             }
         });
-        if (this.action.detachCam) {
+        if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
             this.detachCamera(null);
             this.action.detachCam = false;
         }
