@@ -87,8 +87,8 @@ class AnnotationIR:
                 else:
                     break
             # Need to leave the last shape if all shapes are outside
-            if drop_count == len(shapes):
-                drop_count -= 1
+            # if drop_count == len(shapes):
+            #     drop_count -= 1
 
             return shapes[drop_count:]
 
@@ -103,8 +103,12 @@ class AnnotationIR:
             if scoped_shapes:
                 if not scoped_shapes[0]['keyframe']:
                     segment_shapes.insert(0, scoped_shapes[0])
-                if not scoped_shapes[-1]['keyframe']:
+                if not scoped_shapes[-1]['keyframe'] and \
+                        scoped_shapes[-1]['outside']:
                     segment_shapes.append(scoped_shapes[-1])
+                elif stop + 1 < len(interpolated_shapes) and \
+                        interpolated_shapes[stop + 1]['outside']:
+                    segment_shapes.append(interpolated_shapes[stop + 1])
 
             # Should delete 'interpolation_shapes' and 'keyframe' keys because
             # Track and TrackedShape models don't expect these fields
@@ -112,9 +116,10 @@ class AnnotationIR:
             for shape in segment_shapes:
                 shape.pop('keyframe', None)
 
-        track['shapes'] = segment_shapes
-        track['frame'] = track['shapes'][0]['frame']
-        return track
+        if 0 < len(segment_shapes):
+            track['shapes'] = segment_shapes
+            track['frame'] = track['shapes'][0]['frame']
+            return track
 
     def slice(self, start, stop):
         #makes a data copy from specified frame interval
@@ -123,8 +128,13 @@ class AnnotationIR:
             for t in self.tags if self._is_shape_inside(t, start, stop)]
         splitted_data.shapes = [deepcopy(s)
             for s in self.shapes if self._is_shape_inside(s, start, stop)]
-        splitted_data.tracks = [self._slice_track(t, start, stop)
-            for t in self.tracks if self._is_track_inside(t, start, stop)]
+        splitted_tracks = []
+        for t in self.tracks:
+            if self._is_track_inside(t, start, stop):
+                track = self._slice_track(t, start, stop)
+                if track != None:
+                    splitted_tracks.append(track)
+        splitted_data.tracks = splitted_tracks
 
         return splitted_data
 
