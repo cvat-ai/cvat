@@ -117,13 +117,11 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => {
-                        if (project.id === action.payload.project.id) {
-                            return action.payload.project;
-                        }
-
-                        return project;
-                    },
+                    (project): Project => ({
+                        ...project,
+                        instance: project.instance.id === action.payload.project.id ?
+                            action.payload.project : project.instance,
+                    }),
                 ),
             };
         }
@@ -131,13 +129,11 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => {
-                        if (project.id === action.payload.project.id) {
-                            return action.payload.project;
-                        }
-
-                        return project;
-                    },
+                    (project): Project => ({
+                        ...project,
+                        instance: project.instance.id === action.payload.project.id ?
+                            action.payload.project : project.instance,
+                    }),
                 ),
             };
         }
