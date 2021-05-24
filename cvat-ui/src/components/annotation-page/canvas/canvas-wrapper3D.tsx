@@ -17,7 +17,7 @@ import {
     CameraAction, Canvas3d, ViewType, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
-import ContextImage from 'components/annotation-page/standard3D-workspace/context-image/context-image';
+import ContextImage from 'components/annotation-page/standard-workspace/context-image/context-image';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { LogType } from 'cvat-logger';
 import getCore from 'cvat-core-wrapper';
@@ -34,9 +34,6 @@ interface Props {
     jobInstance: any;
     frameData: any;
     curZLayer: number;
-    contextImageHide: boolean;
-    loaded: boolean;
-    data: string;
     annotations: any[];
     contextMenuVisibility: boolean;
     activeLabelID: number;
@@ -44,7 +41,6 @@ interface Props {
     activeObjectType: ObjectType;
     onSetupCanvas: () => void;
     onGroupObjects: (enabled: boolean) => void;
-    getContextImage(): void;
     onResetCanvas(): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onActivateObject(activatedStateID: number | null): void;
@@ -183,10 +179,6 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         frameData,
         onResetCanvas,
         onSetupCanvas,
-        contextImageHide,
-        getContextImage,
-        loaded,
-        data,
         annotations,
         frame,
         jobInstance,
@@ -507,13 +499,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
     return (
         <Layout.Content className='cvat-canvas3d-fullsize' id='canvas3d-container'>
-            <ContextImage
-                frame={frameData}
-                contextImageHide={contextImageHide}
-                getContextImage={getContextImage}
-                loaded={loaded}
-                data={data}
-            />
+            <ContextImage />
             <ResizableBox
                 className='cvat-resizable'
                 width={Infinity}

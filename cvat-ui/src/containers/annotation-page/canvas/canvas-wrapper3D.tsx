@@ -11,7 +11,6 @@ import {
     createAnnotationsAsync,
     dragCanvas,
     editShape,
-    getContextImage,
     groupAnnotationsAsync,
     groupObjects,
     resetCanvas,
@@ -39,9 +38,6 @@ interface StateToProps {
     jobInstance: any;
     frameData: any;
     curZLayer: number;
-    contextImageHide: boolean;
-    loaded: boolean;
-    data: string;
     annotations: any[];
     sidebarCollapsed: boolean;
     activatedStateID: number | null;
@@ -84,7 +80,6 @@ interface StateToProps {
 interface DispatchToProps {
     onDragCanvas: (enabled: boolean) => void;
     onSetupCanvas(): void;
-    getContextImage(): void;
     onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -108,7 +103,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance },
             player: {
                 frame: { data: frameData, number: frame, fetching: frameFetching },
-                contextImage: { hidden: contextImageHide, data, loaded },
                 frameAngles,
             },
             annotations: {
@@ -149,9 +143,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         frameData,
         curZLayer,
-        contextImageHide,
-        loaded,
-        data,
         contextMenuVisibility,
         annotations,
         sidebarCollapsed,
@@ -203,9 +194,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSetupCanvas(): void {
             dispatch(confirmCanvasReady());
-        },
-        getContextImage(): void {
-            dispatch(getContextImage());
         },
         onResetCanvas(): void {
             dispatch(resetCanvas());
