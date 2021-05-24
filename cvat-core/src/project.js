@@ -351,15 +351,10 @@
     };
 
     Project.prototype.preview.implementation = async function () {
-        let taskId;
-        if (this.tasks.length) {
-            taskId = this.tasks[0].id;
-        } else if (Array.isArray(this._internalData.task_ids) && this._internalData.task_ids.length) {
-            [taskId] = this._internalData.task_ids;
-        } else {
+        if (!this._internalData.task_ids.length) {
             return '';
         }
-        const frameData = await getPreview(taskId);
+        const frameData = await getPreview(this._internalData.task_ids[0]);
         return frameData;
     };
 })();

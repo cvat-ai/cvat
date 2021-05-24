@@ -5,9 +5,8 @@
 import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ProjectsQuery, CombinedState } from 'reducers/interfaces';
+import { ProjectsQuery } from 'reducers/interfaces';
 import { getTasksSuccess, updateTaskSuccess } from 'actions/tasks-actions';
-import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
@@ -60,7 +59,7 @@ const projectActions = {
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
 export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         dispatch(projectActions.getProjects());
         dispatch(projectActions.updateProjectsGettingQuery(query));
 
@@ -69,11 +68,6 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
             page: 1,
             ...query,
         };
-
-        // Check if we try to retrive single project of projects list
-        if (!Object.keys(filteredQuery).includes('id')) {
-            filteredQuery.withoutTasks = true;
-        }
 
         for (const key in filteredQuery) {
             if (filteredQuery[key] === null || typeof filteredQuery[key] === 'undefined') {
@@ -102,8 +96,7 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
 
             const taskPreviews = await Promise.all(taskPreviewPromises);
 
-            const store = getCVATStore();
-            const state: CombinedState = store.getState();
+            const state = getState();
 
             dispatch(projectActions.getProjectsSuccess(array, taskPreviews, result.count));
 
