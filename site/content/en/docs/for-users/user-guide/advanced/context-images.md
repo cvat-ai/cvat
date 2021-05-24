@@ -4,8 +4,6 @@ linkTitle: "Context images"
 weight: 12.5
 ---
 
-## Context images for 2d task
-
 When you create a task, you can provide the images with additional contextual images. 
 To do this, create a folder related_images and place a folder with a contextual image in it (make sure the folder has the same name as the image to which it should be tied). 
 An example of the structure:
