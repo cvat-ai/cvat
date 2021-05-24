@@ -35,7 +35,9 @@ keypoint lists (without the `visibility` COCO flag).
 
 #### COCO import
 
-Uploaded file: a single unpacked `*.json` or a zip archive with the [decribed structure](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/formats/coco_user_manual.md#load-coco-dataset) (without images).
+Uploaded file: a single unpacked `*.json` or a zip archive with the structure described
+[here](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/formats/coco_user_manual.md#load-coco-dataset)
+(without images).
 
 - supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 
