@@ -86,9 +86,6 @@ class AnnotationIR:
                     drop_count += 1
                 else:
                     break
-            # Need to leave the last shape if all shapes are outside
-            # if drop_count == len(shapes):
-            #     drop_count -= 1
 
             return shapes[drop_count:]
 
