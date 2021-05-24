@@ -4,12 +4,10 @@
 
 import { connect } from 'react-redux';
 import { KeyMap } from 'utils/mousetrap-react';
-
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     groupObjects,
-    hideShowContextImage,
     pasteShapeAsync,
     redrawShapeAsync,
     repeatDrawShapeAsync,
@@ -23,13 +21,11 @@ interface StateToProps {
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    contextImageHide: boolean;
-    loaded: boolean;
     labels: any[];
+    jobInstance: any;
 }
 
 interface DispatchToProps {
-    hideShowContextImage(hidden: boolean): void;
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
@@ -41,10 +37,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
-            job: { labels },
-            player: {
-                contextImage: { hidden: contextImageHide, loaded },
-            },
+            job: { labels, instance: jobInstance },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -54,17 +47,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
         normalizedKeyMap,
         keyMap,
-        contextImageHide,
-        loaded,
         labels,
+        jobInstance,
     };
 }
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        hideShowContextImage(hidden: boolean): void {
-            dispatch(hideShowContextImage(hidden));
-        },
         repeatDrawShape(): void {
             dispatch(repeatDrawShapeAsync());
         },

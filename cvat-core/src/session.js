@@ -16,6 +16,7 @@
     const User = require('./user');
     const Issue = require('./issue');
     const Review = require('./review');
+    const { FieldUpdateTrigger } = require('./common');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -734,11 +735,11 @@
                 task: undefined,
             };
 
-            let updatedFields = {
+            const updatedFields = new FieldUpdateTrigger({
                 assignee: false,
                 reviewer: false,
                 status: false,
-            };
+            });
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property)) {
@@ -865,9 +866,6 @@
                     },
                     __updatedFields: {
                         get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
                     },
                 }),
             );
@@ -1040,13 +1038,14 @@
                 dimension: undefined,
             };
 
-            let updatedFields = {
+            const updatedFields = new FieldUpdateTrigger({
                 name: false,
                 assignee: false,
                 bug_tracker: false,
                 subset: false,
                 labels: false,
-            };
+                project_id: false,
+            });
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -1126,11 +1125,18 @@
                      * @name projectId
                      * @type {integer|null}
                      * @memberof module:API.cvat.classes.Task
-                     * @readonly
                      * @instance
                      */
                     projectId: {
                         get: () => data.project_id,
+                        set: (projectId) => {
+                            if (!Number.isInteger(projectId) || projectId <= 0) {
+                                throw new ArgumentError('Value must be a positive integer');
+                            }
+
+                            updatedFields.project_id = true;
+                            data.project_id = projectId;
+                        },
                     },
                     /**
                      * @name status
@@ -1558,9 +1564,6 @@
                     },
                     __updatedFields: {
                         get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
                     },
                 }),
             );
@@ -1721,11 +1724,7 @@
 
             await serverProxy.jobs.save(this.id, jobData);
 
-            this.__updatedFields = {
-                status: false,
-                assignee: false,
-                reviewer: false,
-            };
+            this.__updatedFields.reset();
 
             return this;
         }
@@ -2000,6 +1999,9 @@
                     case 'subset':
                         taskData.subset = this.subset;
                         break;
+                    case 'project_id':
+                        taskData.project_id = this.projectId;
+                        break;
                     case 'labels':
                         taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
                         break;
@@ -2011,13 +2013,7 @@
 
             await serverProxy.tasks.saveTask(this.id, taskData);
 
-            this.updatedFields = {
-                assignee: false,
-                name: false,
-                bugTracker: false,
-                subset: false,
-                labels: false,
-            };
+            this.__updatedFields.reset();
 
             return this;
         }

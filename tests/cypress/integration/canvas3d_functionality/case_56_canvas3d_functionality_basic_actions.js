@@ -57,10 +57,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
     }
 
     function testContextImage() {
-        cy.get('.cvat-contextImage-show').should('exist').and('be.visible');
-        cy.get('[data-icon="camera"]').click(); // Context image hide
-        cy.get('.cvat-contextImage-show').should('not.exist');
-        cy.get('[data-icon="camera"]').click(); // Context image show
+        cy.get('.cvat-context-image-wrapper img').should('exist').and('be.visible');
+        cy.get('.cvat-context-image-switcher').click(); // Context image hide
+        cy.get('.cvat-context-image-wrapper img').should('not.exist');
+        cy.get('.cvat-context-image-switcher').click(); // Context image show
     }
 
     function testControlButtonTooltip(button, expectedTooltipText) {
@@ -114,12 +114,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
                     cy.get('.cvat-move-control').should('exist').and('be.visible');
                     cy.get('.cvat-cursor-control').should('exist').and('be.visible');
                     cy.get('.cvat-draw-cuboid-control').should('exist').and('be.visible');
-                    cy.get('.cvat-context-image-control').should('exist').and('be.visible');
                 });
             [
                 ['.cvat-move-control', 'Move the image'],
                 ['.cvat-cursor-control', 'Cursor [Esc]'],
-                ['.cvat-context-image-control', 'Photo context show/hide']
             ].forEach(([button, tooltip]) => {
                 testControlButtonTooltip(button, tooltip);
             });

@@ -13,18 +13,18 @@ annotate million of objects with different properties. Many UI
 and UX decisions are based on feedbacks from professional data
 annotation team. Try it online [cvat.org](https://cvat.org).
 
-![CVAT screenshot](cvat/apps/documentation/static/documentation/images/cvat.jpg)
+![CVAT screenshot](site/content/en/images/cvat.jpg)
 
 ## Documentation
 
-- [Installation guide](cvat/apps/documentation/installation.md)
-- [User's guide](cvat/apps/documentation/user_guide.md)
+- [Installation guide](site/content/en/docs/for-users/installation.md)
+- [User's guide](https://openvinotoolkit.github.io/cvat/docs/for-users/user-guide/)
 - [Django REST API documentation](#rest-api)
 - [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
-- [Command line interface](utils/cli/)
-- [XML annotation format](cvat/apps/documentation/xml_format.md)
-- [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
-- [Frequently asked questions](cvat/apps/documentation/faq.md)
+- [Command line interface](site/content/en/docs/for-developers/cli.md)
+- [XML annotation format](site/content/en/docs/for-developers/xml_format.md)
+- [AWS Deployment Guide](site/content/en/docs/for-developers/AWS-Deployment-Guide.md)
+- [Frequently asked questions](site/content/en/docs/for-users/faq.md)
 - [Questions](#questions)
 
 ## Screencasts
@@ -97,7 +97,7 @@ are visible to users.
 
 Disabled features:
 
-- [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
+- [Analytics: management and monitoring of data annotation team](site/content/en/docs/for-developers/analytics.md)
 
 Limitations:
 
@@ -164,7 +164,7 @@ Other ways to ask questions and get our support:
   vision AI platform that fully integrates CVAT with scalable data processing
   and parallelized training pipelines.
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
-to offer annotation services for projects of any size. 
+  to offer annotation services for projects of any size.
 
 <!-- prettier-ignore-start -->
 <!-- Badges -->

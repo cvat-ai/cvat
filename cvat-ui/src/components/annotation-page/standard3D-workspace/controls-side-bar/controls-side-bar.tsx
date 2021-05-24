@@ -5,8 +5,7 @@
 import React from 'react';
 import Layout from 'antd/lib/layout';
 import { ActiveControl } from 'reducers/interfaces';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 import MoveControl, {
     Props as MoveControlProps,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/move-control';
@@ -21,16 +20,14 @@ import GroupControl, {
 } from 'components/annotation-page/standard-workspace/controls-side-bar/group-control';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
-import PhotoContextControl from './photo-context';
 
 interface Props {
     keyMap: KeyMap;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas;
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
-    contextImageHide: boolean;
-    hideShowContextImage: (hidden: boolean) => void;
     labels: any[];
+    jobInstance: any;
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
@@ -49,14 +46,13 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         pasteShape,
         activeControl,
         normalizedKeyMap,
-        contextImageHide,
-        hideShowContextImage,
         keyMap,
         labels,
         redrawShape,
         repeatDrawShape,
         groupObjects,
         resetGroup,
+        jobInstance,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -144,13 +140,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
                 disabled={!labels.length}
             />
-            <PhotoContextControl
-                canvasInstance={canvasInstance}
-                activeControl={activeControl}
-                contextImageHide={contextImageHide}
-                hideShowContextImage={hideShowContextImage}
-            />
-            <hr />
             <ObservedGroupControl
                 switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
                 resetGroupShortcut={normalizedKeyMap.RESET_GROUP}
@@ -158,6 +147,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 activeControl={activeControl}
                 groupObjects={groupObjects}
                 disabled={!labels.length}
+                jobInstance={jobInstance}
             />
         </Layout.Sider>
     );

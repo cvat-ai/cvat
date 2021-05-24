@@ -74,6 +74,10 @@ export interface TasksState {
     fetching: boolean;
     updating: boolean;
     hideEmpty: boolean;
+    moveTask: {
+        modalVisible: boolean;
+        taskId: number | null;
+    };
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -245,6 +249,7 @@ export interface NotificationsState {
             exporting: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            moving: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -269,6 +274,7 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
+            contextImageFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;
             creating: null | ErrorState;
@@ -309,6 +315,7 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            movingDone: string;
         };
         models: {
             inferenceDone: string;
@@ -417,6 +424,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
+            hasRelatedContext: boolean;
             data: any | null;
             fetching: boolean;
             delay: number;
@@ -425,8 +433,8 @@ export interface AnnotationState {
         playing: boolean;
         frameAngles: number[];
         contextImage: {
-            loaded: boolean;
-            data: string;
+            fetching: boolean;
+            data: string | null;
             hidden: boolean;
         };
     };
