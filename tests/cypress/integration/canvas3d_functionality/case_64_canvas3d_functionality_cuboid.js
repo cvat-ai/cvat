@@ -59,6 +59,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
 
         it('Top/side/front views should be changed afer dblclick on the cuboid on perspective view because of the drawing of the cuboid.', () => {
             cy.get('.cvat-canvas3d-perspective').dblclick(); // Dblclick on the cuboid
+            cy.wait(1000);
             // On the perspective view the cuboid should change a color also.
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_dblclick_on_cuboid');
             cy.compareImagesAndCheckResult(
