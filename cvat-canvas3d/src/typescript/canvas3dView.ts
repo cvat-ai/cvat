@@ -452,8 +452,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const canvasFront = this.views.top.renderer.domElement;
             const bboxfront = new THREE.Box3().setFromObject(this.model.data.selected.front);
             const x2 = Math.min(
-                canvasFront.offsetWidth / (bboxfront.max.x - bboxfront.min.x),
-                canvasFront.offsetHeight / (bboxfront.max.y - bboxfront.min.y),
+                canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
+                canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
             ) * 0.4;
             this.views.front.camera.zoom = x2 / 100;
             this.views.front.camera.updateProjectionMatrix();
@@ -464,7 +464,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const bboxside = new THREE.Box3().setFromObject(this.model.data.selected.side);
             const x3 = Math.min(
                 canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
-                canvasSide.offsetHeight / (bboxside.max.y - bboxside.min.y),
+                canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
             ) * 0.4;
             this.views.side.camera.zoom = x3 / 100;
             this.views.side.camera.updateProjectionMatrix();

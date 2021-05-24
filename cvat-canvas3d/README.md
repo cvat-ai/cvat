@@ -39,6 +39,7 @@ interface Canvas3d {
   configureShapes(shapeProperties: ShapeProperties): void;
   fitCanvas(): void;
   fit(): void;
+  group(groupData: GroupData): void;
 }
 ```
 

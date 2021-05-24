@@ -26,6 +26,7 @@ interface StateToProps {
     contextImageHide: boolean;
     loaded: boolean;
     labels: any[];
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -41,7 +42,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
-            job: { labels },
+            job: { labels, instance: jobInstance },
             player: {
                 contextImage: { hidden: contextImageHide, loaded },
             },
@@ -57,6 +58,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contextImageHide,
         loaded,
         labels,
+        jobInstance,
     };
 }
 

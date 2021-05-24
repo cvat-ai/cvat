@@ -31,6 +31,7 @@ interface Props {
     contextImageHide: boolean;
     hideShowContextImage: (hidden: boolean) => void;
     labels: any[];
+    jobInstance: any;
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
@@ -57,6 +58,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         repeatDrawShape,
         groupObjects,
         resetGroup,
+        jobInstance,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -158,6 +160,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 activeControl={activeControl}
                 groupObjects={groupObjects}
                 disabled={!labels.length}
+                jobInstance={jobInstance}
             />
         </Layout.Sider>
     );
