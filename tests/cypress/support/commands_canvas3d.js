@@ -4,8 +4,8 @@
 
 /// <reference types="cypress" />
 
-Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage) => {
+Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noChangesExpected) => {
     cy.compareImages(baseImage, afterImage).then((diffPercent) => {
-        expect(diffPercent).to.be.gt(0);
+        noChangesExpected ? expect(diffPercent).to.be.eq(0) : expect(diffPercent).to.be.gt(0);
     });
 });

@@ -24,6 +24,8 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 .screenshot(`canvas3d_${view}_before_all`);
         });
         cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
+        cy.get('.cvat-draw-cuboid-popover-visible').find('[type="search"]').click({force: true});
+        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').find(`[title="${labelName}"]`).click();
         cy.get('.cvat-draw-cuboid-popover-visible').find('button').click();
         cy.get('.cvat-canvas3d-perspective').dblclick();
     });
@@ -53,7 +55,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
             });
         });
 
-        it('Change a lable via sidear.', () => {
+        it('Change a label via sidear.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .type(`${secondLabel}{Enter}`)
@@ -170,6 +172,10 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
             ].forEach(([viewAfterCubiodHide, viewAfterCubiodUnhide]) => {
                 cy.compareImagesAndCheckResult(`${screenshotsPath}/${viewAfterCubiodHide}`, `${screenshotsPath}/${viewAfterCubiodUnhide}`);
             });
+        });
+
+        it.skip('Switch pinned property for a cuboid via sidear. The cuboid can be resized but cannot be moved.', () => {
+            // TODO
         });
     });
 });
