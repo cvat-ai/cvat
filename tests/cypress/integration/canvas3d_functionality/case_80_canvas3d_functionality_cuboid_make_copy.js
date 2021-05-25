@@ -9,17 +9,16 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Make a copy.', () => {
     const caseId = '80';
     const secondLabel = `${labelName} car`
+    const cuboidCreationParams = {
+        labelName: labelName,
+    };
 
     before(() => {
         cy.openTask(taskName)
         cy.addNewLabel(secondLabel);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
-        cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
-        cy.get('.cvat-draw-cuboid-popover-visible').find('[type="search"]').click({force: true});
-        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').find(`[title="${labelName}"]`).click();
-        cy.get('.cvat-draw-cuboid-popover-visible').find('button').click();
-        cy.get('.cvat-canvas3d-perspective').dblclick();
+        cy.create3DCuboid(cuboidCreationParams);
     });
 
     describe(`Testing case "${caseId}"`, () => {

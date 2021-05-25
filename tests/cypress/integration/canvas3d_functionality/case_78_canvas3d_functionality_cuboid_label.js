@@ -11,6 +11,9 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
     const secondLabel = `${labelName} car`
 
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_78_canvas3d_functionality_cuboid_label.js';
+    const cuboidCreationParams = {
+        labelName: labelName,
+    };
 
     before(() => {
         cy.openTask(taskName)
@@ -23,11 +26,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 .find('.cvat-canvas3d-fullsize')
                 .screenshot(`canvas3d_${view}_before_all`);
         });
-        cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
-        cy.get('.cvat-draw-cuboid-popover-visible').find('[type="search"]').click({force: true});
-        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').find(`[title="${labelName}"]`).click();
-        cy.get('.cvat-draw-cuboid-popover-visible').find('button').click();
-        cy.get('.cvat-canvas3d-perspective').dblclick();
+        cy.create3DCuboid(cuboidCreationParams);
     });
 
     describe(`Testing case "${caseId}"`, () => {
