@@ -113,10 +113,10 @@ class AnnotationIR:
             for shape in segment_shapes:
                 shape.pop('keyframe', None)
 
+        track['shapes'] = segment_shapes
         if 0 < len(segment_shapes):
-            track['shapes'] = segment_shapes
             track['frame'] = track['shapes'][0]['frame']
-            return track
+        return track
 
     def slice(self, start, stop):
         #makes a data copy from specified frame interval
@@ -129,7 +129,7 @@ class AnnotationIR:
         for t in self.tracks:
             if self._is_track_inside(t, start, stop):
                 track = self._slice_track(t, start, stop)
-                if track != None:
+                if 0 < len(track['shapes']):
                     splitted_tracks.append(track)
         splitted_data.tracks = splitted_tracks
 
