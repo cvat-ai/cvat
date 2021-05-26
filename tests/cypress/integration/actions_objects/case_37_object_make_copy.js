@@ -102,7 +102,7 @@ context('Object make a copy.', () => {
                 cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
                     cy.get('[aria-label="more"]').trigger('mouseover').wait(300); // Wait dropdown menu transition
                 });
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the tast element from cvat-object-item-menu array
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the last element from cvat-object-item-menu array
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click();
                 coordX += 100;
@@ -145,7 +145,7 @@ context('Object make a copy.', () => {
                     .find('[aria-label="more"]')
                     .trigger('mouseover')
                     .wait(300); // Wait dropdown menu transition;
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the tast element from cvat-object-item-menu array
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the last element from cvat-object-item-menu array
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click(); // Deactivate all objects and hide context menu
                 coordX += 100;

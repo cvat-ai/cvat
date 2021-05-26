@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -211,7 +211,7 @@ describe('Feature: put annotations', () => {
         expect(task.annotations.put([state1])).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
-    test('put shape without points and with invalud points to a task', async () => {
+    test('put shape without points and with invalid points to a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
         const state = new window.cvat.classes.ObjectState({

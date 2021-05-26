@@ -18,7 +18,7 @@ weight: 6
   - `occluded` (both UI option and a separate attribute)
   - `truncated` and `difficult` (should be defined for labels as `checkbox` -es)
   - action attributes (import only, should be defined as `checkbox` -es)
-  - arbitrary attributes (in the `attributes` secion of XML files)
+  - arbitrary attributes (in the `attributes` section of XML files)
 
 #### Pascal VOC export
 

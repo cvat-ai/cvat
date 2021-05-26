@@ -55,7 +55,7 @@ context('Mutable attribute.', () => {
             testChangingAttributeValue(attrValueSecondFrame, attrValueThirdFrame);
         });
 
-        it('Go to Standard mode. The object detaild have correct values on the corresponding frames.', () => {
+        it('Go to Standard mode. The object details have correct values on the corresponding frames.', () => {
             cy.changeWorkspace('Standard');
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove', { scrollBehavior: false })

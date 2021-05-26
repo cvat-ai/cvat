@@ -40,8 +40,8 @@ def create(tid, data):
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
-    splitted = job.id.split('/')
-    tid = int(splitted[splitted.index('tasks') + 1])
+    split = job.id.split('/')
+    tid = int(split[split.index('tasks') + 1])
     try:
         db_task = models.Task.objects.select_for_update().get(pk=tid)
         with open(db_task.get_log_path(), "wt") as log_file:

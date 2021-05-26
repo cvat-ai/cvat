@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -451,7 +451,7 @@ RESTRICTIONS = {
     # this setting limits the number of projects for the user
     'project_limit': None,
 
-    # this setting reduse task visibility to owner and assignee only
+    # this setting reduces task visibility to owner and assignee only
     'reduce_task_visibility': False,
 
     # allow access to analytics component to users with the following roles

@@ -17,7 +17,7 @@ import GlobalErrorBoundary from 'components/global-error-boundary/global-error-b
 import Header from 'components/header/header';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
-import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
+import ShortcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import ProjectsPageComponent from 'components/projects-page/projects-page';
 import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
 import ProjectPageComponent from 'components/project-page/project-page';
@@ -307,7 +307,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Layout>
                             <Header />
                             <Layout.Content style={{ height: '100%' }}>
-                                <ShorcutsDialog />
+                                <ShortcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
                                         <Route exact path='/projects' component={ProjectsPageComponent} />

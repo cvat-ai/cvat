@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -177,7 +177,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                                     Math.sign(landmarks[1] - landmarks[0]) *
                                     Math.sign(landmarks[2] - landmarks[1]);
 
-                                // go via a polygon and get vertexes
+                                // go via a polygon and get vertices
                                 // the first vertex has been already drawn
                                 const way = [];
                                 for (let i = landmarks[0] + sign; ; i += sign) {

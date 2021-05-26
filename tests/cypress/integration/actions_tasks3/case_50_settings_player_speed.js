@@ -10,7 +10,7 @@ context('Settings. "Player speed" option.', () => {
     const caseId = '50';
 
     let timeBeforePlay = 0;
-    let timeAferPlay = 0;
+    let timeAfterPlay = 0;
     let durationSlower = 0;
     let durationFastest = 0;
     let durationFast = 0;
@@ -41,8 +41,8 @@ context('Settings. "Player speed" option.', () => {
             cy.get('.cvat-player-filename-wrapper')
                 .should('have.text', `${imageFileName}_28.png`)
                 .then(() => {
-                    timeAferPlay = Date.now();
-                    durationSlower = timeAferPlay - timeBeforePlay;
+                    timeAfterPlay = Date.now();
+                    durationSlower = timeAfterPlay - timeBeforePlay;
                 });
             cy.goCheckFrameNumber(0);
         });
@@ -55,8 +55,8 @@ context('Settings. "Player speed" option.', () => {
             cy.get('.cvat-player-filename-wrapper')
                 .should('have.text', `${imageFileName}_28.png`)
                 .then(() => {
-                    timeAferPlay = Date.now();
-                    durationFastest = timeAferPlay - timeBeforePlay;
+                    timeAfterPlay = Date.now();
+                    durationFastest = timeAfterPlay - timeBeforePlay;
                     expect(durationSlower).to.be.greaterThan(durationFastest);
                 });
             cy.goCheckFrameNumber(0);
@@ -70,8 +70,8 @@ context('Settings. "Player speed" option.', () => {
             cy.get('.cvat-player-filename-wrapper')
                 .should('have.text', `${imageFileName}_28.png`)
                 .then(() => {
-                    timeAferPlay = Date.now();
-                    durationFast = timeAferPlay - timeBeforePlay;
+                    timeAfterPlay = Date.now();
+                    durationFast = timeAfterPlay - timeBeforePlay;
                     expect(durationSlower).to.be.greaterThan(durationFast);
                 });
         });
