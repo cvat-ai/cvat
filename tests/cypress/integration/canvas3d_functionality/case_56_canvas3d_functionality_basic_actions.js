@@ -104,9 +104,11 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-canvas3d-topview').should('exist').and('be.visible');
             cy.get('.cvat-canvas3d-sideview').should('exist').and('be.visible');
             cy.get('.cvat-canvas3d-frontview').should('exist').and('be.visible');
-            cy.get('.cvat-canvas-controls-sidebar').find('[role="img"]').then(($controlButtons) => {
-                expect($controlButtons.length).to.be.equal(4);
-            });
+            cy.get('.cvat-canvas-controls-sidebar')
+                .find('[role="img"]')
+                .then(($controlButtons) => {
+                    expect($controlButtons.length).to.be.equal(4);
+                });
             cy.get('.cvat-canvas-controls-sidebar')
                 .should('exist')
                 .and('be.visible')

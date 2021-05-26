@@ -41,7 +41,10 @@ context('Canvas 3D functionality. Add cuboid.', () => {
                 ['canvas3d_sideview_before_all.png', 'canvas3d_sideview_add_cuboid.png'],
                 ['canvas3d_frontview_before_all.png', 'canvas3d_frontview_add_cuboid.png'],
             ].forEach(([viewBefore, viewAfterAddCuboid]) => {
-                cy.compareImagesAndCheckResult(`${screenshotsPath}/${viewBefore}`, `${screenshotsPath}/${viewAfterAddCuboid}`);
+                cy.compareImagesAndCheckResult(
+                    `${screenshotsPath}/${viewBefore}`,
+                    `${screenshotsPath}/${viewAfterAddCuboid}`,
+                );
             });
         });
 
@@ -64,7 +67,10 @@ context('Canvas 3D functionality. Add cuboid.', () => {
                 ['canvas3d_sideview_add_cuboid.png', 'canvas3d_sideview_move_cursor_to_cuboid.png'],
                 ['canvas3d_frontview_add_cuboid.png', 'canvas3d_frontview_move_cursor_to_cuboid.png'],
             ].forEach(([viewAfterAddCuboid, viewAfterMoveCursorToCuboid]) => {
-                cy.compareImagesAndCheckResult(`${screenshotsPath}/${viewAfterAddCuboid}`, `${screenshotsPath}/${viewAfterMoveCursorToCuboid}`);
+                cy.compareImagesAndCheckResult(
+                    `${screenshotsPath}/${viewAfterAddCuboid}`,
+                    `${screenshotsPath}/${viewAfterMoveCursorToCuboid}`,
+                );
             });
         });
     });
