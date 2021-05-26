@@ -186,7 +186,7 @@ task_create_parser.add_argument(
     default=70,
     type=int,
     help='''set the image quality option in the advanced configuration
-            when creating tasks.(default: %(default))'''
+            when creating tasks.(default: %(default)s)'''
 )
 task_create_parser.add_argument(
     '--frame_step',
