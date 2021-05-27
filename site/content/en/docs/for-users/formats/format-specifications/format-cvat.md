@@ -8,8 +8,11 @@ weight: 1
 This is the native CVAT annotation format. It supports all CVAT annotations
 features, so it can be used to make data backups.
 
-- supported annotations: Rectangles, Polygons, Polylines,
+- supported annotations CVAT for Images: Rectangles, Polygons, Polylines,
   Points, Cuboids, Tags, Tracks
+
+- supported annotations CVAT for Videos: Rectangles, Polygons, Polylines,
+  Points, Cuboids, Tracks
 
 - attributes are supported
 
