@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
-import { ColorBy, CombinedState } from 'reducers/interfaces';
+import { ColorBy, CombinedState, DimensionType } from 'reducers/interfaces';
 import {
     collapseAppearance as collapseAppearanceAction,
     updateTabContentHeight as updateTabContentHeightAction,
@@ -37,6 +37,7 @@ interface StateToProps {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -66,7 +67,10 @@ export function computeHeight(): number {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        annotation: { appearanceCollapsed },
+        annotation: {
+            appearanceCollapsed,
+            job: { instance: jobInstance },
+        },
         settings: {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
@@ -83,6 +87,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlineColor,
         showBitmap,
         showProjections,
+        jobInstance,
     };
 }
 
@@ -144,7 +149,10 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShapesOutlinedBorders,
         changeShowBitmap,
         changeShowProjections,
+        jobInstance,
     } = props;
+
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
         <Collapse
@@ -206,20 +214,24 @@ function AppearanceBlock(props: Props): JSX.Element {
                             </Button>
                         </ColorPicker>
                     </Checkbox>
-                    <Checkbox
-                        className='cvat-appearance-bitmap-checkbox'
-                        onChange={changeShowBitmap}
-                        checked={showBitmap}
-                    >
-                        Show bitmap
-                    </Checkbox>
-                    <Checkbox
-                        className='cvat-appearance-cuboid-projections-checkbox'
-                        onChange={changeShowProjections}
-                        checked={showProjections}
-                    >
-                        Show projections
-                    </Checkbox>
+                    {is2D && (
+                        <Checkbox
+                            className='cvat-appearance-bitmap-checkbox'
+                            onChange={changeShowBitmap}
+                            checked={showBitmap}
+                        >
+                            Show bitmap
+                        </Checkbox>
+                    )}
+                    {is2D && (
+                        <Checkbox
+                            className='cvat-appearance-cuboid-projections-checkbox'
+                            onChange={changeShowProjections}
+                            checked={showProjections}
+                        >
+                            Show projections
+                        </Checkbox>
+                    )}
                 </div>
             </Collapse.Panel>
         </Collapse>

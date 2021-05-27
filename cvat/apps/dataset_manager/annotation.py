@@ -754,7 +754,7 @@ class TrackManager(ObjectManager):
                 break
 
         if not prev_shape["outside"]:
-            shape = copy(prev_shape)
+            shape = deepcopy(prev_shape)
             shape["frame"] = end_frame
             shapes.extend(interpolate(prev_shape, shape))
 

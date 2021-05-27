@@ -7,7 +7,7 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { RectDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -196,6 +196,8 @@ export enum AnnotationActionTypes {
     GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
     HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
     GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
+    GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
+    GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -715,6 +717,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                         number: state.annotation.player.frame.number,
                         data: state.annotation.player.frame.data,
                         filename: state.annotation.player.frame.filename,
+                        hasRelatedContext: state.annotation.player.frame.hasRelatedContext,
                         delay: state.annotation.player.frame.delay,
                         changeTime: state.annotation.player.frame.changeTime,
                         states: state.annotation.annotations.states,
@@ -766,6 +769,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                     number: toFrame,
                     data,
                     filename: data.filename,
+                    hasRelatedContext: data.hasRelatedContext,
                     states,
                     minZ,
                     maxZ,
@@ -1031,6 +1035,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     states,
                     frameNumber,
                     frameFilename: frameData.filename,
+                    frameHasRelatedContext: frameData.hasRelatedContext,
                     frameData,
                     colors,
                     filters,
@@ -1430,8 +1435,9 @@ export function pasteShapeAsync(): ThunkAction {
                     activeControl,
                 },
             });
-
-            canvasInstance.cancel();
+            if (canvasInstance instanceof Canvas) {
+                canvasInstance.cancel();
+            }
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
                     objectType: ObjectType.TAG,
@@ -1488,7 +1494,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } = getStore().getState().annotation;
 
         let activeControl = ActiveControl.CURSOR;
-        if (activeInteractor) {
+        if (activeInteractor && canvasInstance instanceof Canvas) {
             if (activeInteractor.type === 'tracker') {
                 canvasInstance.interact({
                     enabled: true,
@@ -1506,7 +1512,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
             return;
         }
-
         if (activeShapeType === ShapeType.RECTANGLE) {
             activeControl = ActiveControl.DRAW_RECTANGLE;
         } else if (activeShapeType === ShapeType.POINTS) {
@@ -1518,7 +1523,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } else if (activeShapeType === ShapeType.CUBOID) {
             activeControl = ActiveControl.DRAW_CUBOID;
         }
-
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
             payload: {
@@ -1526,7 +1530,9 @@ export function repeatDrawShapeAsync(): ThunkAction {
             },
         });
 
-        canvasInstance.cancel();
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.cancel();
+        }
         if (activeObjectType === ObjectType.TAG) {
             const objectState = new cvat.classes.ObjectState({
                 objectType: ObjectType.TAG,
@@ -1575,8 +1581,9 @@ export function redrawShapeAsync(): ThunkAction {
                         activeControl,
                     },
                 });
-
-                canvasInstance.cancel();
+                if (canvasInstance instanceof Canvas) {
+                    canvasInstance.cancel();
+                }
                 canvasInstance.draw({
                     enabled: true,
                     redraw: activatedStateID,
@@ -1636,31 +1643,23 @@ export function getContextImage(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
-        const { frame, contextImage } = state.annotation.player;
+        const { number: frameNumber } = state.annotation.player.frame;
 
         try {
-            const context = await job.frames.contextImage(job.task.id, frame.number);
-            const loaded = true;
-            const contextImageHide = contextImage.hidden;
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
-                payload: {
-                    context,
-                    loaded,
-                    contextImageHide,
-                },
+                payload: {},
+            });
+
+            const contextImageData = await job.frames.contextImage(job.task.id, frameNumber);
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS,
+                payload: { contextImageData },
             });
         } catch (error) {
-            const context = '';
-            const loaded = true;
-            const contextImageHide = contextImage.hidden;
             dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
-                payload: {
-                    context,
-                    loaded,
-                    contextImageHide,
-                },
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED,
+                payload: { error },
             });
         }
     };

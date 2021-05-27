@@ -11,6 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 import DumpSubmenu from 'components/actions-menu/dump-submenu';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import ExportSubmenu from 'components/actions-menu/export-submenu';
+import { DimensionType } from '../../../reducers/interfaces';
 
 interface Props {
     taskMode: string;
@@ -158,6 +159,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         }
     }
 
+    const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
+
     return (
         <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
             {DumpSubmenu({
@@ -189,7 +192,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     Open the task
                 </a>
             </Menu.Item>
-            {jobStatus === 'annotation' && <Menu.Item key={Actions.REQUEST_REVIEW}>Request a review</Menu.Item>}
+            {jobStatus === 'annotation' && is2d && <Menu.Item key={Actions.REQUEST_REVIEW}>Request a review</Menu.Item>}
             {jobStatus === 'annotation' && <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item>}
             {jobStatus === 'validation' && isReviewer && (
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>

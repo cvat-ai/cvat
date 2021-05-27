@@ -35,6 +35,7 @@ export enum TasksActionTypes {
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
+    SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
 function getTasks(): AnyAction {
@@ -518,4 +519,47 @@ export function hideEmptyTasks(hideEmpty: boolean): AnyAction {
     };
 
     return action;
+}
+
+export function switchMoveTaskModalVisible(visible: boolean, taskId: number | null = null): AnyAction {
+    const action = {
+        type: TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE,
+        payload: {
+            taskId,
+            visible,
+        },
+    };
+
+    return action;
+}
+
+interface LabelMap {
+    label_id: number;
+    new_label_name: string | null;
+    clear_attributes: boolean;
+}
+
+export function moveTaskToProjectAsync(
+    taskInstance: any,
+    projectId: any,
+    labelMap: LabelMap[],
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(updateTask());
+        try {
+            // eslint-disable-next-line no-param-reassign
+            taskInstance.labels = labelMap.map((mapper) => {
+                const [label] = taskInstance.labels.filter((_label: any) => mapper.label_id === _label.id);
+                label.name = mapper.new_label_name;
+                return label;
+            });
+            // eslint-disable-next-line no-param-reassign
+            taskInstance.projectId = projectId;
+            await taskInstance.save();
+            const [task] = await cvat.tasks.get({ id: taskInstance.id });
+            dispatch(updateTaskSuccess(task, task.id));
+        } catch (error) {
+            dispatch(updateTaskFailed(error, taskInstance));
+        }
+    };
 }
