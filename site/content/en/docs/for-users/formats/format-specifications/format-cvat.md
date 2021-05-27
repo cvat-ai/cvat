@@ -1,5 +1,5 @@
 ---
-linkTitle: 'CVAT'
+linkTitle: "CVAT"
 weight: 1
 ---
 
