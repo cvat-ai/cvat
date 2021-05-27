@@ -13,6 +13,7 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
     before(() => {
         cy.openTask(taskName)
         cy.openJob();
+        cy.wait(1000); // Waiting for the point cloud to display
     });
 
     describe(`Testing case "${caseId}"`, () => {

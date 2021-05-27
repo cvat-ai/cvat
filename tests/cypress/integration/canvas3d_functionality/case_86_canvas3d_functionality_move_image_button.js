@@ -16,6 +16,7 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
     before(() => {
         cy.openTask(taskName)
         cy.openJob();
+        cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
         cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboid');
         ['topview', 'sideview', 'frontview'].forEach((view) => {
@@ -43,10 +44,10 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
                 ['canvas3d_topview_after_add_cuboid.png', 'canvas3d_topview_move_the_image_clicked.png'],
                 ['canvas3d_sideview_after_add_cuboid.png', 'canvas3d_sideview_move_the_image_clicked.png'],
                 ['canvas3d_frontview_after_add_cuboid.png', 'canvas3d_frontview_move_the_image_clicked.png'],
-            ].forEach(([viewBefore, viewAfterAddCuboid]) => {
+            ].forEach(([viewAfterAddCuboid, viewMoveTheImageClicked]) => {
                 cy.compareImagesAndCheckResult(
-                    `${screenshotsPath}/${viewBefore}`,
                     `${screenshotsPath}/${viewAfterAddCuboid}`,
+                    `${screenshotsPath}/${viewMoveTheImageClicked}`,
                 );
             });
         });
