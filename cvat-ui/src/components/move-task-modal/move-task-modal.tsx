@@ -90,12 +90,8 @@ export default function MoveTaskModal(): JSX.Element {
                     const { labels } = _project[0];
                     const labelValues: { [key: string]: LabelMapperItemValue } = {};
                     Object.entries(labelMap).forEach(([id, label]) => {
-                        const taskLabelName = task.labels.filter(
-                            (_label: any) => (_label.id === label.labelId),
-                        )[0].name;
-                        const [autoNewLabel] = labels.filter((_label: any) => (
-                            _label.name === taskLabelName
-                        ));
+                        const taskLabelName = task.labels.filter((_label: any) => _label.id === label.labelId)[0].name;
+                        const [autoNewLabel] = labels.filter((_label: any) => _label.name === taskLabelName);
                         labelValues[id] = {
                             labelId: label.labelId,
                             newLabelName: autoNewLabel ? autoNewLabel.name : null,
@@ -142,7 +138,8 @@ export default function MoveTaskModal(): JSX.Element {
                 </Col>
             </Row>
             <Divider orientation='left'>Label mapping</Divider>
-            {!!Object.keys(labelMap).length && !taskUpdating &&
+            {!!Object.keys(labelMap).length &&
+                !taskUpdating &&
                 task?.labels.map((label: any) => (
                     <LabelMapperItem
                         label={label}
