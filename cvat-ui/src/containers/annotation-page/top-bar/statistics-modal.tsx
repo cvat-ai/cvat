@@ -73,7 +73,7 @@ class StatisticsModalContainer extends React.PureComponent<Props> {
 
         return (
             <StatisticsModalComponent
-                canvasInstance={canvasInstance}
+                jobInstance={jobInstance}
                 collecting={collecting}
                 data={data}
                 visible={visible}

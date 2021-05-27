@@ -180,6 +180,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             }
         }
 
+        if ([Mode.EDIT].includes(this.data.mode)) {
+            return;
+        }
+
         if (frameData.number === this.data.imageID) {
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -233,7 +237,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         if (drawData.enabled && this.data.drawData.enabled) {
             throw new Error('Drawing has been already started');
         }
-        if (this.data.mode === Mode.DRAW) {
+        if ([Mode.DRAW, Mode.EDIT].includes(this.data.mode)) {
             return;
         }
         this.data.drawData.enabled = drawData.enabled;

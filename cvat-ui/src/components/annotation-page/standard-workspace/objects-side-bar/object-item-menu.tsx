@@ -19,9 +19,9 @@ import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import {
+    ObjectType, ShapeType, ColorBy, DimensionType,
+} from 'reducers/interfaces';
 import ColorPicker from './color-picker';
 
 interface Props {
@@ -52,6 +52,7 @@ interface Props {
     resetCuboidPerspective(): void;
     changeColorPickerVisible(visible: boolean): void;
     activateTracking(): void;
+    jobInstance: any;
 }
 
 interface ItemProps {
@@ -230,10 +231,10 @@ function RemoveItem(props: ItemProps): JSX.Element {
 
 export default function ItemMenu(props: Props): JSX.Element {
     const {
-        readonly, shapeType, objectType, colorBy, canvasInstance,
+        readonly, shapeType, objectType, colorBy, jobInstance,
     } = props;
 
-    const is2D = canvasInstance instanceof Canvas;
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
         <Menu className='cvat-object-item-menu' selectable={false}>

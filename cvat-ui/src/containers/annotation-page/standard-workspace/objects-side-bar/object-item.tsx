@@ -350,7 +350,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             colorBy,
             normalizedKeyMap,
             readonly,
-            canvasInstance,
+            jobInstance,
         } = this.props;
 
         let stateColor = '';
@@ -364,7 +364,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         return (
             <ObjectStateItemComponent
-                canvasInstance={canvasInstance}
+                jobInstance={jobInstance}
                 readonly={readonly}
                 activated={activated}
                 objectType={objectState.objectType}
