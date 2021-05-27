@@ -14,16 +14,18 @@ const {
     frameMetaDummyData,
 } = require('./dummy-data.mock');
 
-function QueryStringToJSON(query) {
+function QueryStringToJSON(query, ignoreList = []) {
     const pairs = [...new URLSearchParams(query).entries()];
 
     const result = {};
     for (const pair of pairs) {
         const [key, value] = pair;
-        if (['id'].includes(key)) {
-            result[key] = +value;
-        } else {
-            result[key] = value;
+        if (!ignoreList.includes(key)) {
+            if (['id'].includes(key)) {
+                result[key] = +value;
+            } else {
+                result[key] = value;
+            }
         }
     }
 
@@ -73,7 +75,7 @@ class ServerProxy {
         }
 
         async function getProjects(filter = '') {
-            const queries = QueryStringToJSON(filter);
+            const queries = QueryStringToJSON(filter, ['without_tasks']);
             const result = projectsDummyData.results.filter((x) => {
                 for (const key in queries) {
                     if (Object.prototype.hasOwnProperty.call(queries, key)) {

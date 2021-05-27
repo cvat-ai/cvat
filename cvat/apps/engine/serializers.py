@@ -510,11 +510,9 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        subsets = set()
-        for task in instance.tasks.all():
-            if task.subset:
-                subsets.add(task.subset)
-        response['task_subsets'] = list(subsets)
+        task_subsets = set(instance.tasks.values_list('subset', flat=True))
+        task_subsets.discard('')
+        response['task_subsets'] = list(task_subsets)
         return response
 
 class ProjectSerializer(ProjectWithoutTaskSerializer):

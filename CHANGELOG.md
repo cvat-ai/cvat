@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Project page requests took a long time and did many DB queries (<https://github.com/openvinotoolkit/cvat/pull/3223>)
 
 ### Security
 
