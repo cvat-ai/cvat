@@ -7,8 +7,6 @@ import { connect } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
 import { showStatistics } from 'actions/annotation-actions';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface StateToProps {
     visible: boolean;
@@ -17,7 +15,6 @@ interface StateToProps {
     jobInstance: any;
     jobStatus: string;
     savingJobStatus: boolean;
-    canvasInstance: Canvas | Canvas3d;
 }
 
 interface DispatchToProps {
@@ -33,7 +30,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: { status: jobStatus },
                 instance: jobInstance,
             },
-            canvas: { instance: canvasInstance },
         },
     } = state;
 
@@ -44,7 +40,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         jobStatus,
         savingJobStatus,
-        canvasInstance,
     };
 }
 
@@ -61,19 +56,12 @@ type Props = StateToProps & DispatchToProps;
 class StatisticsModalContainer extends React.PureComponent<Props> {
     public render(): JSX.Element {
         const {
-            jobInstance,
-            visible,
-            collecting,
-            data,
-            closeStatistics,
-            jobStatus,
-            savingJobStatus,
-            canvasInstance,
+            jobInstance, visible, collecting, data, closeStatistics, jobStatus, savingJobStatus,
         } = this.props;
 
         return (
             <StatisticsModalComponent
-                canvasInstance={canvasInstance}
+                jobInstance={jobInstance}
                 collecting={collecting}
                 data={data}
                 visible={visible}

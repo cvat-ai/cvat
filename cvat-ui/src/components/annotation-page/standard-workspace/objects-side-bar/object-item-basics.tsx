@@ -10,13 +10,11 @@ import Text from 'antd/lib/typography/Text';
 
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
 
 interface Props {
-    canvasInstance: Canvas | Canvas3d;
+    jobInstance: any;
     readonly: boolean;
     clientID: number;
     serverID: number | undefined;
@@ -79,7 +77,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toForeground,
         resetCuboidPerspective,
         activateTracking,
-        canvasInstance,
+        jobInstance,
     } = props;
 
     const [menuVisible, setMenuVisible] = useState(false);
@@ -128,7 +126,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                     onVisibleChange={changeMenuVisible}
                     placement='bottomLeft'
                     overlay={ItemMenu({
-                        canvasInstance,
+                        jobInstance,
                         readonly,
                         serverID,
                         locked,

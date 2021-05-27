@@ -6,8 +6,6 @@ import React from 'react';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import ItemDetails, { attrValuesAreEqual } from './object-item-details';
 import ItemBasics from './object-item-basics';
 
@@ -24,12 +22,10 @@ interface Props {
     attrValues: Record<number, string>;
     color: string;
     colorBy: ColorBy;
-
     labels: any[];
     attributes: any[];
     collapsed: boolean;
-    canvasInstance: Canvas | Canvas3d;
-
+    jobInstance: any;
     activate(): void;
     copy(): void;
     propagate(): void;
@@ -79,12 +75,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
         labelID,
         color,
         colorBy,
-
         attributes,
         labels,
         collapsed,
         normalizedKeyMap,
-
         activate,
         copy,
         propagate,
@@ -99,7 +93,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         collapse,
         resetCuboidPerspective,
         activateTracking,
-        canvasInstance,
+        jobInstance,
     } = props;
 
     const type =
@@ -121,7 +115,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 style={{ backgroundColor: `${color}88` }}
             >
                 <ItemBasics
-                    canvasInstance={canvasInstance}
+                    jobInstance={jobInstance}
                     readonly={readonly}
                     serverID={serverID}
                     clientID={clientID}

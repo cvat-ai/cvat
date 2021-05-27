@@ -112,6 +112,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
         this.action = {
             scan: null,
+<<<<<<< HEAD
+=======
+            selectable: true,
+>>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
             frameCoordinates: {
                 x: 0,
                 y: 0,
@@ -311,6 +315,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (initState) {
                 ({ label } = initState);
             }
+<<<<<<< HEAD
             this.dispatchEvent(
                 new CustomEvent('canvas.drawn', {
                     bubbles: false,
@@ -328,6 +333,42 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     },
                 }),
             );
+=======
+
+            if (typeof this.model.data.drawData.redraw === 'number') {
+                const [state] = this.model.data.objects.filter(
+                    (_state: any): boolean => _state.clientID === Number(this.model.data.selected.perspective.name),
+                );
+                this.dispatchEvent(
+                    new CustomEvent('canvas.edited', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            state,
+                            points,
+                        },
+                    }),
+                );
+            } else {
+                this.dispatchEvent(
+                    new CustomEvent('canvas.drawn', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            state: {
+                                ...initState,
+                                shapeType: 'cuboid',
+                                frame: this.model.data.imageID,
+                                points,
+                                label,
+                            },
+                            continue: undefined,
+                            duration: 0,
+                        },
+                    }),
+                );
+            }
+>>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         });
 
@@ -492,6 +533,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             && !this.model.data.selected.perspective.userData.hidden
         ) {
             this.action.scan = view;
+<<<<<<< HEAD
+=======
+            this.model.mode = Mode.EDIT;
+            this.action.selectable = false;
+>>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
         }
     }
 
@@ -584,6 +630,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.adjustPerspectiveCameras();
         this.translateReferencePlane(new THREE.Vector3(x, y, z));
         this.resetActions();
+<<<<<<< HEAD
+=======
+        this.model.mode = Mode.IDLE;
+        this.action.selectable = true;
+>>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
     }
 
     private onGroupDone(objects?: any[]): void {
@@ -1067,11 +1118,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (clientID === undefined || clientID === '' || this.model.data.focusData.clientID === clientID) {
                     return;
                 }
+<<<<<<< HEAD
+=======
+                if (!this.action.selectable) return;
+>>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
                 this.resetColor();
                 const object = this.views.perspective.scene.getObjectByName(clientID);
                 if (object === undefined) return;
                 this.model.data.focusData.clientID = clientID;
+<<<<<<< HEAD
                 ((object as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set('#ffffff');
+=======
+>>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
                 this.dispatchEvent(
                     new CustomEvent('canvas.selected', {
                         bubbles: false,
@@ -1136,8 +1194,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
         });
         if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
+<<<<<<< HEAD
             this.detachCamera(null);
             this.action.detachCam = false;
+=======
+            try {
+                this.detachCamera(null);
+                // eslint-disable-next-line no-empty
+            } catch (e) {
+            } finally {
+                this.action.detachCam = false;
+            }
+>>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
         }
     }
 
@@ -1734,6 +1802,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 break;
             case CameraAction.TILT_DOWN:
                 controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
+                break;
+            case 'ControlLeft':
+                this.action.selectable = !key.ctrlKey;
                 break;
             default:
                 break;

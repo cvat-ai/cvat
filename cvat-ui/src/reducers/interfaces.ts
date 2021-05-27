@@ -30,10 +30,13 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
-    [key: string]: string | number | null | undefined;
+    [key: string]: string | boolean | number | null | undefined;
 }
 
-export type Project = any;
+export interface Project {
+    instance: any;
+    preview: string;
+}
 
 export interface ProjectsState {
     initialized: boolean;

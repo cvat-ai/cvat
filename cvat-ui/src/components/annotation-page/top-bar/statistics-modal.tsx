@@ -9,10 +9,9 @@ import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { DimensionType } from 'reducers/interfaces';
 
 interface Props {
     collecting: boolean;
@@ -26,7 +25,7 @@ interface Props {
     jobStatus: string;
     savingJobStatus: boolean;
     closeStatistics(): void;
-    canvasInstance: Canvas | Canvas3d;
+    jobInstance: any;
 }
 
 export default function StatisticsModalComponent(props: Props): JSX.Element {
@@ -40,10 +39,10 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         stopFrame,
         bugTracker,
         closeStatistics,
-        canvasInstance,
+        jobInstance,
     } = props;
 
-    const is2D = canvasInstance instanceof Canvas;
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     const baseProps = {
         cancelButtonProps: { style: { display: 'none' } },
