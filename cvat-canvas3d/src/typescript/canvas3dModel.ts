@@ -179,6 +179,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
 <<<<<<< HEAD
+<<<<<<< HEAD
         }
 
         if (frameData.number === this.data.imageID) {
@@ -188,6 +189,8 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         }
 
 =======
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
         }
 
         if ([Mode.EDIT].includes(this.data.mode)) {
@@ -200,7 +203,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             return;
         }
 
+<<<<<<< HEAD
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
         this.data.imageID = frameData.number;
         frameData
             .data((): void => {
@@ -249,10 +255,14 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             throw new Error('Drawing has been already started');
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (this.data.mode === Mode.DRAW) {
 =======
         if ([Mode.DRAW, Mode.EDIT].includes(this.data.mode)) {
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+        if ([Mode.DRAW, Mode.EDIT].includes(this.data.mode)) {
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
             return;
         }
         this.data.drawData.enabled = drawData.enabled;

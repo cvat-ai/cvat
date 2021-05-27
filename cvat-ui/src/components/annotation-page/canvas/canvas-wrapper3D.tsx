@@ -259,6 +259,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     const keyControls = (key: KeyboardEvent): void => {
         canvasInstance.keyControls(key);
     };
@@ -279,6 +280,8 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     };
 
 =======
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
     const keyControlsKeyDown = (key: KeyboardEvent): void => {
         canvasInstance.keyControls(key);
     };
@@ -304,7 +307,10 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         onUpdateAnnotations([state]);
     };
 
+<<<<<<< HEAD
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html();
         if (
@@ -351,11 +357,16 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.dragstart', onCanvasDragStart);
             canvasInstanceDOM.perspective.removeEventListener('canvas.dragstop', onCanvasDragDone);
 <<<<<<< HEAD
+<<<<<<< HEAD
             document.removeEventListener('keydown', keyControls);
 =======
             document.removeEventListener('keydown', keyControlsKeyDown);
             document.removeEventListener('keyup', keyControlsKeyUp);
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+            document.removeEventListener('keydown', keyControlsKeyDown);
+            document.removeEventListener('keyup', keyControlsKeyUp);
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
             cancelAnimationFrame(animateId.current);
         };
     }, []);

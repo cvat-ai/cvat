@@ -113,9 +113,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.action = {
             scan: null,
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             selectable: true,
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+            selectable: true,
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
             frameCoordinates: {
                 x: 0,
                 y: 0,
@@ -316,6 +320,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 ({ label } = initState);
             }
 <<<<<<< HEAD
+<<<<<<< HEAD
             this.dispatchEvent(
                 new CustomEvent('canvas.drawn', {
                     bubbles: false,
@@ -334,6 +339,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }),
             );
 =======
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
 
             if (typeof this.model.data.drawData.redraw === 'number') {
                 const [state] = this.model.data.objects.filter(
@@ -368,7 +375,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     }),
                 );
             }
+<<<<<<< HEAD
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         });
 
@@ -534,10 +544,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         ) {
             this.action.scan = view;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             this.model.mode = Mode.EDIT;
             this.action.selectable = false;
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+            this.model.mode = Mode.EDIT;
+            this.action.selectable = false;
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
         }
     }
 
@@ -631,10 +646,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.translateReferencePlane(new THREE.Vector3(x, y, z));
         this.resetActions();
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         this.model.mode = Mode.IDLE;
         this.action.selectable = true;
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+        this.model.mode = Mode.IDLE;
+        this.action.selectable = true;
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
     }
 
     private onGroupDone(objects?: any[]): void {
@@ -1119,17 +1139,24 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     return;
                 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                 if (!this.action.selectable) return;
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+                if (!this.action.selectable) return;
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
                 this.resetColor();
                 const object = this.views.perspective.scene.getObjectByName(clientID);
                 if (object === undefined) return;
                 this.model.data.focusData.clientID = clientID;
 <<<<<<< HEAD
+<<<<<<< HEAD
                 ((object as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set('#ffffff');
 =======
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
                 this.dispatchEvent(
                     new CustomEvent('canvas.selected', {
                         bubbles: false,
@@ -1195,9 +1222,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         });
         if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
 <<<<<<< HEAD
+<<<<<<< HEAD
             this.detachCamera(null);
             this.action.detachCam = false;
 =======
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
             try {
                 this.detachCamera(null);
                 // eslint-disable-next-line no-empty
@@ -1205,7 +1235,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             } finally {
                 this.action.detachCam = false;
             }
+<<<<<<< HEAD
 >>>>>>> c6d4a48e14470321fee326a56d04462ef19bc52f
+=======
+>>>>>>> 23297c17fe80a13ce0eb3c5b75ab878cbcea50a3
         }
     }
 
