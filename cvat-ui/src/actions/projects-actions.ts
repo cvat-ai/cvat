@@ -5,9 +5,8 @@
 import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ProjectsQuery, CombinedState } from 'reducers/interfaces';
+import { ProjectsQuery } from 'reducers/interfaces';
 import { getTasksSuccess, updateTaskSuccess } from 'actions/tasks-actions';
-import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
@@ -31,8 +30,8 @@ export enum ProjectsActionTypes {
 // prettier-ignore
 const projectActions = {
     getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
-    getProjectsSuccess: (array: any[], count: number) => (
-        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
+    getProjectsSuccess: (array: any[], previews: string[], count: number) => (
+        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, previews, count })
     ),
     getProjectsFailed: (error: any) => createAction(ProjectsActionTypes.GET_PROJECTS_FAILED, { error }),
     updateProjectsGettingQuery: (query: Partial<ProjectsQuery>) => (
@@ -60,7 +59,7 @@ const projectActions = {
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
 export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         dispatch(projectActions.getProjects());
         dispatch(projectActions.updateProjectsGettingQuery(query));
 
@@ -69,6 +68,7 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
             page: 1,
             ...query,
         };
+
         for (const key in filteredQuery) {
             if (filteredQuery[key] === null || typeof filteredQuery[key] === 'undefined') {
                 delete filteredQuery[key];
@@ -85,38 +85,38 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
 
         const array = Array.from(result);
 
-        const tasks: any[] = [];
-        const taskPreviewPromises: Promise<any>[] = [];
+        // Appropriate tasks fetching proccess needs with retrieving only a single project
+        if (Object.keys(filteredQuery).includes('id')) {
+            const tasks: any[] = [];
+            const [project] = array;
+            const taskPreviewPromises: Promise<string>[] = (project as any).tasks.map((task: any): string => {
+                tasks.push(task);
+                return (task as any).frames.preview().catch(() => '');
+            });
 
-        for (const project of array) {
-            taskPreviewPromises.push(
-                ...(project as any).tasks.map((task: any): string => {
-                    tasks.push(task);
-                    return (task as any).frames.preview().catch(() => '');
-                }),
-            );
-        }
+            const taskPreviews = await Promise.all(taskPreviewPromises);
 
-        const taskPreviews = await Promise.all(taskPreviewPromises);
+            const state = getState();
 
-        dispatch(projectActions.getProjectsSuccess(array, result.count));
+            dispatch(projectActions.getProjectsSuccess(array, taskPreviews, result.count));
 
-        const store = getCVATStore();
-        const state: CombinedState = store.getState();
-
-        if (!state.tasks.fetching) {
-            dispatch(
-                getTasksSuccess(tasks, taskPreviews, tasks.length, {
-                    page: 1,
-                    assignee: null,
-                    id: null,
-                    mode: null,
-                    name: null,
-                    owner: null,
-                    search: null,
-                    status: null,
-                }),
-            );
+            if (!state.tasks.fetching) {
+                dispatch(
+                    getTasksSuccess(tasks, taskPreviews, tasks.length, {
+                        page: 1,
+                        assignee: null,
+                        id: null,
+                        mode: null,
+                        name: null,
+                        owner: null,
+                        search: null,
+                        status: null,
+                    }),
+                );
+            }
+        } else {
+            const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
+            dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
         }
     };
 }
