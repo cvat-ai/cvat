@@ -616,7 +616,7 @@ class TaskDumpUploadTest(_DbTestBase):
         }
         upload_types = ["task", "job"]
 
-        images = self._generate_task_images(1)
+        images = self._generate_task_images(2)
         task = self._create_task(tasks["main"], images)
         task_id = task["id"]
 
