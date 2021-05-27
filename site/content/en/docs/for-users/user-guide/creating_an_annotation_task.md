@@ -4,10 +4,11 @@ linkTitle: "Creating an annotation task"
 weight: 2
 ---
 
-1. Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
+1.  Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
+
     ![](/images/image004.jpg)
 
-1. Specify parameters of the task:
+1.  Specify parameters of the task:
 
     #### Basic configuration
 
@@ -152,9 +153,9 @@ weight: 2
 
     ![](/images/image006_detrac.jpg)
 
-1. The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
-   Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
-   Each button is responsible for a in menu `Actions` specific function:
+1.  The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
+    Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
+    Each button is responsible for a in menu `Actions` specific function:
 
     - `Dump Annotation` and `Export as a dataset` — download annotations or
       annotations and images in a specific format. The following formats are available:
