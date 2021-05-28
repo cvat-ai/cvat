@@ -276,6 +276,7 @@ class TaskData:
                 get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
+        shape_data = ''
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
             if shape['frame'] not in self._frame_info:
@@ -291,7 +292,8 @@ class TaskData:
                 exported_shape = self._export_labeled_shape(shape)
                 shape_data = self._export_shape(shape)
             get_frame(shape['frame']).labeled_shapes.append(exported_shape)
-            get_frame(shape['frame']).shapes.append(shape_data)
+            if shape_data:
+                get_frame(shape['frame']).shapes.append(shape_data)
 
         for tag in self._annotation_ir.tags:
             get_frame(tag['frame']).tags.append(self._export_tag(tag))
@@ -469,9 +471,9 @@ class TaskData:
         return None
 
 class CvatTaskDataExtractor(datumaro.SourceExtractor):
-    def __init__(self, task_data, include_images=False, format=None, dimensions=DimensionType.DIM_2D):
+    def __init__(self, task_data, include_images=False, format_type=None, dimensions=DimensionType.DIM_2D):
         super().__init__()
-        self._categories, self._user, self._labels= self._load_categories(task_data, dimensions=dimensions, format=format)
+        self._categories, self._user, self._labels= self._load_categories(task_data, dimensions=dimensions)
         self._dimension = dimensions
         dm_items = []
 
@@ -481,18 +483,18 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             ext = FrameProvider.VIDEO_FRAME_EXT
 
         if dimensions == DimensionType.DIM_3D:
-            def _make_image(id, **kwargs):
+            def _make_image(image_id, **kwargs):
                 loader = osp.join(
                     task_data.db_task.data.get_upload_dirname(), kwargs['path'])
                 related_images = []
-                image = Img.objects.get(id=id)
+                image = Img.objects.get(id=image_id)
                 for i in image.related_files.all():
                     path = osp.realpath(str(i.path))
                     if osp.isfile(path):
                         name = path.rsplit("/", maxsplit=1)[-1]
                         data = {"name": name,
                                 "path": path}
-                        if format == "velodyne_points":
+                        if format_type == "velodyne_points":
                             data["save_path"] = osp.basename(
                                 osp.dirname(osp.split(path)[0]))
                         else:
@@ -538,7 +540,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                                                attributes={'frame': frame_data.frame})
             elif dimensions == DimensionType.DIM_3D:
                 attributes = {'frame': frame_data.frame}
-                if format == "point_cloud":
+                if format_type == "point_cloud":
                     attributes["name"] = self._user["name"]
                     attributes["createdAt"] = self._user["createdAt"]
                     attributes["updatedAt"] = self._user["updatedAt"]
@@ -564,7 +566,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
         return self._categories
 
     @staticmethod
-    def _load_categories(cvat_anno, dimensions, format):
+    def _load_categories(cvat_anno, dimensions):
         categories = {}
 
         label_categories = datumaro.LabelCategories(attributes=['occluded'])

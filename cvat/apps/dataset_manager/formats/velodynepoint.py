@@ -21,7 +21,7 @@ from .registry import exporter, importer
 def _export_images(dst_file, task_data, save_images=False):
 
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
-        task_data, include_images=save_images, format="velodyne_points", dimensions=DimensionType.DIM_3D), env=dm_env)
+        task_data, include_images=save_images, format_type="velodyne_points", dimensions=DimensionType.DIM_3D), env=dm_env)
 
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'velodyne_points', save_images=save_images)
