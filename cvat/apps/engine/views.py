@@ -392,10 +392,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     func=import_task,
                     args=(filename, request.user.id),
                     job_id=rq_id,
+                    meta={
+                        'tmp_file': filename,
+                        'tmp_file_descriptor': fd,
+                    },
                 )
-                rq_job.meta['tmp_file'] = filename
-                rq_job.meta['tmp_file_descriptor'] = fd
-                rq_job.save_meta()
+
             else:
                 if rq_job.is_finished:
                     task_id = rq_job.return_value

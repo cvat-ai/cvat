@@ -84,10 +84,19 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
 
     public componentDidUpdate(prevProps: TasksPageProps & RouteComponentProps): void {
         const {
-            location, gettingQuery, tasksFetching, numberOfHiddenTasks, onGetTasks, hideEmptyTasks,
+            location,
+            gettingQuery,
+            tasksFetching,
+            numberOfHiddenTasks,
+            onGetTasks,
+            hideEmptyTasks,
+            taskImporting,
         } = this.props;
 
-        if (prevProps.location.search !== location.search) {
+        if (
+            prevProps.location.search !== location.search ||
+            (prevProps.taskImporting === true && taskImporting === false)
+        ) {
             // get new tasks if any query changes
             const query = updateQuery(gettingQuery, location.search);
             message.destroy();

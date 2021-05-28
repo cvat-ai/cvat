@@ -18,7 +18,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer)
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice, Job
+from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice
 from cvat.apps.engine.task import _create_thread
 
 
@@ -78,18 +78,37 @@ class _TaskBackupBase():
         }
         return self._prepare_meta(allowed_fields, segments)
 
-    def _prepare_job_meta(self, jobs):
+    def _prepare_job_meta(self, job):
         allowed_fields = {
-            'id',
             'status',
         }
-        return self._prepare_meta(allowed_fields, jobs)
+        return self._prepare_meta(allowed_fields, job)
 
-    def _prepare_annotations(self, annotations):
+    def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
+            'name',
+            'mutable',
+            'input_type',
+            'default_value',
+            'values',
+        }
+        return self._prepare_meta(allowed_fields, attribute)
+
+    def _prepare_label_meta(self, labels):
+        allowed_fields = {
+            'name',
+            'color',
+            'attributes',
+        }
+        return self._prepare_meta(allowed_fields, labels)
+
+    def _prepare_annotations(self, annotations, label_mapping):
+        allowed_fields = {
+            'label',
             'label_id',
             'type',
             'occluded',
+            'outside',
             'z_order',
             'points',
             'frame',
@@ -99,11 +118,43 @@ class _TaskBackupBase():
             'shapes',
         }
 
+        def _update_attribute(attribute, label):
+            if 'name' in attribute:
+                source, dest = attribute.pop('name'), 'spec_id'
+            else:
+                source, dest = attribute.pop('spec_id'), 'name'
+            attribute[dest] = label_mapping[label]['attributes'][source]
+
+        def _update_label(shape):
+            if 'label_id' in shape:
+                source, dest = shape.pop('label_id'), 'label'
+            elif 'label' in shape:
+                source, dest = shape.pop('label'), 'label_id'
+            shape[dest] = label_mapping[source]['value']
+
+            return source
+
         for tag in annotations['tags']:
+            label = _update_label(tag)
+            for attr in tag['attributes']:
+                _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, tag)
+
         for shape in annotations['shapes']:
+            label = _update_label(shape)
+            for attr in shape['attributes']:
+                _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, shape)
+
         for track in annotations['tracks']:
+            label = _update_label(track)
+            for shape in track['shapes']:
+                for attr in shape['attributes']:
+                    _update_attribute(attr, label)
+                self._prepare_meta(allowed_fields, shape)
+
+            for attr in track['attributes']:
+                _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, track)
 
         return annotations
@@ -114,6 +165,20 @@ class TaskExporter(_TaskBackupBase):
         self._db_task.segment_set.all().prefetch_related('job_set')
         self._db_data = self._db_task.data
         self._version = version
+
+        db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
+            'attributespec_set')
+
+        self._label_mapping = {}
+        self._label_mapping = {db_label.id: db_label.name for db_label in db_labels}
+        self._attribute_mapping = {}
+        for db_label in db_labels:
+            self._label_mapping[db_label.id] = {
+                'value': db_label.name,
+                'attributes': {},
+            }
+            for db_attribute in db_label.attributespec_set.all():
+                self._label_mapping[db_label.id]['attributes'][db_attribute.id] = db_attribute.name
 
     def _write_files(self, source_dir, zip_object, files, target_dir):
         for filename in files:
@@ -163,7 +228,7 @@ class TaskExporter(_TaskBackupBase):
             self._write_files(
                 source_dir=upload_dir,
                 zip_object=zip_object,
-                files=(os.path.join(upload_dir, f) for f in ('manifest.jsonl', 'index.json')),
+                files=(os.path.join(upload_dir, f) for f in ('manifest.jsonl',)),
                 target_dir=self.DATA_DIRNAME
             )
         else:
@@ -186,22 +251,32 @@ class TaskExporter(_TaskBackupBase):
             task_serializer.fields.pop('assignee')
             task_serializer.fields.pop('segments')
 
-            return self._prepare_task_meta(task_serializer.data)
+            task = self._prepare_task_meta(task_serializer.data)
+            task['labels'] = [self._prepare_label_meta(l) for l in task['labels']]
+            for label in task['labels']:
+                label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
+
+            return task
+
+        def serialize_segment(db_segment):
+            db_job = db_segment.job_set.first()
+            job_serializer = SimpleJobSerializer(db_job)
+            job_serializer.fields.pop('url')
+            job_serializer.fields.pop('assignee')
+            job_serializer.fields.pop('reviewer')
+            job_data = self._prepare_job_meta(job_serializer.data)
+
+            segment_serailizer = SegmentSerializer(db_segment)
+            segment_serailizer.fields.pop('jobs')
+            segment = segment_serailizer.data
+            segment.update(job_data)
+
+            return segment
 
         def serialize_jobs():
-            task_jobs = []
-            for db_segment in self._db_task.segment_set.all():
-                db_job = db_segment.job_set.first()
-                job_serializer = SimpleJobSerializer(db_job)
-                job_serializer.fields.pop('url')
-                job_data = self._prepare_job_meta(job_serializer.data)
-                segment_serailizer = SegmentSerializer(db_segment)
-                segment_serailizer.fields.pop('jobs')
-                segment = segment_serailizer.data
-                segment.update(job_data)
-                task_jobs.append(segment)
-
-            return task_jobs
+            db_segments = list(self._db_task.segment_set.all())
+            db_segments.sort(key=lambda i: i.job_set.first().id)
+            return (serialize_segment(s) for s in db_segments)
 
         def serialize_data():
             data_serializer = DataSerializer(self._db_data)
@@ -218,13 +293,15 @@ class TaskExporter(_TaskBackupBase):
 
     def _write_annotations(self, zip_object):
         def serialize_annotations():
-            job_annotations = {}
-            for db_segment in self._db_task.segment_set.all():
-                for db_job in db_segment.job_set.all():
-                    annotations = dm.task.get_job_data(db_job.id)
-                    annotations_serializer = LabeledDataSerializer(data=annotations)
-                    annotations_serializer.is_valid(raise_exception=True)
-                    job_annotations[db_job.id] = self._prepare_annotations(annotations_serializer.data)
+            job_annotations = []
+            db_segments = list(self._db_task.segment_set.all())
+            db_segments.sort(key=lambda i: i.job_set.first().id)
+            db_job_ids = (s.job_set.first().id for s in db_segments)
+            for db_job_id in db_job_ids:
+                annotations = dm.task.get_job_data(db_job_id)
+                annotations_serializer = LabeledDataSerializer(data=annotations)
+                annotations_serializer.is_valid(raise_exception=True)
+                job_annotations.append(self._prepare_annotations(annotations_serializer.data, self._label_mapping))
 
             return job_annotations
 
@@ -247,12 +324,12 @@ class TaskImporter(_TaskBackupBase):
         self._user_id = user_id
         self._manifest, self._annotations = self._read_meta()
         self._version = self._read_version()
+        self._labels_mapping = {}
 
     def _read_meta(self):
         with ZipFile(self._filename, 'r') as input_file:
             manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
             annotations = JSONParser().parse(io.BytesIO(input_file.read(self.ANNOTATIONS_FILENAME)))
-            annotations = {int(job_id): job_annotations for job_id, job_annotations in annotations.items()}
 
             return manifest, annotations
 
@@ -271,42 +348,27 @@ class TaskImporter(_TaskBackupBase):
 
     def _create_labels(self, db_task, labels):
         label_mapping = {}
-        attribute_mapping = {}
 
         for label in labels:
-            label_id = label.pop('id')
+            label_name = label['name']
             attributes = label.pop('attributes', [])
             db_label = models.Label.objects.create(task=db_task, **label)
-            label_mapping[label_id] = db_label.id
+            label_mapping[label_name] = {
+                'value': db_label.id,
+                'attributes': {},
+            }
 
             for attribute in attributes:
-                attribute_id = attribute.pop('id')
+                attribute_name = attribute['name']
                 attribute_serializer = AttributeSerializer(data=attribute)
                 attribute_serializer.is_valid(raise_exception=True)
                 db_attribute = attribute_serializer.save(label=db_label)
-                attribute_mapping[attribute_id] = db_attribute.id
+                label_mapping[label_name]['attributes'][attribute_name] = db_attribute.id
 
-        return label_mapping, attribute_mapping
+        return label_mapping
 
-    def _update_annotations(self, labels_mapping, attributes_mapping, annotations):
-        def update_ids(objects):
-            for obj in objects:
-                obj['label_id'] = labels_mapping[obj['label_id']]
-                for attribute in obj['attributes']:
-                    attribute['spec_id'] = attributes_mapping[attribute['spec_id']]
-
-        update_ids(annotations['tags'])
-        update_ids(annotations['shapes'])
-        update_ids(annotations['tracks'])
-        for track in annotations['tracks']:
-            for track_shape in track['shapes']:
-                track_shape.pop('id')
-                for attribute in track_shape['attributes']:
-                    attribute['spec_id'] = attributes_mapping[attribute['spec_id']]
-
-    def _create_annotations(self, db_job, labels_mapping, attributes_mapping, annotations):
-        self._update_annotations(labels_mapping, attributes_mapping, annotations)
-        self._prepare_annotations(annotations)
+    def _create_annotations(self, db_job, annotations):
+        self._prepare_annotations(annotations, self._labels_mapping)
 
         serializer = LabeledDataSerializer(data=annotations)
         serializer.is_valid(raise_exception=True)
@@ -342,7 +404,7 @@ class TaskImporter(_TaskBackupBase):
         os.makedirs(self._db_task.get_task_logs_dirname())
         os.makedirs(self._db_task.get_task_artifacts_dirname())
 
-        self._labels_mapping, self._attributes_mapping = self._create_labels(self._db_task, labels)
+        self._labels_mapping = self._create_labels(self._db_task, labels)
 
         self._prepare_data_meta(data)
         data_serializer = DataSerializer(data=data)
@@ -378,17 +440,12 @@ class TaskImporter(_TaskBackupBase):
         db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage'])
 
     def _import_annotations(self):
-        job_mapping = {}
-        for db_segment in self._db_task.segment_set.all():
-            for db_job in db_segment.job_set.all():
-                for job in self._jobs:
-                    if db_segment.start_frame == job['start_frame']:
-                        job_mapping[job['id']] = db_job.id
+        db_segments = list(self._db_task.segment_set.all())
+        db_segments.sort(key=lambda i: i.job_set.first().id)
+        db_jobs = (s.job_set.first() for s in db_segments)
 
-        for job in self._jobs:
-            db_job = Job.objects.get(pk=job_mapping[job['id']])
-            self._create_annotations(db_job, self._labels_mapping, self._attributes_mapping, self._annotations[job['id']])
-
+        for db_job, annotations in zip(db_jobs, self._annotations):
+            self._create_annotations(db_job, annotations)
 
     def import_task(self):
         self._import_task()
