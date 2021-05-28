@@ -482,7 +482,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
         if dimensions == DimensionType.DIM_3D:
             def _make_image(id, **kwargs):
-                loader = osp.join(task_data.db_task.data.get_upload_dirname(), kwargs['path'])
+                loader = osp.join(
+                    task_data.db_task.data.get_upload_dirname(), kwargs['path'])
                 related_images = []
                 image = Img.objects.get(id=id)
                 for i in image.related_files.all():
@@ -492,11 +493,11 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                         data = {"name": name,
                                 "path": path}
                         if format == "velodyne_points":
-                            data["save_path"] = osp.basename(osp.dirname(osp.split(path)[0]))
+                            data["save_path"] = osp.basename(
+                                osp.dirname(osp.split(path)[0]))
                         else:
                             data["save_path"] = None
                         related_images.append(data)
-
                 return loader, related_images
 
         elif include_images:
@@ -525,7 +526,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
             if dimensions == DimensionType.DIM_3D:
                 dm_image = _make_image(frame_data.id, **image_args)
-
             elif include_images:
                 dm_image = _make_image(frame_data.idx, **image_args)
             else:
@@ -534,8 +534,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
             if dimensions == DimensionType.DIM_2D:
                 dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
-                    annotations=dm_anno, image=dm_image,
-                    attributes={'frame': frame_data.frame})
+                                               annotations=dm_anno, image=dm_image,
+                                               attributes={'frame': frame_data.frame})
             elif dimensions == DimensionType.DIM_3D:
                 attributes = {'frame': frame_data.frame}
                 if format == "point_cloud":
@@ -659,13 +659,11 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                     z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.CUBOID:
                 if self._dimension == DimensionType.DIM_3D:
-                    anno = datumaro.Cuboid(id=anno_id, points=anno_points,
+                    anno = datumaro.Cuboid3D(id=anno_id, points=anno_points,
                                              label=anno_label, attributes=anno_attr, group=anno_group,
                                              z_order=shape_obj.z_order)
                 else:
-                    anno = datumaro.Cuboid(anno_points,
-                                           label=anno_label, attributes=anno_attr, group=anno_group,
-                                           z_order=shape_obj.z_order)
+                    continue
             else:
                 raise Exception("Unknown shape type '%s'" % shape_obj.type)
 

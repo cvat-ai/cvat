@@ -24,6 +24,7 @@ import json
 
 from .registry import exporter, importer
 
+
 @exporter(name='Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, task_data, save_images=False):
 
@@ -34,6 +35,7 @@ def _export_images(dst_file, task_data, save_images=False):
         dataset.export(temp_dir, 'point_cloud', save_images=save_images)
 
         make_zip_archive(temp_dir, dst_file)
+
 
 @importer(name='Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _import(src_file, task_data):
@@ -48,4 +50,3 @@ def _import(src_file, task_data):
         dataset = Dataset.import_from(src_file.name,
                                       'point_cloud', env=dm_env)
         import_dm_annotations(dataset, task_data)
-

@@ -16,6 +16,7 @@ from cvat.apps.engine.models import DimensionType
 
 from .registry import exporter, importer
 
+
 @exporter(name='Velodyne Points Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, task_data, save_images=False):
 
@@ -34,12 +35,11 @@ def _import(src_file, task_data):
         with TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(src_file).extractall(tmp_dir)
 
-            dataset = Dataset.import_from(tmp_dir, 'velodyne_points', env=dm_env)
+            dataset = Dataset.import_from(
+                tmp_dir, 'velodyne_points', env=dm_env)
             import_dm_annotations(dataset, task_data)
     else:
 
-        dataset = Dataset.import_from(src_file.name, 'velodyne_points', env=dm_env)
+        dataset = Dataset.import_from(
+            src_file.name, 'velodyne_points', env=dm_env)
         import_dm_annotations(dataset, task_data)
-
-
-
