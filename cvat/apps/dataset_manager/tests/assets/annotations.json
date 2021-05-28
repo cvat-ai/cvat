@@ -88,15 +88,7 @@
   },
   "CVAT for video 1.1": {
     "version": 0,
-    "tags": [
-      {
-        "frame": 1,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
+    "tags": [],
     "shapes": [],
     "tracks": [
       {
@@ -1007,8 +999,7 @@
   },
     "CVAT for images 1.1 different types": {
     "version": 0,
-    "tags": [
-    ],
+    "tags": [],
     "shapes": [
       {
         "type": "rectangle",
@@ -1054,15 +1045,7 @@
   },
  "CVAT for video 1.1 polygon": {
     "version": 0,
-    "tags": [
-      {
-        "frame": 1,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
+    "tags": [],
     "shapes": [],
     "tracks": [
       {
