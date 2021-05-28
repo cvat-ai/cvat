@@ -181,7 +181,20 @@ task_create_parser.add_argument(
     action='store_true',
     help='using lfs for dataset repository (default: %(default)s)'
 )
-
+task_create_parser.add_argument(
+    '--image_quality',
+    default=70,
+    type=int,
+    help='''set the image quality option in the advanced configuration
+            when creating tasks.(default: %(default)s)'''
+)
+task_create_parser.add_argument(
+    '--frame_step',
+    default=1,
+    type=int,
+    help='''set the frame step option in the advanced configuration
+            when uploading image series or videos (default: %(default)s)'''
+)
 #######################################################################
 # Delete
 #######################################################################

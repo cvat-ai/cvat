@@ -35,6 +35,7 @@ export enum Actions {
     EXPORT_TASK_DATASET = 'export_task_dataset',
     DELETE_TASK = 'delete_task',
     RUN_AUTO_ANNOTATION = 'run_auto_annotation',
+    MOVE_TASK_TO_PROJECT = 'move_task_to_project',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     EXPORT_TASK = 'export_task',
 }
@@ -136,6 +137,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                 Export Task
             </Menu.Item>
             <hr />
+            <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
             <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>
         </Menu>
     );

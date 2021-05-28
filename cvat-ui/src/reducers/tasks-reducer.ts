@@ -15,6 +15,10 @@ const defaultState: TasksState = {
     fetching: false,
     updating: false,
     hideEmpty: false,
+    moveTask: {
+        modalVisible: false,
+        taskId: null,
+    },
     count: 0,
     current: [],
     gettingQuery: {
@@ -395,6 +399,16 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             return {
                 ...state,
                 hideEmpty: action.payload.hideEmpty,
+            };
+        }
+        case TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE: {
+            return {
+                ...state,
+                moveTask: {
+                    ...state.moveTask,
+                    modalVisible: action.payload.visible,
+                    taskId: action.payload.taskId,
+                },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

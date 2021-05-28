@@ -47,6 +47,7 @@ const defaultState: NotificationsState = {
             creating: null,
             exporting: null,
             importing: null,
+            moving: null,
         },
         formats: {
             fetching: null,
@@ -71,6 +72,7 @@ const defaultState: NotificationsState = {
             saving: null,
             jobFetching: null,
             frameFetching: null,
+            contextImageFetching: null,
             changingLabelColor: null,
             updating: null,
             creating: null,
@@ -112,6 +114,7 @@ const defaultState: NotificationsState = {
         tasks: {
             loadingDone: '',
             importingDone: '',
+            movingDone: '',
         },
         models: {
             inferenceDone: '',
@@ -730,6 +733,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         frameFetching: {
                             message: `Could not receive frame ${action.payload.number}`,
                             reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        contextImageFetching: {
+                            message: 'Could not fetch context image from the server',
+                            reason: action.payload.error,
                         },
                     },
                 },

@@ -4,8 +4,9 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
+
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
 import { CombinedState } from 'reducers/interfaces';
 
@@ -16,8 +17,8 @@ import {
     exportDatasetAsync,
     deleteTaskAsync,
     exportTaskAsync,
+    switchMoveTaskModalVisible,
 } from 'actions/tasks-actions';
-// eslint-disable-next-line import/no-extraneous-dependencies
 
 interface OwnProps {
     taskInstance: any;
@@ -39,6 +40,7 @@ interface DispatchToProps {
     deleteTask: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
     exportTask: (taskInstance: any) => void;
+    openMoveTaskToProjectWindow: (taskInstance: any) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -85,6 +87,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         exportTask: (taskInstance: any): void => {
             dispatch(exportTaskAsync(taskInstance));
         },
+        openMoveTaskToProjectWindow: (taskId: number): void => {
+            dispatch(switchMoveTaskModalVisible(true, taskId));
+        },
     };
 }
 
@@ -104,6 +109,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         deleteTask,
         openRunModelWindow,
         exportTask,
+        openMoveTaskToProjectWindow,
     } = props;
 
     function onClickMenu(params: MenuInfo, file?: File): void {
@@ -133,12 +139,13 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             if (action === Actions.DELETE_TASK) {
                 deleteTask(taskInstance);
             } else if (action === Actions.OPEN_BUG_TRACKER) {
-                // eslint-disable-next-line
                 window.open(`${taskInstance.bugTracker}`, '_blank');
             } else if (action === Actions.RUN_AUTO_ANNOTATION) {
                 openRunModelWindow(taskInstance);
             } else if (action === Actions.EXPORT_TASK) {
                 exportTask(taskInstance);
+            } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
+                openMoveTaskToProjectWindow(taskInstance.id);
             }
         }
     }

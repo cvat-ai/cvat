@@ -8,6 +8,7 @@
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
     const { Label } = require('./labels');
+    const { getPreview } = require('./frames');
     const User = require('./user');
 
     /**
@@ -34,6 +35,7 @@
                 updated_date: undefined,
                 task_subsets: undefined,
                 training_project: undefined,
+                task_ids: undefined,
             };
 
             for (const property in data) {
@@ -58,9 +60,9 @@
                     data.tasks.push(taskInstance);
                 }
             }
-            if (!data.task_subsets && data.tasks.length) {
+            if (!data.task_subsets) {
                 const subsetsSet = new Set();
-                for (const task in data.tasks) {
+                for (const task of data.tasks) {
                     if (task.subset) subsetsSet.add(task.subset);
                 }
                 data.task_subsets = Array.from(subsetsSet);
@@ -255,6 +257,22 @@
         }
 
         /**
+         * Get the first frame of the first task of a project for preview
+         * @method preview
+         * @memberof Project
+         * @returns {string} - jpeg encoded image
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.ArgumentError}
+         */
+        async preview() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.preview);
+            return result;
+        }
+
+        /**
          * Method updates data of a created project or creates new project from scratch
          * @method save
          * @returns {module:API.cvat.classes.Project}
@@ -330,5 +348,13 @@
     Project.prototype.delete.implementation = async function () {
         const result = await serverProxy.projects.delete(this.id);
         return result;
+    };
+
+    Project.prototype.preview.implementation = async function () {
+        if (!this._internalData.task_ids.length) {
+            return '';
+        }
+        const frameData = await getPreview(this._internalData.task_ids[0]);
+        return frameData;
     };
 })();
