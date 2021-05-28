@@ -8,7 +8,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
     const caseId = '78';
-    const secondLabel = `${labelName} car`
+    const secondLabel = 'car';
 
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_78_canvas3d_functionality_cuboid_label.js';
     const cuboidCreationParams = {

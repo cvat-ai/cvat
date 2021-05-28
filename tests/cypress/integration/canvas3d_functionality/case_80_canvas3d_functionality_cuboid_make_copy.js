@@ -8,7 +8,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Make a copy.', () => {
     const caseId = '80';
-    const secondLabel = `${labelName} car`
+    const secondLabel = 'car';
     const cuboidCreationParams = {
         labelName: labelName,
     };
