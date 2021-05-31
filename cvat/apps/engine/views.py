@@ -25,7 +25,7 @@ from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
-from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled
+from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled, FieldInspector
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -984,6 +984,15 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
 
+class RedefineDescriptionField(FieldInspector):
+    # pylint: disable=no-self-use
+    def process_result(self, result, method_name, obj, **kwargs):
+        if isinstance(result, openapi.Schema):
+            if hasattr(result, 'title') and result.title == 'Specific attributes':
+                result.description = 'structure like key1=value1&key2=value2\n' \
+                    'supported: range=aws_range'
+        return result
+
 @method_decorator(
     name='retrieve',
     decorator=swagger_auto_schema(
@@ -1004,8 +1013,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 openapi.Parameter('owner', openapi.IN_QUERY, description="A resource owner", type=openapi.TYPE_STRING),
                 openapi.Parameter('credentials_type', openapi.IN_QUERY, description="A type of a granting access", type=openapi.TYPE_STRING, enum=CredentialsTypeChoice.list()),
             ],
-        responses={'200': CloudStorageSerializer(many=True)},
-        tags=['cloud storages']
+        responses={'200': BaseCloudStorageSerializer(many=True)},
+        tags=['cloud storages'],
+        field_inspectors=[RedefineDescriptionField]
     )
 )
 @method_decorator(name='destroy', decorator=swagger_auto_schema(
@@ -1015,7 +1025,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 )
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(
         operation_summary='Methods does a partial update of chosen fields in a cloud storage instance',
-        tags=['cloud storages']
+        tags=['cloud storages'],
+        field_inspectors=[RedefineDescriptionField]
     )
 )
 class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewSet):
@@ -1092,7 +1103,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             responses={
                 '201': openapi.Response(description='A storage has beed created')
             },
-            tags=['cloud storages']
+            tags=['cloud storages'],
+            field_inspectors=[RedefineDescriptionField],
         )
     )
     def create(self, request, *args, **kwargs):

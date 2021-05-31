@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('provider_type', models.CharField(choices=[('AWS_S3_BUCKET', 'AWS_S3'), ('AZURE_CONTAINER', 'AZURE_CONTAINER'), ('GOOGLE_DRIVE', 'GOOGLE_DRIVE')], max_length=20)),
                 ('resource', models.CharField(max_length=63)),
-                ('display_name', models.CharField(max_length=63, unique=True)),
+                ('display_name', models.CharField(max_length=63)),
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now=True)),
                 ('credentials', models.CharField(max_length=500)),
