@@ -24,6 +24,7 @@
     "micromatch": "^4.0.2",
     "nyc": "^15.1.0",
     "prettier": "2.1.2",
+    "remark-cli": "^9.0.0",
     "remark-lint-emphasis-marker": "^2.0.0",
     "remark-lint-list-item-spacing": "^2.0.0",
     "remark-lint-maximum-heading-length": "^2.0.0",
@@ -38,7 +39,8 @@
     "remark-preset-lint-recommended": "^4.0.0",
     "source-map-support": "^0.5.19",
     "stylelint": "^13.6.1",
-    "stylelint-config-standard": "^20.0.0"
+    "stylelint-config-standard": "^20.0.0",
+    "vfile-reporter-json": "^2.0.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
