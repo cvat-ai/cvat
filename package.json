@@ -25,6 +25,8 @@
     "nyc": "^15.1.0",
     "prettier": "2.1.2",
     "remark-cli": "^9.0.0",
+    "remark-frontmatter": "^3.0.0",
+    "remark-gfm": "^1.0.0",
     "remark-lint-emphasis-marker": "^2.0.0",
     "remark-lint-list-item-spacing": "^2.0.0",
     "remark-lint-maximum-heading-length": "^2.0.0",
