@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.0] - Unreleased
+## \[1.5.0] - Unreleased
 
 ### Added
 
@@ -17,11 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
--
+- TBD
 
 ### Removed
 
--
+- TBD
 
 ### Fixed
 
@@ -29,9 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
--
+- TBD
 
-## [1.4.0] - 2021-05-18
+## \[1.4.0] - 2021-05-18
 
 ### Added
 
@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manifest: migration (<https://github.com/openvinotoolkit/cvat/pull/3146>)
 - Fixed cropping polygon in some corner cases (<https://github.com/openvinotoolkit/cvat/pull/3184>)
 
-## [1.3.0] - 3/31/2021
+## \[1.3.0] - 3/31/2021
 
 ### Added
 
@@ -83,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/openvinotoolkit/cvat/pull/2891>)
 - [Market-1501](https://www.aitribune.com/dataset/2018051063) format support (<https://github.com/openvinotoolkit/cvat/pull/2869>)
 - Ability of upload manifest for dataset with images (<https://github.com/openvinotoolkit/cvat/pull/2763>)
-- Annotations filters UI using react-awesome-query-builder (https://github.com/openvinotoolkit/cvat/issues/1418)
+- Annotations filters UI using react-awesome-query-builder (<https://github.com/openvinotoolkit/cvat/issues/1418>)
 - Storing settings in local storage to keep them between browser sessions (<https://github.com/openvinotoolkit/cvat/pull/3017>)
 - [ICDAR](https://rrc.cvc.uab.es/?ch=2) format support (<https://github.com/openvinotoolkit/cvat/pull/2866>)
 - Added switcher to maintain polygon crop behavior (<https://github.com/openvinotoolkit/cvat/pull/3021>
@@ -131,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updating label attributes when label contains number attributes (<https://github.com/openvinotoolkit/cvat/pull/2969>)
 - Crop a polygon if its points are outside the bounds of the image (<https://github.com/openvinotoolkit/cvat/pull/3025>)
 
-## [1.2.0] - 2021-01-08
+## \[1.2.0] - 2021-01-08
 
 ### Fixed
 
@@ -139,7 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frame preloading (<https://github.com/openvinotoolkit/cvat/pull/2608>)
 - Project cannot be removed from the project page (<https://github.com/openvinotoolkit/cvat/pull/2626>)
 
-## [1.2.0-beta] - 2020-12-15
+## \[1.2.0-beta] - 2020-12-15
 
 ### Added
 
@@ -179,20 +179,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset state (reviews, issues) after logout or changing a job (<https://github.com/openvinotoolkit/cvat/pull/2525>)
 - TypeError: Cannot read property 'id' of undefined when updating a task (<https://github.com/openvinotoolkit/cvat/pull/2544>)
 
-## [1.2.0-alpha] - 2020-11-09
+## \[1.2.0-alpha] - 2020-11-09
 
 ### Added
 
 - Ability to login into CVAT-UI with token from api/v1/auth/login (<https://github.com/openvinotoolkit/cvat/pull/2234>)
 - Added layout grids toggling ('ctrl + alt + Enter')
 - Added password reset functionality (<https://github.com/opencv/cvat/pull/2058>)
-- Ability to work with data on the fly (https://github.com/opencv/cvat/pull/2007)
+- Ability to work with data on the fly (<https://github.com/opencv/cvat/pull/2007>)
 - Annotation in process outline color wheel (<https://github.com/opencv/cvat/pull/2084>)
 - On the fly annotation using DL detectors (<https://github.com/opencv/cvat/pull/2102>)
 - Displaying automatic annotation progress on a task view (<https://github.com/opencv/cvat/pull/2148>)
 - Automatic tracking of bounding boxes using serverless functions (<https://github.com/opencv/cvat/pull/2136>)
-- [Datumaro] CLI command for dataset equality comparison (<https://github.com/opencv/cvat/pull/1989>)
-- [Datumaro] Merging of datasets with different labels (<https://github.com/opencv/cvat/pull/2098>)
+- \[Datumaro] CLI command for dataset equality comparison (<https://github.com/opencv/cvat/pull/1989>)
+- \[Datumaro] Merging of datasets with different labels (<https://github.com/opencv/cvat/pull/2098>)
 - Add FBRS interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/2094>)
 - Ability to change default behaviour of previous/next buttons of a player.
   It supports regular navigation, searching a frame according to annotations
@@ -212,7 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Used Ubuntu:20.04 as a base image for CVAT Dockerfile (<https://github.com/opencv/cvat/pull/2101>)
 - Right colors of label tags in label mapping when a user runs automatic detection (<https://github.com/openvinotoolkit/cvat/pull/2162>)
 - Nuclio became an optional component of CVAT (<https://github.com/openvinotoolkit/cvat/pull/2192>)
-- A key to remove a point from a polyshape [Ctrl => Alt] (<https://github.com/openvinotoolkit/cvat/pull/2204>)
+- A key to remove a point from a polyshape (Ctrl => Alt) (<https://github.com/openvinotoolkit/cvat/pull/2204>)
 - Updated `docker-compose` file version from `2.3` to `3.3`(<https://github.com/openvinotoolkit/cvat/pull/2235>)
 - Added auto inference of url schema from host in CLI, if provided (<https://github.com/openvinotoolkit/cvat/pull/2240>)
 - Track frames in skips between annotation is presented in MOT and MOTS formats are marked `outside` (<https://github.com/openvinotoolkit/cvat/pull/2198>)
@@ -244,15 +244,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 'List of tasks' Kibana visualization (<https://github.com/openvinotoolkit/cvat/pull/2361>)
 - An error on exporting not `jpg` or `png` images in TF Detection API format (<https://github.com/openvinotoolkit/datumaro/issues/35>)
 
-## [1.1.0] - 2020-08-31
+## \[1.1.0] - 2020-08-31
 
 ### Added
 
 - Siammask tracker as DL serverless function (<https://github.com/opencv/cvat/pull/1988>)
-- [Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
-- [Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
+- \[Datumaro] Added model info and source info commands (<https://github.com/opencv/cvat/pull/1973>)
+- \[Datumaro] Dataset statistics (<https://github.com/opencv/cvat/pull/1668>)
 - Ability to change label color in tasks and predefined labels (<https://github.com/opencv/cvat/pull/2014>)
-- [Datumaro] Multi-dataset merge (https://github.com/opencv/cvat/pull/1695)
+- \[Datumaro] Multi-dataset merge (<https://github.com/opencv/cvat/pull/1695>)
 - Ability to configure email verification for new users (<https://github.com/opencv/cvat/pull/1929>)
 - Link to django admin page from UI (<https://github.com/opencv/cvat/pull/2068>)
 - Notification message when users use wrong browser (<https://github.com/opencv/cvat/pull/2070>)
@@ -271,7 +271,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Django RQ dashboard view (<https://github.com/opencv/cvat/pull/2069>)
 - Object's details menu settings (<https://github.com/opencv/cvat/pull/2084>)
 
-## [1.1.0-beta] - 2020-08-03
+## \[1.1.0-beta] - 2020-08-03
 
 ### Added
 
@@ -279,7 +279,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Source type support for tags, shapes and tracks (<https://github.com/opencv/cvat/pull/1192>)
 - Source type support for CVAT Dumper/Loader (<https://github.com/opencv/cvat/pull/1192>)
 - Intelligent polygon editing (<https://github.com/opencv/cvat/pull/1921>)
-- Support creating multiple jobs for each task through python cli (https://github.com/opencv/cvat/pull/1950)
+- Support creating multiple jobs for each task through python cli (<https://github.com/opencv/cvat/pull/1950>)
 - python cli over https (<https://github.com/opencv/cvat/pull/1942>)
 - Error message when plugins weren't able to initialize instead of infinite loading (<https://github.com/opencv/cvat/pull/1966>)
 - Ability to change user password (<https://github.com/opencv/cvat/pull/1954>)
@@ -319,7 +319,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clearing frame cache when close a task (<https://github.com/opencv/cvat/pull/1966>)
 - Increase rate of throttling policy for unauthenticated users (<https://github.com/opencv/cvat/pull/1969>)
 
-## [1.1.0-alpha] - 2020-06-30
+## \[1.1.0-alpha] - 2020-06-30
 
 ### Added
 
@@ -334,9 +334,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ClamAV antivirus integration (<https://github.com/opencv/cvat/pull/1712>)
 - Added canvas background color selector (<https://github.com/opencv/cvat/pull/1705>)
 - SCSS files linting with Stylelint tool (<https://github.com/opencv/cvat/pull/1766>)
-- Supported import and export or single boxes in MOT format (https://github.com/opencv/cvat/pull/1764)
-- [Datumaro] Added `stats` command, which shows some dataset statistics
-  like image mean and std (https://github.com/opencv/cvat/pull/1734)
+- Supported import and export or single boxes in MOT format (<https://github.com/opencv/cvat/pull/1764>)
+- \[Datumaro] Added `stats` command, which shows some dataset statistics
+  like image mean and std (<https://github.com/opencv/cvat/pull/1734>)
 - Add option to upload annotations upon task creation on CLI
 - Polygon and polylines interpolation (<https://github.com/opencv/cvat/pull/1571>)
 - Ability to redraw shape from scratch (Shift + N) for an activated shape (<https://github.com/opencv/cvat/pull/1571>)
@@ -346,9 +346,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new tag annotation workspace (<https://github.com/opencv/cvat/pull/1570>)
 - Appearance block in attribute annotation mode (<https://github.com/opencv/cvat/pull/1820>)
 - Keyframe navigations and some switchers in attribute annotation mode (<https://github.com/opencv/cvat/pull/1820>)
-- [Datumaro] Added `convert` command to convert datasets directly (<https://github.com/opencv/cvat/pull/1837>)
-- [Datumaro] Added an option to specify image extension when exporting datasets (<https://github.com/opencv/cvat/pull/1799>)
-- [Datumaro] Added image copying when exporting datasets, if possible (<https://github.com/opencv/cvat/pull/1799>)
+- \[Datumaro] Added `convert` command to convert datasets directly (<https://github.com/opencv/cvat/pull/1837>)
+- \[Datumaro] Added an option to specify image extension when exporting datasets (<https://github.com/opencv/cvat/pull/1799>)
+- \[Datumaro] Added image copying when exporting datasets, if possible (<https://github.com/opencv/cvat/pull/1799>)
 
 ### Changed
 
@@ -358,10 +358,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings page move to the modal. (<https://github.com/opencv/cvat/pull/1705>)
 - Implemented import and export of annotations with relative image paths (<https://github.com/opencv/cvat/pull/1463>)
 - Using only single click to start editing or remove a point (<https://github.com/opencv/cvat/pull/1571>)
-- Added support for attributes in VOC XML format (https://github.com/opencv/cvat/pull/1792)
-- Added annotation attributes in COCO format (https://github.com/opencv/cvat/pull/1782)
+- Added support for attributes in VOC XML format (<https://github.com/opencv/cvat/pull/1792>)
+- Added annotation attributes in COCO format (<https://github.com/opencv/cvat/pull/1782>)
 - Colorized object items in the side panel (<https://github.com/opencv/cvat/pull/1753>)
-- [Datumaro] Annotation-less files are not generated anymore in COCO format, unless tasks explicitly requested (<https://github.com/opencv/cvat/pull/1799>)
+- \[Datumaro] Annotation-less files are not generated anymore in COCO format, unless tasks explicitly requested (<https://github.com/opencv/cvat/pull/1799>)
 
 ### Fixed
 
@@ -388,7 +388,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - SQL injection in Django `CVE-2020-9402` (<https://github.com/opencv/cvat/pull/1657>)
 
-## [1.0.0] - 2020-05-29
+## \[1.0.0] - 2020-05-29
 
 ### Added
 
@@ -425,7 +425,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added directory removal on error during `extract` command (<https://github.com/opencv/cvat/pull/1352>)
 - Added debug error message on incorrect XPath (<https://github.com/opencv/cvat/pull/1352>)
 - Exporting frame stepped task
-  (<https://github.com/opencv/cvat/issues/1294, https://github.com/opencv/cvat/issues/1334>)
+  (<https://github.com/opencv/cvat/issues/1294>, <https://github.com/opencv/cvat/issues/1334>)
 - Fixed broken command line interface for `cvat` export format in Datumaro (<https://github.com/opencv/cvat/issues/1494>)
 - Updated Rest API document, Swagger document serving instruction issue (<https://github.com/opencv/cvat/issues/1495>)
 - Fixed cuboid occluded view (<https://github.com/opencv/cvat/pull/1500>)
@@ -450,7 +450,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Permission group whitelist check for analytics view (<https://github.com/opencv/cvat/pull/1608>)
 
-## [1.0.0-beta.2] - 2020-04-30
+## \[1.0.0-beta.2] - 2020-04-30
 
 ### Added
 
@@ -462,13 +462,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Annotation convertation utils, currently supported natively via Datumaro framework
-  (https://github.com/opencv/cvat/pull/1477)
+  (<https://github.com/opencv/cvat/pull/1477>)
 
 ### Fixed
 
-- Auto annotation, TF annotation and Auto segmentation apps (https://github.com/opencv/cvat/pull/1409)
+- Auto annotation, TF annotation and Auto segmentation apps (<https://github.com/opencv/cvat/pull/1409>)
 - Import works with truncated images now: "OSError:broken data stream" on corrupt images
-  (https://github.com/opencv/cvat/pull/1430)
+  (<https://github.com/opencv/cvat/pull/1430>)
 - Hide functionality (H) doesn't work (<https://github.com/opencv/cvat/pull/1445>)
 - The highlighted attribute doesn't correspond to the chosen attribute in AAM (<https://github.com/opencv/cvat/pull/1445>)
 - Inconvinient image shaking while drawing a polygon (hold Alt key during drawing/editing/grouping to drag an image) (<https://github.com/opencv/cvat/pull/1445>)
@@ -476,13 +476,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Block of text information doesn't disappear after deactivating for locked shapes (<https://github.com/opencv/cvat/pull/1445>)
 - Annotation uploading fails in annotation view (<https://github.com/opencv/cvat/pull/1445>)
 - UI freezes after canceling pasting with escape (<https://github.com/opencv/cvat/pull/1445>)
-- Duplicating keypoints in COCO export (https://github.com/opencv/cvat/pull/1435)
+- Duplicating keypoints in COCO export (<https://github.com/opencv/cvat/pull/1435>)
 - CVAT new UI: add arrows on a mouse cursor (<https://github.com/opencv/cvat/pull/1391>)
 - Delete point bug (in new UI) (<https://github.com/opencv/cvat/pull/1440>)
-- Fix apache startup after PC restart (https://github.com/opencv/cvat/pull/1467)
-- Open task button doesn't work (https://github.com/opencv/cvat/pull/1474)
+- Fix apache startup after PC restart (<https://github.com/opencv/cvat/pull/1467>)
+- Open task button doesn't work (<https://github.com/opencv/cvat/pull/1474>)
 
-## [1.0.0-beta.1] - 2020-04-15
+## \[1.0.0-beta.1] - 2020-04-15
 
 ### Added
 
@@ -491,12 +491,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to display a bitmap in the new UI
 - Button to reset colors settings (brightness, saturation, contrast) in the new UI
 - Option to display shape text always
-- Dedicated message with clarifications when share is unmounted (https://github.com/opencv/cvat/pull/1373)
-- Ability to create one tracked point (https://github.com/opencv/cvat/pull/1383)
+- Dedicated message with clarifications when share is unmounted (<https://github.com/opencv/cvat/pull/1373>)
+- Ability to create one tracked point (<https://github.com/opencv/cvat/pull/1383>)
 - Ability to draw/edit polygons and polylines with automatic bordering feature
-  (https://github.com/opencv/cvat/pull/1394)
+  (<https://github.com/opencv/cvat/pull/1394>)
 - Tutorial: instructions for CVAT over HTTPS
-- Deep extreme cut (semi-automatic segmentation) to the new UI (https://github.com/opencv/cvat/pull/1398)
+- Deep extreme cut (semi-automatic segmentation) to the new UI (<https://github.com/opencv/cvat/pull/1398>)
 
 ### Changed
 
@@ -516,38 +516,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hidden points (or outsided) are visible after changing a frame
 - Merge is allowed for points, but clicks on points conflict with frame dragging logic
 - Removed objects are visible for search
-- Add missed task_id and job_id fields into exception logs for the new UI (https://github.com/opencv/cvat/pull/1372)
-- UI fails when annotations saving occurs during drag/resize/edit (https://github.com/opencv/cvat/pull/1383)
+- Add missed task_id and job_id fields into exception logs for the new UI (<https://github.com/opencv/cvat/pull/1372>)
+- UI fails when annotations saving occurs during drag/resize/edit (<https://github.com/opencv/cvat/pull/1383>)
 - Multiple savings when hold Ctrl+S (a lot of the same copies of events were sent with the same working time)
-  (https://github.com/opencv/cvat/pull/1383)
-- UI doesn't have any reaction when git repos synchronization failed (https://github.com/opencv/cvat/pull/1383)
-- Bug when annotations cannot be saved after (delete - save - undo - save) (https://github.com/opencv/cvat/pull/1383)
-- VOC format exports Upper case labels correctly in lower case (https://github.com/opencv/cvat/pull/1379)
-- Fixed polygon exporting bug in COCO dataset (https://github.com/opencv/cvat/issues/1387)
-- Task creation from remote files (https://github.com/opencv/cvat/pull/1392)
+  (<https://github.com/opencv/cvat/pull/1383>)
+- UI doesn't have any reaction when git repos synchronization failed (<https://github.com/opencv/cvat/pull/1383>)
+- Bug when annotations cannot be saved after (delete - save - undo - save) (<https://github.com/opencv/cvat/pull/1383>)
+- VOC format exports Upper case labels correctly in lower case (<https://github.com/opencv/cvat/pull/1379>)
+- Fixed polygon exporting bug in COCO dataset (<https://github.com/opencv/cvat/issues/1387>)
+- Task creation from remote files (<https://github.com/opencv/cvat/pull/1392>)
 - Job cannot be opened in some cases when the previous job was failed during opening
-  (https://github.com/opencv/cvat/issues/1403)
-- Deactivated shape is still highlighted on the canvas (https://github.com/opencv/cvat/issues/1403)
-- AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (https://github.com/opencv/cvat/issues/1403)
-- Wrong semi-automatic segmentation near edges of an image (https://github.com/opencv/cvat/issues/1403)
-- Git repos paths (https://github.com/opencv/cvat/pull/1400)
-- Uploading annotations for tasks with multiple jobs (https://github.com/opencv/cvat/pull/1396)
+  (<https://github.com/opencv/cvat/issues/1403>)
+- Deactivated shape is still highlighted on the canvas (<https://github.com/opencv/cvat/issues/1403>)
+- AttributeError: 'tuple' object has no attribute 'read' in ReID algorithm (<https://github.com/opencv/cvat/issues/1403>)
+- Wrong semi-automatic segmentation near edges of an image (<https://github.com/opencv/cvat/issues/1403>)
+- Git repos paths (<https://github.com/opencv/cvat/pull/1400>)
+- Uploading annotations for tasks with multiple jobs (<https://github.com/opencv/cvat/pull/1396>)
 
-## [1.0.0-alpha] - 2020-03-31
+## \[1.0.0-alpha] - 2020-03-31
 
 ### Added
 
-- Data streaming using chunks (https://github.com/opencv/cvat/pull/1007)
-- New UI: showing file names in UI (https://github.com/opencv/cvat/pull/1311)
-- New UI: delete a point from context menu (https://github.com/opencv/cvat/pull/1292)
+- Data streaming using chunks (<https://github.com/opencv/cvat/pull/1007>)
+- New UI: showing file names in UI (<https://github.com/opencv/cvat/pull/1311>)
+- New UI: delete a point from context menu (<https://github.com/opencv/cvat/pull/1292>)
 
 ### Fixed
 
-- Git app cannot clone a repository (https://github.com/opencv/cvat/pull/1330)
-- New UI: preview position in task details (https://github.com/opencv/cvat/pull/1312)
-- AWS deployment (https://github.com/opencv/cvat/pull/1316)
+- Git app cannot clone a repository (<https://github.com/opencv/cvat/pull/1330>)
+- New UI: preview position in task details (<https://github.com/opencv/cvat/pull/1312>)
+- AWS deployment (<https://github.com/opencv/cvat/pull/1316>)
 
-## [0.6.1] - 2020-03-21
+## \[0.6.1] - 2020-03-21
 
 ### Changed
 
@@ -567,7 +567,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bump acorn from 6.3.0 to 6.4.1 in /cvat-ui ([#1270](https://github.com/opencv/cvat/pull/1270))
 
-## [0.6.0] - 2020-03-15
+## \[0.6.0] - 2020-03-15
 
 ### Added
 
@@ -605,19 +605,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Output labels for VOC format can be specified with Datumaro [#942](https://github.com/opencv/cvat/issues/942)
 - Annotations can be filtered before dumping with Datumaro [#994](https://github.com/opencv/cvat/issues/994)
 
-## [0.5.2] - 2019-12-15
+## \[0.5.2] - 2019-12-15
 
 ### Fixed
 
 - Frozen version of scikit-image==0.15 in requirements.txt because next releases don't support Python 3.5
 
-## [0.5.1] - 2019-10-17
+## \[0.5.1] - 2019-10-17
 
 ### Added
 
 - Integration with Zenodo.org (DOI)
 
-## [0.5.0] - 2019-09-12
+## \[0.5.0] - 2019-09-12
 
 ### Added
 
@@ -635,7 +635,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added in a command line model manager tester
 - Ability to dump/load annotations in several formats from UI (CVAT, Pascal VOC, YOLO, MS COCO, png mask, TFRecord)
 - Auth for REST API (api/v1/auth/): login, logout, register, ...
-- Preview for the new CVAT UI (dashboard only) is available: http://localhost:9080/
+- Preview for the new CVAT UI (dashboard only) is available: <http://localhost:9080/>
 - Added command line tool for performing common task operations (/utils/cli/)
 
 ### Changed
@@ -669,26 +669,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgraded Django, djangorestframework, and other packages
 
-## [0.4.2] - 2019-06-03
+## \[0.4.2] - 2019-06-03
 
 ### Fixed
 
 - Fixed interaction with the server share in the auto annotation plugin
 
-## [0.4.1] - 2019-05-14
+## \[0.4.1] - 2019-05-14
 
 ### Fixed
 
 - JavaScript syntax incompatibility with Google Chrome versions less than 72
 
-## [0.4.0] - 2019-05-04
+## \[0.4.0] - 2019-05-04
 
 ### Added
 
 - OpenVINO auto annotation: it is possible to upload a custom model and annotate images automatically.
 - Ability to rotate images/video in the client part (Ctrl+R, Shift+Ctrl+R shortcuts) (#305)
 - The ReID application for automatic bounding box merging has been added (#299)
-- Keyboard shortcuts to switch next/previous default shape type (box, polygon etc) [Alt + <, Alt + >] (#316)
+- Keyboard shortcuts to switch next/previous default shape type (box, polygon etc) (Alt + <, Alt + >) (#316)
 - Converter for VOC now supports interpolation tracks
 - REST API (/api/v1/\*, /api/docs)
 - Semi-automatic semantic segmentation with the [Deep Extreme Cut](http://www.vision.ee.ethz.ch/~cvlsegmentation/dextr/) work
@@ -706,10 +706,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Django 2.1.5 (security fix, https://nvd.nist.gov/vuln/detail/CVE-2019-3498)
+- Django 2.1.5 (security fix, [CVE-2019-3498](https://nvd.nist.gov/vuln/detail/CVE-2019-3498))
 - Several scenarious which cause code 400 after undo/redo/save have been fixed (#315)
 
-## [0.3.0] - 2018-12-29
+## \[0.3.0] - 2018-12-29
 
 ### Added
 
@@ -736,7 +736,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
 - Unified shortcut (Esc) for close any mode instead of different shortcuts (Alt+N, Alt+G, Alt+M etc.).
 - Dump file contains information about data source (e.g. video name, archive name, ...)
-- Update requests library due to https://nvd.nist.gov/vuln/detail/CVE-2018-18074
+- Update requests library due to [CVE-2018-18074](https://nvd.nist.gov/vuln/detail/CVE-2018-18074)
 - Per task/job permissions to create/access/change/delete tasks and annotations
 - Documentation was improved
 - Timeout for creating tasks was increased (from 1h to 4h) (#136)
@@ -755,7 +755,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard loading has been accelerated (#156)
 - Text drawing outside of a frame in some cases (#202)
 
-## [0.2.0] - 2018-09-28
+## \[0.2.0] - 2018-09-28
 
 ### Added
 
@@ -787,7 +787,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Several memory leaks
 - Inconsistent extensions between filenames in an annotation file and real filenames
 
-## [0.1.2] - 2018-08-07
+## \[0.1.2] - 2018-08-07
 
 ### Added
 
@@ -805,7 +805,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - More strict verification for labels with attributes
 
-## [0.1.1] - 2018-07-6
+## \[0.1.1] - 2018-07-6
 
 ### Added
 
@@ -816,7 +816,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - GitHub documentation
 
-## 0.1.0 - 2018-06-29
+## \[0.1.0] - 2018-06-29
 
 ### Added
 
