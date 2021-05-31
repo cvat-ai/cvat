@@ -50,13 +50,7 @@
     text-shadow: 0 0 3px rgb(27, 27, 27);
 }
 
-.avatar:hover img {
-    box-shadow: 0 0 15px gray;
-}
-
-.developer-info-list-item {
-    min-width: 15rem !important;
-}
+/* block location */
 
 .location {
     width: 70%;
@@ -94,19 +88,6 @@
 
 #world-map-marker:hover {
     border: 4px white solid;
-}
-
-#world-map-marker:hover #tooltip div {
-    visibility: visible;
-}
-
-#tooltip {
-    background: white;
-    color: #000;
-    padding: 4px 8px;
-    font-size: 13px;
-    border-radius: 8px;
-    visibility: hidden;
 }
 
 /* cover block on about page */
