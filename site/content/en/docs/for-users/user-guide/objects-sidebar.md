@@ -36,7 +36,8 @@ frame. The following figure is an example of how the list might look like:
 
 **Objects** on the side bar
 
-The type of a shape can be changed by selecting **Label** property. For instance, it can look like shown on the figure below:
+The type of a shape can be changed by selecting **Label** property.
+For instance, it can look like shown on the figure below:
 
 ![](/images/image050.jpg)
 
@@ -48,7 +49,8 @@ The action menu calls up the button:
 
 The action menu contains:
 
-- `Create object URL` - puts a link to an object on the clipboard. After you open the link, this object will be filtered.
+- `Create object URL` - puts a link to an object on the clipboard.
+  After you open the link, this object will be filtered.
 - `Make a copy`- copies an object. The keyboard shortcut is `Ctrl + C` `Ctrl + V`.
 - `Propagate` - Сopies the form to several frames,
   invokes a dialog box in which you can specify the number of copies
@@ -99,8 +101,10 @@ this way you will change the label color for all jobs in the task.
 
 **Fast label change**
 
-You can change the label of an object using hot keys. In order to do it, you need to assign a number (from 0 to 9) to labels. By default numbers 1,2...0 are assigned to the first ten labels.
- To assign a number, click on the button placed at the right of a label name on the sidebar.
+You can change the label of an object using hot keys.
+In order to do it, you need to assign a number (from 0 to 9) to labels.
+By default numbers 1,2...0 are assigned to the first ten labels.
+To assign a number, click on the button placed at the right of a label name on the sidebar.
 
 ![](/images/image210.jpg)
 

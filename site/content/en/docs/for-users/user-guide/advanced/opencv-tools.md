@@ -3,7 +3,10 @@ title: "OpenCV tools"
 linkTitle: "OpenCV tools"
 weight: 6
 ---
-The tool based on [Open CV](https://opencv.org/) Computer Vision library which is an open-source product that includes many CV algorithms. Some of these algorithms can be used to simplify the annotation process.
+
+The tool based on [Open CV](https://opencv.org/) Computer Vision library
+which is an open-source product that includes many CV algorithms.
+Some of these algorithms can be used to simplify the annotation process.
 
 First step to work with OpenCV is to load it into CVAT. Click on the toolbar icon, then click `Load OpenCV`.
 
@@ -13,7 +16,8 @@ Once it is loaded, the tool's functionality will be available.
 
 ### Intelligent scissors
 
-Intelligent scissors is an CV method of creating a polygon by placing points with automatic drawing of a line between them.
+Intelligent scissors is an CV method of creating a polygon
+by placing points with automatic drawing of a line between them.
 The distance between the adjacent points is limited by the threshold of action,
 displayed as a red square which is tied to the cursor.
 

@@ -49,4 +49,5 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
   ![](/images/image187.jpg)
 
 - This action will automatically annotates one frame.
-  In the [Automatic annotation](/docs/for-users/user-guide/advanced/automatic-annotation/) section you can read how to make automatic annotation of all frames.
+  In the [Automatic annotation](/docs/for-users/user-guide/advanced/automatic-annotation/) section you can read
+  how to make automatic annotation of all frames.
