@@ -55,11 +55,14 @@ Go to the next/previous frame with a predefined step. Shortcuts:
 
 ![](/images/image037.jpg)
 
-The button to go to the next / previous frame has the customization possibility. To customize, right-click on the button and select one of three options:
+The button to go to the next / previous frame has the customization possibility.
+To customize, right-click on the button and select one of three options:
 
 1. The default option - go to the next / previous frame (the step is 1 frame).
-2. Go to the next / previous frame that has any objects (in particular filtered). Read the [filter](/docs/for-users/user-guide/advanced/filter/) section to know the details how to use it.
-3. Go to the next / previous frame without annotation at all. Use this option in cases when you need to find missed frames quickly.
+2. Go to the next / previous frame that has any objects (in particular filtered).
+   Read the [filter](/docs/for-users/user-guide/advanced/filter/) section to know the details how to use it.
+3. Go to the next / previous frame without annotation at all.
+   Use this option in cases when you need to find missed frames quickly.
 
 Shortcuts: `D` - previous, `F` - next.
 
