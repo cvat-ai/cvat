@@ -36,7 +36,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
+function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
     const { visible, switchShortcutsDialog } = props;
     const keyMap = getApplicationKeyMap();
 
@@ -95,9 +95,14 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
             zIndex={1001} /* default antd is 1000 */
             className='cvat-shortcuts-modal-window'
         >
-            <Table dataSource={dataSource} columns={columns} size='small' className='cvat-shortcuts-modal-window-table' />
+            <Table
+                dataSource={dataSource}
+                columns={columns}
+                size='small'
+                className='cvat-shortcuts-modal-window-table'
+            />
         </Modal>
     );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ShorcutsDialog);
+export default connect(mapStateToProps, mapDispatchToProps)(ShortcutsDialog);

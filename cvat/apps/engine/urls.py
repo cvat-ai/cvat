@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -30,7 +30,7 @@ schema_view = get_schema_view(
 
 # drf-yasg component doesn't handle correctly URL_FORMAT_OVERRIDE and
 # send requests with ?format=openapi suffix instead of ?scheme=openapi.
-# We map the required paramater explicitly and add it into query arguments
+# We map the required parameter explicitly and add it into query arguments
 # on the server side.
 def wrap_swagger(view):
     @login_required

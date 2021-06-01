@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ def create_user(sender, instance, created, **kwargs):
         db_group = Group.objects.get(name=AUTH_ROLE.ADMIN)
         instance.groups.add(db_group)
 
-        # create and verify EmailAdress for superuser accounts
+        # create and verify EmailAddress for superuser accounts
         if allauth_settings.EMAIL_REQUIRED:
             EmailAddress.objects.get_or_create(user=instance, email=instance.email, primary=True, verified=True)
 

@@ -1776,6 +1776,190 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         }
         self._check_api_v1_task(data)
 
+class TaskMoveAPITestCase(APITestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+        self._run_api_v1_job_id_annotation(self.task.segment_set.first().job_set.first().id, self.annotation_data)
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+        projects = []
+
+        project_data = {
+            "name": "Project for task move 1",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car"
+            }, {
+                "name": "person"
+            }]
+        }
+        db_project = create_db_project(project_data)
+        projects.append(db_project)
+
+        project_data = {
+            "name": "Project for task move 2",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
+            }, {
+                "name": "test"
+            }, {
+                "name": "other.label"
+            }]
+        }
+
+        db_project = create_db_project(project_data)
+        projects.append(db_project)
+
+        cls.projects = projects
+
+        task_data = {
+            "name": "Task for moving",
+            "owner": cls.admin,
+            "overlap": 0,
+            "segment_size": 100,
+            "image_quality": 75,
+            "size": 100,
+            "project": None,
+            "labels": [{
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
+            }]
+        }
+        db_task = create_db_task(task_data)
+        cls.task = db_task
+
+        cls.annotation_data = {
+            "version": 1,
+            "tags": [
+                {
+                    "frame": 0,
+                    "label_id": cls.task.label_set.first().id,
+                    "group": None,
+                    "source": "manual",
+                    "attributes": []
+                }
+            ],
+            "shapes": [
+                {
+                    "frame": 0,
+                    "label_id": cls.task.label_set.first().id,
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": cls.task.label_set.first().attributespec_set.first().id,
+                            "value": cls.task.label_set.first().attributespec_set.first().values.split('\'')[1]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 100, 300.222],
+                    "type": "rectangle",
+                    "occluded": False
+                }
+            ],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": cls.task.label_set.first().id,
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": cls.task.label_set.first().attributespec_set.first().id,
+                            "value": cls.task.label_set.first().attributespec_set.first().values.split('\'')[1]
+                        }
+                    ],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        },
+                        {
+                            "frame": 2,
+                            "attributes": [],
+                            "points": [2.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True
+                        },
+                    ]
+                }
+            ]
+        }
+
+    def _run_api_v1_tasks_id(self, tid, data):
+        with ForceLogin(self.admin, self.client):
+            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+                data=data, format="json")
+
+        return response
+
+    def _run_api_v1_job_id_annotation(self, jid, data):
+        with ForceLogin(self.admin, self.client):
+            response = self.client.patch('/api/v1/jobs/{}/annotations?action=create'.format(jid),
+                data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, data):
+        self.assertEqual(response.data["project_id"], data["project_id"])
+
+    def _check_api_v1_tasks(self, tid, data, expected_status=status.HTTP_200_OK):
+        response = self._run_api_v1_tasks_id(tid, data)
+        self.assertEqual(response.status_code, expected_status)
+        if (expected_status == status.HTTP_200_OK):
+            self._check_response(response, data)
+
+    def test_move_task_bad_request(self):
+        # Try to move task without proper label mapping
+        data = {
+            "project_id": self.projects[0].id,
+            "labels": [{
+                "id": self.task.label_set.first().id,
+                "name": "some.other.label"
+            }]
+        }
+        self._check_api_v1_tasks(self.task.id, data, status.HTTP_400_BAD_REQUEST)
+
+    def test_move_task(self):
+        # Try to move single task to the project
+        data = {
+            "project_id": self.projects[0].id
+        }
+        self._check_api_v1_tasks(self.task.id, data)
+
+        # Try to move task from project to the other project
+        data = {
+            "project_id": self.projects[1].id,
+            "labels": [{
+                "id": self.projects[0].label_set.all()[1].id,
+                "name": "test"
+            }]
+        }
+        self._check_api_v1_tasks(self.task.id, data)
+
 class TaskCreateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()

@@ -30,10 +30,13 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
-    [key: string]: string | number | null | undefined;
+    [key: string]: string | boolean | number | null | undefined;
 }
 
-export type Project = any;
+export interface Project {
+    instance: any;
+    preview: string;
+}
 
 export interface ProjectsState {
     initialized: boolean;
@@ -74,6 +77,10 @@ export interface TasksState {
     fetching: boolean;
     updating: boolean;
     hideEmpty: boolean;
+    moveTask: {
+        modalVisible: boolean;
+        taskId: number | null;
+    };
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -245,6 +252,7 @@ export interface NotificationsState {
             exporting: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            moving: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -310,6 +318,7 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            movingDone: string;
         };
         models: {
             inferenceDone: string;

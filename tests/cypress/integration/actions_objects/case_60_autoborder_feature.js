@@ -89,7 +89,7 @@ context('Autoborder feature.', () => {
             testCollectCxCircleCoord(polygonSvgJsCircleId);
         });
 
-        it('Start drawing a polyline with autobordering beetwen the two shapes.', () => {
+        it('Start drawing a polyline with autobordering between the two shapes.', () => {
             cy.get('.cvat-draw-polyline-control').click();
             cy.get('.cvat-draw-polyline-popover-visible').find('[type="button"]').contains('Shape').click();
             testAutoborderPointsCount(12); // 8 points at the rectangles + 4 at the polygon
