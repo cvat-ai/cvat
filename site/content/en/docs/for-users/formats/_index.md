@@ -144,7 +144,7 @@ for parsed_shape in parsed_shapes:
 task_data.add_shape(shape)
 ```
 
-## Format specifications:
+## Format specifications
 
 - [CVAT](format-cvat)
 - [Datumaro](format-datumaro)
