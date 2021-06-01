@@ -18,7 +18,7 @@ weight: 6
   - `occluded` (both UI option and a separate attribute)
   - `truncated` and `difficult` (should be defined for labels as `checkbox` -es)
   - action attributes (import only, should be defined as `checkbox` -es)
-  - arbitrary attributes (in the `attributes` secion of XML files)
+  - arbitrary attributes (in the `attributes` section of XML files)
 
 #### Pascal VOC export
 
@@ -161,7 +161,8 @@ the last label:12,28,0:: # color index 200
    You can add `~checkbox=difficult:false ~checkbox=truncated:false`
    attributes for each label if you want to use them.
 
-   Select interesting image files (See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task/) guide for details)
+   Select interesting image files
+   (See [Creating an annotation task](/docs/for-users/user-guide/creating_an_annotation_task/) guide for details)
 
 1. zip the corresponding annotation files
 

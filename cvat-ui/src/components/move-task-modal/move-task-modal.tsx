@@ -40,7 +40,7 @@ export default function MoveTaskModal(): JSX.Element {
                 labelValues[label.id] = {
                     labelId: label.id,
                     newLabelName: null,
-                    clearAtrributes: true,
+                    clearAttributes: true,
                 };
             });
             setLabelMap(labelValues);
@@ -75,7 +75,7 @@ export default function MoveTaskModal(): JSX.Element {
                 Object.values(labelMap).map((map) => ({
                     label_id: map.labelId,
                     new_label_name: map.newLabelName,
-                    clear_attributes: map.clearAtrributes,
+                    clear_attributes: map.clearAttributes,
                 })),
             ),
         );
@@ -90,16 +90,12 @@ export default function MoveTaskModal(): JSX.Element {
                     const { labels } = _project[0];
                     const labelValues: { [key: string]: LabelMapperItemValue } = {};
                     Object.entries(labelMap).forEach(([id, label]) => {
-                        const taskLabelName = task.labels.filter(
-                            (_label: any) => (_label.id === label.labelId),
-                        )[0].name;
-                        const [autoNewLabel] = labels.filter((_label: any) => (
-                            _label.name === taskLabelName
-                        ));
+                        const taskLabelName = task.labels.filter((_label: any) => _label.id === label.labelId)[0].name;
+                        const [autoNewLabel] = labels.filter((_label: any) => _label.name === taskLabelName);
                         labelValues[id] = {
                             labelId: label.labelId,
                             newLabelName: autoNewLabel ? autoNewLabel.name : null,
-                            clearAtrributes: true,
+                            clearAttributes: true,
                         };
                     });
                     setLabelMap(labelValues);
@@ -124,7 +120,7 @@ export default function MoveTaskModal(): JSX.Element {
                 <span>
                     {`Move task ${task?.id} to project`}
                     {/* TODO: replace placeholder */}
-                    <CVATTooltip title='Some moving proccess description here'>
+                    <CVATTooltip title='Some moving process description here'>
                         <QuestionCircleFilled className='ant-typography-secondary' />
                     </CVATTooltip>
                 </span>
@@ -142,7 +138,8 @@ export default function MoveTaskModal(): JSX.Element {
                 </Col>
             </Row>
             <Divider orientation='left'>Label mapping</Divider>
-            {!!Object.keys(labelMap).length && !taskUpdating &&
+            {!!Object.keys(labelMap).length &&
+                !taskUpdating &&
                 task?.labels.map((label: any) => (
                     <LabelMapperItem
                         label={label}

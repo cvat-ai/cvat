@@ -9,7 +9,8 @@ If you have any problems with a git repository cloning inside the CVAT:
 docker exec -it cvat bash -ic 'ls .ssh'
 ```
 
-- If you need a proxy for connecting to the Internet, specify the socks_proxy variable before build the container. For example:
+- If you need a proxy for connecting to the Internet, specify the socks_proxy variable before build the container.
+  For example:
 
 ```bash
 socks_proxy=proxy-example.com:1080 docker-compose build

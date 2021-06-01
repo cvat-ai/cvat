@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -163,13 +163,13 @@ class Git:
         slogger.task[self._tid].info("Cloning remote repository from {}..".format(ssh_url))
         self._rep = git.Repo.clone_from(ssh_url, self._cwd)
 
-        # Intitialization
+        # Initialization
         self._configurate()
 
 
     # Method is some wrapper for clone
-    # It restores state if any errors have occured
-    # It useful if merge conflicts have occured during pull
+    # It restores state if any errors have occurred
+    # It useful if merge conflicts have occurred during pull
     def _reclone(self):
         if os.path.exists(self._cwd):
             if not os.path.isdir(self._cwd):
@@ -184,7 +184,7 @@ class Git:
                     self._clone()
                     shutil.rmtree(tmp_repo, True)
                 except Exception as ex:
-                    # Restore state if any errors have occured
+                    # Restore state if any errors have occurred
                     if os.path.isdir(self._cwd):
                         shutil.rmtree(self._cwd, True)
                     os.rename(tmp_repo, self._cwd)
@@ -386,7 +386,7 @@ def initial_create(tid, git_path, lfs, user):
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
     except Exception as ex:
-        slogger.task[tid].exception('exception occured during git initial_create', exc_info = True)
+        slogger.task[tid].exception('exception occurred during git initial_create', exc_info = True)
         raise ex
 
 
@@ -455,7 +455,7 @@ def update_states():
         try:
             get(db_git.task_id, db_user)
         except Exception:
-            slogger.glob("Exception occured during a status updating for db_git with tid: {}".format(db_git.task_id))
+            slogger.glob("Exception occurred during a status updating for db_git with tid: {}".format(db_git.task_id))
 
 @transaction.atomic
 def _onsave(jid, data, action):

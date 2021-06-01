@@ -116,7 +116,7 @@ Prebuilt docker images for CVAT releases are available on Docker Hub:
 Automatically generated Swagger documentation for Django REST API is available
 on `<cvat_origin>/api/swagger`(default: `localhost:8080/api/swagger`).
 
-Swagger documentation is visiable on allowed hostes, Update environement
+Swagger documentation is visible on allowed hosts, Update environment
 variable in docker-compose.yml file with cvat hosted machine IP or domain
 name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`.
 
@@ -164,7 +164,7 @@ Other ways to ask questions and get our support:
   vision AI platform that fully integrates CVAT with scalable data processing
   and parallelized training pipelines.
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
-to offer annotation services for projects of any size. 
+  to offer annotation services for projects of any size.
 
 <!-- prettier-ignore-start -->
 <!-- Badges -->

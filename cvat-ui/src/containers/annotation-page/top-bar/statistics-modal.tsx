@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,6 +61,7 @@ class StatisticsModalContainer extends React.PureComponent<Props> {
 
         return (
             <StatisticsModalComponent
+                jobInstance={jobInstance}
                 collecting={collecting}
                 data={data}
                 visible={visible}

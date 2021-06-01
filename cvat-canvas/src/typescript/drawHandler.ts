@@ -462,11 +462,11 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.drawInstance.draw('point', e);
                 } else {
                     this.drawInstance.draw('update', e);
-                    const deltaTreshold = 15;
+                    const deltaThreshold = 15;
                     const dx = (e.clientX - lastDrawnPoint.x) ** 2;
                     const dy = (e.clientY - lastDrawnPoint.y) ** 2;
                     const delta = Math.sqrt(dx + dy);
-                    if (delta > deltaTreshold) {
+                    if (delta > deltaThreshold) {
                         this.drawInstance.draw('point', e);
                     }
                 }

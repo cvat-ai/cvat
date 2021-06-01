@@ -5,7 +5,6 @@ weight: 2
 ---
 
 1. Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
-
    ![](/images/image004.jpg)
 
 1. Specify parameters of the task:
@@ -23,7 +22,7 @@ weight: 2
    **Labels**. There are two ways of working with labels (available only if the task is not related to the project):
 
    - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
-      ![](/images/image123.jpg)
+     ![](/images/image123.jpg)
 
      You can set a name of the label in the `Label name` field and choose a color for each label.
 
@@ -154,8 +153,8 @@ weight: 2
    ![](/images/image006_detrac.jpg)
 
 1. The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
-    Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
-    Each button is responsible for a in menu `Actions` specific function:
+   Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
+   Each button is responsible for a in menu `Actions` specific function:
 
    - `Dump Annotation` and `Export as a dataset` — download annotations or
      annotations and images in a specific format. The following formats are available:

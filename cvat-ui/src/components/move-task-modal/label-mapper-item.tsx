@@ -13,7 +13,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 export interface LabelMapperItemValue {
     labelId: number;
     newLabelName: string | null;
-    clearAtrributes: boolean;
+    clearAttributes: boolean;
 }
 
 export interface LabelMapperItemProps {
@@ -36,14 +36,10 @@ export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Elemen
             <Col span={6}>
                 {label.name.length > 12 ? (
                     <CVATTooltip overlay={label.name}>
-                        <Tag color={label.color}>
-                            {`${label.name.slice(0, 12)}...`}
-                        </Tag>
+                        <Tag color={label.color}>{`${label.name.slice(0, 12)}...`}</Tag>
                     </CVATTooltip>
                 ) : (
-                    <Tag color={label.color}>
-                        {label.name}
-                    </Tag>
+                    <Tag color={label.color}>{label.name}</Tag>
                 )}
                 <ArrowRightOutlined />
             </Col>
@@ -57,23 +53,23 @@ export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Elemen
                             newLabelName: _value as string,
                         })}
                 >
-                    {projectLabels?.filter((_label) => (
-                        !labelNames.includes(_label.name)
-                    )).map((_label) => (
-                        <Select.Option key={_label.id} value={_label.name}>
-                            {_label.name}
-                        </Select.Option>
-                    ))}
+                    {projectLabels
+                        ?.filter((_label) => !labelNames.includes(_label.name))
+                        .map((_label) => (
+                            <Select.Option key={_label.id} value={_label.name}>
+                                {_label.name}
+                            </Select.Option>
+                        ))}
                 </Select>
             </Col>
             <Col>
                 <Checkbox
                     disabled
-                    checked={value.clearAtrributes}
+                    checked={value.clearAttributes}
                     onChange={(_value) =>
                         onChange({
                             ...value,
-                            clearAtrributes: _value.target.checked,
+                            clearAttributes: _value.target.checked,
                         })}
                 >
                     Clear attributes

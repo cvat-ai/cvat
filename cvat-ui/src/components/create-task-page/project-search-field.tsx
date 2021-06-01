@@ -13,7 +13,7 @@ const core = getCore();
 type Props = {
     value: number | null;
     onSelect: (id: number | null) => void;
-    filter?: (value: Project, index: number, array: Project[]) => unknown
+    filter?: (value: Project, index: number, array: Project[]) => unknown;
 };
 
 type Project = {
