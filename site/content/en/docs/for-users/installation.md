@@ -472,7 +472,7 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 
 Your server should be available (and unsecured) at `http://CVAT.example.com`
 
-Something went wrong ? The most common cause is a containers and images cache which were builded earlier.
+Something went wrong ? The most common cause is a containers and images cache which were built earlier.
 
 This will enable serving `http://CVAT.example.com/.well-known/acme-challenge/`
 route from `/var/tmp/letsencrypt-webroot` directory on the container's filesystem

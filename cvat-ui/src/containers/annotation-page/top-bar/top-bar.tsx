@@ -240,19 +240,19 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
-                let framesSkiped = 0;
+                let framesSkipped = 0;
                 if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {
-                    framesSkiped = 1;
+                    framesSkipped = 1;
                 }
                 if (frameSpeed === FrameSpeed.Fastest && frameNumber + 2 < jobInstance.stopFrame) {
-                    framesSkiped = 2;
+                    framesSkipped = 2;
                 }
 
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
                         if (canvasInstance.isAbleToChangeFrame()) {
-                            onChangeFrame(frameNumber + 1 + framesSkiped, stillPlaying, framesSkiped + 1);
+                            onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
                         } else {
                             onSwitchPlay(false);
                         }

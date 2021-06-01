@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Collapse sidebar/apperance', () => {
+context('Collapse sidebar/appearance', () => {
     const caseId = '30';
     let defaultValueLeftBackground;
 
@@ -51,7 +51,7 @@ context('Collapse sidebar/apperance', () => {
             checkEqualBackground();
         });
 
-        it('Collapse apperance', () => {
+        it('Collapse appearance', () => {
             // hide
             cy.get('.cvat-objects-appearance-collapse-header').click();
             cy.get('.cvat-objects-appearance-content').should('not.be.visible');

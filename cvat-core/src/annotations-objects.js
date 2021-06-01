@@ -50,7 +50,7 @@
                 throw new DataError(`Points must have exact 8 points, but got ${points.length / 2}`);
             }
         } else {
-            throw new ArgumentError(`Unknown value of shapeType has been recieved ${shapeType}`);
+            throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
         }
     }
 
@@ -1452,7 +1452,7 @@
                             / Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
                     );
                 } else {
-                    // The link below works for lines (which have infinit length)
+                    // The link below works for lines (which have infinite length)
                     // There is a case when perpendicular doesn't cross the edge
                     // In this case we don't use the computed distance
                     // Instead we use just distance to the nearest point

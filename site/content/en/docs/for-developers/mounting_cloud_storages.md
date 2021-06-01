@@ -135,7 +135,7 @@ sudo systemctl disable s3fs.service
 
    For more details see [here](https://github.com/Azure/azure-storage-fuse/wiki/1.-Installation)
 
-1. Create enviroments(replace `account_name`, `account_key`, `mount_point`):
+1. Create environments (replace `account_name`, `account_key`, `mount_point`):
 
    ```bash
    export AZURE_STORAGE_ACCOUNT=<account_name>

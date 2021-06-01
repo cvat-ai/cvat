@@ -40,7 +40,7 @@ export default function MoveTaskModal(): JSX.Element {
                 labelValues[label.id] = {
                     labelId: label.id,
                     newLabelName: null,
-                    clearAtrributes: true,
+                    clearAttributes: true,
                 };
             });
             setLabelMap(labelValues);
@@ -75,7 +75,7 @@ export default function MoveTaskModal(): JSX.Element {
                 Object.values(labelMap).map((map) => ({
                     label_id: map.labelId,
                     new_label_name: map.newLabelName,
-                    clear_attributes: map.clearAtrributes,
+                    clear_attributes: map.clearAttributes,
                 })),
             ),
         );
@@ -95,7 +95,7 @@ export default function MoveTaskModal(): JSX.Element {
                         labelValues[id] = {
                             labelId: label.labelId,
                             newLabelName: autoNewLabel ? autoNewLabel.name : null,
-                            clearAtrributes: true,
+                            clearAttributes: true,
                         };
                     });
                     setLabelMap(labelValues);
@@ -120,7 +120,7 @@ export default function MoveTaskModal(): JSX.Element {
                 <span>
                     {`Move task ${task?.id} to project`}
                     {/* TODO: replace placeholder */}
-                    <CVATTooltip title='Some moving proccess description here'>
+                    <CVATTooltip title='Some moving process description here'>
                         <QuestionCircleFilled className='ant-typography-secondary' />
                     </CVATTooltip>
                 </span>
