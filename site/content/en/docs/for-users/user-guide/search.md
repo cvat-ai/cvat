@@ -3,7 +3,6 @@ title: "Search"
 linkTitle: "Search"
 weight: 6
 ---
-### Search
 
 There are several options how to use the search.
 
