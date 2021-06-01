@@ -157,7 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - PATCH requests from cvat-core submit only changed fields (<https://github.com/openvinotoolkit/cvat/pull/2445>)
-- deploy.sh in serverless folder is seperated into deploy_cpu.sh and deploy_gpu.sh (<https://github.com/openvinotoolkit/cvat/pull/2546>)
+- deploy.sh in serverless folder is separated into deploy_cpu.sh and deploy_gpu.sh (<https://github.com/openvinotoolkit/cvat/pull/2546>)
 - Bumped nuclio version to 1.5.8
 - Migrated to Antd 4.9 (<https://github.com/openvinotoolkit/cvat/pull/2536>)
 
@@ -307,11 +307,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cannot read property 'pinned' of undefined because of zOrder related issues (<https://github.com/opencv/cvat/pull/1874>)
 - Do not iterate over hidden objects in aam (which are invisible because of zOrder) (<https://github.com/opencv/cvat/pull/1874>)
 - Cursor position is reset after changing a text field (<https://github.com/opencv/cvat/pull/1874>)
-- Hidden points and cuboids can be selected to be groupped (<https://github.com/opencv/cvat/pull/1874>)
+- Hidden points and cuboids can be selected to be grouped (<https://github.com/opencv/cvat/pull/1874>)
 - `outside` annotations should not be in exported images (<https://github.com/opencv/cvat/issues/1620>)
 - `CVAT for video format` import error with interpolation (<https://github.com/opencv/cvat/issues/1893>)
 - `Image compression` definition mismatch (<https://github.com/opencv/cvat/issues/1900>)
-- Points are dublicated during polygon interpolation sometimes (<https://github.com/opencv/cvat/pull/1892>)
+- Points are duplicated during polygon interpolation sometimes (<https://github.com/opencv/cvat/pull/1892>)
 - When redraw a shape with activated autobordering, previous points are visible (<https://github.com/opencv/cvat/pull/1892>)
 - No mapping between side object element and context menu in some attributes (<https://github.com/opencv/cvat/pull/1923>)
 - Interpolated shapes exported as `keyframe = True` (<https://github.com/opencv/cvat/pull/1937>)
@@ -462,7 +462,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Annotation convertation utils, currently supported natively via Datumaro framework
+- Annotation conversion utils, currently supported natively via Datumaro framework
   (<https://github.com/opencv/cvat/pull/1477>)
 
 ### Fixed

@@ -2,7 +2,7 @@
 
 ## Description
 
-This CVAT module is a client-side JavaScipt library to management of objects, frames, logs, etc.
+This CVAT module is a client-side JavaScript library for management of objects, frames, logs, etc.
 It contains the core logic of the Computer Vision Annotation Tool.
 
 ## Versioning

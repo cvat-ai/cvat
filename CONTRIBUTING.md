@@ -116,7 +116,7 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
   wsl -d Ubuntu-18.04
   ```
 
-- Run all commands from this isntallation guide in WSL Ubuntu shell.
+- Run all commands from this installation guide in WSL Ubuntu shell.
 
 ## Setup additional components in development environment
 
