@@ -487,7 +487,7 @@ At this point your deployment is up and running, ready for run acme-challenge fo
 
 ###### Create certificate files using an ACME challenge on docker host
 
-####### Prepare certificates
+**Prepare certificates**
 
 Point you shell in cvat repository directory, usually `cd $HOME/cvat` on docker host.
 
@@ -507,20 +507,20 @@ If certificates is issued a successful we can test a renew:
 ~/.acme.sh/acme.sh --renew --force --staging -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
 ```
 
-####### Remove test certificate, if success
+**Remove test certificate, if success**
 
 ```
 ~/.acme.sh/acme.sh --remove -d CVAT.example.com --debug
 rm -r /root/.acme.sh/CVAT.example.com
 ```
 
-####### Issue a production certificate
+**Issue a production certificate**
 
 ```
 ~/.acme.sh/acme.sh --issue -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
 ```
 
-####### Install production certificate and a user cron job (`crontab -e`) for update it
+**Install production certificate and a user cron job (`crontab -e`) for update it**
 
 This will copy necessary certificate files to a permanent directory for serve.
 According to acme.sh [documentation](https://github.com/acmesh-official/acme.sh#3-install-the-cert-to-apachenginx-etc)
@@ -545,7 +545,7 @@ Down the cvat_proxy container for setup https with issued certificate.
 docker stop cvat_proxy
 ```
 
-####### Reconfigure nginx for use certificates
+**Reconfigure nginx for use certificates**
 
 Bring the configuration file `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` to the following form:
 
