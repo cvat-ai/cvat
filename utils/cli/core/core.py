@@ -124,13 +124,14 @@ class CLI():
             check_url = self.api.git_check(rq_id)
             response = self.session.get(check_url)
             response_json = response.json()
-            log.info('''Awaiting dataset repository for task. Status: {}'''.format(
-                    response_json['status']))
+            
             while response_json['status'] != 'finished':
+                log.info('''Awaiting dataset repository for task. Status: {}'''.format(
+                    response_json['status']))
                 sleep(git_completion_verification_period)
                 response = self.session.get(check_url)
                 response_json = response.json()
-                if response_json['status'] == 'Failed':
+                if response_json['status'] == 'failed':
                     log.error(f'Dataset repository creation request for task {task_id} failed.')
 
             log.info(f"Dataset repository creation completed with status: {response_json['status']}.")
