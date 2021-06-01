@@ -753,22 +753,7 @@
   },
   "CVAT for video 1.1 many jobs": {
     "version": 0,
-    "tags": [
-      {
-        "frame": 1,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      },
-      {
-        "frame": 8,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
+/E    "tags": [],
     "shapes": [],
     "tracks": [
       {
