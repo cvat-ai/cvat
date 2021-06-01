@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated manifest format, added meta with related images (<https://github.com/openvinotoolkit/cvat/pull/3122>)
+- Update of COCO format documentation (<https://github.com/openvinotoolkit/cvat/pull/3197>)
 
 ### Deprecated
 
