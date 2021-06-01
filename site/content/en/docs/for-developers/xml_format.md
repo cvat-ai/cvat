@@ -30,7 +30,7 @@ In annotation mode each image tag has `width` and `height` attributes for the sa
       <name>String: some task name</name>
       <size>Number: count of frames/images in the task</size>
       <mode>String: interpolation or annotation</mode>
-      <overlap>Number: number of overlaped frames between segments</overlap>
+      <overlap>Number: number of overlapped frames between segments</overlap>
       <bugtracker>String: URL on an page which describe the task</bugtracker>
       <flipped>Boolean: were images of the task flipped? (True/False)</flipped>
       <created>String: date when the task was created</created>
@@ -300,7 +300,7 @@ Both formats has a common part which is described below:
       <name>String: some task name</name>
       <size>Number: count of frames/images in the task</size>
       <mode>String: interpolation or annotation</mode>
-      <overlap>Number: number of overlaped frames between segments</overlap>
+      <overlap>Number: number of overlapped frames between segments</overlap>
       <bugtracker>String: URL on an page which describe the task</bugtracker>
       <created>String: date when the task was created</created>
       <updated>String: date when the task was updated</updated>

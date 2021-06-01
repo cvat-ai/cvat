@@ -425,7 +425,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 instance.label_set.all().delete()
             else:
                 for old_label in instance.project.label_set.all():
-                    if new_label_for_name := list(filter(lambda x: x.get('id', None) == old_label.id, labels)):
+                    new_label_for_name = list(filter(lambda x: x.get('id', None) == old_label.id, labels))
+                    if len(new_label_for_name):
                         old_label.name = new_label_for_name[0].get('name', old_label.name)
                     try:
                         new_label = project.label_set.filter(name=old_label.name).first()
@@ -458,7 +459,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
             for old_label in old_labels:
-                if len(new_labels := tuple(filter(lambda x: x.get('id') == old_label.id, attrs.get('label_set', [])))):
+                new_labels = tuple(filter(lambda x: x.get('id') == old_label.id, attrs.get('label_set', [])))
+                if len(new_labels):
                     new_label_names.add(new_labels[0].get('name', old_label.name))
                 else:
                     new_label_names.add(old_label.name)
@@ -510,11 +512,9 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        subsets = set()
-        for task in instance.tasks.all():
-            if task.subset:
-                subsets.add(task.subset)
-        response['task_subsets'] = list(subsets)
+        task_subsets = set(instance.tasks.values_list('subset', flat=True))
+        task_subsets.discard('')
+        response['task_subsets'] = list(task_subsets)
         return response
 
 class ProjectSerializer(ProjectWithoutTaskSerializer):

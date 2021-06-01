@@ -31,10 +31,10 @@ s1 - sequence
 00 - means that this bounding box is the first one among the several
 ```
 
-- supported annotations: Label `market-1501` with atrributes (`query`, `person_id`, `camera_id`)
+- supported annotations: Label `market-1501` with attributes (`query`, `person_id`, `camera_id`)
 
 #### Market-1501 import
 
 Uploaded file: a zip archive of the structure above
 
-- supported annotations: Label `market-1501` with atrributes (`query`, `person_id`, `camera_id`)
+- supported annotations: Label `market-1501` with attributes (`query`, `person_id`, `camera_id`)

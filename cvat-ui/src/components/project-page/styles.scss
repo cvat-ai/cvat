@@ -4,6 +4,11 @@
 
 @import '../../base.scss';
 
+.cvat-project-page {
+    overflow-y: auto;
+    height: 100%;
+}
+
 .cvat-project-details {
     width: 100%;
     height: auto;
