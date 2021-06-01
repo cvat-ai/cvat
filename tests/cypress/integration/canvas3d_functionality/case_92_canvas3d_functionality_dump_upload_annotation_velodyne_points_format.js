@@ -6,7 +6,7 @@
 
 import { taskName, labelName } from '../../support/const_canvas3d';
 
-context('Canvas 3D functionality. Dump/upload annotation. ', () => {
+context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" format.', () => {
     const caseId = '91';
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_92_canvas3d_functionality_dump_upload_annotation_velodyne_points_format.js';
     const cuboidCreationParams = {
