@@ -8,7 +8,6 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format', () => {
     const caseId = '91';
-    const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_91_canvas3d_functionality_dump_upload_annotation_point_cloud_format.js';
     const cuboidCreationParams = {
         labelName: labelName,
     };
@@ -26,8 +25,6 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
-        cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboid');
-
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -72,12 +69,6 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.wait('@uploadAnnotationsPut').its('response.statusCode').should('equal', 201);
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_upload_annotation');
-            cy.compareImagesAndCheckResult(
-                `${screenshotsPath}/canvas3d_perspective_after_add_cuboid.png`,
-                `${screenshotsPath}/canvas3d_perspective_after_upload_annotation.png`,
-                true,
-            );
             cy.removeAnnotations();
             cy.get('button').contains('Save').click({ force: true });
         });
