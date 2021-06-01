@@ -172,9 +172,5 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
                 cy.compareImagesAndCheckResult(`${screenshotsPath}/${viewAfterCubiodHide}`, `${screenshotsPath}/${viewAfterCubiodUnhide}`);
             });
         });
-
-        it.skip('Switch pinned property for a cuboid via sidear. The cuboid can be resized but cannot be moved.', () => {
-            // TODO
-        });
     });
 });

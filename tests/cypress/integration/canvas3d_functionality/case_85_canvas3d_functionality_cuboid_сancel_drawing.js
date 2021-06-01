@@ -29,7 +29,7 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_drawning');
             cy.get('body').type('{Esc}');
-            cy.get('.cvat-draw-cuboid-popover-visible').should('exist').and('be.visible');
+            cy.get('.cvat-active-canvas-control').should('exist');
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_cancel_drawning');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_drawning.png`,
