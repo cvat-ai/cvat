@@ -17,8 +17,8 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
         cy.openTask(taskName)
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
+        cy.get('.cvat-canvas3d-topview').find('.cvat-canvas3d-fullsize').screenshot('canvas3d_topview_before_all');
         cy.create3DCuboid(cuboidCreationParams);
-        cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboid');
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -30,11 +30,10 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
             cy.get('.cvat-objects-sidebar-state-item').then((sidebarStateItem) => {
                 expect(sidebarStateItem.length).to.be.equal(1);
             });
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_reopen_job');
+            cy.get('.cvat-canvas3d-topview').find('.cvat-canvas3d-fullsize').screenshot('canvas3d_topview_after_reopen_job');
             cy.compareImagesAndCheckResult(
-                `${screenshotsPath}/canvas3d_perspective_after_add_cuboid.png`,
-                `${screenshotsPath}/canvas3d_perspective_after_reopen_job.png`,
-                true,
+                `${screenshotsPath}/canvas3d_topview_before_all.png`,
+                `${screenshotsPath}/canvas3d_topview_after_reopen_job.png`,
             );
         });
 
@@ -43,10 +42,10 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
             cy.saveJob('PUT');
             cy.contains('Saving changes on the server').should('be.hidden');
             cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_remove_annotations');
+            cy.get('.cvat-canvas3d-topview').find('.cvat-canvas3d-fullsize').screenshot('canvas3d_topview_after_remove_annotations');
             cy.compareImagesAndCheckResult(
-                `${screenshotsPath}/canvas3d_perspective_after_reopen_job.png`,
-                `${screenshotsPath}/canvas3d_perspective_after_remove_annotations.png`,
+                `${screenshotsPath}/canvas3d_topview_after_reopen_job.png`,
+                `${screenshotsPath}/canvas3d_topview_after_remove_annotations.png`,
             );
         });
     });
