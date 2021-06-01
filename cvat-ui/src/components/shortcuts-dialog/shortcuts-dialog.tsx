@@ -36,7 +36,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
+function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
     const { visible, switchShortcutsDialog } = props;
     const keyMap = getApplicationKeyMap();
 
@@ -100,4 +100,4 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
     );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ShorcutsDialog);
+export default connect(mapStateToProps, mapDispatchToProps)(ShortcutsDialog);

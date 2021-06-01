@@ -868,7 +868,7 @@
 
             const deepSearch = (deepSearchFrom, deepSearchTo) => {
                 // deepSearchFrom is expected to be a frame that doesn't satisfy a filter
-                // deepSearchTo is expected to be a frame that satifies a filter
+                // deepSearchTo is expected to be a frame that satisfies a filter
 
                 let [prev, next] = [deepSearchFrom, deepSearchTo];
                 // half division method instead of linear search

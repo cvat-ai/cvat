@@ -59,7 +59,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           tags: openvino/cvat_server:latest
           load: true
-      - name: Runing unit tests
+      - name: Running unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
@@ -203,7 +203,7 @@ jobs:
     needs: [Unit_testing, E2E_testing]
     steps:
       - uses: actions/checkout@v2
-      - name: Geting SHA from the default branch
+      - name: Getting SHA from the default branch
         id: get-sha
         run: |
           URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"

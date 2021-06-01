@@ -27,7 +27,7 @@ enum ConstructorMode {
     UPDATE = 'UPDATE',
 }
 
-interface LabelsEditortProps {
+interface LabelsEditorProps {
     labels: Label[];
     onSubmit: (labels: any[]) => void;
 }
@@ -39,8 +39,8 @@ interface LabelsEditorState {
     labelForUpdate: Label | null;
 }
 
-export default class LabelsEditor extends React.PureComponent<LabelsEditortProps, LabelsEditorState> {
-    public constructor(props: LabelsEditortProps) {
+export default class LabelsEditor extends React.PureComponent<LabelsEditorProps, LabelsEditorState> {
+    public constructor(props: LabelsEditorProps) {
         super(props);
 
         this.state = {
@@ -53,10 +53,10 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
 
     public componentDidMount(): void {
         // just need performe the same code
-        this.componentDidUpdate((null as any) as LabelsEditortProps);
+        this.componentDidUpdate((null as any) as LabelsEditorProps);
     }
 
-    public componentDidUpdate(prevProps: LabelsEditortProps): void {
+    public componentDidUpdate(prevProps: LabelsEditorProps): void {
         function transformLabel(label: any): Label {
             return {
                 name: label.name,

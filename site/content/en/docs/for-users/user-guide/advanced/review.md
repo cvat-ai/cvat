@@ -27,7 +27,9 @@ or areas in the frame and describe the problem.
 
   ![](/images/image196_detrac.jpg)
 
-- Once all the problems are marked, save the annotation, open the menu and select "submit the review". After that you'll see a form containing the verification statistics, here you can give an assessment of the job and choose further actions:
+- Once all the problems are marked, save the annotation, open the menu and select "submit the review".
+  After that you'll see a form containing the verification statistics,
+  here you can give an assessment of the job and choose further actions:
 
   - Accept - changes the status of the job to `completed`.
   - Review next – passes the job to another user for re-review.
