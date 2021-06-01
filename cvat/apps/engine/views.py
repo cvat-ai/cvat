@@ -921,11 +921,12 @@ class CommentViewSet(viewsets.GenericViewSet,
 class UserFilter(filters.FilterSet):
     class Meta:
         model = User
-        fields = ("id",)
+        fields = ("id", "is_active")
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
     manual_parameters=[
             openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this user",type=openapi.TYPE_NUMBER),
+            openapi.Parameter('is_active',openapi.IN_QUERY,description="Returns only active users",type=openapi.TYPE_BOOLEAN),
     ],
     operation_summary='Method provides a paginated list of users registered on the server'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(

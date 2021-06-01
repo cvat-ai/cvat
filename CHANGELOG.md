@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support of context images for 2D image tasks (<https://github.com/openvinotoolkit/cvat/pull/3122>)
+- Filter `is_active` for user list (<https://github.com/openvinotoolkit/cvat/pull/3235>)
 
 ### Changed
 
