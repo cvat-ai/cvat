@@ -20,6 +20,22 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
         });
     }
 
+    function uploadToTask(toTaskName) {
+        cy.contains('.cvat-item-task-name', toTaskName)
+            .parents('.cvat-tasks-list-item')
+            .find('.cvat-menu-icon')
+            .trigger('mouseover');
+        cy.contains('Upload annotations').trigger('mouseover');
+        cy.contains('.cvat-menu-load-submenu-item', dumpTypeVC.split(' ')[0])
+            .should('be.visible')
+            .within(() => {
+                cy.get('.cvat-menu-load-submenu-item-button')
+                    .click()
+                    .get('input[type=file]')
+                    .attachFile(annotationVCArchiveName);
+            });
+    }
+
     before(() => {
         cy.openTask(taskName)
         cy.openJob();
@@ -65,6 +81,18 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             cy.wait('@uploadAnnotationsPut', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@uploadAnnotationsPut').its('response.statusCode').should('equal', 201);
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+            cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
+            cy.removeAnnotations();
+            cy.get('button').contains('Save').click({ force: true });
+        });
+
+        it('Upload annotation to task.', () => {
+            cy.goToTaskList();
+            uploadToTask(taskName);
+            confirmUpdate('.cvat-modal-content-load-task-annotation');
+            cy.contains('Annotations have been loaded').should('be.visible');
+            cy.get('[data-icon="close"]').click();
+            cy.openTaskJob(taskName);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
             cy.get('button').contains('Save').click({ force: true });
