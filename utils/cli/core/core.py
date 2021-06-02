@@ -124,7 +124,6 @@ class CLI():
             check_url = self.api.git_check(rq_id)
             response = self.session.get(check_url)
             response_json = response.json()
-            
             while response_json['status'] != 'finished':
                 log.info('''Awaiting dataset repository for task. Status: {}'''.format(
                     response_json['status']))
