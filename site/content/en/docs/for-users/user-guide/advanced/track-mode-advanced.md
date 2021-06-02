@@ -4,7 +4,7 @@ linkTitle: "Track mode"
 weight: 2
 ---
 
-Basic operations in the mode were described in section [track mode (basics)](/docs/for-users/user-guide/basics/shape-mode-basic/).
+Basic operations in the mode were described in section [track mode (basics)](/docs/for-users/user-guide/basics/track-mode-basics/).
 
 Shapes that were created in the track mode, have extra navigation buttons.
 

@@ -18,7 +18,7 @@
     class Project {
         /**
          * In a fact you need use the constructor only if you want to create a project
-         * @param {object} initialData - Object which is used for initalization
+         * @param {object} initialData - Object which is used for initialization
          * <br> It can contain keys:
          * <br> <li style="margin-left: 10px;"> name
          * <br> <li style="margin-left: 10px;"> labels

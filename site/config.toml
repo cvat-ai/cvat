@@ -59,7 +59,7 @@ id = "UA-00000000-0"
 
 [languages]
 [languages.en]
-title = ""
+title = "CVAT"
 description = ""
 languageName ="English"
 # Weight used for sorting.

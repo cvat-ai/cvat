@@ -29,13 +29,13 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 |                            | _Modes_                                                                                                  |
 | `N`                        | Repeat the latest procedure of drawing with the same parameters                                          |
 | `M`                        | Activate or deactivate mode to merging shapes                                                            |
-| `Alt+M`                    | Activate or deactivate mode to spliting shapes                                                           |
+| `Alt+M`                    | Activate or deactivate mode to splitting shapes                                                           |
 | `G`                        | Activate or deactivate mode to grouping shapes                                                           |
 | `Shift+G`                  | Reset group for selected shapes (in group mode)                                                          |
 | `Esc`                      | Cancel any active canvas mode                                                                            |
 |                            | _Image operations_                                                                                       |
 | `Ctrl+R`                   | Change image angle (add 90 degrees)                                                                      |
-| `Ctrl+Shift+R`             | Change image angle (substract 90 degrees)                                                                |
+| `Ctrl+Shift+R`             | Change image angle (subtract 90 degrees)                                                                |
 | `Shift+B+=`                | Increase brightness level for the image                                                                  |
 | `Shift+B+-`                | Decrease brightness level for the image                                                                  |
 | `Shift+C+=`                | Increase contrast level for the image                                                                    |
