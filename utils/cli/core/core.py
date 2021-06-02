@@ -132,6 +132,7 @@ class CLI():
                 response_json = response.json()
                 if response_json['status'] == 'failed':
                     log.error(f'Dataset repository creation request for task {task_id} failed.')
+                    break
 
             log.info(f"Dataset repository creation completed with status: {response_json['status']}.")
 
