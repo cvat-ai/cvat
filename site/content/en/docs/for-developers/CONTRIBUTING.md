@@ -126,7 +126,7 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
 ### DL models as serverless functions
 
-Follow this [guide](/cvat/apps/documentation/installation_automatic_annotation.md) to install Nuclio:
+Follow this [guide](https://openvinotoolkit.github.io/cvat/docs/for-users/installation_automatic_annotation/) to install Nuclio:
 
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions.
@@ -257,6 +257,7 @@ Server = nuclio
 ```
 
 </details>
+
 ### Run Cypress tests
 - Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
 - Run cypress tests:
