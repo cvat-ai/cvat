@@ -10,8 +10,8 @@ import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
-import cv2
 
+import cv2
 from django.db.models.query import Prefetch
 import django_rq
 from django.apps import apps
