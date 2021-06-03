@@ -28,54 +28,60 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
     const history = useHistory();
 
     return (
-        <>
-            <Row justify='center' align='middle' gutter={8}>
-                <Col md={8} lg={7} xl={6} xxl={5}>
-                    <Text className='cvat-title'>Tasks</Text>
-                    <SearchTooltip instance='task'>
-                        <Input.Search
-                            className='cvat-task-page-search-task'
-                            defaultValue={searchValue}
-                            onSearch={onSearch}
-                            size='large'
-                            placeholder='Search'
-                        />
-                    </SearchTooltip>
-                </Col>
-                <Col md={{ span: 8 }} lg={{ span: 7 }} xl={{ span: 6 }} xxl={{ span: 6 }}>
-                    <Upload
-                        accept='.zip'
-                        multiple={false}
-                        showUploadList={false}
-                        beforeUpload={(file: File): boolean => {
-                            onFileUpload(file);
-                            return false;
-                        }}
-                    >
-                        <Button
-                            size='large'
-                            id='cvat-import-task-button'
-                            type='primary'
-                            disabled={taskImporting}
-                            icon={<UploadOutlined />}
-                        >
-                            Import Task
-                            {taskImporting && <LoadingOutlined id='cvat-import-task-button-loading' />}
-                        </Button>
-                    </Upload>
-                </Col>
-                <Col md={{ span: 6 }} lg={{ span: 4 }} xl={{ span: 3 }} xxl={{ span: 3 }}>
-                    <Button
-                        size='large'
-                        id='cvat-create-task-button'
-                        type='primary'
-                        onClick={(): void => history.push('/tasks/create')}
-                        icon={<PlusOutlined />}
-                    >
-                        Create new task
-                    </Button>
-                </Col>
-            </Row>
-        </>
+        <Row className='cvat-tasks-page-top-bar' justify='center' align='middle'>
+            <Col md={22} lg={18} xl={16} xxl={14}>
+                <Row justify='space-between' align='bottom'>
+                    <Col>
+                        <Text className='cvat-title'>Tasks</Text>
+                        <SearchTooltip instance='task'>
+                            <Input.Search
+                                className='cvat-task-page-search-task'
+                                defaultValue={searchValue}
+                                onSearch={onSearch}
+                                size='large'
+                                placeholder='Search'
+                            />
+                        </SearchTooltip>
+                    </Col>
+                    <Col>
+                        <Row gutter={8}>
+                            <Col>
+                                <Upload
+                                    accept='.zip'
+                                    multiple={false}
+                                    showUploadList={false}
+                                    beforeUpload={(file: File): boolean => {
+                                        onFileUpload(file);
+                                        return false;
+                                    }}
+                                >
+                                    <Button
+                                        size='large'
+                                        id='cvat-import-task-button'
+                                        type='primary'
+                                        disabled={taskImporting}
+                                        icon={<UploadOutlined />}
+                                    >
+                                        Import Task
+                                        {taskImporting && <LoadingOutlined id='cvat-import-task-button-loading' />}
+                                    </Button>
+                                </Upload>
+                            </Col>
+                            <Col>
+                                <Button
+                                    size='large'
+                                    id='cvat-create-task-button'
+                                    type='primary'
+                                    onClick={(): void => history.push('/tasks/create')}
+                                    icon={<PlusOutlined />}
+                                >
+                                    Create new task
+                                </Button>
+                            </Col>
+                        </Row>
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
     );
 }

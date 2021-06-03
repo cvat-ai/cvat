@@ -11,6 +11,14 @@
     height: 100%;
     width: 100%;
 
+    .cvat-tasks-page-top-bar {
+        > div:nth-child(1) {
+            > div:nth-child(1) {
+                width: 100%;
+            }
+        }
+    }
+
     > div:nth-child(2) {
         height: 83%;
         padding-top: 10px;
