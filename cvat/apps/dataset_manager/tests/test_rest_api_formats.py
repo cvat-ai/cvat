@@ -408,7 +408,7 @@ class TaskDumpUploadTest(_DbTestBase):
             for upload_format in upload_formats:
                 upload_format_name = upload_format.DISPLAY_NAME
                 if upload_format_name == "CVAT 1.1":
-                    file_zip_name = osp.join(test_dir, f'{test_name}_admin_CVAT for images 1.1.zip.zip')
+                    file_zip_name = osp.join(test_dir, f'{test_name}_admin_CVAT for images 1.1.zip')
                 else:
 
                     file_zip_name = osp.join(test_dir, f'{test_name}_admin_{upload_format_name}.zip')
