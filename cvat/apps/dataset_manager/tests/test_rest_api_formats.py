@@ -186,7 +186,7 @@ class _DbTestBase(APITestCase):
         return response
 
 class TaskDumpUploadTest(_DbTestBase):
-    def test_attribute_import_in_tracks(self):
+    def test_api_v1_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
         upload_format_name = "CVAT 1.1"
@@ -196,7 +196,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 # create task with annotations
                 images = self._generate_task_images(13)
                 task = self._create_task(tasks["many jobs"], images)
-                self._create_annotations(task, f'{dump_format_name} many jobs', "dafault")
+                self._create_annotations(task, f'{dump_format_name} attributes in tracks', "dafault")
 
                 task_id = task["id"]
                 task_ann = TaskAnnotation(task_id)

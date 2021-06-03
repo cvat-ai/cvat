@@ -1,5 +1,5 @@
 {
-  "CVAT for video 1.1 many jobs": {
+  "CVAT for video 1.1 attributes in tracks": {
     "version": 0,
     "tags": [],
     "shapes": [],
@@ -11,10 +11,10 @@
         "source": "manual",
         "shapes": [
           {
-            "type": "rectangle",
-            "occluded": true,
+            "type": "polygon",
+            "occluded": false,
             "z_order": 0,
-            "points": [4.75, 4.8, 13.06, 11.39],
+            "points": [25.04, 13.7, 35.85, 20.2, 16.65, 19.8],
             "frame": 1,
             "outside": false,
             "attributes": []
@@ -23,16 +23,16 @@
         "attributes": []
       },
       {
-        "frame": 10,
+        "frame": 8,
         "label_id": null,
         "group": 1,
         "source": "manual",
         "shapes": [
           {
-            "type": "polygon",
-            "occluded": false,
+            "type": "rectangle",
+            "occluded": true,
             "z_order": 0,
-            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
+            "points": [5.54, 3.5, 19.64, 11.19],
             "frame": 1,
             "outside": false,
             "attributes": []
