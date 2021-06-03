@@ -8,17 +8,12 @@ import copy
 import json
 import os.path as osp
 import os
-import shutil
-import random
-import sys
 import xml.etree.ElementTree as ET
 import zipfile
-from shutil import copyfile
 from io import BytesIO
 import av
 import numpy as np
 import random
-import string
 
 from datumaro.components.dataset import Dataset
 from datumaro.util.test_utils import compare_datasets, TestDir
@@ -33,14 +28,13 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.annotation import TrackManager
 from cvat.apps.engine.models import Task
 
-path = osp.join(osp.dirname(__file__), 'assets', 'tasks.json')
-with open(path) as f:
-    tasks = json.load(f)
+tasks_path = osp.join(osp.dirname(__file__), 'assets', 'tasks.json')
+with open(tasks_path) as file:
+    tasks = json.load(file)
 
-path = osp.join(osp.dirname(__file__), 'assets', 'annotations.json')
-with open(path) as f:
-    annotations = json.load(f)
-
+annotation_path = osp.join(osp.dirname(__file__), 'assets', 'annotations.json')
+with open(annotation_path) as file:
+    annotations = json.load(file)
 
 
 def generate_image_file(filename, size=(100, 50)):
@@ -270,7 +264,7 @@ class _DbTestBase(APITestCase):
 
     def _upload_file(self, url, data, user):
         with ForceLogin(user, self.client):
-                response = self.client.put(url, data)
+            response = self.client.put(url, data)
         return response
 
     def _check_downloaded_file(self, file_name):
@@ -304,36 +298,9 @@ class _DbTestBase(APITestCase):
         extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
         data_from_task = Dataset.from_extractors(extractor)
         return data_from_task
-"""
-Need to write REST API tests for server (dataset manager):
- # Dump annotations with objects type is shape
- # Upload annotations with objects type is shape
- # Dump annotations with objects type is track
- # Upload annotations with objects type is track
- # Dump tag annotations
- # Dump/upload annotations with objects are different types (images)
- # Dump/upload annotations with objects are different types (video)
- # Dump/upload with objects type is track and outside property
- # Dump/upload with objects type is track and keyframe property
- # Dump/upload annotations from several jobs
- # Dump annotations with objects type is shape from several jobs
- # Dump annotations with objects type is track from several jobs
- # Export dataset
- # Wrong label in input file
- # Wrong value checkbox in input file
- # Dump annotations with attributes
- # Upload annotations with attributes
- # Dump empty frames
- # Upload empty frames
- # Rewriting annotations
- # Dump one type and upload another type
- # Unit test on to_track function
- # Unit test on normalize_shape function
- # Unit test on export_job function
-"""
+
 
 class TaskDumpUploadTest(_DbTestBase):
-
     def test_api_v1_dump_and_upload_annotations_with_objects_type_is_shape(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
@@ -603,17 +570,17 @@ class TaskDumpUploadTest(_DbTestBase):
         task = self._create_task(tasks["main"], images)
         task_id = task["id"]
 
-        for type in upload_types:
+        for upload_type in upload_types:
             with self.subTest(format=type):
                 with TestDir() as test_dir:
-                    if type == "task":
+                    if upload_type == "task":
                         self._create_annotations(task, "CVAT for images 1.1 different types", "random")
                     else:
                         jobs = self._get_jobs(task_id)
                         job_id = jobs[0]["id"]
                         self._create_annotations_in_job(task, job_id, "CVAT for images 1.1 different types", "random")
                     url = self._generate_url_dump_tasks_annotations(task_id, dump_format_name)
-                    file_zip_name = osp.join(test_dir, f'{test_name}_{type}.zip')
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
 
                     data = {
                         "format": dump_format_name,
@@ -634,7 +601,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             f.write(content.getvalue())
                     self.assertEqual(osp.exists(file_zip_name), True)
                     self._remove_annotations(url, self.admin)
-                    if type == "task":
+                    if upload_type == "task":
                         url_upload = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
                     else:
                         jobs = self._get_jobs(task_id)
@@ -659,17 +626,17 @@ class TaskDumpUploadTest(_DbTestBase):
         task = self._create_task(tasks["main"], video)
         task_id = task["id"]
 
-        for type in upload_types:
+        for upload_type in upload_types:
             with self.subTest(format=type):
                 with TestDir() as test_dir:
-                    if type == "task":
+                    if upload_type == "task":
                         self._create_annotations(task, "CVAT for images 1.1 different types", "random")
                     else:
                         jobs = self._get_jobs(task_id)
                         job_id = jobs[0]["id"]
                         self._create_annotations_in_job(task, job_id, "CVAT for images 1.1 different types", "random")
                     url = self._generate_url_dump_tasks_annotations(task_id, dump_format_name)
-                    file_zip_name = osp.join(test_dir, f'{test_name}_{type}.zip')
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
                     data = {
                         "format": dump_format_name,
                     }
@@ -689,7 +656,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             f.write(content.getvalue())
                     self.assertEqual(osp.exists(file_zip_name), True)
                     self._remove_annotations(url, self.admin)
-                    if type == "task":
+                    if upload_type == "task":
                         url_upload = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
                     else:
                         jobs = self._get_jobs(task_id)
@@ -827,10 +794,6 @@ class TaskDumpUploadTest(_DbTestBase):
     def test_api_v1_dump_annotations_with_objects_type_is_shape_from_several_jobs(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for images 1.1"
-        data = {
-            "format": dump_format_name,
-            "action": "download",
-        }
         test_cases = ['all', 'first']
 
         images = self._generate_task_images(10)
@@ -972,7 +935,7 @@ class TaskDumpUploadTest(_DbTestBase):
             for upload_format in upload_formats:
                 upload_format_name = upload_format.DISPLAY_NAME
                 if upload_format_name == "CVAT 1.1":
-                    file_zip_name = osp.join(test_dir, f'empty_CVAT for images 1.1.zip')
+                    file_zip_name = osp.join(test_dir, 'empty_CVAT for images 1.1.zip')
                 else:
                     file_zip_name = osp.join(test_dir, f'empty_{upload_format_name}.zip')
                 if not osp.exists(file_zip_name) or not upload_format.ENABLED:
@@ -1074,34 +1037,34 @@ class TaskDumpUploadTest(_DbTestBase):
 
     def test_api_v1_unit_test_on_normalize_shape_function(self):
         # 3 points
-        norm_shape = TrackManager.normalize_shape({
+        TrackManager.normalize_shape({
              "points": [1.5, 2.5],
         })
 
         # 4 points
-        norm_shape = TrackManager.normalize_shape({
+        TrackManager.normalize_shape({
             "points": [1.5, 2.5, 0.5, 8.6, 9.6, 3.6, 2.8, 7.2],
         })
         # 1 point
-        norm_shape = TrackManager.normalize_shape({
+        TrackManager.normalize_shape({
             "points": [1.5, 2.5],
         })
         # empty shape
         with self.assertRaises(ValueError):
-            norm_shape = TrackManager.normalize_shape({
+            TrackManager.normalize_shape({
                 "points": [],
             })
         # invalid count of points
         with self.assertRaises(ValueError):
-            norm_shape = TrackManager.normalize_shape({
+            TrackManager.normalize_shape({
                 "points": [1.5, 2.5, 7.5],
             })
         # negative points
-        norm_shape = TrackManager.normalize_shape({
+        TrackManager.normalize_shape({
             "points": [-1.5, 2.5, -9.8, -4.6],
         })
         # integer
-        norm_shape = TrackManager.normalize_shape({
+        TrackManager.normalize_shape({
             "points": [1, 2, 9, 4],
         })
 
