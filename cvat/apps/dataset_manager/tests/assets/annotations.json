@@ -1,0 +1,46 @@
+{
+  "CVAT for video 1.1 polygon": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 1,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "polygon",
+            "occluded": false,
+            "z_order": 0,
+            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
+            "frame": 0,
+            "outside": false,
+            "attributes": []
+          },
+          {
+            "type": "polygon",
+            "occluded": false,
+            "z_order": 0,
+            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
+            "frame": 1,
+            "outside": true,
+            "attributes": []
+          },
+          {
+            "type": "polygon",
+            "occluded": false,
+            "z_order": 0,
+            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
+            "frame": 2,
+            "outside": false,
+            "keyframe": true,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      }
+    ]
+  }
+}
