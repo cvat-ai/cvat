@@ -1,0 +1,45 @@
+{
+  "CVAT for video 1.1 many jobs": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": true,
+            "z_order": 0,
+            "points": [4.75, 4.8, 13.06, 11.39],
+            "frame": 1,
+            "outside": false,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      },
+      {
+        "frame": 10,
+        "label_id": null,
+        "group": 1,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "polygon",
+            "occluded": false,
+            "z_order": 0,
+            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
+            "frame": 1,
+            "outside": false,
+            "attributes": []
+          }
+        ],
+        "attributes": []
+      }
+    ]
+  }
+}
