@@ -42,5 +42,34 @@
         "attributes": []
       }
     ]
+  },
+  "WiderFace 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [7.55, 9.75, 16.44, 15.85],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "rectangle",
+        "occluded": true,
+        "z_order": 0,
+        "points": [3.55, 27.75, 11.33, 33.71],
+        "frame": 1,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
   }
 }

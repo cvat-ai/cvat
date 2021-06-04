@@ -53,5 +53,49 @@
         "attributes": []
       }
     ]
+  },
+  "widerface with all attributes": {
+    "name": "widerface task",
+    "overlap": 0,
+    "segment_size": 100,
+    "owner_id": 1,
+    "assignee_id": 2,
+    "labels": [
+      {
+        "name": "face",
+        "attributes": [
+          {
+            "name": "blur",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1", "2"]
+          },
+          {
+            "name": "expression",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          },
+          {
+            "name": "illumination",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          },
+          {
+            "name": "pose",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          },
+          {
+            "name": "invalid",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1"]
+          }
+        ]
+      }
+    ]
   }
 }
