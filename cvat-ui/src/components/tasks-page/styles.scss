@@ -15,6 +15,15 @@
         > div:nth-child(1) {
             > div:nth-child(1) {
                 width: 100%;
+
+                > div:nth-child(1) {
+                    display: flex;
+
+                    > span:nth-child(2) {
+                        width: 200px;
+                        margin-left: 10px;
+                    }
+                }
             }
         }
     }
@@ -26,22 +35,6 @@
 
     > div:nth-child(3) {
         padding-top: 10px;
-    }
-
-    > div:nth-child(1) {
-        > div:nth-child(1) {
-            display: flex;
-
-            > span:nth-child(2) {
-                width: 200px;
-                margin-left: 10px;
-            }
-        }
-
-        > div:nth-child(2) {
-            display: flex;
-            justify-content: flex-end;
-        }
     }
 }
 
