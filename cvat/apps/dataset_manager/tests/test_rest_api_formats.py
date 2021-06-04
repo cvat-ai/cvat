@@ -1113,7 +1113,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     # create task with annotations
                     images = self._generate_task_images(13)
                     task = self._create_task(tasks["many jobs"], images)
-                    self._create_annotations(task, f'{dump_format_name} many jobs', "dafault")
+                    self._create_annotations(task, f'{dump_format_name} many jobs', "default")
 
                     task_id = task["id"]
                     task_ann = TaskAnnotation(task_id)
