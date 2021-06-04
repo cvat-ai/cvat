@@ -1060,49 +1060,6 @@ class TaskDumpUploadTest(_DbTestBase):
             "points": [1, 2, 9, 4],
         })
 
-    def test_api_v1_check_duplicated_polygon_points(self):
-        # issue 2924
-        test_name = self._testMethodName
-        images = self._generate_task_images(10)
-        task = self._create_task(tasks["main"], images)
-        task_id = task["id"]
-        annotation_name = "CVAT for video 1.1 polygon"
-        dump_format_name = "CVAT for video 1.1"
-        self._create_annotations(task, annotation_name, "default")
-        annotation_points = annotations[annotation_name]["tracks"][0]["shapes"][0]['points']
-        with TestDir() as test_dir:
-            url = self._generate_url_dump_tasks_annotations(task_id, dump_format_name)
-            file_zip_name = osp.join(test_dir, f'{test_name}.zip')
-            data = {
-                "format": dump_format_name,
-            }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            data = {
-                "format": dump_format_name,
-                "action": "download",
-            }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            content = BytesIO(b"".join(response.streaming_content))
-            with open(file_zip_name, "wb") as f:
-                f.write(content.getvalue())
-            self.assertEqual(osp.exists(file_zip_name), True)
-            # extract zip
-            folder_name = osp.join(test_dir, f'{test_name}')
-            with zipfile.ZipFile(file_zip_name, 'r') as zip_ref:
-                zip_ref.extractall(folder_name)
-
-            tree = ET.parse(osp.join(folder_name, 'annotations.xml'))
-            root = tree.getroot()
-            for polygon in root.findall("./track[@id='0']/polygon"):
-                polygon_points = polygon.attrib["points"].replace(",", ";")
-                polygon_points = polygon_points.split(";")
-                polygon_points = [float(p) for p in polygon_points]
-                self.assertEqual(polygon_points, annotation_points)
-
     def test_api_v1_tasks_annotations_dump_and_upload_many_jobs_with_datumaro(self):
         test_name = self._testMethodName
         upload_format_name = "CVAT 1.1"
