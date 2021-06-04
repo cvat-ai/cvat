@@ -4,8 +4,9 @@
 
 /* Increased left padding on the sidebar of documentation */
 
-.td-sidebar-nav__section-title .td-sidebar-nav__section {
-    padding-left: 0.3rem;
+.td-sidebar-nav__section .ul-1 ul {
+    padding-left: 0.6rem !important;
+    padding-right: 0.1rem !important;
 }
 
 /* Main documentation page */
