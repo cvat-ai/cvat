@@ -19,12 +19,12 @@ from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
 
-path = osp.join(osp.dirname(__file__), 'assets', 'tasks.json')
-with open(path) as f:
+tasks_path = osp.join(osp.dirname(__file__), 'assets', 'tasks.json')
+with open(tasks_path) as f:
     tasks = json.load(f)
 
-path = osp.join(osp.dirname(__file__), 'assets', 'annotations.json')
-with open(path) as f:
+annotations_path = osp.join(osp.dirname(__file__), 'assets', 'annotations.json')
+with open(annotations_path) as f:
     annotations = json.load(f)
 
 def generate_image_file(filename, size=(100, 50)):
@@ -196,7 +196,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 # create task with annotations
                 images = self._generate_task_images(13)
                 task = self._create_task(tasks["many jobs"], images)
-                self._create_annotations(task, f'{dump_format_name} attributes in tracks', "dafault")
+                self._create_annotations(task, f'{dump_format_name} attributes in tracks', "default")
 
                 task_id = task["id"]
                 task_ann = TaskAnnotation(task_id)
