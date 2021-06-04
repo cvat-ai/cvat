@@ -788,6 +788,7 @@
                     () => {
                         importedArray.forEach((object) => {
                             object.removed = false;
+                            object.serverID = undefined;
                         });
                     },
                     importedArray.map((object) => object.clientID),
