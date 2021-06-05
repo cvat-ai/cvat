@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support of context images for 2D image tasks (<https://github.com/openvinotoolkit/cvat/pull/3122>)
+- Option to set image quality from images when creating a task using the CLI (<https://github.com/openvinotoolkit/cvat/pull/3297>)
 
 ### Changed
 
