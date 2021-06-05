@@ -137,6 +137,13 @@ task_create_parser.add_argument(
     help='bug tracker URL'
 )
 task_create_parser.add_argument(
+    '--image_quality',
+    default=50,
+    type=int,
+    help='value from 5 to 100 (higher is better) that defines the quality of loaded images'
+)
+
+task_create_parser.add_argument(
     'resource_type',
     default='local',
     choices=list(ResourceType),
