@@ -659,11 +659,9 @@ class Task3DTest(_DbTestBase):
                 for format_name in format_names:
                     with self.subTest(format=f"{format_names}"):
                         jobs = self._get_jobs(task_id)
-                        print(len(jobs), job_test_case)
                         if job_test_case == "all":
                             for job in jobs:
                                 response = self._put_api_v1_job_id_annotations(job["id"], annotation)
-                                print(job["id"], job_test_case, response.status_code)
                                 self.assertEqual(response.status_code, status.HTTP_200_OK)
                         else:
                             response = self._put_api_v1_job_id_annotations(jobs[0]["id"], annotation)
