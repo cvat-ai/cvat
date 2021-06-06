@@ -52,15 +52,17 @@ class CLI():
         response.raise_for_status()
         output = []
         page = 1
+        json_data_list = []
         while True:
             response_json = response.json()
             output += response_json['results']
             for r in response_json['results']:
                 if use_json_output:
-                    log.info(json.dumps(r, indent=4))
+                    json_data_list.append(r)
                 else:
                     log.info('{id},{name},{status}'.format(**r))
             if not response_json['next']:
+                log.info(json.dumps(json_data_list, indent=4))
                 return output
             page += 1
             url = self.api.tasks_page(page)
