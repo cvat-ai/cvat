@@ -379,7 +379,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if 'rq_id' in request.data:
                 rq_id = request.data['rq_id']
             else:
-                rq_id = "{}@/api/v1/tasks/{}?action_import".format(request.user, uuid.uuid4())
+                rq_id = "{}@/api/v1/tasks/{}/import".format(request.user, uuid.uuid4())
 
             queue = django_rq.get_queue("default")
             rq_job = queue.fetch_job(rq_id)
@@ -438,7 +438,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             return super().retrieve(request, pk)
         elif action in ('export', 'download'):
             queue = django_rq.get_queue("default")
-            rq_id = "/api/v1/tasks/{}?action_export".format(pk)
+            rq_id = "/api/v1/tasks/{}/export".format(pk)
 
             rq_job = queue.fetch_job(rq_id)
             if rq_job:
@@ -483,7 +483,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         else:
             raise serializers.ValidationError(
                 "Unexpected action specified for the request")
-
 
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
