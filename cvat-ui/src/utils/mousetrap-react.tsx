@@ -4,12 +4,14 @@
 
 import React, { useEffect } from 'react';
 import Mousetrap from 'mousetrap';
+import { DimensionType } from 'reducers/interfaces';
 
 export interface KeyMapItem {
     name: string;
     description: string;
     sequences: string[];
     action: 'keydown' | 'keyup' | 'keypress';
+    applicable: DimensionType[];
 }
 
 export interface KeyMap {

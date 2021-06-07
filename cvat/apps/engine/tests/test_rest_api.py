@@ -3110,6 +3110,12 @@ class JobAnnotationAPITestCase(APITestCase):
                     },
                 ]
             }]
+        elif annotation_format in ["Velodyne Points Format 1.0", "Point Cloud Format 1.0"]:
+            data["labels"] = [{
+                "name": "car"},
+                {"name": "bus"}
+            ]
+            dimension = DimensionType.DIM_3D
         elif annotation_format == "ICDAR Segmentation 1.0":
             data["labels"] = [{
                 "name": "icdar",
@@ -3159,6 +3165,15 @@ class JobAnnotationAPITestCase(APITestCase):
                 "image_quality": 75,
                 "frame_filter": "step=3",
             }
+            if dimension == DimensionType.DIM_3D:
+                images = {
+                    "client_files[0]": open(
+                        os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'
+                        if annotation_format == 'Point Cloud Format 1.0' else 'test_velodyne_points.zip'),
+                        'rb'),
+                    "image_quality": 100,
+                }
+
             response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -4120,7 +4135,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         def _get_initial_annotation(annotation_format):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
-                    "ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
+                                         "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
+                                         "Velodyne Points Format 1.0",
+                                         "Point Cloud Format 1.0"]:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4464,7 +4481,32 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     ],
                 }]
                 annotations["tags"] = tags_with_attrs
-
+            elif annotation_format in ["Velodyne Points Format 1.0", "Point Cloud Format 1.0"]:
+                velodyne_wo_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                    ],
+                    "points": [-3.62, 7.95, -1.03, 0.0, 0.0, 0.0, 1.0, 1.0,
+                               1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    "type": "cuboid",
+                    "occluded": False,
+                },
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
+                                   1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        "type": "cuboid",
+                        "occluded": False,
+                    }
+                ]
+                annotations["shapes"] = velodyne_wo_attrs
             elif annotation_format == "ICDAR Recognition 1.0":
                 tags_with_attrs = [{
                     "frame": 1,
@@ -4716,6 +4758,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         elif format_name == "PASCAL VOC 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "YOLO 1.1":
+            self.assertTrue(zipfile.is_zipfile(content))
+        elif format_name in ["Velodyne Points Format 1.0", "Point Cloud Format 1.0"]:
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "COCO 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
