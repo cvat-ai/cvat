@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -65,10 +65,10 @@ context('When clicking on the Logout button, get the user session closed.', () =
                     email: Cypress.env('email'),
                     password: Cypress.env('password'),
                 },
-            }).then(async (responce) => {
-                responce = await responce['headers']['set-cookie'];
-                const csrfToken = responce[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
-                const sessionId = responce[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
+            }).then(async (response) => {
+                response = await response['headers']['set-cookie'];
+                const csrfToken = response[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
+                const sessionId = response[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
                 cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });

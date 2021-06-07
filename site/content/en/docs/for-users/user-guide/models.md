@@ -4,8 +4,6 @@ linkTitle: "Models"
 weight: 5
 ---
 
-### Models
-
 The Models page contains a list of deep learning (DL) models deployed for semi-automatic and automatic annotation.
 To open the Models page, click the Models button on the navigation bar.
 The list of models is presented in the form of a table. The parameters indicated for each model are the following:

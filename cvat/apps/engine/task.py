@@ -38,8 +38,8 @@ def create(tid, data):
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
-    splitted = job.id.split('/')
-    tid = splitted[splitted.index('tasks') + 1]
+    split = job.id.split('/')
+    tid = split[split.index('tasks') + 1]
     try:
         tid = int(tid)
         db_task = models.Task.objects.select_for_update().get(pk=tid)
