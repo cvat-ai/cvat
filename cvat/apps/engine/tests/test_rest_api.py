@@ -3019,6 +3019,7 @@ class JobAnnotationAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _create_task(self, owner, assignee, annotation_format=""):
+        dimension = DimensionType.DIM_2D
         data = {
             "name": "my task #1",
             "owner_id": owner.id,
