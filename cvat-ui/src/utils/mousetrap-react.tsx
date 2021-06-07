@@ -10,6 +10,7 @@ export interface KeyMapItem {
     description: string;
     sequences: string[];
     action: 'keydown' | 'keyup' | 'keypress';
+    applicable: any[];
 }
 
 export interface KeyMap {

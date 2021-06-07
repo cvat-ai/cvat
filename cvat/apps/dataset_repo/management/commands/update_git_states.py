@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -16,6 +16,6 @@ class Command(BaseCommand):
             try:
                 update_states()
             except Exception as ex:
-                print("An error occured during update task statuses: {}".format(str(ex)))
+                print("An error occurred during update task statuses: {}".format(str(ex)))
             time.sleep(INTERVAL_SEC)
 

@@ -50,13 +50,7 @@
     text-shadow: 0 0 3px rgb(27, 27, 27);
 }
 
-.avatar:hover img {
-    box-shadow: 0 0 15px gray;
-}
-
-.developer-info-list-item {
-    min-width: 15rem !important;
-}
+/* block location */
 
 .location {
     width: 70%;
@@ -89,24 +83,48 @@
     border-radius: 50%;
     border: 2px white solid;
     box-shadow: 2px 2px 1px gray;
-    max-height: 25px;
+    max-height: 27px;
+}
+
+@media (max-width: 1680px) {
+    #world-map-marker {
+        margin-left: 25px;
+    }
+}
+
+@media (max-width: 1540px) {
+    #world-map-marker {
+        margin-left: 35px;
+        max-height: 25px;
+    }
+}
+
+@media (max-width: 1200px) {
+    #world-map-marker {
+        margin-top: 5px;
+        margin-left: 40px;
+        max-height: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    #world-map-marker {
+        margin-top: 10px;
+        margin-left: 30px;
+        max-height: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    #world-map-marker {
+        margin-top: 15px;
+        margin-left: 15px;
+        max-height: 10px;
+    }
 }
 
 #world-map-marker:hover {
     border: 4px white solid;
-}
-
-#world-map-marker:hover #tooltip div {
-    visibility: visible;
-}
-
-#tooltip {
-    background: white;
-    color: #000;
-    padding: 4px 8px;
-    font-size: 13px;
-    border-radius: 8px;
-    visibility: hidden;
 }
 
 /* cover block on about page */

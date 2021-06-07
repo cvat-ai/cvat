@@ -1,4 +1,8 @@
-# Contributing to this project
+---
+title: "Contributing to this project"
+linkTitle: "Contributing"
+weight: 1
+---
 
 Please take a moment to review this document in order to make the contribution
 process easy and effective for everyone involved.
@@ -38,7 +42,7 @@ patches and features.
 - Install CVAT on your local host:
 
   ```sh
-  git clone https://github.com/opencv/cvat
+  git clone https://github.com/openvinotoolkit/cvat
   cd cvat && mkdir logs keys
   python3 -m venv .env
   . .env/bin/activate
@@ -106,7 +110,7 @@ You have done! Now it is possible to insert breakpoints and debug server and cli
 
 You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
-- Install WSL using [this guide](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).
+- Install WSL using [this guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
 - Following this guide install Ubuntu 18.04 Linux distribution for WSL.
 
@@ -116,13 +120,13 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
   wsl -d Ubuntu-18.04
   ```
 
-- Run all commands from this isntallation guide in WSL Ubuntu shell.
+- Run all commands from this installation guide in WSL Ubuntu shell.
 
 ## Setup additional components in development environment
 
 ### DL models as serverless functions
 
-Follow this [guide](/cvat/apps/documentation/installation_automatic_annotation.md) to install Nuclio:
+Follow this [guide](/docs/for-users/installation_automatic_annotation/) to install Nuclio:
 
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions.
@@ -253,6 +257,7 @@ Server = nuclio
 ```
 
 </details>
+
 ### Run Cypress tests
 - Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
 - Run cypress tests:
@@ -300,13 +305,13 @@ Good bug reports are extremely helpful - thank you!
 
 Guidelines for bug reports:
 
-1.  **Use the GitHub issue search** &mdash; check if the issue has already been
-    reported.
+1. **Use the GitHub issue search** &mdash; check if the issue has already been
+   reported.
 
-1.  **Check if the issue has been fixed** &mdash; try to reproduce it using the
-    latest `develop` branch in the repository.
+1. **Check if the issue has been fixed** &mdash; try to reproduce it using the
+   latest `develop` branch in the repository.
 
-1.  **Isolate the problem** &mdash; ideally create a reduced test case.
+1. **Isolate the problem** &mdash; ideally create a reduced test case.
 
 A good bug report shouldn't leave others needing to chase you up for more
 information. Please try to be as detailed as possible in your report. What is
@@ -358,52 +363,52 @@ accurate comments, etc.) and any other requirements (such as test coverage).
 Follow this process if you'd like your work considered for inclusion in the
 project:
 
-1.  [Fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the project, clone your fork,
-    and configure the remotes:
+1. [Fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the project, clone your fork,
+   and configure the remotes:
 
-    ```bash
-    # Clone your fork of the repo into the current directory
-    git clone https://github.com/<your-username>/<repo-name>
-    # Navigate to the newly cloned directory
-    cd <repo-name>
-    # Assign the original repo to a remote called "upstream"
-    git remote add upstream https://github.com/<upstream-owner>/<repo-name>
-    ```
+   ```bash
+   # Clone your fork of the repo into the current directory
+   git clone https://github.com/<your-username>/<repo-name>
+   # Navigate to the newly cloned directory
+   cd <repo-name>
+   # Assign the original repo to a remote called "upstream"
+   git remote add upstream https://github.com/<upstream-owner>/<repo-name>
+   ```
 
-1.  If you cloned a while ago, get the latest changes from upstream:
+1. If you cloned a while ago, get the latest changes from upstream:
 
-    ```bash
-    git checkout <dev-branch>
-    git pull upstream <dev-branch>
-    ```
+   ```bash
+   git checkout <dev-branch>
+   git pull upstream <dev-branch>
+   ```
 
-1.  Create a new topic branch (off the main project development branch) to
-    contain your feature, change, or fix:
+1. Create a new topic branch (off the main project development branch) to
+   contain your feature, change, or fix:
 
-    ```bash
-    git checkout -b <topic-branch-name>
-    ```
+   ```bash
+   git checkout -b <topic-branch-name>
+   ```
 
-1.  Commit your changes in logical chunks. Please adhere to these [git commit
-    message guidelines](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
-    or your code is unlikely be merged into the main project. Use Git's
-    [interactive rebase](https://docs.github.com/en/github/using-git/about-git-rebase)
-    feature to tidy up your commits before making them public.
+1. Commit your changes in logical chunks. Please adhere to these [git commit
+   message guidelines](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
+   or your code is unlikely be merged into the main project. Use Git's
+   [interactive rebase](https://docs.github.com/en/github/using-git/about-git-rebase)
+   feature to tidy up your commits before making them public.
 
-1.  Locally merge (or rebase) the upstream development branch into your topic branch:
+1. Locally merge (or rebase) the upstream development branch into your topic branch:
 
-    ```bash
-    git pull [--rebase] upstream <dev-branch>
-    ```
+   ```bash
+   git pull [--rebase] upstream <dev-branch>
+   ```
 
-1.  Push your topic branch up to your fork:
+1. Push your topic branch up to your fork:
 
-    ```bash
-    git push origin <topic-branch-name>
-    ```
+   ```bash
+   git push origin <topic-branch-name>
+   ```
 
-1.  [Open a Pull Request](hhttps://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
-    with a clear title and description.
+1. [Open a Pull Request](hhttps://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
+   with a clear title and description.
 
 **IMPORTANT**: By submitting a patch, you agree to allow the project owner to
 license your work under the same license as that used by the project.

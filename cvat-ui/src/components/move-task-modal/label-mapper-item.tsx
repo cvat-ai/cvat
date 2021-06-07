@@ -13,7 +13,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 export interface LabelMapperItemValue {
     labelId: number;
     newLabelName: string | null;
-    clearAtrributes: boolean;
+    clearAttributes: boolean;
 }
 
 export interface LabelMapperItemProps {
@@ -65,11 +65,11 @@ export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Elemen
             <Col>
                 <Checkbox
                     disabled
-                    checked={value.clearAtrributes}
+                    checked={value.clearAttributes}
                     onChange={(_value) =>
                         onChange({
                             ...value,
-                            clearAtrributes: _value.target.checked,
+                            clearAttributes: _value.target.checked,
                         })}
                 >
                     Clear attributes
