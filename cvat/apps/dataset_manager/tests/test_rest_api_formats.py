@@ -6,6 +6,8 @@ import copy
 import json
 import os.path as osp
 import random
+import xml.etree.ElementTree as ET
+import zipfile
 from io import BytesIO
 
 from datumaro.components.dataset import Dataset
@@ -186,6 +188,82 @@ class _DbTestBase(APITestCase):
         return response
 
 class TaskDumpUploadTest(_DbTestBase):
+    def test_api_v1_check_duplicated_polygon_points(self):
+        test_name = self._testMethodName
+        images = self._generate_task_images(10)
+        task = self._create_task(tasks["main"], images)
+        task_id = task["id"]
+        data = {
+            "format": "CVAT for video 1.1",
+            "action": "download",
+        }
+        annotation_name = "CVAT for video 1.1 polygon"
+        self._create_annotations(task, annotation_name, "default")
+        annotation_points = annotations[annotation_name]["tracks"][0]["shapes"][0]['points']
+
+        with TestDir() as test_dir:
+            url = self._generate_url_dump_tasks_annotations(task_id)
+            file_zip_name = osp.join(test_dir, f'{test_name}.zip')
+            self._download_file(url, data, self.admin, file_zip_name)
+            self._check_downloaded_file(file_zip_name)
+
+            folder_name = osp.join(test_dir, f'{test_name}')
+            with zipfile.ZipFile(file_zip_name, 'r') as zip_ref:
+                zip_ref.extractall(folder_name)
+
+            tree = ET.parse(osp.join(folder_name, 'annotations.xml'))
+            root = tree.getroot()
+            for polygon in root.findall("./track[@id='0']/polygon"):
+                polygon_points = polygon.attrib["points"].replace(",", ";")
+                polygon_points = [float(p) for p in polygon_points.split(";")]
+                self.assertEqual(polygon_points, annotation_points)
+
+    def test_api_v1_check_widerface_with_all_attributes(self):
+        test_name = self._testMethodName
+        dump_format_name = "WiderFace 1.0"
+        upload_format_name = "WiderFace 1.0"
+
+        for include_images in (False, True):
+            with self.subTest():
+                # create task with annotations
+                images = self._generate_task_images(3)
+                task = self._create_task(tasks["widerface with all attributes"], images)
+                self._create_annotations(task, f'{dump_format_name}', "random")
+
+                task_id = task["id"]
+                task_ann = TaskAnnotation(task_id)
+                task_ann.init_from_db()
+                task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+                extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+                data_from_task_before_upload = Dataset.from_extractors(extractor)
+
+                # dump annotations
+                url = self._generate_url_dump_tasks_annotations(task_id)
+                data = {
+                    "format": dump_format_name,
+                    "action": "download",
+                }
+                with TestDir() as test_dir:
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._check_downloaded_file(file_zip_name)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+
+                    # upload annotations
+                    url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
+
+                    # equals annotations
+                    task_ann = TaskAnnotation(task_id)
+                    task_ann.init_from_db()
+                    task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+                    extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+                    data_from_task_after_upload = Dataset.from_extractors(extractor)
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)\
+
     def test_api_v1_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
