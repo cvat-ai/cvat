@@ -65,7 +65,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Save job. Dump annotaion. Remove annotation. Save job.', () => {
+        it('Save job. Dump annotation. Remove annotation. Save job.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
             cy.interactMenu('Dump annotations');

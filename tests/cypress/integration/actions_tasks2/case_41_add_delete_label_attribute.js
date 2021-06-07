@@ -48,7 +48,7 @@ context('Add/delete labels and attributes.', () => {
             cy.get('.cvat-constructor-viewer-item').should('exist');
         });
 
-        it('Start to edit the label. Attribute should exist. Remove the atrribute. Press Done.', () => {
+        it('Start to edit the label. Attribute should exist. Remove the attribute. Press Done.', () => {
             cy.get('.cvat-constructor-viewer-item').find('[aria-label="edit"]').click();
             cy.get('.cvat-attribute-inputs-wrapper')
                 .should('exist')

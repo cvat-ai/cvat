@@ -1,5 +1,5 @@
 ---
-title: 'CVAT Documentation'
+title: 'Documentation'
 linkTitle: 'Documentation'
 no_list: true
 menu:

@@ -18,7 +18,7 @@
     const Review = require('./review');
     const { FieldUpdateTrigger } = require('./common');
 
-    function buildDublicatedAPI(prototype) {
+    function buildDuplicatedAPI(prototype) {
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
@@ -576,7 +576,7 @@
              * Create a log and add it to a log collection <br>
              * Durable logs will be added after "close" method is called for them <br>
              * The fields "task_id" and "job_id" automatically added when add logs
-             * throught a task or a job <br>
+             * through a task or a job <br>
              * Ignore rules exist for some logs (e.g. zoomImage, changeAttribute) <br>
              * Payload of ignored logs are shallowly combined to previous logs of the same type
              * @method log
@@ -999,7 +999,7 @@
     class Task extends Session {
         /**
          * In a fact you need use the constructor only if you want to create a task
-         * @param {object} initialData - Object which is used for initalization
+         * @param {object} initialData - Object which is used for initialization
          * <br> It can contain keys:
          * <br> <li style="margin-left: 10px;"> name
          * <br> <li style="margin-left: 10px;"> assignee
@@ -1697,8 +1697,8 @@
         closeSession,
     } = require('./annotations');
 
-    buildDublicatedAPI(Job.prototype);
-    buildDublicatedAPI(Task.prototype);
+    buildDuplicatedAPI(Job.prototype);
+    buildDuplicatedAPI(Task.prototype);
 
     Job.prototype.save.implementation = async function () {
         if (this.id) {

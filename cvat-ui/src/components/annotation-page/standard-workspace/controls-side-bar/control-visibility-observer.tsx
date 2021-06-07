@@ -76,7 +76,7 @@ export default function ControlVisibilityObserver<P = {}>(
                     visibilityHeightThreshold = wrapper.offsetTop + wrapper.offsetHeight;
                     // start observing parent size
                     observer.observe(ref.current.parentElement as HTMLElement);
-                    // then put it to extra controls if parent height is not enought
+                    // then put it to extra controls if parent height is not enough
                     setVisible(availableHeight - reservedHeight >= visibilityHeightThreshold);
                 }
 

@@ -231,7 +231,7 @@ const defaultKeyMap = ({
     },
     ANTICLOCKWISE_ROTATION: {
         name: 'Rotate anticlockwise',
-        description: 'Change image angle (substract 90 degrees)',
+        description: 'Change image angle (subtract 90 degrees)',
         sequences: ['ctrl+shift+r'],
         action: 'keydown',
         applicable: [DimensionType.DIM_2D],

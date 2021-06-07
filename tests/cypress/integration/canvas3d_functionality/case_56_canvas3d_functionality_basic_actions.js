@@ -150,7 +150,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-player-first-button').click();
             cy.checkFrameNum(0);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000001.pcd');
-            testContextImage(); // Check context image on the firts frame
+            testContextImage(); // Check context image on the first frame
             cy.get('.cvat-player-forward-button').click();
             cy.checkFrameNum(2);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000003.pcd');
