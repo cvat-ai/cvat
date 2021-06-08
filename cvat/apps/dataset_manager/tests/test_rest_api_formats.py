@@ -8,8 +8,6 @@ import copy
 import json
 import os.path as osp
 import os
-import xml.etree.ElementTree as ET
-import zipfile
 from io import BytesIO
 import av
 import numpy as np
