@@ -16,38 +16,21 @@ from collections import defaultdict
 from enum import Enum
 from glob import glob
 from io import BytesIO
-from unittest import mock
 import copy
 from shutil import copyfile
 
-import av
-import numpy as np
-from pdf2image import convert_from_bytes
-from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.http import HttpResponse
-from PIL import Image
-from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
 from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.engine.models import DimensionType
-from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
-import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from cvat.apps.dataset_manager.annotation import TrackManager
-from cvat.apps.engine.models import Task
 from datumaro.util.test_utils import TestDir
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
 DELETE_ACTION = "delete"
 
-TEST_DATA_ROOT = "/tmp/cvat"
 
 class ForceLogin:
     def __init__(self, user, client):
@@ -230,7 +213,7 @@ class _DbTestBase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
-    def _get_dumped_annotation(self, content, format_name):
+    def _check_dump_content(self, content, task_data, format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
             children = list(t)
@@ -252,7 +235,6 @@ class _DbTestBase(APITestCase):
                 else:
                     d[t.tag] = text
             return d
-        ann_data = {}
         if format_name == "Velodyne Points Format 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
                 zipfile.ZipFile(content).extractall(tmp_dir)
@@ -260,23 +242,20 @@ class _DbTestBase(APITestCase):
                 self.assertTrue(xmls)
                 for xml in xmls:
                     xmlroot = ET.parse(xml).getroot()
-                    print(xmlroot)
-                    ann_data = etree_to_dict(xmlroot)
+                    self.assertEqual(xmlroot.tag, "boost_serialization")
+                    items = xmlroot.findall("./tracklets/item")
+                    self.assertEqual(len(items), len(task_data["shapes"]))
         elif format_name == "Point Cloud Format 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
+                checking_files = [osp.join(tmp_dir, "key_id_map.json"),
+                                  osp.join(tmp_dir, "meta.json"),
+                                  osp.join(tmp_dir, "ds0", "ann", "000001.pcd.json"),
+                                  osp.join(tmp_dir, "ds0", "ann", "000002.pcd.json"),
+                                  osp.join(tmp_dir, "ds0", "ann","000003.pcd.json")]
                 zipfile.ZipFile(content).extractall(tmp_dir)
                 jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)
                 self.assertTrue(jsons)
-                for json_file in jsons:
-                    with open(json_file) as f:
-                        tmp_data = json.load(f)
-                    if "key_id_map.json" in json_file:
-                        ann_data["key_id_map"] = tmp_data
-                    if "meta.jsom" in json_file:
-                        ann_data["meta"] = tmp_data
-                    if "ann/000001.pcd.json" in json_file:
-                        ann_data["ann"] = tmp_data
-        return ann_data
+                self.assertTrue(set(checking_files).issubset(set(jsons)))
 
 
 class Task3DTest(_DbTestBase):
@@ -285,7 +264,6 @@ class Task3DTest(_DbTestBase):
         super().setUpClass()
         cls._image_sizes = {}
         cls.pointcloud_pcd_filename = "test_canvas3d.zip"
-        cls.tmp_pointcloud_pcd_path = osp.join(TEST_DATA_ROOT, cls.pointcloud_pcd_filename)
         cls.pointcloud_pcd_path = osp.join(os.path.dirname(__file__), 'assets', cls.pointcloud_pcd_filename)
         image_sizes = []
         zip_file = zipfile.ZipFile(cls.pointcloud_pcd_path )
@@ -295,14 +273,29 @@ class Task3DTest(_DbTestBase):
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
         cls.task = {
-            "name": "my task #1",
+            "name": "main task",
             "owner_id": 1,
             "assignee_id": 2,
             "overlap": 0,
             "segment_size": 100,
             "labels": [
-                {"name": "points cloud" },
+                {"name": "car"},
                 {"name": "person"},
+            ]
+        }
+        cls.task_many_jobs = {
+            "name": "task several jobs",
+            "owner_id": 1,
+            "assignee_id": 2,
+            "overlap": 3,
+            "segment_size": 1,
+            "labels": [
+                {
+                    "name": "car",
+                    "color": "#c06060",
+                    "id": 1,
+                    "attributes": []
+                }
             ]
         }
         cls.cuboid_example = {
@@ -353,7 +346,6 @@ class Task3DTest(_DbTestBase):
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
             annotation = self._get_tmp_annotation(task, self.cuboid_example)
-
             for user, edata in list(self.expected_action.items()):
                 with self.subTest(format=edata["name"]):
                     response = self._patch_api_v1_task_id_annotations(task_id, annotation, CREATE_ACTION, user)
@@ -389,7 +381,7 @@ class Task3DTest(_DbTestBase):
                         task_ann.init_from_db()
                         self.assertEqual(task_ann.data["shapes"], annotation["shapes"])
 
-    def test_api_v1_delete_annotation_in_task(self):
+    def test_api_v1_remove_annotation_in_task(self):
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
@@ -458,7 +450,7 @@ class Task3DTest(_DbTestBase):
                         task_ann.init_from_db()
                         self.assertEqual(task_ann.data["shapes"], annotation["shapes"])
 
-    def test_api_v1_delete_annotation_in_job(self):
+    def test_api_v1_remove_annotation_in_job(self):
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
@@ -495,7 +487,6 @@ class Task3DTest(_DbTestBase):
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
                 task_ann_prev = TaskAnnotation(task_id)
                 task_ann_prev.init_from_db()
-                response = self._get_request(f"/api/v1/tasks/{task_id}/annotations", self.admin)
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_dump"):
@@ -519,6 +510,7 @@ class Task3DTest(_DbTestBase):
                             content = io.BytesIO(b"".join(response.streaming_content))
                             with open(file_name, "wb") as f:
                                 f.write(content.getvalue())
+                            self._check_dump_content(content, task_ann_prev.data, format_name)
                         self.assertEqual(osp.exists(file_name), edata['file_exists'])
 
                 self._remove_annotations(task_id)
@@ -649,11 +641,9 @@ class Task3DTest(_DbTestBase):
         format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
-            task_copy = copy.deepcopy(self.task)
-            task_copy["overlap"] = 3
-            task_copy["segment_size"] = 1
-            task = self._create_task(task_copy, task_data)
+            task = self._create_task(self.task_many_jobs, task_data)
             task_id = task["id"]
+
             for job_test_case in job_test_cases:
                 annotation = self._get_tmp_annotation(task, self.cuboid_example)
                 for format_name in format_names:
@@ -664,9 +654,10 @@ class Task3DTest(_DbTestBase):
                                 response = self._put_api_v1_job_id_annotations(job["id"], annotation)
                                 self.assertEqual(response.status_code, status.HTTP_200_OK)
                         else:
-                            response = self._put_api_v1_job_id_annotations(jobs[0]["id"], annotation)
+                            response = self._put_api_v1_job_id_annotations(jobs[1]["id"], annotation)
                             self.assertEqual(response.status_code, status.HTTP_200_OK)
-
+                        task_ann_prev = TaskAnnotation(task_id)
+                        task_ann_prev.init_from_db()
                         url = self._generate_url_dump_tasks_annotations(task_id)
                         file_name = osp.join(test_dir, f"{format_name}.zip")
                         data = {
@@ -687,6 +678,7 @@ class Task3DTest(_DbTestBase):
                             with open(file_name, "wb") as f:
                                 f.write(content.getvalue())
                         self.assertTrue(osp.exists(file_name))
+                        self._check_dump_content(content, task_ann_prev.data, format_name)
 
                         self._remove_annotations(task_id)
 
@@ -727,4 +719,5 @@ class Task3DTest(_DbTestBase):
                             with open(file_name, "wb") as f:
                                 f.write(content.getvalue())
                         self.assertEqual(osp.exists(file_name), edata['file_exists'])
+                        self._check_dump_content(content, task_ann_prev.data, format_name)
 
