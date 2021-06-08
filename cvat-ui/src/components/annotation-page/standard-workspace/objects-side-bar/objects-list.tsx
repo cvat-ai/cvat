@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,6 @@ import ObjectListHeader from './objects-list-header';
 
 interface Props {
     readonly: boolean;
-    listHeight: number;
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsedAll: boolean;
@@ -31,7 +30,6 @@ interface Props {
 function ObjectListComponent(props: Props): JSX.Element {
     const {
         readonly,
-        listHeight,
         statesHidden,
         statesLocked,
         statesCollapsedAll,
@@ -50,7 +48,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     } = props;
 
     return (
-        <div style={{ height: listHeight }}>
+        <>
             <ObjectListHeader
                 readonly={readonly}
                 statesHidden={statesHidden}
@@ -80,7 +78,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                     ),
                 )}
             </div>
-        </div>
+        </>
     );
 }
 

@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incorrect attribute import in tracks (<https://github.com/openvinotoolkit/cvat/pull/3229>)
 - Issue "is not a constructor" when create object, save, undo, save, redo save (<https://github.com/openvinotoolkit/cvat/pull/3292>)
 - Fix CLI create an infinite loop if git repository responds with failure (<https://github.com/openvinotoolkit/cvat/pull/3267>)
+- Bug with sidebar & fullscreen (<https://github.com/openvinotoolkit/cvat/pull/3289>)
 
 ### Security
 
