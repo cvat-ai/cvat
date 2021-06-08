@@ -21,7 +21,7 @@
     "issues_prs2/**/*.js",
     "actions_users/**/*.js",
     "actions_projects/**/*.js",
-    "canvas3d_functionality/*.js",
+    "canvas3d_functionality/**/*.js",
     "remove_users_tasks_projects.js"
   ]
 }
