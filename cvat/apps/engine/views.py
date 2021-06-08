@@ -637,7 +637,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             Prefetch('data', queryset=models.Data.objects.prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
             ))
-        ).get(pk=pk)
+        ).select_related('data__video').get(pk=pk)
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
