@@ -1015,7 +1015,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "MOT 1.1", # issue #2925
                         "Datumaro 1.0", # not uploaded
-                        "WiderFace 1.0", # issue #2944
                         "CamVid 1.0", # issue #2840 and changed points values
                         "MOTS PNG 1.0", # issue #2925 and changed points values
                         "Segmentation mask 1.1", # changed points values
