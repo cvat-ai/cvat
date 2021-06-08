@@ -634,10 +634,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         url_path='data/meta')
     def data_info(request, pk):
         db_task = models.Task.objects.prefetch_related(
-            Prefetch('data', queryset=models.Data.objects.prefetch_related(
+            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
             ))
-        ).select_related('data__video').get(pk=pk)
+        ).get(pk=pk)
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
