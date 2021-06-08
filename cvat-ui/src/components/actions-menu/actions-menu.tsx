@@ -6,6 +6,7 @@ import './styles.scss';
 import React from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
+import { LoadingOutlined } from '@ant-design/icons';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 import DumpSubmenu from './dump-submenu';
@@ -25,6 +26,7 @@ interface Props {
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
     onClickMenu: (params: MenuInfo, file?: File) => void;
+    exportIsActive: boolean;
 }
 
 export enum Actions {
@@ -35,6 +37,7 @@ export enum Actions {
     RUN_AUTO_ANNOTATION = 'run_auto_annotation',
     MOVE_TASK_TO_PROJECT = 'move_task_to_project',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
+    EXPORT_TASK = 'export_task',
 }
 
 export default function ActionsMenuComponent(props: Props): JSX.Element {
@@ -50,6 +53,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
         exportActivities,
         loadActivity,
         taskDimension,
+        exportIsActive,
     } = props;
 
     let latestParams: MenuInfo | null = null;
@@ -127,6 +131,10 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
                 Automatic annotation
+            </Menu.Item>
+            <Menu.Item key={Actions.EXPORT_TASK} disabled={exportIsActive}>
+                {exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
+                Export Task
             </Menu.Item>
             <hr />
             <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
