@@ -984,6 +984,7 @@ const tasksDummyData = {
             },
             assignee: null,
             bug_tracker: '',
+            project_id: 2,
             created_date: '2019-05-15T11:40:19.487999+03:00',
             updated_date: '2019-05-15T16:58:27.992785+03:00',
             overlap: 5,

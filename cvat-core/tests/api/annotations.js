@@ -311,6 +311,27 @@ describe('Feature: check unsaved changes', () => {
 });
 
 describe('Feature: save annotations', () => {
+    test('create, save, undo, save, redo save', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.get(0);
+        const state = new window.cvat.classes.ObjectState({
+            frame: 0,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+            label: task.labels[0],
+            zOrder: 0,
+        });
+
+        await task.annotations.put([state]);
+        await task.annotations.save();
+        await task.actions.undo();
+        await task.annotations.save();
+        await task.actions.redo();
+        await task.annotations.save();
+    });
+
     test('create & save annotations for a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(0);
