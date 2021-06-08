@@ -262,11 +262,6 @@ class _DbTestBase(APITestCase):
         response = self._put_api_v1_job_id_annotations(job_id, tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def _dump_api_v1_tasks_id_annotations(self, url, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(url, data)
-        return response
-
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
@@ -366,20 +361,15 @@ class TaskDumpUploadTest(_DbTestBase):
                         data = {
                             "format": dump_format_name,
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
-                        self.assertEqual(response.status_code, edata['create code'])
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['create code'])
                         data = {
                             "format": dump_format_name,
                             "action": "download",
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
                         if response.status_code == status.HTTP_200_OK:
                             content = BytesIO(b"".join(response.streaming_content))
@@ -474,15 +464,15 @@ class TaskDumpUploadTest(_DbTestBase):
                         data = {
                             "format": dump_format_name,
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['create code'])
                         data = {
                             "format": dump_format_name,
                             "action": "download",
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
                         if response.status_code == status.HTTP_200_OK:
                             content = BytesIO(b"".join(response.streaming_content))
@@ -561,15 +551,15 @@ class TaskDumpUploadTest(_DbTestBase):
                         data = {
                             "format": dump_format_name,
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['create code'])
                         data = {
                             "format": dump_format_name,
                             "action": "download",
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
                         if response.status_code == status.HTTP_200_OK:
                             content = BytesIO(b"".join(response.streaming_content))
@@ -597,23 +587,11 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._create_annotations_in_job(task, job_id, "CVAT for images 1.1 different types", "random")
                     url = self._generate_url_dump_tasks_annotations(task_id)
                     file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
-
-                    data = {
-                        "format": dump_format_name,
-                    }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_201_CREATED)
                     data = {
                         "format": dump_format_name,
                         "action": "download",
                     }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_200_OK)
-                    content = BytesIO(b"".join(response.streaming_content))
-                    with open(file_zip_name, "wb") as f:
-                        f.write(content.getvalue())
+                    self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
                     self._remove_annotations(url, self.admin)
                     if upload_type == "task":
@@ -649,22 +627,12 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._create_annotations_in_job(task, job_id, "CVAT for images 1.1 different types", "random")
                     url = self._generate_url_dump_tasks_annotations(task_id)
                     file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
-                    data = {
-                        "format": dump_format_name,
-                    }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
                     data = {
                         "format": dump_format_name,
                         "action": "download",
                     }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_200_OK)
-                    content = BytesIO(b"".join(response.streaming_content))
-                    with open(file_zip_name, "wb") as f:
-                        f.write(content.getvalue())
+                    self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
                     self._remove_annotations(url, self.admin)
                     if upload_type == "task":
@@ -694,20 +662,9 @@ class TaskDumpUploadTest(_DbTestBase):
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
-            }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            data = {
-                "format": dump_format_name,
                 "action": "download",
             }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            content = BytesIO(b"".join(response.streaming_content))
-            with open(file_zip_name, "wb") as f:
-                f.write(content.getvalue())
+            self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
 
             with open(file_zip_name, 'rb') as binary_file:
@@ -726,23 +683,12 @@ class TaskDumpUploadTest(_DbTestBase):
         with TestDir() as test_dir:
             url = self._generate_url_dump_tasks_annotations(task_id)
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
-            data = {
-                "format": dump_format_name,
-            }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
             data = {
                 "format": dump_format_name,
                 "action": "download",
             }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            content = BytesIO(b"".join(response.streaming_content))
-            with open(file_zip_name, "wb") as f:
-                f.write(content.getvalue())
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
 
             with open(file_zip_name, 'rb') as binary_file:
@@ -765,20 +711,9 @@ class TaskDumpUploadTest(_DbTestBase):
             file_zip_name = osp.join(test_dir, f'{test_name}.zip')
             data = {
                 "format": dump_format_name,
-            }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            data = {
-                "format": dump_format_name,
                 "action": "download",
             }
-            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            content = BytesIO(b"".join(response.streaming_content))
-            with open(file_zip_name, "wb") as f:
-                f.write(content.getvalue())
+            self._download_file(url, data, self.admin, file_zip_name)
             self.assertEqual(osp.exists(file_zip_name), True)
 
             # remove annotations
@@ -810,20 +745,9 @@ class TaskDumpUploadTest(_DbTestBase):
                 file_zip_name = osp.join(test_dir, f'{test_name}.zip')
                 data = {
                     "format": dump_format_name,
-                }
-                response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                data = {
-                    "format": dump_format_name,
                     "action": "download",
                 }
-                response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-                content = BytesIO(b"".join(response.streaming_content))
-                with open(file_zip_name, "wb") as f:
-                    f.write(content.getvalue())
+                self._download_file(url, data, self.admin, file_zip_name)
                 self.assertEqual(osp.exists(file_zip_name), True)
 
                 # remove annotations
@@ -871,15 +795,15 @@ class TaskDumpUploadTest(_DbTestBase):
                         data = {
                             "format": dump_format_name,
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata["accept code"])
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata["create code"])
                         data = {
                             "format": dump_format_name,
                             "action": "download",
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata["code"])
                         if response.status_code == status.HTTP_200_OK:
                             content = BytesIO(b"".join(response.streaming_content))
@@ -907,20 +831,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'empty_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
-                    }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                    data = {
-                        "format": dump_format_name,
                         "action": "download",
                     }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_200_OK)
-                    content = BytesIO(b"".join(response.streaming_content))
-                    with open(file_zip_name, "wb") as f:
-                        f.write(content.getvalue())
+                    self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
 
             for upload_format in upload_formats:
@@ -991,20 +904,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                     data = {
                         "format": dump_format_name,
-                    }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                    data = {
-                        "format": dump_format_name,
                         "action": "download",
                     }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_200_OK)
-                    content = BytesIO(b"".join(response.streaming_content))
-                    with open(file_zip_name, "wb") as f:
-                        f.write(content.getvalue())
+                    self._download_file(url, data, self.admin, file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
 
                     self._remove_annotations(url, self.admin)
@@ -1078,22 +980,12 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_dump_tasks_annotations(task_id)
                     with TestDir() as test_dir:
                         file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
                         data = {
                             "format": dump_format_name,
                             "action": "download",
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_200_OK)
-                        content = BytesIO(b"".join(response.streaming_content))
-                        with open(file_zip_name, "wb") as f:
-                            f.write(content.getvalue())
+                        self._download_file(url, data, self.admin, file_zip_name)
                         self._check_downloaded_file(file_zip_name)
 
                         # remove annotations
@@ -1164,20 +1056,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
                             data = {
                                 "format": dump_format_name,
-                            }
-                            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                            data = {
-                                "format": dump_format_name,
                                 "action": "download",
                             }
-                            response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                            self.assertEqual(response.status_code, status.HTTP_200_OK)
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                            self._download_file(url, data, self.admin, file_zip_name)
                             self._check_downloaded_file(file_zip_name)
 
                             # remove annotations
