@@ -6,7 +6,8 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Collapse sidebar. Fullscreen', () => {
+// cypress-real-events API works only in Chrome browser
+context('Collapse sidebar. Fullscreen', { browser: '!firefox' }, () => {
     const caseId = '97';
 
     const createRectangleShape2Points = {
@@ -26,10 +27,10 @@ context('Collapse sidebar. Fullscreen', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Collapse sidebar and activate fullscreen.', () => {
+        it('Collapse sidebar and activate fullscreen. "objects-sidebar-state-item" should be visible.', () => {
             cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
             cy.window().then(window => {
-                // get site iframe for site, set the allowfullscreen to true
+                // get iframe, set the allowfullscreen to true
                 window.parent.document
                     .getElementsByClassName('aut-iframe')[0] // Cypress iframe class name
                     .setAttribute('allowFullScreen', 'true');
@@ -37,17 +38,21 @@ context('Collapse sidebar. Fullscreen', () => {
             cy.reload();
             // make sure fullscreen is now enabled
             cy.document().its('fullscreenEnabled').should('be.true');
-            // cy.closeModalUnsupportedPlatform();
-            cy.contains('.cvat-annotation-header-button', 'Fullscreen').trigger('mousedown', {button: 0});
-            cy.contains('.cvat-annotation-header-button', 'Fullscreen').trigger('mouseup');
-            // hide
+
+            // hide sidebar
             cy.get('.cvat-objects-sidebar-sider').click();
             cy.get('.cvat-objects-sidebar').should('not.be.visible');
 
-            // unhide
-            cy.contains('.cvat-annotation-header-button', 'Fullscreen').click();
+
+            cy.contains('.cvat-annotation-header-button', 'Fullscreen').realClick(); // Enable fuulscreen
+
+            // unhide sidebar
             cy.get('.cvat-objects-sidebar-sider').click();
             cy.get('.cvat-objects-sidebar').should('be.visible');
+
+            cy.contains('.cvat-annotation-header-button', 'Fullscreen').realClick();  // Disable fuulscreen
+
+            // Before the fix the sidebar item did not appear accordingly it was not possible to activate the shape through the sidebar item
             cy.get(`#cvat-objects-sidebar-state-item-1`).trigger('mouseover');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
