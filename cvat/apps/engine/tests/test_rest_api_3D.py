@@ -568,7 +568,7 @@ class Task3DTest(_DbTestBase):
                     self._remove_annotations(task_id)
                     # rewrite annotation
                     annotation_copy = copy.deepcopy(annotation)
-                    annotation_copy["shapes"][0]["points"] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    annotation_copy["shapes"][0]["points"] = [0] * 16
                     response = self._put_api_v1_task_id_annotations(task_id, annotation_copy)
                     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
