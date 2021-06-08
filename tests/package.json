@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "archiver": "^5.0.0",
+    "cypress-real-events": "^1.5.0",
     "jimp": "^0.14.0"
   }
 }

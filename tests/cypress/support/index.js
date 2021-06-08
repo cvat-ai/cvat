@@ -9,6 +9,7 @@ require('./commands_canvas3d');
 require('./commands_filters_feature');
 require('@cypress/code-coverage/support');
 require('cypress-plugin-tab');
+require('cypress-real-events/support');
 
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
