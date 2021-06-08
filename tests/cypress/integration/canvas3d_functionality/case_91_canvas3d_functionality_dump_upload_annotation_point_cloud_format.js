@@ -44,7 +44,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Save a job. Upload with "Point Cloud" format.', () => {
+        it('Save a job. Dump with "Point Cloud" format.', () => {
             cy.saveJob('PATCH', 200, 'saveJob');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
             cy.interactMenu('Dump annotations');

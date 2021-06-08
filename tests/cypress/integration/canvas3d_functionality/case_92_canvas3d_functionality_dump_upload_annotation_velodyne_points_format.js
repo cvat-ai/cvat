@@ -44,7 +44,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Save a job. Upload with "Velodyne Points" format.', () => {
+        it('Save a job. Dump with "Velodyne Points" format.', () => {
             cy.saveJob('PATCH', 200, 'saveJob');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
             cy.interactMenu('Dump annotations');
