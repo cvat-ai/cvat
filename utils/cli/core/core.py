@@ -52,15 +52,17 @@ class CLI():
         response.raise_for_status()
         output = []
         page = 1
+        json_data_list = []
         while True:
             response_json = response.json()
             output += response_json['results']
             for r in response_json['results']:
                 if use_json_output:
-                    log.info(json.dumps(r, indent=4))
+                    json_data_list.append(r)
                 else:
                     log.info('{id},{name},{status}'.format(**r))
             if not response_json['next']:
+                log.info(json.dumps(json_data_list, indent=4))
                 return output
             page += 1
             url = self.api.tasks_page(page)
@@ -124,14 +126,16 @@ class CLI():
             check_url = self.api.git_check(rq_id)
             response = self.session.get(check_url)
             response_json = response.json()
-            log.info('''Awaiting dataset repository for task. Status: {}'''.format(
-                    response_json['status']))
             while response_json['status'] != 'finished':
+                log.info('''Awaiting a dataset repository to be created for the task. Response status: {}'''.format(
+                    response_json['status']))
                 sleep(git_completion_verification_period)
                 response = self.session.get(check_url)
                 response_json = response.json()
-                if response_json['status'] == 'Failed':
-                    log.error(f'Dataset repository creation request for task {task_id} failed.')
+                if response_json['status'] == 'failed' or response_json['status'] == 'unknown':
+                    log.error(f'Dataset repository creation request for task {task_id} failed'
+                              f'with status {response_json["status"]}.')
+                    break
 
             log.info(f"Dataset repository creation completed with status: {response_json['status']}.")
 

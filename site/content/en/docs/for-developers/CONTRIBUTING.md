@@ -1,4 +1,8 @@
-# Contributing to this project
+---
+title: "Contributing to this project"
+linkTitle: "Contributing"
+weight: 1
+---
 
 Please take a moment to review this document in order to make the contribution
 process easy and effective for everyone involved.
@@ -38,7 +42,7 @@ patches and features.
 - Install CVAT on your local host:
 
   ```sh
-  git clone https://github.com/opencv/cvat
+  git clone https://github.com/openvinotoolkit/cvat
   cd cvat && mkdir logs keys
   python3 -m venv .env
   . .env/bin/activate
@@ -106,7 +110,7 @@ You have done! Now it is possible to insert breakpoints and debug server and cli
 
 You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
-- Install WSL using [this guide](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).
+- Install WSL using [this guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
 - Following this guide install Ubuntu 18.04 Linux distribution for WSL.
 
@@ -122,7 +126,7 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
 ### DL models as serverless functions
 
-Follow this [guide](/cvat/apps/documentation/installation_automatic_annotation.md) to install Nuclio:
+Follow this [guide](/docs/for-users/installation_automatic_annotation/) to install Nuclio:
 
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions.
@@ -253,6 +257,7 @@ Server = nuclio
 ```
 
 </details>
+
 ### Run Cypress tests
 - Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
 - Run cypress tests:

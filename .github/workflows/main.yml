@@ -165,7 +165,11 @@ jobs:
           cd ./tests
           npm ci
           if [[ ${{ github.ref }} == 'refs/heads/develop' ]]; then
-            npx cypress run --headless --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            if [[ ${{ matrix.specs }} != 'canvas3d_functionality' ]]; then
+              npx cypress run --headless --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            else
+              npx cypress run --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            fi
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
             if [[ ${{ matrix.specs }} != 'canvas3d_functionality' ]]; then

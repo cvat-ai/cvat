@@ -133,7 +133,9 @@ Cypress.Commands.add(
         }
         cy.contains('button', 'Submit').click();
         if (expectedResult === 'success') {
-            cy.contains('The task has been created');
+            cy.get('.cvat-notification-create-task-success')
+                .should('exist')
+                .find('[data-icon="close"]').click();
         }
         if (!forProject) {
             cy.goToTaskList();

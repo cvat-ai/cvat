@@ -17,6 +17,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 ## Documentation
 
+- [Contributing](https://openvinotoolkit.github.io/cvat/docs/for-developers/contributing/)
 - [Installation guide](https://openvinotoolkit.github.io/cvat/docs/for-users/installation/)
 - [User's guide](https://openvinotoolkit.github.io/cvat/docs/for-users/user-guide/)
 - [Django REST API documentation](#rest-api)
@@ -169,7 +170,7 @@ Other ways to ask questions and get our support:
   and parallelized training pipelines.
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
   to offer annotation services for projects of any size.
-
+- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
 <!-- prettier-ignore-start -->
 <!-- Badges -->
 

@@ -489,7 +489,6 @@ export interface AnnotationState {
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
-    tabContentHeight: number;
     workspace: Workspace;
     predictor: PredictorState;
     aiToolsRef: MutableRefObject<any>;
