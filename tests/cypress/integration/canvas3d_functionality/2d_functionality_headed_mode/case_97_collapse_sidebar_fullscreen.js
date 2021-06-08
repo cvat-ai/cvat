@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName, labelName } from '../../../support/const';
 
 // cypress-real-events API works only in Chrome browser
 context('Collapse sidebar. Fullscreen', { browser: '!firefox' }, () => {
@@ -44,13 +44,12 @@ context('Collapse sidebar. Fullscreen', { browser: '!firefox' }, () => {
             cy.get('.cvat-objects-sidebar').should('not.be.visible');
 
 
-            cy.contains('.cvat-annotation-header-button', 'Fullscreen').realClick(); // Enable fuulscreen
+            cy.contains('.cvat-annotation-header-button', 'Fullscreen').realClick(); // Enable fullscreen
+            cy.contains('.cvat-annotation-header-button', 'Fullscreen').realClick();  // Disable fullscreen
 
             // unhide sidebar
             cy.get('.cvat-objects-sidebar-sider').click();
             cy.get('.cvat-objects-sidebar').should('be.visible');
-
-            cy.contains('.cvat-annotation-header-button', 'Fullscreen').realClick();  // Disable fuulscreen
 
             // Before the fix the sidebar item did not appear accordingly it was not possible to activate the shape through the sidebar item
             cy.get(`#cvat-objects-sidebar-state-item-1`).trigger('mouseover');
