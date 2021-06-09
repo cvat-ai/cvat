@@ -38,19 +38,20 @@ context('Changing a default value for an attribute.', () => {
             cy.addNewLabel(additionalLabel, additionalAttrsLabel);
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
             cy.wait('@getTask').its('response.statusCode').should('equal', 200);
+            cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
 
         it('Open label editor. Change default values for text & checkbox attributes, press Done.', () => {
             cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
-            cy.get(`.cvat-constructor-viewer-item-edit-${additionalLabel.replace(' ', '-')}`).should('be.visible').click();
-            // cy.get('.cvat-constructor-viewer').within(() => {
-            //     cy.contains(new RegExp(`^${additionalLabel}$`))
-            //         .parents('.cvat-constructor-viewer-item')
-            //         .should('be.visible')
-            //         .find('[aria-label="edit"]')
-            //         .should('be.visible')
-            //         .click();
-            // });
+            // cy.get(`.cvat-constructor-viewer-item-edit-${additionalLabel.replace(' ', '-')}`).should('be.visible').click();
+            cy.get('.cvat-constructor-viewer').within(() => {
+                cy.contains(new RegExp(`^${additionalLabel}$`))
+                    .parents('.cvat-constructor-viewer-item')
+                    .should('be.visible')
+                    .find('[aria-label="edit"]')
+                    .should('be.visible')
+                    .click();
+            });
 
             cy.get('.cvat-label-constructor-updater').within(() => {
                 cy.get('.cvat-attribute-inputs-wrapper').then((wrapper) => {
@@ -74,6 +75,7 @@ context('Changing a default value for an attribute.', () => {
                 )}.values'`,
             ).should('not.exist');
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
+            cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
 
         it('Open a job, create an object. Attribute values are correct.', () => {
