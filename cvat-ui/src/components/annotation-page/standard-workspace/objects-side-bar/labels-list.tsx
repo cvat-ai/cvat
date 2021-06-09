@@ -14,7 +14,6 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
-    const listHeight = useSelector((state: CombinedState) => state.annotation.tabContentHeight);
     const activatedStateID = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateID);
     const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
     const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
@@ -87,7 +86,7 @@ function LabelsListComponent(): JSX.Element {
     };
 
     return (
-        <div style={{ height: listHeight }} className='cvat-objects-sidebar-labels-list'>
+        <div className='cvat-objects-sidebar-labels-list'>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             {labelIDs.map(
                 (labelID: number): JSX.Element => (

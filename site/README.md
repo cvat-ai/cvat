@@ -61,3 +61,19 @@ Then you can build a website in the "public" folder:
     hugo
 
 [Read more](https://www.docsy.dev/docs/getting-started/)
+
+### Update the submodule of the docsy theme
+
+To update the submodule of the docsy theme you need to have a repository clone. While in the repository folder,
+use the git command:
+
+    git submodule update --remote
+
+Add and then commit the change to project:
+
+    git add themes/
+    git commit -m "Updating theme submodule"
+
+Push the commit to project repo. For example, run:
+
+    git push

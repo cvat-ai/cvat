@@ -109,7 +109,6 @@ const defaultState: AnnotationState = {
     filtersPanelVisible: false,
     requestReviewDialogVisible: false,
     submitReviewDialogVisible: false,
-    tabContentHeight: 0,
     predictor: {
         enabled: false,
         error: null,
@@ -403,13 +402,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 appearanceCollapsed: !state.appearanceCollapsed,
-            };
-        }
-        case AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT: {
-            const { tabContentHeight } = action.payload;
-            return {
-                ...state,
-                tabContentHeight,
             };
         }
         case AnnotationActionTypes.COLLAPSE_OBJECT_ITEMS: {

@@ -73,6 +73,23 @@
     overflow-y: auto;
     overflow-x: hidden;
 
+    > .ant-layout-sider-children {
+        display: flex;
+        flex-direction: column;
+
+        > .cvat-objects-sidebar-tabs {
+            flex-grow: 10;
+
+            > div {
+                display: flex;
+
+                div[role='tabpanel'] {
+                    height: 100%;
+                }
+            }
+        }
+    }
+
     &.ant-layout-sider-collapsed {
         overflow: initial;
     }

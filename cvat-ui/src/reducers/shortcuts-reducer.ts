@@ -9,7 +9,7 @@ import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ShortcutsState } from './interfaces';
 
 function formatShortcuts(shortcuts: KeyMapItem): string {
-    const list: string[] = shortcuts.sequences as string[];
+    const list: string[] = shortcuts.displayedSequences || (shortcuts.sequences as string[]);
     return `[${list
         .map((shortcut: string): string => {
             let keys = shortcut.split('+');
@@ -270,7 +270,8 @@ const defaultKeyMap = ({
     FOCUS_INPUT_FRAME: {
         name: 'Focus input frame',
         description: 'Focus on the element to change the current frame',
-        sequences: ['~'],
+        sequences: ['`'],
+        displayedSequences: ['~'],
         action: 'keydown',
     },
     SWITCH_AUTOMATIC_BORDERING: {
