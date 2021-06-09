@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bug with sidebar & fullscreen (<https://github.com/openvinotoolkit/cvat/pull/3289>)
 - 504 Gateway Time-out on `data/meta` requests (<https://github.com/openvinotoolkit/cvat/pull/3269>)
 - TypeError: Cannot read property 'clientX' of undefined when draw cuboids with hotkeys (<https://github.com/openvinotoolkit/cvat/pull/3308>)
+- Duplication of the cuboids when redraw them (<https://github.com/openvinotoolkit/cvat/pull/3308>)
 
 ### Security
 
