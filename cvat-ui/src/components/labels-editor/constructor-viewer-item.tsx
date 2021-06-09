@@ -31,6 +31,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     tabIndex={0}
                     onClick={(): void => onUpdate(label)}
                     onKeyPress={(): boolean => false}
+                    className={`cvat-constructor-viewer-item-edit-${label.name.replace(' ', '-')}`}
                 >
                     <EditOutlined />
                 </span>
@@ -41,6 +42,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     tabIndex={0}
                     onClick={(): void => onDelete(label)}
                     onKeyPress={(): boolean => false}
+                    className={`cvat-constructor-viewer-item-delete-${label.name.replace(' ', '-')}`}
                 >
                     <CloseOutlined />
                 </span>
