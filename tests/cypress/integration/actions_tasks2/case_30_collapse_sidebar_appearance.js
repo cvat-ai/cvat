@@ -6,7 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Collapse sidebar/appearance', () => {
+context('Collapse sidebar/appearance. Check issue 3250 (empty sidebar after resizing window).', () => {
     const caseId = '30';
     let defaultValueLeftBackground;
 
@@ -42,7 +42,7 @@ context('Collapse sidebar/appearance', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Collapse sidebar. Activate fullscreen.', () => {
+        it('Collapse sidebar. Cheecck issue 3250.', () => {
             // hide sidebar
             cy.get('.cvat-objects-sidebar-sider').click();
             cy.get('.cvat-objects-sidebar').should('not.be.visible');
@@ -53,6 +53,7 @@ context('Collapse sidebar/appearance', () => {
                     expect(currentValueLeftBackground).to.be.greaterThan(defaultValueLeftBackground);
                 });
 
+            // Check issue 3250
             cy.get('#cvat_canvas_content').invoke('attr', 'style').then((canvasContainerStyle) => {
                 cy.viewport(2999, 2999); // Resize window
                 cy.get('#cvat_canvas_content').should('have.attr', 'style').and('not.equal', canvasContainerStyle);
@@ -65,7 +66,7 @@ context('Collapse sidebar/appearance', () => {
             cy.get('.cvat-objects-sidebar').should('be.visible');
             checkEqualBackground();
 
-            // Before the fix the sidebar item did not appear accordingly it was not possible to activate the shape through the sidebar item
+            // Before the issue fix the sidebar item did not appear accordingly it was not possible to activate the shape through the sidebar item
             cy.get(`#cvat-objects-sidebar-state-item-1`).trigger('mouseover');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
