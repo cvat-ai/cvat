@@ -57,7 +57,7 @@ context('Collapse sidebar/appearance. Check issue 3250 (empty sidebar after resi
             cy.get('#cvat_canvas_content').invoke('attr', 'style').then((canvasContainerStyle) => {
                 cy.viewport(2999, 2999); // Resize window
                 cy.get('#cvat_canvas_content').should('have.attr', 'style').and('not.equal', canvasContainerStyle);
-                cy.viewport(1300, 960); // Return to the original size
+                cy.viewport(Cypress.config('viewportWidth'), Cypress.config('viewportHeight')); // Return to the original size
                 cy.get('#cvat_canvas_content').should('have.attr', 'style').and('equal', canvasContainerStyle);
             });
 
