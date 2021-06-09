@@ -574,7 +574,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .on('drawstop', (e: Event): void => {
                 const bbox = (e.target as SVGRectElement).getBBox();
                 const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
-                const { shapeType } = this.drawData;
+                const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
                 if (this.canceled) return;
@@ -584,6 +584,7 @@ export class DrawHandlerImpl implements DrawHandler {
                         {
                             shapeType,
                             points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
+                            clientID,
                         },
                         Date.now() - this.startTimestamp,
                     );
