@@ -147,6 +147,7 @@ export default function CreateProjectContent(): JSX.Element {
             notification.info({
                 message: 'The project has been created',
                 btn,
+                className: 'cvat-notification-create-project-success',
             });
         }
 

@@ -133,7 +133,9 @@ Cypress.Commands.add(
         }
         cy.contains('button', 'Submit').click();
         if (expectedResult === 'success') {
-            cy.contains('The task has been created');
+            cy.get('.cvat-notification-create-task-success')
+                .should('exist')
+                .find('[data-icon="close"]').click();
         }
         if (!forProject) {
             cy.goToTaskList();
@@ -422,7 +424,10 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
         }
         if (multiAttrParams.mutable) {
             cy.get('.cvat-attribute-mutable-checkbox')
-                .find('[type="checkbox"]').should('not.be.checked').check().should('be.checked');
+                .find('[type="checkbox"]')
+                .should('not.be.checked')
+                .check()
+                .should('be.checked');
         }
     });
 });

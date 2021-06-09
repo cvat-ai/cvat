@@ -73,6 +73,7 @@ export interface Task {
 }
 
 export interface TasksState {
+    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
@@ -104,6 +105,9 @@ export interface TasksState {
             taskId: number | null;
             status: string;
             error: string;
+        };
+        backups: {
+            [tid: number]: boolean;
         };
     };
 }
@@ -249,9 +253,11 @@ export interface NotificationsState {
             updating: null | ErrorState;
             dumping: null | ErrorState;
             loading: null | ErrorState;
-            exporting: null | ErrorState;
+            exportingAsDataset: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            exporting: null | ErrorState;
+            importing: null | ErrorState;
             moving: null | ErrorState;
         };
         formats: {
@@ -318,6 +324,7 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            importingDone: string;
             movingDone: string;
         };
         models: {
