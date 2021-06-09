@@ -103,6 +103,13 @@ class _DbTestBase(APITestCase):
 
         return task
 
+    def _get_data_from_task(self, task_id, include_images):
+        task_ann = TaskAnnotation(task_id)
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+        return Dataset.from_extractors(extractor)
+
     def _get_request_with_data(self, path, data, user):
         with ForceLogin(user, self.client):
             response = self.client.get(path, data)
@@ -231,11 +238,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 self._create_annotations(task, f'{dump_format_name}', "random")
 
                 task_id = task["id"]
-                task_ann = TaskAnnotation(task_id)
-                task_ann.init_from_db()
-                task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                data_from_task_before_upload = Dataset.from_extractors(extractor)
+                data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                 # dump annotations
                 url = self._generate_url_dump_tasks_annotations(task_id)
@@ -257,11 +260,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._upload_file(url, binary_file, self.admin)
 
                     # equals annotations
-                    task_ann = TaskAnnotation(task_id)
-                    task_ann.init_from_db()
-                    task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                    extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                    data_from_task_after_upload = Dataset.from_extractors(extractor)
+                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)\
 
     def test_api_v1_check_attribute_import_in_tracks(self):
@@ -277,11 +276,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 self._create_annotations(task, f'{dump_format_name} attributes in tracks', "default")
 
                 task_id = task["id"]
-                task_ann = TaskAnnotation(task_id)
-                task_ann.init_from_db()
-                task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                data_from_task_before_upload = Dataset.from_extractors(extractor)
+                data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                 # dump annotations
                 url = self._generate_url_dump_tasks_annotations(task_id)
@@ -303,9 +298,5 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._upload_file(url, binary_file, self.admin)
 
                     # equals annotations
-                    task_ann = TaskAnnotation(task_id)
-                    task_ann.init_from_db()
-                    task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                    extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                    data_from_task_after_upload = Dataset.from_extractors(extractor)
+                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
