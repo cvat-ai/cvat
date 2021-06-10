@@ -43,6 +43,41 @@
       }
     ]
   },
+  "CVAT for video 1.1 attributes in tracks": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "polygon",
+            "occluded": false,
+            "z_order": 0,
+            "points": [25.04, 13.7, 35.85, 20.2, 16.65, 19.8],
+            "frame": 0,
+            "outside": true,
+            "attributes": []
+          },
+          {
+            "type": "polygon",
+            "occluded": false,
+            "z_order": 0,
+            "points": [25.04, 13.7, 35.85, 20.2, 16.65, 19.8],
+            "frame": 1,
+            "outside": false,
+            "attributes": [],
+            "keyframe": true
+          }
+        ],
+        "attributes": []
+      }
+    ]
+  },
   "WiderFace 1.0": {
     "version": 0,
     "tags": [],
