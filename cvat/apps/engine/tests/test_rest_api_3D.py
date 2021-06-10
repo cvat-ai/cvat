@@ -6,18 +6,15 @@
 import io
 import os
 import os.path as osp
-import random
-import shutil
 import tempfile
 import xml.etree.ElementTree as ET
-import json
 import zipfile
 from collections import defaultdict
-from enum import Enum
 from glob import glob
 from io import BytesIO
 import copy
 from shutil import copyfile
+import itertools
 
 from django.contrib.auth.models import Group, User
 from rest_framework import status
@@ -161,22 +158,20 @@ class _DbTestBase(APITestCase):
         return response
 
     def _download_file(self, url, data, user, file_name):
-        for _ in range(5):
-            response = self._get_request_with_data(url, data, user)
-            if response.status_code == status.HTTP_200_OK:
-                content = BytesIO(b"".join(response.streaming_content))
-                with open(file_name, "wb") as f:
-                    f.write(content.getvalue())
-                break
-        return response
+        response = self._get_request_with_data(url, data, user)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        response = self._get_request_with_data(url, data, user)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def _upload_file(self, url, binary_file, user):
-        with ForceLogin(user, self.client):
-            for _ in range(5):
-                response = self.client.put(url, {"annotation_file": binary_file})
-                if response.status_code == status.HTTP_201_CREATED:
-                    break
-            return response
+        content = BytesIO(b"".join(response.streaming_content))
+        with open(file_name, "wb") as f:
+            f.write(content.getvalue())
+
+    def _upload_file(self, url, data, user):
+        response = self._put_request_with_data(url, {"annotation_file": data}, user)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        response = self._put_request_with_data(url, {}, user)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def _generate_url_dump_tasks_annotations(self, task_id):
         return f"/api/v1/tasks/{task_id}/annotations"
@@ -198,12 +193,12 @@ class _DbTestBase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
-    def _dump_api_v1_tasks_id_annotations(self, url, data, user):
+    def _get_request_with_data(self, url, data, user):
         with ForceLogin(user, self.client):
             response = self.client.get(url, data)
         return response
 
-    def _upload_api_v1_tasks_id_annotations(self, url, data, user):
+    def _put_request_with_data(self, url, data, user):
         with ForceLogin(user, self.client):
             response = self.client.put(url, data)
         return response
@@ -262,6 +257,7 @@ class Task3DTest(_DbTestBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
         cls._image_sizes = {}
         cls.pointcloud_pcd_filename = "test_canvas3d.zip"
         cls.pointcloud_pcd_path = osp.join(os.path.dirname(__file__), 'assets', cls.pointcloud_pcd_filename)
@@ -281,6 +277,59 @@ class Task3DTest(_DbTestBase):
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
+            ]
+        }
+        cls.task_with_attributes = {
+            "name": "task with attributes",
+            "owner_id": 1,
+            "assignee_id": 2,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [
+                {"name": "car",
+                 "color": "#2080c0",
+                 "attributes": [
+                     {
+                         "default_value": "1",
+                         "id": 5,
+                         "input_type": "select",
+                         "mutable": False,
+                         "name": "1"
+                     }
+                     # {
+                     #     "name": "radio_name",
+                     #     "mutable": False,
+                     #     "input_type": "radio",
+                     #     "default_value": "x1",
+                     #     "values": ["x1", "x2", "x3"]
+                     # },
+                     # {
+                     #     "name": "check_name",
+                     #     "mutable": True,
+                     #     "input_type": "checkbox",
+                     #     "default_value": "false",
+                     #     "values": ["false"]
+                     # },
+                     # {
+                     #     "name": "text_name",
+                     #     "mutable": False,
+                     #     "input_type": "text",
+                     #     "default_value": "qwerty",
+                     #     "values": ["qwerty"]
+                     # },
+                     # {
+                     #     "name": "number_name",
+                     #     "mutable": False,
+                     #     "input_type": "number",
+                     #     "default_value": "-4",
+                     #     "values": ["-4", "4", "1"]
+                     # }
+                 ]
+                 },
+                {"name": "person",
+                 "color": "#c06060",
+                 "attributes": []
+                 },
             ]
         }
         cls.task_many_jobs = {
@@ -475,13 +524,12 @@ class Task3DTest(_DbTestBase):
                         self.assertTrue(len(task_ann.data["shapes"]) == 0)
 
     def test_api_v1_dump_and_upload_annotation(self):
-        format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
 
-            for format_name in format_names:
+            for format_name in self.format_names:
                 annotation = self._get_tmp_annotation(task, self.cuboid_example)
                 response = self._put_api_v1_task_id_annotations(task_id, annotation)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -496,15 +544,15 @@ class Task3DTest(_DbTestBase):
                         data = {
                             "format": format_name,
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['create code'])
                         data = {
                             "format": format_name,
                             "action": "download",
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
                         if response.status_code == status.HTTP_200_OK:
                             content = io.BytesIO(b"".join(response.streaming_content))
@@ -519,10 +567,7 @@ class Task3DTest(_DbTestBase):
                     url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
                     with open(file_name, 'rb') as binary_file:
-                        response = self._upload_api_v1_tasks_id_annotations(url, {"annotation_file": binary_file}, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                        response = self._upload_api_v1_tasks_id_annotations(url, {}, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                        self._upload_file(url, binary_file, self.admin)
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
@@ -532,13 +577,12 @@ class Task3DTest(_DbTestBase):
                     self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
 
     def test_api_v1_rewrite_annotation(self):
-        format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
-            for format_name in format_names:
-                with self.subTest(format=f"{format_names}"):
+            for format_name in self.format_names:
+                with self.subTest(format=f"{format_name}"):
                     annotation = self._get_tmp_annotation(task, self.cuboid_example)
                     response = self._put_api_v1_task_id_annotations(task_id, annotation)
                     self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -548,21 +592,9 @@ class Task3DTest(_DbTestBase):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                    }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                    data = {
-                        "format": format_name,
                         "action": "download",
                     }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_200_OK)
-                    if response.status_code == status.HTTP_200_OK:
-                        content = io.BytesIO(b"".join(response.streaming_content))
-                        with open(file_name, "wb") as f:
-                            f.write(content.getvalue())
+                    self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))
 
                     self._remove_annotations(task_id)
@@ -576,10 +608,7 @@ class Task3DTest(_DbTestBase):
                     url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
                     with open(file_name, 'rb') as binary_file:
-                        response = self._upload_api_v1_tasks_id_annotations(url, {"annotation_file": binary_file}, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                        response = self._upload_api_v1_tasks_id_annotations(url, {}, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                        self._upload_file(url, binary_file, self.admin)
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
@@ -589,7 +618,6 @@ class Task3DTest(_DbTestBase):
                     self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
 
     def test_api_v1_dump_and_upload_empty_annotation(self):
-        format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
@@ -597,38 +625,22 @@ class Task3DTest(_DbTestBase):
             task_ann_prev = TaskAnnotation(task_id)
             task_ann_prev.init_from_db()
 
-            for format_name in format_names:
-                with self.subTest(format=f"{format_names}"):
+            for format_name in self.format_names:
+                with self.subTest(format=f"{format_name}"):
                     url = self._generate_url_dump_tasks_annotations(task_id)
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     data = {
                         "format": format_name,
-                    }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                    data = {
-                        "format": format_name,
                         "action": "download",
                     }
-                    response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                    self.assertEqual(response.status_code, status.HTTP_200_OK)
-                    if response.status_code == status.HTTP_200_OK:
-                        content = io.BytesIO(b"".join(response.streaming_content))
-                        with open(file_name, "wb") as f:
-                            f.write(content.getvalue())
+                    self._download_file(url, data, self.admin, file_name)
                     self.assertTrue(osp.exists(file_name))
 
                     file_name = osp.join(test_dir, f"{format_name}.zip")
                     url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
                     with open(file_name, 'rb') as binary_file:
-                        response = self._upload_api_v1_tasks_id_annotations(url, {"annotation_file": binary_file},
-                                                                            self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                        response = self._upload_api_v1_tasks_id_annotations(url, {}, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                        self._upload_file(url, binary_file, self.admin)
 
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
@@ -638,58 +650,79 @@ class Task3DTest(_DbTestBase):
 
     def test_api_v1_dump_and_upload_several_jobs(self):
         job_test_cases = ["first", "all"]
-        format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task_many_jobs, task_data)
             task_id = task["id"]
+            annotation = self._get_tmp_annotation(task, self.cuboid_example)
 
-            for job_test_case in job_test_cases:
-                annotation = self._get_tmp_annotation(task, self.cuboid_example)
-                for format_name in format_names:
-                    with self.subTest(format=f"{format_names}"):
-                        jobs = self._get_jobs(task_id)
-                        if job_test_case == "all":
-                            for job in jobs:
-                                response = self._put_api_v1_job_id_annotations(job["id"], annotation)
-                                self.assertEqual(response.status_code, status.HTTP_200_OK)
-                        else:
-                            response = self._put_api_v1_job_id_annotations(jobs[1]["id"], annotation)
+            for format_name, job_test_case in itertools.product(self.format_names, job_test_cases):
+                with self.subTest(format=f"{format_name}_{job_test_case}"):
+                    jobs = self._get_jobs(task_id)
+                    if job_test_case == "all":
+                        for job in jobs:
+                            response = self._put_api_v1_job_id_annotations(job["id"], annotation)
                             self.assertEqual(response.status_code, status.HTTP_200_OK)
-                        task_ann_prev = TaskAnnotation(task_id)
-                        task_ann_prev.init_from_db()
-                        url = self._generate_url_dump_tasks_annotations(task_id)
-                        file_name = osp.join(test_dir, f"{format_name}.zip")
-                        data = {
-                            "format": format_name,
-                        }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
-                        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                        data = {
-                            "format": format_name,
-                            "action": "download",
-                        }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, self.admin)
+                    else:
+                        response = self._put_api_v1_job_id_annotations(jobs[1]["id"], annotation)
                         self.assertEqual(response.status_code, status.HTTP_200_OK)
-                        if response.status_code == status.HTTP_200_OK:
-                            content = io.BytesIO(b"".join(response.streaming_content))
-                            with open(file_name, "wb") as f:
-                                f.write(content.getvalue())
-                        self.assertTrue(osp.exists(file_name))
-                        self._check_dump_content(content, task_ann_prev.data, format_name)
+                    task_ann_prev = TaskAnnotation(task_id)
+                    task_ann_prev.init_from_db()
+                    url = self._generate_url_dump_tasks_annotations(task_id)
+                    file_name = osp.join(test_dir, f"{format_name}.zip")
+                    data = {
+                        "format": format_name,
+                        "action": "download",
+                    }
+                    self._download_file(url, data, self.admin, file_name)
 
-                        self._remove_annotations(task_id)
+                    self._remove_annotations(task_id)
+
+    def test_api_v1_zdump_and_upload_with_attributes(self):
+        with TestDir() as test_dir:
+            task_data = self.copy_pcd_file_and_get_task_data(test_dir)
+            task = self._create_task(self.task_with_attributes, task_data)
+            task_id = task["id"]
+
+            for format_name in self.format_names:
+                annotation = self._get_tmp_annotation(task, self.cuboid_example)
+                response = self._put_api_v1_task_id_annotations(task_id, annotation)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                task_ann_prev = TaskAnnotation(task_id)
+                task_ann_prev.init_from_db()
+
+                with self.subTest(format=f"{format_name}_dump"):
+                    url = self._generate_url_dump_tasks_annotations(task_id)
+                    file_name = osp.join(test_dir, f"{format_name}.zip")
+                    data = {
+                        "format": format_name,
+                        "action": "download",
+                    }
+                    self._download_file(url, data, self.admin, file_name)
+                    self.assertTrue(osp.exists(file_name))
+
+                self._remove_annotations(task_id)
+                with self.subTest(format=f"{format_name}_upload"):
+                    file_name = osp.join(test_dir, f"{format_name}.zip")
+                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
+
+                    with open(file_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
+                    task_ann = TaskAnnotation(task_id)
+                    task_ann.init_from_db()
+
+                    task_ann_prev.data["shapes"][0].pop("id")
+                    task_ann.data["shapes"][0].pop("id")
+                    self.assertEqual(task_ann_prev.data["shapes"][0]["attributes"],
+                                     task_ann.data["shapes"][0]["attributes"])
 
     def test_api_v1_export_dataset(self):
-        format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
 
-            for format_name in format_names:
+            for format_name in self.format_names:
                 annotation = self._get_tmp_annotation(task, self.cuboid_example)
                 response = self._put_api_v1_task_id_annotations(task_id, annotation)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -704,15 +737,15 @@ class Task3DTest(_DbTestBase):
                         data = {
                             "format": format_name,
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['create code'])
                         data = {
                             "format": format_name,
                             "action": "download",
                         }
-                        response = self._dump_api_v1_tasks_id_annotations(url, data, user)
+                        response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
                         if response.status_code == status.HTTP_200_OK:
                             content = io.BytesIO(b"".join(response.streaming_content))
