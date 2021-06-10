@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -333,6 +333,36 @@
         '#733380',
     ];
 
+    /**
+     * Provider types
+     * @enum {string}
+     * @name ProviderType
+     * @memberof module:API.cvat.enums
+     * @property {string} AWS_S3 'AWS_S3_BUCKET'
+     * @property {string} AZURE 'AZURE_BLOB_CONTAINER'
+     * @readonly
+     */
+    const ProviderType = Object.freeze({
+        AWS_S3: 'AWS_S3_BUCKET',
+        AZURE: 'AZURE_BLOB_CONTAINER',
+    });
+
+    /**
+     * Types of cloud storage credentials
+     * @enum {string}
+     * @name CredentialsType
+     * @memberof module:API.cvat.enums
+     * @property {string} TEMP_KEY_SECRET_KEY_TOKEN_SET 'TEMP_KEY_SECRET_KEY_TOKEN_SET'
+     * @property {string} ACCOUNT_NAME_TOKEN_PAIR 'ACCOUNT_NAME_TOKEN_PAIR'
+     * @property {string} ANONYMOUS_ACCESS 'ANONYMOUS_ACCESS'
+     * @readonly
+     */
+    const CredentialsType = Object.freeze({
+        TEMP_KEY_SECRET_KEY_TOKEN_SET: 'TEMP_KEY_SECRET_KEY_TOKEN_SET',
+        ACCOUNT_NAME_TOKEN_PAIR: 'ACCOUNT_NAME_TOKEN_PAIR',
+        ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
+    });
+
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -348,5 +378,7 @@
         colors,
         Source,
         DimensionType,
+        ProviderType,
+        CredentialsType,
     };
 })();
