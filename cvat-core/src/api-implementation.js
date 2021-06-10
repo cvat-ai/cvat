@@ -16,13 +16,16 @@
         camelToSnake,
     } = require('./common');
 
-    const { TaskStatus, TaskMode, DimensionType } = require('./enums');
+    const {
+        TaskStatus, TaskMode, DimensionType, ProviderType,
+    } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
     const { Project } = require('./project');
+    const { CloudStorage } = require('./cloud-storage');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -249,6 +252,34 @@
         };
 
         cvat.projects.searchNames.implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
+
+        cvat.cloudStorages.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                page: isInteger,
+                displayName: isString,
+                resourceName: isString,
+                id: isInteger,
+                owner: isString,
+                search: isString,
+                provider: isEnum.bind(ProviderType),
+            });
+
+            checkExclusiveFields(filter, ['id', 'search'], ['page']);
+
+            const searchParams = new URLSearchParams();
+            for (const field of ['displayName', 'resourceName', 'owner', 'search', 'provider', 'id', 'page']) {
+                if (Object.prototype.hasOwnProperty.call(filter, field)) {
+                    searchParams.set(field, filter[field]);
+                }
+            }
+
+            const cloudStoragesData = await serverProxy.cloudStoarges.getCloudStorages(searchParams.toString());
+            const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
+
+            cloudStorages.count = cloudStoragesData.count;
+
+            return cloudStorages;
+        };
 
         return cvat;
     }

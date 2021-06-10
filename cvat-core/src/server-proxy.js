@@ -1148,12 +1148,12 @@
                 }
             }
 
-            async function getCloudStorage(id) {
+            async function getCloudStorages(filter = '') {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/cloudstorages/${id}`, {
+                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=20&${filter}`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -1320,7 +1320,7 @@
 
                     cloudstorage: {
                         value: Object.freeze({
-                            get: getCloudStorage,
+                            getCloudStorages,
                             getContent: getCloudStorageContent,
                             create: createCloudStorage,
                             delete: deleteCloudStorage,
