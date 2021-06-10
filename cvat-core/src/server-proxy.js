@@ -1120,6 +1120,77 @@
                 }
             }
 
+            async function createCloudStorage(storageDetail) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/cloudstorages`, JSON.stringify(storageDetail), {
+                        proxy: config.proxy,
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function saveCloudStorage(id, cloudStorageData) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/cloudstorages/${id}`, JSON.stringify(cloudStorageData), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function getCloudStorage(id) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/cloudstorages/${id}`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getCloudStorageContent(id, manifestPath) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    const url = manifestPath
+                        ? `${backendAPI}/cloudstorages/${id}/content?manifest=${manifestPath}`
+                        : `${backendAPI}/cloudstorages/${id}/content`;
+                    response = await Axios.get(url, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function deleteCloudStorage(id) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/cloudstorages/${id}`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -1243,6 +1314,17 @@
                         value: Object.freeze({
                             status: predictorStatus,
                             predict: predictAnnotations,
+                        }),
+                        writable: false,
+                    },
+
+                    cloudstorage: {
+                        value: Object.freeze({
+                            get: getCloudStorage,
+                            getContent: getCloudStorageContent,
+                            create: createCloudStorage,
+                            delete: deleteCloudStorage,
+                            save: saveCloudStorage,
                         }),
                         writable: false,
                     },
