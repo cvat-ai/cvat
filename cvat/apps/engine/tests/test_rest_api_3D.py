@@ -678,7 +678,7 @@ class Task3DTest(_DbTestBase):
 
                     self._remove_annotations(task_id)
 
-    def test_api_v1_zdump_and_upload_with_attributes(self):
+    def test_api_v1_task_with_attributes(self):
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task_with_attributes, task_data)
