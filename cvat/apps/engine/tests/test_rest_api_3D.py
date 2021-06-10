@@ -290,40 +290,33 @@ class Task3DTest(_DbTestBase):
                  "color": "#2080c0",
                  "attributes": [
                      {
-                         "default_value": "1",
-                         "id": 5,
-                         "input_type": "select",
+                         "name": "radio_name",
                          "mutable": False,
-                         "name": "1"
+                         "input_type": "radio",
+                         "default_value": "x1",
+                         "values": ["x1", "x2", "x3"]
+                     },
+                     {
+                         "name": "check_name",
+                         "mutable": True,
+                         "input_type": "checkbox",
+                         "default_value": "false",
+                         "values": ["false"]
+                     },
+                     {
+                         "name": "text_name",
+                         "mutable": False,
+                         "input_type": "text",
+                         "default_value": "qwerty",
+                         "values": ["qwerty"]
+                     },
+                     {
+                         "name": "number_name",
+                         "mutable": False,
+                         "input_type": "number",
+                         "default_value": "-4",
+                         "values": ["-4", "4", "1"]
                      }
-                     # {
-                     #     "name": "radio_name",
-                     #     "mutable": False,
-                     #     "input_type": "radio",
-                     #     "default_value": "x1",
-                     #     "values": ["x1", "x2", "x3"]
-                     # },
-                     # {
-                     #     "name": "check_name",
-                     #     "mutable": True,
-                     #     "input_type": "checkbox",
-                     #     "default_value": "false",
-                     #     "values": ["false"]
-                     # },
-                     # {
-                     #     "name": "text_name",
-                     #     "mutable": False,
-                     #     "input_type": "text",
-                     #     "default_value": "qwerty",
-                     #     "values": ["qwerty"]
-                     # },
-                     # {
-                     #     "name": "number_name",
-                     #     "mutable": False,
-                     #     "input_type": "number",
-                     #     "default_value": "-4",
-                     #     "values": ["-4", "4", "1"]
-                     # }
                  ]
                  },
                 {"name": "person",
@@ -678,7 +671,7 @@ class Task3DTest(_DbTestBase):
 
                     self._remove_annotations(task_id)
 
-    def test_api_v1_task_with_attributes(self):
+    def test_api_v1_upload_annotation_with_attributes(self):
         with TestDir() as test_dir:
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task_with_attributes, task_data)
