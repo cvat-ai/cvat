@@ -1,19 +1,17 @@
-
 # Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
-
 
 import copy
 import json
 import os.path as osp
 import os
-from io import BytesIO
 import av
 import numpy as np
 import random
 import xml.etree.ElementTree as ET
 import zipfile
+from io import BytesIO
 
 from datumaro.components.dataset import Dataset
 from datumaro.util.test_utils import compare_datasets, TestDir
@@ -171,6 +169,13 @@ class _DbTestBase(APITestCase):
             response = self.client.get(path)
         return response
 
+    def _get_data_from_task(self, task_id, include_images):
+        task_ann = TaskAnnotation(task_id)
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
+        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+        return Dataset.from_extractors(extractor)
+
     def _get_request_with_data(self, path, data, user):
         with ForceLogin(user, self.client):
             response = self.client.get(path, data)
@@ -301,14 +306,6 @@ class _DbTestBase(APITestCase):
         response = self._delete_request(url, user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
-
-    def _get_data_from_task(self, task_id, include_images=False):
-        task_ann = TaskAnnotation(task_id)
-        task_ann.init_from_db()
-        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-        data_from_task = Dataset.from_extractors(extractor)
-        return data_from_task
 
 
 class TaskDumpUploadTest(_DbTestBase):
@@ -1119,11 +1116,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 self._create_annotations(task, f'{dump_format_name}', "random")
 
                 task_id = task["id"]
-                task_ann = TaskAnnotation(task_id)
-                task_ann.init_from_db()
-                task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                data_from_task_before_upload = Dataset.from_extractors(extractor)
+                data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
 
                 # dump annotations
                 url = self._generate_url_dump_tasks_annotations(task_id)
@@ -1145,9 +1138,43 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._upload_file(url, binary_file, self.admin)
 
                     # equals annotations
-                    task_ann = TaskAnnotation(task_id)
-                    task_ann.init_from_db()
-                    task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-                    extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
-                    data_from_task_after_upload = Dataset.from_extractors(extractor)
+                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)\
+
+    def test_api_v1_check_attribute_import_in_tracks(self):
+        test_name = self._testMethodName
+        dump_format_name = "CVAT for video 1.1"
+        upload_format_name = "CVAT 1.1"
+
+        for include_images in (False, True):
+            with self.subTest():
+                # create task with annotations
+                images = self._generate_task_images(13)
+                task = self._create_task(tasks["many jobs"], images)
+                self._create_annotations(task, f'{dump_format_name} attributes in tracks', "default")
+
+                task_id = task["id"]
+                data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
+
+                # dump annotations
+                url = self._generate_url_dump_tasks_annotations(task_id)
+                data = {
+                    "format": dump_format_name,
+                    "action": "download",
+                }
+                with TestDir() as test_dir:
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._check_downloaded_file(file_zip_name)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+
+                    # upload annotations
+                    url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
+
+                    # equals annotations
+                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
