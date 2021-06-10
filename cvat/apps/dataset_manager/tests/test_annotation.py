@@ -166,3 +166,36 @@ class TrackManagerTest(TestCase):
         }
 
         self._check_interpolation(track)
+
+    def test_api_v1_unit_test_on_normalize_shape_function(self):
+        # 3 points
+        TrackManager.normalize_shape({
+             "points": [1.5, 2.5],
+        })
+
+        # 4 points
+        TrackManager.normalize_shape({
+            "points": [1.5, 2.5, 0.5, 8.6, 9.6, 3.6, 2.8, 7.2],
+        })
+        # 1 point
+        TrackManager.normalize_shape({
+            "points": [1.5, 2.5],
+        })
+        # empty shape
+        with self.assertRaises(ValueError):
+            TrackManager.normalize_shape({
+                "points": [],
+            })
+        # invalid count of points
+        with self.assertRaises(ValueError):
+            TrackManager.normalize_shape({
+                "points": [1.5, 2.5, 7.5],
+            })
+        # negative points
+        TrackManager.normalize_shape({
+            "points": [-1.5, 2.5, -9.8, -4.6],
+        })
+        # integer
+        TrackManager.normalize_shape({
+            "points": [1, 2, 9, 4],
+        })
