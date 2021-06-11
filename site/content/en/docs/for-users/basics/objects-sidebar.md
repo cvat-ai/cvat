@@ -28,9 +28,9 @@ The way how to use filters is described in the advanced guide [here](/docs/for-u
 In the objects sidebar you can see the list of available objects on the current
 frame. The following figure is an example of how the list might look like:
 
-| Shape mode                                    | Track mode                                    |
-| --------------------------------------------- | --------------------------------------------- |
-| ![](/images/image044.jpg)                     | ![](/images/image045.jpg)                     |
+| Shape mode                | Track mode                |
+| ------------------------- | ------------------------- |
+| ![](/images/image044.jpg) | ![](/images/image045.jpg) |
 
 ---
 

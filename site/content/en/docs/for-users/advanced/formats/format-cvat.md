@@ -3,7 +3,7 @@ linkTitle: "CVAT"
 weight: 1
 ---
 
-## CVAT
+# CVAT
 
 This is the native CVAT annotation format. It supports all CVAT annotations
 features, so it can be used to make data backups.
