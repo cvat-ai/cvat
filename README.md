@@ -18,14 +18,14 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 ## Documentation
 
 - [Contributing](https://openvinotoolkit.github.io/cvat/docs/for-developers/contributing/)
-- [Installation guide](https://openvinotoolkit.github.io/cvat/docs/for-users/installation/)
-- [User's guide](https://openvinotoolkit.github.io/cvat/docs/for-users/user-guide/)
-- [Django REST API documentation](https://openvinotoolkit.github.io/cvat/docs/for-developers/rest_api_guide/)
+- [Installation guide](https://openvinotoolkit.github.io/cvat/docs/administration/basics/installation/)
+- [For users](https://openvinotoolkit.github.io/cvat/docs/for-users/)
+- [Django REST API documentation](https://openvinotoolkit.github.io/cvat/docs/administration/basics/rest_api_guide/)
 - [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
-- [Command line interface](https://openvinotoolkit.github.io/cvat/docs/for-developers/cli/)
-- [XML annotation format](https://openvinotoolkit.github.io/cvat/docs/for-developers/xml_format/)
-- [AWS Deployment Guide](https://openvinotoolkit.github.io/cvat/docs/for-developers/aws-deployment-guide/)
-- [Frequently asked questions](https://openvinotoolkit.github.io/cvat/docs/for-users/faq/)
+- [Command line interface](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/cli/)
+- [XML annotation format](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/xml_format/)
+- [AWS Deployment Guide](https://openvinotoolkit.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
+- [Frequently asked questions](https://openvinotoolkit.github.io/cvat/docs/faq/)
 - [Questions](#questions)
 
 ## Screencasts
@@ -48,14 +48,14 @@ dataset framework allows additional dataset transformations via its command
 line tool and Python library.
 
 For more information about supported formats look at the
-[documentation](https://openvinotoolkit.github.io/cvat/docs/for-users/formats/).
+[documentation](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/formats/).
 
 <!--lint disable maximum-line-length-->
 
 | Annotation format                                                                                        | Import | Export |
 | -------------------------------------------------------------------------------------------------------  | ------ | ------ |
-| [CVAT for images](https://openvinotoolkit.github.io/cvat/docs/for-developers/xml_format/#annotation)     | X      | X      |
-| [CVAT for a video](https://openvinotoolkit.github.io/cvat/docs/for-developers/xml_format/#interpolation) | X      | X      |
+| [CVAT for images](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/xml_format/#annotation)     | X      | X      |
+| [CVAT for a video](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/xml_format/#interpolation) | X      | X      |
 | [Datumaro](https://github.com/openvinotoolkit/datumaro)                                                  |        | X      |
 | [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                    | X      | X      |
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                            | X      | X      |
@@ -102,7 +102,7 @@ are visible to users.
 
 Disabled features:
 
-- [Analytics: management and monitoring of data annotation team](https://openvinotoolkit.github.io/cvat/docs/for-developers/analytics/)
+- [Analytics: management and monitoring of data annotation team](https://openvinotoolkit.github.io/cvat/docs/administration/advanced/analytics/)
 
 Limitations:
 
