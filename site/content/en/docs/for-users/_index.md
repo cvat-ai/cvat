@@ -1,11 +1,9 @@
-<!--lint disable heading-style-->
-
 ---
 
-title: 'For Users'
-linkTitle: 'For Users'
+title: 'For users'
+linkTitle: 'For users'
 weight: 2
-description: 'This section contains documents for CVAT users'
+description: 'This section contains documents for CVAT simple and advanced users'
 hide_feedback: true
 
 ---
