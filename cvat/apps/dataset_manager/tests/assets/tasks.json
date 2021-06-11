@@ -97,5 +97,18 @@
         ]
       }
     ]
+  },
+  "many jobs": {
+    "name": "many jobs",
+    "overlap": 0,
+    "segment_size": 5,
+    "owner_id": 1,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": []
+      }
+    ]
   }
 }

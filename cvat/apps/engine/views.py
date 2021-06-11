@@ -13,6 +13,7 @@ from distutils.util import strtobool
 from tempfile import mkstemp
 
 import cv2
+from django.db.models.query import Prefetch
 import django_rq
 from django.apps import apps
 from django.conf import settings
@@ -752,18 +753,22 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=DataMetaSerializer,
         url_path='data/meta')
     def data_info(request, pk):
-        db_task = models.Task.objects.prefetch_related('data__images__related_files').select_related('data__video').get(pk=pk)
+        db_task = models.Task.objects.prefetch_related(
+            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
+        ).get(pk=pk)
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
         else:
-            media = list(db_task.data.images.order_by('frame'))
+            media = list(db_task.data.images.all())
 
         frame_meta = [{
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and bool(len(item.related_files.all()))
+            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
         } for item in media]
 
         db_data = db_task.data
