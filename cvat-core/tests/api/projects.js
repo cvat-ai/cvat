@@ -16,7 +16,7 @@ const { Project } = require('../../src/project');
 
 describe('Feature: get projects', () => {
     test('get all projects', async () => {
-        const result = await window.cvat.projects.get({ withoutTasks: false });
+        const result = await window.cvat.projects.get();
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(2);
         for (const el of result) {

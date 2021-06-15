@@ -5,17 +5,10 @@
 import pjson from '../../package.json';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
 import {
-    Canvas3dModel,
-    Canvas3dModelImpl,
-    Mode,
-    DrawData,
-    ViewType,
-    MouseInteraction,
-    ShapeProperties,
-    GroupData,
+    Canvas3dModel, Canvas3dModelImpl, Mode, DrawData, ViewType, MouseInteraction,
 } from './canvas3dModel';
 import {
-    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
+    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CAMERA_ACTION,
 } from './canvas3dView';
 import { Master } from './master';
 
@@ -23,24 +16,19 @@ const Canvas3dVersion = pjson.version;
 
 interface Canvas3d {
     html(): ViewsDOM;
-    setup(frameData: any, objectStates: any[]): void;
+    setup(frameData: any): void;
     isAbleToChangeFrame(): boolean;
     mode(): Mode;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
+    mouseControls(type: string, event: MouseEvent): void;
     draw(drawData: DrawData): void;
     cancel(): void;
-    dragCanvas(enable: boolean): void;
-    activate(clientID: number | null, attributeID?: number): void;
-    configureShapes(shapeProperties: ShapeProperties): void;
-    fitCanvas(): void;
-    fit(): void;
-    group(groupData: GroupData): void;
 }
 
 class Canvas3dImpl implements Canvas3d {
-    private readonly model: Canvas3dModel & Master;
-    private readonly controller: Canvas3dController;
+    private model: Canvas3dModel & Master;
+    private controller: Canvas3dController;
     private view: Canvas3dView;
 
     public constructor() {
@@ -57,6 +45,10 @@ class Canvas3dImpl implements Canvas3d {
         this.view.keyControls(keys);
     }
 
+    public mouseControls(type: MouseInteraction, event: MouseEvent): void {
+        this.view.mouseControls(type, event);
+    }
+
     public render(): void {
         this.view.render();
     }
@@ -65,16 +57,12 @@ class Canvas3dImpl implements Canvas3d {
         this.model.draw(drawData);
     }
 
-    public setup(frameData: any, objectStates: any[]): void {
-        this.model.setup(frameData, objectStates);
+    public setup(frameData: any): void {
+        this.model.setup(frameData);
     }
 
     public mode(): Mode {
         return this.model.mode;
-    }
-
-    public group(groupData: GroupData): void {
-        this.model.group(groupData);
     }
 
     public isAbleToChangeFrame(): boolean {
@@ -84,28 +72,8 @@ class Canvas3dImpl implements Canvas3d {
     public cancel(): void {
         this.model.cancel();
     }
-
-    public dragCanvas(enable: boolean): void {
-        this.model.dragCanvas(enable);
-    }
-
-    public configureShapes(shapeProperties: ShapeProperties): void {
-        this.model.configureShapes(shapeProperties);
-    }
-
-    public activate(clientID: number | null, attributeID: number | null = null): void {
-        this.model.activate(String(clientID), attributeID);
-    }
-
-    public fit(): void {
-        this.model.fit();
-    }
-
-    public fitCanvas(): void {
-        this.model.fit();
-    }
 }
 
 export {
-    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CameraAction, ViewsDOM,
+    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CAMERA_ACTION,
 };

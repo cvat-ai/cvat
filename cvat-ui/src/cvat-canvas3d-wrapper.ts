@@ -7,10 +7,9 @@ import {
     Canvas3dVersion,
     MouseInteraction,
     ViewType,
-    CameraAction,
-    ViewsDOM,
+    CAMERA_ACTION,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
 
 export {
-    Canvas3d, Canvas3dVersion, MouseInteraction, ViewType, CameraAction, ViewsDOM,
+    Canvas3d, Canvas3dVersion, MouseInteraction, ViewType, CAMERA_ACTION,
 };

@@ -42,15 +42,15 @@ export class OpenCVWrapper {
 
         const decoder = new TextDecoder('utf-8');
         const reader = (body as ReadableStream<Uint8Array>).getReader();
-        let received = false;
+        let recieved = false;
         let receivedLength = 0;
         let decodedScript = '';
 
-        while (!received) {
+        while (!recieved) {
             // await in the loop is necessary here
             // eslint-disable-next-line
             const { done, value } = await reader.read();
-            received = done;
+            recieved = done;
 
             if (value instanceof Uint8Array) {
                 decodedScript += decoder.decode(value);

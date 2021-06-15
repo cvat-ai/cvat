@@ -46,7 +46,13 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
+        cy.createAnnotationTask(
+            taskName,
+            labelName,
+            attrName,
+            textDefaultValue,
+            archiveName,
+        );
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
     });
@@ -57,7 +63,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     });
 
     describe(`Testing case "${issueId}"`, () => {
-        it('Save job. Dump annotation to YOLO format. Remove annotation. Save job.', () => {
+        it('Save job. Dump annotaion to YOLO format. Remove annotation. Save job.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
             cy.interactMenu('Dump annotations');

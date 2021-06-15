@@ -8,14 +8,16 @@ import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
-import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
-import { DimensionType, ShapeType } from 'reducers/interfaces';
+import { ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
+    canvasInstance: Canvas | Canvas3d;
     shapeType: ShapeType;
     labels: any[];
     minimumPoints: number;
@@ -30,7 +32,6 @@ interface Props {
     onChangeCuboidDrawingMethod(event: RadioChangeEvent): void;
     onDrawTrack(): void;
     onDrawShape(): void;
-    jobInstance: any;
 }
 
 function DrawShapePopoverComponent(props: Props): JSX.Element {
@@ -49,10 +50,10 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         onChangePoints,
         onChangeRectDrawingMethod,
         onChangeCuboidDrawingMethod,
-        jobInstance,
+        canvasInstance,
     } = props;
 
-    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    const is2D = canvasInstance instanceof Canvas;
 
     return (
         <div className='cvat-draw-shape-popover-content'>

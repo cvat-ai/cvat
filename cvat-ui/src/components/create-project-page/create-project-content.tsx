@@ -96,7 +96,7 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     );
 }
 
-function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
+function AdvanvedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
@@ -197,7 +197,7 @@ export default function CreateProjectContent(): JSX.Element {
                 />
             </Col>
             <Col span={24}>
-                <AdvancedConfigurationForm formRef={advancedFormRef} />
+                <AdvanvedConfigurationForm formRef={advancedFormRef} />
             </Col>
             <Col span={24}>
                 <Button type='primary' onClick={onSumbit}>

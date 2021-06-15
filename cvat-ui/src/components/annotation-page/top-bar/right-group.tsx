@@ -25,8 +25,11 @@ interface Props {
     workspace: Workspace;
     predictor: PredictorState;
     isTrainingActive: boolean;
+
     showStatistics(): void;
+
     switchPredictor(predictorEnabled: boolean): void;
+
     showFilters(): void;
     changeWorkspace(workspace: Workspace): void;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,18 +22,24 @@ interface Props {
 }
 
 export default function ProjectItemComponent(props: Props): JSX.Element {
-    const {
-        projectInstance: { instance, preview },
-    } = props;
+    const { projectInstance } = props;
 
     const history = useHistory();
-    const ownerName = instance.owner ? instance.owner.username : null;
-    const updated = moment(instance.updatedDate).fromNow();
+    const ownerName = projectInstance.owner ? projectInstance.owner.username : null;
+    const updated = moment(projectInstance.updatedDate).fromNow();
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
-    const deleted = instance.id in deletes ? deletes[instance.id] : false;
+    const deleted = projectInstance.id in deletes ? deletes[projectInstance.id] : false;
+
+    let projectPreview = null;
+    if (projectInstance.tasks.length) {
+        // prettier-ignore
+        projectPreview = useSelector((state: CombinedState) => (
+            state.tasks.current.find((task) => task.instance.id === projectInstance.tasks[0].id)?.preview
+        ));
+    }
 
     const onOpenProject = (): void => {
-        history.push(`/projects/${instance.id}`);
+        history.push(`/projects/${projectInstance.id}`);
     };
 
     const style: React.CSSProperties = {};
@@ -46,10 +52,10 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     return (
         <Card
             cover={
-                preview ? (
+                projectPreview ? (
                     <img
                         className='cvat-projects-project-item-card-preview'
-                        src={preview}
+                        src={projectPreview}
                         alt='Preview'
                         onClick={onOpenProject}
                         aria-hidden
@@ -67,7 +73,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
             <Meta
                 title={(
                     <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
-                        {instance.name}
+                        {projectInstance.name}
                     </span>
                 )}
                 description={(
@@ -82,7 +88,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                             <Text type='secondary'>{`Last updated ${updated}`}</Text>
                         </div>
                         <div>
-                            <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={instance} />}>
+                            <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={projectInstance} />}>
                                 <Button type='link' size='large' icon={<MoreOutlined />} />
                             </Dropdown>
                         </div>

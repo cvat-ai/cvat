@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,19 +50,12 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 current: [],
             };
         case ProjectsActionTypes.GET_PROJECTS_SUCCESS: {
-            const combinedWithPreviews = action.payload.array.map(
-                (project: any, index: number): Project => ({
-                    instance: project,
-                    preview: action.payload.previews[index],
-                }),
-            );
-
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 count: action.payload.count,
-                current: combinedWithPreviews,
+                current: action.payload.array,
             };
         }
         case ProjectsActionTypes.GET_PROJECTS_FAILED: {
@@ -117,13 +110,13 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => ({
-                        ...project,
-                        instance:
-                            project.instance.id === action.payload.project.id ?
-                                action.payload.project :
-                                project.instance,
-                    }),
+                    (project): Project => {
+                        if (project.id === action.payload.project.id) {
+                            return action.payload.project;
+                        }
+
+                        return project;
+                    },
                 ),
             };
         }
@@ -131,13 +124,13 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => ({
-                        ...project,
-                        instance:
-                            project.instance.id === action.payload.project.id ?
-                                action.payload.project :
-                                project.instance,
-                    }),
+                    (project): Project => {
+                        if (project.id === action.payload.project.id) {
+                            return action.payload.project;
+                        }
+
+                        return project;
+                    },
                 ),
             };
         }

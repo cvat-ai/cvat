@@ -8,7 +8,6 @@ import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import Input from 'antd/lib/input';
 import copy from 'copy-to-clipboard';
-
 import {
     activateObject,
     changeFrameAsync,
@@ -28,7 +27,6 @@ import {
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     CombinedState, FrameSpeed, Workspace, PredictorState,
 } from 'reducers/interfaces';
@@ -52,7 +50,7 @@ interface StateToProps {
     workspace: Workspace;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas;
     forceExit: boolean;
     predictor: PredictorState;
     isTrainingActive: boolean;
@@ -240,19 +238,19 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         if (playing && canvasIsReady) {
             if (frameNumber < jobInstance.stopFrame) {
-                let framesSkipped = 0;
+                let framesSkiped = 0;
                 if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {
-                    framesSkipped = 1;
+                    framesSkiped = 1;
                 }
                 if (frameSpeed === FrameSpeed.Fastest && frameNumber + 2 < jobInstance.stopFrame) {
-                    framesSkipped = 2;
+                    framesSkiped = 2;
                 }
 
                 setTimeout(() => {
                     const { playing: stillPlaying } = this.props;
                     if (stillPlaying) {
                         if (canvasInstance.isAbleToChangeFrame()) {
-                            onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
+                            onChangeFrame(frameNumber + 1 + framesSkiped, stillPlaying, framesSkiped + 1);
                         } else {
                             onSwitchPlay(false);
                         }

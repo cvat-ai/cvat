@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2019-2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,7 +50,7 @@
                 throw new DataError(`Points must have exact 8 points, but got ${points.length / 2}`);
             }
         } else {
-            throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
+            throw new ArgumentError(`Unknown value of shapeType has been recieved ${shapeType}`);
         }
     }
 
@@ -324,16 +324,11 @@
                 checkObjectType('points', data.points, null, Array);
                 checkNumberOfPoints(this.shapeType, data.points);
                 // cut points
-                const { width, height, filename } = this.frameMeta[frame];
+                const { width, height } = this.frameMeta[frame];
                 fittedPoints = fitPoints(this.shapeType, data.points, width, height);
-                let check = true;
-                if (filename && filename.slice(filename.length - 3) === 'pcd') {
-                    check = false;
-                }
-                if (check) {
-                    if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
-                        fittedPoints = [];
-                    }
+
+                if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
+                    fittedPoints = [];
                 }
             }
 
@@ -1452,7 +1447,7 @@
                             / Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
                     );
                 } else {
-                    // The link below works for lines (which have infinite length)
+                    // The link below works for lines (which have infinit length)
                     // There is a case when perpendicular doesn't cross the edge
                     // In this case we don't use the computed distance
                     // Instead we use just distance to the nearest point

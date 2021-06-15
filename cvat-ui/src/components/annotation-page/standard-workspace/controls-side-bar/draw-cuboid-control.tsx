@@ -7,7 +7,6 @@ import Popover from 'antd/lib/popover';
 import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { ShapeType } from 'reducers/interfaces';
 
 import { CubeIcon } from 'icons';
@@ -16,7 +15,7 @@ import DrawShapePopoverContainer from 'containers/annotation-page/standard-works
 import withVisibilityHandling from './handle-popover-visibility';
 
 export interface Props {
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas;
     isDrawing: boolean;
     disabled?: boolean;
 }

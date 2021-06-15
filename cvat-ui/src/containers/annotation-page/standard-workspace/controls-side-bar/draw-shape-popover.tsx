@@ -9,7 +9,6 @@ import { RadioChangeEvent } from 'antd/lib/radio';
 import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface OwnProps {
@@ -28,10 +27,9 @@ interface DispatchToProps {
 
 interface StateToProps {
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas;
     shapeType: ShapeType;
     labels: any[];
-    jobInstance: any;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -60,7 +58,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance },
-            job: { labels, instance: jobInstance },
+            job: { labels },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -70,7 +68,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         canvasInstance,
         labels,
         normalizedKeyMap,
-        jobInstance,
     };
 }
 
@@ -168,12 +165,12 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         } = this.state;
 
         const {
-            normalizedKeyMap, labels, shapeType, jobInstance,
+            normalizedKeyMap, labels, shapeType, canvasInstance,
         } = this.props;
 
         return (
             <DrawShapePopoverComponent
-                jobInstance={jobInstance}
+                canvasInstance={canvasInstance}
                 labels={labels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}

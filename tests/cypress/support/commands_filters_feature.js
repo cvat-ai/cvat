@@ -36,8 +36,6 @@ Cypress.Commands.add('collectRuleID', () => {
 Cypress.Commands.add('clearFilters', () => {
     cy.сheckFiltersModalOpened();
     cy.contains('button', 'Clear filters').click();
-    cy.get('.cvat-filters-modal-visible').should('not.exist');
-    cy.get('.cvat-filters-modal').should('be.hidden');
 });
 
 Cypress.Commands.add('addFiltersGroup', (groupIndex) => {
@@ -66,7 +64,7 @@ Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
 
 Cypress.Commands.add(
     'setFilter',
-    ({ groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit }) => {
+    ({groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit}) => {
         cy.сheckFiltersModalOpened();
         cy.collectGroupID().then((groupIdIndex) => {
             cy.collectRuleID().then((ruleIdIndex) => {
@@ -119,13 +117,9 @@ Cypress.Commands.add(
                 if (valueSource) {
                     cy.get('.ant-dropdown').not('.ant-dropdown-hidden').contains('[role="menuitem"]', value).click();
                 }
-                if (submit) {
-                    cy.get('.cvat-filters-modal-visible').within(() => {
-                        cy.contains('button', 'Submit').click();
-                    });
-                    cy.get('.cvat-filters-modal-visible').should('not.exist');
-                    cy.get('.cvat-filters-modal').should('be.hidden');
-                }
+                cy.get('.cvat-filters-modal').within(() => {
+                    submit ? cy.contains('button', 'Submit').click() : null;
+                });
             });
         });
     },
@@ -139,9 +133,7 @@ Cypress.Commands.add('selectFilterValue', (filterValue) => {
         .within(() => {
             cy.contains('[role="menuitem"]', new RegExp(`^${filterValue}$`)).click();
         });
-    cy.get('.cvat-filters-modal-visible').within(() => {
+    cy.get('.cvat-filters-modal').within(() => {
         cy.contains('button', 'Submit').click();
     });
-    cy.get('.cvat-filters-modal-visible').should('not.exist');
-    cy.get('.cvat-filters-modal').should('be.hidden');
 });

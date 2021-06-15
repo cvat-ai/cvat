@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -104,6 +104,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'cvat.apps.authentication',
+    'cvat.apps.documentation',
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
@@ -343,7 +344,7 @@ DATA_ROOT = os.path.join(BASE_DIR, 'data')
 LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
 if not os.path.exists(LOGSTASH_DB):
-    open(LOGSTASH_DB, 'w').close()
+    os.mknod(LOGSTASH_DB)
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
@@ -454,7 +455,7 @@ RESTRICTIONS = {
     # this setting limits the number of projects for the user
     'project_limit': None,
 
-    # this setting reduces task visibility to owner and assignee only
+    # this setting reduse task visibility to owner and assignee only
     'reduce_task_visibility': False,
 
     # allow access to analytics component to users with the following roles

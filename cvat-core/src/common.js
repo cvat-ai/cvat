@@ -34,7 +34,7 @@
         for (const prop in filter) {
             if (Object.prototype.hasOwnProperty.call(filter, prop)) {
                 if (!(prop in fields)) {
-                    throw new ArgumentError(`Unsupported filter property has been received: "${prop}"`);
+                    throw new ArgumentError(`Unsupported filter property has been recieved: "${prop}"`);
                 } else if (!fields[prop](filter[prop])) {
                     throw new ArgumentError(`Received filter property "${prop}" is not satisfied for checker`);
                 }
@@ -104,37 +104,6 @@
     }
     negativeIDGenerator.start = -1;
 
-    class FieldUpdateTrigger {
-        constructor(initialFields) {
-            const data = { ...initialFields };
-
-            Object.defineProperties(
-                this,
-                Object.freeze({
-                    ...Object.assign(
-                        {},
-                        ...Array.from(Object.keys(data), (key) => ({
-                            [key]: {
-                                get: () => data[key],
-                                set: (value) => {
-                                    data[key] = value;
-                                },
-                                enumerable: true,
-                            },
-                        })),
-                    ),
-                    reset: {
-                        value: () => {
-                            Object.keys(data).forEach((key) => {
-                                data[key] = false;
-                            });
-                        },
-                    },
-                }),
-            );
-        }
-    }
-
     module.exports = {
         isBoolean,
         isInteger,
@@ -145,6 +114,5 @@
         negativeIDGenerator,
         checkExclusiveFields,
         camelToSnake,
-        FieldUpdateTrigger,
     };
 })();

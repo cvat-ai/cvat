@@ -7,29 +7,21 @@ import Icon from '@ant-design/icons';
 
 import { GroupIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ActiveControl, DimensionType } from 'reducers/interfaces';
+import { ActiveControl } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 export interface Props {
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas;
     activeControl: ActiveControl;
     switchGroupShortcut: string;
     resetGroupShortcut: string;
     disabled?: boolean;
-    jobInstance?: any;
     groupObjects(enabled: boolean): void;
 }
 
 function GroupControl(props: Props): JSX.Element {
     const {
-        switchGroupShortcut,
-        resetGroupShortcut,
-        activeControl,
-        canvasInstance,
-        groupObjects,
-        disabled,
-        jobInstance,
+        switchGroupShortcut, resetGroupShortcut, activeControl, canvasInstance, groupObjects, disabled,
     } = props;
 
     const dynamicIconProps =
@@ -51,9 +43,7 @@ function GroupControl(props: Props): JSX.Element {
             };
 
     const title = [
-        `Group shapes${
-            jobInstance && jobInstance.task.dimension === DimensionType.DIM_3D ? '' : '/tracks'
-        } ${switchGroupShortcut}. `,
+        `Group shapes/tracks ${switchGroupShortcut}. `,
         `Select and press ${resetGroupShortcut} to reset a group.`,
     ].join(' ');
 

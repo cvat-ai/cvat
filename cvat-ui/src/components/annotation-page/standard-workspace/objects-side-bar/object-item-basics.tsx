@@ -14,7 +14,6 @@ import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
 
 interface Props {
-    jobInstance: any;
     readonly: boolean;
     clientID: number;
     serverID: number | undefined;
@@ -77,7 +76,6 @@ function ItemTopComponent(props: Props): JSX.Element {
         toForeground,
         resetCuboidPerspective,
         activateTracking,
-        jobInstance,
     } = props;
 
     const [menuVisible, setMenuVisible] = useState(false);
@@ -126,7 +124,6 @@ function ItemTopComponent(props: Props): JSX.Element {
                     onVisibleChange={changeMenuVisible}
                     placement='bottomLeft'
                     overlay={ItemMenu({
-                        jobInstance,
                         readonly,
                         serverID,
                         locked,

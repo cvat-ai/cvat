@@ -1,8 +1,6 @@
 exports.settings = { bullet: '*', paddedTable: false };
 
 exports.plugins = [
-    'remark-frontmatter',
-    'remark-gfm',
     'remark-preset-lint-recommended',
     'remark-preset-lint-consistent',
     ['remark-lint-list-item-indent', 'space'],
