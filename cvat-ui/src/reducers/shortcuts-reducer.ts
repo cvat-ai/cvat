@@ -9,7 +9,7 @@ import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { DimensionType, ShortcutsState } from './interfaces';
 
 function formatShortcuts(shortcuts: KeyMapItem): string {
-    const list: string[] = shortcuts.sequences as string[];
+    const list: string[] = shortcuts.displayedSequences || (shortcuts.sequences as string[]);
     return `[${list
         .map((shortcut: string): string => {
             let keys = shortcut.split('+');
@@ -77,7 +77,7 @@ const defaultKeyMap = ({
         description: 'Change keyframe property for an active track',
         sequences: ['k'],
         action: 'keydown',
-        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+        applicable: [DimensionType.DIM_2D],
     },
     SWITCH_OUTSIDE: {
         name: 'Switch outside',
@@ -126,14 +126,14 @@ const defaultKeyMap = ({
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
         action: 'keydown',
-        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+        applicable: [DimensionType.DIM_2D],
     },
     PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
         action: 'keydown',
-        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+        applicable: [DimensionType.DIM_2D],
     },
 
     NEXT_ATTRIBUTE: {
@@ -310,7 +310,8 @@ const defaultKeyMap = ({
     FOCUS_INPUT_FRAME: {
         name: 'Focus input frame',
         description: 'Focus on the element to change the current frame',
-        sequences: ['~'],
+        sequences: ['`'],
+        displayedSequences: ['~'],
         action: 'keydown',
         applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
     },

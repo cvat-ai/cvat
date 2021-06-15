@@ -8,9 +8,14 @@
     height: 100%;
 }
 
-.attribute-annotation-sidebar {
+.attribute-annotation-sidebar:not(.ant-layout-sider-collapsed) {
     background: $background-color-2;
     padding: 5px;
+
+    > .ant-layout-sider-children {
+        display: flex;
+        flex-direction: column;
+    }
 }
 
 .cvat-attribute-annotation-sidebar-object-switcher,
@@ -43,6 +48,11 @@
 .attribute-annotations-sidebar-not-found-wrapper {
     margin-top: 20px;
     text-align: center;
+    flex-grow: 10;
+}
+
+.attribute-annotations-sidebar-attribute-editor {
+    flex-grow: 10;
 }
 
 .attribute-annotation-sidebar-attr-list-wrapper {

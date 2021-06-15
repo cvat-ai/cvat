@@ -9,10 +9,10 @@ import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import CONST from './consts';
 import {
-    Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
+    Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType
 } from './canvas3dModel';
 import {
-    createRotationHelper, CuboidModel, setEdges, setTranslationHelper,
+    createRotationHelper, CuboidModel, setEdges, setTranslationHelper
 } from './cuboid';
 
 export interface Canvas3dView {
@@ -293,7 +293,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.views.perspective.scene.children[0].children,
                     false,
                 );
-                if (intersects.length !== 0) {
+                if (intersects.length !== 0 || this.controller.focused.clientID !== null) {
                     this.setDefaultZoom();
                 } else {
                     const { x, y, z } = this.action.frameCoordinates;
@@ -571,6 +571,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 recentMouseVector: new THREE.Vector2(0, 0),
             },
         };
+        this.model.mode = Mode.IDLE;
+        this.action.selectable = true;
     }
 
     private completeActions(): void {
@@ -604,8 +606,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.adjustPerspectiveCameras();
         this.translateReferencePlane(new THREE.Vector3(x, y, z));
         this.resetActions();
-        this.model.mode = Mode.IDLE;
-        this.action.selectable = true;
     }
 
     private onGroupDone(objects?: any[]): void {
@@ -638,7 +638,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private setupObject(object: any, addToScene: boolean): CuboidModel {
         const {
-            opacity, outlined, outlineColor, selectedOpacity, colorBy,
+            opacity, outlined, outlineColor, selectedOpacity, colorBy
         } = this.model.data.shapeProperties;
         const clientID = String(object.clientID);
         const cuboid = new CuboidModel(object.occluded ? 'dashed' : 'line', outlined ? outlineColor : '#ffffff');
@@ -1153,6 +1153,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         }
                         this.updateRotationHelperPos();
                         this.updateResizeHelperPos();
+                    } else {
+                        this.resetActions();
                     }
                 }
             }
@@ -1209,7 +1211,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private moveObject(coordinates: THREE.Vector3): void {
         const {
-            perspective, top, side, front,
+            perspective, top, side, front
         } = this.model.data.selected;
         let localCoordinates = coordinates;
         if (this.action.translation.status) {
@@ -1749,26 +1751,24 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public keyControls(key: any): void {
         const { controls } = this.views.perspective;
         if (!controls) return;
-        switch (key.code) {
-            case CameraAction.ROTATE_RIGHT:
-                controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                break;
-            case CameraAction.ROTATE_LEFT:
-                controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                break;
-            case CameraAction.TILT_UP:
-                controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                break;
-            case CameraAction.TILT_DOWN:
-                controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                break;
-            case 'ControlLeft':
-                this.action.selectable = !key.ctrlKey;
-                break;
-            default:
-                break;
-        }
-        if (key.altKey === true) {
+        if (key.shiftKey) {
+            switch (key.code) {
+                case CameraAction.ROTATE_RIGHT:
+                    controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
+                    break;
+                case CameraAction.ROTATE_LEFT:
+                    controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
+                    break;
+                case CameraAction.TILT_UP:
+                    controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
+                    break;
+                case CameraAction.TILT_DOWN:
+                    controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
+                    break;
+                default:
+                    break;
+            }
+        } else if (key.altKey === true) {
             switch (key.code) {
                 case CameraAction.ZOOM_IN:
                     controls.dolly(CONST.DOLLY_FACTOR, true);
@@ -1791,6 +1791,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 default:
                     break;
             }
+        } else if (key.code === 'ControlLeft') {
+            this.action.selectable = !key.ctrlKey;
         }
     }
 
