@@ -17,7 +17,7 @@
     } = require('./common');
 
     const {
-        TaskStatus, TaskMode, DimensionType, ProviderType,
+        TaskStatus, TaskMode, DimensionType, CloudStorageProviderType,
     } = require('./enums');
 
     const User = require('./user');
@@ -261,19 +261,27 @@
                 id: isInteger,
                 owner: isString,
                 search: isString,
-                provider: isEnum.bind(ProviderType),
+                provider: isEnum.bind(CloudStorageProviderType),
             });
 
             checkExclusiveFields(filter, ['id', 'search'], ['page']);
 
             const searchParams = new URLSearchParams();
-            for (const field of ['displayName', 'resourceName', 'owner', 'search', 'provider', 'id', 'page']) {
+            for (const field of ['displayName', 'owner', 'search', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(field, filter[field]);
+                    searchParams.set(camelToSnake(field), filter[field]);
                 }
             }
 
-            const cloudStoragesData = await serverProxy.cloudStoarges.getCloudStorages(searchParams.toString());
+            if (Object.prototype.hasOwnProperty.call(filter, 'resourceName')) {
+                searchParams.set('resource', filter.resourceName);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(filter, 'provider')) {
+                searchParams.set('provider_type', filter.provider);
+            }
+
+            const cloudStoragesData = await serverProxy.cloudStoarges.get(searchParams.toString());
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
 
             cloudStorages.count = cloudStoragesData.count;

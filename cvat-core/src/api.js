@@ -757,18 +757,18 @@ function build() {
              * @typedef {Object} CloudStorageFilter
              * @property {string} displayName Check if displayName contains this value
              * @property {string} resourceName Check if resourceName contains this value
-             * @property {module:API.cvat.enums.ProviderType} provider Check if provider contains this value
+             * @property {module:API.cvat.enums.ProviderType} provider Check if provider equal this value
              * @property {integer} id Check if id equals this value
              * @property {integer} page Get specific page
              * (default REST API returns 20 clouds storages per request.
              * In order to get more, it is need to specify next page)
-             * @property {string} owner Check if owner user contains this value
-             * @property {string} search Combined search of contains among all fields
+             * @property {string} owner Check if an owner name contains this value
+             * @property {string} search Combined search of contains among all the fields
              * @global
              */
 
             /**
-             * Method returns list of cloud storages corresponding to a filter
+             * Method returns a list of cloud storages corresponding to a filter
              * @method get
              * @async
              * @memberof module:API.cvat.cloudStorages

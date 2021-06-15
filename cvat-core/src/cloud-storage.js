@@ -6,7 +6,7 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { ArgumentError } = require('./exceptions');
-    const { CredentialsType, ProviderType } = require('./enums');
+    const { CloudStorageCredentialsType, CloudStorageProviderType } = require('./enums');
 
     /**
      * Class representing a cloud storage
@@ -17,20 +17,20 @@
         constructor(initialData) {
             const data = {
                 id: undefined,
-                displayName: undefined,
+                display_name: undefined,
                 description: undefined,
-                credentialsType: undefined,
-                provider: undefined,
-                resourceName: undefined,
-                accountName: undefined,
-                accesskey: undefined,
-                secretKey: undefined,
-                token: undefined,
-                specificAttibutes: undefined,
+                credentials_type: undefined,
+                provider_type: undefined,
+                resource: undefined,
+                account_name: undefined,
+                key: undefined,
+                secret_key: undefined,
+                session_token: undefined,
+                specific_attibutes: undefined,
                 owner: undefined,
                 created_date: undefined,
                 updated_date: undefined,
-                manifestPath: undefined,
+                manifest_path: undefined,
             };
 
             for (const property in data) {
@@ -61,12 +61,14 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     displayName: {
-                        get: () => data.displayName,
+                        get: () => data.display_name,
                         set: (value) => {
-                            if (!value.trim().length) {
-                                throw new ArgumentError('Value must not be empty');
+                            if (typeof value !== 'string') {
+                                throw new ArgumentError(`Value must be string. ${typeof value} was found`);
+                            } else if (!value.trim().length) {
+                                throw new ArgumentError('Value must not be empty string');
                             }
-                            data.displayName = value;
+                            data.display_name = value;
                         },
                     },
                     /**
@@ -75,15 +77,19 @@
                      * @type {string}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     description: {
                         get: () => data.description,
                         set: (value) => {
+                            if (typeof value !== 'string') {
+                                throw new ArgumentError('Value must be string');
+                            }
                             data.description = value;
                         },
                     },
                     /**
-                     * Account name (for Azure)
+                     * Azure account name
                      * @name accountName
                      * @type {string}
                      * @memberof module:API.cvat.classes.CloudStorage
@@ -91,14 +97,16 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     accountName: {
-                        get: () => data.accountName,
+                        get: () => data.account_name,
                         set: (value) => {
                             if (typeof value === 'string') {
                                 if (value.trim().length) {
-                                    data.accountName = value;
+                                    data.account_name = value;
                                 } else {
                                     throw new ArgumentError('Value must not be empty');
                                 }
+                            } else {
+                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
                             }
                         },
                     },
@@ -111,14 +119,16 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     accessKey: {
-                        get: () => data.accessKey,
+                        get: () => data.key,
                         set: (value) => {
                             if (typeof value === 'string') {
                                 if (value.trim().length) {
-                                    data.accesskey = value;
+                                    data.key = value;
                                 } else {
                                     throw new ArgumentError('Value must not be empty');
                                 }
+                            } else {
+                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
                             }
                         },
                     },
@@ -131,14 +141,16 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     secretKey: {
-                        get: () => data.secretKey,
+                        get: () => data.secret_key,
                         set: (value) => {
                             if (typeof value === 'string') {
                                 if (value.trim().length) {
-                                    data.secretKey = value;
+                                    data.secret_key = value;
                                 } else {
                                     throw new ArgumentError('Value must not be empty');
                                 }
+                            } else {
+                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
                             }
                         },
                     },
@@ -151,14 +163,16 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     token: {
-                        get: () => data.token,
+                        get: () => data.session_token,
                         set: (value) => {
                             if (typeof value === 'string') {
                                 if (value.trim().length) {
-                                    data.token = value;
+                                    data.session_token = value;
                                 } else {
                                     throw new ArgumentError('Value must not be empty');
                                 }
+                            } else {
+                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
                             }
                         },
                     },
@@ -171,12 +185,14 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     resourceName: {
-                        get: () => data.resourceName,
+                        get: () => data.resource,
                         set: (value) => {
-                            if (!value.trim().length) {
+                            if (typeof value !== 'string') {
+                                throw new ArgumentError(`Value must be string. ${typeof value} was found`);
+                            } else if (!value.trim().length) {
                                 throw new ArgumentError('Value must not be empty');
                             }
-                            data.resourceName = value;
+                            data.resource = value;
                         },
                     },
                     /**
@@ -184,12 +200,15 @@
                      * @type {string}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     manifestPath: {
-                        get: () => data.manifestPath,
+                        get: () => data.manifest_path,
                         set: (value) => {
-                            if (typeof value !== undefined) {
-                                data.manifestPath = value;
+                            if (typeof value !== 'string') {
+                                data.manifest_path = value;
+                            } else {
+                                throw new ArgumentError('Value must be a string');
                             }
                         },
                     },
@@ -201,29 +220,29 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     provider: {
-                        get: () => data.provider,
-                        set: (value) => {
-                            if (value !== undefined && !!ProviderType[value]) {
-                                data.provider = value;
+                        get: () => data.provider_type,
+                        set: (key) => {
+                            if (key !== undefined && !!CloudStorageProviderType[key]) {
+                                data.provider_type = CloudStorageProviderType[key];
                             } else {
-                                throw new ArgumentError('Value must be one from ProviderType values');
+                                throw new ArgumentError('Value must be one CloudStorageProviderType keys');
                             }
                         },
                     },
                     /**
                      * @name credentialsType
-                     * @type {module:API.cvat.enums.CredentialsType}
+                     * @type {module:API.cvat.enums.CloudStorageCredentialsType}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     credentialsType: {
-                        get: () => data.credentialsType,
-                        set: (value) => {
-                            if (value !== undefined && !!CredentialsType[value]) {
-                                data.credentialsType = value;
+                        get: () => data.credentials_type,
+                        set: (key) => {
+                            if (key !== undefined && !!CloudStorageCredentialsType[key]) {
+                                data.credentials_type = CloudStorageCredentialsType[key];
                             } else {
-                                throw new ArgumentError('Value must be one from CredentialsType values');
+                                throw new ArgumentError('Value must be one CloudStorageCredentialsType keys');
                             }
                         },
                     },
@@ -235,18 +254,20 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     specificAttibutes: {
-                        get: () => data.specificAttibutes,
+                        get: () => data.specific_attibutes,
                         set: (attributesValue) => {
                             if (typeof attributesValue === 'string') {
-                                for (const keyValuePair of attributesValue.split('&')) {
-                                    const [key, value] = keyValuePair.split('=');
-                                    if (key && value) {
-                                        throw new ArgumentError('Value mast match the key1=value1&key2=value2');
-                                    }
+                                const attrValues = new URLSearchParams(
+                                    Array.from(new URLSearchParams(attributesValue).entries()).filter(
+                                        ([key, value]) => !!key && !!value,
+                                    ),
+                                ).toString();
+                                if (!attrValues) {
+                                    throw new ArgumentError('Value must match the key1=value1&key2=value2');
                                 }
-                                data.specificAttibutes = attributesValue;
+                                data.specific_attibutes = attributesValue;
                             } else {
-                                throw new ArgumentError('Value mast be string');
+                                throw new ArgumentError('Value must be a string');
                             }
                         },
                     },
@@ -281,9 +302,6 @@
                     updatedDate: {
                         get: () => data.updated_date,
                     },
-                    // _internalData: {
-                    //     get: () => data,
-                    // },
                 }),
             );
         }
@@ -339,28 +357,28 @@
         // update
         if (typeof this.id !== 'undefined') {
             const cloudStorageData = {
-                displayName: this.displayName,
+                display_name: this.displayName,
                 description: this.description ? this.description : null,
-                credentialsType: this.credentialsType ? this.credentialsType : null,
-                provided: this.provider ? this.provider : null,
-                resourceName: this.resourceName ? this.resourceName : null,
-                secretKey: this.secretKey ? this.secretKey : null,
-                token: this.token ? this.token : null,
-                accessKey: this.accessKey ? this.accessKey : null,
-                accountName: this.accountName ? this.accountName : null,
-                specificAttibutes: this.specificAttibutes ? this.specificAttibutes : null,
+                credentials_type: this.credentialsType ? this.credentialsType : null,
+                provided_type: this.provider ? this.provider : null,
+                resource: this.resourceName ? this.resourceName : null,
+                secret_key: this.secretKey ? this.secretKey : null,
+                session_token: this.token ? this.token : null,
+                key: this.accessKey ? this.accessKey : null,
+                account_name: this.accountName ? this.accountName : null,
+                specific_attibutes: this.specificAttibutes ? this.specificAttibutes : null,
             };
 
-            await serverProxy.cloudStorage.save(this.id, cloudStorageData);
+            await serverProxy.cloudStorages.update(this.id, cloudStorageData);
             return this;
         }
 
         // create
         const cloudStorageData = {
-            displayName: this.displayName,
-            credentialsType: this.credentialsType,
-            provider: this.provider,
-            resourceName: this.resourceName,
+            display_name: this.displayName,
+            credentials_type: this.credentialsType,
+            provider_type: this.provider,
+            resource: this.resourceName,
         };
 
         if (this.description) {
@@ -368,23 +386,23 @@
         }
 
         if (this.accountName) {
-            cloudStorageData.accountName = this.accountName;
+            cloudStorageData.account_name = this.accountName;
         }
 
         if (this.accessKey) {
-            cloudStorageData.accessKey = this.accessKey;
+            cloudStorageData.key = this.accessKey;
         }
 
         if (this.secretKey) {
-            cloudStorageData.secretKey = this.secretKey;
+            cloudStorageData.secret_key = this.secretKey;
         }
 
         if (this.token) {
-            cloudStorageData.token = this.token;
+            cloudStorageData.session_token = this.token;
         }
 
         if (this.specificAttibutes) {
-            cloudStorageData.specificAttibutes = this.specificAttibutes;
+            cloudStorageData.specific_attibutes = this.specificAttibutes;
         }
 
         const cloudStorage = await serverProxy.cloudStorages.create(cloudStorageData);
@@ -397,7 +415,7 @@
     };
 
     CloudStorage.prototype.getContent.implementation = async function () {
-        const result = await serverProxy.cloudStorage.getContent(this.id, this.manifestPath);
+        const result = await serverProxy.cloudStorages.getContent(this.id, this.manifestPath);
         return result;
     };
 

@@ -334,30 +334,30 @@
     ];
 
     /**
-     * Provider types
+     * Types of cloud storage providers
      * @enum {string}
-     * @name ProviderType
+     * @name CloudStorageProviderType
      * @memberof module:API.cvat.enums
      * @property {string} AWS_S3 'AWS_S3_BUCKET'
      * @property {string} AZURE 'AZURE_BLOB_CONTAINER'
      * @readonly
      */
-    const ProviderType = Object.freeze({
-        AWS_S3: 'AWS_S3_BUCKET',
-        AZURE: 'AZURE_BLOB_CONTAINER',
+    const CloudStorageProviderType = Object.freeze({
+        AWS_S3_BUCKET: 'AWS_S3_BUCKET',
+        AZURE_BLOB_CONTAINER: 'AZURE_BLOB_CONTAINER',
     });
 
     /**
      * Types of cloud storage credentials
      * @enum {string}
-     * @name CredentialsType
+     * @name CloudStorageCredentialsType
      * @memberof module:API.cvat.enums
      * @property {string} TEMP_KEY_SECRET_KEY_TOKEN_SET 'TEMP_KEY_SECRET_KEY_TOKEN_SET'
      * @property {string} ACCOUNT_NAME_TOKEN_PAIR 'ACCOUNT_NAME_TOKEN_PAIR'
      * @property {string} ANONYMOUS_ACCESS 'ANONYMOUS_ACCESS'
      * @readonly
      */
-    const CredentialsType = Object.freeze({
+    const CloudStorageCredentialsType = Object.freeze({
         TEMP_KEY_SECRET_KEY_TOKEN_SET: 'TEMP_KEY_SECRET_KEY_TOKEN_SET',
         ACCOUNT_NAME_TOKEN_PAIR: 'ACCOUNT_NAME_TOKEN_PAIR',
         ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
@@ -378,7 +378,7 @@
         colors,
         Source,
         DimensionType,
-        ProviderType,
-        CredentialsType,
+        CloudStorageProviderType,
+        CloudStorageCredentialsType,
     };
 })();

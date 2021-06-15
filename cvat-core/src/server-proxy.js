@@ -1133,7 +1133,7 @@
                 }
             }
 
-            async function saveCloudStorage(id, cloudStorageData) {
+            async function updateCloudStorage(id, cloudStorageData) {
                 const { backendAPI } = config;
 
                 try {
@@ -1169,7 +1169,7 @@
                 let response = null;
                 try {
                     const url = manifestPath
-                        ? `${backendAPI}/cloudstorages/${id}/content?manifest=${manifestPath}`
+                        ? `${backendAPI}/cloudstorages/${id}/content?manifest_path=${manifestPath}`
                         : `${backendAPI}/cloudstorages/${id}/content`;
                     response = await Axios.get(url, {
                         proxy: config.proxy,
@@ -1318,13 +1318,13 @@
                         writable: false,
                     },
 
-                    cloudstorage: {
+                    cloudStorages: {
                         value: Object.freeze({
-                            getCloudStorages,
+                            get: getCloudStorages,
                             getContent: getCloudStorageContent,
                             create: createCloudStorage,
                             delete: deleteCloudStorage,
-                            save: saveCloudStorage,
+                            update: updateCloudStorage,
                         }),
                         writable: false,
                     },
