@@ -280,16 +280,15 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Button
                     className='cvat-header-button'
                     type='link'
-                    value='cloudstorage'
-                    href='/cloudstorages'
+                    value='cloudstorages'
+                    href='/cloudstorages?page=1'
                     onClick={(event: React.MouseEvent): void => {
                         event.preventDefault();
-                        history.push('/cloudstorages');
+                        history.push('/cloudstorages?page=1');
                     }}
                 >
                     Cloud Storages
                 </Button>
-
                 {isModelsPluginActive && (
                     <Button
                         className='cvat-header-button'
