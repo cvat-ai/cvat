@@ -3,18 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    ReactElement, SyntheticEvent, useEffect, useReducer, useRef
+    ReactElement, SyntheticEvent, useEffect, useReducer, useRef,
 } from 'react';
 import Layout from 'antd/lib/layout/layout';
 import {
-    ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined
+    ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
 import { ResizableBox } from 'react-resizable';
 import {
-    ColorBy, ContextMenuType, ObjectType, Workspace
+    ColorBy, ContextMenuType, ObjectType, Workspace,
 } from 'reducers/interfaces';
 import {
-    CameraAction, Canvas3d, ViewType, ViewsDOM
+    CameraAction, Canvas3d, ViewType, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import ContextImage from 'components/annotation-page/standard-workspace/context-image/context-image';
