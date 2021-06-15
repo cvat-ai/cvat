@@ -146,7 +146,6 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
-    UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
@@ -576,15 +575,6 @@ export function activateObject(activatedStateID: number | null, activatedAttribu
     };
 }
 
-export function updateTabContentHeight(tabContentHeight: number): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT,
-        payload: {
-            tabContentHeight,
-        },
-    };
-}
-
 export function collapseSidebar(): AnyAction {
     return {
         type: AnnotationActionTypes.COLLAPSE_SIDEBAR,
@@ -764,7 +754,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
             );
 
             let offset = 0;
-            if (job.task.dimension == DimensionType.DIM_3D){
+            if (job.task.dimension === DimensionType.DIM_3D) {
                 offset = 100;
             }
 
