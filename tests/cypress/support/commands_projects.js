@@ -29,9 +29,11 @@ Cypress.Commands.add(
             cy.contains('Submit').click();
         });
         if (expectedResult == 'success') {
-            cy.contains('The project has been created').should('exist');
+            cy.get('.cvat-notification-create-project-success')
+                .should('exist')
+                .find('[data-icon="close"]').click();
         } else if (expectedResult == 'fail') {
-            cy.contains('The project has been created').should('not.exist');
+            cy.get('.cvat-notification-create-project-success').should('not.exist');
         }
         cy.goToProjectsList();
     },
@@ -89,4 +91,36 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
 Cypress.Commands.add('closeNotification', (className) => {
     cy.get(className).find('span[aria-label="close"]').click();
     cy.get(className).should('not.exist');
+});
+
+Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTask) => {
+    if (fromTask) {
+        cy.contains('.cvat-text-color', 'Actions').click();
+        cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
+            cy.contains('Move to project').click();
+        });
+    } else {
+        cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').click();
+        cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
+            cy.contains('Move to project').click();
+        });
+    }
+    cy.get('.cvat-task-move-modal').find('.cvat-project-search-field').click();
+    cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
+        cy.get(`[title="${projectName}"]`).click();
+    });
+    if (labelMappingFrom !== labelMappingTo) {
+        cy.get('.cvat-move-task-label-mapper-item').within(() => {
+            cy.contains(labelMappingFrom).should('exist');
+            cy.get('.cvat-move-task-label-mapper-item-select').click();
+        });
+        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').find(`[title="${labelMappingTo}"]`).click();
+    } else {
+        cy.get('.cvat-move-task-label-mapper-item').within(() => {
+            cy.get('.cvat-move-task-label-mapper-item-select').should('have.text', labelMappingFrom);
+        });
+    }
+    cy.get('.cvat-task-move-modal').within(() => {
+        cy.contains('button', 'OK').click();
+    })
 });

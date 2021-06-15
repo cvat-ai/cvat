@@ -30,10 +30,13 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
-    [key: string]: string | number | null | undefined;
+    [key: string]: string | boolean | number | null | undefined;
 }
 
-export type Project = any;
+export interface Project {
+    instance: any;
+    preview: string;
+}
 
 export interface ProjectsState {
     initialized: boolean;
@@ -70,10 +73,15 @@ export interface Task {
 }
 
 export interface TasksState {
+    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
     hideEmpty: boolean;
+    moveTask: {
+        modalVisible: boolean;
+        taskId: number | null;
+    };
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -97,6 +105,9 @@ export interface TasksState {
             taskId: number | null;
             status: string;
             error: string;
+        };
+        backups: {
+            [tid: number]: boolean;
         };
     };
 }
@@ -242,9 +253,12 @@ export interface NotificationsState {
             updating: null | ErrorState;
             dumping: null | ErrorState;
             loading: null | ErrorState;
-            exporting: null | ErrorState;
+            exportingAsDataset: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            exporting: null | ErrorState;
+            importing: null | ErrorState;
+            moving: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -310,6 +324,8 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            importingDone: string;
+            movingDone: string;
         };
         models: {
             inferenceDone: string;
@@ -480,7 +496,6 @@ export interface AnnotationState {
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
-    tabContentHeight: number;
     workspace: Workspace;
     predictor: PredictorState;
     aiToolsRef: MutableRefObject<any>;

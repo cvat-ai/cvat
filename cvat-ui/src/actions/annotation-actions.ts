@@ -7,7 +7,7 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { RectDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -146,7 +146,6 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
-    UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
@@ -572,15 +571,6 @@ export function activateObject(activatedStateID: number | null, activatedAttribu
         payload: {
             activatedStateID,
             activatedAttributeID,
-        },
-    };
-}
-
-export function updateTabContentHeight(tabContentHeight: number): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT,
-        payload: {
-            tabContentHeight,
         },
     };
 }
@@ -1435,8 +1425,9 @@ export function pasteShapeAsync(): ThunkAction {
                     activeControl,
                 },
             });
-
-            canvasInstance.cancel();
+            if (canvasInstance instanceof Canvas) {
+                canvasInstance.cancel();
+            }
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
                     objectType: ObjectType.TAG,
@@ -1493,7 +1484,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } = getStore().getState().annotation;
 
         let activeControl = ActiveControl.CURSOR;
-        if (activeInteractor) {
+        if (activeInteractor && canvasInstance instanceof Canvas) {
             if (activeInteractor.type === 'tracker') {
                 canvasInstance.interact({
                     enabled: true,
@@ -1511,7 +1502,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
             return;
         }
-
         if (activeShapeType === ShapeType.RECTANGLE) {
             activeControl = ActiveControl.DRAW_RECTANGLE;
         } else if (activeShapeType === ShapeType.POINTS) {
@@ -1523,7 +1513,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } else if (activeShapeType === ShapeType.CUBOID) {
             activeControl = ActiveControl.DRAW_CUBOID;
         }
-
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
             payload: {
@@ -1531,7 +1520,9 @@ export function repeatDrawShapeAsync(): ThunkAction {
             },
         });
 
-        canvasInstance.cancel();
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.cancel();
+        }
         if (activeObjectType === ObjectType.TAG) {
             const objectState = new cvat.classes.ObjectState({
                 objectType: ObjectType.TAG,
@@ -1580,8 +1571,9 @@ export function redrawShapeAsync(): ThunkAction {
                         activeControl,
                     },
                 });
-
-                canvasInstance.cancel();
+                if (canvasInstance instanceof Canvas) {
+                    canvasInstance.cancel();
+                }
                 canvasInstance.draw({
                     enabled: true,
                     redraw: activatedStateID,

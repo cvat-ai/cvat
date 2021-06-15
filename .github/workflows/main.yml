@@ -59,7 +59,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           tags: openvino/cvat_server:latest
           load: true
-      - name: Runing unit tests
+      - name: Running unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
@@ -165,10 +165,18 @@ jobs:
           cd ./tests
           npm ci
           if [[ ${{ github.ref }} == 'refs/heads/develop' ]]; then
-            npx cypress run --headless --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            if [[ ${{ matrix.specs }} != 'canvas3d_functionality' ]]; then
+              npx cypress run --headless --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            else
+              npx cypress run --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            fi
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
-            npx cypress run --headless --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            if [[ ${{ matrix.specs }} != 'canvas3d_functionality' ]]; then
+              npx cypress run --headless --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            else
+              npx cypress run --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+            fi
           fi
       - name: Creating a log file from "cvat" container logs
         if: failure()
@@ -199,7 +207,7 @@ jobs:
     needs: [Unit_testing, E2E_testing]
     steps:
       - uses: actions/checkout@v2
-      - name: Geting SHA from the default branch
+      - name: Getting SHA from the default branch
         id: get-sha
         run: |
           URL_get_default_branch="https://api.github.com/repos/${{ github.repository }}"

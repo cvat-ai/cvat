@@ -94,7 +94,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if ((e.button === 0 || (e.button === 2 && this.interactionData.enableNegVertices)) && !e.altKey) {
                 e.preventDefault();
                 const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
-                if (!this.isWithingFrame(cx, cy)) return;
+                if (!this.isWithinFrame(cx, cy)) return;
                 if (!this.isWithinThreshold(cx, cy)) return;
 
                 this.currentInteractionShape = this.canvas
@@ -149,7 +149,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
         };
 
-        // clear this listener in relese()
+        // clear this listener in release()
         this.canvas.on('mousedown.interaction', eventListener);
     }
 
@@ -234,7 +234,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         return xDiff < this.thresholdRectSize / 2 && yDiff < this.thresholdRectSize / 2;
     }
 
-    private isWithingFrame(x: number, y: number): boolean {
+    private isWithinFrame(x: number, y: number): boolean {
         const { offset, image } = this.geometry;
         const { width, height } = image;
         const [imageX, imageY] = [Math.round(x - offset), Math.round(y - offset)];
@@ -280,7 +280,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
 
             if (this.interactionData.enableSliding && this.interactionShapes.length) {
-                if (this.isWithingFrame(x, y)) {
+                if (this.isWithinFrame(x, y)) {
                     if (this.interactionData.enableThreshold && !this.isWithinThreshold(x, y)) return;
                     this.onInteraction(
                         [

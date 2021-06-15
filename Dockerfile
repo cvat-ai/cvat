@@ -134,7 +134,7 @@ RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
     fi
 COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.gz ${HOME}/sources/
 
-# Copy python virtual enviroment and FFmpeg binaries from build-image
+# Copy python virtual environment and FFmpeg binaries from build-image
 COPY --from=build-image /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 COPY --from=build-image /opt/ffmpeg /usr
