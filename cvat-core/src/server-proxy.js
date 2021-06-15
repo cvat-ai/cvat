@@ -1168,9 +1168,9 @@
 
                 let response = null;
                 try {
-                    const url = manifestPath
-                        ? `${backendAPI}/cloudstorages/${id}/content?manifest_path=${manifestPath}`
-                        : `${backendAPI}/cloudstorages/${id}/content`;
+                    const url = `${backendAPI}/cloudstorages/${id}/content${
+                        manifestPath ? `?manifest_path=${manifestPath}` : ''
+                    }`;
                     response = await Axios.get(url, {
                         proxy: config.proxy,
                     });
