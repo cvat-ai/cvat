@@ -19,9 +19,9 @@ export default function StoragesTopBar(): JSX.Element {
 
     return (
         <Row justify='space-between' align='middle' className='cvat-storages-list-top-bar'>
-            <Col md={11} lg={9} xl={8} xxl={7}>
-                <Text className='cvat-title'>Storages</Text>
-                <SearchField onSearch={onSearch} query={query} />
+            <Col md={11} lg={9} xl={9} xxl={9}>
+                <Text className='cvat-title'>Cloud Storages</Text>
+                <SearchField instance='cloudstorage' onSearch={onSearch} query={query} />
             </Col>
             <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 9 }} xxl={{ span: 9 }}>
                 <Button

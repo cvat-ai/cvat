@@ -30,6 +30,7 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
+    assignee: string | null;
     [key: string]: string | boolean | number | null | undefined;
 }
 

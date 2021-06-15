@@ -11,7 +11,7 @@ import './styles.scss';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
-    instance: 'task' | 'project';
+    instance: 'task' | 'project' | 'cloudstorage';
     children: JSX.Element;
 }
 
@@ -21,7 +21,7 @@ export default function SearchTooltip(props: Props): JSX.Element {
 
     return (
         <CVATTooltip
-            overlayClassName={`cvat-${instance}s-search-tooltip`}
+            overlayClassName={`cvat-${instance}s-search-tooltip cvat-search-tooltip`}
             title={(
                 <>
                     <Paragraph>
@@ -29,31 +29,55 @@ export default function SearchTooltip(props: Props): JSX.Element {
                         <Text>
                             all
                             {instances}
-                            created by the user who has the substring
+                            created by users who have the substring
                             <q>admin</q>
                             in their username
                         </Text>
                     </Paragraph>
-                    <Paragraph>
-                        <Text strong>assignee: employee</Text>
-                        <Text>
-                            all
-                            {instances}
-                            which are assigned to a user who has the substring
-                            <q>admin</q>
-                            in their username
-                        </Text>
-                    </Paragraph>
-                    <Paragraph>
-                        <Text strong>name: training</Text>
-                        <Text>
-                            all
-                            {instances}
-                            with the substring
-                            <q>training</q>
-                            in its name
-                        </Text>
-                    </Paragraph>
+                    {instance !== 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>assignee: employee</Text>
+                            <Text>
+                                all
+                                {instances}
+                                which are assigned to a user who has the substring
+                                <q>admin</q>
+                                in their username
+                            </Text>
+                        </Paragraph>
+                    ) : null}
+                    {instance === 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>display_name: Azure</Text>
+                            <Text>
+                                all
+                                {instances}
+                                where names include the substring
+                                <q>Azure</q>
+                            </Text>
+                        </Paragraph>
+                    ) : null}
+                    {instance === 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>status: avaliable</Text>
+                            <Text>
+                                all available/unavailable
+                                {instances}
+                            </Text>
+                        </Paragraph>
+                    ) : null}
+                    {instance !== 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>name: training</Text>
+                            <Text>
+                                all
+                                {instances}
+                                with the substring
+                                <q>training</q>
+                                in its name
+                            </Text>
+                        </Paragraph>
+                    ) : null}
                     {instance === 'task' ? (
                         <Paragraph>
                             <Text strong>mode: annotation</Text>
@@ -62,10 +86,12 @@ export default function SearchTooltip(props: Props): JSX.Element {
                             </Text>
                         </Paragraph>
                     ) : null}
-                    <Paragraph>
-                        <Text strong>status: annotation</Text>
-                        <Text>annotation, validation, or completed</Text>
-                    </Paragraph>
+                    {instance !== 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>status: annotation</Text>
+                            <Text>annotation, validation, or completed</Text>
+                        </Paragraph>
+                    ) : null}
                     <Paragraph>
                         <Text strong>id: 5</Text>
                         <Text>

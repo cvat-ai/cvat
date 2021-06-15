@@ -2,20 +2,23 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
 import React from 'react';
 import Search from 'antd/lib/input/Search';
+import SearchTooltip from 'components/search-tooltip/search-tooltip';
 
 interface Query {
-    [key: string]: string | number | null | undefined;
+    [key: string]: string | number | boolean | null | undefined;
 }
 
 interface Props {
-    onSearch(query: object): void;
     query: Query;
+    instance: 'task' | 'project' | 'cloudstorage';
+    onSearch(query: object): void;
 }
 
 export default function SearchField(props: Props): JSX.Element {
-    const { onSearch, query } = props;
+    const { onSearch, query, instance } = props;
     function parse(_query: Query): string {
         let searchString = '';
         for (const field of Object.keys(_query)) {
@@ -67,21 +70,23 @@ export default function SearchField(props: Props): JSX.Element {
             }
         }
 
-        query.page = 1;
+        currentQuery.page = 1;
         if (!specificRequest && value) {
-            query.search = value;
+            currentQuery.search = value;
         }
 
-        onSearch(query);
+        onSearch(currentQuery);
     };
 
     return (
-        <Search
-            className='cvat-search-field'
-            defaultValue={parse(query)}
-            onSearch={handleSearch}
-            size='large'
-            placeholder='Search'
-        />
+        <SearchTooltip instance={instance}>
+            <Search
+                className='cvat-search-field'
+                defaultValue={parse(query)}
+                onSearch={handleSearch}
+                size='large'
+                placeholder='Search'
+            />
+        </SearchTooltip>
     );
 }
