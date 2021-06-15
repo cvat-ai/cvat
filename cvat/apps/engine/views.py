@@ -203,6 +203,7 @@ class ServerViewSet(viewsets.ViewSet):
 class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
+    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
     status = filters.CharFilter(field_name="status", lookup_expr="icontains")
 
     class Meta:
@@ -230,7 +231,7 @@ class ProjectFilter(filters.FilterSet):
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = models.Project.objects.all().order_by('-id')
-    search_fields = ("name", "owner__username", "status")
+    search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
