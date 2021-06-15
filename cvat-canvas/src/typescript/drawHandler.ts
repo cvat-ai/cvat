@@ -311,8 +311,9 @@ export class DrawHandlerImpl implements DrawHandler {
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
             if (
-                this.drawData.shapeType !== 'rectangle'
-                && this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC
+                ['polygon', 'polyline', 'points'].includes(this.drawData.shapeType)
+                || (this.drawData.shapeType === 'cuboid'
+                    && this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)
             ) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
