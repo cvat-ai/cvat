@@ -764,7 +764,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
             );
 
             let offset = 0;
-            if (job.task.dimension === DimensionType.DIM_3D) {
+            if (job.task.dimension == DimensionType.DIM_3D){
                 offset = 100;
             }
 

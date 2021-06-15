@@ -21,7 +21,9 @@ import {
     rememberObject,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
 import getCore from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -33,7 +35,7 @@ interface StateToProps {
     states: any[];
     labels: any[];
     jobInstance: any;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     frameNumber: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
@@ -203,7 +205,10 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 className={`cvat-objects-sidebar-sider
                     ant-layout-sider-zero-width-trigger
                     ant-layout-sider-zero-width-trigger-left`}
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                onClick={() => {
+                    adjustContextImagePosition(!sidebarCollapsed);
+                    setSidebarCollapsed(!sidebarCollapsed);
+                }}
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
@@ -222,7 +227,10 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                     className={`cvat-objects-sidebar-sider
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
-                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    onClick={() => {
+                        adjustContextImagePosition(!sidebarCollapsed);
+                        setSidebarCollapsed(!sidebarCollapsed);
+                    }}
                 >
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>

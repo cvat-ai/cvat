@@ -48,11 +48,12 @@ def files_to_ignore(directory):
     return False
 
 class IMediaReader(ABC):
-    def __init__(self, source_path, step, start, stop):
+    def __init__(self, source_path, step, start, stop, dimension):
         self._source_path = sorted(source_path)
         self._step = step
         self._start = start
         self._stop = stop
+        self._dimension = dimension
 
     @abstractmethod
     def __iter__(self):
@@ -89,7 +90,7 @@ class IMediaReader(ABC):
         return range(self._start, self._stop, self._step)
 
 class ImageListReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=None):
+    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         if not source_path:
             raise Exception('No image found')
 
@@ -105,6 +106,7 @@ class ImageListReader(IMediaReader):
             step=step,
             start=start,
             stop=stop,
+            dimension=dimension
         )
 
     def __iter__(self):
@@ -113,7 +115,14 @@ class ImageListReader(IMediaReader):
 
     def filter(self, callback):
         source_path = list(filter(callback, self._source_path))
-        ImageListReader.__init__(self, source_path, step=self._step, start=self._start, stop=self._stop)
+        ImageListReader.__init__(
+            self,
+            source_path,
+            step=self._step,
+            start=self._start,
+            stop=self._stop,
+            dimension=self._dimension
+        )
 
     def get_path(self, i):
         return self._source_path[i]
@@ -125,19 +134,36 @@ class ImageListReader(IMediaReader):
         return (pos - self._start + 1) / (self._stop - self._start)
 
     def get_preview(self):
-        fp = open(self._source_path[0], "rb")
+        if self._dimension == DimensionType.DIM_3D:
+            fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
+        else:
+            fp = open(self._source_path[0], "rb")
         return self._get_preview(fp)
 
     def get_image_size(self, i):
+        if self._dimension == DimensionType.DIM_3D:
+            with open(self.get_path(i), 'rb') as f:
+                properties = ValidateDimension.get_pcd_properties(f)
+                return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(self._source_path[i])
         return img.width, img.height
+
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+        # FIXME
+        ImageListReader.__init__(self,
+            source_path=source_files,
+            step=step,
+            start=start,
+            stop=stop
+        )
+        self._dimension = dimension
 
     @property
     def absolute_source_paths(self):
         return [self.get_path(idx) for idx, _ in enumerate(self._source_path)]
 
 class DirectoryReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=None):
+    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         image_paths = []
         for source in source_path:
             for root, _, files in os.walk(source):
@@ -149,10 +175,11 @@ class DirectoryReader(ImageListReader):
             step=step,
             start=start,
             stop=stop,
+            dimension=dimension,
         )
 
 class ArchiveReader(DirectoryReader):
-    def __init__(self, source_path, step=1, start=0, stop=None):
+    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         self._archive_source = source_path[0]
         extract_dir = source_path[1] if len(source_path) > 1 else os.path.dirname(source_path[0])
         Archive(self._archive_source).extractall(extract_dir)
@@ -163,10 +190,11 @@ class ArchiveReader(DirectoryReader):
             step=step,
             start=start,
             stop=stop,
+            dimension=dimension
         )
 
 class PdfReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=None):
+    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         if not source_path:
             raise Exception('No PDF found')
 
@@ -194,21 +222,22 @@ class PdfReader(ImageListReader):
             step=step,
             start=start,
             stop=stop,
+            dimension=dimension,
         )
 
 class ZipReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=None):
-        self._dimension = DimensionType.DIM_2D
-        self._zip_source = zipfile.ZipFile(source_path[0], mode='a')
+    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+        self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
         file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
-        super().__init__(file_list, step=step, start=start, stop=stop)
+        super().__init__(file_list, step=step, start=start, stop=stop, dimension=dimension)
 
     def __del__(self):
         self._zip_source.close()
 
     def get_preview(self):
         if self._dimension == DimensionType.DIM_3D:
+            # TODO
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
             return self._get_preview(fp)
         io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
@@ -216,31 +245,19 @@ class ZipReader(ImageListReader):
 
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
-            with self._zip_source.open(self._source_path[i], "r") as file:
-                properties = ValidateDimension.get_pcd_properties(file)
+            with open(self.get_path(i), 'rb') as f:
+                properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
         return img.width, img.height
 
     def get_image(self, i):
+        if self._dimension == DimensionType.DIM_3D:
+            return self.get_path(i)
         return io.BytesIO(self._zip_source.read(self._source_path[i]))
-
-    def add_files(self, source_path):
-        root_path = os.path.split(self._zip_source.filename)[0]
-        for path in source_path:
-            self._zip_source.write(path, path.replace(root_path, ""))
 
     def get_zip_filename(self):
         return self._zip_source.filename
-
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
-        self._dimension = dimension
-        super().__init__(
-            source_path=source_files,
-            step=step,
-            start=start,
-            stop=stop
-        )
 
     def get_path(self, i):
         if self._zip_source.filename:
@@ -249,18 +266,28 @@ class ZipReader(ImageListReader):
         else: # necessary for mime_type definition
             return self._source_path[i]
 
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+        super().reconcile(
+            source_files=source_files,
+            step=step,
+            start=start,
+            stop=stop,
+            dimension=dimension,
+        )
+
     def extract(self):
         self._zip_source.extractall(self.extract_dir if self.extract_dir else os.path.dirname(self._zip_source.filename))
         if not self.extract_dir:
             os.remove(self._zip_source.filename)
 
 class VideoReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=None):
+    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         super().__init__(
             source_path=source_path,
             step=step,
             start=start,
             stop=stop + 1 if stop is not None else stop,
+            dimension=dimension,
         )
 
     def _has_frame(self, i):
@@ -743,15 +770,15 @@ class ValidateDimension:
         pcd_files = {}
 
         for file in files:
-            file_name, file_extension = file.rsplit('.', maxsplit=1)
+            file_name, file_extension = os.path.splitext(file)
             file_path = os.path.abspath(os.path.join(root, file))
 
-            if file_extension == "bin":
+            if file_extension == ".bin":
                 path = self.bin_operation(file_path, actual_path)
                 pcd_files[file_name] = path
                 self.related_files[path] = []
 
-            elif file_extension == "pcd":
+            elif file_extension == ".pcd":
                 path = ValidateDimension.pcd_operation(file_path, actual_path)
                 if path == file_path:
                     self.image_files[file_name] = file_path
@@ -759,7 +786,8 @@ class ValidateDimension:
                     pcd_files[file_name] = path
                     self.related_files[path] = []
             else:
-                self.image_files[file_name] = file_path
+                if _is_image(file_path):
+                    self.image_files[file_name] = file_path
         return pcd_files
 
     def validate(self):

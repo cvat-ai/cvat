@@ -52,15 +52,17 @@ class CLI():
         response.raise_for_status()
         output = []
         page = 1
+        json_data_list = []
         while True:
             response_json = response.json()
             output += response_json['results']
             for r in response_json['results']:
                 if use_json_output:
-                    log.info(json.dumps(r, indent=4))
+                    json_data_list.append(r)
                 else:
                     log.info('{id},{name},{status}'.format(**r))
             if not response_json['next']:
+                log.info(json.dumps(json_data_list, indent=4))
                 return output
             page += 1
             url = self.api.tasks_page(page)
@@ -209,6 +211,53 @@ class CLI():
 
         logger_string = "Upload job for Task ID {} ".format(task_id) +\
             "with annotation file {} finished".format(filename)
+        log.info(logger_string)
+
+    def tasks_export(self, task_id, filename, export_verification_period=3, **kwargs):
+        """ Export and download a whole task """
+        url = self.api.tasks_id(task_id)
+        export_url = url + '?action=export'
+
+        while True:
+            response = self.session.get(export_url)
+            response.raise_for_status()
+            log.info('STATUS {}'.format(response.status_code))
+            if response.status_code == 201:
+                break
+            sleep(export_verification_period)
+
+        response = self.session.get(url + '?action=download')
+        response.raise_for_status()
+
+        with open(filename, 'wb') as fp:
+            fp.write(response.content)
+        logger_string = "Task {} has been exported sucessfully. ".format(task_id) +\
+            "to {}".format(os.path.abspath(filename))
+        log.info(logger_string)
+
+    def tasks_import(self, filename, import_verification_period=3, **kwargs):
+        """ Import a task"""
+        url = self.api.tasks + '?action=import'
+        with open(filename, 'rb') as input_file:
+            response = self.session.post(
+                    url,
+                    files={'task_file': input_file}
+                )
+        response.raise_for_status()
+        response_json = response.json()
+        rq_id = response_json['rq_id']
+        while True:
+            sleep(import_verification_period)
+            response = self.session.post(
+                url,
+                data={'rq_id': rq_id}
+            )
+            response.raise_for_status()
+            if response.status_code == 201:
+                break
+
+        task_id = response.json()['id']
+        logger_string = "Task has been imported sucessfully. Task ID: {}".format(task_id)
         log.info(logger_string)
 
     def login(self, credentials):

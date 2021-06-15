@@ -15,11 +15,9 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { CombinedState, DimensionType } from 'reducers/interfaces';
 import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
-import {
-    collapseSidebar as collapseSidebarAction,
-    updateTabContentHeight as updateTabContentHeightAction,
-} from 'actions/annotation-actions';
-import AppearanceBlock, { computeHeight } from 'components/annotation-page/appearance-block';
+import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
+import { collapseSidebar as collapseSidebarAction, updateTabContentHeight as updateTabContentHeightAction } from 'actions/annotation-actions';
+import AppearanceBlock from 'components/annotation-page/appearance-block';
 import IssuesListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/issues-list';
 
 interface OwnProps {
@@ -34,7 +32,6 @@ interface StateToProps {
 
 interface DispatchToProps {
     collapseSidebar(): void;
-
     updateTabContentHeight(): void;
 }
 
@@ -105,6 +102,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
             (collapser as HTMLElement).addEventListener('transitionend', listener as any);
         }
 
+        adjustContextImagePosition(!sidebarCollapsed);
         collapseSidebar();
     };
 
