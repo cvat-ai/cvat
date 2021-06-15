@@ -10,10 +10,11 @@ import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
+import Select from 'antd/lib/select';
 import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
-import { InboxOutlined } from '@ant-design/icons';
+import { InboxOutlined, CloudTwoTone, PlusCircleOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
 
@@ -21,12 +22,13 @@ export interface Files {
     local: File[];
     share: string[];
     remote: string[];
+    cloudStorage: string[];
 }
 
 interface State {
     files: Files;
     expandedKeys: string[];
-    active: 'local' | 'share' | 'remote';
+    active: 'local' | 'share' | 'remote' | 'cloudStorage';
 }
 
 interface Props {
@@ -45,6 +47,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 local: [],
                 share: [],
                 remote: [],
+                cloudStorage: [],
             },
             expandedKeys: [],
             active: 'local',
@@ -59,6 +62,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
             local: active === 'local' ? files.local : [],
             share: active === 'share' ? files.share : [],
             remote: active === 'remote' ? files.remote : [],
+            cloudStorage: active === 'cloudStorage' ? files.cloudStorage : [],
         };
     }
 
@@ -79,6 +83,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 local: [],
                 share: [],
                 remote: [],
+                cloudStorage: [],
             },
         });
     }
@@ -221,6 +226,42 @@ export default class FileManager extends React.PureComponent<Props, State> {
         );
     }
 
+    // eslint-disable-next-line class-methods-use-this
+    private renderCloudStorageSelector(): JSX.Element {
+        // todo
+        const cloudStoragesArray = [];
+        return (
+            <Tabs.TabPane
+                key='cloudStorage'
+                className='cvat-cloud-storage-tab'
+                tab={(
+                    <span>
+                        Cloud Storage
+                        <a className='cvat-cloud-storage-tab-plus' href='/cloudstorages/create'>
+                            &nbsp;
+                            <PlusCircleOutlined />
+                        </a>
+                    </span>
+                )}
+            >
+                {cloudStoragesArray.length ? (
+                    <div className='cvat-cloud-storages-tree'>
+                        <Select
+                            // defaultValue='---'
+                            // onSelect={this.selectCloudStorage}
+                            value={[]}
+                        />
+                    </div>
+                ) : (
+                    <div className='cvat-empty-cloud-storages-tree'>
+                        <CloudTwoTone className='cvat-cloud-storage-icon' twoToneColor='#40a9ff' />
+                        <Paragraph className='cvat-text-color'>Your have not avaliable storages yet</Paragraph>
+                    </div>
+                )}
+            </Tabs.TabPane>
+        );
+    }
+
     public render(): JSX.Element {
         const { withRemote, onChangeActiveKey } = this.props;
         const { active } = this.state;
@@ -241,6 +282,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {withRemote && this.renderRemoteSelector()}
+                    {this.renderCloudStorageSelector()}
                 </Tabs>
             </>
         );

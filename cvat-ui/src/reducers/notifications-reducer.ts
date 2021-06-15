@@ -16,6 +16,7 @@ import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
+import { CloudStorageActionsTypes } from 'actions/cloud-storage-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -108,6 +109,12 @@ const defaultState: NotificationsState = {
         },
         predictor: {
             prediction: null,
+        },
+        cloudStorages: {
+            creating: null,
+            fetching: null,
+            updating: null,
+            deleting: null,
         },
     },
     messages: {
@@ -1182,6 +1189,77 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         prediction: {
                             message: 'Could not fetch prediction data',
                             reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionsTypes.GET_CLOUD_STORAGE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        fetching: {
+                            message: 'Could not fetch cloud storage',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionsTypes.CREATE_CLOUD_STORAGE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        creating: {
+                            message: 'Could not create the cloud storage',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-cloud-storage-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionsTypes.UPDATE_CLOUD_STORAGE_FAILED: {
+            const { cloudStorageId } = action.payload.cloudStorage;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        updating: {
+                            message:
+                                'Could not update ' +
+                                `<a href="/cloudstorages/${cloudStorageId}" target="_blank">
+                                cloud storage ${cloudStorageId}</a>`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-cloud-storage-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionsTypes.DELETE_CLOUD_STORAGE_FAILED: {
+            const { cloudStorageId } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        updating: {
+                            message:
+                                'Could not delete ' +
+                                `<a href="/cloudstorages/${cloudStorageId}" target="_blank">
+                                cloud storage ${cloudStorageId}</a>`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-cloud-storage-failed',
                         },
                     },
                 },

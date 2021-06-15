@@ -277,6 +277,18 @@ function HeaderContainer(props: Props): JSX.Element {
                 >
                     Tasks
                 </Button>
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='cloudstorage'
+                    href='/cloudstorages'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/cloudstorages');
+                    }}
+                >
+                    Cloud Storages
+                </Button>
 
                 {isModelsPluginActive && (
                     <Button
