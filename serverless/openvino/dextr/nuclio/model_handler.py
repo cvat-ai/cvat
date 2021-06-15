@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -21,7 +21,7 @@ class ModelHandler:
     #   polygon: [[x1,y1], [x2,y2], [x3,y3], [x4,y4], ...]
     def handle(self, image, points):
         DEXTR_PADDING = 50
-        DEXTR_TRESHOLD = 0.9
+        DEXTR_TRESHOLD = 0.8
         DEXTR_SIZE = 512
 
         numpy_image = np.array(image)
@@ -43,7 +43,7 @@ class ModelHandler:
             resized = resized[:, :, :3]
 
         # Make a heatmap
-        points = points - [min(points[:, 0]), min(points[:, 1])] + [DEXTR_PADDING, DEXTR_PADDING]
+        points = points - [bounding_box[0], bounding_box[1]]
         points = (points * [DEXTR_SIZE / numpy_cropped.shape[1], DEXTR_SIZE / numpy_cropped.shape[0]]).astype(int)
         heatmap = np.zeros(shape=resized.shape[:2], dtype=np.float64)
         for point in points:
@@ -51,25 +51,24 @@ class ModelHandler:
             gaussian_y_axis = np.arange(0, DEXTR_SIZE, 1, float)[:, np.newaxis] - point[1]
             gaussian = np.exp(-4 * np.log(2) * ((gaussian_x_axis ** 2 + gaussian_y_axis ** 2) / 100)).astype(np.float64)
             heatmap = np.maximum(heatmap, gaussian)
-        cv2.normalize(heatmap,  heatmap, 0, 255, cv2.NORM_MINMAX)
+        cv2.normalize(heatmap, heatmap, 0, 255, cv2.NORM_MINMAX)
 
         # Concat an image and a heatmap
         input_dextr = np.concatenate((resized, heatmap[:, :, np.newaxis].astype(resized.dtype)), axis=2)
         input_dextr = input_dextr.transpose((2,0,1))
 
         pred = self.model.infer(input_dextr[np.newaxis, ...], False)[0, 0, :, :]
-        pred = cv2.resize(pred, tuple(reversed(numpy_cropped.shape[:2])), interpolation = cv2.INTER_CUBIC)
-        result = np.zeros(numpy_image.shape[:2])
-        result[bounding_box[1]:bounding_box[1] + pred.shape[0], bounding_box[0]:bounding_box[0] + pred.shape[1]] = pred > DEXTR_TRESHOLD
+        pred = (pred > DEXTR_TRESHOLD).astype(np.uint8)
+        pred = cv2.resize(pred, tuple(reversed(numpy_cropped.shape[:2])), interpolation = cv2.INTER_NEAREST)
+        result = np.zeros(numpy_image.shape[:2]).astype(np.uint8)
+        result[bounding_box[1]:bounding_box[1] + pred.shape[0], bounding_box[0]:bounding_box[0] + pred.shape[1]] = pred
 
         # Convert a mask to a polygon
-        result = np.array(result, dtype=np.uint8)
-        cv2.normalize(result,result,0,255,cv2.NORM_MINMAX)
         contours = None
         if int(cv2.__version__.split('.')[0]) > 3:
-            contours = cv2.findContours(result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[0]
+            contours = cv2.findContours(result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
         else:
-            contours = cv2.findContours(result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[1]
+            contours = cv2.findContours(result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
 
         contours = max(contours, key=lambda arr: arr.size)
         if contours.shape.count(1):
