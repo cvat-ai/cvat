@@ -12,7 +12,8 @@ import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { CombinedState } from 'reducers/interfaces';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { CombinedState, DimensionType } from 'reducers/interfaces';
 import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import {
     collapseSidebar as collapseSidebarAction,
@@ -27,11 +28,13 @@ interface OwnProps {
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
     collapseSidebar(): void;
+
     updateTabContentHeight(): void;
 }
 
@@ -40,12 +43,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             sidebarCollapsed,
             canvas: { instance: canvasInstance },
+            job: { instance: jobInstance },
         },
     } = state;
 
     return {
         sidebarCollapsed,
         canvasInstance,
+        jobInstance,
     };
 }
 
@@ -63,7 +68,12 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        sidebarCollapsed, canvasInstance, collapseSidebar, updateTabContentHeight, objectsList,
+        sidebarCollapsed,
+        canvasInstance,
+        collapseSidebar,
+        updateTabContentHeight,
+        objectsList,
+        jobInstance,
     } = props;
 
     useEffect(() => {
@@ -98,6 +108,8 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         collapseSidebar();
     };
 
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+
     return (
         <Layout.Sider
             className='cvat-objects-sidebar'
@@ -126,9 +138,12 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 <Tabs.TabPane forceRender tab={<Text strong>Labels</Text>} key='labels'>
                     <LabelsList />
                 </Tabs.TabPane>
-                <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
-                    <IssuesListComponent />
-                </Tabs.TabPane>
+
+                {is2D ? (
+                    <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
+                        <IssuesListComponent />
+                    </Tabs.TabPane>
+                ) : null}
             </Tabs>
 
             {!sidebarCollapsed && <AppearanceBlock />}

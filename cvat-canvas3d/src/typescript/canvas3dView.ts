@@ -8,12 +8,8 @@ import CameraControls from 'camera-controls';
 import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import CONST from './consts';
-import {
-    Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
-} from './canvas3dModel';
-import {
-    createRotationHelper, CuboidModel, setEdges, setTranslationHelper,
-} from './cuboid';
+import { Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType } from './canvas3dModel';
+import { createRotationHelper, CuboidModel, setEdges, setTranslationHelper } from './cuboid';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
@@ -293,7 +289,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.views.perspective.scene.children[0].children,
                     false,
                 );
-                if (intersects.length !== 0) {
+                if (intersects.length !== 0 || this.controller.focused.clientID !== null) {
                     this.setDefaultZoom();
                 } else {
                     const { x, y, z } = this.action.frameCoordinates;
@@ -458,10 +454,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else {
             const canvasTop = this.views.top.renderer.domElement;
             const bboxtop = new THREE.Box3().setFromObject(this.model.data.selected.top);
-            const x1 = Math.min(
-                canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
-                canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
-            ) * 0.4;
+            const x1 =
+                Math.min(
+                    canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
+                    canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
+                ) * 0.4;
             this.views.top.camera.zoom = x1 / 100;
             this.views.top.camera.updateProjectionMatrix();
             this.views.top.camera.updateMatrix();
@@ -469,10 +466,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             const canvasFront = this.views.top.renderer.domElement;
             const bboxfront = new THREE.Box3().setFromObject(this.model.data.selected.front);
-            const x2 = Math.min(
-                canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
-                canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
-            ) * 0.4;
+            const x2 =
+                Math.min(
+                    canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
+                    canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
+                ) * 0.4;
             this.views.front.camera.zoom = x2 / 100;
             this.views.front.camera.updateProjectionMatrix();
             this.views.front.camera.updateMatrix();
@@ -480,10 +478,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             const canvasSide = this.views.side.renderer.domElement;
             const bboxside = new THREE.Box3().setFromObject(this.model.data.selected.side);
-            const x3 = Math.min(
-                canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
-                canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
-            ) * 0.4;
+            const x3 =
+                Math.min(
+                    canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
+                    canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
+                ) * 0.4;
             this.views.side.camera.zoom = x3 / 100;
             this.views.side.camera.updateProjectionMatrix();
             this.views.side.camera.updateMatrix();
@@ -505,9 +504,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.action.rotation.screenInit = { x: diffX, y: diffY };
         this.action.rotation.screenMove = { x: diffX, y: diffY };
         if (
-            this.model.data.selected
-            && !this.model.data.selected.perspective.userData.lock
-            && !this.model.data.selected.perspective.userData.hidden
+            this.model.data.selected &&
+            !this.model.data.selected.perspective.userData.lock &&
+            !this.model.data.selected.perspective.userData.hidden
         ) {
             this.action.scan = view;
             this.model.mode = Mode.EDIT;
@@ -571,6 +570,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 recentMouseVector: new THREE.Vector2(0, 0),
             },
         };
+        this.model.mode = Mode.IDLE;
+        this.action.selectable = true;
     }
 
     private completeActions(): void {
@@ -604,8 +605,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.adjustPerspectiveCameras();
         this.translateReferencePlane(new THREE.Vector3(x, y, z));
         this.resetActions();
-        this.model.mode = Mode.IDLE;
-        this.action.selectable = true;
     }
 
     private onGroupDone(objects?: any[]): void {
@@ -637,9 +636,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private setupObject(object: any, addToScene: boolean): CuboidModel {
-        const {
-            opacity, outlined, outlineColor, selectedOpacity, colorBy,
-        } = this.model.data.shapeProperties;
+        const { opacity, outlined, outlineColor, selectedOpacity, colorBy } = this.model.data.shapeProperties;
         const clientID = String(object.clientID);
         const cuboid = new CuboidModel(object.occluded ? 'dashed' : 'line', outlined ? outlineColor : '#ffffff');
 
@@ -658,8 +655,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid.setOpacity(opacity);
 
         if (
-            this.model.data.activeElement.clientID === clientID
-            && ![Mode.DRAG_CANVAS, Mode.GROUP].includes(this.mode)
+            this.model.data.activeElement.clientID === clientID &&
+            ![Mode.DRAG_CANVAS, Mode.GROUP].includes(this.mode)
         ) {
             cuboid.setOpacity(selectedOpacity);
             if (!object.lock) {
@@ -900,12 +897,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const sphereCenter = points.geometry.boundingSphere.center;
         const { radius } = points.geometry.boundingSphere;
         if (!this.views.perspective.camera) return;
-        const xRange = -radius / 2 < this.views.perspective.camera.position.x - sphereCenter.x
-            && radius / 2 > this.views.perspective.camera.position.x - sphereCenter.x;
-        const yRange = -radius / 2 < this.views.perspective.camera.position.y - sphereCenter.y
-            && radius / 2 > this.views.perspective.camera.position.y - sphereCenter.y;
-        const zRange = -radius / 2 < this.views.perspective.camera.position.z - sphereCenter.z
-            && radius / 2 > this.views.perspective.camera.position.z - sphereCenter.z;
+        const xRange =
+            -radius / 2 < this.views.perspective.camera.position.x - sphereCenter.x &&
+            radius / 2 > this.views.perspective.camera.position.x - sphereCenter.x;
+        const yRange =
+            -radius / 2 < this.views.perspective.camera.position.y - sphereCenter.y &&
+            radius / 2 > this.views.perspective.camera.position.y - sphereCenter.y;
+        const zRange =
+            -radius / 2 < this.views.perspective.camera.position.z - sphereCenter.z &&
+            radius / 2 > this.views.perspective.camera.position.z - sphereCenter.z;
         let newX = 0;
         let newY = 0;
         let newZ = 0;
@@ -1021,10 +1021,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private positionAllViews(x: number, y: number, z: number, animation: boolean): void {
         if (
-            this.views.perspective.controls
-            && this.views.top.controls
-            && this.views.side.controls
-            && this.views.front.controls
+            this.views.perspective.controls &&
+            this.views.top.controls &&
+            this.views.side.controls &&
+            this.views.front.controls
         ) {
             this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, animation);
             this.views.top.camera.position.set(x, y, z + 8);
@@ -1153,6 +1153,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         }
                         this.updateRotationHelperPos();
                         this.updateResizeHelperPos();
+                    } else {
+                        this.resetActions();
                     }
                 }
             }
@@ -1190,8 +1192,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private renderTranslateAction(view: ViewType, viewType: any): void {
         if (
-            this.action.translation.helper.x === this.views[view].rayCaster.mouseVector.x
-            && this.action.translation.helper.y === this.views[view].rayCaster.mouseVector.y
+            this.action.translation.helper.x === this.views[view].rayCaster.mouseVector.x &&
+            this.action.translation.helper.y === this.views[view].rayCaster.mouseVector.y
         ) {
             return;
         }
@@ -1208,9 +1210,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private moveObject(coordinates: THREE.Vector3): void {
-        const {
-            perspective, top, side, front,
-        } = this.model.data.selected;
+        const { perspective, top, side, front } = this.model.data.selected;
         let localCoordinates = coordinates;
         if (this.action.translation.status) {
             localCoordinates = coordinates
@@ -1256,8 +1256,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
 
         if (
-            this.action.resize.recentMouseVector.x === currentPosX
-            && this.action.resize.recentMouseVector.y === currentPosY
+            this.action.resize.recentMouseVector.x === currentPosX &&
+            this.action.resize.recentMouseVector.y === currentPosY
         ) {
             return;
         }
@@ -1660,15 +1660,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             y: canvas.offsetTop + canvas.offsetHeight / 2,
         };
         if (
-            this.action.rotation.screenInit.x === this.action.rotation.screenMove.x
-            && this.action.rotation.screenInit.y === this.action.rotation.screenMove.y
+            this.action.rotation.screenInit.x === this.action.rotation.screenMove.x &&
+            this.action.rotation.screenInit.y === this.action.rotation.screenMove.y
         ) {
             return;
         }
 
         if (
-            this.action.rotation.recentMouseVector.x === this.views[view].rayCaster.mouseVector.x
-            && this.action.rotation.recentMouseVector.y === this.views[view].rayCaster.mouseVector.y
+            this.action.rotation.recentMouseVector.x === this.views[view].rayCaster.mouseVector.x &&
+            this.action.rotation.recentMouseVector.y === this.views[view].rayCaster.mouseVector.y
         ) {
             return;
         }
@@ -1749,26 +1749,24 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public keyControls(key: any): void {
         const { controls } = this.views.perspective;
         if (!controls) return;
-        switch (key.code) {
-            case CameraAction.ROTATE_RIGHT:
-                controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                break;
-            case CameraAction.ROTATE_LEFT:
-                controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                break;
-            case CameraAction.TILT_UP:
-                controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                break;
-            case CameraAction.TILT_DOWN:
-                controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                break;
-            case 'ControlLeft':
-                this.action.selectable = !key.ctrlKey;
-                break;
-            default:
-                break;
-        }
-        if (key.altKey === true) {
+        if (key.shiftKey) {
+            switch (key.code) {
+                case CameraAction.ROTATE_RIGHT:
+                    controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
+                    break;
+                case CameraAction.ROTATE_LEFT:
+                    controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
+                    break;
+                case CameraAction.TILT_UP:
+                    controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
+                    break;
+                case CameraAction.TILT_DOWN:
+                    controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
+                    break;
+                default:
+                    break;
+            }
+        } else if (key.altKey === true) {
             switch (key.code) {
                 case CameraAction.ZOOM_IN:
                     controls.dolly(CONST.DOLLY_FACTOR, true);
@@ -1791,6 +1789,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 default:
                     break;
             }
+        } else if (key.code === 'ControlLeft') {
+            this.action.selectable = !key.ctrlKey;
         }
     }
 

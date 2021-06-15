@@ -77,7 +77,7 @@ const defaultKeyMap = ({
         description: 'Change keyframe property for an active track',
         sequences: ['k'],
         action: 'keydown',
-        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+        applicable: [DimensionType.DIM_2D],
     },
     SWITCH_OUTSIDE: {
         name: 'Switch outside',
@@ -126,14 +126,14 @@ const defaultKeyMap = ({
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
         action: 'keydown',
-        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+        applicable: [DimensionType.DIM_2D],
     },
     PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
         action: 'keydown',
-        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+        applicable: [DimensionType.DIM_2D],
     },
 
     NEXT_ATTRIBUTE: {
