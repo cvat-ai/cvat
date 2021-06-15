@@ -52,6 +52,19 @@ export interface ProjectsState {
     };
 }
 
+export interface StorageQuery {
+    [key: string]: string | number | null | undefined;
+}
+
+export type Storage = any;
+
+export interface StoragesState {
+    fetching: boolean;
+    count: number;
+    current: Storage[];
+    query: StorageQuery;
+}
+
 export interface TasksQuery {
     page: number;
     id: number | null;

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -272,6 +272,18 @@ function HeaderContainer(props: Props): JSX.Element {
                     }}
                 >
                     Tasks
+                </Button>
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='storages'
+                    href='/storages?page=1'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/storages?page=1');
+                    }}
+                >
+                    Storages
                 </Button>
 
                 {isModelsPluginActive && (
