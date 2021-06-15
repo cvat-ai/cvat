@@ -19,8 +19,6 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 
-from cvat.apps.engine.models import (
-    DataChoice, StorageMethodChoice, StorageChoice, RelatedFile)
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
@@ -224,7 +222,7 @@ def _create_thread(tid, data, isImport=False):
     upload_dir = db_data.get_upload_dirname()
 
     if data['remote_files']:
-        if db_data.storage != StorageChoice.CLOUD_STORAGE:
+        if db_data.storage != models.StorageChoice.CLOUD_STORAGE:
             data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     manifest_file = []
@@ -237,7 +235,7 @@ def _create_thread(tid, data, isImport=False):
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
             _copy_data_from_share(data['server_files'], upload_dir)
-        elif db_data.storage == StorageChoice.SHARE:
+        elif db_data.storage == models.StorageChoice.SHARE:
             upload_dir = settings.SHARE_ROOT
         else: # cloud storage
             if not manifest_file: raise Exception('A manifest file not found')
@@ -353,7 +351,7 @@ def _create_thread(tid, data, isImport=False):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            if not (db_data.storage == StorageChoice.CLOUD_STORAGE):
+            if not (db_data.storage == models.StorageChoice.CLOUD_STORAGE):
                 w, h = extractor.get_image_size(0)
             else:
                 manifest = ImageManifestManager(db_data.get_manifest_path())
