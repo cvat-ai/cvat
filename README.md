@@ -20,7 +20,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 - [Contributing](https://openvinotoolkit.github.io/cvat/docs/for-developers/contributing/)
 - [Installation guide](https://openvinotoolkit.github.io/cvat/docs/for-users/installation/)
 - [User's guide](https://openvinotoolkit.github.io/cvat/docs/for-users/user-guide/)
-- [Django REST API documentation](#rest-api)
+- [Django REST API documentation](https://openvinotoolkit.github.io/cvat/docs/for-developers/rest_api_guide/)
 - [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
 - [Command line interface](https://openvinotoolkit.github.io/cvat/docs/for-developers/cli/)
 - [XML annotation format](https://openvinotoolkit.github.io/cvat/docs/for-developers/xml_format/)
@@ -115,15 +115,6 @@ Prebuilt docker images for CVAT releases are available on Docker Hub:
 
 - [cvat_server](https://hub.docker.com/r/openvino/cvat_server)
 - [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui)
-
-## REST API
-
-Automatically generated Swagger documentation for Django REST API is available
-on `<cvat_origin>/api/swagger`(default: `localhost:8080/api/swagger`).
-
-Swagger documentation is visible on allowed hosts, Update environment
-variable in docker-compose.yml file with cvat hosted machine IP or domain
-name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`.
 
 ## LICENSE
 
