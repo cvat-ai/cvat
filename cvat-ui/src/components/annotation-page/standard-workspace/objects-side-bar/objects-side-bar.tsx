@@ -12,7 +12,7 @@ import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-//import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { CombinedState, DimensionType } from 'reducers/interfaces';
 import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
@@ -26,8 +26,8 @@ interface OwnProps {
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas; //| Canvas3d;
-    //jobInstance: any;
+    canvasInstance: Canvas | Canvas3d;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -39,14 +39,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             sidebarCollapsed,
             canvas: { instance: canvasInstance },
-            //job: { instance: jobInstance },
+            job: { instance: jobInstance },
         },
     } = state;
 
     return {
         sidebarCollapsed,
         canvasInstance,
-        //jobInstance,
+        jobInstance,
     };
 }
 
@@ -64,7 +64,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         canvasInstance,
         collapseSidebar,
         objectsList,
-        //jobInstance,
+        jobInstance,
     } = props;
 
     const collapse = (): void => {
@@ -85,7 +85,10 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         collapseSidebar();
     };
 
-    //const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    let is2D = true;
+    if (jobInstance) {
+        is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    }
 
     return (
         <Layout.Sider
@@ -116,10 +119,10 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                     <LabelsList />
                 </Tabs.TabPane>
 
-
-                <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
-                    <IssuesListComponent />
-                </Tabs.TabPane>
+                {is2D ?
+                    <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
+                        <IssuesListComponent />
+                    </Tabs.TabPane> : null}
 
             </Tabs>
 
