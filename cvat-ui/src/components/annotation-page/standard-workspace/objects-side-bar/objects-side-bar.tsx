@@ -124,8 +124,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                         <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
                             <IssuesListComponent />
                         </Tabs.TabPane>
-                    )
-                    : null}
+                    ) : null}
 
             </Tabs>
 
