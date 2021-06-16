@@ -5,6 +5,7 @@
 import './styles.scss';
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
@@ -16,6 +17,8 @@ import TopBarComponent from './top-bar';
 
 export default function StoragesPageComponent(): JSX.Element {
     const dispatch = useDispatch();
+    const history = useHistory();
+    const { search } = history.location;
     const initialized = useSelector((state: CombinedState) => state.cloudStorages.initialized);
     const totalCount = useSelector((state: CombinedState) => state.cloudStorages.count);
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
@@ -43,8 +46,28 @@ export default function StoragesPageComponent(): JSX.Element {
     };
 
     useEffect(() => {
+        const searchParams = new URLSearchParams();
+        for (const [key, value] of Object.entries(query)) {
+            if (value !== null && typeof value !== 'undefined') {
+                searchParams.append(key, value.toString());
+            }
+        }
+
+        history.push({
+            pathname: '/cloudstorages',
+            search: `?${searchParams.toString()}`,
+        });
+    }, [query]);
+
+    useEffect(() => {
         if (!initialized) {
-            onSearch(query);
+            const searchParams = { ...query };
+            for (const [key, value] of new URLSearchParams(search)) {
+                if (key in searchParams) {
+                    searchParams[key] = ['page', 'id'].includes(key) ? +value : value;
+                }
+            }
+            onSearch(searchParams);
         }
     }, []);
 
