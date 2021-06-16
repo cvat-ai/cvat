@@ -41,7 +41,7 @@ Computer Vision Annotation Tool GitHub repository.
 
 <!--lint disable maximum-line-length-->
 
-{{% blocks/feature icon="fa-book" title="[For Users](/docs/for-users/)" %}}
+{{% blocks/feature icon="fa-book" title="[Manual](/docs/manual/)" %}}
 
 This section contains documents for CVAT simple and advanced users.
 
@@ -53,7 +53,7 @@ This section contains documents for system administrators.
 
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fa-terminal" title="[For Developers](/docs/for-developers/)" %}}
+{{% blocks/feature icon="fa-terminal" title="[Developing](/docs/developing/)" %}}
 
 This section contains documents for developers.
 
