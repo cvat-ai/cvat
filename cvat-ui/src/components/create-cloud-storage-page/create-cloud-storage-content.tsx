@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter } from 'react-router-dom';
@@ -63,7 +62,6 @@ function CreateCloudStorageContent(props:any): JSX.Element {
     };
 
     const credentialsBlok = (): JSX.Element => {
-        // const { credentialsType, providerType } = this.state;
         let credentials;
         switch (providerType && credentialsType) {
             case ProviderType.AWS_S3_BUCKET && CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET: {
@@ -71,21 +69,21 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                     <>
                         <Form.Item
                             label='ACCESS KEY ID'
-                            name='accessKeyId'
+                            name='key'
                             rules={[{ required: true, message: 'Please input your access_key_id' }]}
                         >
                             <Input.Password maxLength={20} />
                         </Form.Item>
                         <Form.Item
                             label='SECRET ACCESS KEY ID'
-                            name='secretAccessKeyId'
+                            name='secret_key'
                             rules={[{ required: true, message: 'Please input your secret_access_key_id' }]}
                         >
                             <Input.Password maxLength={40} />
                         </Form.Item>
                         <Form.Item
                             label='TOKEN SESSION'
-                            name='tokenSession'
+                            name='token'
                             rules={[{ required: true, message: 'Please input your token_session' }]}
                         >
                             <Input.Password />
@@ -99,14 +97,14 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                     <>
                         <Form.Item
                             label='Account name'
-                            name='accountName'
+                            name='account_name'
                             rules={[{ required: true, message: 'Please input your account name' }]}
                         >
                             <Input.Password minLength={3} maxLength={24} />
                         </Form.Item>
                         <Form.Item
                             label='SAS token'
-                            name='sasToken'
+                            name='token'
                             rules={[{ required: true, message: 'Please input your SAS token' }]}
                         >
                             <Input.Password maxLength={40} />
@@ -128,14 +126,14 @@ function CreateCloudStorageContent(props:any): JSX.Element {
         <>
             <Form.Item
                 label='Bucket name'
-                name='bucketName'
+                name='resource'
                 rules={[{ required: true, message: 'Please, input bucket name' }]}
             >
                 <Input maxLength={63} />
             </Form.Item>
             <Form.Item
                 label='Credentials type'
-                name='credentialsType'
+                name='credentials_type'
                 rules={[{ required: true, message: 'Please, select credentials type' }]}
             >
                 <Select
@@ -157,14 +155,14 @@ function CreateCloudStorageContent(props:any): JSX.Element {
         <>
             <Form.Item
                 label='Container name'
-                name='containerName'
+                name='resource'
                 rules={[{ required: true, message: 'Please, input container name' }]}
             >
                 <Input maxLength={63} />
             </Form.Item>
             <Form.Item
                 label='Credentials type'
-                name='credentialsType'
+                name='credentials_type'
                 rules={[{ required: true, message: 'Please, select credentials type' }]}
             >
                 <Select
@@ -189,8 +187,7 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                 >
                     <Form.Item
                         label='Display name'
-                        // tooltip='What name will be used for display?'
-                        name='displayName'
+                        name='display_name'
                         rules={[{ required: true, message: 'Please, input your display name' }]}
                     >
                         <Input maxLength={63} />
@@ -207,7 +204,7 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                     </Form.Item>
                     <Form.Item
                         label='Provider'
-                        name='provider'
+                        name='provider_type'
                         rules={[{ required: true, message: 'Please, select provider' }]}
                     >
                         <Select
