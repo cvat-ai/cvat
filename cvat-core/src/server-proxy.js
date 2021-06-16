@@ -1202,14 +1202,15 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=20&${filter}`, {
+                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=12&${filter}`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
 
-                return response.data;
+                response.data.results.count = response.data.count;
+                return response.data.results;
             }
 
             async function getCloudStorageContent(id, manifestPath) {

@@ -296,7 +296,7 @@
                 searchParams.set('provider_type', filter.provider);
             }
 
-            const cloudStoragesData = await serverProxy.cloudStoarges.get(searchParams.toString());
+            const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
 
             cloudStorages.count = cloudStoragesData.count;

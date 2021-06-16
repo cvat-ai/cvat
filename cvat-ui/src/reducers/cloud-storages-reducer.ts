@@ -50,12 +50,14 @@ export default (state: CloudStoragesState = defaultState, action: AnyAction): Cl
                 current: [],
             };
         case CloudStorageActionsTypes.GET_CLOUD_STORAGE_SUCCESS: {
+            const { array, count, query } = action.payload;
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
-                count: action.payload.count,
-                current: action.payload.array,
+                count,
+                gettingQuery: query,
+                current: array,
             };
         }
         case CloudStorageActionsTypes.GET_CLOUD_STORAGE_FAILED: {

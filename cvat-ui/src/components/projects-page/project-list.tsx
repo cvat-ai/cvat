@@ -27,6 +27,12 @@ export default function ProjectListComponent(): JSX.Element {
         );
     }
 
+    const dimensions = {
+        md: 22,
+        lg: 18,
+        xl: 16,
+        xxl: 16,
+    };
     const projects = projectInstances.reduce<Project[][]>((rows, key, index) => {
         if (index % 4 === 0) {
             rows.push([key]);
@@ -39,7 +45,7 @@ export default function ProjectListComponent(): JSX.Element {
     return (
         <>
             <Row justify='center' align='middle' className='cvat-project-list-content'>
-                <Col className='cvat-projects-list' md={22} lg={18} xl={16} xxl={14}>
+                <Col className='cvat-projects-list' {...dimensions}>
                     {projects.map(
                         (row: Project[]): JSX.Element => (
                             <Row key={row[0].instance.id} gutter={[8, 8]}>
@@ -54,7 +60,7 @@ export default function ProjectListComponent(): JSX.Element {
                 </Col>
             </Row>
             <Row justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
+                <Col {...dimensions}>
                     <Pagination
                         className='cvat-projects-pagination'
                         onChange={changePage}

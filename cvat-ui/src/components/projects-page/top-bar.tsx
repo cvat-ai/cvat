@@ -18,10 +18,16 @@ export default function TopBarComponent(): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
+    const dimensions = {
+        md: 11,
+        lg: 9,
+        xl: 8,
+        xxl: 8,
+    };
 
     return (
         <Row justify='center' align='middle' className='cvat-projects-top-bar'>
-            <Col md={11} lg={9} xl={8} xxl={7}>
+            <Col {...dimensions}>
                 <Text className='cvat-title'>Projects</Text>
                 <SearchField
                     query={query}
@@ -29,7 +35,7 @@ export default function TopBarComponent(): JSX.Element {
                     onSearch={(_query: ProjectsQuery) => dispatch(getProjectsAsync(_query))}
                 />
             </Col>
-            <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 8 }} xxl={{ span: 7 }}>
+            <Col {...dimensions}>
                 <Button
                     size='large'
                     id='cvat-create-project-button'

@@ -5,7 +5,7 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { CloudStoragesQuery } from 'reducers/interfaces'; // CloudStorage
+import { CloudStoragesQuery } from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -76,33 +76,40 @@ function getCloudStoragesFailed(error: any, query: CloudStoragesQuery): AnyActio
     return action;
 }
 
-// export function CloudStoragesAsync(query: CloudStoragesQuery): ThunkAction {
-//     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-//         dispatch(getCloudStorages());
+export function getCloudStoragesAsync(query: CloudStoragesQuery): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(getCloudStorages());
 
-//         // We need remove all keys with null values from query
-//         const filteredQuery = { ...query };
-//         for (const key in filteredQuery) {
-//             if (filteredQuery[key] === null) {
-//                 delete filteredQuery[key];
-//             }
-//         }
+        // We need remove all keys with null values from query
+        const filteredQuery = { ...query };
+        for (const key in filteredQuery) {
+            if (filteredQuery[key] === null) {
+                delete filteredQuery[key];
+            }
+        }
 
-//         let result = null;
-//         try {
-//             result = await cvat.cloudStorages.get(filteredQuery);
-//         } catch (error) {
-//             dispatch(getCloudStoragesFailed(error, query));
-//             return;
-//         }
+        let result = null;
+        try {
+            result = await cvat.cloudStorages.get(filteredQuery);
+        } catch (error) {
+            dispatch(getCloudStoragesFailed(error, query));
+            return;
+        }
 
-//         const array = Array.from(result);
-//         const promises = array.map((cloudStorage: CloudStorage):
-// string => (cloudStorage as any).frames.preview().catch(() => ''));
+        const array = Array.from(result);
+        //         const promises = array.map((cloudStorage: CloudStorage):
+        // string => (cloudStorage as any).frames.preview().catch(() => ''));
 
-//         dispatch(getCloudStoragesSuccess(array, await Promise.all(promises), result.count, query));
-//     };
-// }
+        dispatch(
+            getCloudStoragesSuccess(
+                array,
+                array.map((): string => ''),
+                result.count,
+                query,
+            ),
+        );
+    };
+}
 
 function deleteCloudStorage(cloudStorageID: number): AnyAction {
     const action = {

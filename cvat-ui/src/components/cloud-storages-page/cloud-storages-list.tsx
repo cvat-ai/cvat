@@ -3,51 +3,62 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
 import Pagination from 'antd/lib/pagination';
 import { Row, Col } from 'antd/lib/grid';
 
-export default function StoragesList(): JSX.Element {
-    const dimensions = {
-        md: 22, lg: 18, xl: 16, xxl: 14,
-    };
+import { CloudStorage } from 'reducers/interfaces';
+import CloudStorageItemComponent from './cloud-storage-item';
 
-    // todo: get count
-    // todo: get page
-    // todo: add action to change page
+interface Props {
+    storages: CloudStorage[];
+    totalCount: number;
+    page: number;
+    onChangePage(page: number): void;
+}
 
-    function changePage() {
+export default function StoragesList(props: Props): JSX.Element {
+    const {
+        storages, totalCount, page, onChangePage,
+    } = props;
 
-    }
+    const groupedStorages = storages.reduce(
+        (acc: CloudStorage[][], storage: CloudStorage, index: number): CloudStorage[][] => {
+            if (index && index % 4) {
+                acc[acc.length - 1].push(storage);
+            } else {
+                acc.push([storage]);
+            }
 
-    const storagesCount = 12;
-    const page = 1;
+            return acc;
+        },
+        [],
+    );
 
     return (
         <>
             <Row justify='center' align='middle'>
-                <Col className='cvat-storages-list' {...dimensions}>
-                    {/* {projectInstances.map(
-                        (row: any[]): JSX.Element => (
-                            <Row key={row[0].id} gutter={[8, 8]}>
-                                {row.map((instance: any) => (
+                <Col className='cvat-storages-list'>
+                    {groupedStorages.map(
+                        (instances: CloudStorage[]): JSX.Element => (
+                            <Row key={instances[0].id} gutter={[8, 8]}>
+                                {instances.map((instance: CloudStorage) => (
                                     <Col span={6} key={instance.id}>
-                                        <ProjectItem projectInstance={instance} />
+                                        <CloudStorageItemComponent cloudStorageInstance={instance} />
                                     </Col>
                                 ))}
                             </Row>
                         ),
-                    )} */}
+                    )}
                 </Col>
             </Row>
             <Row justify='center' align='middle'>
-                <Col {...dimensions}>
+                <Col>
                     <Pagination
-                        className='cvat-projects-pagination'
-                        onChange={changePage}
+                        className='cvat-cloud-storages-pagination'
+                        onChange={onChangePage}
                         showSizeChanger={false}
-                        total={storagesCount}
-                        pageSize={20}
+                        total={totalCount}
+                        pageSize={12}
                         current={page}
                         showQuickJumper
                     />
