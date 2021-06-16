@@ -135,7 +135,7 @@ prism_syntax_highlighting = false
 [params.ui]
 # Enable to show the side bar menu in its compact state.
 sidebar_menu_compact = true
-ul_show = 2
+ul_show = 1
 #  Set to true to disable breadcrumb navigation.
 breadcrumb_disable = false
 #  Set to true to hide the sidebar search box (the top nav search box will still be displayed if search is enabled)

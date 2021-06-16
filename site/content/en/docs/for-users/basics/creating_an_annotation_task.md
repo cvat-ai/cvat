@@ -70,6 +70,48 @@ weight: 2
 
    ![](/images/image127.jpg)
 
+   **Data formats for a task**
+
+   To create a 3D task, you need to use the following directory structures:
+
+    {{< tabpane >}}
+    {{< tab header="Velodyne" >}}
+    VELODYNE FORMAT
+    Structure:
+      velodyne_points/
+          data/
+              image_01.bin
+      IMAGE_00  # unknown dirname, Generally image_01.png can be under IMAGE_00, IMAGE_01, IMAGE_02, IMAGE_03, etc
+          data/
+              image_01.png
+    {{< /tab >}}
+    {{< tab header="3D pointcloud" >}}
+    3D POINTCLOUD DATA FORMAT
+    Structure:
+      pointcloud/
+          00001.pcd
+      related_images/
+          00001_pcd/
+              image_01.png # or any other image
+    {{< /tab >}}
+    {{< tab header="3D Option 1" >}}
+    3D, DEFAULT DATAFORMAT Option 1
+    Structure:
+    data/
+      image.pcd
+      image.png
+    {{< /tab >}}
+    {{< tab header="3D Option 2" >}}
+    3D, DEFAULT DATAFORMAT Option 2
+    Structure:
+      data/
+        image_1/
+            image_1.pcd
+            context_1.png  # or any other name
+            context_2.jpg
+    {{< /tab >}}
+    {{< /tabpane >}}
+
    #### Advanced configuration
 
    ![](/images/image128_use_cache.jpg)
