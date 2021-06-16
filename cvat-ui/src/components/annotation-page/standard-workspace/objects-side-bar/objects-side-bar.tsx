@@ -120,9 +120,11 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 </Tabs.TabPane>
 
                 {is2D ?
-                    <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
-                        <IssuesListComponent />
-                    </Tabs.TabPane> : null}
+                    (
+                        <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
+                            <IssuesListComponent />
+                        </Tabs.TabPane>
+                    ) : null}
 
             </Tabs>
 

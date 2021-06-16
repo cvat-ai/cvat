@@ -9,10 +9,10 @@ import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import CONST from './consts';
 import {
-    Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType
+    Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
 } from './canvas3dModel';
 import {
-    createRotationHelper, CuboidModel, setEdges, setTranslationHelper
+    createRotationHelper, CuboidModel, setEdges, setTranslationHelper,
 } from './cuboid';
 
 export interface Canvas3dView {
@@ -638,7 +638,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private setupObject(object: any, addToScene: boolean): CuboidModel {
         const {
-            opacity, outlined, outlineColor, selectedOpacity, colorBy
+            opacity, outlined, outlineColor, selectedOpacity, colorBy,
         } = this.model.data.shapeProperties;
         const clientID = String(object.clientID);
         const cuboid = new CuboidModel(object.occluded ? 'dashed' : 'line', outlined ? outlineColor : '#ffffff');
@@ -1211,7 +1211,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private moveObject(coordinates: THREE.Vector3): void {
         const {
-            perspective, top, side, front
+            perspective, top, side, front,
         } = this.model.data.selected;
         let localCoordinates = coordinates;
         if (this.action.translation.status) {
