@@ -37,7 +37,7 @@ export default function StoragesList(props: Props): JSX.Element {
     return (
         <>
             <Row justify='center' align='middle'>
-                <Col className='cvat-storages-list'>
+                <Col span={24} className='cvat-cloud-storages-list'>
                     {groupedStorages.map(
                         (instances: CloudStorage[]): JSX.Element => (
                             <Row key={instances[0].id} gutter={[8, 8]}>

@@ -88,7 +88,7 @@ export default function StoragesPageComponent(): JSX.Element {
     }
 
     return (
-        <Row className='cvat-cloud-storages-page' justify='center' align='middle'>
+        <Row className='cvat-cloud-storages-page' justify='center' align='top'>
             <Col {...dimensions}>
                 <TopBarComponent query={query} onSearch={onSearch} />
                 {current.length ? (

@@ -6,6 +6,8 @@
 
 .cvat-cloud-storages-page {
     padding: $grid-unit-size * 2;
+    height: 100%;
+    overflow: auto;
 
     .ant-spin {
         position: absolute;
@@ -19,7 +21,7 @@
 }
 
 .cvat-cloud-storages-pagination {
-    margin-top: 32px;
+    margin-top: $grid-unit-size * 2;
 }
 
 .cvat-cloud-storages-list-top-bar {
@@ -36,9 +38,19 @@
     }
 }
 
+.cvat-cloud-storages-list,
+.cvat-empty-cloud-storages-list {
+    margin-top: $grid-unit-size * 2;
+}
+
+.cvat-cloud-storage-item-empty-preview {
+    font-size: $grid-unit-size * 9;
+    text-align: center;
+    padding: $grid-unit-size;
+}
+
 .cvat-cloud-storage-item {
-    width: 250px;
-    height: 200px;
-    background: aqua;
-    margin: 8px;
+    div.ant-typography {
+        margin-bottom: 0;
+    }
 }
