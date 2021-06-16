@@ -48,7 +48,7 @@ export default function SearchTooltip(props: Props): JSX.Element {
                     ) : null}
                     {instance === 'cloudstorage' ? (
                         <Paragraph>
-                            <Text strong>display_name: Azure</Text>
+                            <Text strong>displayName: Azure</Text>
                             <Text>
                                 all
                                 {instances}
