@@ -129,8 +129,7 @@ context('Redraw feature.', () => {
             });
         });
 
-        it.skip('Draw and redraw a cuboid.', () => {
-            // Need to fix issue https://github.com/openvinotoolkit/cvat/issues/2873
+        it('Draw and redraw a cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.get('.cvat-canvas-container').trigger('mousemove', 300, 400);
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');

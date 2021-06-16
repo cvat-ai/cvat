@@ -7,7 +7,7 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-import { RectDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
+import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -1134,6 +1134,7 @@ export function rememberObject(createParams: {
     activeShapeType?: ShapeType;
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
+    activeCuboidDrawingMethod?: CuboidDrawingMethod;
 }): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
@@ -1480,6 +1481,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 activeShapeType,
                 activeNumOfPoints,
                 activeRectDrawingMethod,
+                activeCuboidDrawingMethod,
             },
         } = getStore().getState().annotation;
 
@@ -1534,6 +1536,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
+                cuboidDrawingMethod: activeCuboidDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),

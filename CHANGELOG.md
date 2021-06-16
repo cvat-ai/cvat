@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix CLI create an infinite loop if git repository responds with failure (<https://github.com/openvinotoolkit/cvat/pull/3267>)
 - Bug with sidebar & fullscreen (<https://github.com/openvinotoolkit/cvat/pull/3289>)
 - 504 Gateway Time-out on `data/meta` requests (<https://github.com/openvinotoolkit/cvat/pull/3269>)
+- TypeError: Cannot read property 'clientX' of undefined when draw cuboids with hotkeys (<https://github.com/openvinotoolkit/cvat/pull/3308>)
+- Duplication of the cuboids when redraw them (<https://github.com/openvinotoolkit/cvat/pull/3308>)
 - Some code issues in Deep Extreme Cut handler code (<https://github.com/openvinotoolkit/cvat/pull/3325>)
 
 ### Security
