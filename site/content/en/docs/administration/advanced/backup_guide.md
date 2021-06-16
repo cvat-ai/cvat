@@ -16,7 +16,7 @@ Docker volumes are used to store all CVAT data:
 - `cvat_data`: used to store uploaded and prepared media data.
   Mounted into `cvat` container by `/home/django/data` path.
 
-- `cvat_keys`: used to store user ssh keys needed for [synchronization with a remote Git repository](/docs/for-users/advanced/task-synchronization/).
+- `cvat_keys`: used to store user ssh keys needed for [synchronization with a remote Git repository](/docs/manual/advanced/task-synchronization/).
   Mounted into `cvat` container by `/home/django/keys` path.
 
 - `cvat_logs`: used to store logs of CVAT backend processes managed by supevisord.

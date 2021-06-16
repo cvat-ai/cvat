@@ -115,7 +115,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT for users](/docs/for-users/) for more details.
+  [CVAT manual](/docs/manual/) for more details.
 
 ## Windows 10
 
@@ -178,7 +178,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT user's guide](/docs/for-users/user-guide) for more details.
+  [CVAT manual](/docs/manual/) for more details.
 
 ## Mac OS Mojave
 
@@ -245,7 +245,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT user's guide](/docs/for-users/user-guide) for more details.
+  [CVAT manual](/docs/manual/) for more details.
 
 ## Advanced Topics
 

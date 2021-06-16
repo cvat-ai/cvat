@@ -17,13 +17,13 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 ## Documentation
 
-- [Contributing](https://openvinotoolkit.github.io/cvat/docs/for-developers/contributing/)
+- [Contributing](https://openvinotoolkit.github.io/cvat/docs/developing/contributing/)
 - [Installation guide](https://openvinotoolkit.github.io/cvat/docs/administration/basics/installation/)
-- [For users](https://openvinotoolkit.github.io/cvat/docs/for-users/)
+- [Manual](https://openvinotoolkit.github.io/cvat/docs/manual/)
 - [Django REST API documentation](https://openvinotoolkit.github.io/cvat/docs/administration/basics/rest_api_guide/)
 - [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
-- [Command line interface](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/cli/)
-- [XML annotation format](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/xml_format/)
+- [Command line interface](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/cli/)
+- [XML annotation format](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/xml_format/)
 - [AWS Deployment Guide](https://openvinotoolkit.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
 - [Frequently asked questions](https://openvinotoolkit.github.io/cvat/docs/faq/)
 - [Questions](#questions)
@@ -48,28 +48,28 @@ dataset framework allows additional dataset transformations via its command
 line tool and Python library.
 
 For more information about supported formats look at the
-[documentation](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/formats/).
+[documentation](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/formats/).
 
 <!--lint disable maximum-line-length-->
 
-| Annotation format                                                                                        | Import | Export |
-| -------------------------------------------------------------------------------------------------------  | ------ | ------ |
-| [CVAT for images](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/xml_format/#annotation)     | X      | X      |
-| [CVAT for a video](https://openvinotoolkit.github.io/cvat/docs/for-users/advanced/xml_format/#interpolation) | X      | X      |
-| [Datumaro](https://github.com/openvinotoolkit/datumaro)                                                  |        | X      |
-| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                    | X      | X      |
-| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                            | X      | X      |
-| [YOLO](https://pjreddie.com/darknet/yolo/)                                                               | X      | X      |
-| [MS COCO Object Detection](http://cocodataset.org/#format-data)                                          | X      | X      |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                      | X      | X      |
-| [MOT](https://motchallenge.net/)                                                                         | X      | X      |
-| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                   | X      | X      |
-| [ImageNet](http://www.image-net.org)                                                                     | X      | X      |
-| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                     | X      | X      |
-| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                                          | X      | X      |
-| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                          | X      | X      |
-| [Market-1501](https://www.aitribune.com/dataset/2018051063)                                              | X      | X      |
-| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                               | X      | X      |
+| Annotation format                                                                                         | Import | Export |
+| --------------------------------------------------------------------------------------------------------- | ------ | ------ |
+| [CVAT for images](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     | X      | X      |
+| [CVAT for a video](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) | X      | X      |
+| [Datumaro](https://github.com/openvinotoolkit/datumaro)                                                   |        | X      |
+| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     | X      | X      |
+| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             | X      | X      |
+| [YOLO](https://pjreddie.com/darknet/yolo/)                                                                | X      | X      |
+| [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           | X      | X      |
+| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       | X      | X      |
+| [MOT](https://motchallenge.net/)                                                                          | X      | X      |
+| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    | X      | X      |
+| [ImageNet](http://www.image-net.org)                                                                      | X      | X      |
+| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                      | X      | X      |
+| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                                           | X      | X      |
+| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                           | X      | X      |
+| [Market-1501](https://www.aitribune.com/dataset/2018051063)                                               | X      | X      |
+| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                                | X      | X      |
 
 <!--lint enable maximum-line-length-->
 

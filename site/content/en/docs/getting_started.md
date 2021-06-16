@@ -12,11 +12,7 @@ First step is to install CVAT on your system. Use the [Installation Guide](/docs
 
 ## Getting started in CVAT
 
-To create an admin account, use the following command:
-
-    docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
-
-To find out more, go to the [authorization](/docs/for-users/basics/authorization/) section.
+To find out more, go to the [authorization](/docs/manual/basics/authorization/) section.
 
 To create a task, go to `Tasks` section. Click `Create new task` to go to the task creation page.
 
@@ -28,7 +24,7 @@ Set the label using the constructor: first click "add label", then enter the nam
 
 You need to upload images or videos for your future annotation. To do so, simply drag and drop the files.
 
-To learn more, go to [creating an annotation task](/docs/for-users/basics/creating_an_annotation_task/)
+To learn more, go to [creating an annotation task](/docs/manual/basics/creating_an_annotation_task/)
 
 ## Basic annotation
 
@@ -41,12 +37,12 @@ Choose a correct section for your type of the task and start annotation.
 
 | Shape     | Annotation                                                                                | Interpolation                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Rectangle | [Shape mode (basics)](/docs/for-users/basics/shape-mode-basics/)                               | [Track mode (basics)](/docs/for-users/basics/track-mode-basics/)                                         |
-| Polygon   | [Annotation with polygons](/docs/for-users/advanced/annotation-with-polygons/)                | [Track mode with polygons](/docs/for-users/advanced/annotation-with-polygons/track-mode-with-polygons/) |
-| Polyline  | [Annotation with polylines](/docs/for-users/advanced/annotation-with-polylines/)              |                                                                                                     |
-| Points    | [Points in shape mode](/docs/for-users/advanced/annotation-with-points/points-in-shape-mode/) | [Liner interpolation with one point](/docs/for-users/advanced/annotation-with-points/liner-interpolation-with-one-point/) |
-| Cuboids   | [Annotation with cuboids](/docs/for-users/advanced/annotation-with-cuboids/)                  | [Editing the cuboid](/docs/for-users/advanced/annotation-with-cuboids/editing-the-cuboid/)              |
-| Tag       | [Annotation with tags](/docs/for-users/advanced/annotation-with-tags/)                        |                                                                                                     |
+| Rectangle | [Shape mode (basics)](/docs/manual/basics/shape-mode-basics/)                               | [Track mode (basics)](/docs/manual/basics/track-mode-basics/)                                         |
+| Polygon   | [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/)                | [Track mode with polygons](/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/) |
+| Polyline  | [Annotation with polylines](/docs/manual/advanced/annotation-with-polylines/)              |                                                                                                     |
+| Points    | [Points in shape mode](/docs/manual/advanced/annotation-with-points/points-in-shape-mode/) | [Liner interpolation with one point](/docs/manual/advanced/annotation-with-points/liner-interpolation-with-one-point/) |
+| Cuboids   | [Annotation with cuboids](/docs/manual/advanced/annotation-with-cuboids/)                  | [Editing the cuboid](/docs/manual/advanced/annotation-with-cuboids/editing-the-cuboid/)              |
+| Tag       | [Annotation with tags](/docs/manual/advanced/annotation-with-tags/)                        |                                                                                                     |
 
 ## Dump annotation
 
@@ -61,4 +57,4 @@ Choose a correct section for your type of the task and start annotation.
 
 4. Lastly choose a format of the dump annotation file.
 
-To learn more, go to [downloading annotations](/docs/for-users/advanced/downloading-annotations/)
+To learn more, go to [downloading annotations](/docs/manual/advanced/downloading-annotations/)

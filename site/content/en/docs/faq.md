@@ -112,14 +112,14 @@ volumes:
 
 ## How to mark job/task as completed
 
-The status is set by the user in the [Info window](/docs/for-users/basic/top-panel/#info)
+The status is set by the user in the [Info window](/docs/manual/basics/top-panel/#info)
 of the job annotation view.
 There are three types of status: annotation, validation or completed.
 The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 
-Follow this [guide](/docs/administration/basic/installation/#windows-10).
+Follow this [guide](/docs/administration/basics/installation/#windows-10).
 
 ## I do not have the Analytics tab on the header section. How can I add analytics
 
@@ -142,7 +142,7 @@ services:
 ## How to create a task with multiple jobs
 
 Set the segment size when you create a new task, this option is available in the
-[Advanced configuration](/docs/for-users/advanced/creating_an_annotation_task/#advanced-configuration)
+[Advanced configuration](/docs/manual/basics/creating_an_annotation_task/#advanced-configuration)
 section.
 
 ## How to transfer CVAT to another machine
