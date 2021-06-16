@@ -1,6 +1,6 @@
 ---
-title: "Contributing to this project"
-linkTitle: "Contributing"
+title: 'Contributing to this project'
+linkTitle: 'Contributing'
 weight: 1
 ---
 
@@ -126,7 +126,7 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
 ### DL models as serverless functions
 
-Follow this [guide](/docs/for-users/installation_automatic_annotation/) to install Nuclio:
+Follow this [guide](/docs/administration/advanced/installation_automatic_annotation/) to install Nuclio:
 
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions.
