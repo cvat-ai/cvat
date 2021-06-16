@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support of context images for 2D image tasks (<https://github.com/openvinotoolkit/cvat/pull/3122>)
+- Support of cloud storage without copying data into CVAT: server part (<https://github.com/openvinotoolkit/cvat/pull/2620>)
 - Filter `is_active` for user list (<https://github.com/openvinotoolkit/cvat/pull/3235>)
 - Ability to export/import tasks (<https://github.com/openvinotoolkit/cvat/pull/3056>)
 
