@@ -1177,7 +1177,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if (provider_type := self.request.query_params.get('provider_type', None)):
+        provider_type = self.request.query_params.get('provider_type', None)
+        if provider_type:
             if provider_type in CloudProviderChoice.list():
                 return queryset.filter(provider_type=provider_type)
             raise ValidationError('Unsupported type of cloud provider')
