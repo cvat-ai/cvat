@@ -533,8 +533,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['POST', 'GET'])
     def data(self, request, pk):
+        db_task = self.get_object() # call check_object_permissions as well
         if request.method == 'POST':
-            db_task = self.get_object() # call check_object_permissions as well
             if db_task.data:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
