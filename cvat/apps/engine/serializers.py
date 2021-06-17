@@ -788,7 +788,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'specific_attributes', 'description'
+            'secret_key', 'specific_attributes', 'description', 'id'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
