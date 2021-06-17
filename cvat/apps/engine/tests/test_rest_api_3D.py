@@ -348,7 +348,7 @@ class Task3DTest(_DbTestBase):
                     "type": "cuboid",
                     "occluded": False,
                     "z_order": 0,
-                    "points": [0.106, 0.202, -0.268, 0, -0.149, 0, 4.843, 4.483, 4.125, 0, 0, 0, 0, 0, 0, 0],
+                    "points": [0.16, 0.20, -0.26, 0, -0.14, 0, 4.84, 4.48, 4.12, 0, 0, 0, 0, 0, 0, 0],
                     "frame": 0,
                     "label_id": None,
                     "group": 0,
