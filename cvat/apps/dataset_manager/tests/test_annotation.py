@@ -169,18 +169,23 @@ class TrackManagerTest(TestCase):
 
     def test_api_v1_unit_test_on_normalize_shape_function(self):
         # 3 points
-        TrackManager.normalize_shape({
-             "points": [1.5, 2.5],
+        norm_shape = TrackManager.normalize_shape({
+            "points": [1.5, 2.5, 0.5, 8.6, 9.6, 3.6],
         })
+        self.assertEqual(len(norm_shape["points"]), 200)
 
         # 4 points
-        TrackManager.normalize_shape({
+        norm_shape = TrackManager.normalize_shape({
             "points": [1.5, 2.5, 0.5, 8.6, 9.6, 3.6, 2.8, 7.2],
         })
+        self.assertEqual(len(norm_shape["points"]), 200)
+
         # 1 point
-        TrackManager.normalize_shape({
+        norm_shape = TrackManager.normalize_shape({
             "points": [1.5, 2.5],
         })
+        self.assertEqual(len(norm_shape["points"]), 200)
+
         # empty shape
         with self.assertRaises(ValueError):
             TrackManager.normalize_shape({

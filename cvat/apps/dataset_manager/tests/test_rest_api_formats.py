@@ -922,39 +922,6 @@ class TaskDumpUploadTest(_DbTestBase):
                     task_ann_data = task_ann.data
                     self.assertEqual(len(task_ann_data["shapes"]), len(task_ann_prev_data["shapes"]))
 
-    def test_api_v1_unit_test_on_normalize_shape_function(self):
-        # 3 points
-        TrackManager.normalize_shape({
-             "points": [1.5, 2.5],
-        })
-
-        # 4 points
-        TrackManager.normalize_shape({
-            "points": [1.5, 2.5, 0.5, 8.6, 9.6, 3.6, 2.8, 7.2],
-        })
-        # 1 point
-        TrackManager.normalize_shape({
-            "points": [1.5, 2.5],
-        })
-        # empty shape
-        with self.assertRaises(ValueError):
-            TrackManager.normalize_shape({
-                "points": [],
-            })
-        # invalid count of points
-        with self.assertRaises(ValueError):
-            TrackManager.normalize_shape({
-                "points": [1.5, 2.5, 7.5],
-            })
-        # negative points
-        TrackManager.normalize_shape({
-            "points": [-1.5, 2.5, -9.8, -4.6],
-        })
-        # integer
-        TrackManager.normalize_shape({
-            "points": [1, 2, 9, 4],
-        })
-
     def test_api_v1_tasks_annotations_dump_and_upload_many_jobs_with_datumaro(self):
         test_name = self._testMethodName
         upload_format_name = "CVAT 1.1"
