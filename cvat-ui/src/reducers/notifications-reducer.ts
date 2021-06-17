@@ -16,7 +16,7 @@ import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
-import { CloudStorageActionsTypes } from 'actions/cloud-storage-actions';
+import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 
 import { NotificationsState } from './interfaces';
 
@@ -1194,7 +1194,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case CloudStorageActionsTypes.GET_CLOUD_STORAGE_FAILED: {
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED: {
             return {
                 ...state,
                 errors: {
@@ -1209,7 +1209,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case CloudStorageActionsTypes.CREATE_CLOUD_STORAGE_FAILED: {
+        case CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED: {
             return {
                 ...state,
                 errors: {
@@ -1225,27 +1225,27 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case CloudStorageActionsTypes.UPDATE_CLOUD_STORAGE_FAILED: {
-            const { cloudStorageId } = action.payload.cloudStorage;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    cloudStorages: {
-                        ...state.errors.cloudStorages,
-                        updating: {
-                            message:
-                                'Could not update ' +
-                                `<a href="/cloudstorages/${cloudStorageId}" target="_blank">
-                                cloud storage ${cloudStorageId}</a>`,
-                            reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-update-cloud-storage-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case CloudStorageActionsTypes.DELETE_CLOUD_STORAGE_FAILED: {
+        // case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED: {
+        //     const { cloudStorageId } = action.payload.cloudStorage;
+        //     return {
+        //         ...state,
+        //         errors: {
+        //             ...state.errors,
+        //             cloudStorages: {
+        //                 ...state.errors.cloudStorages,
+        //                 updating: {
+        //                     message:
+        //                         'Could not update ' +
+        //                         `<a href="/cloudstorages/${cloudStorageId}" target="_blank">
+        //                         cloud storage ${cloudStorageId}</a>`,
+        //                     reason: action.payload.error.toString(),
+        //                     className: 'cvat-notification-notice-update-cloud-storage-failed',
+        //                 },
+        //             },
+        //         },
+        //     };
+        // }
+        case CloudStorageActionTypes.DELETE_CLOUD_STORAGE_FAILED: {
             const { cloudStorageId } = action.payload;
             return {
                 ...state,

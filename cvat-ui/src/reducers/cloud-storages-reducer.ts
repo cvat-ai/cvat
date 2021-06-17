@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction } from 'redux';
-import { CloudStorageActionsTypes } from 'actions/cloud-storage-actions';
-import { AuthActionTypes } from 'actions/auth-actions';
-import { CloudStorage, CloudStoragesState } from './interfaces';
+import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
+import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
+import { CloudStoragesState } from './interfaces';
 
 const defaultState: CloudStoragesState = {
     initialized: false,
@@ -39,9 +38,12 @@ const defaultState: CloudStoragesState = {
     },
 };
 
-export default (state: CloudStoragesState = defaultState, action: AnyAction): CloudStoragesState => {
+export default (
+    state: CloudStoragesState = defaultState,
+    action: CloudStorageActions | AuthActions,
+): CloudStoragesState => {
     switch (action.type) {
-        case CloudStorageActionsTypes.GET_CLOUD_STORAGES:
+        case CloudStorageActionTypes.GET_CLOUD_STORAGES:
             return {
                 ...state,
                 initialized: false,
@@ -49,7 +51,7 @@ export default (state: CloudStoragesState = defaultState, action: AnyAction): Cl
                 count: 0,
                 current: [],
             };
-        case CloudStorageActionsTypes.GET_CLOUD_STORAGE_SUCCESS: {
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS: {
             const { array, count, query } = action.payload;
             return {
                 ...state,
@@ -60,14 +62,14 @@ export default (state: CloudStoragesState = defaultState, action: AnyAction): Cl
                 current: array,
             };
         }
-        case CloudStorageActionsTypes.GET_CLOUD_STORAGE_FAILED: {
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED: {
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
             };
         }
-        case CloudStorageActionsTypes.CREATE_CLOUD_STORAGE: {
+        case CloudStorageActionTypes.CREATE_CLOUD_STORAGE: {
             return {
                 ...state,
                 activities: {
@@ -79,19 +81,19 @@ export default (state: CloudStoragesState = defaultState, action: AnyAction): Cl
                 },
             };
         }
-        case CloudStorageActionsTypes.CREATE_CLOUD_STORAGE_SUCCESS: {
+        case CloudStorageActionTypes.CREATE_CLOUD_STORAGE_SUCCESS: {
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     creates: {
-                        id: action.payload.cloudStorageId,
+                        id: action.payload.cloudStorageID,
                         error: '',
                     },
                 },
             };
         }
-        case CloudStorageActionsTypes.CREATE_CLOUD_STORAGE_FAILED: {
+        case CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED: {
             return {
                 ...state,
                 activities: {
@@ -103,40 +105,40 @@ export default (state: CloudStoragesState = defaultState, action: AnyAction): Cl
                 },
             };
         }
-        case CloudStorageActionsTypes.UPDATE_CLOUD_STORAGE: {
-            return {
-                ...state,
-            };
-        }
-        case CloudStorageActionsTypes.UPDATE_CLOUD_STORAGE_SUCCESS: {
-            return {
-                ...state,
-                current: state.current.map(
-                    (cloudStorage: CloudStorage): CloudStorage => {
-                        if (cloudStorage.id === action.payload.cloudStorage.id) {
-                            return action.payload.cloudStorage;
-                        }
+        // case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE: {
+        //     return {
+        //         ...state,
+        //     };
+        // }
+        // case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS: {
+        //     return {
+        //         ...state,
+        //         current: state.current.map(
+        //             (cloudStorage: CloudStorage): CloudStorage => {
+        //                 if (cloudStorage.id === action.payload.cloudStorage.id) {
+        //                     return action.payload.cloudStorage;
+        //                 }
 
-                        return cloudStorage;
-                    },
-                ),
-            };
-        }
-        case CloudStorageActionsTypes.UPDATE_CLOUD_STORAGE_FAILED: {
-            return {
-                ...state,
-                current: state.current.map(
-                    (cloudStorage: CloudStorage): CloudStorage => {
-                        if (cloudStorage.id === action.payload.cloudStorage.id) {
-                            return action.payload.cloudStorage;
-                        }
+        //                 return cloudStorage;
+        //             },
+        //         ),
+        //     };
+        // }
+        // case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED: {
+        //     return {
+        //         ...state,
+        //         current: state.current.map(
+        //             (cloudStorage: CloudStorage): CloudStorage => {
+        //                 if (cloudStorage.id === action.payload.cloudStorage.id) {
+        //                     return action.payload.cloudStorage;
+        //                 }
 
-                        return cloudStorage;
-                    },
-                ),
-            };
-        }
-        case CloudStorageActionsTypes.DELETE_CLOUD_STORAGE: {
+        //                 return cloudStorage;
+        //             },
+        //         ),
+        //     };
+        // }
+        case CloudStorageActionTypes.DELETE_CLOUD_STORAGE: {
             const { cloudStorageID } = action.payload;
             const { deletes } = state.activities;
 
@@ -152,7 +154,7 @@ export default (state: CloudStoragesState = defaultState, action: AnyAction): Cl
                 },
             };
         }
-        case CloudStorageActionsTypes.DELETE_CLOUD_STORAGE_SUCCESS: {
+        case CloudStorageActionTypes.DELETE_CLOUD_STORAGE_SUCCESS: {
             const { cloudStorageID } = action.payload;
             const { deletes } = state.activities;
 
@@ -168,7 +170,7 @@ export default (state: CloudStoragesState = defaultState, action: AnyAction): Cl
                 },
             };
         }
-        case CloudStorageActionsTypes.DELETE_CLOUD_STORAGE_FAILED: {
+        case CloudStorageActionTypes.DELETE_CLOUD_STORAGE_FAILED: {
             const { cloudStorageID } = action.payload;
             const { deletes } = state.activities;
 
