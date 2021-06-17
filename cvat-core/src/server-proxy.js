@@ -1175,6 +1175,9 @@
                 try {
                     const response = await Axios.post(`${backendAPI}/cloudstorages`, JSON.stringify(storageDetail), {
                         proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
                     });
                     return response.data;
                 } catch (errorData) {
