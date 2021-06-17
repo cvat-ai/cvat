@@ -255,7 +255,7 @@ function AttributeEditor(props: Props): JSX.Element {
     const { inputType, values, id: attrID } = attribute;
 
     return (
-        <div>
+        <div className='attribute-annotations-sidebar-attribute-editor'>
             {renderList({ values, inputType, onChange })}
             <hr />
             {renderInputElement({

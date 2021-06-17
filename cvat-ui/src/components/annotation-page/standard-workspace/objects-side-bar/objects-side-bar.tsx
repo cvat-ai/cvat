@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { Dispatch, useEffect, TransitionEvent } from 'react';
+import React, { Dispatch, TransitionEvent } from 'react';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
@@ -12,13 +12,12 @@ import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { CombinedState } from 'reducers/interfaces';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { CombinedState, DimensionType } from 'reducers/interfaces';
 import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
-import {
-    collapseSidebar as collapseSidebarAction,
-    updateTabContentHeight as updateTabContentHeightAction,
-} from 'actions/annotation-actions';
-import AppearanceBlock, { computeHeight } from 'components/annotation-page/appearance-block';
+import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
+import { collapseSidebar as collapseSidebarAction } from 'actions/annotation-actions';
+import AppearanceBlock from 'components/annotation-page/appearance-block';
 import IssuesListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/issues-list';
 
 interface OwnProps {
@@ -27,12 +26,12 @@ interface OwnProps {
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
     collapseSidebar(): void;
-    updateTabContentHeight(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -40,12 +39,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             sidebarCollapsed,
             canvas: { instance: canvasInstance },
+            job: { instance: jobInstance },
         },
     } = state;
 
     return {
         sidebarCollapsed,
         canvasInstance,
+        jobInstance,
     };
 }
 
@@ -54,32 +55,17 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         collapseSidebar(): void {
             dispatch(collapseSidebarAction());
         },
-        updateTabContentHeight(): void {
-            const height = computeHeight();
-            dispatch(updateTabContentHeightAction(height));
-        },
     };
 }
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        sidebarCollapsed, canvasInstance, collapseSidebar, updateTabContentHeight, objectsList,
+        sidebarCollapsed,
+        canvasInstance,
+        collapseSidebar,
+        objectsList,
+        jobInstance,
     } = props;
-
-    useEffect(() => {
-        const alignTabHeight = (): void => {
-            if (!sidebarCollapsed) {
-                updateTabContentHeight();
-            }
-        };
-
-        window.addEventListener('resize', alignTabHeight);
-        alignTabHeight();
-
-        return () => {
-            window.removeEventListener('resize', alignTabHeight);
-        };
-    }, []);
 
     const collapse = (): void => {
         const [collapser] = window.document.getElementsByClassName('cvat-objects-sidebar');
@@ -95,8 +81,14 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
             (collapser as HTMLElement).addEventListener('transitionend', listener as any);
         }
 
+        adjustContextImagePosition(!sidebarCollapsed);
         collapseSidebar();
     };
+
+    let is2D = true;
+    if (jobInstance) {
+        is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    }
 
     return (
         <Layout.Sider
@@ -126,9 +118,14 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 <Tabs.TabPane forceRender tab={<Text strong>Labels</Text>} key='labels'>
                     <LabelsList />
                 </Tabs.TabPane>
-                <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
-                    <IssuesListComponent />
-                </Tabs.TabPane>
+
+                {is2D ?
+                    (
+                        <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
+                            <IssuesListComponent />
+                        </Tabs.TabPane>
+                    ) : null}
+
             </Tabs>
 
             {!sidebarCollapsed && <AppearanceBlock />}

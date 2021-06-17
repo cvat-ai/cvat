@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,8 +16,8 @@ describe('Delete users and tasks created during the test run.', () => {
                 email: Cypress.env('email'),
                 password: Cypress.env('password'),
             },
-        }).then(async (responce) => {
-            authKey = await responce['body']['key'];
+        }).then(async (response) => {
+            authKey = await response['body']['key'];
         });
     });
     it('Get a list of users and delete all except id:1', () => {
@@ -26,8 +26,8 @@ describe('Delete users and tasks created during the test run.', () => {
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(async (responce) => {
-            const responceResult = await responce['body']['results'];
+        }).then(async (response) => {
+            const responceResult = await response['body']['results'];
             for (let user of responceResult) {
                 let userId = user['id'];
                 if (userId !== 1) {
@@ -48,8 +48,8 @@ describe('Delete users and tasks created during the test run.', () => {
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(async (responce) => {
-            const responceResult = await responce['body']['results'];
+        }).then(async (response) => {
+            const responceResult = await response['body']['results'];
             for (let tasks of responceResult) {
                 let taskId = tasks['id'];
                 cy.request({
@@ -68,8 +68,8 @@ describe('Delete users and tasks created during the test run.', () => {
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(async (responce) => {
-            const responceResult = await responce['body']['results'];
+        }).then(async (response) => {
+            const responceResult = await response['body']['results'];
             for (let tasks of responceResult) {
                 let taskId = tasks['id'];
                 cy.request({

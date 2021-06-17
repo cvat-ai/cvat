@@ -6,7 +6,7 @@
 
 import { taskName, advancedConfigurationParams, labelName } from '../../support/const';
 
-context('First part of a splitted track is visible', () => {
+context('First part of a split track is visible', () => {
     const issueId = '1819';
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
@@ -42,7 +42,7 @@ context('First part of a splitted track is visible', () => {
                 cy.get('input[role="spinbutton"]').should('have.value', advancedConfigurationParams.segmentSize - 2);
             });
         });
-        it('First part of a splitted track is visible', () => {
+        it('First part of a split track is visible', () => {
             cy.get('#cvat_canvas_shape_2').should('be.visible');
         });
     });

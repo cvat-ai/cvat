@@ -63,5 +63,5 @@ A background class can be:
 - `background` class with any color (has a priority, name is case-insensitive)
 - Any class of black color (RGB 0, 0, 0)
 
-To change backgound color in generated masks (default is black),
+To change background color in generated masks (default is black),
 change `background` class color to the desired one.

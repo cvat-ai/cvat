@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context("Some parts of the Redux state (issues) isn't reset after chaning a task.", () => {
+context("Some parts of the Redux state (issues) isn't reset after changing a task.", () => {
     const issueId = '2524_2633';
     const labelName = `Issue ${issueId}`;
     const taskName = {

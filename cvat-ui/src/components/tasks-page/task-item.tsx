@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,7 +74,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const numOfJobs = taskInstance.jobs.length;
         const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.status === 'completed').length;
 
-        // Progress appearence depends on number of jobs
+        // Progress appearance depends on number of jobs
         let progressColor = null;
         let progressText = null;
         if (numOfCompleted && numOfCompleted === numOfJobs) {

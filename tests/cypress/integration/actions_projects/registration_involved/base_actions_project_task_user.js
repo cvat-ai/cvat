@@ -127,7 +127,7 @@ context('Base actions on the project', () => {
             cy.contains('.cvat-projects-project-item-title', failProjectName).should('not.exist');
             cy.logout(userName);
         });
-        it('Login first user. Assing project to second user. Logout.', () => {
+        it('Login first user. Assign project to second user. Logout.', () => {
             cy.login();
             cy.goToProjectsList();
             cy.openProject(projectName);
