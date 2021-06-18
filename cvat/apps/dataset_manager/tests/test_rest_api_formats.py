@@ -24,7 +24,6 @@ from rest_framework.test import APIClient, APITestCase
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from cvat.apps.dataset_manager.annotation import TrackManager
 from cvat.apps.engine.models import Task
 
 tasks_path = osp.join(osp.dirname(__file__), 'assets', 'tasks.json')
