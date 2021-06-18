@@ -579,7 +579,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     elif data_quality not in possible_quality_values:
                         raise ValidationError(detail='Wrong quality value')
 
-                db_task = self.get_object()
                 db_data = db_task.data
                 if not db_data:
                     raise NotFound(detail='Cannot find requested data for the task')
