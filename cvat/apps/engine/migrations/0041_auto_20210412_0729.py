@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0039_auto_training'),
+        ('engine', '0040_cloud_storage'),
     ]
 
     operations = [
