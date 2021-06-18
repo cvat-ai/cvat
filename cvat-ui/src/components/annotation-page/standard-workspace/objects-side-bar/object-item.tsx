@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,11 +22,10 @@ interface Props {
     attrValues: Record<number, string>;
     color: string;
     colorBy: ColorBy;
-
     labels: any[];
     attributes: any[];
     collapsed: boolean;
-
+    jobInstance: any;
     activate(): void;
     copy(): void;
     propagate(): void;
@@ -76,12 +75,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
         labelID,
         color,
         colorBy,
-
         attributes,
         labels,
         collapsed,
         normalizedKeyMap,
-
         activate,
         copy,
         propagate,
@@ -96,6 +93,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         collapse,
         resetCuboidPerspective,
         activateTracking,
+        jobInstance,
     } = props;
 
     const type =
@@ -117,6 +115,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 style={{ backgroundColor: `${color}88` }}
             >
                 <ItemBasics
+                    jobInstance={jobInstance}
                     readonly={readonly}
                     serverID={serverID}
                     clientID={clientID}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,7 +43,7 @@ export class SplitHandlerImpl implements SplitHandler {
     }
 
     private closeSplitting(): void {
-        // Split done is true if an object was splitted
+        // Split done is true if an object was split
         // Split also can be called with { enabled: false } without splitting an object
         if (!this.splitDone) {
             this.onSplitDone(null);

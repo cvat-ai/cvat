@@ -25,7 +25,7 @@ context(
             complete: true,
             numberOfPoints: null,
         };
-        const createThridPointsShape = {
+        const createThirdPointsShape = {
             type: 'Shape',
             labelName: labelName,
             pointsMap: [{ x: 400, y: 410 }],
@@ -46,7 +46,7 @@ context(
                 cy.get('#cvat-objects-sidebar-state-item-1').should('contain', '1').and('contain', 'POINTS SHAPE');
                 cy.createPoint(createSecondPointsShape);
                 cy.get('#cvat-objects-sidebar-state-item-2').should('contain', '2').and('contain', 'POINTS SHAPE');
-                cy.createPoint(createThridPointsShape);
+                cy.createPoint(createThirdPointsShape);
                 cy.get('#cvat-objects-sidebar-state-item-3')
                     .should('contain', '3')
                     .and('contain', 'POINTS SHAPE')

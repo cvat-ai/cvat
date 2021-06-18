@@ -316,7 +316,7 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-notification-notice-save-annotations-failed')
                 .should('exist')
                 .within(() => {
-                    cy.get('[data-icon="close"]').click(); // Close the notice.
+                    cy.get('[data-icon="close"]').click({ multiple: true }); // Close the notice.
                 });
             cy.goToTaskList();
             cy.logout(thirdUserName);

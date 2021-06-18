@@ -7,13 +7,16 @@ from io import BytesIO
 
 from diskcache import Cache
 from django.conf import settings
+from tempfile import NamedTemporaryFile
 
+from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType
-
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
+from cvat.apps.engine.utils import md5_hash
 class CacheInteraction:
     def __init__(self, dimension=DimensionType.DIM_2D):
         self._cache = Cache(settings.CACHE_ROOT)
@@ -49,10 +52,12 @@ class CacheInteraction:
         buff = BytesIO()
         upload_dir = {
                 StorageChoice.LOCAL: db_data.get_upload_dirname(),
-                StorageChoice.SHARE: settings.SHARE_ROOT
+                StorageChoice.SHARE: settings.SHARE_ROOT,
+                StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname(),
             }[db_data.storage]
         if hasattr(db_data, 'video'):
             source_path = os.path.join(upload_dir, db_data.video.path)
+
             reader = VideoDatasetManifestReader(manifest_path=db_data.get_manifest_path(),
                 source_path=source_path, chunk_number=chunk_number,
                 chunk_size=db_data.chunk_size, start=db_data.start_frame,
@@ -64,12 +69,43 @@ class CacheInteraction:
                 chunk_number=chunk_number, chunk_size=db_data.chunk_size,
                 start=db_data.start_frame, stop=db_data.stop_frame,
                 step=db_data.get_frame_step())
-            for item in reader:
-                source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
-                images.append((source_path, source_path, None))
-
+            if db_data.storage == StorageChoice.CLOUD_STORAGE:
+                db_cloud_storage = db_data.cloud_storage
+                credentials = Credentials()
+                credentials.convert_from_db({
+                    'type': db_cloud_storage.credentials_type,
+                    'value': db_cloud_storage.credentials,
+                })
+                details = {
+                    'resource': db_cloud_storage.resource,
+                    'credentials': credentials,
+                    'specific_attributes': db_cloud_storage.get_specific_attributes()
+                }
+                cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
+                cloud_storage_instance.initialize_content()
+                for item in reader:
+                    name = f"{item['name']}{item['extension']}"
+                    if name not in cloud_storage_instance:
+                        raise Exception('{} file was not found on a {} storage'.format(name, cloud_storage_instance.name))
+                    with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=name, delete=False) as temp_file:
+                        source_path = temp_file.name
+                        buf = cloud_storage_instance.download_fileobj(name)
+                        temp_file.write(buf.getvalue())
+                        if not (checksum := item.get('checksum', None)):
+                            slogger.glob.warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
+                        if checksum and not md5_hash(source_path) == checksum:
+                            slogger.glob.warning('Hash sums of files {} do not match'.format(name))
+                        images.append((source_path, source_path, None))
+            else:
+                for item in reader:
+                    source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
+                    images.append((source_path, source_path, None))
         writer.save_as_chunk(images, buff)
         buff.seek(0)
+        if db_data.storage == StorageChoice.CLOUD_STORAGE:
+            images = [image_path for image in images if os.path.exists((image_path := image[0]))]
+            for image_path in images:
+                os.remove(image_path)
         return buff, mime_type
 
     def save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):
