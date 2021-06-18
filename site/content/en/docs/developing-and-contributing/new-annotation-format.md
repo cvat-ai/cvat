@@ -1,17 +1,13 @@
 ---
-title: 'Dataset and annotation formats'
-linkTitle: 'Formats'
-weight: 2
+title: 'How to add a new annotation format support'
+linkTitle: 'New annotation format support'
+weight: 10
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats)
 ---
 
-<!-- lint disable heading-style -->
-
-## How to add a new annotation format support<a id="how-to-add"></a>
-
 1. Add a python script to `dataset_manager/formats`
-1. Add an import statement to [registry.py](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py).
-1. Implement some importers and exporters as the format requires.
+2. Add an import statement to [registry.py](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py).
+3. Implement some importers and exporters as the format requires.
 
 Each format is supported by an importer and exporter.
 
