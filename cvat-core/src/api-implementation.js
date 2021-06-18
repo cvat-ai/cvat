@@ -126,10 +126,7 @@
                 users = await serverProxy.users.self();
                 users = [users];
             } else {
-                // get list of active users as default
-                const searchParams = {
-                    is_active: true,
-                };
+                const searchParams = {};
                 for (const key in filter) {
                     if (filter[key] && key !== 'self') {
                         searchParams[key] = filter[key];

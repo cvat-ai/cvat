@@ -4,7 +4,7 @@
 
 import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 
@@ -452,6 +452,7 @@ export interface AnnotationState {
         activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
+        activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
