@@ -91,6 +91,7 @@ export enum Mode {
     INTERACT = 'interact',
     DRAG_CANVAS = 'drag_canvas',
     GROUP = 'group',
+    BUSY = 'busy',
 }
 
 export interface Canvas3dDataModel {
@@ -180,12 +181,13 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             }
         }
 
-        if ([Mode.EDIT].includes(this.data.mode)) {
+        if ([Mode.EDIT, Mode.BUSY].includes(this.data.mode)) {
             return;
         }
 
         if (frameData.number === this.data.imageID) {
             this.data.objects = objectStates;
+            this.data.mode = Mode.BUSY;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
         }
@@ -228,7 +230,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT, Mode.BUSY].includes(this.data.mode)
             || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
         return !isUnable;
     }

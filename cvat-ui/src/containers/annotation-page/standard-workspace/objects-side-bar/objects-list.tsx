@@ -287,6 +287,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
             PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
             CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
+            TILT_UP: keyMap.TILT_UP,
+            TILT_DOWN: keyMap.TILT_DOWN,
+            ROTATE_LEFT: keyMap.ROTATE_LEFT,
+            ROTATE_RIGHT: keyMap.ROTATE_RIGHT,
+            MOVE_UP: keyMap.MOVE_UP,
+            MOVE_DOWN: keyMap.MOVE_DOWN,
+            MOVE_LEFT: keyMap.MOVE_LEFT,
+            MOVE_RIGHT: keyMap.MOVE_RIGHT,
+            ZOOM_IN: keyMap.ZOOM_IN,
+            ZOOM_OUT: keyMap.ZOOM_OUT,
         };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
