@@ -83,6 +83,55 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
     });
 });
 
+Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
+    let status;
+    cy.request({
+        url: '/api/v1/users?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
+        },
+    }).then((response) => {
+        const responceResult = response['body']['results'];
+        for (const user of responceResult) {
+            const userId = user['id'];
+            const userName = user['username'];
+            for (const account of accountsToChangeActiveStatus) {
+                if (userName === account) {
+                    isActive === false ? status = false : status = true;
+                    cy.request({
+                        method: 'PATCH',
+                        url: `/api/v1/users/${userId}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                            body: {
+                                is_active: status,
+                            }
+                    });
+                }
+            }
+        }
+    });
+});
+
+Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, superuserStatus, activeStatus) => {
+    cy.request({
+        url: '/api/v1/users?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
+        },
+    }).then((response) => {
+        const responceResult = response['body']['results'];
+        for (const user of responceResult) {
+            if (userName === user['username']) {
+                expect(staffStatus).to.be.equal(user['is_staff']);
+                expect(superuserStatus).to.be.equal(user['is_superuser']);
+                expect(activeStatus).to.be.equal(user['is_active']);
+            }
+        }
+    });
+});
+
 Cypress.Commands.add(
     'createAnnotationTask',
     (
