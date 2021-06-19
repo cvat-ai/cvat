@@ -103,6 +103,7 @@ export interface Canvas3dDataModel {
     imageSize: Size;
     drawData: DrawData;
     mode: Mode;
+    objectUpdating: boolean;
     exception: Error | null;
     objects: any[];
     groupedObjects: any[];
@@ -141,6 +142,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 height: 0,
                 width: 0,
             },
+            objectUpdating: false,
             objects: [],
             groupedObjects: [],
             image: null,
@@ -180,14 +182,16 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
-
         if ([Mode.EDIT, Mode.BUSY].includes(this.data.mode)) {
             return;
         }
 
         if (frameData.number === this.data.imageID) {
+            if (this.data.objectUpdating) {
+                return;
+            }
             this.data.objects = objectStates;
-            this.data.mode = Mode.BUSY;
+            this.data.objectUpdating = true;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
         }

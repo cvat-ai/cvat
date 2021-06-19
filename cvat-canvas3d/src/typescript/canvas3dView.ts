@@ -1210,6 +1210,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             } else {
                 this.model.mode = Mode.IDLE;
             }
+        } else if (this.model.data.objectUpdating && !this.action.loading) {
+            this.model.data.objectUpdating = false;
         }
     }
 
