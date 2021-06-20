@@ -490,6 +490,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
         self._format_type = format_type
         dm_items = []
 
+        if format_type == "point_cloud":
+            dm_item = self.dm_item(task_data)
+
         is_video = task_data.meta['task']['mode'] == 'interpolation'
         ext = ''
         if is_video:
@@ -554,13 +557,12 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             elif dimension == DimensionType.DIM_3D:
                 attributes = {'frame': frame_data.frame}
                 if format_type == "point_cloud":
-                    if self._user:
-                        attributes["name"] = self._user["name"]
-                        attributes["createdAt"] = self._user["createdAt"]
-                        attributes["updatedAt"] = self._user["updatedAt"]
-                        attributes["labels"] = []
-                        for label in frame_data.labels.values():
-                            attributes["labels"].append({"label_id": label.id, "name": label.name, "color": label.color})
+                    attributes["name"] = self._user["name"]
+                    attributes["createdAt"] = self._user["createdAt"]
+                    attributes["updatedAt"] = self._user["updatedAt"]
+                    attributes["labels"] = []
+                    for label in frame_data.labels.values():
+                        attributes["labels"].append({"label_id": label.id, "name": label.name, "color": label.color})
 
                 dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1],
                                                annotations=dm_anno, pcd=dm_image[0], related_images=dm_image[1],
@@ -568,7 +570,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
             dm_items.append(dm_item)
 
-        self._items = dm_items
+        self._items = dm_items if dm_items else dm_item
 
     def __iter__(self):
         for item in self._items:
@@ -579,6 +581,22 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
     def categories(self):
         return self._categories
+
+    def dm_item(self, task_data):
+        attributes = {
+            "name": self._user["name"],
+            "createdAt": self._user["createdAt"],
+            "updatedAt": self._user["updatedAt"],
+            "labels": []}
+        index = 0
+        for _, label in task_data.meta['task']['labels']:
+            attributes["labels"].append({"label_id": index, "name": label["name"], "color": label["color"]})
+            index += 1
+
+        return datumaro.DatasetItem(id="-1",
+                                       annotations=[], pcd=None, related_images=[],
+                                       attributes=attributes)
+
 
     @staticmethod
     def _load_categories(cvat_anno, dimension):
@@ -591,7 +609,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             user_info = {"name": cvat_anno.meta['task']['owner']['username'],
                          "createdAt": cvat_anno.meta['task']['created'],
                          "updatedAt": cvat_anno.meta['task']['updated']}
-
         index = 0
         for _, label in cvat_anno.meta['task']['labels']:
             attributes = []
@@ -658,7 +675,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             anno_label = map_label(shape_obj.label)
             anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
             anno_attr['occluded'] = shape_obj.occluded
-
 
             if hasattr(shape_obj, 'track_id'):
                 anno_attr['track_id'] = shape_obj.track_id
