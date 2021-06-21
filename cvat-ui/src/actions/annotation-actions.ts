@@ -7,7 +7,7 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-import { RectDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
+import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -753,11 +753,6 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                 Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
-            let offset = 0;
-            if (job.task.dimension === DimensionType.DIM_3D) {
-                offset = 100;
-            }
-
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
@@ -769,8 +764,8 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                     minZ,
                     maxZ,
                     curZ: maxZ,
-                    changeTime: currentTime + delay + offset,
-                    delay: delay + offset,
+                    changeTime: currentTime + delay,
+                    delay,
                 },
             });
             dispatch(getPredictionsAsync());
@@ -1139,6 +1134,7 @@ export function rememberObject(createParams: {
     activeShapeType?: ShapeType;
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
+    activeCuboidDrawingMethod?: CuboidDrawingMethod;
 }): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
@@ -1485,6 +1481,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 activeShapeType,
                 activeNumOfPoints,
                 activeRectDrawingMethod,
+                activeCuboidDrawingMethod,
             },
         } = getStore().getState().annotation;
 
@@ -1539,6 +1536,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
+                cuboidDrawingMethod: activeCuboidDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),

@@ -19,7 +19,7 @@ from .registry import dm_env, exporter, importer
 def _export_images(dst_file, task_data, save_images=False):
 
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
-        task_data, include_images=save_images, format_type='point_cloud', dimensions=DimensionType.DIM_3D), env=dm_env)
+        task_data, include_images=save_images, format_type='point_cloud', dimension=DimensionType.DIM_3D), env=dm_env)
 
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'point_cloud', save_images=save_images)
