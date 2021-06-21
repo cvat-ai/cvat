@@ -225,7 +225,6 @@ class _DbTestBase(APITestCase):
                                 "spec_id": spec_id,
                                 "value": value,
                             })
-
         response = self._put_api_v1_task_id_annotations(task["id"], tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -263,7 +262,6 @@ class _DbTestBase(APITestCase):
                                 "spec_id": spec_id,
                                 "value": value,
                             })
-
         response = self._put_api_v1_job_id_annotations(job_id, tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -969,12 +967,12 @@ class TaskDumpUploadTest(_DbTestBase):
         for dump_format, include_images in itertools.product(dump_formats, include_images_params):
             if dump_format.ENABLED:
                 dump_format_name = dump_format.DISPLAY_NAME
-                with self.subTest():
+                with self.subTest(dump_format_name):
                     if dump_format_name in [
-                        "MOT 1.1", # issue #2925
+                        "MOT 1.1",
                         "Datumaro 1.0", # not uploaded
                         "CamVid 1.0", # issue #2840 and changed points values
-                        "MOTS PNG 1.0", # issue #2925 and changed points values
+                        "MOTS PNG 1.0", # changed points values
                         "Segmentation mask 1.1", # changed points values
                         "ICDAR Segmentation 1.0", # changed points values
                     ]:
