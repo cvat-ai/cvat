@@ -9,7 +9,12 @@
     ],
     "exclude": [
         "**/3rdparty/*",
-        "**/tests/*"
+        "**/tests/*",
+        "cvat-ui/src/actions/models-actions.ts",
+        "cvat-ui/src/actions/boundaries-actions.ts",
+        "cvat-ui/src/containers/models-page/models-page.tsx",
+        "cvat-ui/src/reducers/models-reducer.ts",
+        "cvat-ui/src/utils/platform-checker.ts"
     ],
     "parser-plugins": [
         "typescript"
