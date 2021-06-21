@@ -649,8 +649,19 @@ class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
+    author_id = serializers.SerializerMethodField('_get_user_id', allow_null=True, required=False,
+                                                  default=None)
     group = serializers.IntegerField(min_value=0, allow_null=True)
     source = serializers.CharField(default = 'manual')
+
+    def _get_user_id(self, obj):
+        request = self.context.get('request', None)
+        if request:
+            return request.user.id
+
+    class Meta:
+        model = models.Annotation
+        fields = ('author_id')
 
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,

@@ -689,7 +689,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 )
             else:
                 data = dm.task.get_task_data(pk)
-                serializer = LabeledDataSerializer(data=data)
+                serializer = LabeledDataSerializer(data=data, context={'request': request})
                 if serializer.is_valid(raise_exception=True):
                     return Response(serializer.data)
         elif request.method == 'PUT':
@@ -703,7 +703,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     format_name=format_name,
                 )
             else:
-                serializer = LabeledDataSerializer(data=request.data)
+                serializer = LabeledDataSerializer(data=request.data, context={'request': request})
                 if serializer.is_valid(raise_exception=True):
                     data = dm.task.put_task_data(pk, serializer.data)
                     return Response(data)
@@ -715,7 +715,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(data=request.data, context={'request': request})
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_task_data(pk, serializer.data, action)
@@ -862,7 +862,7 @@ class JobViewSet(viewsets.GenericViewSet,
                     format_name=format_name
                 )
             else:
-                serializer = LabeledDataSerializer(data=request.data)
+                serializer = LabeledDataSerializer(data=request.data, context={'request': request})
                 if serializer.is_valid(raise_exception=True):
                     try:
                         data = dm.task.put_job_data(pk, serializer.data)
@@ -877,7 +877,7 @@ class JobViewSet(viewsets.GenericViewSet,
             if action not in dm.task.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
-            serializer = LabeledDataSerializer(data=request.data)
+            serializer = LabeledDataSerializer(data=request.data, context={'request': request})
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_job_data(pk, serializer.data, action)

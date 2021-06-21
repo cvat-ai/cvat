@@ -11,7 +11,6 @@ from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.utils import timezone
 
 
 class SafeCharField(models.CharField):
@@ -437,6 +436,7 @@ class Annotation(models.Model):
     group = models.PositiveIntegerField(null=True)
     source = models.CharField(max_length=16, choices=SourceType.choices(),
         default=str(SourceType.MANUAL), null=True)
+    author = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     date_modified = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
