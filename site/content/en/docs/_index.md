@@ -53,7 +53,7 @@ This section contains documents for system administrators.
 
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fa-terminal" title="[Developing and contributing](/docs/developing-and-contributing/)" %}}
+{{% blocks/feature icon="fa-terminal" title="[Contributing](/docs/contributing/)" %}}
 
 This section contains documents for developers.
 

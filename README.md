@@ -17,7 +17,7 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 
 ## Documentation
 
-- [Contributing](https://openvinotoolkit.github.io/cvat/docs/developing-and-contributing/contributing/)
+- [Contributing](https://openvinotoolkit.github.io/cvat/docs/contributing/)
 - [Installation guide](https://openvinotoolkit.github.io/cvat/docs/administration/basics/installation/)
 - [Manual](https://openvinotoolkit.github.io/cvat/docs/manual/)
 - [Django REST API documentation](https://openvinotoolkit.github.io/cvat/docs/administration/basics/rest_api_guide/)
