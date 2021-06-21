@@ -472,7 +472,7 @@ class TrackManager(ObjectManager):
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
                 points = None
-                if shape1["outside"]:
+                if shape0["outside"] and shape1["outside"]:
                     points = np.asarray(shape0["points"])
                 else:
                     points = shape0["points"] + diff * offset
@@ -698,7 +698,7 @@ class TrackManager(ObjectManager):
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
                 points = None
-                if shape1["outside"]:
+                if shape0["outside"] and shape1["outside"]:
                     points = np.asarray(shape0["points"])
                 else:
                     points = interpolate_position(shape0, shape1, offset)
