@@ -11,7 +11,7 @@ const GITTER_PUBLIC_URL = 'https://gitter.im/opencv-cvat/public';
 const FORUM_URL = 'https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit';
 const GITHUB_URL = 'https://github.com/openvinotoolkit/cvat';
 const GITHUB_IMAGE_URL =
-    'https://raw.githubusercontent.com/openvinotoolkit/cvat/develop/cvat/apps/documentation/static/documentation/images/cvat.jpg';
+    'https://github.com/openvinotoolkit/cvat/raw/develop/site/content/en/images/cvat.jpg';
 const SHARE_MOUNT_GUIDE_URL =
     'https://openvinotoolkit.github.io/cvat/docs/administration/basics/installation/#share-path';
 const NUCLIO_GUIDE =
