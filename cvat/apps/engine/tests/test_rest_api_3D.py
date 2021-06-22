@@ -113,7 +113,8 @@ class _DbTestBase(APITestCase):
         return task
 
     @staticmethod
-    def _get_tmp_annotation(task, tmp_annotations):
+    def _get_tmp_annotation(task, annotation):
+        tmp_annotations = copy.deepcopy(annotation)
         for item in tmp_annotations:
             if item in ["tags", "shapes", "tracks"]:
                 for index_elem, _ in enumerate(tmp_annotations[item]):
@@ -397,7 +398,7 @@ class Task3DTest(_DbTestBase):
                         task_ann.init_from_db()
                         task_shape = task_ann.data["shapes"][0]
                         task_shape.pop("id")
-                        self.assertEqual(task_shape, self.cuboid_example["shapes"][0])
+                        self.assertEqual(task_shape, annotation["shapes"][0])
                         self._remove_annotations(task_id)
 
     def test_api_v1_update_annotation_in_task(self):
@@ -463,7 +464,8 @@ class Task3DTest(_DbTestBase):
                     if len(task_ann.data["shapes"]):
                         task_shape = task_ann.data["shapes"][0]
                         task_shape.pop("id")
-                        self.assertEqual(task_shape, self.cuboid_example["shapes"][0])
+                        self.assertEqual(task_shape, annotation["shapes"][0])
+                        self._remove_annotations(task_id)
 
     def test_api_v1_update_annotation_in_job(self):
         with TestDir() as test_dir:
