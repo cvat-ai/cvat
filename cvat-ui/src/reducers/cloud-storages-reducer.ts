@@ -4,6 +4,7 @@
 
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
+import { CloudStorage } from 'reducers/interfaces';
 import { CloudStoragesState } from './interfaces';
 
 const defaultState: CloudStoragesState = {
@@ -31,7 +32,7 @@ const defaultState: CloudStoragesState = {
             error: '',
         },
         updates: {
-            cloudstorageId: null,
+            cloudStorageID: null,
             error: '',
         },
         deletes: {},
@@ -58,7 +59,10 @@ export default (
                 initialized: true,
                 fetching: false,
                 count,
-                gettingQuery: query,
+                gettingQuery: {
+                    ...defaultState.gettingQuery,
+                    ...query,
+                },
                 current: array,
             };
         }
@@ -105,39 +109,51 @@ export default (
                 },
             };
         }
-        // case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE: {
-        //     return {
-        //         ...state,
-        //     };
-        // }
-        // case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS: {
-        //     return {
-        //         ...state,
-        //         current: state.current.map(
-        //             (cloudStorage: CloudStorage): CloudStorage => {
-        //                 if (cloudStorage.id === action.payload.cloudStorage.id) {
-        //                     return action.payload.cloudStorage;
-        //                 }
+        case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        cloudStorageID: null,
+                        error: '',
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        cloudStorageID: action.payload.cloudStorage.id,
+                        error: '',
+                    },
+                },
+                current: state.current.map(
+                    (cloudStorage: CloudStorage): CloudStorage => {
+                        if (cloudStorage.id === action.payload.cloudStorage.id) {
+                            return cloudStorage;
+                        }
 
-        //                 return cloudStorage;
-        //             },
-        //         ),
-        //     };
-        // }
-        // case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED: {
-        //     return {
-        //         ...state,
-        //         current: state.current.map(
-        //             (cloudStorage: CloudStorage): CloudStorage => {
-        //                 if (cloudStorage.id === action.payload.cloudStorage.id) {
-        //                     return action.payload.cloudStorage;
-        //                 }
-
-        //                 return cloudStorage;
-        //             },
-        //         ),
-        //     };
-        // }
+                        return cloudStorage;
+                    },
+                ),
+            };
+        }
+        case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...state.activities.updates,
+                        error: action.payload.error.toString(),
+                    },
+                },
+            };
+        }
         case CloudStorageActionTypes.DELETE_CLOUD_STORAGE: {
             const { cloudStorageID } = action.payload;
             const { deletes } = state.activities;

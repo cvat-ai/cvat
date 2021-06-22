@@ -5,7 +5,7 @@
 import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { CloudStoragesQuery } from 'reducers/interfaces';
+import { CloudStoragesQuery, CloudStorage } from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -22,9 +22,9 @@ export enum CloudStorageActionTypes {
     DELETE_CLOUD_STORAGE = 'DELETE_CLOUD_STORAGE',
     DELETE_CLOUD_STORAGE_SUCCESS = 'DELETE_CLOUD_STORAGE_SUCCESS',
     DELETE_CLOUD_STORAGE_FAILED = 'DELETE_CLOUD_STORAGE_FAILED',
-    // UPDATE_CLOUD_STORAGE = 'UPDATE_CLOUD_STORAGE',
-    // UPDATE_CLOUD_STORAGE_SUCCESS = 'UPDATE_CLOUD_STORAGE_SUCCESS',
-    // UPDATE_CLOUD_STORAGE_FAILED = 'UPDATE_CLOUD_STORAGE_FAILED',
+    UPDATE_CLOUD_STORAGE = 'UPDATE_CLOUD_STORAGE',
+    UPDATE_CLOUD_STORAGE_SUCCESS = 'UPDATE_CLOUD_STORAGE_SUCCESS',
+    UPDATE_CLOUD_STORAGE_FAILED = 'UPDATE_CLOUD_STORAGE_FAILED',
     LOAD_CLOUD_STORAGE_CONTENT = 'LOAD_CLOUD_STORAGE_CONTENT',
     LOAD_CLOUD_STORAGE_CONTENT_FAILED = 'LOAD_CLOUD_STORAGE_CONTENT_FAILED',
     LOAD_CLOUD_STORAGE_CONTENT_SUCCESS = 'LOAD_CLOUD_STORAGE_CONTENT_SUCCESS',
@@ -32,14 +32,14 @@ export enum CloudStorageActionTypes {
 
 const cloudStoragesActions = {
     getCloudStorages: () => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGES),
-    getCloudStoragesSuccess: (array: any[], previews: string[], count: number, query: CloudStoragesQuery) =>
+    getCloudStoragesSuccess: (array: any[], previews: string[], count: number, query: Partial<CloudStoragesQuery>) =>
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS, {
             array,
             previews,
             count,
             query,
         }),
-    getCloudStoragesFailed: (error: any, query: CloudStoragesQuery) =>
+    getCloudStoragesFailed: (error: any, query: Partial<CloudStoragesQuery>) =>
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED, { error, query }),
     deleteCloudStorage: (cloudStorageID: number) =>
         createAction(CloudStorageActionTypes.DELETE_CLOUD_STORAGE, { cloudStorageID }),
@@ -52,11 +52,17 @@ const cloudStoragesActions = {
         createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_SUCCESS, { cloudStorageID }),
     createCloudStorageFailed: (error: any) =>
         createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED, { error }),
+    updateCloudStorage: (cloudStorageID: number) =>
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE, { cloudStorageID }),
+    updateCloudStorageSuccess: (cloudStorage: CloudStorage) =>
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS, { cloudStorage }),
+    updateCloudStorageFailed: (cloudStorage: CloudStorage, error: any) =>
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED, { cloudStorage, error }),
 };
 
 export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;
 
-export function getCloudStoragesAsync(query: CloudStoragesQuery): ThunkAction {
+export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(cloudStoragesActions.getCloudStorages());
 
@@ -114,6 +120,20 @@ export function createCloudStorageAsync(data: any): ThunkAction {
             dispatch(cloudStoragesActions.createCloudStorageSuccess(savedCloudStorage.id));
         } catch (error) {
             dispatch(cloudStoragesActions.createCloudStorageFailed(error));
+        }
+    };
+}
+
+export function updateCloudStorageAsync(data: any): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const cloudStorageInstance = new cvat.classes.CloudStorage(data);
+
+        dispatch(cloudStoragesActions.updateCloudStorage(data.id));
+        try {
+            const savedCloudStorage = await cloudStorageInstance.save();
+            dispatch(cloudStoragesActions.updateCloudStorageSuccess(savedCloudStorage));
+        } catch (error) {
+            dispatch(cloudStoragesActions.updateCloudStorageFailed(data, error));
         }
     };
 }
