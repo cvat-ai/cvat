@@ -21,6 +21,7 @@ function CreateCloudStorageContent(props:any): JSX.Element {
     const formRef = React.createRef<FormInstance>();
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
+    // const [specificAttributes, setSpecificAttributes] = useState<string | null>(null);
     const dispatch = useDispatch();
     const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
 
@@ -46,6 +47,10 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                 ...cloudStorageData,
                 ...formValues,
             };
+            if (typeof formValues.range !== undefined) {
+                delete cloudStorageData.range;
+                cloudStorageData.speciffic_attributes = `range=${formValues.range}`;
+            }
             dispatch(createCloudStorageAsync(cloudStorageData));
         }
     };
@@ -148,6 +153,13 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                 </Select>
             </Form.Item>
             {credentialsBlok()}
+            <Form.Item
+                label='Range'
+                name='range'
+                tooltip='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
+            >
+                <Input maxLength={14} />
+            </Form.Item>
         </>
     );
 
