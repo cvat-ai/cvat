@@ -437,24 +437,6 @@ class TrackManager(ObjectManager):
                 obj["interpolated_shapes"].append(shape)
 
     @staticmethod
-    def normalize_shape(shape):
-        points = list(shape["points"])
-        if len(points) == 2:
-            points.extend(points) # duplicate points for single point case
-        points = np.asarray(points).reshape(-1, 2)
-        broken_line = geometry.LineString(points)
-        points = []
-        for off in range(0, 100, 1):
-            p = broken_line.interpolate(off / 100, True)
-            points.append(p.x)
-            points.append(p.y)
-
-        shape = copy(shape)
-        shape["points"] = points
-
-        return shape
-
-    @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
         def copy_shape(source, frame, points=None):
             copied = deepcopy(source)
