@@ -1,7 +1,7 @@
 ---
 title: 'Documentation'
 linkTitle: 'Documentation'
-description: 'Welcome to the documentation of Computer Vision Annotation Tools!'
+description: 'Welcome to the documentation of Computer Vision Annotation Tool.'
 no_list: true
 menu:
   main:
