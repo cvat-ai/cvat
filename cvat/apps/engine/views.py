@@ -291,6 +291,75 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+    @swagger_auto_schema(method='get', operation_summary='Export project as a dataset in a specific format',
+        manual_parameters=[
+            openapi.Parameter('format', openapi.IN_QUERY,
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('filename', openapi.IN_QUERY,
+                description="Desired output file name",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('action', in_=openapi.IN_QUERY,
+                description='Used to start downloading process after annotation file had been created',
+                type=openapi.TYPE_STRING, required=False, enum=['download'])
+        ],
+        responses={'202': openapi.Response(description='Exporting has been started'),
+            '201': openapi.Response(description='Output file is ready for downloading'),
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
+        }
+    )
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        url_path='dataset')
+    def dataset_export(self, request, pk):
+        db_project = self.get_object() # force to call check_object_permissions
+
+        format_name = request.query_params.get("format", "")
+        return _export_annotations(db_instance=db_project,
+            rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
+            request=request,
+            action=request.query_params.get("action", "").lower(),
+            callback=dm.views.export_project_as_dataset,
+            format_name=format_name,
+            filename=request.query_params.get("filename", "").lower(),
+        )
+
+    @swagger_auto_schema(method='get', operation_summary='Method allows to download project annotations',
+        manual_parameters=[
+            openapi.Parameter('format', openapi.IN_QUERY,
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('filename', openapi.IN_QUERY,
+                description="Desired output file name",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('action', in_=openapi.IN_QUERY,
+                description='Used to start downloading process after annotation file had been created',
+                type=openapi.TYPE_STRING, required=False, enum=['download'])
+        ],
+        responses={
+            '202': openapi.Response(description='Dump of annotations has been started'),
+            '201': openapi.Response(description='Annotations file is ready to download'),
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
+        }
+    )
+    @action(detail=True, methods=['GET'],
+        serializer_class=LabeledDataSerializer)
+    def annotations(self, request, pk):
+        db_project = self.get_object() # force to call check_object_permissions
+        format_name = request.query_params.get('format')
+        if format_name:
+            return _export_annotations(db_instance=db_project,
+                rq_id="/api/v1/projects/{}/annotations/{}".format(pk, format_name),
+                request=request,
+                action=request.query_params.get("action", "").lower(),
+                callback=dm.views.export_project_annotation,
+                format_name=format_name,
+                filename=request.query_params.get("filename", "").lower(),
+            )
+        else:
+            return Response(status=500)
+
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -553,7 +622,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if request.method == 'GET':
             format_name = request.query_params.get('format')
             if format_name:
-                return _export_annotations(db_task=db_task,
+                return _export_annotations(db_instance=db_task,
                     rq_id="/api/v1/tasks/{}/annotations/{}".format(pk, format_name),
                     request=request,
                     action=request.query_params.get("action", "").lower(),
@@ -676,7 +745,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         db_task = self.get_object() # force to call check_object_permissions
 
         format_name = request.query_params.get("format", "")
-        return _export_annotations(db_task=db_task,
+        return _export_annotations(db_instance=db_task,
             rq_id="/api/v1/tasks/{}/dataset/{}".format(pk, format_name),
             request=request,
             action=request.query_params.get("action", "").lower(),
@@ -1048,7 +1117,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
 
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _export_annotations(db_task, rq_id, request, format_name, action, callback, filename):
+def _export_annotations(db_instance, rq_id, request, format_name, action, callback, filename):
     if action not in {"", "download"}:
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
@@ -1065,7 +1134,7 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
 
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
-        last_task_update_time = timezone.localtime(db_task.updated_date)
+        last_task_update_time = timezone.localtime(db_instance.updated_date)
         request_time = rq_job.meta.get('request_time', None)
         if request_time is None or request_time < last_task_update_time:
             rq_job.cancel()
@@ -1079,9 +1148,11 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
                     timestamp = datetime.strftime(last_task_update_time,
                         "%Y_%m_%d_%H_%M_%S")
                     filename = filename or \
-                        "task_{}-{}-{}{}".format(
-                        db_task.name, timestamp,
-                        format_name, osp.splitext(file_path)[1])
+                        "{}_{}-{}-{}{}".format(
+                            "project" if isinstance(db_instance, models.Project) else "task",
+                            db_instance.name, timestamp,
+                            format_name, osp.splitext(file_path)[1]
+                        )
                     return sendfile(request, file_path, attachment=True,
                         attachment_filename=filename.lower())
                 else:
@@ -1102,9 +1173,9 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
     except Exception:
         server_address = None
 
-    ttl = dm.views.CACHE_TTL.total_seconds()
+    ttl = (dm.views.PROJECT_CACHE_TTL if isinstance(db_instance, Project) else dm.views.TASK_CACHE_TTL).total_seconds()
     queue.enqueue_call(func=callback,
-        args=(db_task.id, format_name, server_address), job_id=rq_id,
+        args=(db_instance.id, format_name, server_address), job_id=rq_id,
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
