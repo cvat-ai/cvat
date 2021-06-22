@@ -111,6 +111,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
         };
         this.action = {
+            loading: false,
+            oldState: '',
             scan: null,
             selectable: true,
             frameCoordinates: {
@@ -215,6 +217,35 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         },
                     }),
                 );
+            }
+            if (this.model.mode === Mode.DRAW) {
+                const { x, y, z } = this.cube.perspective.position;
+                const { x: width, y: height, z: depth } = this.cube.perspective.scale;
+                const { x: rotationX, y: rotationY, z: rotationZ } = this.cube.perspective.rotation;
+                const points = [x, y, z, rotationX, rotationY, rotationZ, width, height, depth, 0, 0, 0, 0, 0, 0, 0];
+                const initState = this.model.data.drawData.initialState;
+                let label;
+                if (initState) {
+                    ({ label } = initState);
+                }
+                this.dispatchEvent(
+                    new CustomEvent('canvas.drawn', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            state: {
+                                ...initState,
+                                shapeType: 'cuboid',
+                                frame: this.model.data.imageID,
+                                points,
+                                label,
+                            },
+                            continue: undefined,
+                            duration: 0,
+                        },
+                    }),
+                );
+                this.action.oldState = Mode.DRAW;
             }
         });
 
@@ -718,6 +749,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const object = this.model.data.objects[i];
                 this.setupObject(object, true);
             }
+            this.action.loading = false;
         }
     }
 
@@ -735,6 +767,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
         if (reason === UpdateReasons.IMAGE_CHANGED) {
             if (!model.data.image) return;
+            this.views.perspective.renderer.dispose();
+            this.model.mode = Mode.BUSY;
+            this.action.loading = true;
             const loader = new PCDLoader();
             const objectURL = URL.createObjectURL(model.data.image.imageData);
             this.clearScene();
@@ -1167,6 +1202,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             } finally {
                 this.action.detachCam = false;
             }
+        }
+        if (this.model.mode === Mode.BUSY && !this.action.loading) {
+            if (this.action.oldState !== '') {
+                this.model.mode = this.action.oldState;
+                this.action.oldState = '';
+            } else {
+                this.model.mode = Mode.IDLE;
+            }
+        } else if (this.model.data.objectUpdating && !this.action.loading) {
+            this.model.data.objectUpdating = false;
         }
     }
 
@@ -1731,9 +1776,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             true,
         );
         if (intersectsBox.length !== 0) {
-            // const [state] = this.model.data.objects.filter(
-            //     (_state: any): boolean => _state.clientID === Number(this.model.data.selected[view].name),
-            // );
             if (state.pinned) return;
             this.action.translation.helper = viewType.rayCaster.mouseVector.clone();
             this.action.translation.inverseMatrix = intersectsBox[0].object.parent.matrixWorld.invert();
