@@ -243,7 +243,7 @@ def _create_thread(tid, data, isImport=False):
             credentials = Credentials()
             credentials.convert_from_db({
                'type': db_cloud_storage.credentials_type,
-               'value': db_cloud_storage.value,
+               'value': db_cloud_storage.credentials,
             })
 
             details = {
@@ -253,7 +253,8 @@ def _create_thread(tid, data, isImport=False):
             }
             cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
             cloud_storage_instance.download_file(manifest_file[0], db_data.get_manifest_path())
-            cloud_storage_instance.download_file(media['image'][0], os.path.join(upload_dir, media['image'][0]))
+            first_sorted_media_image = sorted(media['image'])[0]
+            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
 
     av_scan_paths(upload_dir)
 

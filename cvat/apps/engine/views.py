@@ -11,7 +11,7 @@ import traceback
 import uuid
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp, NamedTemporaryFile
+from tempfile import mkstemp, TemporaryDirectory
 
 import cv2
 from django.db.models.query import Prefetch
@@ -1176,7 +1176,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if (provider_type := self.request.query_params.get('provider_type', None)):
+        provider_type = self.request.query_params.get('provider_type', None)
+        if provider_type:
             if provider_type in CloudProviderChoice.list():
                 return queryset.filter(provider_type=provider_type)
             raise ValidationError('Unsupported type of cloud provider')
@@ -1278,9 +1279,10 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             storage_files = storage.content
 
             manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
-            with NamedTemporaryFile(mode='w+b', suffix='manifest', prefix='cvat') as tmp_manifest:
-                storage.download_file(manifest_path, tmp_manifest.name)
-                manifest = ImageManifestManager(tmp_manifest.name)
+            with TemporaryDirectory(suffix='manifest', prefix='cvat') as tmp_dir:
+                tmp_manifest_path = os.path.join(tmp_dir, 'manifest.jsonl')
+                storage.download_file(manifest_path, tmp_manifest_path)
+                manifest = ImageManifestManager(tmp_manifest_path)
                 manifest.init_index()
                 manifest_files = manifest.data
             content = {f:[] for f in set(storage_files) | set(manifest_files)}
