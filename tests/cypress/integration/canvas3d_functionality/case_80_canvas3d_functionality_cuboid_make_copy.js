@@ -14,7 +14,6 @@ context('Canvas 3D functionality. Make a copy.', () => {
     };
     const keyCodeV = 86;
     const keyCodeC = 67;
-    const keyCodeCtrl = 17;
 
     before(() => {
         cy.openTask(taskName)
