@@ -22,6 +22,7 @@
     "actions_users/**/*.js",
     "actions_projects/**/*.js",
     "canvas3d_functionality/*.js",
+    "models/*.js",
     "remove_users_tasks_projects.js"
   ]
 }
