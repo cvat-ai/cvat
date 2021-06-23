@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import sys
 import os.path as osp
 from collections import namedtuple
 from typing import Any, Callable, Dict, List, Mapping, NamedTuple, OrderedDict, Tuple, Union
@@ -12,7 +13,7 @@ from django.utils import timezone
 
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, LabeledShape, ShapeType, Project, Task, Label
+from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
 
@@ -478,8 +479,8 @@ class TaskData(InstanceLabelData):
 
 class ProjectData(InstanceLabelData):
     # TODO: strictify
-    LabledShape = NamedTuple('LabledShape', [('type',Any), ('frame',Any), ('label',Any), ('points',Any), ('occluded',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any)])
-    LabledShape.__new__.__defaults__ = (0,0)
+    LabeledShape = NamedTuple('LabledShape', [('type',Any), ('frame',Any), ('label',Any), ('points',Any), ('occluded',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any)])
+    LabeledShape.__new__.__defaults__ = (0,0)
     TrackedShape = NamedTuple('TrackedShape',
         [('type',Any), ('frame',Any), ('points',Any), ('occluded',Any), ('outside',Any), ('keyframe',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any), ('label',Any), ('track_id',Any)],
     )
@@ -605,7 +606,7 @@ class ProjectData(InstanceLabelData):
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
 
-    def _export_tracked_shape(self, shape: dict, task_id: int) -> TrackedShape:
+    def _export_tracked_shape(self, shape: dict, task_id: int):
         return ProjectData.TrackedShape(
             type=shape["type"],
             frame=self.abs_frame_id(task_id, shape["frame"]),
@@ -621,7 +622,7 @@ class ProjectData(InstanceLabelData):
             attributes=self._export_attributes(shape["attributes"]),
         )
 
-    def _export_labeled_shape(self, shape: dict, task_id: int) -> LabeledShape:
+    def _export_labeled_shape(self, shape: dict, task_id: int):
         return ProjectData.LabeledShape(
             type=shape["type"],
             label=self._get_label_name(shape["label_id"]),
@@ -634,7 +635,7 @@ class ProjectData(InstanceLabelData):
             attributes=self._export_attributes(shape["attributes"]),
         )
 
-    def _export_tag(self, tag: dict, task_id: int) -> Tag:
+    def _export_tag(self, tag: dict, task_id: int):
         return ProjectData.Tag(
             frame=self.abs_frame_id(task_id, tag["frame"]),
             label=self._get_label_name(tag["label_id"]),
@@ -859,7 +860,8 @@ class CVATProjectDataExtractor(datumaro.SourceExtractor):
                 dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, project_data)
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
-                annotation=dm_anno, image=dm_image, subset=frame_data.subset,
+                annotations=dm_anno, image=dm_image,
+                subset=get_defaulted_subset(frame_data.subset, project_data.subsets),
                 attributes={'frame': frame_data.frame}
             )
             dm_items.append(dm_item)
@@ -911,6 +913,22 @@ def CVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_image
 
 class CvatImportError(Exception):
     pass
+
+
+def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
+    if subset:
+        return subset
+    else:
+        if datumaro.DEFAULT_SUBSET_NAME not in subsets:
+            return datumaro.DEFAULT_SUBSET_NAME
+        else:
+            i = 1
+            while i < sys.maxsize:
+                if f'{datumaro.DEFAULT_SUBSET_NAME}_{i}' not in subsets:
+                    return f'{datumaro.DEFAULT_SUBSET_NAME}_{i}'
+                i += 1
+            raise Exception('Cannot find deafoult name for subset')
+
 
 def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label):
     item_anno = []

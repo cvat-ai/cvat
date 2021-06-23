@@ -21,7 +21,7 @@ def export_project(project_id, dst_file, format_name,
     # more dump request received at the same time:
     # https://github.com/opencv/cvat/issues/217
     with transaction.atomic():
-        project = TaskAnnotation(project_id)
+        project = ProjectAnnotation(project_id)
         project.init_from_db()
 
     exporter = make_exporter(format_name)
