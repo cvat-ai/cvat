@@ -1,10 +1,8 @@
-<!--
- Copyright (C) 2021 Intel Corporation
-
- SPDX-License-Identifier: MIT
--->
-
-# Serverless tutorial
+---
+title: 'Serverless tutorial'
+linkTitle: 'Serverless tutorial'
+weight: 100
+---
 
 ## Introduction
 
@@ -138,7 +136,7 @@ and check that you can see SiamMask in the list. If you cannot by a reason it
 means that there are some problems. Go to one of our public channels and ask
 for help.
 
-![Models list with SiamMask](images/models_list_with_siammask.png)
+![Models list with SiamMask](/images/models_list_with_siammask.png)
 
 After that go to http://localhost:8080/tasks/create and create an annotation
 task with [the video file][vtest-avi]. You can choose any task name, any
@@ -146,17 +144,17 @@ labels, and even another video file if you like. In this case `Remote sources`
 option was used to specify the video file. Press submit button at the end to
 finish the process.
 
-![Create a video annotation task](images/create_video_task.png)
+![Create a video annotation task](/images/create_video_task.png)
 
 Open the task and use [AI tools][cvat-ai-tools-user-guide] to start tracking
 an object. Draw a bounding box around the object and it will be tracked during
 a couple of frames forward.
 
-![Start tracking an object](images/start_tracking.png)
+![Start tracking an object](/images/start_tracking.png)
 
 Finally you will get bounding boxes for 10 frames by default.
 
-![SiamMask results](images/siammask_results.gif)
+![SiamMask results](/images/siammask_results.gif)
 
 ### Object detection using YOLO-v3
 
@@ -247,7 +245,7 @@ python demo/demo.py --config-file configs/COCO-Detection/retinanet_R_101_FPN_3x.
     --input 1920px-Cat_poster_1.jpg --opts MODEL.WEIGHTS model_final_971ab9.pkl MODEL.DEVICE cpu
 ```
 
-![Cats detected by RetinaNet R101](images/detectron2_detected_cats.jpg)
+![Cats detected by RetinaNet R101](/images/detectron2_detected_cats.jpg)
 
 Next step is to minimize `demo/demo.py` script and keep code which is necessary to load,
 run, and interpret output of the model only. Let's hard code parameters and remove
