@@ -471,11 +471,7 @@ class TrackManager(ObjectManager):
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
-                points = None
-                if shape0["outside"] and shape1["outside"]:
-                    points = np.asarray(shape0["points"])
-                else:
-                    points = shape0["points"] + diff * offset
+                points = shape0["points"] + diff * offset
 
                 shapes.append(copy_shape(shape0, frame, points.tolist()))
 
@@ -697,11 +693,7 @@ class TrackManager(ObjectManager):
             distance = shape1["frame"] - shape0["frame"]
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
-                points = None
-                if shape0["outside"] and shape1["outside"]:
-                    points = np.asarray(shape0["points"])
-                else:
-                    points = interpolate_position(shape0, shape1, offset)
+                points = interpolate_position(shape0, shape1, offset)
 
                 shapes.append(copy_shape(shape0, frame, points))
 
