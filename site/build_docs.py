@@ -34,7 +34,7 @@ def generate_versioning_config(filename, versions, url_prefix=''):
 
 def generate_docs(repo, output_dir, tags):
     def run_hugo(content_loc, destination_dir):
-        subprocess.run([
+        subprocess.run([ # nosec
                 'hugo',
                 '--destination',
                 destination_dir,
