@@ -166,3 +166,4 @@ class TrackManagerTest(TestCase):
         }
 
         self._check_interpolation(track)
+

@@ -608,8 +608,8 @@ class CloudStorage(models.Model):
         return os.path.join(self.get_storage_dirname(), "storage.log")
 
     def get_specific_attributes(self):
-        attributes = self.specific_attributes.split('&')
+        specific_attributes = self.specific_attributes
         return {
             item.split('=')[0].strip(): item.split('=')[1].strip()
-                for item in attributes
-        } if len(attributes) else dict()
+                for item in specific_attributes.split('&')
+        } if specific_attributes else dict()
