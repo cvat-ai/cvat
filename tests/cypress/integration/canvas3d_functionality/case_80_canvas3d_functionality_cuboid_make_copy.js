@@ -63,5 +63,19 @@ context('Canvas 3D functionality. Make a copy.', () => {
                 expect(sideBarItems.length).to.be.equal(5);
             });
         });
+
+        // Comment: https://github.com/openvinotoolkit/cvat/pull/3234#issuecomment-866830173
+        it.skip('Make a copy via hot keys with frame chenging.', () => {
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 100, 200).trigger('mousemove', 300, 200);
+            cy.get('body').type('{Ctrl}c').type('{Ctrl}v');
+            cy.get('.cvat-player-next-button').click();
+            cy.get('.cvat-player-previous-button').click();
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 100, 200).trigger('mousemove', 300, 200);
+            cy.get('body').type('{Ctrl}c').type('{Ctrl}v');
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 250).dblclick(400, 250);
+            cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
+                expect(sideBarItems.length).to.be.equal(6);
+            });
+        });
     });
 });
