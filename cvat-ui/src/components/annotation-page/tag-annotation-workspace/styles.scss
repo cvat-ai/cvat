@@ -8,7 +8,7 @@
     height: 100%;
 }
 
-.cvat-tag-annotation-sidebar {
+.cvat-tag-annotation-sidebar:not(.ant-layout-sider-collapsed) {
     background: $background-color-2;
     padding: 5px;
 

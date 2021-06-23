@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -50,7 +50,7 @@ def scale_bbox(x, y, h, w, class_id, confidence, h_scale, w_scale):
 def parse_yolo_region(blob, resized_image_shape, original_im_shape, params, threshold):
     # ------------------------------------------ Validating output parameters ------------------------------------------
     _, _, out_blob_h, out_blob_w = blob.shape
-    assert out_blob_w == out_blob_h, "Invalid size of output blob. It sould be in NCHW layout and height should " \
+    assert out_blob_w == out_blob_h, "Invalid size of output blob. It should be in NCHW layout and height should " \
                                      "be equal to width. Current height = {}, current width = {}" \
                                      "".format(out_blob_h, out_blob_w)
 
@@ -131,7 +131,7 @@ class ModelHandler:
             objects += parse_yolo_region(out_blob, self.model.input_size(),
                 origin_im_size, layer_params, threshold)
 
-        # Filtering overlapping boxes (non-maximum supression)
+        # Filtering overlapping boxes (non-maximum suppression)
         IOU_THRESHOLD = 0.4
         objects = sorted(objects, key=lambda obj : obj['confidence'], reverse=True)
         for i, obj in enumerate(objects):

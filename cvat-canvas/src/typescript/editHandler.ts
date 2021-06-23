@@ -93,11 +93,11 @@ export class EditHandlerImpl implements EditHandler {
                 if (lastDrawnPoint.x === null || lastDrawnPoint.y === null) {
                     (this.editLine as any).draw('point', e);
                 } else {
-                    const deltaTreshold = 15;
+                    const deltaThreshold = 15;
                     const dxsqr = (e.clientX - lastDrawnPoint.x) ** 2;
                     const dysqr = (e.clientY - lastDrawnPoint.y) ** 2;
                     const delta = Math.sqrt(dxsqr + dysqr);
-                    if (delta > deltaTreshold) {
+                    if (delta > deltaThreshold) {
                         (this.editLine as any).draw('point', e);
                     }
                 }

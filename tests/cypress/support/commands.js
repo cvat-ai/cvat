@@ -55,15 +55,15 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
             email: Cypress.env('email'),
             password: Cypress.env('password'),
         },
-    }).then((responce) => {
-        const authKey = responce['body']['key'];
+    }).then((response) => {
+        const authKey = response['body']['key'];
         cy.request({
             url: '/api/v1/users?page_size=all',
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then((responce) => {
-            const responceResult = responce['body']['results'];
+        }).then((response) => {
+            const responceResult = response['body']['results'];
             for (const user of responceResult) {
                 const userId = user['id'];
                 const userName = user['username'];
@@ -133,7 +133,9 @@ Cypress.Commands.add(
         }
         cy.contains('button', 'Submit').click();
         if (expectedResult === 'success') {
-            cy.contains('The task has been created');
+            cy.get('.cvat-notification-create-task-success')
+                .should('exist')
+                .find('[data-icon="close"]').click();
         }
         if (!forProject) {
             cy.goToTaskList();
@@ -422,7 +424,10 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
         }
         if (multiAttrParams.mutable) {
             cy.get('.cvat-attribute-mutable-checkbox')
-                .find('[type="checkbox"]').should('not.be.checked').check().should('be.checked');
+                .find('[type="checkbox"]')
+                .should('not.be.checked')
+                .check()
+                .should('be.checked');
         }
     });
 });

@@ -11,6 +11,7 @@ import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { DimensionType } from 'reducers/interfaces';
 
 interface Props {
     collecting: boolean;
@@ -24,12 +25,24 @@ interface Props {
     jobStatus: string;
     savingJobStatus: boolean;
     closeStatistics(): void;
+    jobInstance: any;
 }
 
 export default function StatisticsModalComponent(props: Props): JSX.Element {
     const {
-        collecting, data, visible, assignee, reviewer, startFrame, stopFrame, bugTracker, closeStatistics,
+        collecting,
+        data,
+        visible,
+        assignee,
+        reviewer,
+        startFrame,
+        stopFrame,
+        bugTracker,
+        closeStatistics,
+        jobInstance,
     } = props;
+
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     const baseProps = {
         cancelButtonProps: { style: { display: 'none' } },
@@ -77,7 +90,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     });
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
-        <CVATTooltip title='Shapes / Tracks'>
+        <CVATTooltip title={is2D ? 'Shapes / Tracks' : 'Shapes'}>
             <Text strong style={{ marginRight: 5 }}>
                 {title}
             </Text>
@@ -130,6 +143,24 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
             title: <Text strong> Interpolated </Text>,
             dataIndex: 'interpolated',
             key: 'interpolated',
+        },
+        {
+            title: <Text strong> Total </Text>,
+            dataIndex: 'total',
+            key: 'total',
+        },
+    ];
+
+    const columns3D = [
+        {
+            title: <Text strong> Label </Text>,
+            dataIndex: 'label',
+            key: 'label',
+        },
+        {
+            title: makeShapesTracksTitle('Cuboids'),
+            dataIndex: 'cuboid',
+            key: 'cuboid',
         },
         {
             title: <Text strong> Total </Text>,
@@ -191,7 +222,13 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                 <Row justify='space-around' className='cvat-job-info-statistics'>
                     <Col span={24}>
                         <Text className='cvat-text'>Annotations statistics</Text>
-                        <Table scroll={{ y: 400 }} bordered pagination={false} columns={columns} dataSource={rows} />
+                        <Table
+                            scroll={{ y: 400 }}
+                            bordered
+                            pagination={false}
+                            columns={is2D ? columns : columns3D}
+                            dataSource={rows}
+                        />
                     </Col>
                 </Row>
             </div>
