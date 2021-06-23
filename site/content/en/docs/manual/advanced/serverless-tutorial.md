@@ -131,16 +131,16 @@ nuctl get functions
   nuclio    | pth-foolwood-siammask | cvat    | ready |     49155 | 1/1
 ```
 
-Let's see how it works in UI. First of all go to http://localhost:8080/models
+Let's see how it works in UI. First of all go to [models tab](http://localhost:8080/models)
 and check that you can see SiamMask in the list. If you cannot by a reason it
 means that there are some problems. Go to one of our public channels and ask
 for help.
 
 ![Models list with SiamMask](/images/models_list_with_siammask.png)
 
-After that go to http://localhost:8080/tasks/create and create an annotation
-task with [the video file][vtest-avi]. You can choose any task name, any
-labels, and even another video file if you like. In this case `Remote sources`
+After that go to [new task page](http://localhost:8080/tasks/create) and
+create one with [the video file][vtest-avi]. You can choose any task name,
+any labels, and even another video file if you like. In this case `Remote sources`
 option was used to specify the video file. Press submit button at the end to
 finish the process.
 
