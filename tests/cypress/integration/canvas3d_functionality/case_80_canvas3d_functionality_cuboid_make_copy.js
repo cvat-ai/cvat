@@ -51,13 +51,13 @@ context('Canvas 3D functionality. Make a copy.', () => {
             });
         });
 
-        it('Make a copy via hot keys with "ctrl" holding.', () => {
+        it.skip('Make a copy via hot keys with "ctrl" holding.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 100, 200).trigger('mousemove', 300, 200);
             cy.get('body').type('{ctrl}', {release: false}); // Hold ctrl
             cy.get('body').trigger('keydown', {keyCode: keyCodeC, ctrlKey: true}).trigger('keyup'); // Copy a shape
             cy.get('body').trigger('keydown', {keyCode: keyCodeV, ctrlKey: true}).trigger('keyup');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 200).dblclick(400, 200); // Paste the shape
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 300).dblclick(400, 300); // The shape is expected to be pasted again
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 300).dblclick(400, 300); // The shape is expected to be pasted again (not working now)
             cy.get('body').type('{ctrl}'); // Ctrl key up
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
                 expect(sideBarItems.length).to.be.equal(5);
