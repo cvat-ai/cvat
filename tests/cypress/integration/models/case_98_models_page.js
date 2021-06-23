@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Settings. "Auto save" option.', () => {
+context('Models page.', () => {
     const caseId = '51';
 
     before(() => {
@@ -13,7 +13,7 @@ context('Settings. "Auto save" option.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Link to models page exist.', () => {
+        it('The link to the models page and the models page exists.', () => {
             cy.goToModelsList();
         });
     });
