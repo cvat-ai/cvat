@@ -77,7 +77,6 @@ weight: 2
    ### Data formats for a 3D task
 
    To create a 3D task, you need to use the following directory structures:
-
     {{< tabpane >}}
     {{< tab header="Velodyne" >}}
     VELODYNE FORMAT

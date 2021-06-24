@@ -12,7 +12,8 @@ The contextual image could be compared to 3D data and would help to identify the
 
 `Perspective` – a main window for work with objects in a 3D task.
 
-Projections - projections are tied to an object so that a cuboid is in the center and looks like a rectangle. Projections show only the selected object.
+Projections - projections are tied to an object so that a cuboid is in the center and looks like a rectangle.
+Projections show only the selected object.
 
 - `Top` – a projection of the view from above.
 - `Side` – a projection of the left side of the object.

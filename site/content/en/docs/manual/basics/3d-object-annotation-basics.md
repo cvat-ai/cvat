@@ -18,14 +18,15 @@ To move in 3D space you can use several methods:
   ![](/images/image216_carla_town3.jpg)
 
 You can move around by pressing the corresponding buttons:
-  - To rotate the camera use: `Shift+arrrowup`/`Shift+arrrowdown`/`Shift+arrrowleft`/`Shift+arrrowright`.
-  - To move left/right use: `Allt+J`/`Alt+L`.
-  - To move up/down use: `Alt-U`/`Alt+O`.
-  - To zoom in/out use: `Alt+K`/`Alt+I`.
+- To rotate the camera use: `Shift+arrrowup`/`Shift+arrrowdown`/`Shift+arrrowleft`/`Shift+arrrowright`.
+- To move left/right use: `Allt+J`/`Alt+L`.
+- To move up/down use: `Alt-U`/`Alt+O`.
+- To zoom in/out use: `Alt+K`/`Alt+I`.
 
 ### Creating a cuboid
 
-To create a cube in a 3D task you need to click the appropriate icon on the control sidebar, select the label of the future object and click `shape`.
+To create a cube in a 3D task you need to click the appropriate icon on the control sidebar,
+select the label of the future object and click `shape`.
 
   ![](/images/image217.jpg)
 
@@ -38,11 +39,12 @@ You can place an object only near the dots of the point cloud.
 To adjust the size precisely, you need to edit the cuboid on the projections.
 In each projection you can:
 
-Move the object in the projection plane - to do this, hover over the object, press the left mouse button and move the object
+Move the object in the projection plane - to do this, hover over the object,
+press the left mouse button and move the object.
 
   ![](/images/gif027_carla_town3.gif)
 
-Move one of the four points - you can change the size of the cuboid by dragging the points in the projection
+Move one of the four points - you can change the size of the cuboid by dragging the points in the projection.
 
   ![](/images/gif028_carla_town3.gif)
 

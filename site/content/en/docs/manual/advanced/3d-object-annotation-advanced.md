@@ -9,11 +9,13 @@ properties and have an action menu. Read more in [objects sidebar](/docs/manual/
 
 ## Moving an object
 
-If you hover the cursor over a cuboid and press `Shift+N`, the cuboid will be cut, so you can paste it in other place (double-click to paste the cuboid).
+If you hover the cursor over a cuboid and press `Shift+N`, the cuboid will be cut,
+so you can paste it in other place (double-click to paste the cuboid).
 
 ## Copying
 
-As well as in 2D task you can copy and paste objects by `Ctrl+C` and `Ctrl+V`, but unlike 2D tasks you have to place a copied object in a 3D space (double click to paste).
+As well as in 2D task you can copy and paste objects by `Ctrl+C` and `Ctrl+V`,
+but unlike 2D tasks you have to place a copied object in a 3D space (double click to paste).
 
   ![](/images/gif030_carla_town3.gif)
 
