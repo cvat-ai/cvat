@@ -20,7 +20,7 @@
     "issues_prs/**/*.js",
     "issues_prs2/**/*.js",
     "actions_users/**/*.js",
-    "actions_projects/**/*.js",
+    "actions_projects_models/**/*.js",
     "canvas3d_functionality/*.js",
     "models/*.js",
     "remove_users_tasks_projects.js"
