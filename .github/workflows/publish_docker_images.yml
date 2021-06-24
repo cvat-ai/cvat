@@ -14,7 +14,7 @@ jobs:
 
       - name: Build images
         run: |
-          CLAM_AV=yes INSTALL_SOURCES=yes docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml build
+          CLAM_AV=yes INSTALL_SOURCES=yes docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml -f components/serverless/docker-compose.serverless.yml build
 
       - name: Run unit tests
         env:
