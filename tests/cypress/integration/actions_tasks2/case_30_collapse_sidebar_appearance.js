@@ -4,11 +4,21 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 
-context('Collapse sidebar/appearance', () => {
+context('Collapse sidebar/appearance. Check issue 3250 (empty sidebar after resizing window).', () => {
     const caseId = '30';
     let defaultValueLeftBackground;
+
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        labelName: labelName,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450,
+    };
 
     function checkEqualBackground() {
         cy.get('#cvat_canvas_background')
@@ -21,6 +31,7 @@ context('Collapse sidebar/appearance', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
+        cy.createRectangle(createRectangleShape2Points);
 
         // get default left value from background
         cy.get('#cvat_canvas_background')
@@ -31,8 +42,8 @@ context('Collapse sidebar/appearance', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Collapse sidebar', () => {
-            // hide
+        it('Collapse sidebar. Cheeck issue 3250.', () => {
+            // hide sidebar
             cy.get('.cvat-objects-sidebar-sider').click();
             cy.get('.cvat-objects-sidebar').should('not.be.visible');
             cy.get('#cvat_canvas_background')
@@ -42,13 +53,22 @@ context('Collapse sidebar/appearance', () => {
                     expect(currentValueLeftBackground).to.be.greaterThan(defaultValueLeftBackground);
                 });
 
-            // wait when background fitted
-            cy.wait(500);
+            // Check issue 3250
+            cy.get('#cvat_canvas_content').invoke('attr', 'style').then((canvasContainerStyle) => {
+                cy.viewport(2999, 2999); // Resize window
+                cy.get('#cvat_canvas_content').should('have.attr', 'style').and('not.equal', canvasContainerStyle);
+                cy.viewport(Cypress.config('viewportWidth'), Cypress.config('viewportHeight')); // Return to the original size
+                cy.get('#cvat_canvas_content').should('have.attr', 'style').and('equal', canvasContainerStyle);
+            });
 
-            // unhide
+            // unhide sidebar
             cy.get('.cvat-objects-sidebar-sider').click();
             cy.get('.cvat-objects-sidebar').should('be.visible');
             checkEqualBackground();
+
+            // Before the issue fix the sidebar item did not appear accordingly it was not possible to activate the shape through the sidebar item
+            cy.get(`#cvat-objects-sidebar-state-item-1`).trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
 
         it('Collapse appearance', () => {

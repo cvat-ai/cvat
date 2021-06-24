@@ -311,8 +311,9 @@ export class DrawHandlerImpl implements DrawHandler {
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
             if (
-                this.drawData.shapeType !== 'rectangle'
-                && this.drawData.cuboidDrawingMethod !== CuboidDrawingMethod.CLASSIC
+                ['polygon', 'polyline', 'points'].includes(this.drawData.shapeType)
+                || (this.drawData.shapeType === 'cuboid'
+                    && this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)
             ) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
@@ -574,7 +575,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .on('drawstop', (e: Event): void => {
                 const bbox = (e.target as SVGRectElement).getBBox();
                 const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
-                const { shapeType } = this.drawData;
+                const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
                 if (this.canceled) return;
@@ -584,6 +585,7 @@ export class DrawHandlerImpl implements DrawHandler {
                         {
                             shapeType,
                             points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
+                            clientID,
                         },
                         Date.now() - this.startTimestamp,
                     );

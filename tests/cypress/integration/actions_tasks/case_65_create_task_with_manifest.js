@@ -32,7 +32,6 @@ context('Create an annotation task with manifest.', () => {
                 });
                 cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, filesToAttach);
             });
-            cy.get('.cvat-notification-create-task-success').should('exist');
             cy.get('.cvat-notification-create-task-fail').should('not.exist');
         });
 

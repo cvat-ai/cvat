@@ -4,7 +4,7 @@
 
 import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 
@@ -73,6 +73,7 @@ export interface Task {
 }
 
 export interface TasksState {
+    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
@@ -104,6 +105,9 @@ export interface TasksState {
             taskId: number | null;
             status: string;
             error: string;
+        };
+        backups: {
+            [tid: number]: boolean;
         };
     };
 }
@@ -249,9 +253,11 @@ export interface NotificationsState {
             updating: null | ErrorState;
             dumping: null | ErrorState;
             loading: null | ErrorState;
-            exporting: null | ErrorState;
+            exportingAsDataset: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            exporting: null | ErrorState;
+            importing: null | ErrorState;
             moving: null | ErrorState;
         };
         formats: {
@@ -318,6 +324,7 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            importingDone: string;
             movingDone: string;
         };
         models: {
@@ -445,6 +452,7 @@ export interface AnnotationState {
         activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
+        activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
@@ -489,7 +497,6 @@ export interface AnnotationState {
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
-    tabContentHeight: number;
     workspace: Workspace;
     predictor: PredictorState;
     aiToolsRef: MutableRefObject<any>;

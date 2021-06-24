@@ -16,6 +16,7 @@ import {
     loadAnnotationsAsync,
     exportDatasetAsync,
     deleteTaskAsync,
+    exportTaskAsync,
     switchMoveTaskModalVisible,
 } from 'actions/tasks-actions';
 
@@ -29,6 +30,7 @@ interface StateToProps {
     dumpActivities: string[] | null;
     exportActivities: string[] | null;
     inferenceIsActive: boolean;
+    exportIsActive: boolean;
 }
 
 interface DispatchToProps {
@@ -37,6 +39,7 @@ interface DispatchToProps {
     exportDataset: (taskInstance: any, exporter: any) => void;
     deleteTask: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
+    exportTask: (taskInstance: any) => void;
     openMoveTaskToProjectWindow: (taskInstance: any) => void;
 }
 
@@ -48,7 +51,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         formats: { annotationFormats },
         tasks: {
-            activities: { dumps, loads, exports: activeExports },
+            activities: {
+                dumps, loads, exports: activeExports, backups,
+            },
         },
     } = state;
 
@@ -58,6 +63,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         loadActivity: tid in loads ? loads[tid] : null,
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
+        exportIsActive: tid in backups,
     };
 }
 
@@ -78,6 +84,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openRunModelWindow: (taskInstance: any): void => {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
+        exportTask: (taskInstance: any): void => {
+            dispatch(exportTaskAsync(taskInstance));
+        },
         openMoveTaskToProjectWindow: (taskId: number): void => {
             dispatch(switchMoveTaskModalVisible(true, taskId));
         },
@@ -92,12 +101,14 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         dumpActivities,
         exportActivities,
         inferenceIsActive,
+        exportIsActive,
 
         loadAnnotations,
         dumpAnnotations,
         exportDataset,
         deleteTask,
         openRunModelWindow,
+        exportTask,
         openMoveTaskToProjectWindow,
     } = props;
 
@@ -131,6 +142,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
                 window.open(`${taskInstance.bugTracker}`, '_blank');
             } else if (action === Actions.RUN_AUTO_ANNOTATION) {
                 openRunModelWindow(taskInstance);
+            } else if (action === Actions.EXPORT_TASK) {
+                exportTask(taskInstance);
             } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
                 openMoveTaskToProjectWindow(taskInstance.id);
             }
@@ -150,6 +163,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
+            exportIsActive={exportIsActive}
         />
     );
 }

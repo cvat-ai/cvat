@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support of context images for 2D image tasks (<https://github.com/openvinotoolkit/cvat/pull/3122>)
+- Support of cloud storage without copying data into CVAT: server part (<https://github.com/openvinotoolkit/cvat/pull/2620>)
 - Filter `is_active` for user list (<https://github.com/openvinotoolkit/cvat/pull/3235>)
+- Ability to export/import tasks (<https://github.com/openvinotoolkit/cvat/pull/3056>)
 
 ### Changed
 
@@ -30,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project page requests took a long time and did many DB queries (<https://github.com/openvinotoolkit/cvat/pull/3223>)
 - Fixed Python 3.6 support (<https://github.com/openvinotoolkit/cvat/pull/3258>)
 - Incorrect attribute import in tracks (<https://github.com/openvinotoolkit/cvat/pull/3229>)
+- Issue "is not a constructor" when create object, save, undo, save, redo save (<https://github.com/openvinotoolkit/cvat/pull/3292>)
+- Fix CLI create an infinite loop if git repository responds with failure (<https://github.com/openvinotoolkit/cvat/pull/3267>)
+- Bug with sidebar & fullscreen (<https://github.com/openvinotoolkit/cvat/pull/3289>)
+- 504 Gateway Time-out on `data/meta` requests (<https://github.com/openvinotoolkit/cvat/pull/3269>)
+- TypeError: Cannot read property 'clientX' of undefined when draw cuboids with hotkeys (<https://github.com/openvinotoolkit/cvat/pull/3308>)
+- Duplication of the cuboids when redraw them (<https://github.com/openvinotoolkit/cvat/pull/3308>)
+- Some code issues in Deep Extreme Cut handler code (<https://github.com/openvinotoolkit/cvat/pull/3325>)
+- UI fails when inactive user is assigneed to a task/job (<https://github.com/openvinotoolkit/cvat/pull/3343>)
 
 ### Security
 

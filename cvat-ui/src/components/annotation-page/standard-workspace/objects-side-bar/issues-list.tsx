@@ -17,7 +17,6 @@ import { CombinedState } from 'reducers/interfaces';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const tabContentHeight = useSelector((state: CombinedState) => state.annotation.tabContentHeight);
     const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
@@ -50,7 +49,7 @@ export default function LabelsListComponent(): JSX.Element {
         };
 
     return (
-        <div style={{ height: tabContentHeight }}>
+        <>
             <div className='cvat-objects-sidebar-issues-list-header'>
                 <Row justify='start' align='middle'>
                     <Col>
@@ -122,6 +121,6 @@ export default function LabelsListComponent(): JSX.Element {
                     ),
                 )}
             </div>
-        </div>
+        </>
     );
 }

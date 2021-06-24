@@ -10,6 +10,7 @@ import Layout, { SiderProps } from 'antd/lib/layout';
 import Text from 'antd/lib/typography/Text';
 
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
@@ -20,6 +21,7 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
+import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
@@ -34,7 +36,7 @@ interface StateToProps {
     jobInstance: any;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     canvasIsReady: boolean;
     curZLayer: number;
 }
@@ -134,6 +136,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             (collapser as HTMLElement).addEventListener('transitionend', listener as any);
         }
 
+        adjustContextImagePosition(!sidebarCollapsed);
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
