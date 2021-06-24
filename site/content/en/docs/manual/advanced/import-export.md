@@ -1,10 +1,10 @@
 ---
-title: 'Import/Export tasks'
+title: 'Import/Export a task'
 linkTitle: 'Import/Export'
 weight: 25
 ---
 
-In CVAT you can export and import tasks.
+In CVAT you can exporting and importing tasks.
 This can be used to backup the task on your PC or to transfer the task to another server.
 
 ## Export
