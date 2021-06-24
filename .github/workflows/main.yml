@@ -168,14 +168,14 @@ jobs:
             if [[ ${{ matrix.specs }} != 'canvas3d_functionality' ]]; then
               npx cypress run --headless --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
             else
-              npx cypress run --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+              npx cypress run --browser chrome --config-file cypress_canvas3d.json --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
             fi
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
             if [[ ${{ matrix.specs }} != 'canvas3d_functionality' ]]; then
               npx cypress run --headless --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
             else
-              npx cypress run --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+              npx cypress run --browser chrome --env coverage=false --config-file cypress_canvas3d.json --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
             fi
           fi
       - name: Creating a log file from "cvat" container logs

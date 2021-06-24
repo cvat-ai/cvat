@@ -34,6 +34,7 @@ jobs:
           cd ./tests
           npm ci
           npm run cypress:run:chrome
+          npm run cypress:run:chrome:canvas3d
       - name: Uploading cypress screenshots as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
