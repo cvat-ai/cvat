@@ -544,7 +544,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     else:
                         return Response(status=status.HTTP_202_ACCEPTED)
 
-            ttl = dm.views.CACHE_TTL.total_seconds()
+            ttl = dm.views.TASK_CACHE_TTL.total_seconds()
             queue.enqueue_call(
                 func=dm.views.backup_task,
                 args=(pk, 'task_dump.zip'),
