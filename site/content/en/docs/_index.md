@@ -1,7 +1,7 @@
 ---
 title: 'Documentation'
 linkTitle: 'Documentation'
-description: 'Welcome to the documentation of Computer Vision Annotation Tools!'
+description: 'Welcome to the documentation of Computer Vision Annotation Tool.'
 no_list: true
 menu:
   main:
@@ -53,7 +53,7 @@ This section contains documents for system administrators.
 
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fa-terminal" title="[Developing](/docs/developing/)" %}}
+{{% blocks/feature icon="fa-terminal" title="[Contributing](/docs/contributing/)" %}}
 
 This section contains documents for developers.
 

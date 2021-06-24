@@ -1,10 +1,14 @@
 ---
 title: '3D task workspace'
 linkTitle: '3D task workspace'
-weight: 23
+weight: 5
 ---
 
-![](/images/image!!!.jpg)
+![](/images/image214_carla_town3.jpg)
+
+
+If the `related_images` folder contains any images, a `context image` will be available  in the perspective window.
+The contextual image could be compared to 3D data and would help to identify the labels of marked objects.
 
 `Perspective` – a main window for work with objects in a 3D task.
 
