@@ -29,13 +29,13 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 |                            | _Modes_                                                                                                  |
 | `N`                        | Repeat the latest procedure of drawing with the same parameters                                          |
 | `M`                        | Activate or deactivate mode to merging shapes                                                            |
-| `Alt+M`                    | Activate or deactivate mode to splitting shapes                                                           |
+| `Alt+M`                    | Activate or deactivate mode to splitting shapes                                                          |
 | `G`                        | Activate or deactivate mode to grouping shapes                                                           |
 | `Shift+G`                  | Reset group for selected shapes (in group mode)                                                          |
 | `Esc`                      | Cancel any active canvas mode                                                                            |
 |                            | _Image operations_                                                                                       |
 | `Ctrl+R`                   | Change image angle (add 90 degrees)                                                                      |
-| `Ctrl+Shift+R`             | Change image angle (subtract 90 degrees)                                                                |
+| `Ctrl+Shift+R`             | Change image angle (subtract 90 degrees)                                                                 |
 | `Shift+B+=`                | Increase brightness level for the image                                                                  |
 | `Shift+B+-`                | Decrease brightness level for the image                                                                  |
 | `Shift+C+=`                | Increase contrast level for the image                                                                    |
@@ -63,6 +63,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Ctrl+V`                   | Paste a shape from internal CVAT clipboard                                                               |
 | Hold `Ctrl` while pasting  | When pasting shape from the buffer for multiple pasting.                                                 |
 | `Crtl+B`                   | Make a copy of the object on the following frames                                                        |
+| `Ctrl+(0..9)`              | Changes a label for an activated object or for the next drawn object if no objects are activated         |
 |                            | _Operations are available only for track_                                                                |
 | `K`                        | Change keyframe property for an active track                                                             |
 | `O`                        | Change outside property for an active track                                                              |
@@ -74,3 +75,14 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Tab`                      | Go to the next annotated object in current frame                                                         |
 | `Shift+Tab`                | Go to the previous annotated object in current frame                                                     |
 | `<number>`                 | Assign a corresponding value to the current attribute                                                    |
+|                            | _Standard 3d mode_                                                                                       |
+| `Shift+arrrowup`           | Increases camera roll angle                                                                              |
+| `Shift+arrrowdown`         | Decreases camera roll angle                                                                              |
+| `Shift+arrrowleft`         | Decreases camera pitch angle                                                                             |
+| `Shift+arrrowright`        | Increases camera pitch angle                                                                             |
+| `Alt+O`                    | Move the camera up                                                                                       |
+| `Alt+U`                    | Move the camera down                                                                                     |
+| `Alt+J`                    | Move the camera left                                                                                     |
+| `Alt+L`                    | Move the camera right                                                                                    |
+| `Alt+I`                    | Performs zoom in                                                                                         |
+| `Alt+K`                    | Performs zoom out                                                                                        |
