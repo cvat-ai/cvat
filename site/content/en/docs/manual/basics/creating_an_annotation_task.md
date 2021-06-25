@@ -238,7 +238,7 @@ weight: 2
    - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
      Presence depends on how you build CVAT instance.
    - `Export task` — Export a task on zip archive.
-     Read more [Import/export a task](/docs/manual/advanced/import-export/) section.
+     Read more [export/import a task](/docs/manual/advanced/export-import/) section.
    - `Move to project` — Moving the task to the project (can be used to move a task from one project to another).
      Note that attributes reset during the moving process. In case of label mismatch,
      you can create or delete necessary labels in the project/task.
