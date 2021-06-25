@@ -4,7 +4,7 @@ linkTitle: 'Export/import'
 weight: 25
 ---
 
-In CVAT you can exporting and importing tasks.
+In CVAT you can export and import tasks.
 This can be used to backup the task on your PC or to transfer the task to another server.
 
 ## Export
@@ -13,7 +13,7 @@ To export the task, open the action menu select `Export Task`.
 
 ![](/images/image219_mapillary_vistas.jpg)
 
-As a result, you'll get a file containing data, task parameters, and a annotation.
+As a result, you'll get a file containing data, task parameters, and annotation.
 
 ## Import
 
@@ -21,4 +21,4 @@ To import the task go to the tasks page, press the `Import Task` button and sele
 
 ![](/images/image220.jpg)
 
-As a result, you'll get a task containing data, parameters, and a annotation of a previously exported task.
+As a result, you'll get a task containing data, parameters, and annotation of a previously exported task.
