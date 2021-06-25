@@ -490,9 +490,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
         self._format_type = format_type
         dm_items = []
 
-        if format_type == "point_cloud":
-            dm_item = self.dm_item(task_data)
-
         is_video = task_data.meta['task']['mode'] == 'interpolation'
         ext = ''
         if is_video:
@@ -561,8 +558,10 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                     attributes["createdAt"] = self._user["createdAt"]
                     attributes["updatedAt"] = self._user["updatedAt"]
                     attributes["labels"] = []
-                    for label in frame_data.labels.values():
-                        attributes["labels"].append({"label_id": label.id, "name": label.name, "color": label.color})
+                    index = 0
+                    for _, label in task_data.meta['task']['labels']:
+                        attributes["labels"].append({"label_id": index, "name": label["name"], "color": label["color"]})
+                        index += 1
 
                 dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1],
                                                annotations=dm_anno, pcd=dm_image[0], related_images=dm_image[1],
@@ -570,7 +569,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
             dm_items.append(dm_item)
 
-        self._items = dm_items if dm_items else dm_item
+        self._items = dm_items
 
     def __iter__(self):
         for item in self._items:
@@ -581,22 +580,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
     def categories(self):
         return self._categories
-
-    def dm_item(self, task_data):
-        attributes = {
-            "name": self._user["name"],
-            "createdAt": self._user["createdAt"],
-            "updatedAt": self._user["updatedAt"],
-            "labels": []}
-        index = 0
-        for _, label in task_data.meta['task']['labels']:
-            attributes["labels"].append({"label_id": index, "name": label["name"], "color": label["color"]})
-            index += 1
-
-        return datumaro.DatasetItem(id="-1",
-                                       annotations=[], pcd=None, related_images=[],
-                                       attributes=attributes)
-
 
     @staticmethod
     def _load_categories(cvat_anno, dimension):
@@ -655,6 +638,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                     raise Exception(
                         "Failed to convert attribute '%s'='%s': %s" %
                         (a_name, a_value, e))
+                if self._format_type == "point_cloud" and (a_desc.get('input_type') == 'select' or a_desc.get('input_type') == 'radio'):
+                    dm_attr[f"{a_name}__values"] = a_desc["values"]
+
             return dm_attr
 
         for tag_obj in cvat_frame_anno.tags:

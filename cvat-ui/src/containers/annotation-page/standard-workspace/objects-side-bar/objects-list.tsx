@@ -318,6 +318,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         };
 
         const handlers = {
+            TILT_UP: () => {}, // Handled by CVAT 3D Independently
+            TILT_DOWN: () => {},
+            ROTATE_LEFT: () => {},
+            ROTATE_RIGHT: () => {},
+            MOVE_UP: () => {},
+            MOVE_DOWN: () => {},
+            MOVE_LEFT: () => {},
+            MOVE_RIGHT: () => {},
+            ZOOM_IN: () => {},
+            ZOOM_OUT: () => {},
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);

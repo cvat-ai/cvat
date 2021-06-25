@@ -240,10 +240,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public draw(drawData: DrawData): void {
-        if (drawData.enabled && this.data.drawData.enabled) {
+        if (drawData.enabled && this.data.drawData.enabled && !drawData.initialState) {
             throw new Error('Drawing has been already started');
         }
-        if ([Mode.DRAW, Mode.EDIT].includes(this.data.mode)) {
+        if ([Mode.DRAW, Mode.EDIT].includes(this.data.mode) && !drawData.initialState) {
             return;
         }
         this.data.drawData.enabled = drawData.enabled;
@@ -324,6 +324,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public configureShapes(shapeProperties: ShapeProperties): void {
+        this.data.drawData.enabled = false;
+        this.data.mode = Mode.IDLE;
+        this.cancel();
         this.data.shapeProperties = {
             ...shapeProperties,
         };

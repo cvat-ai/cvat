@@ -218,7 +218,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     }),
                 );
             }
-            if (this.model.mode === Mode.DRAW) {
+            if (this.model.mode === Mode.DRAW && e.ctrlKey && this.model.data.drawData.initialState) {
                 const { x, y, z } = this.cube.perspective.position;
                 const { x: width, y: height, z: depth } = this.cube.perspective.scale;
                 const { x: rotationX, y: rotationY, z: rotationZ } = this.cube.perspective.rotation;
@@ -240,7 +240,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                                 points,
                                 label,
                             },
-                            continue: undefined,
+                            continue: true,
                             duration: 0,
                         },
                     }),
@@ -448,6 +448,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     viewType.controls.mouseButtons.right = CameraControls.ACTION.NONE;
                 } else {
                     viewType.controls = new CameraControls(viewType.camera, viewType.renderer.domElement);
+                    viewType.controls.mouseButtons.left = CameraControls.ACTION.NONE;
+                    viewType.controls.mouseButtons.right = CameraControls.ACTION.NONE;
+                    viewType.controls.mouseButtons.wheel = CameraControls.ACTION.NONE;
+                    viewType.controls.touches.one = CameraControls.ACTION.NONE;
+                    viewType.controls.touches.two = CameraControls.ACTION.NONE;
+                    viewType.controls.touches.three = CameraControls.ACTION.NONE;
                 }
                 viewType.controls.minDistance = CONST.MIN_DISTANCE;
                 viewType.controls.maxDistance = CONST.MAX_DISTANCE;
@@ -524,6 +530,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private startAction(view: any, event: MouseEvent): void {
         if (event.detail !== 1) return;
+        if (this.model.mode === Mode.DRAG_CANVAS) return;
         const { clientID } = this.model.data.activeElement;
         if (clientID === 'null') return;
         const canvas = this.views[view as keyof Views].renderer.domElement;
@@ -548,6 +555,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private moveAction(view: any, event: MouseEvent): void {
         event.preventDefault();
+        if (this.model.mode === Mode.DRAG_CANVAS) return;
         const { clientID } = this.model.data.activeElement;
         if (clientID === 'null') return;
         const canvas = this.views[view as keyof Views].renderer.domElement;
@@ -608,6 +616,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private completeActions(): void {
         const { scan, detected } = this.action;
+        if (this.model.mode === Mode.DRAG_CANVAS) return;
         if (!detected) {
             this.resetActions();
             return;
@@ -767,6 +776,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
         if (reason === UpdateReasons.IMAGE_CHANGED) {
             if (!model.data.image) return;
+            this.dispatchEvent(new CustomEvent('canvas.canceled'));
+            if (this.model.mode === Mode.DRAW) {
+                this.model.data.drawData.enabled = false;
+            }
             this.views.perspective.renderer.dispose();
             this.model.mode = Mode.BUSY;
             this.action.loading = true;
@@ -801,12 +814,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.setupObjects();
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             this.dispatchEvent(
-                new CustomEvent(this.mode === Mode.DRAG_CANVAS ? 'canvas.dragstart' : 'canvas.dragstop', {
+                new CustomEvent(this.model.mode === Mode.DRAG_CANVAS ? 'canvas.dragstart' : 'canvas.dragstop', {
                     bubbles: false,
                     cancelable: true,
                 }),
             );
             this.model.data.activeElement.clientID = 'null';
+            if (this.model.mode === Mode.DRAG_CANVAS) {
+                const { controls } = this.views.perspective;
+                controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+                controls.mouseButtons.right = CameraControls.ACTION.TRUCK;
+                controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+                controls.touches.one = CameraControls.ACTION.TOUCH_ROTATE;
+                controls.touches.two = CameraControls.ACTION.TOUCH_DOLLY_TRUCK;
+                controls.touches.three = CameraControls.ACTION.TOUCH_TRUCK;
+            }
             this.setupObjects();
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
@@ -818,7 +840,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
             this.model.data.groupData.grouped = [];
             this.setHelperVisibility(false);
-            this.mode = Mode.IDLE;
+            this.model.mode = Mode.IDLE;
+            const { controls } = this.views.perspective;
+            controls.mouseButtons.left = CameraControls.ACTION.NONE;
+            controls.mouseButtons.right = CameraControls.ACTION.NONE;
+            controls.mouseButtons.wheel = CameraControls.ACTION.NONE;
+            controls.touches.one = CameraControls.ACTION.NONE;
+            controls.touches.two = CameraControls.ACTION.NONE;
+            controls.touches.three = CameraControls.ACTION.NONE;
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             this.dispatchEvent(new CustomEvent('canvas.fit'));
