@@ -1,6 +1,6 @@
 ---
-title: 'Import/Export a task'
-linkTitle: 'Import/Export'
+title: 'Import/export a task'
+linkTitle: 'Import/export'
 weight: 25
 ---
 
