@@ -38,19 +38,19 @@ weight: 2
      The following actions are available here:
 
      1. Set the attribute’s name.
-     2. Choose the way to display the attribute:
+     1. Choose the way to display the attribute:
         - Select — drop down list of value
         - Radio — is used when it is necessary to choose just one option out of few suggested.
         - Checkbox — is used when it is necessary to choose any number of options out of suggested.
         - Text — is used when an attribute is entered as a text.
         - Number — is used when an attribute is entered as a number.
-     3. Set values for the attribute. The values could be separated by pressing `Enter`.
+     1. Set values for the attribute. The values could be separated by pressing `Enter`.
         The entered value is displayed as a separate element which could be deleted
         by pressing `Backspace` or clicking the close button (x).
         If the specified way of displaying the attribute is Text or Number,
         the entered value will be displayed as text by default (e.g. you can specify the text format).
-     4. Checkbox `Mutable` determines if an attribute would be changed frame to frame.
-     5. You can delete the attribute by clicking the close button (x).
+     1. Checkbox `Mutable` determines if an attribute would be changed frame to frame.
+     1. You can delete the attribute by clicking the close button (x).
 
      Click the `Continue` button to add more labels.
      If you need to cancel adding a label - press the `Cancel` button.
@@ -209,7 +209,7 @@ weight: 2
 
    ![](/images/image006_detrac.jpg)
 
-2. The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
+1. The tasks page contains elements and each of them relates to a separate task. They are sorted in creation order.
    Each element contains: task name, preview, progress bar, button `Open`, and menu `Actions`.
    Each button is responsible for a in menu `Actions` specific function:
 
