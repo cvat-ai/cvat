@@ -172,15 +172,7 @@ Finally you will get bounding boxes for 10 frames by default.
 - Compare results with the ground truth using Datumaro
 - Conclusion
 
-## Advanced capabilities
-
-- Optimize using GPU
-- Testing
-- Logging (docker)
-- Debugging
-- Troubleshooting
-
-## Choose a DL model
+### Choose a DL model
 
 In my case I will choose a popular AI library with a lot of models inside.
 In your case it can be your own model. If it is based on detectron2 it
@@ -199,7 +191,7 @@ git clone https://github.com/facebookresearch/detectron2
 cd detectron2
 ```
 
-## Run local experiments
+### Run local experiments
 
 Let's run a detection model locally. First of all need to
 [install requirements][detectron2-requirements] for the library.
@@ -292,7 +284,7 @@ if __name__ == "__main__":
         print(box.tolist(), float(score), label)
 ```
 
-## DL model as a serverless function
+### DL model as a serverless function
 
 When we know how to run the DL model locally, we can prepare a serverless
 function which can be used by CVAT to annotate data. Let's see how function.yaml
@@ -369,8 +361,7 @@ spec:
     image: cvat/pth.facebookresearch.detectron2.retinanet_r101
     baseImage: ubuntu:20.04
 
-    directives:
-      preCopy:
+    : preCopy:
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
         - kind: RUN
@@ -465,11 +456,131 @@ def handler(context, event):
 
 Full code can be found here: [detectron2/retinanet/nuclio/main.py][retinanet-main-py]
 
-## Deploy RetinaNet serverless function
+### Deploy RetinaNet serverless function
 
 To use the new serverless function you have to deploy it using `nuctl` command.
 The actual deployment process is described in
 [automatic annotation guide][cvat-auto-annotation-guide]
+
+## Advanced capabilities
+
+### Optimize using GPU
+
+TODO
+
+### Debugging a serverless function
+
+Let's say you have a problem with your serverless function and want to debug it.
+Of course you can use `context.logger.info` or similar methods to print the
+intermediate state of your function.
+Another way is to debug using [Visual Studio Code](https://code.visualstudio.com/).
+Please see instructions below to setup your environment step by step.
+
+Let's modify our function.yaml to include [debugpy](https://github.com/microsoft/debugpy)
+package and specify that `maxWorkers` count is 1. Otherwise both workers will
+try to use the same port and it will lead to an exception in python code.
+
+```yaml
+        - kind: RUN
+          value: pip3 install debugpy
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+```
+
+Change `main.py` to listen to a port (e.g. 5678). Insert code below
+in the beginning of your file with entry point.
+
+```python
+import debugpy
+debugpy.listen(5678)
+```
+
+After these changes deploy the serverless function once again. For
+`serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/` you should
+run the command below:
+
+```sh
+./serverless/deploy_cpu.sh serverless/pytorch/facebookresearch/detectron2/retinanet
+```
+
+To debug python code inside a container you have to publish the port (in this
+tutorial it is 5678). Nuclio deploy command doesn't support that and we have to
+workaround it using [SSH port forwarding](https://www.ssh.com/academy/ssh/tunneling).
+
+- Install SSH server on your host machine using `sudo apt install openssh-server`
+- In `/etc/ssh/sshd_config` host file set `GatewayPorts yes`
+- Restart ssh service to apply changes using `sudo systemctl restart ssh.service`
+
+Next step is to install ssh client inside the container and run port forwarding.
+In the snippet below instead of `user` and `ipaddress` provide username and
+IP address of your host (usually IP address starts from `192.168.`). You will
+need to confirm that you want to connect to your host computer and enter your
+password. Keep the terminal open after that.
+
+```sh
+docker exec -it nuclio-nuclio-pth.facebookresearch.detectron2.retinanet_r101 /bin/bash
+apt update && apt install -y ssh
+ssh -R 5678:localhost:5678 user@ipaddress
+```
+
+See how the latest command looks like in my case:
+
+```sh
+root@2d6cceec8f70:/opt/nuclio# ssh -R 5678:localhost:5678 nmanovic@192.168.50.188
+The authenticity of host '192.168.50.188 (192.168.50.188)' can't be established.
+ECDSA key fingerprint is SHA256:0sD6IWi+FKAhtUXr2TroHqyjcnYRIGLLx/wkGaZeRuo.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.50.188' (ECDSA) to the list of known hosts.
+nmanovic@192.168.50.188's password:
+Welcome to Ubuntu 20.04.2 LTS (GNU/Linux 5.8.0-53-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+223 updates can be applied immediately.
+132 of these updates are standard security updates.
+To see these additional updates run: apt list --upgradable
+
+Your Hardware Enablement Stack (HWE) is supported until April 2025.
+Last login: Fri Jun 25 16:39:04 2021 from 172.17.0.5
+[setupvars.sh] OpenVINO environment initialized
+nmanovic@nmanovic-dl-node:~$
+```
+
+Finally, add the configuration below into your launch.json. Open Visual Studio Code and
+run `Serverless Debug` configuration, set a breakpoint in `main.py` and try to call the
+serverless function from CVAT UI. The breakpoint should be triggered in Visual Studio
+Code and it should be possible to inspect variables and debug code.
+
+```json
+{
+  "name": "Serverless Debug",
+  "type": "python",
+  "request": "attach",
+  "connect": {
+    "host": "localhost",
+    "port": 5678
+  },
+  "pathMappings": [
+    {
+      "localRoot": "${workspaceFolder}/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio",
+      "remoteRoot": "/opt/nuclio"
+    }
+  ]
+}
+```
+
+![VS Code debug RetinaNet](/images/vscode_debug_retinanet.png)
+
+_Note: In case of changes in the source code, need to re-deploy the function and initiate
+port forwarding again._
+
+### Troubleshooting
+
+TODO
 
 [detectron2-github]: https://github.com/facebookresearch/detectron2
 [detectron2-requirements]: https://detectron2.readthedocs.io/en/latest/tutorials/install.html
