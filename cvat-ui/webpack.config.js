@@ -12,7 +12,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
-module.exports = {
+module.exports = (env) => ({
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
@@ -29,6 +29,13 @@ module.exports = {
         compress: false,
         inline: true,
         port: 3000,
+        proxy: {
+            '/api': {
+                target: env.API_URL,
+                secure: false,
+                changeOrigin: true,
+            },
+        },
         historyApiFallback: true,
     },
     resolve: {
@@ -134,4 +141,4 @@ module.exports = {
         ]),
     ],
     node: { fs: 'empty' },
-};
+});
