@@ -3,6 +3,7 @@ title: 'Objects sidebar'
 linkTitle: 'Objects sidebar'
 weight: 24
 ---
+## Hide objects sidebar
 
 `Hide` - the button hides the object's sidebar.
 
