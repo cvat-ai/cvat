@@ -5,17 +5,7 @@
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import {
-    selectIssuePosition as selectIssuePositionAction,
-    mergeObjects,
-    groupObjects,
-    splitTrack,
-    redrawShapeAsync,
-    rotateCurrentFrame,
-    repeatDrawShapeAsync,
-    pasteShapeAsync,
-    resetAnnotationsGroup,
-} from 'actions/annotation-actions';
+import { selectIssuePosition as selectIssuePositionAction, rotateCurrentFrame } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/review-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -29,15 +19,8 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    mergeObjects(enabled: boolean): void;
-    groupObjects(enabled: boolean): void;
-    splitTrack(enabled: boolean): void;
     rotateFrame(angle: Rotation): void;
     selectIssuePosition(enabled: boolean): void;
-    resetGroup(): void;
-    repeatDrawShape(): void;
-    pasteShape(): void;
-    redrawShape(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -53,7 +36,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         rotateAll,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         activeControl,
         normalizedKeyMap,
         keyMap,
@@ -62,32 +45,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        mergeObjects(enabled: boolean): void {
-            dispatch(mergeObjects(enabled));
-        },
-        groupObjects(enabled: boolean): void {
-            dispatch(groupObjects(enabled));
-        },
-        splitTrack(enabled: boolean): void {
-            dispatch(splitTrack(enabled));
-        },
         selectIssuePosition(enabled: boolean): void {
             dispatch(selectIssuePositionAction(enabled));
         },
         rotateFrame(rotation: Rotation): void {
             dispatch(rotateCurrentFrame(rotation));
-        },
-        repeatDrawShape(): void {
-            dispatch(repeatDrawShapeAsync());
-        },
-        pasteShape(): void {
-            dispatch(pasteShapeAsync());
-        },
-        resetGroup(): void {
-            dispatch(resetAnnotationsGroup());
-        },
-        redrawShape(): void {
-            dispatch(redrawShapeAsync());
         },
     };
 }

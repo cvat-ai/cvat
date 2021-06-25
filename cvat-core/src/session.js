@@ -16,8 +16,9 @@
     const User = require('./user');
     const Issue = require('./issue');
     const Review = require('./review');
+    const { FieldUpdateTrigger } = require('./common');
 
-    function buildDublicatedAPI(prototype) {
+    function buildDuplicatedAPI(prototype) {
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
@@ -575,7 +576,7 @@
              * Create a log and add it to a log collection <br>
              * Durable logs will be added after "close" method is called for them <br>
              * The fields "task_id" and "job_id" automatically added when add logs
-             * throught a task or a job <br>
+             * through a task or a job <br>
              * Ignore rules exist for some logs (e.g. zoomImage, changeAttribute) <br>
              * Payload of ignored logs are shallowly combined to previous logs of the same type
              * @method log
@@ -734,11 +735,11 @@
                 task: undefined,
             };
 
-            let updatedFields = {
+            const updatedFields = new FieldUpdateTrigger({
                 assignee: false,
                 reviewer: false,
                 status: false,
-            };
+            });
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property)) {
@@ -865,9 +866,6 @@
                     },
                     __updatedFields: {
                         get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
                     },
                 }),
             );
@@ -1016,7 +1014,7 @@
     class Task extends Session {
         /**
          * In a fact you need use the constructor only if you want to create a task
-         * @param {object} initialData - Object which is used for initalization
+         * @param {object} initialData - Object which is used for initialization
          * <br> It can contain keys:
          * <br> <li style="margin-left: 10px;"> name
          * <br> <li style="margin-left: 10px;"> assignee
@@ -1056,13 +1054,14 @@
                 clowder_api_key: undefined,
             };
 
-            let updatedFields = {
+            const updatedFields = new FieldUpdateTrigger({
                 name: false,
                 assignee: false,
                 bug_tracker: false,
                 subset: false,
                 labels: false,
-            };
+                project_id: false,
+            });
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -1143,11 +1142,18 @@
                      * @name projectId
                      * @type {integer|null}
                      * @memberof module:API.cvat.classes.Task
-                     * @readonly
                      * @instance
                      */
                     projectId: {
                         get: () => data.project_id,
+                        set: (projectId) => {
+                            if (!Number.isInteger(projectId) || projectId <= 0) {
+                                throw new ArgumentError('Value must be a positive integer');
+                            }
+
+                            updatedFields.project_id = true;
+                            data.project_id = projectId;
+                        },
                     },
                     /**
                      * @name status
@@ -1628,9 +1634,6 @@
                     },
                     __updatedFields: {
                         get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
                     },
                 }),
             );
@@ -1733,6 +1736,36 @@
         }
 
         /**
+         * Method makes a backup of a task
+         * @method export
+         * @memberof module:API.cvat.classes.Task
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async export() {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.export);
+            return result;
+        }
+
+        /**
+         * Method imports a task from a backup
+         * @method import
+         * @memberof module:API.cvat.classes.Task
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        static async import(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.import, file);
+            return result;
+        }
+
+        /**
          * Method save annotation files into clowder storage
          * @method clowderSync
          * @memberof module:API.cvat.classes.Task
@@ -1779,8 +1812,8 @@
         closeSession,
     } = require('./annotations');
 
-    buildDublicatedAPI(Job.prototype);
-    buildDublicatedAPI(Task.prototype);
+    buildDuplicatedAPI(Job.prototype);
+    buildDuplicatedAPI(Task.prototype);
 
     Job.prototype.save.implementation = async function () {
         if (this.id) {
@@ -1806,11 +1839,7 @@
 
             await serverProxy.jobs.save(this.id, jobData);
 
-            this.__updatedFields = {
-                status: false,
-                assignee: false,
-                reviewer: false,
-            };
+            this.__updatedFields.reset();
 
             return this;
         }
@@ -2090,6 +2119,9 @@
                     case 'subset':
                         taskData.subset = this.subset;
                         break;
+                    case 'project_id':
+                        taskData.project_id = this.projectId;
+                        break;
                     case 'labels':
                         taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
                         break;
@@ -2101,13 +2133,7 @@
 
             await serverProxy.tasks.saveTask(this.id, taskData);
 
-            this.updatedFields = {
-                assignee: false,
-                name: false,
-                bugTracker: false,
-                subset: false,
-                labels: false,
-            };
+            this.__updatedFields.reset();
 
             return this;
         }
@@ -2168,6 +2194,16 @@
 
     Task.prototype.delete.implementation = async function () {
         const result = await serverProxy.tasks.deleteTask(this.id);
+        return result;
+    };
+
+    Task.prototype.export.implementation = async function () {
+        const result = await serverProxy.tasks.exportTask(this.id);
+        return result;
+    };
+
+    Task.import.implementation = async function (file) {
+        const result = await serverProxy.tasks.importTask(file);
         return result;
     };
 

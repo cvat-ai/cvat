@@ -38,6 +38,7 @@ context('Changing a default value for an attribute.', () => {
             cy.addNewLabel(additionalLabel, additionalAttrsLabel);
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
             cy.wait('@getTask').its('response.statusCode').should('equal', 200);
+            cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
 
         it('Open label editor. Change default values for text & checkbox attributes, press Done.', () => {
@@ -45,9 +46,12 @@ context('Changing a default value for an attribute.', () => {
             cy.get('.cvat-constructor-viewer').within(() => {
                 cy.contains(new RegExp(`^${additionalLabel}$`))
                     .parents('.cvat-constructor-viewer-item')
+                    .should('be.visible')
                     .find('[aria-label="edit"]')
-                    .click({ force: true });
+                    .should('be.visible')
+                    .click();
             });
+
             cy.get('.cvat-label-constructor-updater').within(() => {
                 cy.get('.cvat-attribute-inputs-wrapper').then((wrapper) => {
                     for (let i = 0; i < wrapper.length; i++) {
@@ -56,7 +60,7 @@ context('Changing a default value for an attribute.', () => {
                     const minId = Math.min(...wrapperId);
                     const maxId = Math.max(...wrapperId);
                     cy.get(`[cvat-attribute-id="${minId}"]`).find('.cvat-attribute-values-input').type(newTextValue);
-                    cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click().wait(500); // Wait for the dropdown menu to transition.
+                    cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
                 });
             });
             cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
@@ -70,6 +74,7 @@ context('Changing a default value for an attribute.', () => {
                 )}.values'`,
             ).should('not.exist');
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
+            cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
 
         it('Open a job, create an object. Attribute values are correct.', () => {

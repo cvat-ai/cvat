@@ -8,8 +8,8 @@
    helm repo update
    helm dependency update
 ```
-4. (Optional) Install ingress of your choice (for example: https://github.com/kubernetes/ingress-nginx)
-5. (Optional) Create certificates for https  (for example: https://github.com/jetstack/cert-manager/ )
+4. (Optional) Install ingress of your choice (for example: <https://github.com/kubernetes/ingress-nginx>)
+5. (Optional) Create certificates for https (for example: <https://github.com/jetstack/cert-manager/>)
 6. (Optional) Create values.override.yaml and override there parameters you want
 7. Change postgresql password as described below
 8. Add ingress to values.override.yaml(example also below)
@@ -43,7 +43,7 @@ postgresql:
 ## How to describe ingress:
   Just set `ingress.enabled:` to `true`, then copy example, uncomment it and change values there
 ## How to understand what diff will be inflicted by 'helm upgrade'?
-You can use https://github.com/databus23/helm-diff#install for that
+You can use <https://github.com/databus23/helm-diff#install> for that
 ## I want to use my own postgresql/redis with your chart.
 Just set `postgresql.enabled` or `redis.enabled` to `false`, as described below.
 Then - put your instance params to "external" field
@@ -53,6 +53,6 @@ Then reference it in helm update/install command using `-f` flag
 ## Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
 ## What is kubernetes and how it is working?
-See https://kubernetes.io/
+See <https://kubernetes.io/>
 ## What is helm and how it is working?
-See https://helm.sh/
+See <https://helm.sh/>

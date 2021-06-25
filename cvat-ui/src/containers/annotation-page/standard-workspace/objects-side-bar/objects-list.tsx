@@ -17,6 +17,7 @@ import {
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
 } from 'reducers/interfaces';
@@ -28,7 +29,6 @@ interface OwnProps {
 interface StateToProps {
     jobInstance: any;
     frameNumber: any;
-    listHeight: number;
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsedAll: boolean;
@@ -42,7 +42,7 @@ interface StateToProps {
     maxZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
 }
 
 interface DispatchToProps {
@@ -71,7 +71,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance },
-            tabContentHeight: listHeight,
             colors,
         },
         settings: {
@@ -94,7 +93,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     });
 
     return {
-        listHeight,
         statesHidden,
         statesLocked,
         statesCollapsedAll: collapsedAll,
@@ -263,7 +261,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             colors,
             colorBy,
             readonly,
-            listHeight,
             statesCollapsedAll,
             updateAnnotations,
             changeGroupColor,
@@ -441,7 +438,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             <>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 <ObjectsListComponent
-                    listHeight={listHeight}
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}
                     statesCollapsedAll={statesCollapsedAll}

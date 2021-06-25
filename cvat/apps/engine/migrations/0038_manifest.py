@@ -2,30 +2,20 @@
 
 import glob
 import itertools
-import logging
 import os
-import sys
 from re import search
 
 from django.conf import settings
 from django.db import migrations
 
+from cvat.apps.engine.log import get_logger
 from cvat.apps.engine.models import (DimensionType, StorageChoice,
                                      StorageMethodChoice)
 from cvat.apps.engine.media_extractors import get_mime
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-def get_logger():
-    migration = os.path.basename(__file__).split(".")[0]
-    logger = logging.getLogger(name=migration)
-    logger.setLevel(logging.INFO)
-    file_handler = logging.FileHandler(os.path.join(settings.MIGRATIONS_LOGS_ROOT, f"{migration}.log"))
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.addHandler(logging.StreamHandler(sys.stderr))
-    return logger
+MIGRATION_NAME = os.path.splitext(os.path.basename(__file__))[0]
+MIGRATION_LOG = os.path.join(settings.MIGRATIONS_LOGS_ROOT, f"{MIGRATION_NAME}.log")
 
 def _get_query_set(apps):
     Data = apps.get_model("engine", "Data")
@@ -33,7 +23,7 @@ def _get_query_set(apps):
     return query_set
 
 def migrate2meta(apps, shema_editor):
-    logger = get_logger()
+    logger = get_logger(MIGRATION_NAME, MIGRATION_LOG)
     query_set = _get_query_set(apps)
     for db_data in query_set:
         try:
@@ -74,7 +64,7 @@ def migrate2meta(apps, shema_editor):
             logger.error(str(ex))
 
 def migrate2manifest(apps, shema_editor):
-    logger = get_logger()
+    logger = get_logger(MIGRATION_NAME, MIGRATION_LOG)
     logger.info('The data migration has been started for creating manifest`s files')
     query_set = _get_query_set(apps)
     logger.info('Need to update {} data objects'.format(len(query_set)))
