@@ -54,6 +54,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                         onFileUpload(file);
                                         return false;
                                     }}
+                                    className='cvat-import-task'
                                 >
                                     <Button
                                         size='large'
