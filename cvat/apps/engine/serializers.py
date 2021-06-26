@@ -772,9 +772,11 @@ class CombinedReviewSerializer(ReviewSerializer):
         return db_review
 
 class BaseCloudStorageSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer(required=False)
     class Meta:
         model = models.CloudStorage
         exclude = ['credentials']
+        read_only_fields = ('created_date', 'updated_date', 'owner')
 
 class CloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)

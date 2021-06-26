@@ -25,14 +25,19 @@ jobs:
         with:
           node-version: '14.x'
 
-      - name: Build docs
+      - name: Install npm packages
         working-directory: ./site
         run: |
           npm ci
-          hugo --minify
+
+      - name: Build docs
+        run: |
+          pip install gitpython packaging
+          python site/build_docs.py
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site/public
+          publish_dir: ./public
           force_orphan: true

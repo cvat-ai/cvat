@@ -36,5 +36,5 @@ npm run build
 npm run build -- --mode=development     # without a minification
 ```
 
-Important: You also have to run CVAT REST API server (please read `CONTRIBUTING.md`)
+Important: You also have to run CVAT REST API server (please read `https://openvinotoolkit.github.io/cvat/docs/contributing/`)
 to correct working since UI gets all necessary data (tasks, users, annotations) from there
