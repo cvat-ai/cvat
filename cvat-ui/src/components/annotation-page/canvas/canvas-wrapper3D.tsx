@@ -406,7 +406,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
     const ArrowGroup = (): ReactElement => (
         <span className='cvat-canvas3d-perspective-arrow-directions'>
-            <CVATTooltip title='Arrow Up' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Up' placement='topRight'>
                 <button
                     data-cy='arrow-up'
                     onClick={() => screenKeyControl(CameraAction.TILT_UP, false, true)}
@@ -417,7 +417,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 </button>
             </CVATTooltip>
             <br />
-            <CVATTooltip title='Arrow Left' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Left' placement='topRight'>
                 <button
                     onClick={() => screenKeyControl(CameraAction.ROTATE_LEFT, false, true)}
                     type='button'
@@ -426,7 +426,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
                 </button>
             </CVATTooltip>
-            <CVATTooltip title='Arrow Bottom' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Bottom' placement='topRight'>
                 <button
                     onClick={() => screenKeyControl(CameraAction.TILT_DOWN, false, true)}
                     type='button'
@@ -435,7 +435,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     <ArrowDownOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
                 </button>
             </CVATTooltip>
-            <CVATTooltip title='Arrow Right' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Right' placement='topRight'>
                 <button
                     onClick={() => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true)}
                     type='button'
