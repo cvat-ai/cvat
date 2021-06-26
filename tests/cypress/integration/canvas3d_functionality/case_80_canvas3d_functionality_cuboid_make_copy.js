@@ -12,8 +12,6 @@ context('Canvas 3D functionality. Make a copy.', () => {
     const cuboidCreationParams = {
         labelName: labelName,
     };
-    const keyCodeV = 86;
-    const keyCodeC = 67;
 
     before(() => {
         cy.openTask(taskName)
@@ -51,30 +49,27 @@ context('Canvas 3D functionality. Make a copy.', () => {
             });
         });
 
-        it.skip('Make a copy via hot keys with "ctrl" holding.', () => {
+        it('Copy a cuboid to an another frame.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 100, 200).trigger('mousemove', 300, 200);
-            cy.get('body').type('{ctrl}', {release: false}); // Hold ctrl
-            cy.get('body').trigger('keydown', {keyCode: keyCodeC, ctrlKey: true}).trigger('keyup'); // Copy a shape
-            cy.get('body').trigger('keydown', {keyCode: keyCodeV, ctrlKey: true}).trigger('keyup');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 200).dblclick(400, 200); // Paste the shape
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 300).dblclick(400, 300); // The shape is expected to be pasted again (not working now)
-            cy.get('body').type('{ctrl}'); // Ctrl key up
+            cy.get('#cvat-objects-sidebar-state-item-2').should('have.class', 'cvat-objects-sidebar-state-active-item')
+            cy.get('body').type('{Ctrl}c');
+            cy.get('.cvat-player-next-button').click().wait(1000);
+            cy.get('body').type('{Ctrl}v');
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 200).dblclick(400, 200);
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
-                expect(sideBarItems.length).to.be.equal(5);
+                expect(sideBarItems.length).to.be.equal(1);
             });
+            cy.get('.cvat-player-previous-button').click().wait(1000);
         });
 
-        // Comment: https://github.com/openvinotoolkit/cvat/pull/3234#issuecomment-866830173
-        it.skip('Make a copy via hot keys with frame chenging.', () => {
+        it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 100, 200).trigger('mousemove', 300, 200);
+            cy.get('#cvat-objects-sidebar-state-item-2').should('have.class', 'cvat-objects-sidebar-state-active-item')
             cy.get('body').type('{Ctrl}c').type('{Ctrl}v');
-            cy.get('.cvat-player-next-button').click();
-            cy.get('.cvat-player-previous-button').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 100, 200).trigger('mousemove', 300, 200);
-            cy.get('body').type('{Ctrl}c').type('{Ctrl}v');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 250).dblclick(400, 250);
+            cy.get('.cvat-player-next-button').click().wait(1000);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove').dblclick();
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
-                expect(sideBarItems.length).to.be.equal(6);
+                expect(sideBarItems.length).to.be.equal(2);
             });
         });
     });
