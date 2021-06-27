@@ -872,7 +872,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=dump_format_name):
                     if dump_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
-                        "Datumaro 1.0" # Datumaro 1.0 is not in the list of import format
+                        "Datumaro 1.0", # Datumaro 1.0 is not in the list of import format
                         "Point Cloud Format 1.0",
                         "Velodyne Points Format 1.0"
                     ]:
