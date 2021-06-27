@@ -151,11 +151,18 @@ export interface CloudStoragesState {
             error: string;
         };
         updates: {
-            cloudStorageID: null | number;
+            cloudStorageID: null | number; // [cloudStorageID: number]: boolean;
             error: string;
         };
         deletes: {
             [cloudStorageID: number]: boolean;
+        };
+        contentLoads: {
+            cloudStorageID: number | null;
+            content: any | null;
+            initialized: boolean;
+            fetching: boolean;
+
         };
     };
 }

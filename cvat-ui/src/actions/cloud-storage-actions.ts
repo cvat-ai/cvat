@@ -10,9 +10,6 @@ import { CloudStoragesQuery, CloudStorage } from 'reducers/interfaces';
 const cvat = getCore();
 
 export enum CloudStorageActionTypes {
-    // GET_FILE = 'GET_FILE',
-    // GET_FILE_SUCCESS = 'GET_FILES_SUCCESS',
-    // GET_FILE_FAILED = 'GET_FILE_FAILED',
     GET_CLOUD_STORAGES = 'GET_CLOUD_STORAGES',
     GET_CLOUD_STORAGE_SUCCESS = 'GET_CLOUD_STORAGES_SUCCESS',
     GET_CLOUD_STORAGE_FAILED = 'GET_CLOUD_STORAGES_FAILED',
@@ -58,6 +55,12 @@ const cloudStoragesActions = {
         createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS, { cloudStorage }),
     updateCloudStorageFailed: (cloudStorage: CloudStorage, error: any) =>
         createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED, { cloudStorage, error }),
+    loadCloudStorageContent: () => createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT),
+    loadCloudStorageContentSuccess: (cloudStorageID: number, content: any) =>
+        createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_SUCCESS, { cloudStorageID, content }),
+    loadCloudStorageContentFailed: (cloudStorageID: number, error: any) =>
+        createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED, { cloudStorageID, error }),
+
 };
 
 export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;
@@ -134,6 +137,34 @@ export function updateCloudStorageAsync(data: any): ThunkAction {
             dispatch(cloudStoragesActions.updateCloudStorageSuccess(savedCloudStorage));
         } catch (error) {
             dispatch(cloudStoragesActions.updateCloudStorageFailed(data, error));
+        }
+    };
+}
+
+export function loadCloudStorageContentAsync(cloudStorageID: number): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        let cloudStorageInstances;
+        const query = {
+            id: cloudStorageID,
+        };
+        try {
+            cloudStorageInstances = await cvat.cloudStorages.get(query);
+        } catch (error) {
+            dispatch(cloudStoragesActions.getCloudStoragesFailed(error, query));
+            return;
+        }
+
+        // if (!cloudStorageInstances.length) {
+        //     dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorageID, content))
+        // }
+        dispatch(cloudStoragesActions.loadCloudStorageContent());
+        try {
+            const cloudStorageInstance = new cvat.classes.CloudStorage(cloudStorageInstances[0]);
+            const result = await cloudStorageInstance.getContent();
+            const content = JSON.parse(result);
+            dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorageID, content));
+        } catch (error) {
+            dispatch(cloudStoragesActions.loadCloudStorageContentFailed(cloudStorageID, error));
         }
     };
 }

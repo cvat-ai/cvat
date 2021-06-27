@@ -36,6 +36,12 @@ const defaultState: CloudStoragesState = {
             error: '',
         },
         deletes: {},
+        contentLoads: {
+            cloudStorageID: null,
+            content: null,
+            initialized: false,
+            fetching: false,
+        },
     },
 };
 
@@ -198,6 +204,47 @@ export default (
                     ...state.activities,
                     deletes: {
                         ...deletes,
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT:
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    contentLoads: {
+                        cloudStorageID: null,
+                        content: null,
+                        initialized: false,
+                        fetching: true,
+                    },
+                },
+            };
+        case CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_SUCCESS: {
+            const { cloudStorageID, content } = action.payload;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    contentLoads: {
+                        cloudStorageID,
+                        content,
+                        initialized: true,
+                        fetching: false,
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    contentLoads: {
+                        ...state.activities.contentLoads,
+                        initialized: true,
+                        fetching: false,
                     },
                 },
             };
