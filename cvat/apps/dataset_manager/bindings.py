@@ -268,7 +268,7 @@ class TaskData:
             if frame not in frames:
                 frames[frame] = TaskData.Frame(
                     idx=idx,
-                    id=frame_info['id'],
+                    id=frame_info.get('id',0),
                     frame=frame,
                     name=frame_info['path'],
                     height=frame_info["height"],

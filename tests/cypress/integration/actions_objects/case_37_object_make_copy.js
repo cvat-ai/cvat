@@ -168,5 +168,48 @@ context('Object make a copy.', () => {
                 }
             },
         );
+
+        it('Copy a shape to an another frame.', () => {
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}c');
+            cy.get('.cvat-player-next-button').click();
+            cy.get('body').type('{ctrl}v');
+            cy.get('.cvat-canvas-container').click();
+            cy.get('.cvat-player-previous-button').click();
+        });
+
+        it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', () => {
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}c');
+            cy.get('body').type('{ctrl}v');
+            cy.get('.cvat-player-next-button').click();
+            cy.get('.cvat-canvas-container').click(300, 300);
+            cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {
+                expect(sidebarItems.length).to.be.equal(2);
+            });
+        });
+
+        it('Copy a shape with holding "Ctrl".', () => {
+            const keyCodeC = 67;
+            const keyCodeV = 86;
+            cy.get('#cvat_canvas_shape_18').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}', {release: false}); // Hold
+            cy.get('body')
+                .trigger('keydown', {keyCode: keyCodeC, ctrlKey: true})
+                .trigger('keyup')
+                .trigger('keydown', {keyCode: keyCodeV, ctrlKey: true})
+                .trigger('keyup');
+            cy.get('.cvat-canvas-container').click(400, 300);
+            cy.get('.cvat-canvas-container').click(500, 300);
+            cy.get('body').type('{ctrl}'); // Unhold
+            cy.get('.cvat-canvas-container').click(600, 300);
+            cy.get('.cvat_canvas_shape_drawing').should('not.exist');
+            cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {
+                expect(sidebarItems.length).to.be.equal(5);
+            });
+            cy.get('.cvat_canvas_shape').then((shapes) => {
+                expect(shapes.length).to.be.equal(5);
+            });
+        });
     });
 });

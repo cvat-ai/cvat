@@ -91,7 +91,8 @@ class CacheInteraction:
                         source_path = temp_file.name
                         buf = cloud_storage_instance.download_fileobj(name)
                         temp_file.write(buf.getvalue())
-                        if not (checksum := item.get('checksum', None)):
+                        checksum = item.get('checksum', None)
+                        if not checksum:
                             slogger.glob.warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
                         if checksum and not md5_hash(source_path) == checksum:
                             slogger.glob.warning('Hash sums of files {} do not match'.format(name))
@@ -103,7 +104,7 @@ class CacheInteraction:
         writer.save_as_chunk(images, buff)
         buff.seek(0)
         if db_data.storage == StorageChoice.CLOUD_STORAGE:
-            images = [image_path for image in images if os.path.exists((image_path := image[0]))]
+            images = [image[0] for image in images if os.path.exists(image[0])]
             for image_path in images:
                 os.remove(image_path)
         return buff, mime_type
