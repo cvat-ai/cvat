@@ -30,22 +30,5 @@
         > div:not(first-child) {
             margin-top: 10px;
         }
-
-        .cvat-update-cloud-storage-submit-section > button {
-            float: right;
-            width: 120px;
-        }
-
-        .cvat-update-cloud-storage-reset-button {
-            background-color: $cansel-button-color1;
-            border: 1px solid #b8b8b8;
-            box-sizing: border-box;
-            border-radius: 2px;
-            color: white;
-        }
-
-        .cvat-update-cloud-storage-reset-button:hover {
-            background-color: $cansel-button-color2;
-        }
     }
 }

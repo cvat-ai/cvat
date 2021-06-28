@@ -4,48 +4,43 @@
 
 @import '../../base.scss';
 
-.cvat-create-cloud-storage-form-wrapper {
+.cvat-attach-cloud-storage-form-wrapper {
     text-align: center;
-    padding-top: 40px;
+    padding-top: $grid-unit-size * 5;
     overflow-y: auto;
     height: 90%;
     position: fixed;
     width: 100%;
 
     > div > span {
-        font-size: 36px;
+        font-size: $grid-unit-size * 4;
     }
 
-    .cvat-create-cloud-storage-content {
-        margin-top: 20px;
+    .cvat-attach-cloud-storage-form {
+        margin-top: $grid-unit-size * 2;
         width: 100%;
         height: auto;
         border: 1px solid $border-color-1;
-        border-radius: 3px;
-        padding: 20px;
+        border-radius: $grid-unit-size / 2;
+        padding: $grid-unit-size * 2;
         background: $background-color-1;
         text-align: initial;
-        justify-content: space-between;
+
+        .cvat-attach-cloud-storage-form-item {
+            justify-content: space-between;
+
+            > div:first-child {
+                text-align: left;
+            }
+        }
 
         > div:not(first-child) {
-            margin-top: 10px;
+            margin-top: $grid-unit-size;
         }
 
-        .cvat-create-cloud-storage-submit-section > button {
-            float: right;
-            width: 120px;
-        }
-
-        .cvat-create-cloud-storage-reset-button {
-            background-color: $cansel-button-color1;
-            border: 1px solid #b8b8b8;
-            box-sizing: border-box;
-            border-radius: 2px;
-            color: white;
-        }
-
-        .cvat-create-cloud-storage-reset-button:hover {
-            background-color: $cansel-button-color2;
+        .cvat-attach-cloud-storage-reset-button,
+        .cvat-attach-cloud-storage-submit-button {
+            width: $grid-unit-size * 12;
         }
     }
 }

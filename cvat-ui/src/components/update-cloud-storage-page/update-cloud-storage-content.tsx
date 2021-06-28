@@ -12,26 +12,25 @@ import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { updateCloudStorageAsync } from 'actions/cloud-storage-actions';
-import { CloudStorage } from '../../reducers/interfaces';
-import { ProviderType, CredentialsType } from '../enums';
+import { ProviderType, CredentialsType } from 'utils/enums';
 
 export interface Props {
-    cloudStorage: CloudStorage,
+    cloudStorage: CloudStorage;
 }
 
 interface CloudStorageForm {
-    credentials_type: CredentialsType,
-    display_name: string,
-    provider_type: ProviderType,
-    resource: string,
-    account_name?: string,
-    session_token?: string,
-    key?: string,
-    secretKey?: string,
-    description?: string,
-    specific_attributes?: string,
+    credentials_type: CredentialsType;
+    display_name: string;
+    provider_type: ProviderType;
+    resource: string;
+    account_name?: string;
+    session_token?: string;
+    key?: string;
+    secretKey?: string;
+    description?: string;
+    specific_attributes?: string;
 }
 
 export default function UpdateCloudStorageContent(props: Props): JSX.Element {
@@ -40,8 +39,17 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
     const history = useHistory();
     const formRef = React.createRef<FormInstance>();
     const {
-        displayName, description, accessKey, secretKey, token, accountName, resourceName,
-        credentialsType, provider, specificAttributes, id,
+        displayName,
+        description,
+        accessKey,
+        secretKey,
+        token,
+        accountName,
+        resourceName,
+        credentialsType,
+        provider,
+        specificAttributes,
+        id,
     } = cloudStorage;
     const [newCredentialsType, setNewCredentialsType] = useState<CredentialsType>(credentialsType);
     const updates = useSelector((state: CombinedState) => state.cloudStorages.activities.updates);
@@ -65,7 +73,6 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
             // not chancged
             provider_type: provider,
             resource: resourceName,
-
         };
         if (credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
             fieldsValue.account_name = accountName;
@@ -178,9 +185,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                 name='credentials_type'
                 rules={[{ required: true, message: 'Please, select credentials type' }]}
             >
-                <Select
-                    onSelect={(value: CredentialsType) => setNewCredentialsType(value)}
-                >
+                <Select onSelect={(value: CredentialsType) => setNewCredentialsType(value)}>
                     <Select.Option value={CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET}>
                         {CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET}
                     </Select.Option>
@@ -231,10 +236,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
     return (
         <Row justify='start' align='middle' className='cvat-update-cloud-storage-content'>
             <Col span={24}>
-                <Form
-                    layout='horizontal'
-                    ref={formRef}
-                >
+                <Form layout='horizontal' ref={formRef}>
                     <Form.Item
                         label='Display name'
                         name='display_name'
@@ -242,14 +244,8 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                     >
                         <Input maxLength={63} />
                     </Form.Item>
-                    <Form.Item
-                        label='Description'
-                        name='description'
-                        labelAlign='left'
-                    >
-                        <TextArea
-                            autoSize={{ minRows: 2, maxRows: 5 }}
-                        />
+                    <Form.Item label='Description' name='description' labelAlign='left'>
+                        <TextArea autoSize={{ minRows: 2, maxRows: 5 }} />
                     </Form.Item>
                     <Form.Item
                         label='Provider'
@@ -263,11 +259,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                 </Form>
             </Col>
             <Col span={6} offset={18}>
-                <Button
-                    htmlType='button'
-                    onClick={onReset}
-                    className='cvat-update-cloud-storage-reset-button'
-                >
+                <Button htmlType='button' onClick={onReset} className='cvat-update-cloud-storage-reset-button'>
                     Cansel
                 </Button>
                 <Button
