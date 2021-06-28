@@ -421,7 +421,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             })
             .catch((exception: any): void => {
                 this.data.exception = exception;
-                this.notify(UpdateReasons.DATA_FAILED);
+                // don't notify when the frame is no longer needed
+                if (typeof exception !== 'number' || exception === this.data.imageID) {
+                    this.notify(UpdateReasons.DATA_FAILED);
+                }
                 throw exception;
             });
     }
