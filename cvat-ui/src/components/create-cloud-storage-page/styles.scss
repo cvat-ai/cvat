@@ -4,6 +4,7 @@
 
 @import '../../base.scss';
 
+.cvat-update-cloud-storage-form-wrapper,
 .cvat-attach-cloud-storage-form-wrapper {
     text-align: center;
     padding-top: $grid-unit-size * 5;
@@ -16,7 +17,7 @@
         font-size: $grid-unit-size * 4;
     }
 
-    .cvat-attach-cloud-storage-form {
+    .cvat-cloud-storage-form {
         margin-top: $grid-unit-size * 2;
         width: 100%;
         height: auto;
@@ -26,7 +27,7 @@
         background: $background-color-1;
         text-align: initial;
 
-        .cvat-attach-cloud-storage-form-item {
+        .cvat-cloud-storage-form-item {
             justify-content: space-between;
 
             > div:first-child {

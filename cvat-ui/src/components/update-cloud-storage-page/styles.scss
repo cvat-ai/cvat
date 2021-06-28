@@ -6,29 +6,13 @@
 
 .cvat-update-cloud-storage-form-wrapper {
     text-align: center;
-    padding-top: 40px;
+    padding-top: $grid-unit-size * 5;
     overflow-y: auto;
     height: 90%;
     position: fixed;
     width: 100%;
 
     > div > span {
-        font-size: 36px;
-    }
-
-    .cvat-update-cloud-storage-content {
-        margin-top: 20px;
-        width: 100%;
-        height: auto;
-        border: 1px solid $border-color-1;
-        border-radius: 3px;
-        padding: 20px;
-        background: $background-color-1;
-        text-align: initial;
-        justify-content: space-between;
-
-        > div:not(first-child) {
-            margin-top: 10px;
-        }
+        font-size: $grid-unit-size * 4;
     }
 }

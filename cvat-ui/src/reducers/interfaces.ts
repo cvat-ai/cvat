@@ -147,11 +147,13 @@ export interface CloudStoragesState {
     gettingList: CloudStoragesList;
     activities: {
         creates: {
+            attaching: boolean;
             id: null | number;
             error: string;
         };
         updates: {
-            cloudStorageID: null | number; // [cloudStorageID: number]: boolean;
+            updating: boolean;
+            cloudStorageID: null | number;
             error: string;
         };
         deletes: {
@@ -162,7 +164,6 @@ export interface CloudStoragesState {
             content: any | null;
             initialized: boolean;
             fetching: boolean;
-
         };
     };
 }

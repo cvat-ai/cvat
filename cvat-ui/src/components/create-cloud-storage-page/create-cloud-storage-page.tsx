@@ -7,7 +7,7 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
-import CreateCloudStorageForm from './create-cloud-storage-form';
+import CreateCloudStorageForm from './cloud-storage-form';
 
 export default function CreateCloudStoragePageComponent(): JSX.Element {
     return (

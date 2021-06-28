@@ -28,10 +28,12 @@ const defaultState: CloudStoragesState = {
     },
     activities: {
         creates: {
+            attaching: false,
             id: null,
             error: '',
         },
         updates: {
+            updating: false,
             cloudStorageID: null,
             error: '',
         },
@@ -85,6 +87,7 @@ export default (
                 activities: {
                     ...state.activities,
                     creates: {
+                        attaching: true,
                         id: null,
                         error: '',
                     },
@@ -97,6 +100,7 @@ export default (
                 activities: {
                     ...state.activities,
                     creates: {
+                        attaching: false,
                         id: action.payload.cloudStorageID,
                         error: '',
                     },
@@ -110,6 +114,7 @@ export default (
                     ...state.activities,
                     creates: {
                         ...state.activities.creates,
+                        attaching: false,
                         error: action.payload.error.toString(),
                     },
                 },
@@ -121,6 +126,7 @@ export default (
                 activities: {
                     ...state.activities,
                     updates: {
+                        updating: true,
                         cloudStorageID: null,
                         error: '',
                     },
@@ -133,6 +139,7 @@ export default (
                 activities: {
                     ...state.activities,
                     updates: {
+                        updating: false,
                         cloudStorageID: action.payload.cloudStorage.id,
                         error: '',
                     },
@@ -156,6 +163,7 @@ export default (
                     ...state.activities,
                     updates: {
                         ...state.activities.updates,
+                        updating: false,
                         error: action.payload.error.toString(),
                     },
                 },

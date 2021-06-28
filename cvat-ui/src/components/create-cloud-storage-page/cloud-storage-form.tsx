@@ -12,16 +12,74 @@ import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 
-export default function CreateCloudStorageForm(): JSX.Element {
+export interface Props {
+    cloudStorage?: CloudStorage;
+}
+
+interface CloudStorageForm {
+    credentials_type: CredentialsType;
+    display_name: string;
+    provider_type: ProviderType;
+    resource: string;
+    account_name?: string;
+    session_token?: string;
+    key?: string;
+    secretKey?: string;
+    description?: string;
+    specific_attributes?: string;
+}
+
+export default function CreateCloudStorageForm(props: Props): JSX.Element {
+    const { cloudStorage } = props;
     const dispatch = useDispatch();
     const formRef = React.createRef<FormInstance>();
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
     const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
+    const attaching = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.attaching);
+    const updating = useSelector((state: CombinedState) => state.cloudStorages.activities.updates.updating);
+    const loading = cloudStorage ? updating : attaching;
+
+    function initializeFields(): void {
+        const fieldsValue: CloudStorageForm = {
+            credentials_type: cloudStorage.credentialsType,
+            display_name: cloudStorage.displayName,
+            description: cloudStorage.description,
+            specific_attributes: cloudStorage.specificAttributes,
+            provider_type: cloudStorage.provider,
+            resource: cloudStorage.resourceName,
+        };
+
+        setProviderType(cloudStorage.provider);
+        setCredentialsType(cloudStorage.credentialsType);
+
+        if (cloudStorage.credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
+            fieldsValue.account_name = cloudStorage.accountName;
+            fieldsValue.session_token = cloudStorage.token;
+        } else if (cloudStorage.credentialsType === CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET) {
+            fieldsValue.session_token = cloudStorage.token;
+            fieldsValue.key = cloudStorage.accessKey;
+            fieldsValue.secretKey = cloudStorage.secretKey;
+        }
+
+        formRef.current?.setFieldsValue(fieldsValue);
+    }
+
+    function onReset(): void {
+        if (cloudStorage) {
+            initializeFields();
+        } else {
+            formRef.current?.resetFields();
+        }
+    }
+
+    useEffect(() => {
+        onReset();
+    }, []);
 
     useEffect(() => {
         if (Number.isInteger(newCloudStorageId)) {
@@ -36,13 +94,6 @@ export default function CreateCloudStorageForm(): JSX.Element {
             });
         }
     }, [newCloudStorageId]);
-
-    useEffect(() => {
-        setCredentialsType(null);
-        if (formRef && formRef.current) {
-            formRef.current.resetFields(['credentials_type']);
-        }
-    }, [providerType]);
 
     const onSumbit = async (): Promise<void> => {
         let cloudStorageData: Record<string, any> = {};
@@ -64,12 +115,8 @@ export default function CreateCloudStorageForm(): JSX.Element {
         }
     };
 
-    const onReset = (): void => {
-        formRef.current?.resetFields();
-    };
-
     const commonProps = {
-        className: 'cvat-attach-cloud-storage-form-item',
+        className: 'cvat-cloud-storage-form-item',
         labelCol: { span: 5 },
         wrapperCol: { offset: 1 },
     };
@@ -159,7 +206,7 @@ export default function CreateCloudStorageForm(): JSX.Element {
                     rules={[{ required: true, message: 'Please, specify a bucket name' }]}
                     {...internalCommonProps}
                 >
-                    <Input maxLength={63} />
+                    <Input disabled={!!cloudStorage} maxLength={63} />
                 </Form.Item>
                 <Form.Item
                     label='Credentials type'
@@ -204,7 +251,7 @@ export default function CreateCloudStorageForm(): JSX.Element {
                     rules={[{ required: true, message: 'Please, specify a container name' }]}
                     {...internalCommonProps}
                 >
-                    <Input maxLength={63} />
+                    <Input disabled={!!cloudStorage} maxLength={63} />
                 </Form.Item>
                 <Form.Item
                     label='Credentials type'
@@ -225,7 +272,7 @@ export default function CreateCloudStorageForm(): JSX.Element {
     };
 
     return (
-        <Form className='cvat-attach-cloud-storage-form' layout='horizontal' ref={formRef}>
+        <Form className='cvat-cloud-storage-form' layout='horizontal' ref={formRef}>
             <Form.Item
                 {...commonProps}
                 label='Display name'
@@ -234,7 +281,7 @@ export default function CreateCloudStorageForm(): JSX.Element {
             >
                 <Input maxLength={63} />
             </Form.Item>
-            <Form.Item {...commonProps} label='Description' name='description' labelAlign='left'>
+            <Form.Item {...commonProps} label='Description' name='description'>
                 <TextArea autoSize={{ minRows: 1, maxRows: 5 }} placeholder='Any useful description' />
             </Form.Item>
             <Form.Item
@@ -243,7 +290,14 @@ export default function CreateCloudStorageForm(): JSX.Element {
                 name='provider_type'
                 rules={[{ required: true, message: 'Please, specify a cloud storage provider' }]}
             >
-                <Select onSelect={(value: ProviderType) => setProviderType(value)}>
+                <Select
+                    disabled={!!cloudStorage}
+                    onSelect={(value: ProviderType) => {
+                        setProviderType(value);
+                        setCredentialsType(null);
+                        formRef.current?.resetFields(['credentials_type']);
+                    }}
+                >
                     <Select.Option value={ProviderType.AWS_S3_BUCKET}>{ProviderType.AWS_S3_BUCKET}</Select.Option>
                     <Select.Option value={ProviderType.AZURE_CONTAINER}>{ProviderType.AZURE_CONTAINER}</Select.Option>
                 </Select>
@@ -252,7 +306,12 @@ export default function CreateCloudStorageForm(): JSX.Element {
             {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
             <Row justify='end'>
                 <Col>
-                    <Button htmlType='button' onClick={onReset} className='cvat-attach-cloud-storage-reset-button'>
+                    <Button
+                        htmlType='button'
+                        onClick={onReset}
+                        className='cvat-cloud-storage-reset-button'
+                        disabled={loading}
+                    >
                         Reset
                     </Button>
                 </Col>
@@ -261,9 +320,11 @@ export default function CreateCloudStorageForm(): JSX.Element {
                         type='primary'
                         htmlType='submit'
                         onClick={onSumbit}
-                        className='cvat-attach-cloud-storage-submit-button'
+                        className='cvat-cloud-storage-submit-button'
+                        loading={loading}
+                        disabled={loading}
                     >
-                        Submit
+                        {cloudStorage ? 'Update' : 'Submit'}
                     </Button>
                 </Col>
             </Row>
