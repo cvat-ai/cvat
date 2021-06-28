@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,14 +29,14 @@ module.exports = (env) => ({
         compress: false,
         inline: true,
         port: 3000,
+        historyApiFallback: true,
         proxy: {
             '/api': {
-                target: env.API_URL,
+                target: env && env.API_URL,
                 secure: false,
                 changeOrigin: true,
             },
         },
-        historyApiFallback: true,
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
