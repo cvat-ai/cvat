@@ -49,8 +49,8 @@ const cloudStoragesActions = {
         createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_SUCCESS, { cloudStorageID }),
     createCloudStorageFailed: (error: any) =>
         createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED, { error }),
-    updateCloudStorage: (cloudStorageID: number) =>
-        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE, { cloudStorageID }),
+    updateCloudStorage: () =>
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE, {}),
     updateCloudStorageSuccess: (cloudStorage: CloudStorage) =>
         createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS, { cloudStorage }),
     updateCloudStorageFailed: (cloudStorage: CloudStorage, error: any) =>
@@ -131,7 +131,7 @@ export function updateCloudStorageAsync(data: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const cloudStorageInstance = new cvat.classes.CloudStorage(data);
 
-        dispatch(cloudStoragesActions.updateCloudStorage(data.id));
+        dispatch(cloudStoragesActions.updateCloudStorage());
         try {
             const savedCloudStorage = await cloudStorageInstance.save();
             dispatch(cloudStoragesActions.updateCloudStorageSuccess(savedCloudStorage));

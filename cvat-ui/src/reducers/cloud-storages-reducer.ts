@@ -4,7 +4,7 @@
 
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { CloudStorage } from 'reducers/interfaces';
+// import { CloudStorage } from 'reducers/interfaces';
 import { CloudStoragesState } from './interfaces';
 
 const defaultState: CloudStoragesState = {
@@ -137,15 +137,16 @@ export default (
                         error: '',
                     },
                 },
-                current: state.current.map(
-                    (cloudStorage: CloudStorage): CloudStorage => {
-                        if (cloudStorage.id === action.payload.cloudStorage.id) {
-                            return cloudStorage;
-                        }
+                // current: state.current.map(
+                //     (cloudStorage: CloudStorage): CloudStorage => {
+                //         if (cloudStorage.id === action.payload.cloudStorage.id) {
+                //             return cloudStorage;
+                //         }
 
-                        return cloudStorage;
-                    },
-                ),
+                //         return cloudStorage;
+                //     },
+                // ),
+                current: [action.payload.cloudStorage],
             };
         }
         case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED: {

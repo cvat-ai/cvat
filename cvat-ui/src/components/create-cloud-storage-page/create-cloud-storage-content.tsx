@@ -51,6 +51,10 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                 delete cloudStorageData.range;
                 cloudStorageData.speciffic_attributes = `range=${formValues.range}`;
             }
+            if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
+                delete cloudStorageData.SAS_token;
+                cloudStorageData.session_token = formValues.SAS_token;
+            }
             dispatch(createCloudStorageAsync(cloudStorageData));
         }
     };
@@ -88,7 +92,7 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                         </Form.Item>
                         <Form.Item
                             label='TOKEN SESSION'
-                            name='token'
+                            name='session_token'
                             rules={[{ required: true, message: 'Please input your token_session' }]}
                         >
                             <Input.Password />
@@ -97,7 +101,7 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                 );
                 break;
             }
-            case ProviderType.AZURE_BLOB_CONTAINER && CredentialsType.ACCOUNT_NAME_TOKEN_PAIR: {
+            case ProviderType.AZURE_CONTAINER && CredentialsType.ACCOUNT_NAME_TOKEN_PAIR: {
                 credentials = (
                     <>
                         <Form.Item
@@ -109,10 +113,10 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                         </Form.Item>
                         <Form.Item
                             label='SAS token'
-                            name='token'
+                            name='SAS_token'
                             rules={[{ required: true, message: 'Please input your SAS token' }]}
                         >
-                            <Input.Password maxLength={40} />
+                            <Input.Password />
                         </Form.Item>
                     </>
                 );
@@ -225,13 +229,13 @@ function CreateCloudStorageContent(props:any): JSX.Element {
                             <Select.Option value={ProviderType.AWS_S3_BUCKET}>
                                 {ProviderType.AWS_S3_BUCKET}
                             </Select.Option>
-                            <Select.Option value={ProviderType.AZURE_BLOB_CONTAINER}>
-                                {ProviderType.AZURE_BLOB_CONTAINER}
+                            <Select.Option value={ProviderType.AZURE_CONTAINER}>
+                                {ProviderType.AZURE_CONTAINER}
                             </Select.Option>
                         </Select>
                     </Form.Item>
                     {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
-                    {providerType === ProviderType.AZURE_BLOB_CONTAINER && AzureBlobStorageConfiguration()}
+                    {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
                 </Form>
             </Col>
             <Col span={6} offset={18}>

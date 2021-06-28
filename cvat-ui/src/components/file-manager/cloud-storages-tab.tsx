@@ -14,6 +14,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Form, { FormInstance } from 'antd/lib/form';
 import Tabs from 'antd/lib/tabs';
+import Spin from 'antd/lib/spin';
 import { CloudTwoTone, PlusCircleOutlined } from '@ant-design/icons';
 import { CloudStoragesQuery, CombinedState, CloudStorage } from 'reducers/interfaces';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
@@ -48,6 +49,14 @@ export default function CloudStorageTab(props: Props): JSX.Element {
         [cloudStorages],
     );
 
+    if (isFetching) {
+        return (
+            <Row className='cvat-creaqte-task-page-cloud-storages-tab-empty-content' justify='center' align='middle'>
+                <Spin size='large' />
+            </Row>
+        );
+    }
+
     const cloudStoragesArray = [];
     for (const curCloudStorage of cloudStorages) {
         cloudStoragesArray.push(
@@ -78,7 +87,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     {cloudStoragesArray}
                 </Select>
             </Form.Item>
-            {totalCount ? (
+            { initialized && totalCount ? (
                 cloudStorageId && (
                     <CloudStorageFiles
                         id={cloudStorageId}

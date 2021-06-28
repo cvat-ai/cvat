@@ -21,28 +21,52 @@
 }
 
 .cvat-create-task-page-cloud-storages-tab {
-    // cvat-create-task-page-cloud-storages-tab-form
     display: flex;
     justify-content: space-between;
 
     // > .cvat-cloud-storage-tab-plus {
     // }
+}
 
-    .cvat-create-task-page-cloud-storages-tab-form {
-        .cvat-empty-cloud-storages-tree {
-            background-color: $background-color-2;
-            border: 1px;
-            box-sizing: border-box;
-            border-radius: $grid-unit-size * 0.5;
-            text-align: center;
+.cvat-create-task-page-cloud-storages-tab-form {
+    .cvat-empty-cloud-storages-tree {
+        background-color: $background-color-2;
+        border: 1px;
+        box-sizing: border-box;
+        border-radius: $grid-unit-size * 0.5;
+        text-align: center;
 
-            > .ant-typography {
-                margin-top: $grid-unit-size * 1.25;
-            }
-
-            > .cvat-cloud-storage-icon {
-                font-size: $grid-unit-size * 20;
-            }
+        > .ant-typography {
+            margin-top: $grid-unit-size * 1.25;
         }
+
+        > .cvat-cloud-storage-icon {
+            font-size: $grid-unit-size * 20;
+        }
+    }
+
+    .notification-file-not-exist-in-manifest {
+        background-color: $notification-background-color-1;
+        display: flex;
+        justify-content: left;
+        vertical-align: bottom;
+        border-color: $notification-border-color-1;
+        border-radius: $grid-unit-size * 0.5;
+        // width: $grid-unit-size * 80;
+        // height: $grid-unit-size * 6;
+        // stroke: solid;
+    }
+
+    .notification-file-not-exist-in-stoarge {
+        background-color: $notification-background-color-1;
+        display: flex;
+        justify-content: left;
+        vertical-align: bottom;
+        border-color: $notification-border-color-1;
+        border-radius: $grid-unit-size * 0.5;
+    }
+
+    .warning-icon {
+        color: $notification-border-color-1;
     }
 }

@@ -4,7 +4,7 @@
 
 export enum ProviderType {
     AWS_S3_BUCKET = 'AWS_S3_BUCKET',
-    AZURE_BLOB_CONTAINER = 'AZURE_BLOB_CONTAINER',
+    AZURE_CONTAINER = 'AZURE_CONTAINER',
 }
 
 export enum CredentialsType {

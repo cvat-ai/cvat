@@ -856,6 +856,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
         instance.display_name = validated_data.get('display_name', instance.display_name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.specific_attributes = validated_data.get('specific_attributes', instance.specific_attributes)
 
         instance.save()
         return instance

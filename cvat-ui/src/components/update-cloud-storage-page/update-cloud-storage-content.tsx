@@ -21,29 +21,63 @@ export interface Props {
     cloudStorage: CloudStorage,
 }
 
+interface CloudStorageForm {
+    credentials_type: CredentialsType,
+    display_name: string,
+    provider_type: ProviderType,
+    resource: string,
+    account_name?: string,
+    session_token?: string,
+    key?: string,
+    secretKey?: string,
+    description?: string,
+    specific_attributes?: string,
+}
+
 export default function UpdateCloudStorageContent(props: Props): JSX.Element {
+    const { cloudStorage } = props;
     const dispatch = useDispatch();
     const history = useHistory();
     const formRef = React.createRef<FormInstance>();
-    const { cloudStorage } = props;
-    console.log(cloudStorage);
     const {
-        displayName, description, accessKey, secretKey, token, accountName, resource,
-        credentialsType, provider,
+        displayName, description, accessKey, secretKey, token, accountName, resourceName,
+        credentialsType, provider, specificAttributes, id,
     } = cloudStorage;
-    console.log('resource ', resource);
     const [newCredentialsType, setNewCredentialsType] = useState<CredentialsType>(credentialsType);
     const updates = useSelector((state: CombinedState) => state.cloudStorages.activities.updates);
 
+    // useEffect(() => {
+    //     if (updates.cloudStorageID && !updates.error) {
+    //         notification.info({
+    //             message: 'The cloud storage has been updated',
+    //             className: 'cvat-notification-update-cloud-storage-success',
+    //         });
+    //     }
+    //     history.push('/cloudstorages');
+    // }, [updates]);
+
     useEffect(() => {
-        if (updates.cloudStorageID && !updates.error) {
-            notification.info({
-                message: 'The cloud storage has been updated',
-                className: 'cvat-notification-update-cloud-storage-success',
-            });
+        const fieldsValue: CloudStorageForm = {
+            credentials_type: credentialsType,
+            display_name: displayName,
+            description,
+            specific_attributes: specificAttributes,
+            // not chancged
+            provider_type: provider,
+            resource: resourceName,
+
+        };
+        if (credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
+            fieldsValue.account_name = accountName;
+            fieldsValue.session_token = token;
+        } else if (credentialsType === CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET) {
+            fieldsValue.session_token = token;
+            fieldsValue.key = accessKey;
+            fieldsValue.secretKey = secretKey;
         }
-        history.push('/cloudstorages');
-    }, [updates]);
+
+        formRef.current?.setFieldsValue(fieldsValue);
+    }, [cloudStorage]);
 
     const onSumbit = async (): Promise<void> => {
         let cloudStorageData: Record<string, any> = {};
@@ -57,6 +91,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                 delete cloudStorageData.range;
                 cloudStorageData.speciffic_attributes = `range=${formValues.range}`;
             }
+            cloudStorageData.id = id;
             dispatch(updateCloudStorageAsync(cloudStorageData));
         }
     };
@@ -99,7 +134,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                 );
                 break;
             }
-            case ProviderType.AZURE_BLOB_CONTAINER && CredentialsType.ACCOUNT_NAME_TOKEN_PAIR: {
+            case ProviderType.AZURE_CONTAINER && CredentialsType.ACCOUNT_NAME_TOKEN_PAIR: {
                 credentials = (
                     <>
                         <Form.Item
@@ -107,14 +142,14 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                             name='account_name'
                             rules={[{ required: true, message: 'Please input your account name' }]}
                         >
-                            <Input.Password defaultValue={accountName} minLength={3} maxLength={24} />
+                            <Input.Password minLength={3} maxLength={24} defaultValue={accountName} />
                         </Form.Item>
                         <Form.Item
                             label='SAS token'
                             name='token'
                             rules={[{ required: true, message: 'Please input your SAS token' }]}
                         >
-                            <Input.Password defaultValue={accountName} maxLength={40} />
+                            <Input.Password defaultValue={token} />
                         </Form.Item>
                     </>
                 );
@@ -136,7 +171,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                 name='resource'
                 rules={[{ required: true, message: 'Please, input bucket name' }]}
             >
-                <Input defaultValue={resource} maxLength={63} />
+                <Input maxLength={63} disabled />
             </Form.Item>
             <Form.Item
                 label='Credentials type'
@@ -144,7 +179,6 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                 rules={[{ required: true, message: 'Please, select credentials type' }]}
             >
                 <Select
-                    defaultValue={credentialsType}
                     onSelect={(value: CredentialsType) => setNewCredentialsType(value)}
                 >
                     <Select.Option value={CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET}>
@@ -173,7 +207,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                 name='resource'
                 rules={[{ required: true, message: 'Please, input container name' }]}
             >
-                <Input maxLength={63} defaultValue={resource} />
+                <Input maxLength={63} disabled />
             </Form.Item>
             <Form.Item
                 label='Credentials type'
@@ -206,7 +240,7 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                         name='display_name'
                         rules={[{ required: true, message: 'Please, input your display name' }]}
                     >
-                        <Input maxLength={63} defaultValue='some' />
+                        <Input maxLength={63} />
                     </Form.Item>
                     <Form.Item
                         label='Description'
@@ -215,7 +249,6 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                     >
                         <TextArea
                             autoSize={{ minRows: 2, maxRows: 5 }}
-                            defaultValue={cloudStorage.description}
                         />
                     </Form.Item>
                     <Form.Item
@@ -223,10 +256,10 @@ export default function UpdateCloudStorageContent(props: Props): JSX.Element {
                         name='provider_type'
                         rules={[{ required: true, message: 'Please, select provider' }]}
                     >
-                        <Input defaultValue={provider} disabled />
+                        <Input disabled />
                     </Form.Item>
                     {provider === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
-                    {provider === ProviderType.AZURE_BLOB_CONTAINER && AzureBlobStorageConfiguration()}
+                    {provider === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
                 </Form>
             </Col>
             <Col span={6} offset={18}>
