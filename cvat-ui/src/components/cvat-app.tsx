@@ -321,8 +321,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                         <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
-                                        <Route exact path='/cloudstorages/create' component={CreateCloudStoragePageComponent} />
-                                        <Route exact path='/cloudstorages/edit/:id' component={UpdateCloudStoragePageComponent} />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/create'
+                                            component={CreateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/update/:id'
+                                            component={UpdateCloudStoragePageComponent}
+                                        />
                                         {isModelPluginActive && (
                                             <Route exact path='/models' component={ModelsPageContainer} />
                                         )}

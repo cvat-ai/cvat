@@ -47,8 +47,8 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
         style.opacity = 0.5;
     }
 
-    const onEdit = useCallback(() => {
-        history.push(`/cloudstorages/edit/${id}`);
+    const onUpdate = useCallback(() => {
+        history.push(`/cloudstorages/update/${id}`);
     }, []);
 
     const onDelete = useCallback(() => {
@@ -112,7 +112,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                         <Dropdown
                             overlay={(
                                 <Menu className='cvat-project-actions-menu'>
-                                    <Menu.Item onClick={onEdit}>Edit</Menu.Item>
+                                    <Menu.Item onClick={onUpdate}>Update</Menu.Item>
                                     <Menu.Item onClick={onDelete}>Delete</Menu.Item>
                                 </Menu>
                             )}
