@@ -8,4 +8,4 @@ keys/
 logs/
 static/
 templates/
-cvat-ui/webpack.config.js
+*/webpack.config.js
