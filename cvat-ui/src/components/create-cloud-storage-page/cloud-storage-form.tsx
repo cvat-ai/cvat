@@ -13,7 +13,7 @@ import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
-import { createCloudStorageAsync } from 'actions/cloud-storage-actions';
+import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 
 export interface Props {
@@ -95,23 +95,27 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
     }, [newCloudStorageId]);
 
-    const onSumbit = async (): Promise<void> => {
+    const onSubmit = async (): Promise<void> => {
         let cloudStorageData: Record<string, any> = {};
         if (formRef.current) {
             const formValues = await formRef.current.validateFields();
-            cloudStorageData = {
-                ...cloudStorageData,
-                ...formValues,
-            };
+            cloudStorageData = { ...cloudStorageData, ...formValues };
             if (typeof formValues.range !== undefined) {
                 delete cloudStorageData.range;
                 cloudStorageData.speciffic_attributes = `range=${formValues.range}`;
             }
+
             if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
                 delete cloudStorageData.SAS_token;
                 cloudStorageData.session_token = formValues.SAS_token;
             }
-            dispatch(createCloudStorageAsync(cloudStorageData));
+
+            if (cloudStorage) {
+                cloudStorageData.id = cloudStorage.id;
+                dispatch(updateCloudStorageAsync(cloudStorageData));
+            } else {
+                dispatch(createCloudStorageAsync(cloudStorageData));
+            }
         }
     };
 
@@ -319,7 +323,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Button
                         type='primary'
                         htmlType='submit'
-                        onClick={onSumbit}
+                        onClick={onSubmit}
                         className='cvat-cloud-storage-submit-button'
                         loading={loading}
                         disabled={loading}
