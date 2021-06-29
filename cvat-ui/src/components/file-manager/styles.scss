@@ -41,31 +41,6 @@
             font-size: $grid-unit-size * 20;
         }
     }
-
-    .notification-file-not-exist-in-manifest {
-        background-color: $notification-background-color-1;
-        display: flex;
-        justify-content: left;
-        vertical-align: bottom;
-        border-color: $notification-border-color-1;
-        border-radius: $grid-unit-size * 0.5;
-        // width: $grid-unit-size * 80;
-        // height: $grid-unit-size * 6;
-        // stroke: solid;
-    }
-
-    .notification-file-not-exist-in-stoarge {
-        background-color: $notification-background-color-1;
-        display: flex;
-        justify-content: left;
-        vertical-align: bottom;
-        border-color: $notification-border-color-1;
-        border-radius: $grid-unit-size * 0.5;
-    }
-
-    .warning-icon {
-        color: $notification-border-color-1;
-    }
 }
 
 .cvat-cloud-storage-alert-file-not-exist-in-manifest,

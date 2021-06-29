@@ -162,8 +162,8 @@ export interface CloudStoragesState {
         contentLoads: {
             cloudStorageID: number | null;
             content: any | null;
-            initialized: boolean;
             fetching: boolean;
+            error: string;
         };
     };
 }

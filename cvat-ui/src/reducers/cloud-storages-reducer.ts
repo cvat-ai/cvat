@@ -4,8 +4,7 @@
 
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-// import { CloudStorage } from 'reducers/interfaces';
-import { CloudStoragesState } from './interfaces';
+import { CloudStoragesState, CloudStorage } from './interfaces';
 
 const defaultState: CloudStoragesState = {
     initialized: false,
@@ -41,8 +40,8 @@ const defaultState: CloudStoragesState = {
         contentLoads: {
             cloudStorageID: null,
             content: null,
-            initialized: false,
             fetching: false,
+            error: '',
         },
     },
 };
@@ -134,26 +133,26 @@ export default (
             };
         }
         case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS: {
+            const { cloudStorage } = action.payload;
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     updates: {
                         updating: false,
-                        cloudStorageID: action.payload.cloudStorage.id,
+                        cloudStorageID: cloudStorage.id,
                         error: '',
                     },
                 },
-                // current: state.current.map(
-                //     (cloudStorage: CloudStorage): CloudStorage => {
-                //         if (cloudStorage.id === action.payload.cloudStorage.id) {
-                //             return cloudStorage;
-                //         }
+                current: state.current.map(
+                    (_cloudStorage: CloudStorage): CloudStorage => {
+                        if (_cloudStorage.id === cloudStorage.id) {
+                            return cloudStorage;
+                        }
 
-                //         return cloudStorage;
-                //     },
-                // ),
-                current: [action.payload.cloudStorage],
+                        return _cloudStorage;
+                    },
+                ),
             };
         }
         case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED: {
@@ -225,7 +224,7 @@ export default (
                     contentLoads: {
                         cloudStorageID: null,
                         content: null,
-                        initialized: false,
+                        error: '',
                         fetching: true,
                     },
                 },
@@ -239,7 +238,7 @@ export default (
                     contentLoads: {
                         cloudStorageID,
                         content,
-                        initialized: true,
+                        error: '',
                         fetching: false,
                     },
                 },
@@ -252,7 +251,7 @@ export default (
                     ...state.activities,
                     contentLoads: {
                         ...state.activities.contentLoads,
-                        initialized: true,
+                        error: action.payload.error.toString(),
                         fetching: false,
                     },
                 },
