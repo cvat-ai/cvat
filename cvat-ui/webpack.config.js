@@ -30,13 +30,17 @@ module.exports = (env) => ({
         inline: true,
         port: 3000,
         historyApiFallback: true,
-        proxy: {
-            '/api': {
+        proxy: [
+            {
+                context: (param) =>
+                    param.match(
+                        /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                    ),
                 target: env && env.API_URL,
                 secure: false,
                 changeOrigin: true,
             },
-        },
+        ],
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
