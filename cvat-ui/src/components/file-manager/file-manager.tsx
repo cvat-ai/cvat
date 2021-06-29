@@ -19,6 +19,7 @@ import { InboxOutlined, PlusCircleOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
 import { CloudStorage } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import CloudStorageTab from './cloud-storages-tab';
 
 export interface Files {
@@ -189,13 +190,15 @@ export class FileManager extends React.PureComponent<Props, State> {
                             });
                         }}
                         onCheck={(
-                            checkedKeys: | ReactText[] | {
+                            checkedKeys:
+                            | ReactText[]
+                            | {
                                 checked: ReactText[];
                                 halfChecked: ReactText[];
                             },
                         ): void => {
-                            const keys = (checkedKeys as ReactText[])
-                                .map((text: ReactText): string => text.toLocaleString());
+                            const keys = (checkedKeys as ReactText[]).map((text: ReactText): string =>
+                                text.toLocaleString());
                             this.setState({
                                 files: {
                                     ...files,
@@ -254,7 +257,9 @@ export class FileManager extends React.PureComponent<Props, State> {
                 className='cvat-create-task-page-cloud-storage-tab'
                 tab={(
                     <span>
-                        <PlusCircleOutlined onClick={() => history.push('/cloudstorages/create')} />
+                        <CVATTooltip overlay='Attach a new one'>
+                            <PlusCircleOutlined onClick={() => history.push('/cloudstorages/create')} />
+                        </CVATTooltip>
                         Cloud Storage
                     </span>
                 )}
