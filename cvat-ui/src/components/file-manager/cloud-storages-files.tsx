@@ -94,10 +94,10 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
             ) : null}
             {treeData.length ? (
                 <Tree.DirectoryTree
+                    selectable={false}
                     multiple
                     checkable
                     height={256}
-                    showLine
                     // FIXME: add handler for dirs and files not in manifest
                     onCheck={(checkedKeys: Files) => onSelectFiles(checkedKeys as string[])}
                     treeData={treeData}
