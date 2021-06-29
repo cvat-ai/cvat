@@ -15,7 +15,7 @@ import { CloudStorage } from 'reducers/interfaces';
 import CloudStorageFiles from './cloud-storages-files';
 
 interface Props {
-    cloudStorageId: number | null;
+    cloudStorage: CloudStorage | null;
     onSelectFiles: (files: string[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
@@ -45,7 +45,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
     const [list, setList] = useState<CloudStorage[]>([]);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
-    const { cloudStorageId, onSelectFiles, onSelectCloudStorage } = props;
+    const { cloudStorage, onSelectFiles, onSelectCloudStorage } = props;
 
     useEffect(() => {
         searchCloudStorages({}).then((data) => {
@@ -58,10 +58,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
 
     // todo: clear this form after the task was created
     return (
-        <Form
-            className='cvat-create-task-page-cloud-storages-tab-form'
-            layout='vertical'
-        >
+        <Form className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
             <Form.Item
                 label='Select cloud storage'
                 name='cloudStorageSelect'
@@ -80,25 +77,24 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                             searchCloudStoragesWrapper(phrase, setList);
                         }
                     }}
-                    options={list.map((cloudStorage) => ({
-                        value: cloudStorage.id.toString(),
-                        label: cloudStorage.displayName,
+                    options={list.map((_cloudStorage) => ({
+                        value: _cloudStorage.id.toString(),
+                        label: _cloudStorage.displayName,
                     }))}
                     onSelect={(value: string) => {
-                        const cloudStorage = list
-                            .filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0];
-                        onSelectCloudStorage(+value);
-                        setSearchPhrase(cloudStorage?.displayName);
+                        const selectedCloudStorage =
+                            list.filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
+                        onSelectCloudStorage(selectedCloudStorage);
+                        setSearchPhrase(selectedCloudStorage?.displayName || '');
                     }}
                 >
-
                     <Input />
                 </AutoComplete>
             </Form.Item>
 
-            { cloudStorageId ? (
+            {cloudStorage ? (
                 <CloudStorageFiles
-                    id={cloudStorageId}
+                    cloudStorage={cloudStorage}
                     onCheckFiles={(files: ReactText[]): void => onSelectFiles(files.map((file) => file.toString()))}
                 />
             ) : null}

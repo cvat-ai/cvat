@@ -49,8 +49,7 @@ const cloudStoragesActions = {
         createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_SUCCESS, { cloudStorageID }),
     createCloudStorageFailed: (error: any) =>
         createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED, { error }),
-    updateCloudStorage: () =>
-        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE, {}),
+    updateCloudStorage: () => createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE, {}),
     updateCloudStorageSuccess: (cloudStorage: CloudStorage) =>
         createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS, { cloudStorage }),
     updateCloudStorageFailed: (cloudStorage: CloudStorage, error: any) =>
@@ -60,7 +59,6 @@ const cloudStoragesActions = {
         createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_SUCCESS, { cloudStorageID, content }),
     loadCloudStorageContentFailed: (cloudStorageID: number, error: any) =>
         createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED, { cloudStorageID, error }),
-
 };
 
 export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;
@@ -141,30 +139,15 @@ export function updateCloudStorageAsync(data: any): ThunkAction {
     };
 }
 
-export function loadCloudStorageContentAsync(cloudStorageID: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
-        let cloudStorageInstances;
-        const query = {
-            id: cloudStorageID,
-        };
-        try {
-            cloudStorageInstances = await cvat.cloudStorages.get(query);
-        } catch (error) {
-            dispatch(cloudStoragesActions.getCloudStoragesFailed(error, query));
-            return;
-        }
-
-        // if (!cloudStorageInstances.length) {
-        //     dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorageID, content))
-        // }
+export function loadCloudStorageContentAsync(cloudStorage: CloudStorage): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(cloudStoragesActions.loadCloudStorageContent());
         try {
-            const cloudStorageInstance = new cvat.classes.CloudStorage(cloudStorageInstances[0]);
-            const result = await cloudStorageInstance.getContent();
+            const result = await cloudStorage.getContent();
             const content = JSON.parse(result);
-            dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorageID, content));
+            dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorage.id, content));
         } catch (error) {
-            dispatch(cloudStoragesActions.loadCloudStorageContentFailed(cloudStorageID, error));
+            dispatch(cloudStoragesActions.loadCloudStorageContentFailed(cloudStorage.id, error));
         }
     };
 }

@@ -18,6 +18,7 @@ import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined, PlusCircleOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
+import { CloudStorage } from 'reducers/interfaces';
 import CloudStorageTab from './cloud-storages-tab';
 
 export interface Files {
@@ -31,7 +32,7 @@ interface State {
     files: Files;
     expandedKeys: string[];
     active: 'local' | 'share' | 'remote' | 'cloudStorage';
-    cloudStorageId: null | number;
+    cloudStorage: CloudStorage | null;
 }
 
 interface Props {
@@ -53,7 +54,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 remote: [],
                 cloudStorage: [],
             },
-            cloudStorageId: null,
+            cloudStorage: null,
             expandedKeys: [],
             active: 'local',
         };
@@ -72,8 +73,8 @@ export class FileManager extends React.PureComponent<Props, State> {
     };
 
     public getCloudStorageId(): number | null {
-        const { cloudStorageId } = this.state;
-        return cloudStorageId;
+        const { cloudStorage } = this.state;
+        return cloudStorage?.id || null;
     }
 
     public getFiles(): Files {
@@ -152,7 +153,8 @@ export class FileManager extends React.PureComponent<Props, State> {
         function renderTreeNodes(data: TreeNodeNormal[]): JSX.Element[] {
             // sort alphabetically
             data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number =>
-                a.key.toLocaleString().localeCompare(b.key.toLocaleString()));
+                a.key.toLocaleString().localeCompare(b.key.toLocaleString()),
+            );
             return data.map((item: TreeNodeNormal) => {
                 if (item.children) {
                     return (
@@ -189,14 +191,15 @@ export class FileManager extends React.PureComponent<Props, State> {
                         }}
                         onCheck={(
                             checkedKeys:
-                            | ReactText[]
-                            | {
-                                checked: ReactText[];
-                                halfChecked: ReactText[];
-                            },
+                                | ReactText[]
+                                | {
+                                      checked: ReactText[];
+                                      halfChecked: ReactText[];
+                                  },
                         ): void => {
                             const keys = (checkedKeys as ReactText[]).map((text: ReactText): string =>
-                                text.toLocaleString());
+                                text.toLocaleString(),
+                            );
                             this.setState({
                                 files: {
                                     ...files,
@@ -247,24 +250,24 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderCloudStorageSelector(): JSX.Element {
-        const { cloudStorageId } = this.state;
+        const { cloudStorage } = this.state;
         const { history } = this.props;
         return (
             <Tabs.TabPane
                 key='cloudStorage'
                 className='cvat-create-task-page-cloud-storage-tab'
-                tab={(
+                tab={
                     <span>
                         <PlusCircleOutlined onClick={() => history.push('/cloudstorages/create')} />
                         Cloud Storage
                     </span>
-                )}
+                }
             >
                 <CloudStorageTab
                     onSelectFiles={this.onSelectCloudStorageFiles}
-                    cloudStorageId={cloudStorageId}
-                    onSelectCloudStorage={(id: number | null) => {
-                        this.setState({ cloudStorageId: id });
+                    cloudStorage={cloudStorage}
+                    onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
+                        this.setState({ cloudStorage: _cloudStorage });
                     }}
                 />
             </Tabs.TabPane>
@@ -303,9 +306,7 @@ function withHistory(
 ): React.ForwardRefExoticComponent<Props & React.RefAttributes<FileManager>> {
     return React.forwardRef((props: Props, ref: React.Ref<FileManager>) => {
         const history = useHistory();
-        return (
-            <Component ref={ref} {...props} history={history} />
-        );
+        return <Component ref={ref} {...props} history={history} />;
     });
 }
 

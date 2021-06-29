@@ -506,7 +506,6 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
 
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
-        // TODO: need to discuss with Boris
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
 
