@@ -4,6 +4,8 @@
 
 import './styles.scss';
 import React, { ReactText } from 'react';
+
+import { RouteComponentProps, withRouter } from 'react-router';
 import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
@@ -15,6 +17,7 @@ import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { FormInstance } from 'antd/lib/form';
+
 import consts from 'consts';
 import CloudStorageTab from './cloud-storages-tab';
 
@@ -37,11 +40,11 @@ interface Props {
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
     onChangeActiveKey(key: string): void;
     cloudStorageId: number | null;
-    onSelectCloudStorage: (cloudStorageId: number | null) => void,
+    onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
 
-export default class FileManager extends React.PureComponent<Props, State> {
-    public constructor(props: Props) {
+class FileManager extends React.PureComponent<Props & RouteComponentProps, State> {
+    public constructor(props: Props & RouteComponentProps) {
         super(props);
 
         this.state = {
@@ -242,22 +245,15 @@ export default class FileManager extends React.PureComponent<Props, State> {
     // eslint-disable-next-line class-methods-use-this
     private renderCloudStorageSelector(): JSX.Element {
         const formRef = React.createRef<FormInstance>();
-        const { cloudStorageId, onSelectCloudStorage } = this.props;
+        const { cloudStorageId, onSelectCloudStorage, history } = this.props;
         return (
             <Tabs.TabPane
                 key='cloudStorage'
                 className='cvat-create-task-page-cloud-storage-tab'
                 tab={(
                     <span>
+                        <PlusCircleOutlined onClick={() => history.push('/cloudstorages/create')} />
                         Cloud Storage
-                        <a
-                            className='cvat-cloud-storage-tab-plus'
-                            href='/cloudstorages/create'
-                            // onClick={() => history.push('/cloudstorages/create')}
-                        >
-                            &nbsp;
-                            <PlusCircleOutlined />
-                        </a>
                     </span>
                 )}
             >
@@ -291,9 +287,11 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {withRemote && this.renderRemoteSelector()}
-                    { this.renderCloudStorageSelector() }
+                    {this.renderCloudStorageSelector()}
                 </Tabs>
             </>
         );
     }
 }
+
+export default withRouter(FileManager);
