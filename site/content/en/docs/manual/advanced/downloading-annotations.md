@@ -30,3 +30,7 @@ weight: 1
    - [MOT](https://motchallenge.net/)
    - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
    - [Datumaro](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/datumaro)
+
+   For 3D tasks, the following formats are available:
+   - Point Cloud Format 1.0
+   - Velodyn points format 1.0

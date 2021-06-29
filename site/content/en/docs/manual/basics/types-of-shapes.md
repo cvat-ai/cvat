@@ -10,6 +10,7 @@ There are five shapes which you can annotate your images with:
 - `Polyline`
 - `Points`
 - `Cuboid`
+- `Cuboid in 3d task`
 - `Tag`
 
 And there is how they all look like:
@@ -18,6 +19,8 @@ And there is how they all look like:
 
 ![](/images/image009_mapillary_vistas.jpg 'Polyline') ![](/images/image010_affectnet.jpg 'Points')
 
-![](/images/image015_detrac.jpg 'Cuboid') ![](/images/image135.jpg 'Tag')
+![](/images/image015_detrac.jpg 'Cuboid') ![](/images/image218_carla_town3.jpg 'Cuboid in 3d task')
+
+ ![](/images/image135.jpg 'Tag')
 
 `Tag` - has no shape in the workspace, but is displayed in objects sidebar.
