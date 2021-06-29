@@ -153,8 +153,7 @@ export class FileManager extends React.PureComponent<Props, State> {
         function renderTreeNodes(data: TreeNodeNormal[]): JSX.Element[] {
             // sort alphabetically
             data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number =>
-                a.key.toLocaleString().localeCompare(b.key.toLocaleString()),
-            );
+                a.key.toLocaleString().localeCompare(b.key.toLocaleString()));
             return data.map((item: TreeNodeNormal) => {
                 if (item.children) {
                     return (
@@ -190,16 +189,13 @@ export class FileManager extends React.PureComponent<Props, State> {
                             });
                         }}
                         onCheck={(
-                            checkedKeys:
-                                | ReactText[]
-                                | {
-                                      checked: ReactText[];
-                                      halfChecked: ReactText[];
-                                  },
+                            checkedKeys: | ReactText[] | {
+                                checked: ReactText[];
+                                halfChecked: ReactText[];
+                            },
                         ): void => {
-                            const keys = (checkedKeys as ReactText[]).map((text: ReactText): string =>
-                                text.toLocaleString(),
-                            );
+                            const keys = (checkedKeys as ReactText[])
+                                .map((text: ReactText): string => text.toLocaleString());
                             this.setState({
                                 files: {
                                     ...files,
@@ -256,12 +252,12 @@ export class FileManager extends React.PureComponent<Props, State> {
             <Tabs.TabPane
                 key='cloudStorage'
                 className='cvat-create-task-page-cloud-storage-tab'
-                tab={
+                tab={(
                     <span>
                         <PlusCircleOutlined onClick={() => history.push('/cloudstorages/create')} />
                         Cloud Storage
                     </span>
-                }
+                )}
             >
                 <CloudStorageTab
                     onSelectFiles={this.onSelectCloudStorageFiles}

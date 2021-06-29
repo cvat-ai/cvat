@@ -50,18 +50,14 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
     }, [content]);
 
     useEffect(() => {
-        // prepare nodes
-        const TEMP_KEY_SECRET_KEY_TOKEN_SET;
-        const tmp = [];
-        for (const fileName of fileNames) {
-            tmp.push({
-                title: fileName,
-                key: fileName,
-                isLeaf: true,
-                disabled: content[fileName].length !== 2 && !fileName.includes('manifest.jsonl'),
-            });
-        }
-        setTreeData(tmp);
+        const nodes = fileNames.map((filename: string) => ({
+            title: filename,
+            key: filename,
+            isLeaf: true,
+            disabled: content[filename].length !== 2 && !filename.includes('manifest.jsonl'),
+        }));
+
+        setTreeData(nodes);
 
         // define files which does not exist in the manifest
         setContentNotInManifest(fileNames.filter((fileName: string) => !content[fileName].includes('m')));
