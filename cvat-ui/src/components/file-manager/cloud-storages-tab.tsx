@@ -56,6 +56,20 @@ export default function CloudStorageTab(props: Props): JSX.Element {
         });
     }, []);
 
+    const onBlur = (): void => {
+        if (!searchPhrase && cloudStorage) {
+            onSelectCloudStorage(null);
+        } else if (searchPhrase) {
+            const potentialStorages = list.filter((_cloudStorage) => _cloudStorage.displayName.includes(searchPhrase));
+            if (potentialStorages.length === 1) {
+                setSearchPhrase(potentialStorages[0].displayName);
+                onSelectCloudStorage(potentialStorages[0]);
+            } else {
+                setSearchPhrase(cloudStorage?.displayName || '');
+            }
+        }
+    };
+
     // todo: clear this form after the task was created
     return (
         <Form className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
@@ -66,6 +80,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 valuePropName='label'
             >
                 <AutoComplete
+                    onBlur={onBlur}
                     value={searchPhrase}
                     placeholder='Search...'
                     showSearch

@@ -1243,7 +1243,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case CloudStorageActionTypes.DELETE_CLOUD_STORAGE_FAILED: {
-            const { cloudStorageId } = action.payload;
+            const { cloudStorageID } = action.payload;
             return {
                 ...state,
                 errors: {
@@ -1253,10 +1253,27 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         updating: {
                             message:
                                 'Could not delete ' +
-                                `<a href="/cloudstorages/${cloudStorageId}" target="_blank">
-                                cloud storage ${cloudStorageId}</a>`,
+                                `<a href="/cloudstorages/${cloudStorageID}" target="_blank">
+                                cloud storage ${cloudStorageID}</a>`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-cloud-storage-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED: {
+            const { cloudStorageID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        updating: {
+                            message: `Could not fetch content for cloud storage #${cloudStorageID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-cloud-storage-content-failed',
                         },
                     },
                 },

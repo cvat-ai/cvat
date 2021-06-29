@@ -37,10 +37,10 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.fetching);
     const content = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.content);
+    const error = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.error);
     const [contentNotInManifest, setContentNotInManifest] = useState<boolean>(false);
     const [contentNotInStorage, setContentNotInStorage] = useState<boolean>(false);
 
-    const [fileNames, setFileNames] = useState<string[]>([]);
     const [treeData, setTreeData] = useState<CloudStorageFile[]>([]);
 
     useEffect(() => {
@@ -49,30 +49,39 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
 
     useEffect(() => {
         if (content) {
-            setContentNotInStorage(false);
+            const fileNames = Object.keys(content);
+            const nodes = fileNames.map((filename: string) => ({
+                title: filename,
+                key: filename,
+                isLeaf: true,
+                disabled: content[filename].length !== 2 && !filename.includes('manifest.jsonl'),
+            }));
+
+            setTreeData(nodes);
+            setContentNotInManifest(fileNames.some((fileName: string) => !content[fileName].includes('m')));
+            setContentNotInStorage(fileNames.some((fileName: string) => !content[fileName].includes('s')));
+        } else {
+            setTreeData([]);
             setContentNotInManifest(false);
-            setFileNames(Object.keys(content));
+            setContentNotInStorage(false);
         }
-    }, [content]);
-
-    useEffect(() => {
-        const nodes = fileNames.map((filename: string) => ({
-            title: filename,
-            key: filename,
-            isLeaf: true,
-            disabled: content[filename].length !== 2 && !filename.includes('manifest.jsonl'),
-        }));
-
-        setTreeData(nodes);
-        setContentNotInManifest(fileNames.some((fileName: string) => !content[fileName].includes('m')));
-        setContentNotInStorage(fileNames.some((fileName: string) => !content[fileName].includes('s')));
-    }, [fileNames]); // todo: extend with curent selected manifest
+    }, [content]); // todo: extend with curent selected manifest
 
     if (isFetching) {
         return (
             <Row className='cvat-create-task-page-empty-cloud-storage' justify='center' align='middle'>
                 <Spin size='large' />
             </Row>
+        );
+    }
+
+    if (error) {
+        return (
+            <Alert
+                className='cvat-cloud-storage-alert-fetching-failed'
+                message='Could not fetch cloud storage data'
+                type='error'
+            />
         );
     }
 

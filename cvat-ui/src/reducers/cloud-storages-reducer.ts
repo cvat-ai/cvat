@@ -41,6 +41,7 @@ const defaultState: CloudStoragesState = {
             cloudStorageID: null,
             content: null,
             fetching: false,
+            error: '',
         },
     },
 };
@@ -223,6 +224,7 @@ export default (
                     contentLoads: {
                         cloudStorageID: null,
                         content: null,
+                        error: '',
                         fetching: true,
                     },
                 },
@@ -236,6 +238,7 @@ export default (
                     contentLoads: {
                         cloudStorageID,
                         content,
+                        error: '',
                         fetching: false,
                     },
                 },
@@ -248,6 +251,7 @@ export default (
                     ...state.activities,
                     contentLoads: {
                         ...state.activities.contentLoads,
+                        error: action.payload.error.toString(),
                         fetching: false,
                     },
                 },

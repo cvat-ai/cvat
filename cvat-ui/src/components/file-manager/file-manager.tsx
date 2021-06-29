@@ -5,7 +5,6 @@
 import './styles.scss';
 import React, { ReactText } from 'react';
 
-import { useHistory } from 'react-router';
 import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
@@ -15,11 +14,10 @@ import Empty from 'antd/lib/empty';
 import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
-import { InboxOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { InboxOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
 import { CloudStorage } from 'reducers/interfaces';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import CloudStorageTab from './cloud-storages-tab';
 
 export interface Files {
@@ -39,7 +37,6 @@ interface State {
 interface Props {
     withRemote: boolean;
     treeData: TreeNodeNormal[];
-    history: ReturnType<typeof useHistory>;
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
     onChangeActiveKey(key: string): void;
 }
@@ -250,19 +247,11 @@ export class FileManager extends React.PureComponent<Props, State> {
 
     private renderCloudStorageSelector(): JSX.Element {
         const { cloudStorage } = this.state;
-        const { history } = this.props;
         return (
             <Tabs.TabPane
                 key='cloudStorage'
                 className='cvat-create-task-page-cloud-storage-tab'
-                tab={(
-                    <span>
-                        <CVATTooltip overlay='Attach a new one'>
-                            <PlusCircleOutlined onClick={() => history.push('/cloudstorages/create')} />
-                        </CVATTooltip>
-                        Cloud Storage
-                    </span>
-                )}
+                tab={<span> Cloud Storage </span>}
             >
                 <CloudStorageTab
                     onSelectFiles={this.onSelectCloudStorageFiles}
@@ -302,13 +291,4 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 }
 
-function withHistory(
-    Component: React.ComponentClass<Props, State>,
-): React.ForwardRefExoticComponent<Props & React.RefAttributes<FileManager>> {
-    return React.forwardRef((props: Props, ref: React.Ref<FileManager>) => {
-        const history = useHistory();
-        return <Component ref={ref} {...props} history={history} />;
-    });
-}
-
-export default withHistory(FileManager);
+export default FileManager;

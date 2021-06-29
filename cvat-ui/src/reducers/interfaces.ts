@@ -163,6 +163,7 @@ export interface CloudStoragesState {
             cloudStorageID: number | null;
             content: any | null;
             fetching: boolean;
+            error: string;
         };
     };
 }
