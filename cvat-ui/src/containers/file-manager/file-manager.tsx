@@ -15,8 +15,6 @@ interface OwnProps {
     ref: any;
     withRemote: boolean;
     onChangeActiveKey(key: string): void;
-    cloudStorageId: number | null,
-    onSelectedCloudStorage(id: number | null): void;
 }
 
 interface StateToProps {
@@ -62,8 +60,18 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 export class FileManagerContainer extends React.PureComponent<Props> {
     private managerComponentRef: any;
 
+    public constructor(props: Props) {
+        super(props);
+
+        this.managerComponentRef = React.createRef();
+    }
+
     public getFiles(): Files {
         return this.managerComponentRef.getFiles();
+    }
+
+    public getCloudStorageId(): number | null {
+        return this.managerComponentRef.getCloudStorageId();
     }
 
     public reset(): Files {
@@ -73,16 +81,13 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     public render(): JSX.Element {
         const {
             treeData, getTreeData, withRemote, onChangeActiveKey,
-            onSelectedCloudStorage, cloudStorageId,
         } = this.props;
 
         return (
             <FileManagerComponent
                 treeData={treeData}
-                cloudStorageId={cloudStorageId}
                 onLoadData={getTreeData}
                 onChangeActiveKey={onChangeActiveKey}
-                onSelectCloudStorage={onSelectedCloudStorage}
                 withRemote={withRemote}
                 ref={(component): void => {
                     this.managerComponentRef = component;

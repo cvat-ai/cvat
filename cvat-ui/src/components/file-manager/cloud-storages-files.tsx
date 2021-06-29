@@ -1,7 +1,7 @@
 // Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import './styles.scss';
 import React, {
     ReactText, useEffect, useState,

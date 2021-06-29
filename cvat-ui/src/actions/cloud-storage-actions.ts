@@ -142,7 +142,7 @@ export function updateCloudStorageAsync(data: any): ThunkAction {
 }
 
 export function loadCloudStorageContentAsync(cloudStorageID: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         let cloudStorageInstances;
         const query = {
             id: cloudStorageID,

@@ -5,7 +5,7 @@
 import './styles.scss';
 import React, { ReactText } from 'react';
 
-import { RouteComponentProps, withRouter } from 'react-router';
+import { useHistory } from 'react-router';
 import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
@@ -16,7 +16,6 @@ import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined, PlusCircleOutlined } from '@ant-design/icons';
-import { FormInstance } from 'antd/lib/form';
 
 import consts from 'consts';
 import CloudStorageTab from './cloud-storages-tab';
@@ -25,26 +24,26 @@ export interface Files {
     local: File[];
     share: string[];
     remote: string[];
-    cloudStorage: ReactText[];
+    cloudStorage: string[];
 }
 
 interface State {
     files: Files;
     expandedKeys: string[];
     active: 'local' | 'share' | 'remote' | 'cloudStorage';
+    cloudStorageId: null | number;
 }
 
 interface Props {
     withRemote: boolean;
     treeData: TreeNodeNormal[];
+    history: ReturnType<typeof useHistory>;
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
     onChangeActiveKey(key: string): void;
-    cloudStorageId: number | null;
-    onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
 
-class FileManager extends React.PureComponent<Props & RouteComponentProps, State> {
-    public constructor(props: Props & RouteComponentProps) {
+export class FileManager extends React.PureComponent<Props, State> {
+    public constructor(props: Props) {
         super(props);
 
         this.state = {
@@ -54,22 +53,27 @@ class FileManager extends React.PureComponent<Props & RouteComponentProps, State
                 remote: [],
                 cloudStorage: [],
             },
+            cloudStorageId: null,
             expandedKeys: [],
             active: 'local',
         };
 
         this.loadData('/');
-        this.onCheckCloudStorageFiles = this.onCheckCloudStorageFiles.bind(this);
     }
 
-    private onCheckCloudStorageFiles(checkedKeys: ReactText[]): void {
+    private onSelectCloudStorageFiles = (cloudStorageFiles: string[]): void => {
         const { files } = this.state;
         this.setState({
             files: {
                 ...files,
-                cloudStorage: checkedKeys,
+                cloudStorage: cloudStorageFiles,
             },
         });
+    };
+
+    public getCloudStorageId(): number | null {
+        const { cloudStorageId } = this.state;
+        return cloudStorageId;
     }
 
     public getFiles(): Files {
@@ -242,10 +246,9 @@ class FileManager extends React.PureComponent<Props & RouteComponentProps, State
         );
     }
 
-    // eslint-disable-next-line class-methods-use-this
     private renderCloudStorageSelector(): JSX.Element {
-        const formRef = React.createRef<FormInstance>();
-        const { cloudStorageId, onSelectCloudStorage, history } = this.props;
+        const { cloudStorageId } = this.state;
+        const { history } = this.props;
         return (
             <Tabs.TabPane
                 key='cloudStorage'
@@ -258,10 +261,11 @@ class FileManager extends React.PureComponent<Props & RouteComponentProps, State
                 )}
             >
                 <CloudStorageTab
-                    formRef={formRef}
-                    onCheckFiles={this.onCheckCloudStorageFiles}
+                    onSelectFiles={this.onSelectCloudStorageFiles}
                     cloudStorageId={cloudStorageId}
-                    onSelectCloudStorage={onSelectCloudStorage}
+                    onSelectCloudStorage={(id: number | null) => {
+                        this.setState({ cloudStorageId: id });
+                    }}
                 />
             </Tabs.TabPane>
         );
@@ -294,4 +298,15 @@ class FileManager extends React.PureComponent<Props & RouteComponentProps, State
     }
 }
 
-export default withRouter(FileManager);
+function withHistory(
+    Component: React.ComponentClass<Props, State>,
+): React.ForwardRefExoticComponent<Props & React.RefAttributes<FileManager>> {
+    return React.forwardRef((props: Props, ref: React.Ref<FileManager>) => {
+        const history = useHistory();
+        return (
+            <Component ref={ref} {...props} history={history} />
+        );
+    });
+}
+
+export default withHistory(FileManager);

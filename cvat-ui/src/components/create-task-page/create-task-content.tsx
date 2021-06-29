@@ -75,7 +75,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.state = { ...defaultState };
         this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
         this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
-        this.handleCloudStorageIdChange = this.handleCloudStorageIdChange.bind(this);
     }
 
     public componentDidMount(): void {
@@ -119,10 +118,18 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private validateFiles = (): boolean => {
+        const { activeFileManagerTab } = this.state;
         const files = this.fileManagerContainer.getFiles();
+
         this.setState({
             files,
         });
+
+        if (activeFileManagerTab === 'cloudStorage') {
+            this.setState({
+                cloudStorageId: this.fileManagerContainer.getCloudStorageId(),
+            });
+        }
         const totalLen = Object.keys(files).reduce((acc, key) => acc + files[key].length, 0);
 
         return !!totalLen;
@@ -160,13 +167,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.setState({
             ...values,
             activeFileManagerTab: key,
-        });
-    };
-
-    private handleCloudStorageIdChange = (id: number | null): void => {
-        // todo
-        this.setState({
-            cloudStorageId: id,
         });
     };
 
@@ -298,7 +298,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderFilesBlock(): JSX.Element {
-        const { cloudStorageId } = this.state;
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
@@ -308,8 +307,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     ref={(container: any): void => {
                         this.fileManagerContainer = container;
                     }}
-                    cloudStorageId={cloudStorageId}
-                    onSelectedCloudStorage={this.handleCloudStorageIdChange}
                     withRemote
                 />
             </Col>
