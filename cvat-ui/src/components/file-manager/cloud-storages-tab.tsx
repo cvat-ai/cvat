@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState, ReactText } from 'react';
+import React, { useEffect, useState } from 'react';
 import Form from 'antd/lib/form';
 import notification from 'antd/lib/notification';
 import AutoComplete from 'antd/lib/auto-complete';
@@ -92,12 +92,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 </AutoComplete>
             </Form.Item>
 
-            {cloudStorage ? (
-                <CloudStorageFiles
-                    cloudStorage={cloudStorage}
-                    onCheckFiles={(files: ReactText[]): void => onSelectFiles(files.map((file) => file.toString()))}
-                />
-            ) : null}
+            {cloudStorage ? <CloudStorageFiles cloudStorage={cloudStorage} onSelectFiles={onSelectFiles} /> : null}
         </Form>
     );
 }
