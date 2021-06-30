@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated manifest format, added meta with related images (<https://github.com/openvinotoolkit/cvat/pull/3122>)
 - Update of COCO format documentation (<https://github.com/openvinotoolkit/cvat/pull/3197>)
 - Updated Webpack Dev Server config to add proxxy (<https://github.com/openvinotoolkit/cvat/pull/3368>)
+- Update to Django 3.1.12 (<https://github.com/openvinotoolkit/cvat/pull/3378>)
 
 ### Deprecated
 
