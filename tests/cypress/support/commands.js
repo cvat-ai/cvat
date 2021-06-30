@@ -84,7 +84,6 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
 });
 
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
-    let status;
     cy.request({
         url: '/api/v1/users?page_size=all',
         headers: {
@@ -92,25 +91,22 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
         },
     }).then((response) => {
         const responceResult = response['body']['results'];
-        for (const user of responceResult) {
+        responceResult.forEach((user) => {
             const userId = user['id'];
             const userName = user['username'];
-            for (const account of accountsToChangeActiveStatus) {
-                if (userName === account) {
-                    isActive === false ? status = false : status = true;
-                    cy.request({
-                        method: 'PATCH',
-                        url: `/api/v1/users/${userId}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
+            if (userName.includes(accountsToChangeActiveStatus)) {
+                cy.request({
+                    method: 'PATCH',
+                    url: `/api/v1/users/${userId}`,
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                        body: {
+                            is_active: isActive,
                         },
-                            body: {
-                                is_active: status,
-                            }
-                    });
-                }
+                });
             }
-        }
+        });
     });
 });
 
@@ -122,13 +118,14 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
         },
     }).then((response) => {
         const responceResult = response['body']['results'];
-        for (const user of responceResult) {
-            if (userName === user['username']) {
+        responceResult.forEach((user) => {
+            if (user['username'].includes(userName)) {
                 expect(staffStatus).to.be.equal(user['is_staff']);
                 expect(superuserStatus).to.be.equal(user['is_superuser']);
                 expect(activeStatus).to.be.equal(user['is_active']);
             }
-        }
+
+        });
     });
 });
 

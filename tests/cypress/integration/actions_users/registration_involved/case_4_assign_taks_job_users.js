@@ -43,7 +43,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
     const isActive = false;
 
     function changeCheckUserStatusOpenTask(userName) {
-        cy.changeUserActiveStatus(authKey, [userName], isActive);
+        cy.changeUserActiveStatus(authKey, userName, isActive);
         cy.checkUserStatuses(authKey, userName, isStaff, isSuperuser, isActive);
         cy.intercept('GET', `/api/v1/users*${thirdUserName}*`).as('users');
         cy.openTask(taskName);
@@ -168,13 +168,13 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             });
         });
 
-        it('Deactivate the second users (task assigned). Trying to open the task. Should be succefull.', () => {
+        it('Deactivate the second user (task assigned). Trying to open the task. Should be succefull.', () => {
             changeCheckUserStatusOpenTask(secondUserName);
             cy.goToTaskList();
         });
 
-        it('Deactivate the third users (job assigned). Trying to open the task. Should be succefull.', () => {
-            changeCheckUserStatusOpenTask(secondUserName);
+        it('Deactivate the third user (job assigned). Trying to open the task. Should be succefull.', () => {
+            changeCheckUserStatusOpenTask(thirdUserName);
         });
     });
 });
