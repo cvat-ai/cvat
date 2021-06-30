@@ -35,7 +35,7 @@ async function searchCloudStorages(filter: Record<string, string>): Promise<Clou
 }
 
 const searchCloudStoragesWrapper = debounce((phrase, setList) => {
-    const filter = { search: phrase }; // TODO: Change to displayName (does not work now)
+    const filter = { displayName: phrase };
     searchCloudStorages(filter).then((list) => {
         setList(list);
     });

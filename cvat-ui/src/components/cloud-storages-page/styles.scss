@@ -59,4 +59,11 @@
         bottom: 0;
         right: 0;
     }
+
+    .cvat-cloud-storage-description-icon {
+        position: absolute;
+        top: $grid-unit-size;
+        width: auto;
+        right: $grid-unit-size;
+    }
 }

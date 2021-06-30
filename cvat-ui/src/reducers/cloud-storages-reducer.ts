@@ -23,6 +23,10 @@ const defaultState: CloudStoragesState = {
         search: null,
         owner: null,
         displayName: null,
+        description: null,
+        resourceName: null,
+        providerType: null,
+        credentialsType: null,
         status: null,
     },
     activities: {
