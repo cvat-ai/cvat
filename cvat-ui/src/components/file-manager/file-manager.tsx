@@ -35,7 +35,6 @@ interface State {
 }
 
 interface Props {
-    withRemote: boolean;
     treeData: TreeNodeNormal[];
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
     onChangeActiveKey(key: string): void;
@@ -265,7 +264,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { withRemote, onChangeActiveKey } = this.props;
+        const { onChangeActiveKey } = this.props;
         const { active } = this.state;
 
         return (
@@ -283,7 +282,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 >
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
-                    {withRemote && this.renderRemoteSelector()}
+                    {this.renderRemoteSelector()}
                     {this.renderCloudStorageSelector()}
                 </Tabs>
             </>
