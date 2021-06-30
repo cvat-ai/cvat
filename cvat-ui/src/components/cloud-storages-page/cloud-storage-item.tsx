@@ -85,7 +85,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                         </div>
                     )}
                     {description ? (
-                        <CVATTooltip overlay='description'>
+                        <CVATTooltip overlay={description}>
                             <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
                         </CVATTooltip>
                     ) : null}
