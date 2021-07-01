@@ -5,12 +5,13 @@
 from .development import *
 import tempfile
 
-_temp_dir = tempfile.TemporaryDirectory(suffix="cvat")
+_temp_dir = tempfile.TemporaryDirectory(dir=BASE_DIR, suffix="cvat")
+BASE_DIR = _temp_dir.name
 
-DATA_ROOT = os.path.join(_temp_dir.name, 'data')
+DATA_ROOT = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
 
-SHARE_ROOT = os.path.join(_temp_dir.name, 'share')
+SHARE_ROOT = os.path.join(BASE_DIR, 'share')
 os.makedirs(SHARE_ROOT, exist_ok=True)
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
@@ -30,7 +31,7 @@ os.makedirs(CACHE_ROOT, exist_ok=True)
 
 # To avoid ERROR django.security.SuspiciousFileOperation:
 # The joined path (...) is located outside of the base path component
-MEDIA_ROOT = _temp_dir.name
+MEDIA_ROOT = BASE_DIR
 
 # Suppress all logs by default
 for logger in LOGGING["loggers"].values():
