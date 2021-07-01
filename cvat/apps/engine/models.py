@@ -275,7 +275,8 @@ class MyFileSystemStorage(FileSystemStorage):
         return name
 
 def upload_path_handler(instance, filename):
-    return os.path.join(instance.data.get_upload_dirname(), filename)
+    # relative path is required since Django 3.1.11
+    return os.path.join(os.path.relpath(instance.data.get_upload_dirname(), settings.BASE_DIR), filename)
 
 # For client files which the user is uploaded
 class ClientFile(models.Model):

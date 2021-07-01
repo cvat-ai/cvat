@@ -5,6 +5,7 @@ weight: 22
 ---
 
 A special mode to check the annotation allows you to point to an object or area in the frame containing an error.
+`Review mode` is not available in 3D tasks.
 To go into review mode, you need to select `Request a review` in the menu and assign the user to run a check.
 
 ![](/images/image194.jpg)
