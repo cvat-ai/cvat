@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Duplication of the cuboids when redraw them (<https://github.com/openvinotoolkit/cvat/pull/3308>)
 - Some code issues in Deep Extreme Cut handler code (<https://github.com/openvinotoolkit/cvat/pull/3325>)
 - UI fails when inactive user is assigneed to a task/job (<https://github.com/openvinotoolkit/cvat/pull/3343>)
+- Calculate precise progress of decoding a video file (<https://github.com/openvinotoolkit/cvat/pull/3381>)
 - Falsely successful `cvat_ui` image build in case of OOM error that leads to the default nginx welcome page
   (<https://github.com/openvinotoolkit/cvat/pull/3379>)
 
