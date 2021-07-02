@@ -112,6 +112,26 @@ export interface TasksState {
     };
 }
 
+export interface ExportState {
+    tasks: {
+        datasets: {
+            [tid: number]: string[];
+        };
+        annotation: {
+            [tid: number]: string[];
+        };
+    };
+    projects: {
+        datasets: {
+            [tid: number]: string[];
+        };
+        annotation: {
+            [tid: number]: string[];
+        };
+    };
+    modalVisible: boolean;
+}
+
 export interface FormatsState {
     annotationFormats: any;
     fetching: boolean;
@@ -616,6 +636,7 @@ export interface CombinedState {
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;
+    export: ExportState;
 }
 
 export enum DimensionType {
