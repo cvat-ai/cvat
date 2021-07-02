@@ -28,7 +28,7 @@ Export task API:
 
 - endpoint: `/api/v1/tasks/{id}?action=export​`
 - method: `GET`
-- returns: zip archive
+- responses: 202, 201 with zip archive payload
 
 ## Import task
 
@@ -43,4 +43,4 @@ Import task API:
 - endpoint: `/api/v1/tasks?action=import​`
 - method: `POST`
 - Content-Type: `multipart/form-data​`
-- returns: json
+- responses: 202, 201 with json payload
