@@ -9,7 +9,7 @@ This can be used to backup the task on your PC or to transfer the task to anothe
 
 ## Export task
 
-To export the task, open the action menu and select `Export Task`.
+To export a task, open the action menu and select `Export Task`.
 
 ![](/images/image219_mapillary_vistas.jpg)
 
@@ -32,11 +32,11 @@ Export task API:
 
 ## Import task
 
-To import the task go to the tasks page, click the `Import Task` button and select the file you need.
+To import a task from an archive, go to the tasks page, click the `Import Task` button and select the archive you need.
 
 ![](/images/image220.jpg)
 
-As a result, you'll get a task containing data, parameters, and annotations of a previously exported task.
+As a result, you'll get a task containing data, parameters, and annotations of the previously exported task.
 
 Import task API:
 
