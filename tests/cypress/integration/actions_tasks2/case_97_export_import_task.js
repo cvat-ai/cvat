@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Export, import an annotation task.', () => {
+context('Export, import an annotation task.', { browser: '!firefox' }, () => {
     const caseId = '97';
     const labelName = 'car';
     const taskName = `Case ${caseId}`;
@@ -60,7 +60,7 @@ context('Export, import an annotation task.', () => {
         cy.deleteTask(taskName);
     });
 
-    describe(`Testing "${labelName}"`, () => {
+    describe(`Testing "${taskName}"`, () => {
         it('Export a task.', () => {
             cy.contains('.cvat-item-task-name', taskName)
                 .parents('.cvat-tasks-list-item')

@@ -192,7 +192,7 @@ context('Object make a copy.', () => {
         it('Copy a shape with holding "Ctrl".', () => {
             const keyCodeC = 67;
             const keyCodeV = 86;
-            cy.get('#cvat_canvas_shape_18').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.cvat_canvas_shape').first().trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}', {release: false}); // Hold
             cy.get('body')
                 .trigger('keydown', {keyCode: keyCodeC, ctrlKey: true})
