@@ -11,7 +11,8 @@ import traceback
 import uuid
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp, TemporaryDirectory
+from tempfile import mkstemp, NamedTemporaryFile, TemporaryDirectory
+from PIL import Image as PILImage
 
 import cv2
 from django.db.models.query import Prefetch
@@ -44,6 +45,8 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.media_extractors import MEDIA_TYPES, ImageListReader
+from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice, Image,
@@ -206,6 +209,7 @@ class ServerViewSet(viewsets.ViewSet):
 class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
+    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
     status = filters.CharFilter(field_name="status", lookup_expr="icontains")
 
     class Meta:
@@ -233,7 +237,7 @@ class ProjectFilter(filters.FilterSet):
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = models.Project.objects.all().order_by('-id')
-    search_fields = ("name", "owner__username", "status")
+    search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
@@ -1293,6 +1297,51 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             data = json.dumps(content)
             return Response(data=data, content_type="aplication/json")
 
+        except CloudStorageModel.DoesNotExist:
+            message = f"Storage {pk} does not exist"
+            slogger.glob.error(message)
+            return HttpResponseNotFound(message)
+        except Exception as ex:
+            return HttpResponseBadRequest(str(ex))
+
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='Method returns a preview image from a cloud storage',
+        responses={
+            '200': openapi.Response(description='Preview'),
+        },
+        tags=['cloud storages']
+    )
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        try:
+            db_storage = CloudStorageModel.objects.get(pk=pk)
+            if not os.path.exists(db_storage.get_preview_path()):
+                credentials = Credentials()
+                credentials.convert_from_db({
+                    'type': db_storage.credentials_type,
+                    'value': db_storage.credentials,
+                })
+                details = {
+                    'resource': db_storage.resource,
+                    'credentials': credentials,
+                    'specific_attributes': db_storage.get_specific_attributes()
+                }
+                storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+                storage.initialize_content()
+                storage_images = [f for f in storage.content if MEDIA_TYPES['image']['has_mime_type'](f)]
+                if not len(storage_images):
+                    return HttpResponseBadRequest('Cloud storage {} does not contain any images'.format(pk))
+                with NamedTemporaryFile() as temp_image:
+                    storage.download_file(storage_images[0], temp_image.name)
+                    reader = ImageListReader([temp_image.name])
+                    preview = reader.get_preview()
+                    preview.save(db_storage.get_preview_path())
+            buf = io.BytesIO()
+            PILImage.open(db_storage.get_preview_path()).save(buf, format='JPEG')
+            buf.seek(0)
+            content_type = mimetypes.guess_type(db_storage.get_preview_path())[0]
+            return HttpResponse(buf.getvalue(), content_type)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)

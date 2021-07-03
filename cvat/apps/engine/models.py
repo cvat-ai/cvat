@@ -608,6 +608,9 @@ class CloudStorage(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_storage_dirname(), "storage.log")
 
+    def get_preview_path(self):
+        return os.path.join(self.get_storage_dirname(), 'preview.jpeg')
+
     def get_specific_attributes(self):
         specific_attributes = self.specific_attributes
         return {
