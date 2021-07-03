@@ -5,7 +5,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import { CloudSyncOutlined, MoreOutlined } from '@ant-design/icons';
+import { CloudSyncOutlined, MoreOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Paragraph from 'antd/lib/typography/Paragraph';
@@ -18,6 +18,7 @@ import moment from 'moment';
 
 import { CloudStorage, CombinedState } from 'reducers/interfaces';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     cloudStorageInstance: CloudStorage;
@@ -35,10 +36,9 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
     // cloudStorageInstance: {storage, preview}
     const { cloudStorageInstance } = props;
     const {
-        id, displayName, provider, owner, createdDate, updatedDate,
+        id, displayName, provider, owner, createdDate, updatedDate, description,
     } = cloudStorageInstance.storage;
     const { preview } = cloudStorageInstance;
-
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
     const deleted = cloudStorageInstance.storage.id in deletes ? deletes[cloudStorageInstance.storage.id] : false;
 
@@ -71,15 +71,27 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
 
     return (
         <Card
-            cover={
-                preview ? (
-                    <img className='cvat-cloud-storage-item-preview' src={preview} alt='Preview image' aria-hidden />
-                ) : (
-                    <div className='cvat-cloud-storage-item-empty-preview' aria-hidden>
-                        <CloudSyncOutlined />
-                    </div>
-                )
-            }
+            cover={(
+                <>
+                    {preview ? (
+                        <img
+                            className='cvat-cloud-storage-item-preview'
+                            src={preview}
+                            alt='Preview image'
+                            aria-hidden
+                        />
+                    ) : (
+                        <div className='cvat-cloud-storage-item-empty-preview' aria-hidden>
+                            <CloudSyncOutlined />
+                        </div>
+                    )}
+                    {description ? (
+                        <CVATTooltip overlay={description}>
+                            <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
+                        </CVATTooltip>
+                    ) : null}
+                </>
+            )}
             size='small'
             style={style}
             className='cvat-cloud-storage-item'

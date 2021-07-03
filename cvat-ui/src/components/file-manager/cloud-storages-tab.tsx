@@ -35,7 +35,7 @@ async function searchCloudStorages(filter: Record<string, string>): Promise<Clou
 }
 
 const searchCloudStoragesWrapper = debounce((phrase, setList) => {
-    const filter = { search: phrase }; // TODO: Change to displayName (does not work now)
+    const filter = { displayName: phrase };
     searchCloudStorages(filter).then((list) => {
         setList(list);
     });
@@ -56,6 +56,14 @@ export default function CloudStorageTab(props: Props): JSX.Element {
         });
     }, []);
 
+    useEffect(() => {
+        if (!searchPhrase) {
+            setList(initialList);
+        } else {
+            searchCloudStoragesWrapper(searchPhrase, setList);
+        }
+    }, [searchPhrase, initialList]);
+
     const onBlur = (): void => {
         if (!searchPhrase && cloudStorage) {
             onSelectCloudStorage(null);
@@ -64,8 +72,6 @@ export default function CloudStorageTab(props: Props): JSX.Element {
             if (potentialStorages.length === 1) {
                 setSearchPhrase(potentialStorages[0].displayName);
                 onSelectCloudStorage(potentialStorages[0]);
-            } else {
-                setSearchPhrase(cloudStorage?.displayName || '');
             }
         }
     };
@@ -86,11 +92,6 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     showSearch
                     onSearch={(phrase: string) => {
                         setSearchPhrase(phrase);
-                        if (!phrase) {
-                            setList(initialList);
-                        } else {
-                            searchCloudStoragesWrapper(phrase, setList);
-                        }
                     }}
                     options={list.map((_cloudStorage) => ({
                         value: _cloudStorage.id.toString(),

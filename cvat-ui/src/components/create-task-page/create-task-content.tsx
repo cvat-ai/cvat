@@ -307,7 +307,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     ref={(container: any): void => {
                         this.fileManagerContainer = container;
                     }}
-                    withRemote
                 />
             </Col>
         );

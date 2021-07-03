@@ -15,6 +15,9 @@ interface Props {
     children: JSX.Element;
 }
 
+// provider: isEnum.bind(CloudStorageProviderType),
+// credentialsType: isEnum.bind(CloudStorageCredentialsType),
+
 export default function SearchTooltip(props: Props): JSX.Element {
     const { instance, children } = props;
     const instances = ` ${instance}s `;
@@ -24,6 +27,61 @@ export default function SearchTooltip(props: Props): JSX.Element {
             overlayClassName={`cvat-${instance}s-search-tooltip cvat-search-tooltip`}
             title={(
                 <>
+                    {instance === 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>displayName: Azure</Text>
+                            <Text>
+                                all
+                                {instances}
+                                where name includes the substring
+                                <q>Azure</q>
+                            </Text>
+                        </Paragraph>
+                    ) : null}
+                    {instance === 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>description: Personal bucket</Text>
+                            <Text>
+                                all
+                                {instances}
+                                where description includes the substring
+                                <q>Personal bucket</q>
+                            </Text>
+                        </Paragraph>
+                    ) : null}
+                    {instance === 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>resourceName: mycvatbucket</Text>
+                            <Text>
+                                all
+                                {instances}
+                                where a name of the resource includes the substring
+                                <q>mycvatbucket</q>
+                            </Text>
+                        </Paragraph>
+                    ) : null}
+                    {instance === 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>providerType: AWS_S3_BUCKET</Text>
+                            <Text>
+                                <q>AWS_S3_BUCKET</q>
+                                or
+                                <q>AZURE_CONTAINER</q>
+                            </Text>
+                        </Paragraph>
+                    ) : null}
+                    {instance === 'cloudstorage' ? (
+                        <Paragraph>
+                            <Text strong>credentialsType: TEMP_KEY_SECRET_KEY_TOKEN_SET</Text>
+                            <Text>
+                                <q>TEMP_KEY_SECRET_KEY_TOKEN_SET</q>
+                                or
+                                <q>ACCOUNT_NAME_TOKEN_PAIR</q>
+                                or
+                                <q>ANONYMOUS_ACCESS</q>
+                            </Text>
+                        </Paragraph>
+                    ) : null}
                     <Paragraph>
                         <Text strong>owner: admin</Text>
                         <Text>
@@ -43,26 +101,6 @@ export default function SearchTooltip(props: Props): JSX.Element {
                                 which are assigned to a user who has the substring
                                 <q>admin</q>
                                 in their username
-                            </Text>
-                        </Paragraph>
-                    ) : null}
-                    {instance === 'cloudstorage' ? (
-                        <Paragraph>
-                            <Text strong>displayName: Azure</Text>
-                            <Text>
-                                all
-                                {instances}
-                                where names include the substring
-                                <q>Azure</q>
-                            </Text>
-                        </Paragraph>
-                    ) : null}
-                    {instance === 'cloudstorage' ? (
-                        <Paragraph>
-                            <Text strong>status: avaliable</Text>
-                            <Text>
-                                all available/unavailable
-                                {instances}
                             </Text>
                         </Paragraph>
                     ) : null}
