@@ -1234,6 +1234,24 @@
                 return response.data;
             }
 
+            async function getCloudStoragePreview(id) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    const url = `${backendAPI}/cloudstorages/${id}/preview`;
+                    response = await Axios.get(url, {
+                        proxy: config.proxy,
+                        responseType: 'blob',
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(`Could not get preview for the cloud storage ${id} from the server`, code);
+                }
+
+                return response.data;
+            }
+
             async function deleteCloudStorage(id) {
                 const { backendAPI } = config;
 
@@ -1377,6 +1395,7 @@
                         value: Object.freeze({
                             get: getCloudStorages,
                             getContent: getCloudStorageContent,
+                            getPreview: getCloudStoragePreview,
                             create: createCloudStorage,
                             delete: deleteCloudStorage,
                             update: updateCloudStorage,

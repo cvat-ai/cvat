@@ -32,13 +32,15 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
 
+    // cloudStorageInstance: {storage, preview}
     const { cloudStorageInstance } = props;
     const {
-        id, displayName, preview, provider, owner, createdDate, updatedDate,
-    } = cloudStorageInstance;
+        id, displayName, provider, owner, createdDate, updatedDate,
+    } = cloudStorageInstance.storage;
+    const { preview } = cloudStorageInstance;
 
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
-    const deleted = cloudStorageInstance.id in deletes ? deletes[cloudStorageInstance.id] : false;
+    const deleted = cloudStorageInstance.storage.id in deletes ? deletes[cloudStorageInstance.storage.id] : false;
 
     const style: React.CSSProperties = {};
 
@@ -57,7 +59,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
             content: `You are going to remove the cloudstorage "${displayName}". Continue?`,
             className: 'cvat-delete-cloud-storage-modal',
             onOk: () => {
-                dispatch(deleteCloudStorageAsync(cloudStorageInstance));
+                dispatch(deleteCloudStorageAsync(cloudStorageInstance.storage));
             },
             okButtonProps: {
                 type: 'primary',

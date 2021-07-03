@@ -60,7 +60,14 @@ export default (
                 current: [],
             };
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS: {
-            const { array, count, query } = action.payload;
+            const { count, query } = action.payload;
+
+            const combinedWithPreviews = action.payload.array.map(
+                (cloudStorage: any, index: number): CloudStorage => ({
+                    instance: cloudStorage,
+                    preview: action.payload.previews[index],
+                }),
+            );
             return {
                 ...state,
                 initialized: true,
@@ -70,7 +77,7 @@ export default (
                     ...defaultState.gettingQuery,
                     ...query,
                 },
-                current: array,
+                current: combinedWithPreviews,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED: {

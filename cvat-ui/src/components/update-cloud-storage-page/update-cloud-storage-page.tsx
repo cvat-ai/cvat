@@ -24,7 +24,8 @@ export default function UpdateCloudStoragePageComponent(): JSX.Element {
     const cloudStorageId = +useParams<ParamType>().id;
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const cloudStorageQuery = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
-    const cloudStorages = useSelector((state: CombinedState) => state.cloudStorages.current);
+    const cloudStorages = useSelector((state: CombinedState) => state.cloudStorages.current)
+        .map((cloudStrage) => cloudStrage.instance);
     const [cloudStorage] = cloudStorages.filter((_cloudStorage) => _cloudStorage.id === cloudStorageId);
 
     useEffect(() => {
