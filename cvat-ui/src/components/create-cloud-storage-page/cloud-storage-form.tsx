@@ -192,6 +192,24 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
+        if (
+            providerType === ProviderType.AZURE_CONTAINER &&
+            credentialsType === CredentialsType.ANONYMOUS_ACCESS
+        ) {
+            return (
+                <>
+                    <Form.Item
+                        label='Account name'
+                        name='account_name'
+                        rules={[{ required: true, message: 'Please, specify your account name' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password minLength={3} maxLength={24} />
+                    </Form.Item>
+                </>
+            );
+        }
+
         return <></>;
     };
 
@@ -266,6 +284,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Select onSelect={(value: CredentialsType) => setCredentialsType(value)}>
                         <Select.Option value={CredentialsType.ACCOUNT_NAME_TOKEN_PAIR}>
                             {CredentialsType.ACCOUNT_NAME_TOKEN_PAIR}
+                        </Select.Option>
+                        <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>
+                            {CredentialsType.ANONYMOUS_ACCESS}
                         </Select.Option>
                     </Select>
                 </Form.Item>
