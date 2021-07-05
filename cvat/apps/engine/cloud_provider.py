@@ -271,7 +271,7 @@ class Credentials:
             CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET : \
                 " ".join([self.key, self.secret_key, self.session_token]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
-            CredentialsTypeChoice.ANONYMOUS_ACCESS: "",
+            CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
         }
         return converted_credentials[self.credentials_type]
 
@@ -282,7 +282,10 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
             self.account_name, self.session_token = credentials.get('value').split()
         else:
-            self.account_name, self.session_token, self.key, self.secret_key = ('', '', '', '')
+            # anonymous access
+            self.session_token, self.key, self.secret_key = ('', '', '')
+            # account_name will be in [some_value, '']
+            self.account_name = credentials.get('value')
             self.credentials_type = None
 
     def mapping_with_new_values(self, credentials):

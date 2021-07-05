@@ -7,7 +7,7 @@ from io import BytesIO
 
 from diskcache import Cache
 from django.conf import settings
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, gettempdir
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
@@ -84,18 +84,22 @@ class CacheInteraction:
                 cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
                 cloud_storage_instance.initialize_content()
                 for item in reader:
-                    name = f"{item['name']}{item['extension']}"
-                    if name not in cloud_storage_instance:
-                        raise Exception('{} file was not found on a {} storage'.format(name, cloud_storage_instance.name))
-                    with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=name, delete=False) as temp_file:
+                    # full_name may be 'sub_dir/image.jpeg'
+                    full_name = f"{item['name']}{item['extension']}"
+                    if full_name not in cloud_storage_instance:
+                        raise Exception('{} file was not found on a {} storage'.format(full_name, cloud_storage_instance.name))
+                    head, file_name = os.path.split(full_name)
+                    abs_head = os.path.join(gettempdir(), head)
+                    os.makedirs(abs_head, exist_ok=True)
+                    with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=file_name, delete=False, dir=abs_head) as temp_file:
                         source_path = temp_file.name
-                        buf = cloud_storage_instance.download_fileobj(name)
+                        buf = cloud_storage_instance.download_fileobj(full_name)
                         temp_file.write(buf.getvalue())
                         checksum = item.get('checksum', None)
                         if not checksum:
                             slogger.glob.warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
                         if checksum and not md5_hash(source_path) == checksum:
-                            slogger.glob.warning('Hash sums of files {} do not match'.format(name))
+                            slogger.glob.warning('Hash sums of files {} do not match'.format(full_name))
                         images.append((source_path, source_path, None))
             else:
                 for item in reader:
@@ -104,9 +108,14 @@ class CacheInteraction:
         writer.save_as_chunk(images, buff)
         buff.seek(0)
         if db_data.storage == StorageChoice.CLOUD_STORAGE:
+            tmp = gettempdir()
+            created_dirs = set(filter(lambda x: x if x.lstrip(tmp) else None, [os.path.dirname(i[0]) for i in images]))
             images = [image[0] for image in images if os.path.exists(image[0])]
             for image_path in images:
                 os.remove(image_path)
+            for created_dir in created_dirs:
+                if not os.listdir(created_dir):
+                    os.rmdir(created_dir)
         return buff, mime_type
 
     def save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):
