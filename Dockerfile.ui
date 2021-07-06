@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS cvat-ui
+FROM node:lts-buster AS cvat-ui
 
 ARG http_proxy
 ARG https_proxy
@@ -14,8 +14,6 @@ ENV TERM=xterm \
     socks_proxy=${socks_proxy} \
     LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
-
-RUN apk add python3 g++ make
 
 # Install dependencies
 COPY cvat-core/package*.json /tmp/cvat-core/

@@ -172,6 +172,15 @@ server. Proxy is an advanced topic and it is not covered by the guide.
   winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
+  If you don't have winpty installed or the above command does not work, you may also try the following:
+
+  ```sh
+  # enter docker image first
+  docker exec -it cvat /bin/bash
+  # then run
+  python3 ~/manage.py createsuperuser
+  ```
+
   Choose a username and a password for your admin account. For more information
   please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
