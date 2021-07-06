@@ -132,14 +132,6 @@ export interface CloudStoragesQuery {
     [key: string]: string | number | null | undefined;
 }
 
-export interface CloudStoragesList {
-    id: number | null;
-    search: string | null;
-    owner: string | null;
-    displayName: string | null;
-    [key: string]: string | number | null | undefined;
-}
-
 export type CloudStorage = any;
 
 export interface CloudStoragesState {
@@ -148,7 +140,6 @@ export interface CloudStoragesState {
     count: number;
     current: CloudStorage[];
     gettingQuery: CloudStoragesQuery;
-    gettingList: CloudStoragesList;
     activities: {
         creates: {
             attaching: boolean;

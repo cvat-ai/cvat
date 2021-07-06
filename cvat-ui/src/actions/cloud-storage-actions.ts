@@ -10,6 +10,7 @@ import { CloudStoragesQuery, CloudStorage } from 'reducers/interfaces';
 const cvat = getCore();
 
 export enum CloudStorageActionTypes {
+    UPDATE_CLOUD_STORAGES_GETTING_QUERY = 'UPDATE_CLOUD_STORAGES_GETTING_QUERY',
     GET_CLOUD_STORAGES = 'GET_CLOUD_STORAGES',
     GET_CLOUD_STORAGE_SUCCESS = 'GET_CLOUD_STORAGES_SUCCESS',
     GET_CLOUD_STORAGE_FAILED = 'GET_CLOUD_STORAGES_FAILED',
@@ -28,6 +29,9 @@ export enum CloudStorageActionTypes {
 }
 
 const cloudStoragesActions = {
+    updateCloudStoragesGettingQuery: (query: Partial<CloudStoragesQuery>) => (
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY, { query })
+    ),
     getCloudStorages: () => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGES),
     getCloudStoragesSuccess: (array: any[], previews: string[], count: number, query: Partial<CloudStoragesQuery>) =>
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS, {
@@ -66,6 +70,7 @@ export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;
 export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(cloudStoragesActions.getCloudStorages());
+        dispatch(cloudStoragesActions.updateCloudStoragesGettingQuery(query));
 
         const filteredQuery = { ...query };
         for (const key in filteredQuery) {

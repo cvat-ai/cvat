@@ -11,12 +11,6 @@ const defaultState: CloudStoragesState = {
     fetching: false,
     count: 0,
     current: [],
-    gettingList: {
-        id: null,
-        search: null,
-        owner: null,
-        displayName: null,
-    },
     gettingQuery: {
         page: 1,
         id: null,
@@ -55,6 +49,14 @@ export default (
     action: CloudStorageActions | AuthActions,
 ): CloudStoragesState => {
     switch (action.type) {
+        case CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY:
+            return {
+                ...state,
+                gettingQuery: {
+                    ...defaultState.gettingQuery,
+                    ...action.payload.query,
+                },
+            };
         case CloudStorageActionTypes.GET_CLOUD_STORAGES:
             return {
                 ...state,

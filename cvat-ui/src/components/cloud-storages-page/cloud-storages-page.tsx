@@ -19,7 +19,6 @@ export default function StoragesPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
     const { search } = history.location;
-    const initialized = useSelector((state: CombinedState) => state.cloudStorages.initialized);
     const totalCount = useSelector((state: CombinedState) => state.cloudStorages.count);
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const current = useSelector((state: CombinedState) => state.cloudStorages.current)
@@ -63,15 +62,13 @@ export default function StoragesPageComponent(): JSX.Element {
     }, [query]);
 
     useEffect(() => {
-        if (!initialized) {
-            const searchParams = { ...query };
-            for (const [key, value] of new URLSearchParams(search)) {
-                if (key in searchParams) {
-                    searchParams[key] = ['page', 'id'].includes(key) ? +value : value;
-                }
+        const searchParams = { ...query };
+        for (const [key, value] of new URLSearchParams(search)) {
+            if (key in searchParams) {
+                searchParams[key] = ['page', 'id'].includes(key) ? +value : value;
             }
-            onSearch(searchParams);
         }
+        onSearch(searchParams);
     }, []);
 
     const searchWasUsed = Object.entries(query).some(([key, value]: Array<any>) => {
