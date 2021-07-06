@@ -1118,6 +1118,18 @@ class RedefineDescriptionField(FieldInspector):
                     'supported: range=aws_range'
         return result
 
+class CloudStorageFilter(filters.FilterSet):
+    display_name = filters.CharFilter(field_name='display_name', lookup_expr='icontains')
+    provider_type = filters.CharFilter(field_name='provider_type', lookup_expr='icontains')
+    resource = filters.CharFilter(field_name='resource', lookup_expr='icontains')
+    credentials_type = filters.CharFilter(field_name='credentials_type', lookup_expr='icontains')
+    description = filters.CharFilter(field_name='description', lookup_expr='icontains')
+    owner = filters.CharFilter(field_name='owner__username', lookup_expr='icontains')
+
+    class Meta:
+        model = models.CloudStorage
+        fields = ('id', 'display_name', 'provider_type', 'resource', 'credentials_type', 'description', 'owner')
+
 @method_decorator(
     name='retrieve',
     decorator=swagger_auto_schema(
@@ -1157,8 +1169,8 @@ class RedefineDescriptionField(FieldInspector):
 class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
-    search_fields = ('provider_type', 'display_name', 'resource', 'owner__username')
-    filterset_fields = ['provider_type', 'display_name', 'resource', 'credentials_type']
+    search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
+    filterset_class = CloudStorageFilter
 
     def get_permissions(self):
         http_method = self.request.method
