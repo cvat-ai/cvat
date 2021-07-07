@@ -24,10 +24,7 @@ interface Props {
     cloudStorageInstance: CloudStorage;
 }
 
-// TODO: fix owner [server]
 // TODO: implement status
-// TODO: implement editing
-// TODO: implement preview
 
 export default function CloudStorageItemComponent(props: Props): JSX.Element {
     const history = useHistory();
