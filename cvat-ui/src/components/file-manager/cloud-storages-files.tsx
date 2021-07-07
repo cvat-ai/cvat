@@ -58,7 +58,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
             }));
 
             setTreeData(nodes);
-            setContentNotInManifest(fileNames.some((fileName: string) => !content[fileName].includes('m')));
+            setContentNotInManifest(fileNames.some((fileName: string) => !content[fileName].includes('m') && !fileName.includes('manifest.jsonl')));
             setContentNotInStorage(fileNames.some((fileName: string) => !content[fileName].includes('s')));
         } else {
             setTreeData([]);
