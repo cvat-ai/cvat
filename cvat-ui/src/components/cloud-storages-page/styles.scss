@@ -43,15 +43,20 @@
     margin-top: $grid-unit-size * 2;
 }
 
-.cvat-cloud-storage-item-empty-preview {
-    font-size: $grid-unit-size * 9;
-    text-align: center;
-    padding: $grid-unit-size;
-}
-
 .cvat-cloud-storage-item {
     div.ant-typography {
         margin-bottom: 0;
+    }
+
+    .cvat-cloud-storage-item-empty-preview {
+        font-size: $grid-unit-size * 15;
+        text-align: center;
+        height: $grid-unit-size * 24;
+    }
+
+    img {
+        height: $grid-unit-size * 24;
+        object-fit: cover;
     }
 
     .cvat-cloud-storage-item-menu-button {
