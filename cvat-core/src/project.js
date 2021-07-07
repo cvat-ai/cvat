@@ -4,7 +4,6 @@
 
 
 (() => {
-    const { exportDataset } = require('./annotations');
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { ArgumentError } = require('./exceptions');
@@ -309,6 +308,8 @@
     module.exports = {
         Project,
     };
+
+    const { exportDataset } = require('./annotations');
 
     Object.defineProperties(Project.prototype, Object.freeze({
         annotations: Object.freeze({

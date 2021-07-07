@@ -88,7 +88,7 @@ export default function ExportDatasetModal(): JSX.Element {
                     )}
             </Select>
             <Checkbox
-                value={saveImages}
+                checked={saveImages}
                 onChange={(e) => setSaveImages(e.target.checked)}
             >
                 Save images

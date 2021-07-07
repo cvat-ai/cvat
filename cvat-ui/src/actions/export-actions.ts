@@ -25,20 +25,20 @@ export const exportActions = {
 
 export const exportDatasetAsync = (
     instance: any,
-    exporter: any,
+    format: string,
     name: string,
     saveImages: boolean,
 ): ThunkAction => async (dispatch) => {
-    dispatch(exportActions.exportDataset(instance, exporter));
+    dispatch(exportActions.exportDataset(instance, format));
 
     try {
-        const url = await instance.annotations.exportDataset(exporter.name, saveImages);
+        const url = await instance.annotations.exportDataset(format, saveImages);
         const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
         downloadAnchor.href = url;
         downloadAnchor.click();
-        dispatch(exportActions.exportDatasetSuccess(instance, exporter));
+        dispatch(exportActions.exportDatasetSuccess(instance, format));
     } catch (error) {
-        dispatch(exportActions.exportDatasetFailed(instance, exporter, error));
+        dispatch(exportActions.exportDatasetFailed(instance, format, error));
     }
 };
 

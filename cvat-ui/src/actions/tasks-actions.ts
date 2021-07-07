@@ -21,9 +21,9 @@ export enum TasksActionTypes {
     DUMP_ANNOTATIONS = 'DUMP_ANNOTATIONS',
     DUMP_ANNOTATIONS_SUCCESS = 'DUMP_ANNOTATIONS_SUCCESS',
     DUMP_ANNOTATIONS_FAILED = 'DUMP_ANNOTATIONS_FAILED',
-    EXPORT_DATASET = 'EXPORT_DATASET',
-    EXPORT_DATASET_SUCCESS = 'EXPORT_DATASET_SUCCESS',
-    EXPORT_DATASET_FAILED = 'EXPORT_DATASET_FAILED',
+    // EXPORT_DATASET = 'EXPORT_DATASET',
+    // EXPORT_DATASET_SUCCESS = 'EXPORT_DATASET_SUCCESS',
+    // EXPORT_DATASET_FAILED = 'EXPORT_DATASET_FAILED',
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
@@ -263,42 +263,42 @@ export function importTaskAsync(file: File): ThunkAction<Promise<void>, {}, {}, 
     };
 }
 
-function exportDataset(task: any, exporter: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_DATASET,
-        payload: {
-            task,
-            exporter,
-        },
-    };
+// function exportDataset(task: any, exporter: any): AnyAction {
+//     const action = {
+//         type: TasksActionTypes.EXPORT_DATASET,
+//         payload: {
+//             task,
+//             exporter,
+//         },
+//     };
 
-    return action;
-}
+//     return action;
+// }
 
-function exportDatasetSuccess(task: any, exporter: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_DATASET_SUCCESS,
-        payload: {
-            task,
-            exporter,
-        },
-    };
+// function exportDatasetSuccess(task: any, exporter: any): AnyAction {
+//     const action = {
+//         type: TasksActionTypes.EXPORT_DATASET_SUCCESS,
+//         payload: {
+//             task,
+//             exporter,
+//         },
+//     };
 
-    return action;
-}
+//     return action;
+// }
 
-function exportDatasetFailed(task: any, exporter: any, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_DATASET_FAILED,
-        payload: {
-            task,
-            exporter,
-            error,
-        },
-    };
+// function exportDatasetFailed(task: any, exporter: any, error: any): AnyAction {
+//     const action = {
+//         type: TasksActionTypes.EXPORT_DATASET_FAILED,
+//         payload: {
+//             task,
+//             exporter,
+//             error,
+//         },
+//     };
 
-    return action;
-}
+//     return action;
+// }
 
 export function exportDatasetAsync(task: any, exporter: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {

@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-const { Project } = require('./project');
-
 (() => {
     const serverProxy = require('./server-proxy');
     const Collection = require('./annotations-collection');
@@ -11,6 +9,7 @@ const { Project } = require('./project');
     const AnnotationsHistory = require('./annotations-history');
     const { checkObjectType } = require('./common');
     const { Task, Job } = require('./session');
+    const { Project } = require('./project');
     const { Loader, Dumper } = require('./annotation-formats');
     const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
 
