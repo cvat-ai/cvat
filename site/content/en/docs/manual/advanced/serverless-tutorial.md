@@ -580,9 +580,6 @@ port forwarding again._
 
 ### Troubleshooting
 
-Let's try to investigate several problems reported by users with serverless
-functions.
-
 First of all need to check that you are using the recommended version of
 nuclio framework. In my case it is `1.5.16` but you need to check [the
 installation manual][cvat-auto-annotation-guide].
@@ -601,7 +598,7 @@ CONTAINER ID   IMAGE                                   COMMAND                  
 7ab0c076c927   quay.io/nuclio/dashboard:1.5.16-amd64   "/docker-entrypoint.…"   6 weeks ago   Up 46 minutes (healthy)   80/tcp, 0.0.0.0:8070->8070/tcp, :::8070->8070/tcp   nuclio
 ```
 
-Be sure that the model which doesn't work is healthy. In my case Inside Outside
+Be sure that the model, which doesn't work, is healthy. In my case Inside Outside
 Guidance is not running.
 
 ```bash
@@ -609,10 +606,18 @@ docker ps --filter NAME=iog
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 ```
 
-Let's run it. Go to the root of CVAT code and run the deploying command.
+Let's run it. Go to the root of CVAT repository and run the deploying command.
+
+<details>
+<summary>
 
 ```bash
 ./serverless/deploy_cpu.sh serverless/pytorch/shiyinzhang/iog
+```
+
+</summary>
+
+```bash
 Deploying serverless/pytorch/shiyinzhang/iog function...
 21.07.06 12:49:08.763                     nuctl (I) Deploying function {"name": ""}
 21.07.06 12:49:08.763                     nuctl (I) Building {"versionInfo": "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3", "name": ""}
@@ -651,7 +656,9 @@ Failed to deploy function
   nuclio    | pth.shiyinzhang.iog                            | cvat    | error |         0 | 1/1
 ```
 
-In this case I built the container some time ago and the port 49154 was
+</details>
+
+In this case the container was built some time ago and the port 49154 was
 assigned by nuclio. Now the port is used by `openvino-dextr` as we can
 see in logs. To prove our hypothesis just need to run a couple of docker
 commands:
@@ -665,13 +672,21 @@ docker inspect eb0c1ee46630 | grep 49154
 ```
 
 To solve the problem let's just remove the previous container for the function.
-In my case it is `eb0c1ee46630`. After that the deploying command works as
+In this case it is `eb0c1ee46630`. After that the deploying command works as
 expected.
+
+<details>
+<summary>
 
 ```bash
 docker container rm eb0c1ee46630
 eb0c1ee46630
 ./serverless/deploy_cpu.sh serverless/pytorch/shiyinzhang/iog
+```
+
+</summary>
+
+```bash
 Deploying serverless/pytorch/shiyinzhang/iog function...
 21.07.06 13:09:52.934                     nuctl (I) Deploying function {"name": ""}
 21.07.06 13:09:52.934                     nuctl (I) Building {"versionInfo": "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3", "name": ""}
@@ -693,6 +708,31 @@ Deploying serverless/pytorch/shiyinzhang/iog function...
   nuclio    | pth.facebookresearch.detectron2.retinanet_r101 | cvat    | ready |     49155 | 1/1
   nuclio    | pth.shiyinzhang.iog                            | cvat    | ready |     49159 | 1/1
 ```
+
+</details>
+
+When you investigate an issue with a serverless function, it is extremely
+useful to look at logs. Just run a couple of commands like
+`docker logs <container>`.
+
+<details>
+
+```bash
+docker logs cvat
+2021-07-06 13:44:54,699 DEBG 'runserver' stderr output:
+[Tue Jul 06 13:44:54.699431 2021] [wsgi:error] [pid 625:tid 140010969868032] [remote 172.28.0.3:40972] [2021-07-06 13:44:54,699] ERROR django.request: Internal Server Error: /api/v1/lambda/functions/pth.shiyinzhang.iog
+
+2021-07-06 13:44:54,700 DEBG 'runserver' stderr output:
+[Tue Jul 06 13:44:54.699712 2021] [wsgi:error] [pid 625:tid 140010969868032] [remote 172.28.0.3:40972] ERROR - 2021-07-06 13:44:54,699 - log - Internal Server Error: /api/v1/lambda/functions/pth.shiyinzhang.iog
+
+docker container ls --filter name=iog
+CONTAINER ID   IMAGE                             COMMAND                  CREATED       STATUS                 PORTS                                         NAMES
+3b6ef9a9f3e2   cvat/pth.shiyinzhang.iog:latest   "conda run -n iog pr…"   4 hours ago   Up 4 hours (healthy)   0.0.0.0:49159->8080/tcp, :::49159->8080/tcp   nuclio-nuclio-pth.shiyinzhang.iog
+
+docker logs nuclio-nuclio-pth.shiyinzhang.iog
+```
+
+</details>
 
 [detectron2-github]: https://github.com/facebookresearch/detectron2
 [detectron2-requirements]: https://detectron2.readthedocs.io/en/latest/tutorials/install.html
