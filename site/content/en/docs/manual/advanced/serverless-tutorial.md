@@ -208,10 +208,11 @@ pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https:/
 pip install opencv-python
 ```
 
-Install the detectron2 library from your local clone.
+Install the detectron2 library from your local clone (you should be inside
+detectron2 directory).
 
 ```sh
-python -m pip install -e detectron2 .
+python -m pip install -e .
 ```
 
 After the library from Facebook AI Research is installed, we can run a couple
@@ -608,14 +609,11 @@ CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 
 Let's run it. Go to the root of CVAT repository and run the deploying command.
 
-<details>
-<summary>
-
 ```bash
 ./serverless/deploy_cpu.sh serverless/pytorch/shiyinzhang/iog
 ```
 
-</summary>
+<details>
 
 ```bash
 Deploying serverless/pytorch/shiyinzhang/iog function...
@@ -675,16 +673,13 @@ To solve the problem let's just remove the previous container for the function.
 In this case it is `eb0c1ee46630`. After that the deploying command works as
 expected.
 
-<details>
-<summary>
-
 ```bash
 docker container rm eb0c1ee46630
 eb0c1ee46630
 ./serverless/deploy_cpu.sh serverless/pytorch/shiyinzhang/iog
 ```
 
-</summary>
+<details>
 
 ```bash
 Deploying serverless/pytorch/shiyinzhang/iog function...

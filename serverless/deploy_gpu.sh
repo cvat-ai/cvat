@@ -21,5 +21,8 @@ nuctl deploy --project-name cvat \
     --triggers '{"myHttpTrigger": {"maxWorkers": 1}}' \
     --resource-limit nvidia.com/gpu=1 --verbose
 
+nuctl deploy --project-name cvat --platform local \
+    --path "$SCRIPT_DIR/pytorch/facebookresearch/detectron2/retinanet/nuclio" \
+    --file "$SCRIPT_DIR/pytorch/facebookresearch/detectron2/retinanet/nuclio/function-gpu.yaml"
 
 nuctl get function

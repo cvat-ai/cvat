@@ -4,17 +4,24 @@ import io
 from PIL import Image
 import yaml
 
+import torch
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import convert_PIL_to_numpy
 from detectron2.engine.defaults import DefaultPredictor
 from detectron2.data.datasets.builtin_meta import COCO_CATEGORIES
 
 CONFIG_FILE = "detectron2/configs/COCO-Detection/retinanet_R_101_FPN_3x.yaml"
-CONFIG_OPTS = ["MODEL.WEIGHTS", "model_final_971ab9.pkl", "MODEL.DEVICE", "cpu"]
+CONFIG_OPTS = ["MODEL.WEIGHTS", "model_final_971ab9.pkl"]
 CONFIDENCE_THRESHOLD = 0.5
 
 def init_context(context):
     context.logger.info("Init context...  0%")
+    if torch.cuda.is_available():
+        functionconfig = yaml.safe_load(open("/opt/nuclio/function-gpu.yaml"))
+        CONFIG_OPTS.extend(['MODEL.DEVICE', 'cuda'])
+    else:
+        functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+        CONFIG_OPTS.extend(['MODEL.DEVICE', 'cpu'])
 
     cfg = get_cfg()
     cfg.merge_from_file(CONFIG_FILE)
@@ -26,7 +33,6 @@ def init_context(context):
     predictor = DefaultPredictor(cfg)
 
     setattr(context.user_data, 'model_handler', predictor)
-    functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
     setattr(context.user_data, "labels", labels)
