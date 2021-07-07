@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { ReactText } from 'react';
+import React, { ReactText, RefObject } from 'react';
 
 import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
@@ -12,6 +12,7 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
+import { FormInstance } from 'antd/lib/form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined } from '@ant-design/icons';
@@ -41,8 +42,11 @@ interface Props {
 }
 
 export class FileManager extends React.PureComponent<Props, State> {
+    private cloudStorageTabFormRef: RefObject<FormInstance>;
+
     public constructor(props: Props) {
         super(props);
+        this.cloudStorageTabFormRef = React.createRef<FormInstance>();
 
         this.state = {
             files: {
@@ -94,6 +98,10 @@ export class FileManager extends React.PureComponent<Props, State> {
         });
 
     public reset(): void {
+        const { active } = this.state;
+        if (active === 'cloudStorage') {
+            this.cloudStorageTabFormRef.current?.resetFields();
+        }
         this.setState({
             expandedKeys: [],
             active: 'local',
@@ -258,6 +266,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                     onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
                         this.setState({ cloudStorage: _cloudStorage });
                     }}
+                    formRef={this.cloudStorageTabFormRef}
                 />
             </Tabs.TabPane>
         );

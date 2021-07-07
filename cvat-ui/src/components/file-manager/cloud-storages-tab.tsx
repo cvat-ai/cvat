@@ -15,6 +15,7 @@ import { CloudStorage } from 'reducers/interfaces';
 import CloudStorageFiles from './cloud-storages-files';
 
 interface Props {
+    formRef: any;
     cloudStorage: CloudStorage | null;
     onSelectFiles: (files: string[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
@@ -45,7 +46,9 @@ export default function CloudStorageTab(props: Props): JSX.Element {
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
     const [list, setList] = useState<CloudStorage[]>([]);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
-    const { cloudStorage, onSelectFiles, onSelectCloudStorage } = props;
+    const {
+        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage,
+    } = props;
 
     useEffect(() => {
         searchCloudStorages({}).then((data) => {
@@ -78,7 +81,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
 
     // todo: clear this form after the task was created
     return (
-        <Form className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
+        <Form ref={formRef} className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
             <Form.Item
                 label='Select cloud storage'
                 name='cloudStorageSelect'
@@ -108,7 +111,15 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 </AutoComplete>
             </Form.Item>
 
-            {cloudStorage ? <CloudStorageFiles cloudStorage={cloudStorage} onSelectFiles={onSelectFiles} /> : null}
+            {cloudStorage ? (
+                <Form.Item
+                    label='Files'
+                    name='cloudStorageFiles'
+                    rules={[{ required: true, message: 'Please, select a files' }]}
+                >
+                    <CloudStorageFiles cloudStorage={cloudStorage} onSelectFiles={onSelectFiles} />
+                </Form.Item>
+            ) : null}
         </Form>
     );
 }

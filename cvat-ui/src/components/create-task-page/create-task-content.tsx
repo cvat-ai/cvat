@@ -97,12 +97,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 className: 'cvat-notification-create-task-success',
             });
 
-            if (this.basicConfigurationComponent.current) {
-                this.basicConfigurationComponent.current.resetFields();
-            }
-            if (this.advancedConfigurationComponent.current) {
-                this.advancedConfigurationComponent.current.resetFields();
-            }
+            this.basicConfigurationComponent.current?.resetFields();
+            this.advancedConfigurationComponent.current?.resetFields();
 
             this.fileManagerContainer.reset();
 
