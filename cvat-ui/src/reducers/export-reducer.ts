@@ -14,15 +14,23 @@ const defaultState: ExportState = {
         datasets: {},
         annotation: {},
     },
+    instance: null,
     modalVisible: false,
 };
 
 export default (state: ExportState = defaultState, action: ExportActions): ExportState => {
     switch (action.type) {
-        case ExportActionTypes.TOGGLE_EXPORT_MODAL_VISIBLE:
+        case ExportActionTypes.OPEN_EXPORT_MODAL:
             return {
                 ...state,
-                modalVisible: !state.modalVisible,
+                modalVisible: true,
+                instance: action.payload.instance,
+            };
+        case ExportActionTypes.CLOSE_EXPORT_MODAL:
+            return {
+                ...state,
+                modalVisible: false,
+                instance: null,
             };
         default:
             return state;

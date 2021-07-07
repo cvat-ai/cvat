@@ -110,7 +110,7 @@ export default function ProjectPageComponent(): JSX.Element {
                     </React.Fragment>
                 ))}
             </Col>
-            <ExportDatasetModal instance={project} />
+            <ExportDatasetModal />
         </Row>
     );
 }

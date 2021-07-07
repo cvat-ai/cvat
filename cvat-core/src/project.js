@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+
 (() => {
+    const { exportDataset } = require('./annotations');
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { ArgumentError } = require('./exceptions');
@@ -308,6 +310,22 @@
         Project,
     };
 
+    Object.defineProperties(Project.prototype, Object.freeze({
+        annotations: Object.freeze({
+            value: {
+                async exportDataset(format, saveImages) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        Project.prototype.annotations.exportDataset,
+                        format,
+                        saveImages,
+                    );
+                    return result;
+                },
+            },
+        }),
+    }));
+
     Project.prototype.save.implementation = async function () {
         const trainingProjectCopy = this.trainingProject;
         if (typeof this.id !== 'undefined') {
@@ -356,5 +374,10 @@
         }
         const frameData = await getPreview(this._internalData.task_ids[0]);
         return frameData;
+    };
+
+    Project.prototype.annotations.exportDataset.implementation = async function (format, saveImages) {
+        const result = exportDataset(this, format, '', saveImages);
+        return result;
     };
 })();

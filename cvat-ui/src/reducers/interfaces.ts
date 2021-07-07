@@ -129,6 +129,7 @@ export interface ExportState {
             [tid: number]: string[];
         };
     };
+    instance: any;
     modalVisible: boolean;
 }
 

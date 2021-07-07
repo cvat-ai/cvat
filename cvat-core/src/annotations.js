@@ -1,6 +1,8 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
+
+const { Project } = require('./project');
 
 (() => {
     const serverProxy = require('./server-proxy');
@@ -8,7 +10,7 @@
     const AnnotationsSaver = require('./annotations-saver');
     const AnnotationsHistory = require('./annotations-history');
     const { checkObjectType } = require('./common');
-    const { Task } = require('./session');
+    const { Task, Job } = require('./session');
     const { Loader, Dumper } = require('./annotation-formats');
     const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
 
@@ -274,16 +276,25 @@
         );
     }
 
-    async function exportDataset(session, format) {
+    async function exportDataset(instance, format, name, saveImages = false) {
         if (!(format instanceof String || typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
-        if (!(session instanceof Task)) {
-            throw new ArgumentError('A dataset can only be created from a task');
+        if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
+            throw new ArgumentError('A dataset can only be created from a task or project');
+        }
+        if (typeof saveImages !== 'boolean') {
+            throw new ArgumentError('Save images parameter must be a boolean');
         }
 
         let result = null;
-        result = await serverProxy.tasks.exportDataset(session.id, format);
+        if (instance instanceof Task) {
+            result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages);
+        } else if (instance instanceof Project) {
+            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages);
+        } else {
+            result = await serverProxy.tasks.exportDataset(instance.task.id, format, name, saveImages);
+        }
 
         return result;
     }
