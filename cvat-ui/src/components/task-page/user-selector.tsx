@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,6 +29,7 @@ const searchUsers = debounce(
             .get({
                 search: searchValue,
                 limit: 10,
+                is_active: true,
             })
             .then((result: User[]) => {
                 if (result) {
@@ -50,7 +51,7 @@ export default function UserSelector(props: Props): JSX.Element {
     const autocompleteRef = useRef<RefSelectProps | null>(null);
 
     useEffect(() => {
-        core.users.get({ limit: 10 }).then((result: User[]) => {
+        core.users.get({ limit: 10, is_active: true }).then((result: User[]) => {
             if (result) {
                 setInitialUsers(result);
             }

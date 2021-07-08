@@ -1,0 +1,131 @@
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+import zipfile
+from tempfile import TemporaryDirectory
+
+from datumaro.components.dataset import Dataset
+from datumaro.components.extractor import (AnnotationType, Caption, Label,
+    LabelCategories, Transform)
+
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+    import_dm_annotations)
+from cvat.apps.dataset_manager.util import make_zip_archive
+
+from .registry import dm_env, exporter, importer
+
+
+class AddLabelToAnns(Transform):
+    def __init__(self, extractor, label):
+        super().__init__(extractor)
+
+        assert isinstance(label, str)
+        self._categories = {}
+        label_cat = self._extractor.categories().get(AnnotationType.label)
+        if not label_cat:
+            label_cat = LabelCategories()
+        self._label = label_cat.add(label)
+        self._categories[AnnotationType.label] = label_cat
+
+    def categories(self):
+        return self._categories
+
+    def transform_item(self, item):
+        annotations = item.annotations
+        for ann in annotations:
+            if ann.type in [AnnotationType.polygon,
+                    AnnotationType.bbox, AnnotationType.mask]:
+                ann.label = self._label
+        return item.wrap(annotations=annotations)
+
+class CaptionToLabel(Transform):
+    def __init__(self, extractor, label):
+        super().__init__(extractor)
+
+        assert isinstance(label, str)
+        self._categories = {}
+        label_cat = self._extractor.categories().get(AnnotationType.label)
+        if not label_cat:
+            label_cat = LabelCategories()
+        self._label = label_cat.add(label)
+        self._categories[AnnotationType.label] = label_cat
+
+    def categories(self):
+        return self._categories
+
+    def transform_item(self, item):
+        annotations = item.annotations
+        captions = [ann for ann in annotations
+            if ann.type == AnnotationType.caption]
+        for ann in captions:
+            annotations.append(Label(self._label,
+                attributes={'text': ann.caption}))
+            annotations.remove(ann)
+        return item.wrap(annotations=annotations)
+
+class LabelToCaption(Transform):
+    def transform_item(self, item):
+        annotations = item.annotations
+        anns = [p for p in annotations
+            if 'text' in p.attributes]
+        for ann in anns:
+            annotations.append(Caption(ann.attributes['text']))
+            annotations.remove(ann)
+        return item.wrap(annotations=annotations)
+
+@exporter(name='ICDAR Recognition', ext='ZIP', version='1.0')
+def _export_recognition(dst_file, task_data, save_images=False):
+    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
+        task_data, include_images=save_images), env=dm_env)
+    dataset.transform(LabelToCaption)
+    with TemporaryDirectory() as temp_dir:
+        dataset.export(temp_dir, 'icdar_word_recognition', save_images=save_images)
+        make_zip_archive(temp_dir, dst_file)
+
+@importer(name='ICDAR Recognition', ext='ZIP', version='1.0')
+def _import(src_file, task_data):
+    with TemporaryDirectory() as tmp_dir:
+        zipfile.ZipFile(src_file).extractall(tmp_dir)
+        dataset = Dataset.import_from(tmp_dir, 'icdar_word_recognition', env=dm_env)
+        dataset.transform(CaptionToLabel, 'icdar')
+        import_dm_annotations(dataset, task_data)
+
+
+@exporter(name='ICDAR Localization', ext='ZIP', version='1.0')
+def _export_localization(dst_file, task_data, save_images=False):
+    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
+        task_data, include_images=save_images), env=dm_env)
+    with TemporaryDirectory() as temp_dir:
+        dataset.export(temp_dir, 'icdar_text_localization', save_images=save_images)
+        make_zip_archive(temp_dir, dst_file)
+
+@importer(name='ICDAR Localization', ext='ZIP', version='1.0')
+def _import(src_file, task_data):
+    with TemporaryDirectory() as tmp_dir:
+        zipfile.ZipFile(src_file).extractall(tmp_dir)
+
+        dataset = Dataset.import_from(tmp_dir, 'icdar_text_localization', env=dm_env)
+        dataset.transform(AddLabelToAnns, 'icdar')
+        import_dm_annotations(dataset, task_data)
+
+
+@exporter(name='ICDAR Segmentation', ext='ZIP', version='1.0')
+def _export_segmentation(dst_file, task_data, save_images=False):
+    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
+        task_data, include_images=save_images), env=dm_env)
+    with TemporaryDirectory() as temp_dir:
+        dataset.transform('polygons_to_masks')
+        dataset.transform('boxes_to_masks')
+        dataset.transform('merge_instance_segments')
+        dataset.export(temp_dir, 'icdar_text_segmentation', save_images=save_images)
+        make_zip_archive(temp_dir, dst_file)
+
+@importer(name='ICDAR Segmentation', ext='ZIP', version='1.0')
+def _import(src_file, task_data):
+    with TemporaryDirectory() as tmp_dir:
+        zipfile.ZipFile(src_file).extractall(tmp_dir)
+        dataset = Dataset.import_from(tmp_dir, 'icdar_text_segmentation', env=dm_env)
+        dataset.transform(AddLabelToAnns, 'icdar')
+        dataset.transform('masks_to_polygons')
+        import_dm_annotations(dataset, task_data)

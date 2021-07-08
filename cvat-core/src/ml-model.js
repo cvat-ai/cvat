@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,7 @@ class MLModel {
         this._params = {
             canvas: {
                 minPosVertices: data.min_pos_points,
+                enableNegVertices: true,
             },
         };
     }

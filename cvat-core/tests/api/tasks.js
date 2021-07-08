@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -95,6 +95,7 @@ describe('Feature: save a task', () => {
 
         result[0].bugTracker = 'newBugTracker';
         result[0].name = 'New Task Name';
+        result[0].projectId = 6;
 
         result[0].save();
 
@@ -104,6 +105,7 @@ describe('Feature: save a task', () => {
 
         expect(result[0].bugTracker).toBe('newBugTracker');
         expect(result[0].name).toBe('New Task Name');
+        expect(result[0].projectId).toBe(6);
     });
 
     test('save some new labels in a task', async () => {
@@ -194,5 +196,22 @@ describe('Feature: delete a task', () => {
 
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(0);
+    });
+});
+
+describe('Feature: delete a label', () => {
+    test('delete a label', async () => {
+        let result = await window.cvat.tasks.get({
+            id: 100,
+        });
+
+        const labelsLength = result[0].labels.length;
+        const deletedLabels = result[0].labels.filter((el) => el.name !== 'person');
+        result[0].labels = deletedLabels;
+        result[0].save();
+        result = await window.cvat.tasks.get({
+            id: 100,
+        });
+        expect(result[0].labels).toHaveLength(labelsLength - 1);
     });
 });

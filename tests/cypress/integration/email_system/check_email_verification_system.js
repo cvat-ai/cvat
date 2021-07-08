@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,12 +28,12 @@ context('Check email verification system', () => {
 
     describe(`Case: "${caseId}"`, () => {
         it('Register user. Notification exist. The response status is successful.', () => {
-            cy.server().route('POST', '/api/v1/auth/register').as('userRegister');
+            cy.intercept('POST', '/api/v1/auth/register').as('userRegister');
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             cy.get('.ant-notification-topRight')
                 .contains(`We have sent an email with a confirmation link to ${emailAddr}.`)
                 .should('exist');
-            cy.wait('@userRegister').its('status').should('eq', 201);
+            cy.wait('@userRegister').its('response.statusCode').should('eq', 201);
         });
     });
 });

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ import { Row, Col } from 'antd/lib/grid';
 import { CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import Tooltip from 'antd/lib/tooltip';
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -19,8 +18,11 @@ import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
 import { Model, StringObject } from 'reducers/interfaces';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
+
 import { clamp } from 'utils/math';
 import consts from 'consts';
+import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
     withCleanup: boolean;
@@ -92,7 +94,7 @@ function DetectorRunner(props: Props): JSX.Element {
         onChange: (label: string) => void,
     ): JSX.Element {
         return (
-            <Tooltip title={tooltip}>
+            <CVATTooltip title={tooltip}>
                 <Select
                     value={value}
                     onChange={onChange}
@@ -117,7 +119,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         ),
                     )}
                 </Select>
-            </Tooltip>
+            </CVATTooltip>
         );
     }
 
@@ -127,7 +129,8 @@ function DetectorRunner(props: Props): JSX.Element {
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
-                        placeholder='Select a model'
+                        placeholder={task.dimension === DimensionType.DIM_2D ? 'Select a model' : 'No models available'}
+                        disabled={task.dimension !== DimensionType.DIM_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
                             const newmodel = models.filter((_model): boolean => _model.id === _modelID)[0];
@@ -167,7 +170,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                 <Tag color={color}>{mapping[modelLabel]}</Tag>
                             </Col>
                             <Col offset={1}>
-                                <Tooltip title='Remove the mapped values' mouseLeaveDelay={0}>
+                                <CVATTooltip title='Remove the mapped values'>
                                     <CloseCircleOutlined
                                         className='cvat-danger-circle-icon'
                                         onClick={(): void => {
@@ -176,7 +179,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                             setMapping(newmapping);
                                         }}
                                     />
-                                </Tooltip>
+                                </CVATTooltip>
                             </Col>
                         </Row>
                     );
@@ -193,12 +196,9 @@ function DetectorRunner(props: Props): JSX.Element {
                                 updateMatch(null, taskLabel))}
                         </Col>
                         <Col span={1} offset={1}>
-                            <Tooltip
-                                title='Specify a label mapping between model labels and task labels'
-                                mouseLeaveDelay={0}
-                            >
+                            <CVATTooltip title='Specify a label mapping between model labels and task labels'>
                                 <QuestionCircleOutlined className='cvat-info-circle-icon' />
-                            </Tooltip>
+                            </CVATTooltip>
                         </Col>
                     </Row>
                 </>
@@ -220,19 +220,19 @@ function DetectorRunner(props: Props): JSX.Element {
                             <Text>Threshold</Text>
                         </Col>
                         <Col offset={1}>
-                            <Tooltip title='Minimum similarity value for shapes that can be merged'>
+                            <CVATTooltip title='Minimum similarity value for shapes that can be merged'>
                                 <InputNumber
                                     min={0.01}
                                     step={0.01}
                                     max={1}
                                     value={threshold}
-                                    onChange={(value: number | undefined | string) => {
-                                        if (typeof value !== 'undefined') {
+                                    onChange={(value: number | undefined | string | null) => {
+                                        if (typeof value !== 'undefined' && value !== null) {
                                             setThreshold(clamp(+value, 0.01, 1));
                                         }
                                     }}
                                 />
-                            </Tooltip>
+                            </CVATTooltip>
                         </Col>
                     </Row>
                     <Row align='middle' justify='start'>
@@ -240,18 +240,18 @@ function DetectorRunner(props: Props): JSX.Element {
                             <Text>Maximum distance</Text>
                         </Col>
                         <Col offset={1}>
-                            <Tooltip title='Maximum distance between shapes that can be merged'>
+                            <CVATTooltip title='Maximum distance between shapes that can be merged'>
                                 <InputNumber
                                     placeholder='Threshold'
                                     min={1}
                                     value={distance}
-                                    onChange={(value: number | undefined | string) => {
-                                        if (typeof value !== 'undefined') {
+                                    onChange={(value: number | undefined | string | null) => {
+                                        if (typeof value !== 'undefined' && value !== null) {
                                             setDistance(+value);
                                         }
                                     }}
                                 />
-                            </Tooltip>
+                            </CVATTooltip>
                         </Col>
                     </Row>
                 </div>

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,9 +42,12 @@ const defaultState: NotificationsState = {
             updating: null,
             dumping: null,
             loading: null,
-            exporting: null,
+            exportingAsDataset: null,
             deleting: null,
             creating: null,
+            exporting: null,
+            importing: null,
+            moving: null,
         },
         formats: {
             fetching: null,
@@ -69,6 +72,7 @@ const defaultState: NotificationsState = {
             saving: null,
             jobFetching: null,
             frameFetching: null,
+            contextImageFetching: null,
             changingLabelColor: null,
             updating: null,
             creating: null,
@@ -102,10 +106,15 @@ const defaultState: NotificationsState = {
             resolvingIssue: null,
             submittingReview: null,
         },
+        predictor: {
+            prediction: null,
+        },
     },
     messages: {
         tasks: {
             loadingDone: '',
+            importingDone: '',
+            movingDone: '',
         },
         models: {
             inferenceDone: '',
@@ -307,7 +316,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     tasks: {
                         ...state.errors.tasks,
-                        exporting: {
+                        exportingAsDataset: {
                             message:
                                 'Could not export dataset for the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
@@ -345,6 +354,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not upload annotation for the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-load-annotation-failed',
                         },
                     },
                 },
@@ -376,6 +386,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         updating: {
                             message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-task-failed',
                         },
                     },
                 },
@@ -412,6 +423,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not delete the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-task-failed',
                         },
                     },
                 },
@@ -427,7 +439,51 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         creating: {
                             message: 'Could not create the task',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-task-failed',
                         },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.EXPORT_TASK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        exporting: {
+                            message: 'Could not export the task',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        importing: {
+                            message: 'Could not import the task',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
+            const taskID = action.payload.task.id;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        importingDone: `Task has been imported succesfully <a href="/tasks/${taskID}">Open task</a>`,
                     },
                 },
             };
@@ -457,6 +513,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         creating: {
                             message: 'Could not create the project',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-project-failed',
                         },
                     },
                 },
@@ -475,6 +532,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not update ' +
                                 `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-project-failed',
                         },
                     },
                 },
@@ -493,6 +551,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not delete ' +
                                 `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-project-failed',
                         },
                     },
                 },
@@ -658,6 +717,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         jobFetching: {
                             message: 'Error during fetching a job',
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-job-failed',
                         },
                     },
                 },
@@ -673,6 +733,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         frameFetching: {
                             message: `Could not receive frame ${action.payload.number}`,
                             reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        contextImageFetching: {
+                            message: 'Could not fetch context image from the server',
+                            reason: action.payload.error,
                         },
                     },
                 },
@@ -835,6 +910,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                                 'Could not upload annotations for the ' +
                                 `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
                             reason: error.toString(),
+                            className: 'cvat-notification-notice-upload-annotations-fail',
                         },
                     },
                 },
@@ -1090,6 +1166,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         jobFetching: {
                             message: 'Could not fetch frame data from the server',
+                            reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    predictor: {
+                        ...state.errors.predictor,
+                        prediction: {
+                            message: 'Could not fetch prediction data',
                             reason: action.payload.error,
                         },
                     },

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ const { defaults } = require('jest-config');
 
 module.exports = {
     coverageDirectory: 'reports/coverage',
-    coverageReporters: ['lcov'],
+    coverageReporters: ['json', ['lcov', { projectRoot: '../' }]],
     moduleFileExtensions: [...defaults.moduleFileExtensions, 'ts', 'tsx'],
     reporters: ['default', ['jest-junit', { outputDirectory: 'reports/junit' }]],
     testMatch: ['**/tests/**/*.js'],

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,7 +50,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const taskID = +params.tid;
     const jobID = +params.jid;
     const searchParams = new URLSearchParams(window.location.search);
-    const initialFilters: string[] = [];
+    const initialFilters: object[] = [];
     let initialFrame = 0;
 
     if (searchParams.has('frame')) {
@@ -64,7 +64,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         const serverID = searchParams.get('serverID');
         const type = searchParams.get('type');
         if (serverID && !Number.isNaN(+serverID)) {
-            initialFilters.push(`serverID==${serverID} & type=="${type}"`);
+            initialFilters.push({
+                and: [{ '==': [{ var: 'serverID' }, serverID] }, { '==': [{ var: 'type' }, type] }],
+            });
         }
     }
 

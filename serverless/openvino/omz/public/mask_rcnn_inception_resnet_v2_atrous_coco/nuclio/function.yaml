@@ -99,7 +99,7 @@ spec:
   eventTimeout: 60s
   env:
     - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/common/python3
+      value: /opt/nuclio/common/openvino/python3
 
   build:
     image: cvat/openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
@@ -137,3 +137,4 @@ spec:
       restartPolicy:
         name: always
         maximumRetryCount: 3
+      mountMode: volume

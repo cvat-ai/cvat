@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ import Descriptions from 'antd/lib/descriptions';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
+import ProjectSubsetField from '../create-task-page/project-subset-field';
 
 const core = getCore();
 
@@ -28,12 +29,14 @@ interface Props {
     taskInstance: any;
     installedGit: boolean; // change to git repos url
     activeInference: ActiveInference | null;
+    projectSubsets: string[];
     cancelAutoAnnotation(): void;
     onTaskUpdate: (taskInstance: any) => void;
 }
 
 interface State {
     name: string;
+    subset: string;
     repository: string;
     repositoryStatus: string;
 }
@@ -55,6 +58,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.previewWrapperRef = React.createRef<HTMLDivElement>();
         this.state = {
             name: taskInstance.name,
+            subset: taskInstance.subset,
             repository: '',
             repositoryStatus: '',
         };
@@ -289,6 +293,36 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
+    private renderSubsetField(): JSX.Element {
+        const { subset } = this.state;
+        const { taskInstance, projectSubsets, onTaskUpdate } = this.props;
+
+        return (
+            <Row>
+                <Col span={24}>
+                    <Text className='cvat-text-color'>Subset:</Text>
+                </Col>
+                <Col span={24}>
+                    <ProjectSubsetField
+                        value={subset}
+                        projectId={taskInstance.projectId}
+                        projectSubsets={projectSubsets}
+                        onChange={(value) => {
+                            this.setState({
+                                subset: value,
+                            });
+
+                            if (taskInstance.subset !== value) {
+                                taskInstance.subset = value;
+                                onTaskUpdate(taskInstance);
+                            }
+                        }}
+                    />
+                </Col>
+            </Row>
+        );
+    }
+
     public render(): JSX.Element {
         const {
             activeInference, cancelAutoAnnotation, taskInstance, onTaskUpdate,
@@ -329,6 +363,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         </Row>
                         {this.renderDatasetRepository()}
                         {!taskInstance.projectId && this.renderLabelsEditor()}
+                        {taskInstance.projectId && this.renderSubsetField()}
                     </Col>
                 </Row>
             </div>

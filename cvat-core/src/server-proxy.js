@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,31 @@
     const store = require('store');
     const config = require('./config');
     const DownloadWorker = require('./download.worker');
+
+    function waitFor(frequencyHz, predicate) {
+        return new Promise((resolve, reject) => {
+            if (typeof predicate !== 'function') {
+                reject(new Error(`Predicate must be a function, got ${typeof predicate}`));
+            }
+
+            const internalWait = () => {
+                let result = false;
+                try {
+                    result = predicate();
+                } catch (error) {
+                    reject(error);
+                }
+
+                if (result) {
+                    resolve();
+                } else {
+                    setTimeout(internalWait, 1000 / frequencyHz);
+                }
+            };
+
+            setTimeout(internalWait);
+        });
+    }
 
     function generateError(errorData) {
         if (errorData.response) {
@@ -465,6 +490,59 @@
                 });
             }
 
+            async function exportTask(id) {
+                const { backendAPI } = config;
+                const url = `${backendAPI}/tasks/${id}`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.get(`${url}?action=export`, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                resolve(`${url}?action=download`);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            async function importTask(file) {
+                const { backendAPI } = config;
+
+                let taskData = new FormData();
+                taskData.append('task_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.post(`${backendAPI}/tasks?action=import`, taskData, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                taskData = new FormData();
+                                taskData.append('rq_id', response.data.rq_id);
+                                setTimeout(request, 3000);
+                            } else {
+                                const importedTask = await getTasks(`?id=${response.data.id}`);
+                                resolve(importedTask[0]);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
             async function createTask(taskSpec, taskDataSpec, onUpdate) {
                 const { backendAPI } = config;
 
@@ -713,6 +791,25 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new ServerError(`Could not get preview frame for the task ${tid} from the server`, code);
+                }
+
+                return response.data;
+            }
+
+            async function getImageContext(tid, frame) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(
+                        `${backendAPI}/tasks/${tid}/data?quality=original&type=context_image&number=${frame}`,
+                        {
+                            proxy: config.proxy,
+                            responseType: 'blob',
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -970,6 +1067,96 @@
                 }
             }
 
+            function predictorStatus(projectId) {
+                const { backendAPI } = config;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.get(`${backendAPI}/predict/status?project=${projectId}`);
+                            return response.data;
+                        } catch (errorData) {
+                            throw generateError(errorData);
+                        }
+                    }
+
+                    const timeoutCallback = async () => {
+                        let data = null;
+                        try {
+                            data = await request();
+                            if (data.status === 'queued') {
+                                setTimeout(timeoutCallback, 1000);
+                            } else if (data.status === 'done') {
+                                resolve(data);
+                            } else {
+                                throw new Error(`Unknown status was received "${data.status}"`);
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+
+                    setTimeout(timeoutCallback);
+                });
+            }
+
+            function predictAnnotations(taskId, frame) {
+                return new Promise((resolve, reject) => {
+                    const { backendAPI } = config;
+
+                    async function request() {
+                        try {
+                            const response = await Axios.get(
+                                `${backendAPI}/predict/frame?task=${taskId}&frame=${frame}`,
+                            );
+                            return response.data;
+                        } catch (errorData) {
+                            throw generateError(errorData);
+                        }
+                    }
+
+                    const timeoutCallback = async () => {
+                        let data = null;
+                        try {
+                            data = await request();
+                            if (data.status === 'queued') {
+                                setTimeout(timeoutCallback, 1000);
+                            } else if (data.status === 'done') {
+                                predictAnnotations.latestRequest.fetching = false;
+                                resolve(data.annotation);
+                            } else {
+                                throw new Error(`Unknown status was received "${data.status}"`);
+                            }
+                        } catch (error) {
+                            predictAnnotations.latestRequest.fetching = false;
+                            reject(error);
+                        }
+                    };
+
+                    const closureId = Date.now();
+                    predictAnnotations.latestRequest.id = closureId;
+                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
+                    if (predictAnnotations.latestRequest.fetching) {
+                        waitFor(5, predicate).then(() => {
+                            if (predictAnnotations.latestRequest.id !== closureId) {
+                                resolve(null);
+                            } else {
+                                predictAnnotations.latestRequest.fetching = true;
+                                setTimeout(timeoutCallback);
+                            }
+                        });
+                    } else {
+                        predictAnnotations.latestRequest.fetching = true;
+                        setTimeout(timeoutCallback);
+                    }
+                });
+            }
+
+            predictAnnotations.latestRequest = {
+                fetching: false,
+                id: null,
+            };
+
             async function installedApps() {
                 const { backendAPI } = config;
                 try {
@@ -1023,6 +1210,8 @@
                             createTask,
                             deleteTask,
                             exportDataset,
+                            exportTask,
+                            importTask,
                         }),
                         writable: false,
                     },
@@ -1053,6 +1242,7 @@
                             getData,
                             getMeta,
                             getPreview,
+                            getImageContext,
                         }),
                         writable: false,
                     },
@@ -1096,6 +1286,14 @@
                     comments: {
                         value: Object.freeze({
                             create: createComment,
+                        }),
+                        writable: false,
+                    },
+
+                    predictor: {
+                        value: Object.freeze({
+                            status: predictorStatus,
+                            predict: predictAnnotations,
                         }),
                         writable: false,
                     },

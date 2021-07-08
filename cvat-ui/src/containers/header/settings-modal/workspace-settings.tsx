@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ import {
     switchShowingInterpolatedTracks,
     switchShowingObjectsTextAlways,
     switchAutomaticBordering,
+    switchIntelligentPolygonCrop,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -25,6 +26,7 @@ interface StateToProps {
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
+    intelligentPolygonCrop: boolean;
 }
 
 interface DispatchToProps {
@@ -34,6 +36,7 @@ interface DispatchToProps {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchIntelligentPolygonCrop(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -45,6 +48,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        intelligentPolygonCrop,
     } = workspace;
 
     return {
@@ -54,6 +58,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        intelligentPolygonCrop,
     };
 }
 
@@ -76,6 +81,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchAutomaticBordering(enabled: boolean): void {
             dispatch(switchAutomaticBordering(enabled));
+        },
+        onSwitchIntelligentPolygonCrop(enabled: boolean): void {
+            dispatch(switchIntelligentPolygonCrop(enabled));
         },
     };
 }

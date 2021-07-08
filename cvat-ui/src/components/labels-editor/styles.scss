@@ -33,6 +33,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     overflow-y: auto;
     min-height: 9em;
     flex-wrap: wrap;
+    align-items: baseline;
 }
 
 .cvat-constructor-viewer-item {

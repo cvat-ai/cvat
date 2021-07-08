@@ -1,30 +1,30 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { MutableRefObject } from 'react';
 import {
-    AnyAction, Dispatch, ActionCreator, Store,
+    ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-
-import {
-    CombinedState,
-    ActiveControl,
-    ShapeType,
-    ObjectType,
-    Task,
-    FrameSpeed,
-    Rotation,
-    ContextMenuType,
-    Workspace,
-    Model,
-} from 'reducers/interfaces';
-
+import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { getCVATStore } from 'cvat-store';
-import { MutableRefObject } from 'react';
+import {
+    ActiveControl,
+    CombinedState,
+    ContextMenuType,
+    DimensionType,
+    FrameSpeed,
+    Model,
+    ObjectType,
+    OpenCVTool,
+    Rotation,
+    ShapeType,
+    Task,
+    Workspace,
+} from 'reducers/interfaces';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -146,7 +146,6 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
-    UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
@@ -159,6 +158,7 @@ export enum AnnotationActionTypes {
     PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
     CHANGE_PROPAGATE_FRAMES = 'CHANGE_PROPAGATE_FRAMES',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
+    SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
     COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
     COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
@@ -189,6 +189,14 @@ export enum AnnotationActionTypes {
     SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
     SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
+    UPDATE_PREDICTOR_STATE = 'UPDATE_PREDICTOR_STATE',
+    GET_PREDICTIONS = 'GET_PREDICTIONS',
+    GET_PREDICTIONS_FAILED = 'GET_PREDICTIONS_FAILED',
+    GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
+    HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
+    GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
+    GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
+    GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -272,24 +280,10 @@ export function fetchAnnotationsAsync(): ThunkAction {
     };
 }
 
-export function changeAnnotationsFilters(filters: string[]): AnyAction {
-    const state: CombinedState = getStore().getState();
-    const { filtersHistory, filters: oldFilters } = state.annotation.annotations;
-
-    filters.forEach((element: string) => {
-        if (!(filtersHistory.includes(element) || oldFilters.includes(element))) {
-            filtersHistory.push(element);
-        }
-    });
-
-    window.localStorage.setItem('filtersHistory', JSON.stringify(filtersHistory.slice(-10)));
-
+export function changeAnnotationsFilters(filters: any[]): AnyAction {
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
-        payload: {
-            filters,
-            filtersHistory: filtersHistory.slice(-10),
-        },
+        payload: { filters },
     };
 }
 
@@ -439,6 +433,14 @@ export function showStatistics(visible: boolean): AnyAction {
         },
     };
 }
+export function showFilters(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SHOWING_FILTERS,
+        payload: {
+            visible,
+        },
+    };
+}
 
 export function propagateObjectAsync(sessionInstance: any, objectState: any, from: number, to: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
@@ -573,15 +575,6 @@ export function activateObject(activatedStateID: number | null, activatedAttribu
     };
 }
 
-export function updateTabContentHeight(tabContentHeight: number): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT,
-        payload: {
-            tabContentHeight,
-        },
-    };
-}
-
 export function collapseSidebar(): AnyAction {
     return {
         type: AnnotationActionTypes.COLLAPSE_SIDEBAR,
@@ -615,6 +608,87 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
+export function getPredictionsAsync(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const {
+            annotations: {
+                states: currentStates,
+                zLayer: { cur: curZOrder },
+            },
+            predictor: { enabled, annotatedFrames },
+        } = getStore().getState().annotation;
+
+        const {
+            filters, frame, showAllInterpolationTracks, jobInstance: job,
+        } = receiveAnnotationsParameters();
+        if (!enabled || currentStates.length || annotatedFrames.includes(frame)) return;
+
+        dispatch({
+            type: AnnotationActionTypes.GET_PREDICTIONS,
+            payload: {},
+        });
+
+        let annotations = [];
+        try {
+            annotations = await job.predictor.predict(frame);
+            // current frame could be changed during a request above, need to fetch it from store again
+            const { number: currentFrame } = getStore().getState().annotation.player.frame;
+            if (frame !== currentFrame || annotations === null) {
+                // another request has already been sent or user went to another frame
+                // we do not need dispatch predictions success action
+                return;
+            }
+            annotations = annotations.map(
+                (data: any): any =>
+                    new cvat.classes.ObjectState({
+                        shapeType: data.type,
+                        label: job.task.labels.filter((label: any): boolean => label.id === data.label)[0],
+                        points: data.points,
+                        objectType: ObjectType.SHAPE,
+                        frame,
+                        occluded: false,
+                        source: 'auto',
+                        attributes: {},
+                        zOrder: curZOrder,
+                    }),
+            );
+
+            dispatch({
+                type: AnnotationActionTypes.GET_PREDICTIONS_SUCCESS,
+                payload: { frame },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.GET_PREDICTIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+
+        try {
+            await job.annotations.put(annotations);
+            const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
+            const history = await job.actions.get();
+
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                    history,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
 export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
@@ -633,6 +707,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                         number: state.annotation.player.frame.number,
                         data: state.annotation.player.frame.data,
                         filename: state.annotation.player.frame.filename,
+                        hasRelatedContext: state.annotation.player.frame.hasRelatedContext,
                         delay: state.annotation.player.frame.delay,
                         changeTime: state.annotation.player.frame.changeTime,
                         states: state.annotation.annotations.states,
@@ -684,6 +759,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                     number: toFrame,
                     data,
                     filename: data.filename,
+                    hasRelatedContext: data.hasRelatedContext,
                     states,
                     minZ,
                     maxZ,
@@ -692,6 +768,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                     delay,
                 },
             });
+            dispatch(getPredictionsAsync());
         } catch (error) {
             if (error !== 'not needed') {
                 dispatch({
@@ -872,7 +949,7 @@ export function closeJob(): ThunkAction {
     };
 }
 
-export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: string[]): ThunkAction {
+export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: object[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const state: CombinedState = getStore().getState();
@@ -915,10 +992,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
             }
 
-            if (!task.labels.length && task.projectId) {
-                throw new Error(`Project ${task.projectId} does not contain any label`);
-            }
-
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
@@ -941,15 +1014,18 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
 
             loadJobEvent.close(await jobInfoGenerator(job));
 
+            const openTime = Date.now();
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
                 payload: {
+                    openTime,
                     job,
                     issues,
                     reviews,
                     states,
                     frameNumber,
                     frameFilename: frameData.filename,
+                    frameHasRelatedContext: frameData.hasRelatedContext,
                     frameData,
                     colors,
                     filters,
@@ -957,6 +1033,41 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     maxZ,
                 },
             });
+
+            if (job.task.dimension === DimensionType.DIM_3D) {
+                const workspace = Workspace.STANDARD3D;
+                dispatch(changeWorkspace(workspace));
+            }
+
+            const updatePredictorStatus = async (): Promise<void> => {
+                // get current job
+                const currentState: CombinedState = getStore().getState();
+                const { openTime: currentOpenTime, instance: currentJob } = currentState.annotation.job;
+                if (currentJob === null || currentJob.id !== job.id || currentOpenTime !== openTime) {
+                    // the job was closed, changed or reopened
+                    return;
+                }
+
+                try {
+                    const status = await job.predictor.status();
+                    dispatch({
+                        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+                        payload: status,
+                    });
+                    setTimeout(updatePredictorStatus, 60 * 1000);
+                } catch (error) {
+                    dispatch({
+                        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+                        payload: { error },
+                    });
+                    setTimeout(updatePredictorStatus, 20 * 1000);
+                }
+            };
+
+            if (state.plugins.list.PREDICT && job.task.projectId !== null) {
+                updatePredictorStatus();
+            }
+
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
             dispatch({
@@ -1017,36 +1128,17 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
 }
 
 // used to reproduce the latest drawing (in case of tags just creating) by using N
-export function rememberObject(
-    objectType: ObjectType,
-    labelID: number,
-    shapeType?: ShapeType,
-    points?: number,
-    rectDrawingMethod?: RectDrawingMethod,
-): AnyAction {
-    let activeControl = ActiveControl.CURSOR;
-    if (shapeType === ShapeType.RECTANGLE) {
-        activeControl = ActiveControl.DRAW_RECTANGLE;
-    } else if (shapeType === ShapeType.POLYGON) {
-        activeControl = ActiveControl.DRAW_POLYGON;
-    } else if (shapeType === ShapeType.POLYLINE) {
-        activeControl = ActiveControl.DRAW_POLYLINE;
-    } else if (shapeType === ShapeType.POINTS) {
-        activeControl = ActiveControl.DRAW_POINTS;
-    } else if (shapeType === ShapeType.CUBOID) {
-        activeControl = ActiveControl.DRAW_CUBOID;
-    }
-
+export function rememberObject(createParams: {
+    activeObjectType?: ObjectType;
+    activeLabelID?: number;
+    activeShapeType?: ShapeType;
+    activeNumOfPoints?: number;
+    activeRectDrawingMethod?: RectDrawingMethod;
+    activeCuboidDrawingMethod?: CuboidDrawingMethod;
+}): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
-        payload: {
-            shapeType,
-            labelID,
-            objectType,
-            points,
-            activeControl,
-            rectDrawingMethod,
-        },
+        payload: createParams,
     };
 }
 
@@ -1334,8 +1426,9 @@ export function pasteShapeAsync(): ThunkAction {
                     activeControl,
                 },
             });
-
-            canvasInstance.cancel();
+            if (canvasInstance instanceof Canvas) {
+                canvasInstance.cancel();
+            }
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
                     objectType: ObjectType.TAG,
@@ -1354,7 +1447,7 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
-export function interactWithCanvas(activeInteractor: Model, activeLabelID: number): AnyAction {
+export function interactWithCanvas(activeInteractor: Model | OpenCVTool, activeLabelID: number): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
         payload: {
@@ -1388,11 +1481,12 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 activeShapeType,
                 activeNumOfPoints,
                 activeRectDrawingMethod,
+                activeCuboidDrawingMethod,
             },
         } = getStore().getState().annotation;
 
         let activeControl = ActiveControl.CURSOR;
-        if (activeInteractor) {
+        if (activeInteractor && canvasInstance instanceof Canvas) {
             if (activeInteractor.type === 'tracker') {
                 canvasInstance.interact({
                     enabled: true,
@@ -1410,7 +1504,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
             return;
         }
-
         if (activeShapeType === ShapeType.RECTANGLE) {
             activeControl = ActiveControl.DRAW_RECTANGLE;
         } else if (activeShapeType === ShapeType.POINTS) {
@@ -1422,7 +1515,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } else if (activeShapeType === ShapeType.CUBOID) {
             activeControl = ActiveControl.DRAW_CUBOID;
         }
-
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
             payload: {
@@ -1430,7 +1522,9 @@ export function repeatDrawShapeAsync(): ThunkAction {
             },
         });
 
-        canvasInstance.cancel();
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.cancel();
+        }
         if (activeObjectType === ObjectType.TAG) {
             const objectState = new cvat.classes.ObjectState({
                 objectType: ObjectType.TAG,
@@ -1442,6 +1536,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
+                cuboidDrawingMethod: activeCuboidDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),
@@ -1479,8 +1574,9 @@ export function redrawShapeAsync(): ThunkAction {
                         activeControl,
                     },
                 });
-
-                canvasInstance.cancel();
+                if (canvasInstance instanceof Canvas) {
+                    canvasInstance.cancel();
+                }
                 canvasInstance.draw({
                     enabled: true,
                     redraw: activatedStateID,
@@ -1516,5 +1612,48 @@ export function setForceExitAnnotationFlag(forceExit: boolean): AnyAction {
         payload: {
             forceExit,
         },
+    };
+}
+
+export function switchPredictor(predictorEnabled: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
+        payload: {
+            enabled: predictorEnabled,
+        },
+    };
+}
+export function hideShowContextImage(hidden: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE,
+        payload: {
+            hidden,
+        },
+    };
+}
+
+export function getContextImage(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const { instance: job } = state.annotation.job;
+        const { number: frameNumber } = state.annotation.player.frame;
+
+        try {
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
+                payload: {},
+            });
+
+            const contextImageData = await job.frames.contextImage(job.task.id, frameNumber);
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS,
+                payload: { contextImageData },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED,
+                payload: { error },
+            });
+        }
     };
 }

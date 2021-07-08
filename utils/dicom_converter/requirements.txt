@@ -1,0 +1,4 @@
+numpy==1.20.2
+Pillow==8.2.0
+pydicom==2.1.2
+tqdm==4.60.0

@@ -32,6 +32,10 @@
                 }
             }
         }
+
+        .cvat-project-search-field {
+            width: $grid-unit-size * 20;
+        }
     }
 
     > div > div > div > button {

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,7 @@ import { RadioChangeEvent } from 'antd/lib/radio';
 import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface OwnProps {
@@ -22,14 +23,16 @@ interface DispatchToProps {
         objectType: ObjectType,
         points?: number,
         rectDrawingMethod?: RectDrawingMethod,
+        cuboidDrawingMethod?: CuboidDrawingMethod,
     ): void;
 }
 
 interface StateToProps {
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     shapeType: ShapeType;
     labels: any[];
+    jobInstance: any;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -40,8 +43,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             objectType: ObjectType,
             points?: number,
             rectDrawingMethod?: RectDrawingMethod,
+            cuboidDrawingMethod?: CuboidDrawingMethod,
         ): void {
-            dispatch(rememberObject(objectType, labelID, shapeType, points, rectDrawingMethod));
+            dispatch(
+                rememberObject({
+                    activeObjectType: objectType,
+                    activeShapeType: shapeType,
+                    activeLabelID: labelID,
+                    activeNumOfPoints: points,
+                    activeRectDrawingMethod: rectDrawingMethod,
+                    activeCuboidDrawingMethod: cuboidDrawingMethod,
+                }),
+            );
         },
     };
 }
@@ -50,7 +63,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance },
-            job: { labels },
+            job: { labels, instance: jobInstance },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -60,6 +73,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         canvasInstance,
         labels,
         normalizedKeyMap,
+        jobInstance,
     };
 }
 
@@ -79,7 +93,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         super(props);
 
         const { shapeType } = props;
-        const defaultLabelID = props.labels[0].id;
+        const defaultLabelID = props.labels.length ? props.labels[0].id : null;
         const defaultRectDrawingMethod = RectDrawingMethod.CLASSIC;
         const defaultCuboidDrawingMethod = CuboidDrawingMethod.CLASSIC;
         this.state = {
@@ -116,7 +130,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(shapeType),
         });
 
-        onDrawStart(shapeType, selectedLabelID, objectType, numberOfPoints, rectDrawingMethod);
+        onDrawStart(shapeType, selectedLabelID, objectType, numberOfPoints, rectDrawingMethod, cuboidDrawingMethod);
     }
 
     private onChangeRectDrawingMethod = (event: RadioChangeEvent): void => {
@@ -156,10 +170,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints,
         } = this.state;
 
-        const { normalizedKeyMap, labels, shapeType } = this.props;
+        const {
+            normalizedKeyMap, labels, shapeType, jobInstance,
+        } = this.props;
 
         return (
             <DrawShapePopoverComponent
+                jobInstance={jobInstance}
                 labels={labels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,22 +10,30 @@ import {
     LockFilled, UnlockOutlined, EyeInvisibleFilled, EyeOutlined,
 } from '@ant-design/icons';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
+import LabelKeySelectorPopover from './label-key-selector-popover';
+
 interface Props {
     labelName: string;
     labelColor: string;
+    labelID: number;
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
+    keyToLabelMapping: Record<string, number>;
     hideStates(): void;
     showStates(): void;
     lockStates(): void;
     unlockStates(): void;
+    updateLabelShortcutKey(updatedKey: string, labelID: number): void;
 }
 
 function LabelItemComponent(props: Props): JSX.Element {
     const {
         labelName,
         labelColor,
+        labelID,
+        keyToLabelMapping,
         visible,
         statesHidden,
         statesLocked,
@@ -33,8 +41,14 @@ function LabelItemComponent(props: Props): JSX.Element {
         showStates,
         lockStates,
         unlockStates,
+        updateLabelShortcutKey,
     } = props;
 
+    // create reversed mapping just to receive key easily
+    const labelToKeyMapping: Record<string, string> = Object.fromEntries(
+        Object.entries(keyToLabelMapping).map(([key, _labelID]) => [_labelID, key]),
+    );
+    const labelShortcutKey = labelToKeyMapping[labelID] || '?';
     const classes = {
         lock: {
             enabled: { className: 'cvat-label-item-button-lock cvat-label-item-button-lock-enabled' },
@@ -48,22 +62,37 @@ function LabelItemComponent(props: Props): JSX.Element {
 
     return (
         <Row
-            align='middle'
+            align='stretch'
             justify='space-around'
-            className='cvat-objects-sidebar-label-item'
-            style={{ display: visible ? 'flex' : 'none' }}
+            className={[
+                'cvat-objects-sidebar-label-item',
+                visible ? '' : 'cvat-objects-sidebar-label-item-disabled',
+            ].join(' ')}
         >
-            <Col span={4}>
-                <Button style={{ background: labelColor }} className='cvat-label-item-color-button'>
+            <Col span={2}>
+                <div style={{ background: labelColor }} className='cvat-label-item-color'>
                     {' '}
-                </Button>
+                </div>
             </Col>
-            <Col span={14}>
-                <Text strong className='cvat-text'>
-                    {labelName}
-                </Text>
+            <Col span={12}>
+                <CVATTooltip title={labelName}>
+                    <Text strong className='cvat-text'>
+                        {labelName}
+                    </Text>
+                </CVATTooltip>
             </Col>
             <Col span={3}>
+                <LabelKeySelectorPopover
+                    keyToLabelMapping={keyToLabelMapping}
+                    labelID={labelID}
+                    updateLabelShortcutKey={updateLabelShortcutKey}
+                >
+                    <Button className='cvat-label-item-setup-shortcut-button' size='small' ghost type='dashed'>
+                        {labelShortcutKey}
+                    </Button>
+                </LabelKeySelectorPopover>
+            </Col>
+            <Col span={2} offset={1}>
                 {statesLocked ? (
                     <LockFilled {...classes.lock.enabled} onClick={unlockStates} />
                 ) : (

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -165,6 +165,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         shapes: InteractionResult[] | null,
         shapesUpdated: boolean = true,
         isDone: boolean = false,
+        threshold: number | null = null,
     ): void {
         const { zLayer } = this.controller;
         if (Array.isArray(shapes)) {
@@ -176,6 +177,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     isDone,
                     shapes,
                     zOrder: zLayer || 0,
+                    threshold,
                 },
             });
 
@@ -1050,6 +1052,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('wheel', (event): void => {
+            if (event.ctrlKey) return;
             const { offset } = this.controller.geometry;
             const point = translateToSVG(this.content, [event.clientX, event.clientY]);
             self.controller.zoom(point[0] - offset, point[1] - offset, event.deltaY > 0 ? -1 : 1);
@@ -1172,7 +1175,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
-        } else if ([UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
+        } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
             if (this.mode === Mode.GROUP) {
                 this.groupHandler.resetSelectedObjects();
             }
@@ -1440,6 +1443,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             clientID: state.clientID,
             outside: state.outside,
             occluded: state.occluded,
+            source: state.source,
             hidden: state.hidden,
             lock: state.lock,
             shapeType: state.shapeType,
@@ -1531,13 +1535,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            for (const attrID of Object.keys(state.attributes)) {
-                if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
-                    if (text) {
-                        const [span] = (text.node.querySelectorAll(`[attrID="${attrID}"]`) as any) as SVGTSpanElement[];
-                        if (span && span.textContent) {
-                            const prefix = span.textContent.split(':').slice(0, -1).join(':');
-                            span.textContent = `${prefix}: ${state.attributes[attrID]}`;
+            if (drawnState.label.id !== state.label.id) {
+                // need to remove created text and create it again
+                if (text) {
+                    text.remove();
+                    this.svgTexts[state.clientID] = this.addText(state);
+                }
+            } else {
+                // check if there are updates in attributes
+                for (const attrID of Object.keys(state.attributes)) {
+                    if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
+                        if (text) {
+                            const [span] = text.node.querySelectorAll<SVGTSpanElement>(`[attrID="${attrID}"]`);
+                            if (span && span.textContent) {
+                                const prefix = span.textContent.split(':').slice(0, -1).join(':');
+                                span.textContent = `${prefix}: ${state.attributes[attrID]}`;
+                            }
                         }
                     }
                 }

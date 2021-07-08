@@ -1,26 +1,19 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-const randomString = (isPassword) => {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    for (let i = 0; i <= 8; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return isPassword ? `${result}${Math.floor(Math.random() * 10)}` : result;
-};
-
 context('Register user, change password, login with new password', () => {
     const caseId = '2';
-    const firstName = `${randomString()}`;
-    const lastName = `${randomString()}`;
-    const userName = `${randomString()}`;
+    const firstName = 'SecuserfmCaseTwo';
+    const lastName = 'SecuserlmCaseTwo';
+    const userName = 'SecuserCase2';
     const emailAddr = `${userName}@local.local`;
-    const password = `${randomString(true)}`;
-    const newPassword = `${randomString(true)}`;
+    const password = 'GDrb41RguF!';
+    const incorrectCurrentPassword = 'gDrb41RguF!';
+    const newPassword = 'bYdOk8#eEd';
+    const secondNewPassword = 'ndTh48@yVY';
 
     function changePassword(userName, password, newPassword) {
         cy.get('.cvat-right-header')
@@ -41,6 +34,12 @@ context('Register user, change password, login with new password', () => {
         cy.url().should('include', '/auth/register');
     });
 
+    after(() => {
+        cy.get('.cvat-modal-change-password').find('[aria-label="Close"]').click();
+        cy.logout(userName);
+        cy.deletingRegisteredUsers([userName]);
+    });
+
     describe(`Testing "Case ${caseId}"`, () => {
         it('Register user, change password', () => {
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
@@ -55,7 +54,7 @@ context('Register user, change password, login with new password', () => {
             cy.login(userName, newPassword);
         });
         it('Change password with incorrect current password', () => {
-            changePassword(userName, `${randomString(true)}`, newPassword);
+            changePassword(userName, incorrectCurrentPassword, secondNewPassword);
             cy.get('.cvat-notification-notice-change-password-failed').should('exist');
         });
     });

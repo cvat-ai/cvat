@@ -1,12 +1,13 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
-import Tooltip from 'antd/lib/tooltip';
 import Button from 'antd/lib/button';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     currentAttribute: string;
@@ -24,20 +25,28 @@ function AttributeSwitcher(props: Props): JSX.Element {
     const title = `${currentAttribute} [${currentIndex + 1}/${attributesCount}]`;
     return (
         <div className='cvat-attribute-annotation-sidebar-attribute-switcher'>
-            <Tooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`} mouseLeaveDelay={0}>
-                <Button className='cvat-attribute-annotation-sidebar-attribute-switcher-left' disabled={attributesCount <= 1} onClick={() => nextAttribute(-1)}>
+            <CVATTooltip title={`Previous attribute ${normalizedKeyMap.PREVIOUS_ATTRIBUTE}`}>
+                <Button
+                    className='cvat-attribute-annotation-sidebar-attribute-switcher-left'
+                    disabled={attributesCount <= 1}
+                    onClick={() => nextAttribute(-1)}
+                >
                     <LeftOutlined />
                 </Button>
-            </Tooltip>
-            <Tooltip title={title} mouseLeaveDelay={0}>
+            </CVATTooltip>
+            <CVATTooltip title={title}>
                 <Text className='cvat-text'>{currentAttribute}</Text>
                 <Text strong>{` [${currentIndex + 1}/${attributesCount}]`}</Text>
-            </Tooltip>
-            <Tooltip title={`Next attribute ${normalizedKeyMap.NEXT_ATTRIBUTE}`} mouseLeaveDelay={0}>
-                <Button className='cvat-attribute-annotation-sidebar-attribute-switcher-right' disabled={attributesCount <= 1} onClick={() => nextAttribute(1)}>
+            </CVATTooltip>
+            <CVATTooltip title={`Next attribute ${normalizedKeyMap.NEXT_ATTRIBUTE}`}>
+                <Button
+                    className='cvat-attribute-annotation-sidebar-attribute-switcher-right'
+                    disabled={attributesCount <= 1}
+                    onClick={() => nextAttribute(1)}
+                >
                     <RightOutlined />
                 </Button>
-            </Tooltip>
+            </CVATTooltip>
         </div>
     );
 }

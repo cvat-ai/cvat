@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(createAnnotationsAsync(sessionInstance, frame, states));
         },
         onRememberObject(labelID: number): void {
-            dispatch(rememberObject(ObjectType.TAG, labelID));
+            dispatch(rememberObject({ activeObjectType: ObjectType.TAG, activeLabelID: labelID }));
         },
     };
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 import DumpSubmenu from 'components/actions-menu/dump-submenu';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import ExportSubmenu from 'components/actions-menu/export-submenu';
+import { DimensionType } from '../../../reducers/interfaces';
 
 interface Props {
     taskMode: string;
@@ -99,6 +100,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     Modal.confirm({
                         title: 'Current annotation will be lost',
                         content: 'You are going to upload new annotations to this job. Continue?',
+                        className: 'cvat-modal-content-load-job-annotation',
                         onOk: () => {
                             onClickMenu(copyParams, file);
                         },
@@ -157,6 +159,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         }
     }
 
+    const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
+
     return (
         <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
             {DumpSubmenu({
@@ -164,6 +168,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 dumpers,
                 dumpActivities,
                 menuKey: Actions.DUMP_TASK_ANNO,
+                taskDimension: jobInstance.task.dimension,
             })}
             {LoadSubmenu({
                 loaders,
@@ -172,11 +177,13 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     onClickMenuWrapper(null, file);
                 },
                 menuKey: Actions.LOAD_JOB_ANNO,
+                taskDimension: jobInstance.task.dimension,
             })}
             {ExportSubmenu({
                 exporters: dumpers,
                 exportActivities,
                 menuKey: Actions.EXPORT_TASK_DATASET,
+                taskDimension: jobInstance.task.dimension,
             })}
 
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
@@ -185,7 +192,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     Open the task
                 </a>
             </Menu.Item>
-            {jobStatus === 'annotation' && <Menu.Item key={Actions.REQUEST_REVIEW}>Request a review</Menu.Item>}
+            {jobStatus === 'annotation' && is2d && <Menu.Item key={Actions.REQUEST_REVIEW}>Request a review</Menu.Item>}
             {jobStatus === 'annotation' && <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item>}
             {jobStatus === 'validation' && isReviewer && (
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
