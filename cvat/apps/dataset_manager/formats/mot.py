@@ -4,23 +4,22 @@
 
 from tempfile import TemporaryDirectory
 
+import datumaro.components.extractor as datumaro
+from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
-import datumaro.components.extractor as datumaro
 from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor
 from cvat.apps.dataset_manager.util import make_zip_archive
-from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
 
 
 @exporter(name='MOT', ext='ZIP', version='1.1')
 def _export(dst_file, task_data, save_images=False):
-    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
-    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
+        task_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
-        dm_env.converters.get('mot_seq_gt').convert(extractor,
-            save_dir=temp_dir, save_images=save_images)
+        dataset.export(temp_dir, 'mot_seq_gt', save_images=save_images)
 
         make_zip_archive(temp_dir, dst_file)
 
@@ -29,7 +28,7 @@ def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
-        dataset = dm_env.make_importer('mot_seq')(tmp_dir).make_dataset()
+        dataset = Dataset.import_from(tmp_dir, 'mot_seq', env=dm_env)
 
         tracks = {}
         label_cat = dataset.categories()[datumaro.AnnotationType.label]

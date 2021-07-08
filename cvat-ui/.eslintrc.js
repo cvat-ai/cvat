@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ module.exports = {
         parser: '@typescript-eslint/parser',
         ecmaVersion: 6,
         project: './tsconfig.json',
+        tsconfigRootDir: __dirname,
     },
     plugins: ['@typescript-eslint', 'import'],
     extends: [
@@ -19,6 +20,7 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:import/typescript',
     ],
+    ignorePatterns: ['.eslintrc.js'],
     rules: {
         '@typescript-eslint/indent': ['warn', 4],
         '@typescript-eslint/lines-between-class-members': 0,
@@ -53,11 +55,17 @@ module.exports = {
                 },
             },
         ],
+        'import/order': [
+            'error',
+            {
+                'groups': ['builtin', 'external', 'internal'],
+            }
+        ]
     },
     settings: {
         'import/resolver': {
             node: {
-                paths: ['src'],
+                paths: ['src', `${__dirname}/src`],
             },
         },
     },

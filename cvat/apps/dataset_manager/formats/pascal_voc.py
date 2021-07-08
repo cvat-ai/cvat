@@ -6,26 +6,25 @@ import os
 import os.path as osp
 import shutil
 from glob import glob
-
 from tempfile import TemporaryDirectory
 
+from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
-from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
 
 
 @exporter(name='PASCAL VOC', ext='ZIP', version='1.1')
 def _export(dst_file, task_data, save_images=False):
-    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
-    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
+        task_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
-        dm_env.converters.get('voc').convert(extractor,
-            save_dir=temp_dir, save_images=save_images, label_map='source')
+        dataset.export(temp_dir, 'voc', save_images=save_images,
+            label_map='source')
 
         make_zip_archive(temp_dir, dst_file)
 
@@ -56,7 +55,6 @@ def _import(src_file, task_data):
             for f in anno_files:
                 shutil.move(f, anno_dir)
 
-        dataset = dm_env.make_importer('voc')(tmp_dir).make_dataset()
-        masks_to_polygons = dm_env.transforms.get('masks_to_polygons')
-        dataset = dataset.transform(masks_to_polygons)
+        dataset = Dataset.import_from(tmp_dir, 'voc', env=dm_env)
+        dataset.transform('masks_to_polygons')
         import_dm_annotations(dataset, task_data)

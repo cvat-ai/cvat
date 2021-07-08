@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
 
 import { AIToolsIcon } from 'icons';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
 import {
@@ -29,7 +29,6 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
-import { InteractionResult } from 'cvat-canvas/src/typescript/canvas';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
 import withVisibilityHandling from './handle-popover-visibility';
@@ -57,6 +56,7 @@ interface DispatchToProps {
 }
 
 const core = getCore();
+const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { annotation } = state;
@@ -74,7 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeLabelID: annotation.drawing.activeLabelID,
         labels: annotation.job.labels,
         states: annotation.annotations.states,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         jobInstance,
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
@@ -88,22 +88,6 @@ const mapDispatchToProps = {
     fetchAnnotations: fetchAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
 };
-
-function convertShapesForInteractor(shapes: InteractionResult[]): number[][] {
-    const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
-        if (!(index % 2)) {
-            // 0, 2, 4
-            acc.push([array[index], array[index + 1]]);
-        }
-        return acc;
-    };
-
-    return shapes
-        .filter((shape: InteractionResult): boolean => shape.shapeType === 'points' && shape.button === 0)
-        .map((shape: InteractionResult): number[] => shape.points)
-        .flat()
-        .reduce(reducer, []);
-}
 
 type Props = StateToProps & DispatchToProps;
 interface State {
@@ -127,7 +111,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.state = {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
-            activeLabelID: props.labels[0].id,
+            activeLabelID: props.labels.length ? props.labels[0].id : null,
             interactiveStateID: null,
             trackingProgress: null,
             trackingFrames: 10,
@@ -218,11 +202,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } = this.props;
         const { activeInteractor, interactiveStateID, fetching } = this.state;
 
-        try {
-            if (!isActivated) {
-                throw Error('Canvas raises event "canvas.interacted" when interaction with it is off');
-            }
+        if (!isActivated) {
+            return;
+        }
 
+        try {
             if (fetching) {
                 this.interactionIsDone = (e as CustomEvent).detail.isDone;
                 return;
@@ -236,7 +220,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 try {
                     result = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
-                        points: convertShapesForInteractor((e as CustomEvent).detail.shapes),
+                        pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
+                        neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
                     });
 
                     if (this.interactionIsAborted) {
@@ -254,7 +239,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const object = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
-                    label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                    label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                     shapeType: ShapeType.POLYGON,
                     points: result.flat(),
                     occluded: false,
@@ -272,7 +257,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     const object = new core.classes.ObjectState({
                         frame,
                         objectType: ObjectType.SHAPE,
-                        label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                        label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                         shapeType: ShapeType.POLYGON,
                         points: result.flat(),
                         occluded: false,
@@ -322,6 +307,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const {
             isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
         } = this.props;
+
+        if (!isActivated) {
+            return;
+        }
+
         const { activeLabelID } = this.state;
         const [label] = jobInstance.task.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
@@ -331,10 +321,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         this.interactionIsDone = true;
         try {
-            if (!isActivated) {
-                throw Error('Canvas raises event "canvas.interacted" when interaction with it is off');
-            }
-
             const { points } = (e as CustomEvent).detail.shapes[0];
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
@@ -532,8 +518,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             min={1}
                             precision={0}
                             max={jobInstance.stopFrame - frame}
-                            onChange={(value: number | undefined | string): void => {
-                                if (typeof value !== 'undefined') {
+                            onChange={(value: number | undefined | string | null): void => {
+                                if (typeof value !== 'undefined' && value !== null) {
                                     this.setState({
                                         trackingFrames: +value,
                                     });
@@ -550,9 +536,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             className='cvat-tools-track-button'
                             disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
                             onClick={() => {
-                                this.setState({
-                                    mode: 'tracking',
-                                });
+                                this.setState({ mode: 'tracking' });
 
                                 if (activeTracker) {
                                     canvasInstance.cancel();
@@ -625,9 +609,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             className='cvat-tools-interact-button'
                             disabled={!activeInteractor || fetching}
                             onClick={() => {
-                                this.setState({
-                                    mode: 'interaction',
-                                });
+                                this.setState({ mode: 'interaction' });
 
                                 if (activeInteractor) {
                                     canvasInstance.cancel();
@@ -673,16 +655,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 task={jobInstance.task}
                 runInference={async (task: any, model: Model, body: object) => {
                     try {
-                        this.setState({
-                            mode: 'detection',
-                        });
-
-                        this.setState({ fetching: true });
-                        const result = await core.lambda.call(task, model, {
-                            ...body,
-                            frame,
-                        });
-
+                        this.setState({ mode: 'detection', fetching: true });
+                        const result = await core.lambda.call(task, model, { ...body, frame });
                         const states = result.map(
                             (data: any): any =>
                                 new core.classes.ObjectState({
@@ -742,12 +716,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated, canvasInstance,
+            interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const { fetching, trackingProgress } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
-        const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
         const dynamcPopoverPros = isActivated ?
             {
@@ -759,7 +732,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const dynamicIconProps = isActivated ?
             {
-                className: 'cvat-active-canvas-control cvat-tools-control',
+                className: 'cvat-tools-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.interact({ enabled: false });
                 },
@@ -768,7 +741,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        return (
+        return !labels.length ? (
+            <Icon className=' cvat-tools-control cvat-disabled-canvas-control' component={AIToolsIcon} />
+        ) : (
             <>
                 <Modal
                     title='Making a server request'

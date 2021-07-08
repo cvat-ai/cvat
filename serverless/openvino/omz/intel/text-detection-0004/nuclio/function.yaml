@@ -17,7 +17,7 @@ spec:
   eventTimeout: 30s
   env:
     - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/common/python3
+      value: /opt/nuclio/common/openvino/python3
 
   build:
     image: cvat/openvino.omz.intel.text-detection-0004
@@ -47,3 +47,4 @@ spec:
       restartPolicy:
         name: always
         maximumRetryCount: 3
+      mountMode: volume

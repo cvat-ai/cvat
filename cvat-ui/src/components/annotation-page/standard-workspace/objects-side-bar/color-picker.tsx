@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 import React, { useState } from 'react';
@@ -9,9 +9,9 @@ import Button from 'antd/lib/button';
 import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
 import { SketchPicker } from 'react-color';
-import Tooltip from 'antd/lib/tooltip';
 
 import getCore from 'cvat-core-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 const core = getCore();
 
@@ -108,7 +108,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                         <Text strong>Select color</Text>
                     </Col>
                     <Col span={4}>
-                        <Tooltip title='Cancel'>
+                        <CVATTooltip title='Cancel'>
                             <Button
                                 type='link'
                                 onClick={() => {
@@ -117,7 +117,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                             >
                                 <CloseOutlined />
                             </Button>
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                 </Row>
             )}

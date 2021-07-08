@@ -1,4 +1,4 @@
-FROM cvat/server
+FROM openvino/cvat_server
 
 ENV DJANGO_CONFIGURATION=testing
 USER root

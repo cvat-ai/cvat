@@ -6,6 +6,7 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
+import { DimensionType } from '../../reducers/interfaces';
 
 function isDefaultFormat(dumperName: string, taskMode: string): boolean {
     return (
@@ -19,15 +20,19 @@ interface Props {
     menuKey: string;
     dumpers: any[];
     dumpActivities: string[] | null;
+    taskDimension: DimensionType;
 }
 
 export default function DumpSubmenu(props: Props): JSX.Element {
-    const { taskMode, menuKey, dumpers, dumpActivities } = props;
+    const {
+        taskMode, menuKey, dumpers, dumpActivities, taskDimension,
+    } = props;
 
     return (
         <Menu.SubMenu key={menuKey} title='Dump annotations'>
             {dumpers
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                .filter((dumper: any): boolean => dumper.dimension === taskDimension)
                 .map(
                     (dumper: any): JSX.Element => {
                         const pending = (dumpActivities || []).includes(dumper.name);

@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -21,6 +21,8 @@ import fcntl
 import shutil
 import subprocess
 import mimetypes
+from distutils.util import strtobool
+
 mimetypes.add_type("application/wasm", ".wasm", True)
 
 
@@ -56,47 +58,37 @@ def generate_ssh_keys():
         keys_to_add = [entry.name for entry in os.scandir(
             ssh_dir) if entry.name not in IGNORE_FILES]
         keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
-        subprocess.run(['ssh-add {}'.format(keys_to_add)],
-                       shell=True,
-                       stderr=subprocess.PIPE,
-                       # lets set the timeout if ssh-add requires a input passphrase for key
-                       # otherwise the process will be freezed
-                       timeout=30,
-                       )
+        subprocess.run(['ssh-add {}'.format(keys_to_add)], # nosec
+            shell=True,
+            stderr = subprocess.PIPE,
+            # lets set the timeout if ssh-add requires a input passphrase for key
+            # otherwise the process will be freezed
+            timeout=30,
+            )
 
     with open(pidfile, "w") as pid:
         fcntl.flock(pid, fcntl.LOCK_EX)
         try:
             add_ssh_keys()
-            keys = subprocess.run(['ssh-add -l'], shell=True,
-                                  stdout=subprocess.PIPE).stdout.decode('utf-8').split('\n')
+            keys = subprocess.run(['ssh-add', '-l'], # nosec
+                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
             if 'has no identities' in keys[0]:
                 print('SSH keys were not found')
                 volume_keys = os.listdir(keys_dir)
                 if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
                     print('New pair of keys are being generated')
-                    subprocess.run(
-                        ['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell=True)
-                    shutil.copyfile('{}/id_rsa'.format(ssh_dir),
-                                    '{}/id_rsa'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa'.format(ssh_dir),
-                                    '{}/id_rsa'.format(keys_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir),
-                                    '{}/id_rsa.pub'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir),
-                                    '{}/id_rsa.pub'.format(keys_dir))
+                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell=True) # nosec
+                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
                 else:
                     print('Copying them from keys volume')
-                    shutil.copyfile('{}/id_rsa'.format(keys_dir),
-                                    '{}/id_rsa'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa'.format(keys_dir),
-                                    '{}/id_rsa'.format(ssh_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir),
-                                    '{}/id_rsa.pub'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir),
-                                    '{}/id_rsa.pub'.format(ssh_dir))
-                subprocess.run(
-                    ['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell=True)
+                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)]) # nosec
         finally:
             fcntl.flock(pid, fcntl.LOCK_UN)
 
@@ -104,8 +96,8 @@ def generate_ssh_keys():
 try:
     if os.getenv("SSH_AUTH_SOCK", None):
         generate_ssh_keys()
-except Exception:
-    pass
+except Exception as ex:
+    print(str(ex))
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -115,12 +107,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'cvat.apps.authentication',
-    'cvat.apps.documentation',
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
+    'cvat.apps.opencv',
     'django_rq',
     'compressor',
     'cacheops',
@@ -140,6 +132,9 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'rest_auth.registration'
 ]
+
+if strtobool(os.environ.get("ADAPTIVE_AUTO_ANNOTATION", 'false')):
+    INSTALLED_APPS.append('cvat.apps.training')
 
 SITE_ID = 1
 
@@ -349,7 +344,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
+LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
+if not os.path.exists(LOGSTASH_DB):
+    open(LOGSTASH_DB, 'w').close()
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
@@ -375,10 +373,18 @@ os.makedirs(LOGS_ROOT, exist_ok=True)
 MIGRATIONS_LOGS_ROOT = os.path.join(LOGS_ROOT, 'migrations')
 os.makedirs(MIGRATIONS_LOGS_ROOT, exist_ok=True)
 
+CLOUD_STORAGE_ROOT = os.path.join(DATA_ROOT, 'storages')
+os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
+        'logstash': {
+            '()': 'logstash_async.formatter.DjangoLogstashFormatter',
+            'message_type': 'python-logstash',
+            'fqdn': False, # Fully qualified domain name. Default value: false.
+        },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
         }
@@ -399,11 +405,16 @@ LOGGING = {
         },
         'logstash': {
             'level': 'INFO',
-            'class': 'logstash.TCPLogstashHandler',
+            'class': 'logstash_async.handler.AsynchronousLogstashHandler',
+            'formatter': 'logstash',
+            'transport': 'logstash_async.transport.HttpTransport',
+            'ssl_enable': False,
+            'ssl_verify': False,
             'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
-            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 5000),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8080),
             'version': 1,
             'message_type': 'django',
+            'database_path': LOGSTASH_DB,
         }
     },
     'loggers': {
@@ -450,7 +461,7 @@ RESTRICTIONS = {
     # this setting limits the number of projects for the user
     'project_limit': None,
 
-    # this setting reduse task visibility to owner and assignee only
+    # this setting reduces task visibility to owner and assignee only
     'reduce_task_visibility': False,
 
     # allow access to analytics component to users with the following roles

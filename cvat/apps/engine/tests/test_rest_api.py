@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -28,9 +28,12 @@ from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from cvat.apps.engine.models import (AttributeType, Data, Job, Project,
+from datumaro.util.test_utils import TestDir
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
     Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
-from cvat.apps.engine.prepare import prepare_meta, prepare_meta_for_upload
+from cvat.apps.engine.media_extractors import ValidateDimension
+from cvat.apps.engine.models import DimensionType
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -70,6 +73,7 @@ def create_db_task(data):
     os.makedirs(db_data.get_data_dirname())
     os.makedirs(db_data.get_upload_dirname())
 
+    labels = data.pop('labels', None)
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_task_dirname(), ignore_errors=True)
     os.makedirs(db_task.get_task_dirname())
@@ -77,6 +81,17 @@ def create_db_task(data):
     os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
     db_task.save()
+
+    if not labels is None:
+        for label_data in labels:
+            attributes = label_data.pop('attributes', None)
+            db_label = Label(task=db_task, **label_data)
+            db_label.save()
+
+            if not attributes is None:
+                for attribute_data in attributes:
+                    db_attribute = AttributeSpec(label=db_label, **attribute_data)
+                    db_attribute.save()
 
     for x in range(0, db_task.data.size, db_task.segment_size):
         start_frame = x
@@ -93,6 +108,26 @@ def create_db_task(data):
         db_job.save()
 
     return db_task
+
+def create_db_project(data):
+    labels = data.pop('labels', None)
+    db_project = Project.objects.create(**data)
+    shutil.rmtree(db_project.get_project_dirname(), ignore_errors=True)
+    os.makedirs(db_project.get_project_dirname())
+    os.makedirs(db_project.get_project_logs_dirname())
+
+    if not labels is None:
+        for label_data in labels:
+            attributes = label_data.pop('attributes', None)
+            db_label = Label(project=db_project, **label_data)
+            db_label.save()
+
+            if not attributes is None:
+                for attribute_data in attributes:
+                    db_attribute = AttributeSpec(label=db_label, **attribute_data)
+                    db_attribute.save()
+
+    return db_project
 
 def create_dummy_db_tasks(obj, project=None):
     tasks = []
@@ -157,14 +192,14 @@ def create_dummy_db_projects(obj):
         "owner": obj.owner,
         "assignee": obj.assignee,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     projects.append(db_project)
 
     data = {
         "name": "my project without assignee",
         "owner": obj.user,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
@@ -173,14 +208,14 @@ def create_dummy_db_projects(obj):
         "owner": obj.owner,
         "assignee": obj.assignee,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
     data = {
         "name": "public project",
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
@@ -189,7 +224,7 @@ def create_dummy_db_projects(obj):
         "owner": obj.admin,
         "assignee": obj.assignee,
     }
-    db_project = Project.objects.create(**data)
+    db_project = create_db_project(data)
     create_dummy_db_tasks(obj, db_project)
     projects.append(db_project)
 
@@ -735,7 +770,7 @@ class UserListAPITestCase(UserAPITestCase):
 
         return response
 
-    def _check_response(self, user, response, is_full):
+    def _check_response(self, user, response, is_full=True):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for user_info in response.data['results']:
             db_user = getattr(self, user_info['username'])
@@ -1155,7 +1190,7 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
 
     def _check_response(self, response, db_project, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        name = data.get("name", data.get("name", db_project.name))
+        name = data.get("name", db_project.name)
         self.assertEqual(response.data["name"], name)
         response_owner = response.data["owner"]["id"] if response.data["owner"] else None
         db_owner = db_project.owner.id if db_project.owner else None
@@ -1165,6 +1200,16 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         self.assertEqual(response_assignee, data.get("assignee_id", db_assignee))
         self.assertEqual(response.data["status"], data.get("status", db_project.status))
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", db_project.bug_tracker))
+        if data.get("labels"):
+            self.assertListEqual(
+                [label["name"] for label in data.get("labels") if not label.get("deleted", False)],
+                [label["name"] for label in response.data["labels"]]
+            )
+        else:
+            self.assertListEqual(
+                [label.name for label in db_project.label_set.all()],
+                [label["name"] for label in response.data["labels"]]
+            )
 
     def _check_api_v1_projects_id(self, user, data):
         for db_project in self.projects:
@@ -1178,9 +1223,13 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
 
     def test_api_v1_projects_id_admin(self):
         data = {
-            "name": "new name for the project",
+            "name": "project with some labels",
             "owner_id": self.owner.id,
             "bug_tracker": "https://new.bug.tracker",
+            "labels": [
+                {"name": "car"},
+                {"name": "person"}
+            ],
         }
         self._check_api_v1_projects_id(self.admin, data)
 
@@ -1203,6 +1252,103 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v1_projects_id(None, data)
 
+class UpdateLabelsAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def assertLabelsEqual(self, label1, label2):
+        self.assertEqual(label1.get("name", label2.get("name")), label2.get("name"))
+        self.assertEqual(label1.get("color", label2.get("color")), label2.get("color"))
+
+    def _check_response(self, response, db_object, data):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        db_labels = db_object.label_set.all()
+        response_labels = response.data["labels"]
+        for label in data["labels"]:
+            if label.get("id", None) is None:
+                self.assertLabelsEqual(
+                    label,
+                    [l for l in response_labels if label.get("name") == l.get("name")][0],
+                )
+                db_labels = [l for l in db_labels if label.get("name") != l.name]
+                response_labels = [l for l in response_labels if label.get("name") != l.get("name")]
+            else:
+                if not label.get("deleted", False):
+                    self.assertLabelsEqual(
+                        label,
+                        [l for l in response_labels if label.get("id") == l.get("id")][0],
+                    )
+                    response_labels = [l for l in response_labels if label.get("id") != l.get("id")]
+                    db_labels = [l for l in db_labels if label.get("id") != l.id]
+                else:
+                    self.assertEqual(
+                        len([l for l in response_labels if label.get("id") == l.get("id")]), 0
+                    )
+            self.assertEqual(len(response_labels), len(db_labels))
+
+class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        project_data = {
+            "name": "Project with labels",
+            "bug_tracker": "https://new.bug.tracker",
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+            }, {
+                "name": "person",
+            }]
+        }
+
+        create_db_users(cls)
+        db_project = create_db_project(project_data)
+        create_dummy_db_tasks(cls, db_project)
+        cls.project = db_project
+
+    def _check_api_v1_project(self, data):
+        response = self._run_api_v1_project_id(self.project.id, self.admin, data)
+        self._check_response(response, self.project, data)
+
+    def _run_api_v1_project_id(self, pid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/projects/{}'.format(pid),
+                data=data, format="json")
+
+        return response
+
+    def test_api_v1_projects_create_label(self):
+        data = {
+            "labels": [{
+                "name": "new label",
+            }],
+        }
+        self._check_api_v1_project(data)
+
+    def test_api_v1_projects_edit_label(self):
+        data = {
+            "labels": [{
+                "id": 1,
+                "name": "New name for label",
+                "color": "#fefefe",
+            }],
+        }
+        self._check_api_v1_project(data)
+
+    def test_api_v1_projects_delete_label(self):
+        data = {
+            "labels": [{
+                "id": 2,
+                "name": "Label for deletion",
+                "deleted": True
+            }]
+        }
+        self._check_api_v1_project(data)
 class ProjectListOfTasksAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1564,6 +1710,257 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
         }
         self._check_api_v1_tasks_id(None, data)
 
+class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        task_data = {
+            "name": "Project with labels",
+            "bug_tracker": "https://new.bug.tracker",
+            "overlap": 0,
+            "segment_size": 100,
+            "image_quality": 75,
+            "size": 100,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+            }, {
+                "name": "person",
+            }]
+        }
+
+        create_db_users(cls)
+        db_task = create_db_task(task_data)
+        cls.task = db_task
+
+    def _check_api_v1_task(self, data):
+        response = self._run_api_v1_task_id(self.task.id, self.admin, data)
+        self._check_response(response, self.task, data)
+
+    def _run_api_v1_task_id(self, tid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+                data=data, format="json")
+
+        return response
+
+    def test_api_v1_tasks_create_label(self):
+        data = {
+            "labels": [{
+                "name": "new label",
+            }],
+        }
+        self._check_api_v1_task(data)
+
+    def test_api_v1_tasks_edit_label(self):
+        data = {
+            "labels": [{
+                "id": 1,
+                "name": "New name for label",
+                "color": "#fefefe",
+            }],
+        }
+        self._check_api_v1_task(data)
+
+    def test_api_v1_tasks_delete_label(self):
+        data = {
+            "labels": [{
+                "id": 2,
+                "name": "Label for deletion",
+                "deleted": True
+            }]
+        }
+        self._check_api_v1_task(data)
+
+class TaskMoveAPITestCase(APITestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+        self._run_api_v1_job_id_annotation(self.task.segment_set.first().job_set.first().id, self.annotation_data)
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+        projects = []
+
+        project_data = {
+            "name": "Project for task move 1",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car"
+            }, {
+                "name": "person"
+            }]
+        }
+        db_project = create_db_project(project_data)
+        projects.append(db_project)
+
+        project_data = {
+            "name": "Project for task move 2",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
+            }, {
+                "name": "test"
+            }, {
+                "name": "other.label"
+            }]
+        }
+
+        db_project = create_db_project(project_data)
+        projects.append(db_project)
+
+        cls.projects = projects
+
+        task_data = {
+            "name": "Task for moving",
+            "owner": cls.admin,
+            "overlap": 0,
+            "segment_size": 100,
+            "image_quality": 75,
+            "size": 100,
+            "project": None,
+            "labels": [{
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
+            }]
+        }
+        db_task = create_db_task(task_data)
+        cls.task = db_task
+
+        cls.annotation_data = {
+            "version": 1,
+            "tags": [
+                {
+                    "frame": 0,
+                    "label_id": cls.task.label_set.first().id,
+                    "group": None,
+                    "source": "manual",
+                    "attributes": []
+                }
+            ],
+            "shapes": [
+                {
+                    "frame": 0,
+                    "label_id": cls.task.label_set.first().id,
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": cls.task.label_set.first().attributespec_set.first().id,
+                            "value": cls.task.label_set.first().attributespec_set.first().values.split('\'')[1]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 100, 300.222],
+                    "type": "rectangle",
+                    "occluded": False
+                }
+            ],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": cls.task.label_set.first().id,
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": cls.task.label_set.first().attributespec_set.first().id,
+                            "value": cls.task.label_set.first().attributespec_set.first().values.split('\'')[1]
+                        }
+                    ],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        },
+                        {
+                            "frame": 2,
+                            "attributes": [],
+                            "points": [2.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True
+                        },
+                    ]
+                }
+            ]
+        }
+
+    def _run_api_v1_tasks_id(self, tid, data):
+        with ForceLogin(self.admin, self.client):
+            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+                data=data, format="json")
+
+        return response
+
+    def _run_api_v1_job_id_annotation(self, jid, data):
+        with ForceLogin(self.admin, self.client):
+            response = self.client.patch('/api/v1/jobs/{}/annotations?action=create'.format(jid),
+                data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, data):
+        self.assertEqual(response.data["project_id"], data["project_id"])
+
+    def _check_api_v1_tasks(self, tid, data, expected_status=status.HTTP_200_OK):
+        response = self._run_api_v1_tasks_id(tid, data)
+        self.assertEqual(response.status_code, expected_status)
+        if (expected_status == status.HTTP_200_OK):
+            self._check_response(response, data)
+
+    def test_move_task_bad_request(self):
+        # Try to move task without proper label mapping
+        data = {
+            "project_id": self.projects[0].id,
+            "labels": [{
+                "id": self.task.label_set.first().id,
+                "name": "some.other.label"
+            }]
+        }
+        self._check_api_v1_tasks(self.task.id, data, status.HTTP_400_BAD_REQUEST)
+
+    def test_move_task(self):
+        # Try to move single task to the project
+        data = {
+            "project_id": self.projects[0].id
+        }
+        self._check_api_v1_tasks(self.task.id, data)
+
+        # Try to move task from project to the other project
+        data = {
+            "project_id": self.projects[1].id,
+            "labels": [{
+                "id": self.projects[0].label_set.all()[1].id,
+                "name": "test"
+            }]
+        }
+        self._check_api_v1_tasks(self.task.id, data)
+
 class TaskCreateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1675,6 +2072,348 @@ class TaskCreateAPITestCase(APITestCase):
         }
         self._check_api_v1_tasks(None, data)
 
+
+
+class TaskImportExportAPITestCase(APITestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.tasks = []
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+        cls.media_data = []
+
+        image_count = 10
+        imagename_pattern = "test_{}.jpg"
+        for i in range(image_count):
+            filename = imagename_pattern.format(i)
+            path = os.path.join(settings.SHARE_ROOT, filename)
+            _, data = generate_image_file(filename)
+            with open(path, "wb") as image:
+                image.write(data.read())
+
+        cls.media_data.append(
+            {
+                **{"image_quality": 75,
+                   "copy_data": True,
+                   "start_frame": 2,
+                   "stop_frame": 9,
+                   "frame_filter": "step=2",
+                },
+                **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
+            }
+        )
+
+        filename = "test_video_1.mp4"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        _, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "copy_data": True,
+                "start_frame": 2,
+                "stop_frame": 24,
+                "frame_filter": "step=2",
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = os.path.join("test_archive_1.zip")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        _, data = generate_zip_archive_file(filename, count=5)
+        with open(path, "wb") as zip_archive:
+            zip_archive.write(data.read())
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = "test_pointcloud_pcd.zip"
+        source_path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        shutil.copyfile(source_path, path)
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = "test_velodyne_points.zip"
+        source_path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        shutil.copyfile(source_path, path)
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = os.path.join("videos", "test_video_1.mp4")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        os.makedirs(os.path.dirname(path))
+        _, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+
+        generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
+            sources=[path])
+
+        cls.media_data.append(
+            {
+                "image_quality": 70,
+                "copy_data": True,
+                "server_files[0]": filename,
+                "server_files[1]": os.path.join("videos", "manifest.jsonl"),
+                "use_cache": True,
+            }
+        )
+
+        generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
+            sources=[os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)])
+        cls.media_data.append(
+            {
+                **{"image_quality": 70,
+                    "copy_data": True,
+                    "use_cache": True,
+                    "frame_filter": "step=2",
+                    "server_files[0]": "manifest.jsonl",
+                },
+                **{
+                    **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(1, 8)},
+                }
+            }
+        )
+
+        cls.media_data.extend([
+            # image list local
+            {
+                "client_files[0]": generate_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "image_quality": 75,
+            },
+            # video local
+            {
+                "client_files[0]": generate_video_file("test_video.mp4")[1],
+                "image_quality": 75,
+            },
+            # zip archive local
+            {
+                "client_files[0]": generate_zip_archive_file("test_archive_1.zip", 10)[1],
+                "image_quality": 50,
+            },
+            # pdf local
+            {
+                "client_files[0]": generate_pdf_file("test_pdf_1.pdf", 7)[1],
+                "image_quality": 54,
+            },
+        ])
+
+    def tearDown(self):
+        for task in self.tasks:
+            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        path = os.path.join(settings.SHARE_ROOT, "test_1.jpg")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_2.jpg")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_video_1.mp4")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
+        os.remove(path)
+        os.rmdir(os.path.dirname(path))
+
+        path = os.path.join(settings.SHARE_ROOT, "test_pointcloud_pcd.zip")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_velodyne_points.zip")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
+        os.remove(path)
+
+    def _create_tasks(self):
+        self.tasks = []
+
+        def _create_task(task_data, media_data):
+            response = self.client.post('/api/v1/tasks', data=task_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+
+            for media in media_data.values():
+                if isinstance(media, io.BytesIO):
+                    media.seek(0)
+            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            data_id = response.data["data"]
+            self.tasks.append({
+                "id": tid,
+                "data_id": data_id,
+            })
+
+        task_data = [
+            {
+                "name": "my task #1",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "overlap": 0,
+                "segment_size": 100,
+                "labels": [{
+                    "name": "car",
+                    "color": "#ff00ff",
+                    "attributes": [{
+                        "name": "bool_attribute",
+                        "mutable": True,
+                        "input_type": AttributeType.CHECKBOX,
+                        "default_value": "true"
+                    }],
+                    }, {
+                        "name": "person",
+                    },
+                ]
+            },
+            {
+                "name": "my task #2",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "overlap": 1,
+                "segment_size": 3,
+                "labels": [{
+                    "name": "car",
+                    "color": "#ff00ff",
+                    "attributes": [{
+                        "name": "bool_attribute",
+                        "mutable": True,
+                        "input_type": AttributeType.CHECKBOX,
+                        "default_value": "true"
+                    }],
+                    }, {
+                        "name": "person",
+                    },
+                ]
+            },
+        ]
+
+        with ForceLogin(self.owner, self.client):
+            for data in task_data:
+                for media in self.media_data:
+                    _create_task(data, media)
+
+    def _run_api_v1_tasks_id_export(self, tid, user, query_params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/tasks/{}?{}'.format(tid, query_params), format="json")
+
+        return response
+
+    def _run_api_v1_tasks_id_import(self, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/tasks?action=import', data=data, format="multipart")
+
+        return response
+
+    def _run_api_v1_tasks_id(self, tid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/tasks/{}'.format(tid), format="json")
+
+        return response.data
+
+    def _run_api_v1_tasks_id_export_import(self, user):
+        if user:
+            if user is self.user or user is self.annotator:
+                HTTP_200_OK = status.HTTP_403_FORBIDDEN
+                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+            else:
+                HTTP_200_OK = status.HTTP_200_OK
+                HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
+                HTTP_201_CREATED = status.HTTP_201_CREATED
+        else:
+            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
+            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
+            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
+
+        self._create_tasks()
+        for task in self.tasks:
+            tid = task["id"]
+            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+
+            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+            response = self._run_api_v1_tasks_id_export(tid, user, "action=download")
+            self.assertEqual(response.status_code, HTTP_200_OK)
+
+            if user and user is not self.observer and user is not self.user and user is not self.annotator:
+                self.assertTrue(response.streaming)
+                content = io.BytesIO(b"".join(response.streaming_content))
+                content.seek(0)
+
+                uploaded_data = {
+                    "task_file": content,
+                }
+                response = self._run_api_v1_tasks_id_import(user, uploaded_data)
+                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                if user is not self.observer and user is not self.user and user is not self.annotator:
+                    rq_id = response.data["rq_id"]
+                    response = self._run_api_v1_tasks_id_import(user, {"rq_id": rq_id})
+                    self.assertEqual(response.status_code, HTTP_201_CREATED)
+                    original_task = self._run_api_v1_tasks_id(tid, user)
+                    imported_task = self._run_api_v1_tasks_id(response.data["id"], user)
+                    compare_objects(
+                        self=self,
+                        obj1=original_task,
+                        obj2=imported_task,
+                        ignore_keys=(
+                            "id",
+                            "url",
+                            "owner",
+                            "project_id",
+                            "assignee",
+                            "created_date",
+                            "updated_date",
+                            "data",
+                        ),
+                    )
+
+    def test_api_v1_tasks_id_export_admin(self):
+        self._run_api_v1_tasks_id_export_import(self.admin)
+
+    def test_api_v1_tasks_id_export_user(self):
+        self._run_api_v1_tasks_id_export_import(self.user)
+
+    def test_api_v1_tasks_id_export_annotator(self):
+        self._run_api_v1_tasks_id_export_import(self.annotator)
+
+    def test_api_v1_tasks_id_export_observer(self):
+        self._run_api_v1_tasks_id_export_import(self.observer)
+
+    def test_api_v1_tasks_id_export_no_auth(self):
+        self._run_api_v1_tasks_id_export_import(None)
+
 def generate_image_file(filename):
     f = BytesIO()
     gen = random.SystemRandom()
@@ -1759,6 +2498,26 @@ def generate_pdf_file(filename, page_count=1):
     file_buf.seek(0)
     return image_sizes, file_buf
 
+def generate_manifest_file(data_type, manifest_path, sources):
+    kwargs = {
+        'images': {
+            'sources': sources,
+            'is_sorted': False,
+        },
+        'video': {
+            'media_file': sources[0],
+            'upload_dir': os.path.dirname(sources[0]),
+            'force': True
+        }
+    }
+
+    if data_type == 'video':
+        manifest = VideoManifestManager(manifest_path)
+    else:
+        manifest = ImageManifestManager(manifest_path)
+    prepared_meta = manifest.prepare_meta(**kwargs[data_type])
+    manifest.create(prepared_meta)
+
 class TaskDataAPITestCase(APITestCase):
     _image_sizes = {}
 
@@ -1840,6 +2599,53 @@ class TaskDataAPITestCase(APITestCase):
             zip_archive.write(data.read())
         cls._image_sizes[filename] = img_sizes
 
+        filename = "test_pointcloud_pcd.zip"
+        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        image_sizes = []
+        # container = av.open(path, 'r')
+        zip_file = zipfile.ZipFile(path)
+        for info in zip_file.namelist():
+            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
+                with zip_file.open(info, "r") as file:
+                    data = ValidateDimension.get_pcd_properties(file)
+                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+        cls._image_sizes[filename] = image_sizes
+
+        filename = "test_velodyne_points.zip"
+        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        image_sizes = []
+        # create zip instance
+
+        zip_file = zipfile.ZipFile(path, mode='a')
+
+        source_path = []
+        root_path = os.path.abspath(os.path.split(path)[0])
+
+        for info in zip_file.namelist():
+            if os.path.splitext(info)[1][1:] == "bin":
+                zip_file.extract(info, root_path)
+                bin_path = os.path.abspath(os.path.join(root_path, info))
+                source_path.append(ValidateDimension.convert_bin_to_pcd(bin_path))
+
+        for path in source_path:
+            zip_file.write(path, os.path.abspath(path.replace(root_path, "")))
+
+        for info in zip_file.namelist():
+            if os.path.splitext(info)[1][1:] == "pcd":
+                with zip_file.open(info, "r") as file:
+                    data = ValidateDimension.get_pcd_properties(file)
+                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+        root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
+
+        shutil.rmtree(root_path)
+        cls._image_sizes[filename] = image_sizes
+
+        generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
+            sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
+
+        generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
+            sources=[os.path.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -1861,7 +2667,11 @@ class TaskDataAPITestCase(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "videos", "meta_info.txt")
+        path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
+        os.remove(path)
+        os.rmdir(os.path.dirname(path))
+
+        path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
         os.remove(path)
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
@@ -1905,8 +2715,10 @@ class TaskDataAPITestCase(APITestCase):
         return self._run_api_v1_task_id_data_get(tid, user, "frame", "original", number)
 
     @staticmethod
-    def _extract_zip_chunk(chunk_buffer):
+    def _extract_zip_chunk(chunk_buffer, dimension=DimensionType.DIM_2D):
         chunk = zipfile.ZipFile(chunk_buffer, mode='r')
+        if dimension == DimensionType.DIM_3D:
+            return [BytesIO(chunk.read(f)) for f in sorted(chunk.namelist()) if f.rsplit(".", maxsplit=1)[-1] == "pcd"]
         return [Image.open(BytesIO(chunk.read(f))) for f in sorted(chunk.namelist())]
 
     @staticmethod
@@ -1917,7 +2729,7 @@ class TaskDataAPITestCase(APITestCase):
 
     def _test_api_v1_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
-                                        expected_uploaded_data_location=StorageChoice.LOCAL):
+                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.DIM_2D):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -1953,8 +2765,9 @@ class TaskDataAPITestCase(APITestCase):
         response = self._get_preview(task_id, user)
         self.assertEqual(response.status_code, expected_status_code)
         if expected_status_code == status.HTTP_200_OK:
-            preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
-            self.assertLessEqual(preview.size, image_sizes[0])
+            if dimension == DimensionType.DIM_2D:
+                preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
+                self.assertLessEqual(preview.size, image_sizes[0])
 
         # check compressed chunk
         response = self._get_compressed_chunk(task_id, user, 0)
@@ -1965,14 +2778,18 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 compressed_chunk = io.BytesIO(b"".join(response.streaming_content))
             if task["data_compressed_chunk_type"] == self.ChunkType.IMAGESET:
-                images = self._extract_zip_chunk(compressed_chunk)
+                images = self._extract_zip_chunk(compressed_chunk, dimension=dimension)
             else:
                 images = self._extract_video_chunk(compressed_chunk)
 
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
             for image_idx, image in enumerate(images):
-                self.assertEqual(image.size, image_sizes[image_idx])
+                if dimension == DimensionType.DIM_3D:
+                    properties = ValidateDimension.get_pcd_properties(image)
+                    self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), image_sizes[image_idx])
+                else:
+                    self.assertEqual(image.size, image_sizes[image_idx])
 
         # check original chunk
         response = self._get_original_chunk(task_id, user, 0)
@@ -1983,17 +2800,21 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 original_chunk  = io.BytesIO(b"".join(response.streaming_content))
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
-                images = self._extract_zip_chunk(original_chunk)
+                images = self._extract_zip_chunk(original_chunk, dimension=dimension)
             else:
                 images = self._extract_video_chunk(original_chunk)
 
             for image_idx, image in enumerate(images):
-                self.assertEqual(image.size, image_sizes[image_idx])
+                if dimension == DimensionType.DIM_3D:
+                    properties = ValidateDimension.get_pcd_properties(image)
+                    self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), image_sizes[image_idx])
+                else:
+                    self.assertEqual(image.size, image_sizes[image_idx])
 
             self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
-                server_files = [img for key, img in data.items() if key.startswith("server_files")]
+                server_files = [img for key, img in data.items() if key.startswith("server_files") and not img.endswith("manifest.jsonl")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
@@ -2004,7 +2825,7 @@ class TaskDataAPITestCase(APITestCase):
                 source_images = []
                 for f in source_files:
                     if zipfile.is_zipfile(f):
-                        source_images.extend(self._extract_zip_chunk(f))
+                        source_images.extend(self._extract_zip_chunk(f, dimension=dimension))
                     elif isinstance(f, io.BytesIO) and \
                             str(getattr(f, 'name', None)).endswith('.pdf'):
                         source_images.extend(convert_from_bytes(f.getvalue(),
@@ -2013,9 +2834,14 @@ class TaskDataAPITestCase(APITestCase):
                         source_images.append(Image.open(f))
 
                 for img_idx, image in enumerate(images):
-                    server_image = np.array(image)
-                    source_image = np.array(source_images[img_idx])
-                    self.assertTrue(np.array_equal(source_image, server_image))
+                    if dimension == DimensionType.DIM_3D:
+                        server_image = np.array(image.getbuffer())
+                        source_image = np.array(source_images[img_idx].getbuffer())
+                        self.assertTrue(np.array_equal(source_image, server_image))
+                    else:
+                        server_image = np.array(image)
+                        source_image = np.array(source_images[img_idx])
+                        self.assertTrue(np.array_equal(source_image, server_image))
 
     def _test_api_v1_tasks_id_data(self, user):
         task_spec = {
@@ -2177,7 +3003,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
-                                             expected_uploaded_data_location=StorageChoice.SHARE)
+                                             expected_uploaded_data_location=StorageChoice.LOCAL)
 
         task_spec.update([('name', 'my archive task #12')])
         task_data.update([('copy_data', True)])
@@ -2277,7 +3103,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
         task_spec.update([('name', 'my cached zip archive task #19')])
         task_data.update([('copy_data', True)])
@@ -2326,11 +3152,6 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data,
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
-        prepare_meta_for_upload(
-            prepare_meta,
-            os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4"),
-            os.path.join(settings.SHARE_ROOT, "videos")
-        )
         task_spec = {
             "name": "my video with meta info task without copying #22",
             "overlap": 0,
@@ -2342,7 +3163,7 @@ class TaskDataAPITestCase(APITestCase):
         }
         task_data = {
             "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
-            "server_files[1]": os.path.join("videos", "meta_info.txt"),
+            "server_files[1]": os.path.join("videos", "manifest.jsonl"),
             "image_quality": 70,
             "use_cache": True
         }
@@ -2415,6 +3236,77 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
+        task_spec = {
+            "name": "my archive task #24",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'), 'rb'),
+            "image_quality": 100,
+        }
+        image_sizes = self._image_sizes["test_pointcloud_pcd.zip"]
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+                                             self.ChunkType.IMAGESET,
+                                             image_sizes, dimension=DimensionType.DIM_3D)
+
+        task_spec = {
+            "name": "my archive task #25",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_velodyne_points.zip'),
+                                    'rb'),
+            "image_quality": 100,
+        }
+        image_sizes = self._image_sizes["test_velodyne_points.zip"]
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+                                             self.ChunkType.IMAGESET,
+                                             image_sizes, dimension=DimensionType.DIM_3D)
+
+        task_spec = {
+            "name": "my images+manifest without copying #26",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_3.jpg",
+            "server_files[3]": "manifest.jsonl",
+            "image_quality": 70,
+            "use_cache": True
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        task_spec.update([('name', 'my images+manifest #27')])
+        task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
 
@@ -2447,7 +3339,7 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001):
                 continue
             v2 = obj2[k]
             if k == 'attributes':
-                key = lambda a: a['spec_id']
+                key = lambda a: a['spec_id'] if 'spec_id' in a else a['id']
                 v1.sort(key=key)
                 v2.sort(key=key)
             compare_objects(self, v1, v2, ignore_keys)
@@ -2470,7 +3362,7 @@ class JobAnnotationAPITestCase(APITestCase):
     def setUpTestData(cls):
         create_db_users(cls)
 
-    def _create_task(self, owner, assignee):
+    def _create_task(self, owner, assignee, annotation_format=""):
         data = {
             "name": "my task #1",
             "owner_id": owner.id,
@@ -2497,8 +3389,101 @@ class JobAnnotationAPITestCase(APITestCase):
                     ]
                 },
                 {"name": "person"},
+                {
+                    "name": "widerface",
+                    "attributes": [
+                        {
+                            "name": "blur",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1", "2"]
+                        },
+                        {
+                            "name": "expression",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                        {
+                            "name": "illumination",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "0",
+                            "values": ["0", "1"]
+                        },
+                    ]
+                },
             ]
         }
+        if annotation_format == "Market-1501 1.0":
+            data["labels"] = [{
+                "name": "market-1501",
+                "attributes": [
+                    {
+                        "name": "query",
+                        "mutable": False,
+                        "input_type": "select",
+                        "values": ["True", "False"]
+                    },
+                    {
+                        "name": "camera_id",
+                        "mutable": False,
+                        "input_type": "number",
+                        "values": ["0", "1", "2", "3", "4", "5"]
+                    },
+                    {
+                        "name": "person_id",
+                        "mutable": False,
+                        "input_type": "number",
+                        "values": ["1", "2", "3"]
+                    },
+                ]
+            }]
+        elif annotation_format in ["ICDAR Recognition 1.0",
+                "ICDAR Localization 1.0"]:
+            data["labels"] = [{
+                "name": "icdar",
+                "attributes": [
+                    {
+                        "name": "text",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["word_1", "word_2", "word_3"]
+                    },
+                ]
+            }]
+        elif annotation_format == "ICDAR Segmentation 1.0":
+            data["labels"] = [{
+                "name": "icdar",
+                "attributes": [
+                    {
+                        "name": "text",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["word_1", "word_2", "word_3"]
+                    },
+                    {
+                        "name": "index",
+                        "mutable": False,
+                        "input_type": "number",
+                        "values": ["0", "1", "2"]
+                    },
+                    {
+                        "name": "color",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["100 110 240", "10 15 20", "120 128 64"]
+                    },
+                    {
+                        "name": "center",
+                        "mutable": False,
+                        "input_type": "text",
+                        "values": ["1 2", "2 4", "10 45"]
+                    },
+                ]
+            }]
 
         with ForceLogin(owner, self.client):
             response = self.client.post('/api/v1/tasks', data=data, format="json")
@@ -3478,228 +4463,265 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         def _get_initial_annotation(annotation_format):
-            rectangle_tracks_with_attrs = [{
-                "frame": 0,
-                "label_id": task["labels"][0]["id"],
-                "group": 0,
-                "source": "manual",
-                "attributes": [
-                    {
-                        "spec_id": task["labels"][0]["attributes"][0]["id"],
-                        "value": task["labels"][0]["attributes"][0]["values"][0]
-                    },
-                ],
-                "shapes": [
-                    {
-                        "frame": 0,
-                        "points": [1.0, 2.1, 50.1, 30.22],
-                        "type": "rectangle",
-                        "occluded": False,
-                        "outside": False,
-                        "attributes": [
-                            {
-                                "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                "value": task["labels"][0]["attributes"][1]["default_value"]
-                            }
-                        ]
-                    },
-                    {
-                        "frame": 1,
-                        "points": [2.0, 2.1, 77.2, 36.22],
-                        "type": "rectangle",
-                        "occluded": True,
-                        "outside": False,
-                        "attributes": [
-                            {
-                                "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                "value": task["labels"][0]["attributes"][1]["default_value"]
-                            }
-                        ]
-                    },
-                    {
-                        "frame": 2,
-                        "points": [2.0, 2.1, 77.2, 36.22],
-                        "type": "rectangle",
-                        "occluded": True,
-                        "outside": True,
-                        "attributes": [
-                            {
-                                "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                "value": task["labels"][0]["attributes"][1]["default_value"]
-                            }
-                        ]
-                    },
-                ]
-            }]
-            rectangle_tracks_wo_attrs = [{
-                "frame": 0,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "source": "manual",
-                "attributes": [],
-                "shapes": [
-                    {
-                        "frame": 0,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 50.2, 36.6],
-                        "type": "rectangle",
-                        "occluded": False,
-                        "outside": False,
-                    },
-                    {
-                        "frame": 1,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 51, 36.6],
-                        "type": "rectangle",
-                        "occluded": False,
-                        "outside": False
-                    },
-                    {
-                        "frame": 2,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 51, 36.6],
-                        "type": "rectangle",
-                        "occluded": False,
-                        "outside": True,
-                    }
-                ]
-            }]
-            polygon_tracks_wo_attrs = [{
-                "frame": 0,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "source": "manual",
-                "attributes": [],
-                "shapes": [
-                    {
-                        "frame": 0,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 50.2, 36.6, 7.0, 10.0],
-                        "type": "polygon",
-                        "occluded": False,
-                        "outside": False,
-                    },
-                    {
-                        "frame": 1,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 51, 36.6, 8.0, 11.0],
-                        "type": "polygon",
-                        "occluded": False,
-                        "outside": False
-                    },
-                    {
-                        "frame": 2,
-                        "attributes": [],
-                        "points": [1.0, 2.1, 51, 36.6, 14.0, 15.0],
-                        "type": "polygon",
-                        "occluded": False,
-                        "outside": True,
-                    }
-                ]
-            }]
+            if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
+                    "ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
+                rectangle_tracks_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "points": [1.0, 2.1, 50.1, 30.22],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
+                                }
+                            ]
+                        },
+                        {
+                            "frame": 1,
+                            "points": [2.0, 2.1, 77.2, 36.22],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": False,
+                            "attributes": [
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
+                                }
+                            ]
+                        },
+                        {
+                            "frame": 2,
+                            "points": [2.0, 2.1, 77.2, 36.22],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True,
+                            "attributes": [
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
+                                }
+                            ]
+                        },
+                    ]
+                }]
+                rectangle_tracks_wo_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 50.2, 36.6],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                        },
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 51, 36.6],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        },
+                        {
+                            "frame": 2,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 51, 36.6],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": True,
+                        }
+                    ]
+                }]
+                polygon_tracks_wo_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 50.2, 36.6, 7.0, 10.0],
+                            "type": "polygon",
+                            "occluded": False,
+                            "outside": False,
+                        },
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 51, 36.6, 8.0, 11.0],
+                            "type": "polygon",
+                            "occluded": False,
+                            "outside": True
+                        },
+                        {
+                            "frame": 2,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 51, 36.6, 14.0, 15.0],
+                            "type": "polygon",
+                            "occluded": False,
+                            "outside": False,
+                        }
+                    ]
+                }]
 
-            rectangle_shapes_with_attrs = [{
-                "frame": 0,
-                "label_id": task["labels"][0]["id"],
-                "group": 0,
-                "source": "manual",
-                "attributes": [
-                    {
-                        "spec_id": task["labels"][0]["attributes"][0]["id"],
-                        "value": task["labels"][0]["attributes"][0]["values"][0]
-                    },
-                    {
-                        "spec_id": task["labels"][0]["attributes"][1]["id"],
-                        "value": task["labels"][0]["attributes"][1]["default_value"]
-                    }
-                ],
-                "points": [1.0, 2.1, 10.6, 53.22],
-                "type": "rectangle",
-                "occluded": False,
-            }]
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
 
-            rectangle_shapes_wo_attrs = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "source": "manual",
-                "attributes": [],
-                "points": [2.0, 2.1, 40, 50.7],
-                "type": "rectangle",
-                "occluded": False,
-            }]
+                rectangle_shapes_with_wider_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][2]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][2]["attributes"][0]["id"],
+                            "value": task["labels"][2]["attributes"][0]["default_value"]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][1]["id"],
+                            "value": task["labels"][2]["attributes"][1]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][2]["attributes"][2]["id"],
+                            "value": task["labels"][2]["attributes"][2]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
 
-            polygon_shapes_wo_attrs = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "source": "manual",
-                "attributes": [],
-                "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
-                "type": "polygon",
-                "occluded": False,
-            }]
+                rectangle_shapes_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [2.0, 2.1, 40, 50.7],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
 
-            polygon_shapes_with_attrs = [{
-                "frame": 2,
-                "label_id": task["labels"][0]["id"],
-                "group": 1,
-                "source": "manual",
-                "attributes": [
-                    {
-                        "spec_id": task["labels"][0]["attributes"][0]["id"],
-                        "value": task["labels"][0]["attributes"][0]["values"][1]
-                    },
-                    {
-                        "spec_id": task["labels"][0]["attributes"][1]["id"],
-                        "value": task["labels"][0]["attributes"][1]["default_value"]
-                    }
-                ],
-                "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2, 4.44, 5.55],
-                "type": "polygon",
-                "occluded": True,
-            },
-            {
-                "frame": 2,
-                "label_id": task["labels"][1]["id"],
-                "group": 1,
-                "source": "manual",
-                "attributes": [],
-                "points": [4, 7, 10, 30, 4, 5.55],
-                "type": "polygon",
-                "occluded": False,
-            }]
+                polygon_shapes_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
 
-            tags_wo_attrs = [{
-                "frame": 2,
-                "label_id": task["labels"][1]["id"],
-                "group": 0,
-                "source": "manual",
-                "attributes": [],
-            }]
-            tags_with_attrs = [{
-                "frame": 1,
-                "label_id": task["labels"][0]["id"],
-                "group": 3,
-                "source": "manual",
-                "attributes": [
-                    {
-                        "spec_id": task["labels"][0]["attributes"][0]["id"],
-                        "value": task["labels"][0]["attributes"][0]["values"][1]
-                    },
-                    {
-                        "spec_id": task["labels"][0]["attributes"][1]["id"],
-                        "value": task["labels"][0]["attributes"][1]["default_value"]
-                    }
-                ],
-            }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 2,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 1,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["default_value"]
+                        }
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2, 4.44, 5.55],
+                    "type": "polygon",
+                    "occluded": True,
+                },
+                {
+                    "frame": 2,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 1,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [4, 7, 10, 30, 4, 5.55],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                points_wo_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
+                    "type": "points",
+                    "occluded": False,
+                }]
+
+                tags_wo_attrs = [{
+                    "frame": 2,
+                    "label_id": task["labels"][1]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                }]
+                tags_with_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 3,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["default_value"]
+                        }
+                    ],
+                }]
 
             annotations = {
-                    "version": 0,
-                    "tags": [],
-                    "shapes": [],
-                    "tracks": [],
-                }
+                "version": 0,
+                "tags": [],
+                "shapes": [],
+                "tracks": [],
+            }
             if annotation_format == "CVAT for video 1.1":
                 annotations["tracks"] = rectangle_tracks_with_attrs \
                                       + rectangle_tracks_wo_attrs \
@@ -3755,6 +4777,148 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
 
+            elif annotation_format == "WiderFace 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = rectangle_shapes_with_wider_attrs
+
+            elif annotation_format == "VGGFace2 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = points_wo_attrs \
+                                      + rectangle_shapes_wo_attrs
+
+            elif annotation_format == "Market-1501 1.0":
+                tags_with_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["values"][2]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][2]["id"],
+                            "value": task["labels"][0]["attributes"][2]["values"][0]
+                        }
+                    ],
+                }]
+                annotations["tags"] = tags_with_attrs
+
+            elif annotation_format == "ICDAR Recognition 1.0":
+                tags_with_attrs = [{
+                    "frame": 1,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        }
+                    ],
+                }]
+
+                annotations["tags"] = tags_with_attrs
+
+            elif annotation_format == "ICDAR Localization 1.0":
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + polygon_shapes_with_attrs
+
+            elif annotation_format == "ICDAR Segmentation 1.0":
+                rectangle_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][2]["id"],
+                            "value": task["labels"][0]["attributes"][2]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][3]["id"],
+                            "value": task["labels"][0]["attributes"][3]["values"][2]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 10.6, 53.22],
+                    "type": "rectangle",
+                    "occluded": False,
+                }]
+                polygon_shapes_with_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][1]["values"][1]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][2]["id"],
+                            "value": task["labels"][0]["attributes"][2]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][3]["id"],
+                            "value": task["labels"][0]["attributes"][3]["values"][1]
+                        }
+                    ],
+                    "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30],
+                    "type": "polygon",
+                    "occluded": False,
+                }]
+
+                annotations["shapes"] = rectangle_shapes_with_attrs \
+                                      + polygon_shapes_with_attrs
+
             else:
                 raise Exception("Unknown format {}".format(annotation_format))
 
@@ -3791,7 +4955,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             with self.subTest(export_format=export_format,
                     import_format=import_format):
                 # 1. create task
-                task, jobs = self._create_task(owner, assignee)
+                task, jobs = self._create_task(owner, assignee, import_format)
 
                 # 2. add annotation
                 data = _get_initial_annotation(export_format)
@@ -3851,7 +5015,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 # 7. check annotation
-                if import_format in {"Segmentation mask 1.1", "MOTS PNG 1.0", "CamVid 1.0"}:
+                if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
+                        "CamVid 1.0", "ICDAR Segmentation 1.0"}:
                     continue # can't really predict the result to check
                 response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
                 self.assertEqual(response.status_code, HTTP_200_OK)
@@ -4119,3 +5284,98 @@ class ServerShareAPITestCase(APITestCase):
     def test_api_v1_server_share_no_auth(self):
         response = self._run_api_v1_server_share(None, "/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class TaskAnnotation2DContext(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.task = {
+            "name": "my archive task without copying #11",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _get_request_with_data(self, path, data, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get(path, data)
+        return response
+
+    def _get_request(self, path, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get(path)
+        return response
+
+    def _create_task(self, data, image_data):
+        with ForceLogin(self.user, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            tid = response.data["id"]
+
+            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+                                            data=image_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+
+            response = self.client.get("/api/v1/tasks/%s" % tid)
+            task = response.data
+
+        return task
+
+    def create_zip_archive_with_related_images(self, file_name, test_dir, context_images_info):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            for img in context_images_info:
+                image = Image.new('RGB', size=(100, 50))
+                image.save(osp.join(tmp_dir, img), 'png')
+                if context_images_info[img]:
+                    related_path = osp.join(tmp_dir, "related_images", img.replace(".", "_"))
+                    os.makedirs(related_path)
+                    image.save(osp.join(related_path, f"related_{img}"), 'png')
+
+            zip_file_path = osp.join(test_dir, file_name)
+            shutil.make_archive(zip_file_path, 'zip', tmp_dir)
+        return f"{zip_file_path}.zip"
+
+    def test_check_flag_has_related_context(self):
+        with TestDir() as test_dir:
+            test_cases = {
+                "All images with context": {"image_1.png": True, "image_2.png": True},
+                "One image with context": {"image_1.png": True, "image_2.png": False}
+            }
+            for test_case, context_img_data in test_cases.items():
+                filename = self.create_zip_archive_with_related_images(test_case, test_dir, context_img_data)
+                img_data = {
+                    "client_files[0]": open(filename, 'rb'),
+                    "image_quality": 75,
+                }
+                task = self._create_task(self.task, img_data)
+                task_id = task["id"]
+
+                response = self._get_request("/api/v1/tasks/%s/data/meta" % task_id, self.admin)
+                for frame in response.data["frames"]:
+                    self.assertEqual(context_img_data[frame["name"]], frame["has_related_context"])
+
+    def test_fetch_related_image_from_server(self):
+        test_name = self._testMethodName
+        context_img_data ={"image_1.png": True}
+        with TestDir() as test_dir:
+            filename = self.create_zip_archive_with_related_images(test_name, test_dir, context_img_data)
+            img_data = {
+                "client_files[0]": open(filename, 'rb'),
+                "image_quality": 75,
+            }
+            task = self._create_task(self.task , img_data)
+            task_id = task["id"]
+            data = {
+                "quality": "original",
+                "type": "context_image",
+                "number": 0
+            }
+            response = self._get_request_with_data("/api/v1/tasks/%s/data" % task_id, data, self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)

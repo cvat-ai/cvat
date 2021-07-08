@@ -1,25 +1,26 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Tooltip from 'antd/lib/tooltip';
 import Icon from '@ant-design/icons';
 
 import { SplitIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props {
+export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     switchSplitShortcut: string;
+    disabled?: boolean;
     splitTrack(enabled: boolean): void;
 }
 
 function SplitControl(props: Props): JSX.Element {
     const {
-        switchSplitShortcut, activeControl, canvasInstance, splitTrack,
+        switchSplitShortcut, activeControl, canvasInstance, splitTrack, disabled,
     } = props;
 
     const dynamicIconProps =
@@ -40,10 +41,12 @@ function SplitControl(props: Props): JSX.Element {
                 },
             };
 
-    return (
-        <Tooltip title={`Split a track ${switchSplitShortcut}`} placement='right' mouseLeaveDelay={0}>
+    return disabled ? (
+        <Icon className='cvat-split-track-control cvat-disabled-canvas-control' component={SplitIcon} />
+    ) : (
+        <CVATTooltip title={`Split a track ${switchSplitShortcut}`} placement='right'>
             <Icon {...dynamicIconProps} component={SplitIcon} />
-        </Tooltip>
+        </CVATTooltip>
     );
 }
 

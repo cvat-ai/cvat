@@ -1,6 +1,11 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { connect, Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
 
 import { getAboutAsync } from 'actions/about-actions';
 import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
@@ -14,11 +19,7 @@ import CVATApplication from 'components/cvat-app';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { connect, Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
 import { resetErrors, resetMessages } from './actions/notification-actions';
 import { CombinedState, NotificationsState } from './reducers/interfaces';
@@ -45,7 +46,7 @@ interface StateToProps {
     allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     isModelPluginActive: boolean;
 }
 

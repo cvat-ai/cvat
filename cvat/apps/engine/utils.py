@@ -1,15 +1,18 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import ast
 import cv2 as cv
 from collections import namedtuple
+import hashlib
 import importlib
 import sys
 import traceback
 import subprocess
 import os
+from av import VideoFrame
+from PIL import Image
 
 from django.core.exceptions import ValidationError
 
@@ -51,6 +54,7 @@ class InterpreterError(Exception):
 
 def execute_python_code(source_code, global_vars=None, local_vars=None):
     try:
+        # pylint: disable=exec-used
         exec(source_code, global_vars, local_vars)
     except SyntaxError as err:
         error_class = err.__class__.__name__
@@ -72,7 +76,7 @@ def av_scan_paths(*paths):
     if 'yes' == os.environ.get('CLAM_AV'):
         command = ['clamscan', '--no-summary', '-i', '-o']
         command.extend(paths)
-        res = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # nosec
         if res.returncode:
             raise ValidationError(res.stdout)
 
@@ -88,3 +92,10 @@ def rotate_image(image, angle):
     matrix[1, 2] += bound_h/2 - image_center[1]
     matrix = cv.warpAffine(image, matrix, (bound_w, bound_h))
     return matrix
+
+def md5_hash(frame):
+    if isinstance(frame, VideoFrame):
+        frame = frame.to_image()
+    elif isinstance(frame, str):
+        frame = Image.open(frame, 'r')
+    return hashlib.md5(frame.tobytes()).hexdigest() # nosec

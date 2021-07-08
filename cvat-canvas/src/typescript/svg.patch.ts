@@ -167,7 +167,12 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
         handler = this.remember('_resizeHandler');
         handler.resize = function (e: any) {
             const { event } = e.detail;
-            if (event.button === 0 && !event.shiftKey && !event.altKey) {
+            if (
+                event.button === 0 &&
+                // ignore shift key for cuboid change perspective
+                (!event.shiftKey || this.el.parent().hasClass('cvat_canvas_shape_cuboid')) &&
+                !event.altKey
+            ) {
                 return handler.constructor.prototype.resize.call(this, e);
             }
         };
@@ -233,6 +238,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.hideProjections();
 
             this._attr('points', points);
+            this.addClass('cvat_canvas_shape_cuboid');
             return this;
         },
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,9 +34,28 @@
         for (const prop in filter) {
             if (Object.prototype.hasOwnProperty.call(filter, prop)) {
                 if (!(prop in fields)) {
-                    throw new ArgumentError(`Unsupported filter property has been recieved: "${prop}"`);
+                    throw new ArgumentError(`Unsupported filter property has been received: "${prop}"`);
                 } else if (!fields[prop](filter[prop])) {
                     throw new ArgumentError(`Received filter property "${prop}" is not satisfied for checker`);
+                }
+            }
+        }
+    }
+
+    function checkExclusiveFields(obj, exclusive, ignore) {
+        const fields = {
+            exclusive: [],
+            other: [],
+        };
+        for (const field in Object.keys(obj)) {
+            if (!(field in ignore)) {
+                if (field in exclusive) {
+                    if (fields.other.length) {
+                        throw new ArgumentError(`Do not use the filter field "${field}" with others`);
+                    }
+                    fields.exclusive.push(field);
+                } else {
+                    fields.other.push(field);
                 }
             }
         }
@@ -68,12 +87,53 @@
         return true;
     }
 
+    function camelToSnake(str) {
+        if (typeof str !== 'string') {
+            throw new ArgumentError('str is expected to be string');
+        }
+
+        return (
+            str[0].toLowerCase() + str.slice(1, str.length).replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
+        );
+    }
+
     function negativeIDGenerator() {
         const value = negativeIDGenerator.start;
         negativeIDGenerator.start -= 1;
         return value;
     }
     negativeIDGenerator.start = -1;
+
+    class FieldUpdateTrigger {
+        constructor(initialFields) {
+            const data = { ...initialFields };
+
+            Object.defineProperties(
+                this,
+                Object.freeze({
+                    ...Object.assign(
+                        {},
+                        ...Array.from(Object.keys(data), (key) => ({
+                            [key]: {
+                                get: () => data[key],
+                                set: (value) => {
+                                    data[key] = value;
+                                },
+                                enumerable: true,
+                            },
+                        })),
+                    ),
+                    reset: {
+                        value: () => {
+                            Object.keys(data).forEach((key) => {
+                                data[key] = false;
+                            });
+                        },
+                    },
+                }),
+            );
+        }
+    }
 
     module.exports = {
         isBoolean,
@@ -83,5 +143,8 @@
         checkFilter,
         checkObjectType,
         negativeIDGenerator,
+        checkExclusiveFields,
+        camelToSnake,
+        FieldUpdateTrigger,
     };
 })();

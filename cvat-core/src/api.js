@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -573,7 +573,7 @@ function build() {
              * @param {module:API.cvat.classes.Task} task task to be annotated
              * @param {module:API.cvat.classes.MLModel} model model used to get annotation
              * @param {object} [args] extra arguments
-             * @returns {string} requestID
+             * @returns {object[]} annotations
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}

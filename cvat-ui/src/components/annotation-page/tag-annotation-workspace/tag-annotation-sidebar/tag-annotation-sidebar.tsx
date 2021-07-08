@@ -1,10 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
-import { GlobalHotKeys, ExtendedKeyMapOptions } from 'react-hotkeys';
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Row, Col } from 'antd/lib/grid';
@@ -22,9 +21,12 @@ import {
     rememberObject,
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
 import getCore from 'cvat-core-wrapper';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ShortcutsSelect from './shortcuts-select';
 
 const cvat = getCore();
@@ -33,9 +35,9 @@ interface StateToProps {
     states: any[];
     labels: any[];
     jobInstance: any;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     frameNumber: number;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 
@@ -82,7 +84,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
             dispatch(removeObjectAsync(jobInstance, objectState, true));
         },
         onRememberObject(labelID: number): void {
-            dispatch(rememberObject(ObjectType.TAG, labelID));
+            dispatch(rememberObject({ activeObjectType: ObjectType.TAG, activeLabelID: labelID }));
         },
     };
 }
@@ -107,7 +109,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const defaultLabelID = labels[0].id;
+    const defaultLabelID = labels.length ? labels[0].id : null;
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [frameTags, setFrameTags] = useState([] as any[]);
@@ -196,16 +198,39 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         },
     };
 
-    return (
+    return !labels.length ? (
+        <Layout.Sider {...siderProps}>
+            {/* eslint-disable-next-line */}
+            <span
+                className={`cvat-objects-sidebar-sider
+                    ant-layout-sider-zero-width-trigger
+                    ant-layout-sider-zero-width-trigger-left`}
+                onClick={() => {
+                    adjustContextImagePosition(!sidebarCollapsed);
+                    setSidebarCollapsed(!sidebarCollapsed);
+                }}
+            >
+                {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
+            </span>
+            <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
+                <Col>
+                    <Text strong>No labels are available.</Text>
+                </Col>
+            </Row>
+        </Layout.Sider>
+    ) : (
         <>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} allowChanges />
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <Layout.Sider {...siderProps}>
                 {/* eslint-disable-next-line */}
                 <span
                     className={`cvat-objects-sidebar-sider
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
-                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    onClick={() => {
+                        adjustContextImagePosition(!sidebarCollapsed);
+                        setSidebarCollapsed(!sidebarCollapsed);
+                    }}
                 >
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>

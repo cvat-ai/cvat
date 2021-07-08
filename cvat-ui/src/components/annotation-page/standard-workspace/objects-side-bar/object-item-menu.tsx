@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,6 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
-import Tooltip from 'antd/lib/tooltip';
 import Icon, {
     LinkOutlined,
     CopyOutlined,
@@ -15,10 +14,14 @@ import Icon, {
     RetweetOutlined,
     DeleteOutlined,
 } from '@ant-design/icons';
+
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
 } from 'icons';
-import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import {
+    ObjectType, ShapeType, ColorBy, DimensionType,
+} from 'reducers/interfaces';
 import ColorPicker from './color-picker';
 
 interface Props {
@@ -48,6 +51,7 @@ interface Props {
     resetCuboidPerspective(): void;
     changeColorPickerVisible(visible: boolean): void;
     activateTracking(): void;
+    jobInstance: any;
 }
 
 interface ItemProps {
@@ -71,11 +75,11 @@ function MakeCopyItem(props: ItemProps): JSX.Element {
     const { copyShortcut, pasteShortcut, copy } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Tooltip title={`${copyShortcut} and ${pasteShortcut}`} mouseLeaveDelay={0}>
+            <CVATTooltip title={`${copyShortcut} and ${pasteShortcut}`}>
                 <Button type='link' icon={<CopyOutlined />} onClick={copy}>
                     Make a copy
                 </Button>
-            </Tooltip>
+            </CVATTooltip>
         </Menu.Item>
     );
 }
@@ -85,11 +89,11 @@ function PropagateItem(props: ItemProps): JSX.Element {
     const { propagateShortcut, propagate } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Tooltip title={`${propagateShortcut}`} mouseLeaveDelay={0}>
+            <CVATTooltip title={`${propagateShortcut}`}>
                 <Button type='link' icon={<BlockOutlined />} onClick={propagate}>
                     Propagate
                 </Button>
-            </Tooltip>
+            </CVATTooltip>
         </Menu.Item>
     );
 }
@@ -99,11 +103,11 @@ function TrackingItem(props: ItemProps): JSX.Element {
     const { activateTracking } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Tooltip title='Run tracking with the active tracker' mouseLeaveDelay={0}>
+            <CVATTooltip title='Run tracking with the active tracker'>
                 <Button type='link' icon={<GatewayOutlined />} onClick={activateTracking}>
                     Track
                 </Button>
-            </Tooltip>
+            </CVATTooltip>
         </Menu.Item>
     );
 }
@@ -138,12 +142,12 @@ function ToBackgroundItem(props: ItemProps): JSX.Element {
     const { toBackgroundShortcut, toBackground } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Tooltip title={`${toBackgroundShortcut}`} mouseLeaveDelay={0}>
+            <CVATTooltip title={`${toBackgroundShortcut}`}>
                 <Button type='link' onClick={toBackground}>
                     <Icon component={BackgroundIcon} />
                     To background
                 </Button>
-            </Tooltip>
+            </CVATTooltip>
         </Menu.Item>
     );
 }
@@ -153,12 +157,12 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
     const { toForegroundShortcut, toForeground } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Tooltip title={`${toForegroundShortcut}`} mouseLeaveDelay={0}>
+            <CVATTooltip title={`${toForegroundShortcut}`}>
                 <Button type='link' onClick={toForeground}>
                     <Icon component={ForegroundIcon} />
                     To foreground
                 </Button>
-            </Tooltip>
+            </CVATTooltip>
         </Menu.Item>
     );
 }
@@ -182,12 +186,12 @@ function SwitchColorItem(props: ItemProps): JSX.Element {
                 onVisibleChange={changeColorPickerVisible}
                 resetVisible={false}
             >
-                <Tooltip title={`${changeColorShortcut}`} mouseLeaveDelay={0}>
+                <CVATTooltip title={`${changeColorShortcut}`}>
                     <Button type='link'>
                         <Icon component={ColorizeIcon} />
                         {`Change ${colorBy.toLowerCase()} color`}
                     </Button>
-                </Tooltip>
+                </CVATTooltip>
             </ColorPicker>
         </Menu.Item>
     );
@@ -198,7 +202,7 @@ function RemoveItem(props: ItemProps): JSX.Element {
     const { removeShortcut, locked, remove } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Tooltip title={`${removeShortcut}`} mouseLeaveDelay={0}>
+            <CVATTooltip title={`${removeShortcut}`}>
                 <Button
                     type='link'
                     icon={<DeleteOutlined />}
@@ -219,30 +223,32 @@ function RemoveItem(props: ItemProps): JSX.Element {
                 >
                     Remove
                 </Button>
-            </Tooltip>
+            </CVATTooltip>
         </Menu.Item>
     );
 }
 
 export default function ItemMenu(props: Props): JSX.Element {
     const {
-        readonly, shapeType, objectType, colorBy,
+        readonly, shapeType, objectType, colorBy, jobInstance,
     } = props;
 
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+
     return (
-        <Menu className='cvat-object-item-menu'>
+        <Menu className='cvat-object-item-menu' selectable={false}>
             <CreateURLItem toolProps={props} />
             {!readonly && <MakeCopyItem toolProps={props} />}
             {!readonly && <PropagateItem toolProps={props} />}
-            {!readonly && objectType === ObjectType.TRACK && shapeType === ShapeType.RECTANGLE && (
+            {is2D && !readonly && objectType === ObjectType.TRACK && shapeType === ShapeType.RECTANGLE && (
                 <TrackingItem toolProps={props} />
             )}
-            {!readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
+            {is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <SwitchOrientationItem toolProps={props} />
             )}
-            {!readonly && shapeType === ShapeType.CUBOID && <ResetPerspectiveItem toolProps={props} />}
-            {!readonly && objectType !== ObjectType.TAG && <ToBackgroundItem toolProps={props} />}
-            {!readonly && objectType !== ObjectType.TAG && <ToForegroundItem toolProps={props} />}
+            {is2D && !readonly && shapeType === ShapeType.CUBOID && <ResetPerspectiveItem toolProps={props} />}
+            {is2D && objectType !== ObjectType.TAG && <ToBackgroundItem toolProps={props} />}
+            {is2D && !readonly && objectType !== ObjectType.TAG && <ToForegroundItem toolProps={props} />}
             {[ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy) && <SwitchColorItem toolProps={props} />}
             {!readonly && <RemoveItem toolProps={props} />}
         </Menu>

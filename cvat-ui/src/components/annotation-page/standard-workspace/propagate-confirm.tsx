@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -49,6 +49,7 @@ export default function PropagateConfirmComponent(props: Props): JSX.Element {
             <div className='cvat-propagate-confirm'>
                 <Text>Do you want to make a copy of the object on</Text>
                 <InputNumber
+                    className='cvat-propagate-confirm-object-on-frames'
                     size='small'
                     min={minPropagateFrames}
                     value={propagateFrames}
@@ -63,6 +64,7 @@ export default function PropagateConfirmComponent(props: Props): JSX.Element {
                 {propagateFrames > 1 ? <Text> frames </Text> : <Text> frame </Text>}
                 <Text>up to the </Text>
                 <InputNumber
+                    className='cvat-propagate-confirm-object-up-to-frame'
                     size='small'
                     value={propagateUpToFrame}
                     min={frameNumber + 1}

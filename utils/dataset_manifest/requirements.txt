@@ -1,0 +1,3 @@
+av==8.0.2 --no-binary=av
+opencv-python-headless==4.4.0.42
+Pillow==7.2.0

@@ -51,6 +51,10 @@ polyline.cvat_shape_drawing_opacity {
     stroke: red;
 }
 
+.cvat_canvas_threshold {
+    stroke: red;
+}
+
 .cvat_canvas_shape_grouping {
     @extend .cvat_shape_action_dasharray;
     @extend .cvat_shape_action_opacity;

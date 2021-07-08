@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS cvat-ui
+FROM node:lts-buster AS cvat-ui
 
 ARG http_proxy
 ARG https_proxy
@@ -15,11 +15,10 @@ ENV TERM=xterm \
     LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
 
-RUN apk add python3 g++ make
-
 # Install dependencies
 COPY cvat-core/package*.json /tmp/cvat-core/
 COPY cvat-canvas/package*.json /tmp/cvat-canvas/
+COPY cvat-canvas3d/package*.json /tmp/cvat-canvas3d/
 COPY cvat-ui/package*.json /tmp/cvat-ui/
 COPY cvat-data/package*.json /tmp/cvat-data/
 
@@ -35,6 +34,10 @@ RUN npm ci
 WORKDIR /tmp/cvat-canvas/
 RUN npm ci
 
+# Install cvat-canvas dependencies
+WORKDIR /tmp/cvat-canvas3d/
+RUN npm ci
+
 # Install cvat-ui dependencies
 # Voxel hack: npm ci breaks with nested local dependencies
 # so we use `npm install` instead of `npm ci`.
@@ -46,6 +49,7 @@ RUN npm install
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
 COPY cvat-core/ /tmp/cvat-core/
+COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
 RUN npm run build

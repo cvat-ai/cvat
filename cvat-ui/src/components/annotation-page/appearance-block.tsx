@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,14 +10,12 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Slider from 'antd/lib/slider';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
+import Button from 'antd/lib/button';
 
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
-import { ColorBy, CombinedState } from 'reducers/interfaces';
-import {
-    collapseAppearance as collapseAppearanceAction,
-    updateTabContentHeight as updateTabContentHeightAction,
-} from 'actions/annotation-actions';
+import { ColorBy, CombinedState, DimensionType } from 'reducers/interfaces';
+import { collapseAppearance as collapseAppearanceAction } from 'actions/annotation-actions';
 import {
     changeShapesColorBy as changeShapesColorByAction,
     changeShapesOpacity as changeShapesOpacityAction,
@@ -26,7 +24,6 @@ import {
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
 } from 'actions/settings-actions';
-import Button from 'antd/lib/button';
 
 interface StateToProps {
     appearanceCollapsed: boolean;
@@ -37,6 +34,7 @@ interface StateToProps {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -49,24 +47,12 @@ interface DispatchToProps {
     changeShowProjections(event: CheckboxChangeEvent): void;
 }
 
-export function computeHeight(): number {
-    const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
-    const [appearance] = window.document.getElementsByClassName('cvat-objects-appearance-collapse');
-    const [tabs] = Array.from(window.document.querySelectorAll('.cvat-objects-sidebar-tabs > .ant-tabs-nav'));
-
-    if (sidebar && appearance && tabs) {
-        const maxHeight = sidebar ? sidebar.clientHeight : 0;
-        const appearanceHeight = appearance ? appearance.clientHeight : 0;
-        const tabsHeight = tabs ? tabs.clientHeight : 0;
-        return maxHeight - appearanceHeight - tabsHeight;
-    }
-
-    return 0;
-}
-
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        annotation: { appearanceCollapsed },
+        annotation: {
+            appearanceCollapsed,
+            job: { instance: jobInstance },
+        },
         settings: {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
@@ -83,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlineColor,
         showBitmap,
         showProjections,
+        jobInstance,
     };
 }
 
@@ -90,19 +77,6 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
     return {
         collapseAppearance(): void {
             dispatch(collapseAppearanceAction());
-            const [collapser] = window.document.getElementsByClassName('cvat-objects-appearance-collapse');
-
-            if (collapser) {
-                const listener = (event: Event): void => {
-                    if ((event as TransitionEvent).propertyName === 'height') {
-                        const height = computeHeight();
-                        dispatch(updateTabContentHeightAction(height));
-                        collapser.removeEventListener('transitionend', listener);
-                    }
-                };
-
-                collapser.addEventListener('transitionend', listener);
-            }
         },
         changeShapesColorBy(event: RadioChangeEvent): void {
             dispatch(changeShapesColorByAction(event.target.value));
@@ -144,7 +118,10 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShapesOutlinedBorders,
         changeShowBitmap,
         changeShowProjections,
+        jobInstance,
     } = props;
+
+    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
         <Collapse
@@ -152,7 +129,14 @@ function AppearanceBlock(props: Props): JSX.Element {
             activeKey={appearanceCollapsed ? [] : ['appearance']}
             className='cvat-objects-appearance-collapse'
         >
-            <Collapse.Panel header={<Text strong className='cvat-objects-appearance-collapse-header'>Appearance</Text>} key='appearance'>
+            <Collapse.Panel
+                header={(
+                    <Text strong className='cvat-objects-appearance-collapse-header'>
+                        Appearance
+                    </Text>
+                )}
+                key='appearance'
+            >
                 <div className='cvat-objects-appearance-content'>
                     <Text type='secondary'>Color by</Text>
                     <Radio.Group
@@ -199,20 +183,24 @@ function AppearanceBlock(props: Props): JSX.Element {
                             </Button>
                         </ColorPicker>
                     </Checkbox>
-                    <Checkbox
-                        className='cvat-appearance-bitmap-checkbox'
-                        onChange={changeShowBitmap}
-                        checked={showBitmap}
-                    >
-                        Show bitmap
-                    </Checkbox>
-                    <Checkbox
-                        className='cvat-appearance-cuboid-projections-checkbox'
-                        onChange={changeShowProjections}
-                        checked={showProjections}
-                    >
-                        Show projections
-                    </Checkbox>
+                    {is2D && (
+                        <Checkbox
+                            className='cvat-appearance-bitmap-checkbox'
+                            onChange={changeShowBitmap}
+                            checked={showBitmap}
+                        >
+                            Show bitmap
+                        </Checkbox>
+                    )}
+                    {is2D && (
+                        <Checkbox
+                            className='cvat-appearance-cuboid-projections-checkbox'
+                            onChange={changeShowProjections}
+                            checked={showProjections}
+                        >
+                            Show projections
+                        </Checkbox>
+                    )}
                 </div>
             </Collapse.Panel>
         </Collapse>

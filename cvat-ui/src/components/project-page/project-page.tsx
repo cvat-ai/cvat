@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,15 +28,16 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const projects = useSelector((state: CombinedState) => state.projects.current);
+    const projects = useSelector((state: CombinedState) => state.projects.current).map((project) => project.instance);
     const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
     const tasks = useSelector((state: CombinedState) => state.tasks.current);
 
-    const filteredProjects = projects.filter((project) => project.id === id);
-    const project = filteredProjects[0];
+    const [project] = projects.filter((_project) => _project.id === id);
+    const projectSubsets = [''];
+    if (project) projectSubsets.push(...project.subsets);
     const deleteActivity = project && id in deletes ? deletes[id] : null;
 
     useEffect(() => {
@@ -73,7 +74,7 @@ export default function ProjectPageComponent(): JSX.Element {
                 <DetailsComponent project={project} />
                 <Row justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>
                     <Col>
-                        <Title level={4}>Tasks</Title>
+                        <Title level={3}>Tasks</Title>
                     </Col>
                     <Col>
                         <Button
@@ -87,21 +88,26 @@ export default function ProjectPageComponent(): JSX.Element {
                         </Button>
                     </Col>
                 </Row>
-                {tasks
-                    .filter((task) => task.instance.projectId === project.id)
-                    .map((task: Task) => (
-                        <TaskItem
-                            key={task.instance.id}
-                            deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
-                            hidden={false}
-                            activeInference={tasksActiveInferences[task.instance.id] || null}
-                            cancelAutoAnnotation={() => {
-                                dispatch(cancelInferenceAsync(task.instance.id));
-                            }}
-                            previewImage={task.preview}
-                            taskInstance={task.instance}
-                        />
-                    ))}
+                {projectSubsets.map((subset: string) => (
+                    <React.Fragment key={subset}>
+                        {subset && <Title level={4}>{subset}</Title>}
+                        {tasks
+                            .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
+                            .map((task: Task) => (
+                                <TaskItem
+                                    key={task.instance.id}
+                                    deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
+                                    hidden={false}
+                                    activeInference={tasksActiveInferences[task.instance.id] || null}
+                                    cancelAutoAnnotation={() => {
+                                        dispatch(cancelInferenceAsync(task.instance.id));
+                                    }}
+                                    previewImage={task.preview}
+                                    taskInstance={task.instance}
+                                />
+                            ))}
+                    </React.Fragment>
+                ))}
             </Col>
         </Row>
     );

@@ -1,9 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
 import { connect } from 'react-redux';
+import { KeyMap } from 'utils/mousetrap-react';
 
 import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper';
 import {
@@ -50,10 +50,11 @@ import {
 } from 'reducers/interfaces';
 
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
@@ -90,7 +91,7 @@ interface StateToProps {
     curZLayer: number;
     automaticBordering: boolean;
     switchableAutomaticBordering: boolean;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     canvasBackgroundColor: string;
 }
 
@@ -159,7 +160,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 resetZoom,
             },
             workspace: {
-                aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering,
+                aamZoomMargin,
+                showObjectsTextAlways,
+                showAllInterpolationTracks,
+                automaticBordering,
+                intelligentPolygonCrop,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
@@ -207,6 +212,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         automaticBordering,
+        intelligentPolygonCrop,
         workspace,
         keyMap,
         canvasBackgroundColor,

@@ -1,0 +1,31 @@
+name: Linter
+on: pull_request
+jobs:
+  Remark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+            node-version: 12
+
+      - name: Run checks
+        run: |
+          npm ci
+          mkdir -p remark_report
+
+          echo "Remark version: "`npx remark --version`
+          npx remark --quiet --report json --no-stdout . 2> ./remark_report/remark_report.json
+          get_report=`cat ./remark_report/remark_report.json  | jq -r '.[] | select(.messages | length > 0)'`
+          if [[ ! -z ${get_report} ]]; then
+            pip install json2html
+            python ./tests/json_to_html.py ./remark_report/remark_report.json
+            exit 1
+          fi
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: remark_report
+          path: remark_report
