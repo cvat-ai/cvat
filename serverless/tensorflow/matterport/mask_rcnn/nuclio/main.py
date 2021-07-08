@@ -5,12 +5,16 @@ import io
 from model_loader import ModelLoader
 import numpy as np
 import yaml
+import tensorflow as tf
 
 
 def init_context(context):
     context.logger.info("Init context...  0%")
 
-    functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+    if tf.test.is_gpu_available() and tf.test.is_built_with_cuda():
+        functionconfig = yaml.safe_load(open("/opt/nuclio/function-gpu.yaml"))
+    else:
+        functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
 
