@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Calculate precise progress of decoding a video file (<https://github.com/openvinotoolkit/cvat/pull/3381>)
 - Falsely successful `cvat_ui` image build in case of OOM error that leads to the default nginx welcome page
   (<https://github.com/openvinotoolkit/cvat/pull/3379>)
+- Fixed issue when save filtered object in AAM (<https://github.com/openvinotoolkit/cvat/pull/3401>)
 
 ### Security
 
