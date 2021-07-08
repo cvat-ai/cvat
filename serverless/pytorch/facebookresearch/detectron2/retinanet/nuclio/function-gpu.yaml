@@ -90,7 +90,7 @@ metadata:
       ]
 
 spec:
-  description: RetinaNet R101 from Detectron2 optimized for CUDA
+  description: RetinaNet R101 from Detectron2 optimized for GPU
   runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s

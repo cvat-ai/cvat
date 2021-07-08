@@ -467,7 +467,59 @@ The actual deployment process is described in
 
 ### Optimize using GPU
 
-TODO
+To optimize a function for a specific device (e.g. GPU), basically you just need
+to modify instructions above to run the function on the target device. In most
+cases it will be necessary to modify installation instructions only.
+
+For `RetinaNet R101` which was added above modifications will look like:
+
+```diff
+--- function.yaml	2021-06-25 21:06:51.603281723 +0300
++++ function-gpu.yaml	2021-07-07 22:38:53.454202637 +0300
+@@ -90,7 +90,7 @@
+       ]
+
+ spec:
+-  description: RetinaNet R101 from Detectron2
++  description: RetinaNet R101 from Detectron2 optimized for GPU
+   runtime: 'python:3.8'
+   handler: main:handler
+   eventTimeout: 30s
+@@ -108,7 +108,7 @@
+         - kind: WORKDIR
+           value: /opt/nuclio
+         - kind: RUN
+-          value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
++          value: pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+         - kind: RUN
+           value: git clone https://github.com/facebookresearch/detectron2
+         - kind: RUN
+@@ -120,12 +120,16 @@
+
+   triggers:
+     myHttpTrigger:
+-      maxWorkers: 2
++      maxWorkers: 1
+       kind: 'http'
+       workerAvailabilityTimeoutMilliseconds: 10000
+       attributes:
+         maxRequestBodySize: 33554432 # 32MB
+
++  resources:
++    limits:
++      nvidia.com/gpu: 1
++
+   platform:
+     attributes:
+       restartPolicy:
+```
+
+_Note: But need to know that GPU has very limited amount of memory and it doesn't
+allow to run multiple serverless functions in parallel for now using free
+open-source nuclio version on the local platform because scaling to zero
+feature is absent. Theoretically it is possible to run different functions
+on different GPUs, but it requires to change source code on corresponding
+serverless functions to choose a free GPU._
 
 ### Debugging a serverless function
 
