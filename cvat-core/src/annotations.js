@@ -8,8 +8,8 @@
     const AnnotationsSaver = require('./annotations-saver');
     const AnnotationsHistory = require('./annotations-history');
     const { checkObjectType } = require('./common');
-    const { Task, Job } = require('./session');
     const { Project } = require('./project');
+    const { Task, Job } = require('./session');
     const { Loader, Dumper } = require('./annotation-formats');
     const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
 
@@ -51,6 +51,7 @@
                 stopFrame,
                 frameMeta,
             });
+            // eslint-disable-next-line no-unsanitized/method
             collection.import(rawAnnotations);
 
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
@@ -254,6 +255,7 @@
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
+            // eslint-disable-next-line no-unsanitized/method
             return cache.get(session).collection.import(data);
         }
 
@@ -289,10 +291,10 @@
         let result = null;
         if (instance instanceof Task) {
             result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages);
-        } else if (instance instanceof Project) {
-            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages);
-        } else {
+        } else if (instance instanceof Job) {
             result = await serverProxy.tasks.exportDataset(instance.task.id, format, name, saveImages);
+        } else {
+            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages);
         }
 
         return result;

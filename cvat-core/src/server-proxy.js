@@ -468,7 +468,7 @@
             function exportDataset(instanceType) {
                 return async function (id, format, name, saveImages) {
                     const { backendAPI } = config;
-                    const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'annotation' : 'dataset'}`;
+                    const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotation'}`;
                     let query = `format=${encodeURIComponent(format)}`;
                     if (name) {
                         const filename = name.replace(/\//g, '_');
