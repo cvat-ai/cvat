@@ -104,6 +104,13 @@ class AWS_S3(_CloudStorage):
                 aws_session_token=session_token,
                 region_name=region
             )
+        elif access_key_id and secret_key:
+            self._s3 = boto3.resource(
+                's3',
+                aws_access_key_id=access_key_id,
+                aws_secret_access_key=secret_key,
+                region_name=region
+            )
         elif any([access_key_id, secret_key, session_token]):
             raise Exception('Insufficient data for authorization')
         # anonymous access
@@ -270,6 +277,8 @@ class Credentials:
         converted_credentials = {
             CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET : \
                 " ".join([self.key, self.secret_key, self.session_token]),
+            CredentialsTypeChoice.KEY_SECRET_KEY_PAIR : \
+                " ".join([self.key, self.secret_key]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
         }
@@ -279,6 +288,8 @@ class Credentials:
         self.credentials_type = credentials.get('type')
         if self.credentials_type == CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET:
             self.key, self.secret_key, self.session_token = credentials.get('value').split()
+        elif self.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
+            self.key, self.secret_key = credentials.get('value').split()
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
             self.account_name, self.session_token = credentials.get('value').split()
         else:

@@ -557,6 +557,7 @@ class CloudProviderChoice(str, Enum):
 class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
     TEMP_KEY_SECRET_KEY_TOKEN_SET = 'TEMP_KEY_SECRET_KEY_TOKEN_SET' # nosec
+    KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR' # nosec
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
 
