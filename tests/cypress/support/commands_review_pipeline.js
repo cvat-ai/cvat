@@ -144,9 +144,7 @@ Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => 
     cy.get('.cvat-issue-dialog-input').type(resolveText);
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.contains('button', 'Comment').click();
-        reopen
-            ? cy.contains('button', 'Reopen').click()
-            : cy.contains('button', 'Resolve').click();
+        reopen ? cy.contains('button', 'Reopen').click() : cy.contains('button', 'Resolve').click();
     });
     if (reopen) cy.get('.cvat-issue-dialog-header').find('[aria-label="close"]').click();
     cy.wait('@postComment').its('response.statusCode').should('equal', 201);
@@ -157,7 +155,7 @@ Cypress.Commands.add('submitReview', (decision, user) => {
     cy.get('.cvat-submit-review-dialog').within(() => {
         cy.contains(new RegExp(`^${decision}$`, 'g')).click();
         if (decision === 'Review next') {
-            cy.intercept('GET', `/api/v1/users?search=${user}&limit=10`).as('searchUsers');
+            cy.intercept('GET', `/api/v1/users?search=${user}&limit=10&is_active=true`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {
                 cy.get('input[type="search"]').clear().type(`${user}`);
                 cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);

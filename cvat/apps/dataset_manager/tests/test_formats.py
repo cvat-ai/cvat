@@ -824,7 +824,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     {
                         "frame": 0,
                         "attributes": [],
-                        "points": [1.0, 2.1, 100, 300.222],
+                        "points": [1.0, 2.1, 10.6, 53.22, 100, 300.222],
                         "type": "polygon",
                         "occluded": False,
                         "outside": False

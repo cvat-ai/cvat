@@ -51,6 +51,7 @@ const defaultState: AnnotationState = {
             number: 0,
             filename: '',
             data: null,
+            hasRelatedContext: false,
             fetching: false,
             delay: 0,
             changeTime: null,
@@ -58,8 +59,8 @@ const defaultState: AnnotationState = {
         playing: false,
         frameAngles: [],
         contextImage: {
-            loaded: false,
-            data: '',
+            fetching: false,
+            data: null,
             hidden: false,
         },
     },
@@ -108,7 +109,6 @@ const defaultState: AnnotationState = {
     filtersPanelVisible: false,
     requestReviewDialogVisible: false,
     submitReviewDialogVisible: false,
-    tabContentHeight: 0,
     predictor: {
         enabled: false,
         error: null,
@@ -145,6 +145,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
+                frameHasRelatedContext,
                 colors,
                 filters,
                 frameData: data,
@@ -154,10 +155,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             const isReview = job.status === TaskStatus.REVIEW;
             let workspaceSelected = Workspace.STANDARD;
+            let activeShapeType = ShapeType.RECTANGLE;
 
             if (job.task.dimension === DimensionType.DIM_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
+                activeShapeType = ShapeType.CUBOID;
             }
+
             return {
                 ...state,
                 job: {
@@ -189,6 +193,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         filename,
+                        hasRelatedContext: frameHasRelatedContext,
                         number,
                         data,
                     },
@@ -198,6 +203,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.drawing,
                     activeLabelID: job.task.labels.length ? job.task.labels[0].id : null,
                     activeObjectType: job.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
+                    activeShapeType,
                 },
                 canvas: {
                     ...state.canvas,
@@ -226,11 +232,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.player.frame,
                         fetching: false,
                     },
-                    contextImage: {
-                        loaded: false,
-                        data: '',
-                        hidden: state.player.contextImage.hidden,
-                    },
                 },
             };
         }
@@ -252,7 +253,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             const {
-                number, data, filename, states, minZ, maxZ, curZ, delay, changeTime,
+                number,
+                data,
+                filename,
+                hasRelatedContext,
+                states,
+                minZ,
+                maxZ,
+                curZ,
+                delay,
+                changeTime,
             } = action.payload;
 
             const activatedStateID = states
@@ -268,6 +278,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         data,
                         filename,
+                        hasRelatedContext,
                         number,
                         fetching: false,
                         changeTime,
@@ -275,7 +286,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     },
                     contextImage: {
                         ...state.player.contextImage,
-                        loaded: false,
+                        data: null,
                     },
                 },
                 annotations: {
@@ -391,13 +402,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 appearanceCollapsed: !state.appearanceCollapsed,
-            };
-        }
-        case AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT: {
-            const { tabContentHeight } = action.payload;
-            return {
-                ...state,
-                tabContentHeight,
             };
         }
         case AnnotationActionTypes.COLLAPSE_OBJECT_ITEMS: {
@@ -1170,30 +1174,52 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
             const { hidden } = action.payload;
-            const { loaded, data } = state.player.contextImage;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     contextImage: {
-                        loaded,
-                        data,
+                        ...state.player.contextImage,
                         hidden,
                     },
                 },
             };
         }
         case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
-            const { context, loaded } = action.payload;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contextImage: {
+                        ...state.player.contextImage,
+                        fetching: true,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS: {
+            const { contextImageData } = action.payload;
 
             return {
                 ...state,
                 player: {
                     ...state.player,
                     contextImage: {
-                        loaded,
-                        data: context,
-                        hidden: state.player.contextImage.hidden,
+                        ...state.player.contextImage,
+                        fetching: false,
+                        data: contextImageData,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contextImage: {
+                        ...state.player.contextImage,
+                        fetching: false,
                     },
                 },
             };

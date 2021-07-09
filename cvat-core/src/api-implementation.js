@@ -118,6 +118,7 @@
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 id: isInteger,
+                is_active: isBoolean,
                 self: isBoolean,
                 search: isString,
                 limit: isInteger,
@@ -230,6 +231,14 @@
 
             checkExclusiveFields(filter, ['id', 'search'], ['page', 'withoutTasks']);
 
+            if (typeof filter.withoutTasks === 'undefined') {
+                if (typeof filter.id === 'undefined') {
+                    filter.withoutTasks = true;
+                } else {
+                    filter.withoutTasks = false;
+                }
+            }
+
             const searchParams = new URLSearchParams();
             for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page', 'withoutTasks']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
@@ -241,7 +250,10 @@
             // prettier-ignore
             const projects = projectsData.map((project) => {
                 if (filter.withoutTasks) {
+                    project.task_ids = project.tasks;
                     project.tasks = [];
+                } else {
+                    project.task_ids = project.tasks.map((task) => task.id);
                 }
                 return project;
             }).map((project) => new Project(project));
