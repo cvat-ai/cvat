@@ -76,6 +76,8 @@ export default function SearchTooltip(props: Props): JSX.Element {
                             <Text>
                                 <q>TEMP_KEY_SECRET_KEY_TOKEN_SET</q>
                                 or
+                                <q>KEY_SECRET_KEY_PAIR</q>
+                                or
                                 <q>ACCOUNT_NAME_TOKEN_PAIR</q>
                                 or
                                 <q>ANONYMOUS_ACCESS</q>

@@ -28,7 +28,7 @@ interface CloudStorageForm {
     account_name?: string;
     session_token?: string;
     key?: string;
-    secretKey?: string;
+    secret_key?: string;
     description?: string;
     specific_attributes?: string;
 }
@@ -42,7 +42,21 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
     const attaching = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.attaching);
     const updating = useSelector((state: CombinedState) => state.cloudStorages.activities.updates.updating);
+    const updatedCloudStorageId = useSelector(
+        (state: CombinedState) => state.cloudStorages.activities.updates.cloudStorageID,
+    );
     const loading = cloudStorage ? updating : attaching;
+    const fakeCredentialsData = {
+        accountName: 'X'.repeat(24),
+        sessionToken: 'X'.repeat(300),
+        key: 'X'.repeat(20),
+        secretKey: 'X'.repeat(40),
+    };
+
+    const [keyVisibility, setKeyVisibility] = useState<boolean>(false);
+    const [secretKeyVisibility, setSecretKeyVisibility] = useState<boolean>(false);
+    const [sessionTokenVisibility, setSessionTokenVisibility] = useState<boolean>(false);
+    const [accountNameVisibility, setAccountNameVisibility] = useState<boolean>(false);
 
     function initializeFields(): void {
         const fieldsValue: CloudStorageForm = {
@@ -58,12 +72,22 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         setCredentialsType(cloudStorage.credentialsType);
 
         if (cloudStorage.credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
-            fieldsValue.account_name = cloudStorage.accountName;
-            fieldsValue.session_token = cloudStorage.token;
+            // fieldsValue.account_name = cloudStorage.accountName;
+            // fieldsValue.session_token = cloudStorage.token;
+            fieldsValue.account_name = fakeCredentialsData.accountName;
+            fieldsValue.session_token = fakeCredentialsData.sessionToken;
         } else if (cloudStorage.credentialsType === CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET) {
-            fieldsValue.session_token = cloudStorage.token;
-            fieldsValue.key = cloudStorage.accessKey;
-            fieldsValue.secretKey = cloudStorage.secretKey;
+            // fieldsValue.session_token = cloudStorage.token;
+            // fieldsValue.key = cloudStorage.accessKey;
+            // fieldsValue.secret_key = cloudStorage.secretKey;
+            fieldsValue.session_token = fakeCredentialsData.sessionToken;
+            fieldsValue.key = fakeCredentialsData.key;
+            fieldsValue.secret_key = fakeCredentialsData.secretKey;
+        } else if (cloudStorage.credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
+            // fieldsValue.key = cloudStorage.accessKey;
+            // fieldsValue.secret_key = cloudStorage.secretKey;
+            fieldsValue.key = fakeCredentialsData.key;
+            fieldsValue.secret_key = fakeCredentialsData.secretKey;
         }
 
         formRef.current?.setFieldsValue(fieldsValue);
@@ -95,6 +119,27 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
     }, [newCloudStorageId]);
 
+    useEffect(() => {
+        if (updatedCloudStorageId) {
+            notification.info({
+                message: 'The cloud storage has been updated',
+                className: 'cvat-notification-update-cloud-storage-success',
+            });
+        }
+    }, [updatedCloudStorageId]);
+
+    useEffect(() => {
+        if (cloudStorage) {
+            notification.info({
+                message: `For security reasons, your credentials are hidden and represented by fake values
+                    that will not be taken into account when updating the cloud storage.
+                    If you want to replace the original credentials, simply enter new ones.`,
+                className: 'cvat-notification-update-info-cloud-storage',
+                duration: 15,
+            });
+        }
+    }, [cloudStorage]);
+
     const onSubmit = async (): Promise<void> => {
         let cloudStorageData: Record<string, any> = {};
         if (formRef.current) {
@@ -112,11 +157,38 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
             if (cloudStorage) {
                 cloudStorageData.id = cloudStorage.id;
+                // TODO: it may be coincide with the real account name
+                if (cloudStorageData.accoun_name === fakeCredentialsData.accountName) {
+                    delete cloudStorageData.account_name;
+                }
+                if (cloudStorageData.key === fakeCredentialsData.key) {
+                    delete cloudStorageData.key;
+                }
+                if (cloudStorageData.secret_key === fakeCredentialsData.secretKey) {
+                    delete cloudStorageData.secret_key;
+                }
+                if (cloudStorageData.session_token === fakeCredentialsData.sessionToken) {
+                    delete cloudStorageData.session_token;
+                }
                 dispatch(updateCloudStorageAsync(cloudStorageData));
             } else {
                 dispatch(createCloudStorageAsync(cloudStorageData));
             }
         }
+    };
+
+    const resetCredentialsValues = (): void => {
+        formRef.current?.setFieldsValue({
+            key: undefined,
+            secret_key: undefined,
+            session_token: undefined,
+            accoun_name: undefined,
+        });
+    };
+
+    const onChangeCredentialsType = (value: CredentialsType): void => {
+        setCredentialsType(value);
+        resetCredentialsValues();
     };
 
     const commonProps = {
@@ -144,7 +216,11 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         rules={[{ required: true, message: 'Please, specify your access_key_id' }]}
                         {...internalCommonProps}
                     >
-                        <Input.Password maxLength={20} />
+                        <Input.Password
+                            maxLength={20}
+                            visibilityToggle={keyVisibility}
+                            onChange={() => setKeyVisibility(true)}
+                        />
                     </Form.Item>
                     <Form.Item
                         label='SECRET ACCESS KEY ID'
@@ -152,7 +228,11 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         rules={[{ required: true, message: 'Please, specify your secret_access_key_id' }]}
                         {...internalCommonProps}
                     >
-                        <Input.Password maxLength={40} />
+                        <Input.Password
+                            maxLength={40}
+                            visibilityToggle={secretKeyVisibility}
+                            onChange={() => setSecretKeyVisibility(true)}
+                        />
                     </Form.Item>
                     <Form.Item
                         label='TOKEN SESSION'
@@ -160,7 +240,44 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         rules={[{ required: true, message: 'Please, specify your token_session' }]}
                         {...internalCommonProps}
                     >
-                        <Input.Password />
+                        <Input.Password
+                            visibilityToggle={sessionTokenVisibility}
+                            onChange={() => setSessionTokenVisibility(true)}
+                        />
+                    </Form.Item>
+                </>
+            );
+        }
+
+        if (
+            providerType === ProviderType.AWS_S3_BUCKET &&
+            credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR
+        ) {
+            return (
+                <>
+                    <Form.Item
+                        label='ACCESS KEY ID'
+                        name='key'
+                        rules={[{ required: true, message: 'Please, specify your access_key_id' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={20}
+                            visibilityToggle={keyVisibility}
+                            onChange={() => setKeyVisibility(true)}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label='SECRET ACCESS KEY ID'
+                        name='secret_key'
+                        rules={[{ required: true, message: 'Please, specify your secret_access_key_id' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={40}
+                            visibilityToggle={secretKeyVisibility}
+                            onChange={() => setSecretKeyVisibility(true)}
+                        />
                     </Form.Item>
                 </>
             );
@@ -178,7 +295,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         rules={[{ required: true, message: 'Please, specify your account name' }]}
                         {...internalCommonProps}
                     >
-                        <Input.Password minLength={3} maxLength={24} />
+                        <Input.Password
+                            minLength={3}
+                            maxLength={24}
+                            visibilityToggle={accountNameVisibility}
+                            onChange={() => setAccountNameVisibility(true)}
+                        />
                     </Form.Item>
                     <Form.Item
                         label='SAS token'
@@ -186,7 +308,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         rules={[{ required: true, message: 'Please, specify your SAS token' }]}
                         {...internalCommonProps}
                     >
-                        <Input.Password />
+                        <Input.Password
+                            visibilityToggle={sessionTokenVisibility}
+                            onChange={() => setSessionTokenVisibility(true)}
+                        />
                     </Form.Item>
                 </>
             );
@@ -204,7 +329,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         rules={[{ required: true, message: 'Please, specify your account name' }]}
                         {...internalCommonProps}
                     >
-                        <Input.Password minLength={3} maxLength={24} />
+                        <Input.Password
+                            minLength={3}
+                            maxLength={24}
+                            visibilityToggle={accountNameVisibility}
+                            onChange={() => setAccountNameVisibility(true)}
+                        />
                     </Form.Item>
                 </>
             );
@@ -236,9 +366,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     rules={[{ required: true, message: 'Please, specify credentials type' }]}
                     {...internalCommonProps}
                 >
-                    <Select onSelect={(value: CredentialsType) => setCredentialsType(value)}>
+                    <Select onSelect={(value: CredentialsType) => onChangeCredentialsType(value)}>
                         <Select.Option value={CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET}>
                             {CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET}
+                        </Select.Option>
+                        <Select.Option value={CredentialsType.KEY_SECRET_KEY_PAIR}>
+                            {CredentialsType.KEY_SECRET_KEY_PAIR}
                         </Select.Option>
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>
                             {CredentialsType.ANONYMOUS_ACCESS}
@@ -281,7 +414,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     rules={[{ required: true, message: 'Please, specify credentials type' }]}
                     {...internalCommonProps}
                 >
-                    <Select onSelect={(value: CredentialsType) => setCredentialsType(value)}>
+                    <Select onSelect={(value: CredentialsType) => onChangeCredentialsType(value)}>
                         <Select.Option value={CredentialsType.ACCOUNT_NAME_TOKEN_PAIR}>
                             {CredentialsType.ACCOUNT_NAME_TOKEN_PAIR}
                         </Select.Option>
