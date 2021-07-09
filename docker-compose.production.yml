@@ -1,10 +1,7 @@
 version: '3.3'
 services:
-  cvat:
-    volumes:
-      - ./videos:/videos:ro
   cvat_proxy:
     environment:
-      CVAT_HOST: 35.245.244.50 cvat.voxelsafety.com
+      CVAT_HOST: .cvat.voxelsafety.com
     ports:
       - '80:80'
