@@ -468,7 +468,7 @@
             function exportDataset(instanceType) {
                 return async function (id, format, name, saveImages) {
                     const { backendAPI } = config;
-                    const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotation'}`;
+                    const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
                     let query = `format=${encodeURIComponent(format)}`;
                     if (name) {
                         const filename = name.replace(/\//g, '_');
@@ -1145,6 +1145,7 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
+                    // eslint-disable-next-line max-len
                     const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {

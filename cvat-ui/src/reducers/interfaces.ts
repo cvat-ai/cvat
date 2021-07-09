@@ -117,16 +117,16 @@ export interface ExportState {
         datasets: {
             [tid: number]: string[];
         };
-        annotation: {
+        annotations: {
             [tid: number]: string[];
         };
     };
     projects: {
         datasets: {
-            [tid: number]: string[];
+            [pid: number]: string[];
         };
-        annotation: {
-            [tid: number]: string[];
+        annotations: {
+            [pid: number]: string[];
         };
     };
     instance: any;

@@ -12,13 +12,12 @@ import { CombinedState } from 'reducers/interfaces';
 
 import { modelsActions } from 'actions/models-actions';
 import {
-    dumpAnnotationsAsync,
     loadAnnotationsAsync,
-    exportDatasetAsync,
     deleteTaskAsync,
     exportTaskAsync,
     switchMoveTaskModalVisible,
 } from 'actions/tasks-actions';
+import { exportActions } from 'actions/export-actions';
 
 interface OwnProps {
     taskInstance: any;
@@ -35,8 +34,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     loadAnnotations: (taskInstance: any, loader: any, file: File) => void;
-    dumpAnnotations: (taskInstance: any, dumper: any) => void;
-    exportDataset: (taskInstance: any, exporter: any) => void;
+    showExportModal: (taskInstance: any) => void;
     deleteTask: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
     exportTask: (taskInstance: any) => void;
@@ -72,11 +70,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAnnotations: (taskInstance: any, loader: any, file: File): void => {
             dispatch(loadAnnotationsAsync(taskInstance, loader, file));
         },
-        dumpAnnotations: (taskInstance: any, dumper: any): void => {
-            dispatch(dumpAnnotationsAsync(taskInstance, dumper));
-        },
-        exportDataset: (taskInstance: any, exporter: any): void => {
-            dispatch(exportDatasetAsync(taskInstance, exporter));
+        showExportModal: (taskInstance: any): void => {
+            dispatch(exportActions.openExportModal(taskInstance));
         },
         deleteTask: (taskInstance: any): void => {
             dispatch(deleteTaskAsync(taskInstance));
@@ -104,8 +99,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         exportIsActive,
 
         loadAnnotations,
-        dumpAnnotations,
-        exportDataset,
+        showExportModal,
         deleteTask,
         openRunModelWindow,
         exportTask,
@@ -115,28 +109,18 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     function onClickMenu(params: MenuInfo, file?: File): void {
         if (params.keyPath.length > 1) {
             const [additionalKey, action] = params.keyPath;
-            if (action === Actions.DUMP_TASK_ANNO) {
-                const format = additionalKey;
-                const [dumper] = dumpers.filter((_dumper: any): boolean => _dumper.name === format);
-                if (dumper) {
-                    dumpAnnotations(taskInstance, dumper);
-                }
-            } else if (action === Actions.LOAD_TASK_ANNO) {
+            if (action === Actions.LOAD_TASK_ANNO) {
                 const format = additionalKey;
                 const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
                 if (loader && file) {
                     loadAnnotations(taskInstance, loader, file);
                 }
-            } else if (action === Actions.EXPORT_TASK_DATASET) {
-                const format = additionalKey;
-                const [exporter] = dumpers.filter((_exporter: any): boolean => _exporter.name === format);
-                if (exporter) {
-                    exportDataset(taskInstance, exporter);
-                }
             }
         } else {
             const [action] = params.keyPath;
-            if (action === Actions.DELETE_TASK) {
+            if (action === Actions.EXPORT_TASK_DATASET) {
+                showExportModal(taskInstance);
+            } else if (action === Actions.DELETE_TASK) {
                 deleteTask(taskInstance);
             } else if (action === Actions.OPEN_BUG_TRACKER) {
                 window.open(`${taskInstance.bugTracker}`, '_blank');

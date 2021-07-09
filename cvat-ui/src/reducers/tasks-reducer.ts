@@ -123,46 +123,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 },
             };
         }
-        case TasksActionTypes.EXPORT_DATASET: {
-            const { task } = action.payload;
-            const { exporter } = action.payload;
-            const { exports: activeExports } = state.activities;
-
-            activeExports[task.id] =
-                task.id in activeExports && !activeExports[task.id].includes(exporter.name) ?
-                    [...activeExports[task.id], exporter.name] :
-                    activeExports[task.id] || [exporter.name];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    exports: {
-                        ...activeExports,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_DATASET_FAILED:
-        case TasksActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { task } = action.payload;
-            const { exporter } = action.payload;
-            const { exports: activeExports } = state.activities;
-
-            activeExports[task.id] = activeExports[task.id].filter(
-                (exporterName: string): boolean => exporterName !== exporter.name,
-            );
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    exports: {
-                        ...activeExports,
-                    },
-                },
-            };
-        }
         case TasksActionTypes.LOAD_ANNOTATIONS: {
             const { task } = action.payload;
             const { loader } = action.payload;

@@ -314,12 +314,13 @@
         Object.freeze({
             annotations: Object.freeze({
                 value: {
-                    async exportDataset(format, saveImages) {
+                    async exportDataset(format, saveImages, customName = '') {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             Project.prototype.annotations.exportDataset,
                             format,
                             saveImages,
+                            customName,
                         );
                         return result;
                     },

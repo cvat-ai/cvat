@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from 'antd/lib/modal';
 import { useSelector, useDispatch } from 'react-redux';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -26,25 +26,35 @@ type FormValues = {
 };
 
 export default function ExportDatasetModal(): JSX.Element {
-    let instanceType = '';
-    let activities: string[] = [];
+    const [instanceType, setInstanceType] = useState('');
+    const [activities, setActivities] = useState<string[]>([]);
     const [form] = Form.useForm();
     const dispatch = useDispatch();
     const instance = useSelector((state: CombinedState) => state.export.instance);
     const modalVisible = useSelector((state: CombinedState) => state.export.modalVisible);
     const dumpers = useSelector((state: CombinedState) => state.formats.annotationFormats.dumpers);
     const {
-        tasks: { datasets: taskExportActivities, annotation: taskDumpActivities },
-        projects: { datasets: projectExportActivities, annotation: projectDumpActivities },
+        tasks: { datasets: taskExportActivities, annotations: taskDumpActivities },
+        projects: { datasets: projectExportActivities, annotations: projectDumpActivities },
     } = useSelector((state: CombinedState) => state.export);
 
-    if (instance instanceof core.classes.Project) {
-        instanceType = 'project';
-        activities = (form.getFieldValue('saveImages') ? projectExportActivities : projectDumpActivities)[instance.id];
-    } else if (instance instanceof core.classes.Task) {
-        instanceType = 'task';
-        activities = (form.getFieldValue('saveImages') ? taskExportActivities : taskDumpActivities)[instance.id];
-    }
+    const initActivities = (): void => {
+        if (instance instanceof core.classes.Project) {
+            setInstanceType('project');
+            setActivities(
+                (form.getFieldValue('saveImages') ? projectExportActivities : projectDumpActivities)[instance.id] || [],
+            );
+        } else if (instance instanceof core.classes.Task) {
+            setInstanceType('task');
+            setActivities(
+                (form.getFieldValue('saveImages') ? taskExportActivities : taskDumpActivities)[instance.id] || [],
+            );
+        }
+    };
+
+    useEffect(() => {
+        initActivities();
+    }, [instance?.id, instance instanceof core.classes.Project]);
 
     const closeModal = (): void => {
         form.resetFields();
@@ -65,6 +75,7 @@ export default function ExportDatasetModal(): JSX.Element {
             form={form}
             labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}
+            onValuesChange={initActivities}
             initialValues={
                 {
                     selectedFormat: undefined,
@@ -75,7 +86,7 @@ export default function ExportDatasetModal(): JSX.Element {
             onFinish={handleExport}
         >
             <Modal
-                title={`Export ${instanceType} as a dataset`}
+                title={`Export ${instanceType} #${instance?.id} as a dataset`}
                 visible={modalVisible}
                 onCancel={closeModal}
                 onOk={() => form.submit()}

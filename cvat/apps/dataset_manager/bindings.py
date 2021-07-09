@@ -523,7 +523,7 @@ class ProjectData(InstanceLabelData):
     def rel_frame_id(self, task_id: int, absolute_id: int) -> int:
         task = self._db_tasks[task_id]
         d, m = divmod(
-            absolute_id - self._task_frame_offsets[task_id] - task.data.start_frame, self._frame_step)
+            absolute_id - task.data.start_frame, task.data.get_frame_step())
         if m or d not in range(0, task.data.size):
             raise ValueError(f"Unknown frame {absolute_id}")
         return d

@@ -9,9 +9,7 @@ import Modal from 'antd/lib/modal';
 import { LoadingOutlined } from '@ant-design/icons';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-import DumpSubmenu from './dump-submenu';
 import LoadSubmenu from './load-submenu';
-import ExportSubmenu from './export-submenu';
 import { DimensionType } from '../../reducers/interfaces';
 
 interface Props {
@@ -30,7 +28,6 @@ interface Props {
 }
 
 export enum Actions {
-    DUMP_TASK_ANNO = 'dump_task_anno',
     LOAD_TASK_ANNO = 'load_task_anno',
     EXPORT_TASK_DATASET = 'export_task_dataset',
     DELETE_TASK = 'delete_task',
@@ -43,14 +40,10 @@ export enum Actions {
 export default function ActionsMenuComponent(props: Props): JSX.Element {
     const {
         taskID,
-        taskMode,
         bugTracker,
         inferenceIsActive,
-        dumpers,
         loaders,
         onClickMenu,
-        dumpActivities,
-        exportActivities,
         loadActivity,
         taskDimension,
         exportIsActive,
@@ -106,13 +99,6 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
 
     return (
         <Menu selectable={false} className='cvat-actions-menu' onClick={onClickMenuWrapper}>
-            {DumpSubmenu({
-                taskMode,
-                dumpers,
-                dumpActivities,
-                menuKey: Actions.DUMP_TASK_ANNO,
-                taskDimension,
-            })}
             {LoadSubmenu({
                 loaders,
                 loadActivity,
@@ -122,12 +108,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                 menuKey: Actions.LOAD_TASK_ANNO,
                 taskDimension,
             })}
-            {ExportSubmenu({
-                exporters: dumpers,
-                exportActivities,
-                menuKey: Actions.EXPORT_TASK_DATASET,
-                taskDimension,
-            })}
+            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export Task dataset</Menu.Item>
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
                 Automatic annotation

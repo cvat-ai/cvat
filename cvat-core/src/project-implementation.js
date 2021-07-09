@@ -63,8 +63,8 @@
         return frameData;
     };
 
-    Project.prototype.annotations.exportDataset.implementation = async function (format, saveImages) {
-        const result = exportDataset(this, format, '', saveImages);
+    Project.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
+        const result = exportDataset(this, format, customName, saveImages);
         return result;
     };
 })();

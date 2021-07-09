@@ -15,12 +15,17 @@ export enum ExportActionTypes {
 export const exportActions = {
     openExportModal: (instance: any) => createAction(ExportActionTypes.OPEN_EXPORT_MODAL, { instance }),
     closeExportModal: () => createAction(ExportActionTypes.CLOSE_EXPORT_MODAL),
-    exportDataset: (instance: any, exporter: any) =>
-        createAction(ExportActionTypes.EXPORT_DATASET, { instance, exporter }),
-    exportDatasetSuccess: (instance: any, exporter: any) =>
-        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, exporter }),
-    exportDatasetFailed: (instance: any, exporter: any, error: any) =>
-        createAction(ExportActionTypes.EXPORT_DATASET_FAILED, { instance, exporter, error }),
+    exportDataset: (instance: any, format: any, saveImages: boolean) =>
+        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format, saveImages }),
+    exportDatasetSuccess: (instance: any, format: any, saveImages: boolean) =>
+        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format, saveImages }),
+    exportDatasetFailed: (instance: any, format: any, saveImages: boolean, error: any) =>
+        createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
+            instance,
+            format,
+            saveImages,
+            error,
+        }),
 };
 
 export const exportDatasetAsync = (
@@ -29,16 +34,16 @@ export const exportDatasetAsync = (
     name: string,
     saveImages: boolean,
 ): ThunkAction => async (dispatch) => {
-    dispatch(exportActions.exportDataset(instance, format));
+    dispatch(exportActions.exportDataset(instance, format, saveImages));
 
     try {
-        const url = await instance.annotations.exportDataset(format, saveImages);
+        const url = await instance.annotations.exportDataset(format, saveImages, name);
         const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
         downloadAnchor.href = url;
         downloadAnchor.click();
-        dispatch(exportActions.exportDatasetSuccess(instance, format));
+        dispatch(exportActions.exportDatasetSuccess(instance, format, saveImages));
     } catch (error) {
-        dispatch(exportActions.exportDatasetFailed(instance, format, error));
+        dispatch(exportActions.exportDatasetFailed(instance, format, saveImages, error));
     }
 };
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import { CombinedState, TaskStatus } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
-import { dumpAnnotationsAsync, exportDatasetAsync, updateJobAsync } from 'actions/tasks-actions';
+import { updateJobAsync } from 'actions/tasks-actions';
 import {
     uploadJobAnnotationsAsync,
     removeAnnotationsAsync,
@@ -19,6 +19,7 @@ import {
     switchSubmitReviewDialog as switchSubmitReviewDialogAction,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
 } from 'actions/annotation-actions';
+import { exportActions } from 'actions/export-actions';
 
 interface StateToProps {
     annotationFormats: any;
@@ -31,8 +32,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     loadAnnotations(job: any, loader: any, file: File): void;
-    dumpAnnotations(task: any, dumper: any): void;
-    exportDataset(task: any, exporter: any): void;
+    showExportModal(task: any): void;
     removeAnnotations(sessionInstance: any): void;
     switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
@@ -72,11 +72,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAnnotations(job: any, loader: any, file: File): void {
             dispatch(uploadJobAnnotationsAsync(job, loader, file));
         },
-        dumpAnnotations(task: any, dumper: any): void {
-            dispatch(dumpAnnotationsAsync(task, dumper));
-        },
-        exportDataset(task: any, exporter: any): void {
-            dispatch(exportDatasetAsync(task, exporter));
+        showExportModal(task: any): void {
+            dispatch(exportActions.openExportModal(task));
         },
         removeAnnotations(sessionInstance: any): void {
             dispatch(removeAnnotationsAsync(sessionInstance));
@@ -111,8 +108,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         dumpActivities,
         exportActivities,
         loadAnnotations,
-        dumpAnnotations,
-        exportDataset,
+        showExportModal,
         removeAnnotations,
         switchRequestReviewDialog,
         switchSubmitReviewDialog,
@@ -124,28 +120,18 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const onClickMenu = (params: MenuInfo, file?: File): void => {
         if (params.keyPath.length > 1) {
             const [additionalKey, action] = params.keyPath;
-            if (action === Actions.DUMP_TASK_ANNO) {
-                const format = additionalKey;
-                const [dumper] = dumpers.filter((_dumper: any): boolean => _dumper.name === format);
-                if (dumper) {
-                    dumpAnnotations(jobInstance.task, dumper);
-                }
-            } else if (action === Actions.LOAD_JOB_ANNO) {
+            if (action === Actions.LOAD_JOB_ANNO) {
                 const format = additionalKey;
                 const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
                 if (loader && file) {
                     loadAnnotations(jobInstance, loader, file);
                 }
-            } else if (action === Actions.EXPORT_TASK_DATASET) {
-                const format = additionalKey;
-                const [exporter] = dumpers.filter((_exporter: any): boolean => _exporter.name === format);
-                if (exporter) {
-                    exportDataset(jobInstance.task, exporter);
-                }
             }
         } else {
             const [action] = params.keyPath;
-            if (action === Actions.REMOVE_ANNO) {
+            if (action === Actions.EXPORT_TASK_DATASET) {
+                showExportModal(jobInstance.task);
+            } else if (action === Actions.REMOVE_ANNO) {
                 removeAnnotations(jobInstance);
             } else if (action === Actions.REQUEST_REVIEW) {
                 switchRequestReviewDialog(true);
