@@ -249,12 +249,11 @@
             this.attributes = {};
             this.appendDefaultAttributes(label);
 
-            // Try to keep old attributes if name and inputType matches and old value is still valid
+            // Try to keep old attributes if name matches and old value is still valid
             for (const attribute of redoLabel.attributes) {
                 for (const oldAttribute of undoLabel.attributes) {
                     if (
                         attribute.name === oldAttribute.name
-                        && attribute.inputType === oldAttribute.inputType
                         && validateAttributeValue(undoAttributes[oldAttribute.id], attribute)
                     ) {
                         this.attributes[attribute.id] = undoAttributes[oldAttribute.id];
