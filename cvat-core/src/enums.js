@@ -339,12 +339,12 @@
      * @name CloudStorageProviderType
      * @memberof module:API.cvat.enums
      * @property {string} AWS_S3 'AWS_S3_BUCKET'
-     * @property {string} AZURE 'AZURE_BLOB_CONTAINER'
+     * @property {string} AZURE 'AZURE_CONTAINER'
      * @readonly
      */
     const CloudStorageProviderType = Object.freeze({
         AWS_S3_BUCKET: 'AWS_S3_BUCKET',
-        AZURE_BLOB_CONTAINER: 'AZURE_BLOB_CONTAINER',
+        AZURE_CONTAINER: 'AZURE_CONTAINER',
     });
 
     /**

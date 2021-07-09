@@ -17,7 +17,11 @@
     } = require('./common');
 
     const {
-        TaskStatus, TaskMode, DimensionType, CloudStorageProviderType,
+        TaskStatus,
+        TaskMode,
+        DimensionType,
+        CloudStorageProviderType,
+        CloudStorageCredentialsType,
     } = require('./enums');
 
     const User = require('./user');
@@ -270,16 +274,27 @@
                 page: isInteger,
                 displayName: isString,
                 resourceName: isString,
+                description: isString,
                 id: isInteger,
                 owner: isString,
                 search: isString,
-                provider: isEnum.bind(CloudStorageProviderType),
+                providerType: isEnum.bind(CloudStorageProviderType),
+                credentialsType: isEnum.bind(CloudStorageCredentialsType),
             });
 
             checkExclusiveFields(filter, ['id', 'search'], ['page']);
 
             const searchParams = new URLSearchParams();
-            for (const field of ['displayName', 'owner', 'search', 'id', 'page']) {
+            for (const field of [
+                'displayName',
+                'credentialsType',
+                'providerType',
+                'owner',
+                'search',
+                'id',
+                'page',
+                'description',
+            ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(camelToSnake(field), filter[field]);
                 }
@@ -289,11 +304,7 @@
                 searchParams.set('resource', filter.resourceName);
             }
 
-            if (Object.prototype.hasOwnProperty.call(filter, 'provider')) {
-                searchParams.set('provider_type', filter.provider);
-            }
-
-            const cloudStoragesData = await serverProxy.cloudStoarges.get(searchParams.toString());
+            const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
 
             cloudStorages.count = cloudStoragesData.count;

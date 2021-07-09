@@ -1175,6 +1175,9 @@
                 try {
                     const response = await Axios.post(`${backendAPI}/cloudstorages`, JSON.stringify(storageDetail), {
                         proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
                     });
                     return response.data;
                 } catch (errorData) {
@@ -1202,14 +1205,15 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=20&${filter}`, {
+                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=12&${filter}`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
 
-                return response.data;
+                response.data.results.count = response.data.count;
+                return response.data.results;
             }
 
             async function getCloudStorageContent(id, manifestPath) {
@@ -1225,6 +1229,24 @@
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getCloudStoragePreview(id) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    const url = `${backendAPI}/cloudstorages/${id}/preview`;
+                    response = await Axios.get(url, {
+                        proxy: config.proxy,
+                        responseType: 'blob',
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(`Could not get preview for the cloud storage ${id} from the server`, code);
                 }
 
                 return response.data;
@@ -1373,6 +1395,7 @@
                         value: Object.freeze({
                             get: getCloudStorages,
                             getContent: getCloudStorageContent,
+                            getPreview: getCloudStoragePreview,
                             create: createCloudStorage,
                             delete: deleteCloudStorage,
                             update: updateCloudStorage,

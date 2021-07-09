@@ -5,6 +5,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
+    const { isBrowser, isNode } = require('browser-or-node');
     const { ArgumentError } = require('./exceptions');
     const { CloudStorageCredentialsType, CloudStorageProviderType } = require('./enums');
 
@@ -351,22 +352,66 @@
             const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent);
             return result;
         }
+
+        /**
+         * Method returns the cloud storage preview
+         * @method getPreview
+         * @memberof module:API.cvat.classes.CloudStorage
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async getPreview() {
+            const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getPreview);
+            return result;
+        }
     }
 
     CloudStorage.prototype.save.implementation = async function () {
+        function prepareOptionalFields(cloudStorageInstance) {
+            const data = {};
+            if (cloudStorageInstance.description) {
+                data.description = cloudStorageInstance.description;
+            }
+
+            if (cloudStorageInstance.accountName) {
+                data.account_name = cloudStorageInstance.accountName;
+            }
+
+            if (cloudStorageInstance.accessKey) {
+                data.key = cloudStorageInstance.accessKey;
+            }
+
+            if (cloudStorageInstance.secretKey) {
+                data.secret_key = cloudStorageInstance.secretKey;
+            }
+
+            if (cloudStorageInstance.token) {
+                data.session_token = cloudStorageInstance.token;
+            }
+
+            if (cloudStorageInstance.specificAttibutes) {
+                data.specific_attibutes = cloudStorageInstance.specificAttibutes;
+            }
+            return data;
+        }
         // update
         if (typeof this.id !== 'undefined') {
+            // providr_type and recource should not change;
+            // send to the server only the values that have changed
+            const initialData = {};
+            if (this.displayName) {
+                initialData.display_name = this.displayName;
+            }
+            if (this.credentialsType) {
+                initialData.credentials_type = this.credentialsType;
+            }
+
             const cloudStorageData = {
-                display_name: this.displayName,
-                description: this.description ? this.description : null,
-                credentials_type: this.credentialsType ? this.credentialsType : null,
-                provided_type: this.provider ? this.provider : null,
-                resource: this.resourceName ? this.resourceName : null,
-                secret_key: this.secretKey ? this.secretKey : null,
-                session_token: this.token ? this.token : null,
-                key: this.accessKey ? this.accessKey : null,
-                account_name: this.accountName ? this.accountName : null,
-                specific_attibutes: this.specificAttibutes ? this.specificAttibutes : null,
+                ...initialData,
+                ...prepareOptionalFields(this),
             };
 
             await serverProxy.cloudStorages.update(this.id, cloudStorageData);
@@ -374,36 +419,17 @@
         }
 
         // create
-        const cloudStorageData = {
+        const initialData = {
             display_name: this.displayName,
             credentials_type: this.credentialsType,
             provider_type: this.provider,
             resource: this.resourceName,
         };
 
-        if (this.description) {
-            cloudStorageData.description = this.description;
-        }
-
-        if (this.accountName) {
-            cloudStorageData.account_name = this.accountName;
-        }
-
-        if (this.accessKey) {
-            cloudStorageData.key = this.accessKey;
-        }
-
-        if (this.secretKey) {
-            cloudStorageData.secret_key = this.secretKey;
-        }
-
-        if (this.token) {
-            cloudStorageData.session_token = this.token;
-        }
-
-        if (this.specificAttibutes) {
-            cloudStorageData.specific_attibutes = this.specificAttibutes;
-        }
+        const cloudStorageData = {
+            ...initialData,
+            ...prepareOptionalFields(this),
+        };
 
         const cloudStorage = await serverProxy.cloudStorages.create(cloudStorageData);
         return new CloudStorage(cloudStorage);
@@ -417,6 +443,27 @@
     CloudStorage.prototype.getContent.implementation = async function () {
         const result = await serverProxy.cloudStorages.getContent(this.id, this.manifestPath);
         return result;
+    };
+
+    CloudStorage.prototype.getPreview.implementation = async function getPreview() {
+        return new Promise((resolve, reject) => {
+            serverProxy.cloudStorages
+                .getPreview(this.id)
+                .then((result) => {
+                    if (isNode) {
+                        resolve(global.Buffer.from(result, 'binary').toString('base64'));
+                    } else if (isBrowser) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            resolve(reader.result);
+                        };
+                        reader.readAsDataURL(result);
+                    }
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
     };
 
     module.exports = {
