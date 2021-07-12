@@ -237,6 +237,8 @@ weight: 2
      - Velodyn points format 1.0 (Available in 3d task)
    - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
      Presence depends on how you build CVAT instance.
+   - `Export task` — Export a task into a zip archive.
+     Read more in the [export/import a task](/docs/manual/advanced/export-import/) section.
    - `Move to project` — Moving the task to the project (can be used to move a task from one project to another).
      Note that attributes reset during the moving process. In case of label mismatch,
      you can create or delete necessary labels in the project/task.

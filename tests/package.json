@@ -1,7 +1,8 @@
 {
   "scripts": {
     "cypress:run:chrome": "cypress run --env coverage=false --headless --browser chrome",
-    "cypress:run:firefox": "cypress run --env coverage=false --headless --browser firefox --config-file cypress_cron_type.json"
+    "cypress:run:firefox": "cypress run --env coverage=false --headless --browser firefox --config-file cypress_cron_type.json",
+    "cypress:run:chrome:canvas3d": "cypress run --browser chrome --env coverage=false --config-file cypress_canvas3d.json"
   },
   "devDependencies": {
     "@cypress/code-coverage": "^3.9.4",

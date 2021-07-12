@@ -325,15 +325,29 @@ class VideoReader(IMediaReader):
         return self._decode(container)
 
     def get_progress(self, pos):
-        container = self._get_av_container()
-        # Not for all containers return real value
-        stream = container.streams.video[0]
-        return pos / stream.duration if stream.duration else None
+        duration = self._get_duration()
+        return pos / duration if duration else None
 
     def _get_av_container(self):
         if isinstance(self._source_path[0], io.BytesIO):
             self._source_path[0].seek(0) # required for re-reading
         return av.open(self._source_path[0])
+
+    def _get_duration(self):
+        container = self._get_av_container()
+        stream = container.streams.video[0]
+        duration = None
+        if stream.duration:
+            duration = stream.duration
+        else:
+            # may have a DURATION in format like "01:16:45.935000000"
+            duration_str = stream.metadata.get("DURATION", None)
+            tb_denominator = stream.time_base.denominator
+            if duration_str and tb_denominator:
+                _hour, _min, _sec = duration_str.split(':')
+                duration_sec = 60*60*float(_hour) + 60*float(_min) + float(_sec)
+                duration = duration_sec * tb_denominator
+        return duration
 
     def get_preview(self):
         container = self._get_av_container()
