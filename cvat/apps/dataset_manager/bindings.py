@@ -855,7 +855,7 @@ class CVATProjectDataExtractor(datumaro.SourceExtractor):
                 'size': (frame_data.height, frame_data.width),
             }
             if include_images:
-                dm_image = _make_image(frame_data.idx, **image_args)
+                dm_image = image_maker_per_task[frame_data.task_id](frame_data.idx, **image_args)
             else:
                 dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, project_data)
