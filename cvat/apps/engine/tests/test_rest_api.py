@@ -3455,7 +3455,7 @@ class JobAnnotationAPITestCase(APITestCase):
                     },
                 ]
             }]
-        elif annotation_format in ["Velodyne Points Format 1.0", "Point Cloud Format 1.0"]:
+        elif annotation_format in ['Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
             data["labels"] = [{
                 "name": "car"},
                 {"name": "bus"}
@@ -3514,7 +3514,7 @@ class JobAnnotationAPITestCase(APITestCase):
                 images = {
                     "client_files[0]": open(
                         os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'
-                        if annotation_format == 'Point Cloud Format 1.0' else 'test_velodyne_points.zip'),
+                        if annotation_format == 'Sly Point Cloud Format 1.0' else 'test_velodyne_points.zip'),
                         'rb'),
                     "image_quality": 100,
                 }
@@ -4481,8 +4481,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         def _get_initial_annotation(annotation_format):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
                                          "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
-                                         "Velodyne Points Format 1.0",
-                                         "Point Cloud Format 1.0"]:
+                                         'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4826,7 +4825,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     ],
                 }]
                 annotations["tags"] = tags_with_attrs
-            elif annotation_format in ["Velodyne Points Format 1.0", "Point Cloud Format 1.0"]:
+            elif annotation_format in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
                 velodyne_wo_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4836,7 +4835,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     ],
                     "points": [-3.62, 7.95, -1.03, 0.0, 0.0, 0.0, 1.0, 1.0,
                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                    "type": "cuboid",
+                    "type": "cuboid_3d",
                     "occluded": False,
                 },
                     {
@@ -4847,7 +4846,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         "attributes": [],
                         "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
                                    1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                        "type": "cuboid",
+                        "type": "cuboid_3d",
                         "occluded": False,
                     }
                 ]
@@ -5069,6 +5068,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 data["version"] += 2 # upload is delete + put
                 self._check_response(response, data)
 
+                break
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
@@ -5104,7 +5104,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "YOLO 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif format_name in ["Velodyne Points Format 1.0", "Point Cloud Format 1.0"]:
+        elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "COCO 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:

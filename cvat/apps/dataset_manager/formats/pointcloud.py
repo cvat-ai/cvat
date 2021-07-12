@@ -15,28 +15,28 @@ from cvat.apps.engine.models import DimensionType
 from .registry import dm_env, exporter, importer
 
 
-@exporter(name='Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
+@exporter(name='Sly Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, task_data, save_images=False):
 
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
-        task_data, include_images=save_images, format_type='point_cloud', dimension=DimensionType.DIM_3D), env=dm_env)
+        task_data, include_images=save_images, format_type='sly_pointcloud', dimension=DimensionType.DIM_3D), env=dm_env)
 
     with TemporaryDirectory() as temp_dir:
-        dataset.export(temp_dir, 'point_cloud', save_images=save_images)
+        dataset.export(temp_dir, 'sly_pointcloud', save_images=save_images)
 
         make_zip_archive(temp_dir, dst_file)
 
 
-@importer(name='Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
+@importer(name='Sly Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _import(src_file, task_data):
 
     if zipfile.is_zipfile(src_file):
         with TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(src_file).extractall(tmp_dir)
 
-            dataset = Dataset.import_from(tmp_dir, 'point_cloud', env=dm_env)
+            dataset = Dataset.import_from(tmp_dir, 'sly_pointcloud', env=dm_env)
             import_dm_annotations(dataset, task_data)
     else:
         dataset = Dataset.import_from(src_file.name,
-                                      'point_cloud', env=dm_env)
+                                      'sly_pointcloud', env=dm_env)
         import_dm_annotations(dataset, task_data)

@@ -504,15 +504,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 for i in image.related_files.all():
                     path = osp.realpath(str(i.path))
                     if osp.isfile(path):
-                        name = path.rsplit("/", maxsplit=1)[-1]
-                        data = {"name": name,
-                                "path": path}
-                        if format_type == "velodyne_points":
-                            data["save_path"] = osp.basename(
-                                osp.dirname(osp.split(path)[0]))
-                        else:
-                            data["save_path"] = None
-                        related_images.append(data)
+                        related_images.append(path)
                 return loader, related_images
 
         elif include_images:
@@ -553,7 +545,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                                                attributes={'frame': frame_data.frame})
             elif dimension == DimensionType.DIM_3D:
                 attributes = {'frame': frame_data.frame}
-                if format_type == "point_cloud":
+                if format_type == "sly_pointcloud":
                     attributes["name"] = self._user["name"]
                     attributes["createdAt"] = self._user["createdAt"]
                     attributes["updatedAt"] = self._user["updatedAt"]
@@ -561,10 +553,11 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                     index = 0
                     for _, label in task_data.meta['task']['labels']:
                         attributes["labels"].append({"label_id": index, "name": label["name"], "color": label["color"]})
+                        attributes["track_id"] = -1
                         index += 1
 
-                dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1],
-                                               annotations=dm_anno, pcd=dm_image[0], related_images=dm_image[1],
+                dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1], image=None,
+                                               annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
                                                attributes=attributes)
 
             dm_items.append(dm_item)
@@ -638,7 +631,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                     raise Exception(
                         "Failed to convert attribute '%s'='%s': %s" %
                         (a_name, a_value, e))
-                if self._format_type == "point_cloud" and (a_desc.get('input_type') == 'select' or a_desc.get('input_type') == 'radio'):
+                if self._format_type == "sly_pointcloud" and (a_desc.get('input_type') == 'select' or a_desc.get('input_type') == 'radio'):
                     dm_attr[f"{a_name}__values"] = a_desc["values"]
 
             return dm_attr
@@ -686,15 +679,15 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                     z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.CUBOID:
                 if self._dimension == DimensionType.DIM_3D:
-                    if self._format_type == "point_cloud":
+                    if self._format_type == "sly_pointcloud":
                         anno_id = shapes[index]["id"]
                         anno_attr["label_id"] = shapes[index]["label_id"]
                     else:
                         anno_id = index
-
-                    anno = datumaro.Cuboid3D(id=anno_id, points=anno_points,
-                                             label=anno_label, attributes=anno_attr, group=anno_group,
-                                             z_order=shape_obj.z_order)
+                    position, rotation, scale = anno_points[0:3], anno_points[3:6], anno_points[6:9]
+                    anno = datumaro.Cuboid3d(id=anno_id, position=position, rotation=rotation, scale=scale,
+                                             label=anno_label, attributes=anno_attr, group=anno_group
+                                             )
                 else:
                     continue
             else:
@@ -743,7 +736,7 @@ def import_dm_annotations(dm_dataset, task_data):
         datumaro.AnnotationType.polygon: ShapeType.POLYGON,
         datumaro.AnnotationType.polyline: ShapeType.POLYLINE,
         datumaro.AnnotationType.points: ShapeType.POINTS,
-        datumaro.AnnotationType.cuboid: ShapeType.CUBOID
+        datumaro.AnnotationType.cuboid_3d: ShapeType.CUBOID
     }
 
     if len(dm_dataset) == 0:
@@ -778,11 +771,17 @@ def import_dm_annotations(dm_dataset, task_data):
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
                 if ann.type in shapes:
+                    if ann.type == datumaro.AnnotationType.cuboid_3d:
+                        try:
+                            ann.points = [*ann.position,*ann.rotation,*ann.scale,0,0,0,0,0,0,0]
+                        except:
+                            pass
+                        ann.z_order = 0
                     task_data.add_shape(task_data.LabeledShape(
                         type=shapes[ann.type],
                         frame=frame_number,
+                        points = ann.points,
                         label=label_cat.items[ann.label].name,
-                        points=ann.points,
                         occluded=ann.attributes.get('occluded') == True,
                         z_order=ann.z_order,
                         group=group_map.get(ann.group, 0),

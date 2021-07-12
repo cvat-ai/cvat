@@ -52,4 +52,4 @@ azure-storage-blob==12.8.1
 # --no-binary=pycocotools: workaround for binary incompatibility on numpy 1.20
 # of pycocotools and tensorflow 2.4.1
 # when pycocotools is installed by wheel in python 3.8+
-git+https://github.com/manasars/datumaro.git@cvat-3D-M6-pcd --no-binary=datumaro --no-binary=pycocotools
+git+https://github.com/openvinotoolkit/datumaro.git@develop --no-binary=datumaro --no-binary=pycocotools
