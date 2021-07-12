@@ -25,7 +25,7 @@ services:
       - "--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true"
       - "--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json"
       # Uncomment to get Traefik dashboard
-      - "--api.insecure=true"
+      # - "--api.insecure=true"
     ports:
       - 443:443
     volumes:

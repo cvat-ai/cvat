@@ -69,11 +69,11 @@ services:
       - "--providers.docker.network=test"
       - "--entryPoints.web.address=:80"
       # Uncomment to get Traefik dashboard
-      - "--api.insecure=true"
+      # - "--api.insecure=true"
     ports:
       - 80:80
       # Uncomment to get Traefik dashboard
-      - 8080:8080
+      # - 8080:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
