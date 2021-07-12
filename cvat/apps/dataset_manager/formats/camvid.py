@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (CVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -17,7 +17,7 @@ from .utils import make_colormap
 
 @exporter(name='CamVid', ext='ZIP', version='1.0')
 def _export(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(CVATDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     dataset.transform('polygons_to_masks')
     dataset.transform('boxes_to_masks')

@@ -735,10 +735,55 @@ class ProjectData(InstanceLabelData):
         return osp.splitext(path)[0]
 
 
-class CvatTaskDataExtractor(datumaro.SourceExtractor):
+class CVATDataExtractor(datumaro.SourceExtractor):
+    dm_items: List[datumaro.DatasetItem] = []
+    _categories: Dict[datumaro.AnnotationType, datumaro.LabelCategories] = {}
+
+    def __init__(self):
+        super().__init__()
+
+    def __iter__(self):
+        for item in self._items:
+            yield item
+
+    def __len__(self):
+        return len(self._items)
+
+    def categories(self):
+        return self._categories
+
+    @staticmethod
+    def _load_categories(labels: list):
+        categories: Dict[datumaro.AnnotationType, datumaro.LabelCategories] = {}
+
+        label_categories = datumaro.LabelCategories(attributes=['occluded'])
+
+        for _, label in labels:
+            label_categories.add(label['name'])
+            for _, attr in label['attributes']:
+                label_categories.attributes.add(attr['name'])
+
+        categories[datumaro.AnnotationType.label] = label_categories
+
+        return categories
+
+
+    def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, TaskData.Frame], labels: list):
+        categories = self.categories()
+        label_cat = categories[datumaro.AnnotationType.label]
+        def map_label(name): return label_cat.find(name)[0]
+        label_attrs = {
+            label['name']: label['attributes']
+            for _, label in labels
+        }
+
+        return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label)
+
+
+class CvatTaskDataExtractor(CVATDataExtractor):
     def __init__(self, task_data, include_images=False):
         super().__init__()
-        self._categories = self._load_categories(task_data)
+        self._categories = self._load_categories(task_data.meta['task']['labels'])
 
         dm_items = []
 
@@ -773,7 +818,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 dm_image = _make_image(frame_data.idx, **image_args)
             else:
                 dm_image = Image(**image_args)
-            dm_anno = self._read_cvat_anno(frame_data, task_data)
+            dm_anno = self._read_cvat_anno(frame_data, task_data.meta['task']['labels'])
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
                 annotations=dm_anno, image=dm_image,
                 attributes={'frame': frame_data.frame})
@@ -781,46 +826,10 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
 
         self._items = dm_items
 
-    def __iter__(self):
-        for item in self._items:
-            yield item
-
-    def __len__(self):
-        return len(self._items)
-
-    def categories(self):
-        return self._categories
-
-    @staticmethod
-    def _load_categories(cvat_anno):
-        categories = {}
-
-        label_categories = datumaro.LabelCategories(attributes=['occluded'])
-
-        for _, label in cvat_anno.meta['task']['labels']:
-            label_categories.add(label['name'])
-            for _, attr in label['attributes']:
-                label_categories.attributes.add(attr['name'])
-
-        categories[datumaro.AnnotationType.label] = label_categories
-
-        return categories
-
-    def _read_cvat_anno(self, cvat_frame_anno, task_data):
-        categories = self.categories()
-        label_cat = categories[datumaro.AnnotationType.label]
-        def map_label(name): return label_cat.find(name)[0]
-        label_attrs = {
-            label['name']: label['attributes']
-            for _, label in task_data.meta['task']['labels']
-        }
-
-        return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label)
-
 class CVATProjectDataExtractor(datumaro.SourceExtractor):
     def __init__(self, project_data: ProjectData, include_images=False):
         super().__init__()
-        self._categories = self._load_categories(project_data)
+        self._categories = self._load_categories(project_data.meta['project']['labels'])
 
         dm_items: List[datumaro.DatasetItem] = []
 
@@ -858,7 +867,7 @@ class CVATProjectDataExtractor(datumaro.SourceExtractor):
                 dm_image = image_maker_per_task[frame_data.task_id](frame_data.idx, **image_args)
             else:
                 dm_image = Image(**image_args)
-            dm_anno = self._read_cvat_anno(frame_data, project_data)
+            dm_anno = self._read_cvat_anno(frame_data, project_data.meta['project']['labels'])
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
                 annotations=dm_anno, image=dm_image,
                 subset=get_defaulted_subset(frame_data.subset, project_data.subsets),
@@ -868,44 +877,8 @@ class CVATProjectDataExtractor(datumaro.SourceExtractor):
 
         self._items = dm_items
 
-    def __iter__(self):
-        for item in self._items:
-            yield item
 
-    def __len__(self):
-        return len(self._items)
-
-    def categories(self):
-        return self._categories
-
-
-    @staticmethod
-    def _load_categories(project_data: ProjectData):
-        categories: Dict[datumaro.AnnotationType, datumaro.LabelCategories] = {}
-
-        label_categories = datumaro.LabelCategories(attributes=['occluded'])
-
-        for _, label in project_data.meta['project']['labels']:
-            label_categories.add(label['name'])
-            for _, attr in label['attributes']:
-                label_categories.attributes.add(attr['name'])
-
-        categories[datumaro.AnnotationType.label] = label_categories
-
-        return categories
-
-    def _read_cvat_anno(self, cvat_frame_anno: ProjectData.Frame, project_data: ProjectData):
-        categories = self.categories()
-        label_cat = categories[datumaro.AnnotationType.label]
-        def map_label(name: str): return label_cat.find(name)[0]
-        label_attrs = {
-            label['name']: label['attributes']
-            for _, label in project_data.meta['project']['labels']
-        }
-
-        return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label)
-
-def CVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_images: bool=False):
+def GetCVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_images: bool=False):
     if isinstance(instance_data, ProjectData):
         return CVATProjectDataExtractor(instance_data, include_images)
     else:

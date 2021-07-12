@@ -9,7 +9,7 @@ from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import (AnnotationType, Caption, Label,
     LabelCategories, Transform)
 
-from cvat.apps.dataset_manager.bindings import (CVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -76,7 +76,7 @@ class LabelToCaption(Transform):
 
 @exporter(name='ICDAR Recognition', ext='ZIP', version='1.0')
 def _export_recognition(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(CVATDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     dataset.transform(LabelToCaption)
     with TemporaryDirectory() as temp_dir:
@@ -94,7 +94,7 @@ def _import(src_file, instance_data):
 
 @exporter(name='ICDAR Localization', ext='ZIP', version='1.0')
 def _export_localization(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(CVATDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'icdar_text_localization', save_images=save_images)
@@ -112,7 +112,7 @@ def _import(src_file, instance_data):
 
 @exporter(name='ICDAR Segmentation', ext='ZIP', version='1.0')
 def _export_segmentation(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(CVATDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
         dataset.transform('polygons_to_masks')

@@ -9,7 +9,7 @@ from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import (AnnotationType, Label,
     LabelCategories, Transform)
 
-from cvat.apps.dataset_manager.bindings import (CVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -60,7 +60,7 @@ class LabelAttrToAttr(Transform):
 
 @exporter(name='Market-1501', ext='ZIP', version='1.0')
 def _export(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(CVATDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
         dataset.transform(LabelAttrToAttr, 'market-1501')

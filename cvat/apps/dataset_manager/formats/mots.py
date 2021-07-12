@@ -8,7 +8,7 @@ from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import AnnotationType, Transform
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (CVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     find_dataset_root, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -22,7 +22,7 @@ class KeepTracks(Transform):
 
 @exporter(name='MOTS PNG', ext='ZIP', version='1.0')
 def _export(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(CVATDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     dataset.transform(KeepTracks) # can only export tracks
     dataset.transform('polygons_to_masks')

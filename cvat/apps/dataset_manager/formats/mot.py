@@ -8,7 +8,7 @@ import datumaro.components.extractor as datumaro
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import CVATDataExtractor
+from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
@@ -16,7 +16,7 @@ from .registry import dm_env, exporter, importer
 
 @exporter(name='MOT', ext='ZIP', version='1.1')
 def _export(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(CVATDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'mot_seq_gt', save_images=save_images)
