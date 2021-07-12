@@ -775,7 +775,7 @@ def import_dm_annotations(dm_dataset, task_data):
                         try:
                             ann.points = [*ann.position,*ann.rotation,*ann.scale,0,0,0,0,0,0,0]
                         except:
-                            pass
+                            ann.points = ann.points
                         ann.z_order = 0
                     task_data.add_shape(task_data.LabeledShape(
                         type=shapes[ann.type],

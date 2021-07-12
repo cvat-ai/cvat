@@ -63,23 +63,5 @@ context('Canvas 3D functionality. Make a copy.', () => {
             });
             cy.get('.cvat-player-previous-button').click().wait(1000);
         });
-
-        it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', () => {
-            const waitTime = 1000;
-            cy.wait(waitTime);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 100, 200).trigger('mousemove', 300, 200);
-            cy.wait(waitTime);
-            cy.get('#cvat-objects-sidebar-state-item-2').should('have.class', 'cvat-objects-sidebar-state-active-item');
-            cy.wait(waitTime);
-            cy.get('body').type('{Ctrl}c').type('{Ctrl}v');
-            cy.wait(waitTime);
-            cy.get('.cvat-player-next-button').click().wait(1000);
-            cy.wait(waitTime);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove').dblclick();
-            cy.wait(waitTime);
-            cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
-                expect(sideBarItems.length).to.be.equal(2);
-            });
-        });
     });
 });
