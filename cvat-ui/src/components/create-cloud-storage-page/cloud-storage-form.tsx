@@ -29,6 +29,7 @@ interface CloudStorageForm {
     session_token?: string;
     key?: string;
     secret_key?: string;
+    SAS_token?: string;
     description?: string;
     specific_attributes?: string;
 }
@@ -75,7 +76,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             // fieldsValue.account_name = cloudStorage.accountName;
             // fieldsValue.session_token = cloudStorage.token;
             fieldsValue.account_name = fakeCredentialsData.accountName;
-            fieldsValue.session_token = fakeCredentialsData.sessionToken;
+            fieldsValue.SAS_token = fakeCredentialsData.sessionToken;
         } else if (cloudStorage.credentialsType === CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET) {
             // fieldsValue.session_token = cloudStorage.token;
             // fieldsValue.key = cloudStorage.accessKey;
