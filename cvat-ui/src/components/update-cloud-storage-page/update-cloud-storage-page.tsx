@@ -32,7 +32,7 @@ export default function UpdateCloudStoragePageComponent(): JSX.Element {
         if (!cloudStorage && !isFetching) {
             dispatch(getCloudStoragesAsync({ id: cloudStorageId }));
         }
-    }, []);
+    }, [isFetching]);
 
     if (!cloudStorage && cloudStorageQuery.id !== cloudStorageId) {
         return <Spin size='large' className='cvat-spinner' />;
