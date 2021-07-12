@@ -290,15 +290,11 @@ You can enable the Traefik dashboard by uncommenting the following lines from `d
 
 ```
 services:
-  # ...
   traefik:
-    # ...
     command:
-      # ...
       # Uncomment to get Traefik dashboard
       # - "--api.insecure=true"
     ports:
-      - 80:80
       # Uncomment to get Traefik dashboard
       # - 8080:8080
 ```
@@ -306,11 +302,8 @@ services:
 and if you are using `docker-compose.https.yml`, also uncomment this line
 ```
 services:
-  # ...
   traefik:
-    # ...
     command:
-      # ...
       # Uncomment to get Traefik dashboard
       # - "--api.insecure=true"
 ```
