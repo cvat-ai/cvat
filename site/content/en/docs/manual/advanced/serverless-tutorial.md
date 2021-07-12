@@ -18,7 +18,7 @@ solve all our problems. Usually available DL models are trained on public
 datasets which cannot cover all specific cases. Very often you want to
 detect objects which cannot be recognized by these models. Our annotation
 requirements can be so strict that automatically
-annotated objects cannot be accepted as is and it is easy to annotate them
+annotated objects cannot be accepted as is and it is easier to annotate them
 from scratch. You always need to keep in mind all these mentioned limitations.
 Even if you have a DL solution which can
 _perfectly_ annotate 50% of your data, it means that manual work will be
@@ -62,7 +62,7 @@ Let's see on some examples how to use DL models for different annotation tasks.
 In the tutorial it is assumed that you already have the cloned
 [CVAT GitHub repo][cvat-github].
 To build CVAT with serverless support you need to include corresponding
-docker-compose files. In our case it is `docker-comopse.serverless.yml`.
+docker-compose files. In our case it is `docker-compose.serverless.yml`.
 It has necessary instructions how to build and deploy nuclio platform
 as a docker container and enable corresponding support in CVAT.
 
@@ -799,7 +799,7 @@ docker logs nuclio-nuclio-pth.shiyinzhang.iog
 [mscoco-format]: https://cocodataset.org/#format-data
 [pascal-voc-format]: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/index.html
 [faas-wiki]: https://en.wikipedia.org/wiki/Function_as_a_service
-[cvat-ai-tools-user-guide]: https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/documentation/user_guide.md#ai-tools
+[cvat-ai-tools-user-guide]: https://openvinotoolkit.github.io/cvat/docs/manual/advanced/ai-tools/
 [cvat-github]: https://github.com/openvinotoolkit/cvat
 [siammask-serverless]: https://github.com/openvinotoolkit/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio
 [vtest-avi]: https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
