@@ -160,15 +160,16 @@ Finally you will get bounding boxes for 10 frames by default.
 
 First of all let's deploy the DL model. The deployment process is similar for
 all serverless functions. Need to run `nuctl deploy` command with appropriate
-arguments. To simplify the life you can use `serverless/deploy_cpu.sh`
+arguments. To simplify the process, you can use `serverless/deploy_cpu.sh`
 command. Inference of the serverless function is optimized for CPU using
 [Intel OpenVINO framework][intel-openvino-url].
 
 <details>
 <summary>
 
-````bash
+```bash
 ./serverless/deploy_cpu.sh serverless/openvino/omz/public/yolo-v3-tf/
+```
 
 </summary>
 
@@ -187,18 +188,18 @@ Deploying serverless/openvino/omz/public/yolo-v3-tf function...
 21.07.12 15:55:30.359                     nuctl (I) Build complete {"result": {"Image":"cvat/openvino.omz.public.yolo-v3-tf:latest","UpdatedFunctionConfig":{"metadata":{"name":"openvino-omz-public-yolo-v3-tf","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"openvino","name":"YOLO v3","spec":"[\n  { \"id\": 0, \"name\": \"person\" },\n  { \"id\": 1, \"name\": \"bicycle\" },\n  { \"id\": 2, \"name\": \"car\" },\n  { \"id\": 3, \"name\": \"motorbike\" },\n  { \"id\": 4, \"name\": \"aeroplane\" },\n  { \"id\": 5, \"name\": \"bus\" },\n  { \"id\": 6, \"name\": \"train\" },\n  { \"id\": 7, \"name\": \"truck\" },\n  { \"id\": 8, \"name\": \"boat\" },\n  { \"id\": 9, \"name\": \"traffic light\" },\n  { \"id\": 10, \"name\": \"fire hydrant\" },\n  { \"id\": 11, \"name\": \"stop sign\" },\n  { \"id\": 12, \"name\": \"parking meter\" },\n  { \"id\": 13, \"name\": \"bench\" },\n  { \"id\": 14, \"name\": \"bird\" },\n  { \"id\": 15, \"name\": \"cat\" },\n  { \"id\": 16, \"name\": \"dog\" },\n  { \"id\": 17, \"name\": \"horse\" },\n  { \"id\": 18, \"name\": \"sheep\" },\n  { \"id\": 19, \"name\": \"cow\" },\n  { \"id\": 20, \"name\": \"elephant\" },\n  { \"id\": 21, \"name\": \"bear\" },\n  { \"id\": 22, \"name\": \"zebra\" },\n  { \"id\": 23, \"name\": \"giraffe\" },\n  { \"id\": 24, \"name\": \"backpack\" },\n  { \"id\": 25, \"name\": \"umbrella\" },\n  { \"id\": 26, \"name\": \"handbag\" },\n  { \"id\": 27, \"name\": \"tie\" },\n  { \"id\": 28, \"name\": \"suitcase\" },\n  { \"id\": 29, \"name\": \"frisbee\" },\n  { \"id\": 30, \"name\": \"skis\" },\n  { \"id\": 31, \"name\": \"snowboard\" },\n  { \"id\": 32, \"name\": \"sports ball\" },\n  { \"id\": 33, \"name\": \"kite\" },\n  { \"id\": 34, \"name\": \"baseball bat\" },\n  { \"id\": 35, \"name\": \"baseball glove\" },\n  { \"id\": 36, \"name\": \"skateboard\" },\n  { \"id\": 37, \"name\": \"surfboard\" },\n  { \"id\": 38, \"name\": \"tennis racket\" },\n  { \"id\": 39, \"name\": \"bottle\" },\n  { \"id\": 40, \"name\": \"wine glass\" },\n  { \"id\": 41, \"name\": \"cup\" },\n  { \"id\": 42, \"name\": \"fork\" },\n  { \"id\": 43, \"name\": \"knife\" },\n  { \"id\": 44, \"name\": \"spoon\" },\n  { \"id\": 45, \"name\": \"bowl\" },\n  { \"id\": 46, \"name\": \"banana\" },\n  { \"id\": 47, \"name\": \"apple\" },\n  { \"id\": 48, \"name\": \"sandwich\" },\n  { \"id\": 49, \"name\": \"orange\" },\n  { \"id\": 50, \"name\": \"broccoli\" },\n  { \"id\": 51, \"name\": \"carrot\" },\n  { \"id\": 52, \"name\": \"hot dog\" },\n  { \"id\": 53, \"name\": \"pizza\" },\n  { \"id\": 54, \"name\": \"donut\" },\n  { \"id\": 55, \"name\": \"cake\" },\n  { \"id\": 56, \"name\": \"chair\" },\n  { \"id\": 57, \"name\": \"sofa\" },\n  { \"id\": 58, \"name\": \"pottedplant\" },\n  { \"id\": 59, \"name\": \"bed\" },\n  { \"id\": 60, \"name\": \"diningtable\" },\n  { \"id\": 61, \"name\": \"toilet\" },\n  { \"id\": 62, \"name\": \"tvmonitor\" },\n  { \"id\": 63, \"name\": \"laptop\" },\n  { \"id\": 64, \"name\": \"mouse\" },\n  { \"id\": 65, \"name\": \"remote\" },\n  { \"id\": 66, \"name\": \"keyboard\" },\n  { \"id\": 67, \"name\": \"cell phone\" },\n  { \"id\": 68, \"name\": \"microwave\" },\n  { \"id\": 69, \"name\": \"oven\" },\n  { \"id\": 70, \"name\": \"toaster\" },\n  { \"id\": 71, \"name\": \"sink\" },\n  { \"id\": 72, \"name\": \"refrigerator\" },\n  { \"id\": 73, \"name\": \"book\" },\n  { \"id\": 74, \"name\": \"clock\" },\n  { \"id\": 75, \"name\": \"vase\" },\n  { \"id\": 76, \"name\": \"scissors\" },\n  { \"id\": 77, \"name\": \"teddy bear\" },\n  { \"id\": 78, \"name\": \"hair drier\" },\n  { \"id\": 79, \"name\": \"toothbrush\" }\n]\n","type":"detector"}},"spec":{"description":"YOLO v3 via Intel OpenVINO","handler":"main:handler","runtime":"python:3.6","env":[{"name":"NUCLIO_PYTHON_EXE_PATH","value":"/opt/nuclio/common/openvino/python3"}],"resources":{},"image":"cvat/openvino.omz.public.yolo-v3-tf:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"myHttpTrigger","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"volumes":[{"volume":{"name":"volume-1","hostPath":{"path":"/home/nmanovic/Workspace/cvat/serverless/common"}},"volumeMount":{"name":"volume-1","mountPath":"/opt/nuclio/common"}}],"build":{"image":"cvat/openvino.omz.public.yolo-v3-tf","baseImage":"openvino/ubuntu18_dev:2020.2","directives":{"preCopy":[{"kind":"USER","value":"root"},{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"ln -s /usr/bin/pip3 /usr/bin/pip"},{"kind":"RUN","value":"/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name yolo-v3-tf -o /opt/nuclio/open_model_zoo"},{"kind":"RUN","value":"/opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name yolo-v3-tf --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo"}]},"codeEntryType":"image"},"platform":{"attributes":{"mountMode":"volume","restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"securityContext":{},"eventTimeout":"30s"}}}}
 21.07.12 15:55:31.496            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
 21.07.12 15:55:32.894                     nuctl (I) Function deploy complete {"functionName": "openvino-omz-public-yolo-v3-tf", "httpPort": 49156}
-````
+```
 
 </details>
 
 Again, go to [models tab](http://localhost:8080/models) and check that you can
-see YOLO v3 in the list. If you cannot by a reason it means that there are some
+see `YOLO v3` in the list. If you cannot by a reason it means that there are some
 problems. Go to one of our public channels and ask for help.
 
-Let's reuse the task which you created for testing SiamMask serverless function
-above. Choose the `magic wand` tool, go to the `Detectors` tab and select
+Let us reuse the task which you created for testing `SiamMask` serverless function
+above. Choose the `magic wand` tool, go to the `Detectors` tab, and select
 `YOLO v3` model. Press `Annotate` button and you should see detection results.
-Don't forget to save annotations.
+Do not forget to save annotations.
 
 ![YOLO v3 results](/images/yolo_v3_results.png)
 
@@ -209,17 +210,60 @@ results directly into database. For more details please read
 
 ### Objects segmentation using Mask-RCNN
 
-## User story
+If you have a detector, which returns polygons, you can segment objects. One
+of such detectors is Mask-RCNN. There are several implementations of the
+detector available out of the box:
 
-- Architecture of a serverless functions in CVAT (function.yaml, entry point)
-- Choose a dataset which you want to annotate
+- `serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco` is
+  optimized using [Intel OpenVINO framework][intel-openvino-url] and works well
+  if it is run on an Intel CPU.
+- `serverless/tensorflow/matterport/mask_rcnn/` is optimized for GPU.
 
-- Choose a custom model which you want to integrate - DONE
-- Prepare necessary files (function.yaml, main.py) - DONE
+The deployment process for a serverless function optimized for GPU is similar.
+Just need to run `serverless/deploy_gpu.sh` script. It runs mostly the same
+commands but utilize `function-gpu.yaml` configuration file instead of
+`function.yaml` internally. See next sections if you want to understand the
+difference.
 
-- Automatically annotate data using the prepared model
-- Compare results with the ground truth using Datumaro
-- Conclusion
+_Note: Please do not run several GPU functions at the same time. In many cases it
+will not work out of the box. For now you should manually schedule different
+functions on different GPUs and it requires source code modification. Nuclio
+autoscaler does not support the local platform (docker)._
+
+<details>
+<summary>
+
+```bash
+./serverless/deploy_gpu.sh serverless/tensorflow/matterport/mask_rcnn
+```
+
+</summary>
+
+```bash
+Deploying serverless/tensorflow/matterport/mask_rcnn function...
+21.07.12 16:48:48.995                     nuctl (I) Deploying function {"name": ""}
+21.07.12 16:48:48.995                     nuctl (I) Building {"versionInfo": "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3", "name": ""}
+21.07.12 16:48:49.356                     nuctl (I) Cleaning up before deployment {"functionName": "tf-matterport-mask-rcnn"}
+21.07.12 16:48:49.470                     nuctl (I) Function already exists, deleting function containers {"functionName": "tf-matterport-mask-rcnn"}
+21.07.12 16:48:50.247                     nuctl (I) Staging files and preparing base images
+21.07.12 16:48:50.248                     nuctl (I) Building processor image {"imageName": "cvat/tf.matterport.mask_rcnn:latest"}
+21.07.12 16:48:50.249     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.5.16-amd64"}
+21.07.12 16:48:53.674     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
+21.07.12 16:48:57.424            nuctl.platform (I) Building docker image {"image": "cvat/tf.matterport.mask_rcnn:latest"}
+21.07.12 16:48:57.763            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/tf.matterport.mask_rcnn:latest", "registry": ""}
+21.07.12 16:48:57.764            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/tf.matterport.mask_rcnn:latest"}
+21.07.12 16:48:57.764                     nuctl (I) Build complete {"result": {"Image":"cvat/tf.matterport.mask_rcnn:latest","UpdatedFunctionConfig":{"metadata":{"name":"tf-matterport-mask-rcnn","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"tensorflow","name":"Mask RCNN via Tensorflow","spec":"[\n  { \"id\": 0, \"name\": \"BG\" },\n  { \"id\": 1, \"name\": \"person\" },\n  { \"id\": 2, \"name\": \"bicycle\" },\n  { \"id\": 3, \"name\": \"car\" },\n  { \"id\": 4, \"name\": \"motorcycle\" },\n  { \"id\": 5, \"name\": \"airplane\" },\n  { \"id\": 6, \"name\": \"bus\" },\n  { \"id\": 7, \"name\": \"train\" },\n  { \"id\": 8, \"name\": \"truck\" },\n  { \"id\": 9, \"name\": \"boat\" },\n  { \"id\": 10, \"name\": \"traffic_light\" },\n  { \"id\": 11, \"name\": \"fire_hydrant\" },\n  { \"id\": 12, \"name\": \"stop_sign\" },\n  { \"id\": 13, \"name\": \"parking_meter\" },\n  { \"id\": 14, \"name\": \"bench\" },\n  { \"id\": 15, \"name\": \"bird\" },\n  { \"id\": 16, \"name\": \"cat\" },\n  { \"id\": 17, \"name\": \"dog\" },\n  { \"id\": 18, \"name\": \"horse\" },\n  { \"id\": 19, \"name\": \"sheep\" },\n  { \"id\": 20, \"name\": \"cow\" },\n  { \"id\": 21, \"name\": \"elephant\" },\n  { \"id\": 22, \"name\": \"bear\" },\n  { \"id\": 23, \"name\": \"zebra\" },\n  { \"id\": 24, \"name\": \"giraffe\" },\n  { \"id\": 25, \"name\": \"backpack\" },\n  { \"id\": 26, \"name\": \"umbrella\" },\n  { \"id\": 27, \"name\": \"handbag\" },\n  { \"id\": 28, \"name\": \"tie\" },\n  { \"id\": 29, \"name\": \"suitcase\" },\n  { \"id\": 30, \"name\": \"frisbee\" },\n  { \"id\": 31, \"name\": \"skis\" },\n  { \"id\": 32, \"name\": \"snowboard\" },\n  { \"id\": 33, \"name\": \"sports_ball\" },\n  { \"id\": 34, \"name\": \"kite\" },\n  { \"id\": 35, \"name\": \"baseball_bat\" },\n  { \"id\": 36, \"name\": \"baseball_glove\" },\n  { \"id\": 37, \"name\": \"skateboard\" },\n  { \"id\": 38, \"name\": \"surfboard\" },\n  { \"id\": 39, \"name\": \"tennis_racket\" },\n  { \"id\": 40, \"name\": \"bottle\" },\n  { \"id\": 41, \"name\": \"wine_glass\" },\n  { \"id\": 42, \"name\": \"cup\" },\n  { \"id\": 43, \"name\": \"fork\" },\n  { \"id\": 44, \"name\": \"knife\" },\n  { \"id\": 45, \"name\": \"spoon\" },\n  { \"id\": 46, \"name\": \"bowl\" },\n  { \"id\": 47, \"name\": \"banana\" },\n  { \"id\": 48, \"name\": \"apple\" },\n  { \"id\": 49, \"name\": \"sandwich\" },\n  { \"id\": 50, \"name\": \"orange\" },\n  { \"id\": 51, \"name\": \"broccoli\" },\n  { \"id\": 52, \"name\": \"carrot\" },\n  { \"id\": 53, \"name\": \"hot_dog\" },\n  { \"id\": 54, \"name\": \"pizza\" },\n  { \"id\": 55, \"name\": \"donut\" },\n  { \"id\": 56, \"name\": \"cake\" },\n  { \"id\": 57, \"name\": \"chair\" },\n  { \"id\": 58, \"name\": \"couch\" },\n  { \"id\": 59, \"name\": \"potted_plant\" },\n  { \"id\": 60, \"name\": \"bed\" },\n  { \"id\": 61, \"name\": \"dining_table\" },\n  { \"id\": 62, \"name\": \"toilet\" },\n  { \"id\": 63, \"name\": \"tv\" },\n  { \"id\": 64, \"name\": \"laptop\" },\n  { \"id\": 65, \"name\": \"mouse\" },\n  { \"id\": 66, \"name\": \"remote\" },\n  { \"id\": 67, \"name\": \"keyboard\" },\n  { \"id\": 68, \"name\": \"cell_phone\" },\n  { \"id\": 69, \"name\": \"microwave\" },\n  { \"id\": 70, \"name\": \"oven\" },\n  { \"id\": 71, \"name\": \"toaster\" },\n  { \"id\": 72, \"name\": \"sink\" },\n  { \"id\": 73, \"name\": \"refrigerator\" },\n  { \"id\": 74, \"name\": \"book\" },\n  { \"id\": 75, \"name\": \"clock\" },\n  { \"id\": 76, \"name\": \"vase\" },\n  { \"id\": 77, \"name\": \"scissors\" },\n  { \"id\": 78, \"name\": \"teddy_bear\" },\n  { \"id\": 79, \"name\": \"hair_drier\" },\n  { \"id\": 80, \"name\": \"toothbrush\" }\n]\n","type":"detector"}},"spec":{"description":"Mask RCNN optimized for GPU","handler":"main:handler","runtime":"python:3.6","env":[{"name":"MASK_RCNN_DIR","value":"/opt/nuclio/Mask_RCNN"}],"resources":{"limits":{"nvidia.com/gpu":"1"}},"image":"cvat/tf.matterport.mask_rcnn:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"myHttpTrigger","maxWorkers":1,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"volumes":[{"volume":{"name":"volume-1","hostPath":{"path":"/home/nmanovic/Workspace/cvat/serverless/common"}},"volumeMount":{"name":"volume-1","mountPath":"/opt/nuclio/common"}}],"build":{"functionConfigPath":"serverless/tensorflow/matterport/mask_rcnn/nuclio/function-gpu.yaml","image":"cvat/tf.matterport.mask_rcnn","baseImage":"tensorflow/tensorflow:1.15.5-gpu-py3","directives":{"postCopy":[{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"apt update \u0026\u0026 apt install --no-install-recommends -y git curl"},{"kind":"RUN","value":"git clone --depth 1 https://github.com/matterport/Mask_RCNN.git"},{"kind":"RUN","value":"curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5"},{"kind":"RUN","value":"pip3 install numpy cython pyyaml keras==2.1.0 scikit-image Pillow"}]},"codeEntryType":"image"},"platform":{"attributes":{"mountMode":"volume","restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"securityContext":{},"eventTimeout":"30s"}}}}
+21.07.12 16:48:59.071            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
+21.07.12 16:49:00.437                     nuctl (I) Function deploy complete {"functionName": "tf-matterport-mask-rcnn", "httpPort": 49155}
+```
+
+</details>
+
+Now you should be able to annotate objects using segmentation masks.
+
+![Mask RCNN results](/images/mask_rcnn_results.png)
+
+## Adding your own DL models
 
 ### Choose a DL model
 
