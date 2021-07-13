@@ -42,9 +42,11 @@ const defaultState: NotificationsState = {
             updating: null,
             dumping: null,
             loading: null,
-            exporting: null,
+            exportingAsDataset: null,
             deleting: null,
             creating: null,
+            exporting: null,
+            importing: null,
             moving: null,
         },
         formats: {
@@ -111,6 +113,7 @@ const defaultState: NotificationsState = {
     messages: {
         tasks: {
             loadingDone: '',
+            importingDone: '',
             movingDone: '',
         },
         models: {
@@ -313,7 +316,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     tasks: {
                         ...state.errors.tasks,
-                        exporting: {
+                        exportingAsDataset: {
                             message:
                                 'Could not export dataset for the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
@@ -389,24 +392,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.MOVE_TASK_TO_PROJECT_FAILED: {
-            const taskID = action.payload.task.id;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        moving: {
-                            message:
-                                'Could not move  the' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a> to a project`,
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
             const taskID = action.payload.task.id;
             return {
@@ -460,16 +445,45 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.MOVE_TASK_TO_PROJECT_SUCCESS: {
-            const { id: taskId, projectId } = action.payload.task;
-
+        case TasksActionTypes.EXPORT_TASK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        exporting: {
+                            message: 'Could not export the task',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        importing: {
+                            message: 'Could not import the task',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
+            const taskID = action.payload.task.id;
             return {
                 ...state,
                 messages: {
                     ...state.messages,
                     tasks: {
                         ...state.messages.tasks,
-                        movingDone: `The task #${taskId} has been successfully moved to the project #${projectId}`,
+                        importingDone: `Task has been imported succesfully <a href="/tasks/${taskID}">Open task</a>`,
                     },
                 },
             };

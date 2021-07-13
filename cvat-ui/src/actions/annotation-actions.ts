@@ -7,7 +7,7 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-import { RectDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
+import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -146,7 +146,6 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
-    UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
@@ -572,15 +571,6 @@ export function activateObject(activatedStateID: number | null, activatedAttribu
         payload: {
             activatedStateID,
             activatedAttributeID,
-        },
-    };
-}
-
-export function updateTabContentHeight(tabContentHeight: number): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT,
-        payload: {
-            tabContentHeight,
         },
     };
 }
@@ -1144,6 +1134,7 @@ export function rememberObject(createParams: {
     activeShapeType?: ShapeType;
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
+    activeCuboidDrawingMethod?: CuboidDrawingMethod;
 }): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
@@ -1490,6 +1481,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 activeShapeType,
                 activeNumOfPoints,
                 activeRectDrawingMethod,
+                activeCuboidDrawingMethod,
             },
         } = getStore().getState().annotation;
 
@@ -1544,6 +1536,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
+                cuboidDrawingMethod: activeCuboidDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),

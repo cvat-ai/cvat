@@ -45,6 +45,7 @@ export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Elemen
             </Col>
             <Col>
                 <Select
+                    className='cvat-move-task-label-mapper-item-select'
                     disabled={typeof projectLabels === 'undefined'}
                     value={value.newLabelName || ''}
                     onChange={(_value) =>

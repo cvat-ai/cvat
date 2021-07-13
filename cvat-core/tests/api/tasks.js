@@ -95,6 +95,7 @@ describe('Feature: save a task', () => {
 
         result[0].bugTracker = 'newBugTracker';
         result[0].name = 'New Task Name';
+        result[0].projectId = 6;
 
         result[0].save();
 
@@ -104,6 +105,7 @@ describe('Feature: save a task', () => {
 
         expect(result[0].bugTracker).toBe('newBugTracker');
         expect(result[0].name).toBe('New Task Name');
+        expect(result[0].projectId).toBe(6);
     });
 
     test('save some new labels in a task', async () => {
