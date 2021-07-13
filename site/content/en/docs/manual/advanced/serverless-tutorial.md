@@ -57,14 +57,15 @@ the tutorial.
 
 ## Using builtin DL models in practice
 
-Let's see on some examples how to use DL models for different annotation tasks.
+Let's see on examples how to use DL models for annotation in different
+computer vision tasks.
 
 In the tutorial it is assumed that you already have the cloned
 [CVAT GitHub repo][cvat-github].
-To build CVAT with serverless support you need to include corresponding
-docker-compose files. In our case it is `docker-compose.serverless.yml`.
-It has necessary instructions how to build and deploy nuclio platform
-as a docker container and enable corresponding support in CVAT.
+To build CVAT with serverless support you need to run `docker-compose` command
+with specific configuration files. In the case it is `docker-compose.serverless.yml`.
+It has necessary instructions how to build and deploy nuclio platform as a
+docker container and enable corresponding support in CVAT.
 
 ```sh
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
@@ -82,12 +83,12 @@ cvat_ui      /docker-entrypoint.sh ngin ...   Up             80/tcp
 nuclio       /docker-entrypoint.sh sh - ...   Up (healthy)   80/tcp, 0.0.0.0:8070->8070/tcp,:::8070->8070/tcp
 ```
 
-To deploy builtin serverless functions you need to install nuclio command
-line tool (aka `nuctl`) for your operating system. Again it is assumed that
-you followed [the installation guide][cvat-auto-annotation-guide] and `nuctl`
-is already installed on your system. Run the following command to check that
-it works. In the beginning you should not have any deployed serverless
-functions.
+Next step is to deploy builtin serverless functions using nuclio command
+line tool (aka `nuctl`). It is assumed that you followed
+[the installation guide][cvat-auto-annotation-guide] and `nuctl`
+is already installed on your operating system. Run the following
+command to check that it works. In the beginning you should not have
+any deployed serverless functions.
 
 ```sh
 nuctl get functions
@@ -104,7 +105,7 @@ tracks. Basically for every object we need to know its location on every frame.
 
 First step is to deploy [SiamMask][siammask-serverless]. The deployment process
 can depend on your operating system. On Linux you can use `serverless/deploy_cpu.sh`
-auxiliary script but in the tutorial we are using `nuctl` directly.
+auxiliary script but below we are using `nuctl` directly.
 
 ```sh
 nuctl create project cvat
@@ -131,7 +132,7 @@ nuctl get functions
   nuclio    | pth-foolwood-siammask | cvat    | ready |     49155 | 1/1
 ```
 
-Let's see how it works in UI. First of all go to [models tab](http://localhost:8080/models)
+Let's see how it works in UI. Go to [models tab](http://localhost:8080/models)
 and check that you can see SiamMask in the list. If you cannot by a reason it
 means that there are some problems. Go to one of our public channels and ask
 for help.
@@ -141,13 +142,13 @@ for help.
 After that go to [new task page](http://localhost:8080/tasks/create) and
 create one with [the video file][vtest-avi]. You can choose any task name,
 any labels, and even another video file if you like. In this case `Remote sources`
-option was used to specify the video file. Press submit button at the end to
+option was used to specify the video file. Press `submit` button at the end to
 finish the process.
 
 ![Create a video annotation task](/images/create_video_task.png)
 
 Open the task and use [AI tools][cvat-ai-tools-user-guide] to start tracking
-an object. Draw a bounding box around the object and it will be tracked during
+an object. Draw a bounding box around an object and it will be tracked during
 a couple of frames forward.
 
 ![Start tracking an object](/images/start_tracking.png)
@@ -198,10 +199,10 @@ problems. Go to one of our public channels and ask for help.
 
 Let us reuse the task which you created for testing `SiamMask` serverless function
 above. Choose the `magic wand` tool, go to the `Detectors` tab, and select
-`YOLO v3` model. Press `Annotate` button and you should see detection results.
-Do not forget to save annotations.
+`YOLO v3` model. Press `Annotate` button and after a couple of seconds you
+should see detection results. Do not forget to save annotations.
 
-![YOLO v3 results](/images/yolo_v3_results.png)
+![YOLO v3 results](/images/yolo_v3_results.jpg)
 
 Also it is possible to run a detector for the whole annotation task. Thus
 CVAT will run the serverless function on every frame of the task and submit
@@ -211,7 +212,7 @@ results directly into database. For more details please read
 ### Objects segmentation using Mask-RCNN
 
 If you have a detector, which returns polygons, you can segment objects. One
-of such detectors is Mask-RCNN. There are several implementations of the
+of such detectors is `Mask-RCNN`. There are several implementations of the
 detector available out of the box:
 
 - `serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco` is
@@ -261,13 +262,13 @@ Deploying serverless/tensorflow/matterport/mask_rcnn function...
 
 Now you should be able to annotate objects using segmentation masks.
 
-![Mask RCNN results](/images/mask_rcnn_results.png)
+![Mask RCNN results](/images/mask_rcnn_results.jpg)
 
 ## Adding your own DL models
 
 ### Choose a DL model
 
-In my case I will choose a popular AI library with a lot of models inside.
+For the tutorial I will choose a popular AI library with a lot of models inside.
 In your case it can be your own model. If it is based on detectron2 it
 will be easy to integrate. Just follow the tutorial.
 
@@ -455,7 +456,8 @@ spec:
     image: cvat/pth.facebookresearch.detectron2.retinanet_r101
     baseImage: ubuntu:20.04
 
-    : preCopy:
+    directives:
+      preCopy:
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
         - kind: RUN
