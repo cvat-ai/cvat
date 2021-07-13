@@ -300,7 +300,7 @@ services:
       # - traefik.http.routers.dashbaord.service=api@internal
 ```
 
-and if you are using `docker-compose.https.yml`, also uncomment this line
+and if you are using `docker-compose.https.yml`, also uncomment these lines
 ```
 services:
   traefik:
