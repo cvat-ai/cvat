@@ -226,7 +226,7 @@ class _DbTestBase(APITestCase):
                 else:
                     d[t.tag] = text
             return d
-        if format_name == "Velodyne Points Format 1.0":
+        if format_name == "Kitti Raw Format 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
                 zipfile.ZipFile(content).extractall(tmp_dir)
                 xmls = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
@@ -236,7 +236,7 @@ class _DbTestBase(APITestCase):
                     self.assertEqual(xmlroot.tag, "boost_serialization")
                     items = xmlroot.findall("./tracklets/item")
                     self.assertEqual(len(items), len(task_data["shapes"]))
-        elif format_name == "Point Cloud Format 1.0":
+        elif format_name == "Sly Point Cloud Format 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
                 checking_files = [osp.join(tmp_dir, "key_id_map.json"),
                                   osp.join(tmp_dir, "meta.json"),
@@ -253,7 +253,7 @@ class Task3DTest(_DbTestBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.format_names = ["Point Cloud Format 1.0", "Velodyne Points Format 1.0"]
+        cls.format_names = ["Sly Point Cloud Format 1.0", "Kitti Raw Format 1.0"]
         cls._image_sizes = {}
         cls.pointcloud_pcd_filename = "test_canvas3d.zip"
         cls.pointcloud_pcd_path = osp.join(os.path.dirname(__file__), 'assets', cls.pointcloud_pcd_filename)

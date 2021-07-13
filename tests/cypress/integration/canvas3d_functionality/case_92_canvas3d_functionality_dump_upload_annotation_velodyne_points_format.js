@@ -11,7 +11,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
     const cuboidCreationParams = {
         labelName: labelName,
     };
-    const dumpTypeVC = 'Velodyne Points Format';
+    const dumpTypeVC = 'Kitti Raw Format';
     let annotationVCArchiveName = '';
 
     function confirmUpdate(modalWindowClassName) {

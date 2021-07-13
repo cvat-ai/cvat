@@ -12,8 +12,8 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
         labelName: labelName,
     };
 
-    const dumpTypePC = 'Point Cloud Format';
-    const dumpTypeVC = 'Velodyne Points Format';
+    const dumpTypePC = 'Sly Point Cloud Format';
+    const dumpTypeVC = 'Kitti Raw Format';
 
     before(() => {
         cy.openTask(taskName)

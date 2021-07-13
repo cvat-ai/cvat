@@ -11,7 +11,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
     const cuboidCreationParams = {
         labelName: labelName,
     };
-    const dumpTypePC = 'Point Cloud Format';
+    const dumpTypePC = 'Sly Point Cloud Format';
     let annotationPCArchiveName = '';
 
     function confirmUpdate(modalWindowClassName) {
