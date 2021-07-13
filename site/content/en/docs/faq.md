@@ -137,7 +137,7 @@ Uploading of annotation from the Annotation view only affects the current job.
 ## How to specify multiple hostnames
 
 To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label for both the
-`cvat` and `cvat_ui` services, like so
+`cvat` and `cvat_ui` services, like so (see [the documentation](https://doc.traefik.io/traefik/routing/routers/#rule) on Traefik rules for more details):
 
 ```yaml
   cvat:
