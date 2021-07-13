@@ -194,11 +194,6 @@ class _DbTestBase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
-    def _get_request_with_data(self, url, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(url, data)
-        return response
-
     def _put_request_with_data(self, url, data, user):
         with ForceLogin(user, self.client):
             response = self.client.put(url, data)
