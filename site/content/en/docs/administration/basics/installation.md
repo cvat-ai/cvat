@@ -291,12 +291,13 @@ You can enable the Traefik dashboard by uncommenting the following lines from `d
 ```
 services:
   traefik:
-    command:
-      # Uncomment to get Traefik dashboard
-      # - "--api.insecure=true"
-    ports:
-      # Uncomment to get Traefik dashboard
-      # - 8080:8080
+    # Uncomment to get Traefik dashboard
+      # - "--entryPoints.dashboard.address=:8090"
+      # - "--api.dashboard=true"
+    # labels:
+      # - traefik.enable=true
+      # - traefik.http.routers.dashboard.entrypoints=dashboard
+      # - traefik.http.routers.dashbaord.service=api@internal
 ```
 
 and if you are using `docker-compose.https.yml`, also uncomment this line
@@ -305,7 +306,8 @@ services:
   traefik:
     command:
       # Uncomment to get Traefik dashboard
-      # - "--api.insecure=true"
+      # - "--entryPoints.dashboard.address=:8090"
+      # - "--api.dashboard=true"
 ```
 
 Note that this "insecure" dashboard is not recommended in production (and if your instance is publicly available); if you want to keep the dashboard in production you should read Traefik's [documentation](https://doc.traefik.io/traefik/operations/dashboard/) on how to properly secure it.
@@ -418,3 +420,5 @@ Then, use the `docker-compose.https.yml` file to override the base `docker-compo
 ```
 docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
+
+Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).

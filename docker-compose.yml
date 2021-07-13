@@ -70,14 +70,18 @@ services:
     container_name: traefik
     command:
       - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=test"
-      - "--entryPoints.web.address=:80"
-      # Uncomment to get Traefik dashboard
-      # - "--api.insecure=true"
+      - "--providers.docker.network=cvat"
+      - "--entryPoints.web.address=:8080"
+    # Uncomment to get Traefik dashboard
+      # - "--entryPoints.dashboard.address=:8090"
+      # - "--api.dashboard=true"
+    # labels:
+      # - traefik.enable=true
+      # - traefik.http.routers.dashboard.entrypoints=dashboard
+      # - traefik.http.routers.dashbaord.service=api@internal
     ports:
-      - 80:80
-      # Uncomment to get Traefik dashboard
-      # - 8080:8080
+      - 8080:8080
+      - 8090:8090
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:

@@ -20,7 +20,7 @@ services:
     container_name: traefik
     command:
       - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=test"
+      - "--providers.docker.network=cvat"
       - "--entryPoints.web.address=:80"
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
@@ -29,8 +29,10 @@ services:
       - "--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true"
       - "--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json"
       # Uncomment to get Traefik dashboard
-      # - "--api.insecure=true"
-    ports:
+      # - "--entryPoints.dashboard.address=:8090"
+      # - "--api.dashboard=true"
+      ports:
+      - 80:80
       - 443:443
     volumes:
       - cvat_letsencrypt:/letsencrypt
