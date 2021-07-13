@@ -24,7 +24,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
-        cy.get('body').type(key);
+        cy.get('body').type(`{Shift}${key}`);
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
@@ -122,6 +122,9 @@ context('Canvas 3D functionality. Basic actions.', () => {
                 ['.cvat-cursor-control', 'Cursor [Esc]'],
             ].forEach(([button, tooltip]) => {
                 testControlButtonTooltip(button, tooltip);
+            });
+            cy.get('.cvat-objects-sidebar-tabs').within(() => {
+                cy.contains('[role="tab"]', 'Issues').should('not.exist');
             });
         });
 
