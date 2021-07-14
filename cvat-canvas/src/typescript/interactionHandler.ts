@@ -5,7 +5,9 @@
 import * as SVG from 'svg.js';
 import consts from './consts';
 import Crosshair from './crosshair';
-import { translateToSVG } from './shared';
+import {
+    translateToSVG, PropType, stringifyPoints, translateToCanvas,
+} from './shared';
 import { InteractionData, InteractionResult, Geometry } from './canvasModel';
 
 export interface InteractionHandler {
@@ -26,6 +28,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private crosshair: Crosshair;
     private threshold: SVG.Rect | null;
     private thresholdRectSize: number;
+    private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
+    private drawnIntermediateShape: SVG.Shape;
 
     private prepareResult(): InteractionResult[] {
         return this.interactionShapes.map(
@@ -207,6 +211,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private release(): void {
+        if (this.drawnIntermediateShape) {
+            this.drawnIntermediateShape.remove();
+            this.drawnIntermediateShape = null;
+        }
+
         if (this.crosshair) {
             this.removeCrosshair();
         }
@@ -245,6 +254,31 @@ export class InteractionHandlerImpl implements InteractionHandler {
         return imageX >= 0 && imageX < width && imageY >= 0 && imageY < height;
     }
 
+    private updateIntermediateShape(): void {
+        const { intermediateShape, geometry } = this;
+        if (this.drawnIntermediateShape) {
+            this.drawnIntermediateShape.remove();
+        }
+
+        if (!intermediateShape) return;
+        const { shapeType, points } = intermediateShape;
+        if (shapeType === 'polygon') {
+            this.drawnIntermediateShape = this.canvas
+                .polygon(stringifyPoints(translateToCanvas(geometry.offset, points)))
+                .attr({
+                    'color-rendering': 'optimizeQuality',
+                    'shape-rendering': 'geometricprecision',
+                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                    fill: 'none',
+                })
+                .addClass('cvat_canvas_interact_intermediate_shape');
+        } else {
+            throw new Error(
+                `Shape type "${shapeType}" was not implemented at interactionHandler::updateIntermediateShape`,
+            );
+        }
+    }
+
     public constructor(
         onInteraction: (
             shapes: InteractionResult[] | null,
@@ -268,6 +302,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.crosshair = new Crosshair();
         this.threshold = null;
         this.thresholdRectSize = 300;
+        this.intermediateShape = null;
+        this.drawnIntermediateShape = null;
         this.cursorPosition = {
             x: 0,
             y: 0,
@@ -352,7 +388,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     public interact(interactionData: InteractionData): void {
-        if (interactionData.enabled) {
+        if (interactionData.intermediateShape) {
+            this.intermediateShape = interactionData.intermediateShape;
+            this.updateIntermediateShape();
+        } else if (interactionData.enabled) {
             this.interactionData = interactionData;
             this.initInteraction();
             this.startInteraction();
