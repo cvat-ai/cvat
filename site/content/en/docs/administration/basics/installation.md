@@ -292,12 +292,13 @@ You can enable the Traefik dashboard by uncommenting the following lines from `d
 services:
   traefik:
     # Uncomment to get Traefik dashboard
-      # - "--entryPoints.dashboard.address=:8090"
-      # - "--api.dashboard=true"
+    #   - "--entryPoints.dashboard.address=:8090"
+    #   - "--api.dashboard=true"
     # labels:
-      # - traefik.enable=true
-      # - traefik.http.routers.dashboard.entrypoints=dashboard
-      # - traefik.http.routers.dashbaord.service=api@internal
+    #   - traefik.enable=true
+    #   - traefik.http.routers.dashboard.entrypoints=dashboard
+    #   - traefik.http.routers.dashboard.service=api@internal
+    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
 ```
 
 and if you are using `docker-compose.https.yml`, also uncomment these lines
