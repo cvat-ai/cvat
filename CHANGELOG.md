@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update of COCO format documentation (<https://github.com/openvinotoolkit/cvat/pull/3197>)
 - Updated Webpack Dev Server config to add proxxy (<https://github.com/openvinotoolkit/cvat/pull/3368>)
 - Update to Django 3.1.12 (<https://github.com/openvinotoolkit/cvat/pull/3378>)
+- Changed Nginx proxy to Traefik in `docker-compose.yml` (https://github.com/openvinotoolkit/cvat/pull/3409)
+- Simplify the process of deploying CVAT with HTTPS (https://github.com/openvinotoolkit/cvat/pull/3409)
 
 ### Deprecated
 
