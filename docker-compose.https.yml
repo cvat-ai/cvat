@@ -31,7 +31,7 @@ services:
       # Uncomment to get Traefik dashboard
       # - "--entryPoints.dashboard.address=:8090"
       # - "--api.dashboard=true"
-      ports:
+    ports:
       - 80:80
       - 443:443
     volumes:
