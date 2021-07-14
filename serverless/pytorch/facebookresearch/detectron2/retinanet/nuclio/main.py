@@ -17,7 +17,8 @@ CONFIDENCE_THRESHOLD = 0.5
 def init_context(context):
     context.logger.info("Init context...  0%")
     if torch.cuda.is_available():
-        functionconfig = yaml.safe_load(open("/opt/nuclio/function-gpu.yaml"))
+        with open("/opt/nuclio/function-gpu.yaml", 'rb') as function_file:
+            functionconfig = yaml.safe_load(function_file)
         CONFIG_OPTS.extend(['MODEL.DEVICE', 'cuda'])
     else:
         functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
