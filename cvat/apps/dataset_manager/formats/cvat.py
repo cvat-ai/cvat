@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.extractor import DatasetItem
 
-from cvat.apps.dataset_manager.bindings import match_dm_item
+from cvat.apps.dataset_manager.bindings import match_dm_item, ProjectData
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
 
@@ -42,8 +42,10 @@ def create_xml_dumper(file_object):
             self.xmlgen.characters(self.version)
             self.xmlgen.endElement("version")
 
-        def open_root(self):
+        def open_document(self):
             self.xmlgen.startDocument()
+
+        def open_root(self):
             self.xmlgen.startElement("annotations", {})
             self._level += 1
             self._add_version()
@@ -168,12 +170,14 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("annotations")
+
+        def close_document(self):
             self.xmlgen.endDocument()
+
 
     return XmlAnnotationWriter(file_object)
 
-def dump_as_cvat_annotation(file_object, annotations):
-    dumper = create_xml_dumper(file_object)
+def dump_as_cvat_annotation(dumper, annotations):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 
@@ -286,8 +290,7 @@ def dump_as_cvat_annotation(file_object, annotations):
         dumper.close_image()
     dumper.close_root()
 
-def dump_as_cvat_interpolation(file_object, annotations):
-    dumper = create_xml_dumper(file_object)
+def dump_as_cvat_interpolation(dumper, annotations):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
     def dump_track(idx, track):
@@ -526,6 +529,10 @@ def load(file_object, annotations):
                 annotations.add_tag(annotations.Tag(**tag))
                 tag = None
             el.clear()
+
+def dump_task_anno(dst_file, task_data, callback):
+    dumper = create_xml_dumper(dst_file)
+    callback(dumper, task_data)
 
 def _export(dst_file, task_data, anno_callback, save_images=False):
     with TemporaryDirectory() as temp_dir:
