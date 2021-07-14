@@ -110,7 +110,9 @@ spec:
         - kind: RUN
           value: pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
         - kind: RUN
-          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@v0.4'
+          value: git clone --branch v0.4 https://github.com/facebookresearch/detectron2
+        - kind: RUN
+          value: pip3 install -e detectron2
         - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
         - kind: RUN
