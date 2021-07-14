@@ -12,7 +12,7 @@ do
     echo "Deploying $(dirname "$func_root") function..."
     nuctl deploy --project-name cvat --path "$func_root" \
         --volume "$SCRIPT_DIR/common:/opt/nuclio/common" \
-        --file $func_config --platform local
+        --file "$func_config" --platform local
 done
 
 nuctl get function
