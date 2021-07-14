@@ -121,8 +121,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         }
                     }
 
+                    self.addClass('cvat_canvas_removable_interaction_point');
                     self.attr({
                         'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
+                        r: (consts.BASE_POINT_SIZE * 1.5) / this.geometry.scale,
                     });
 
                     self.on('mousedown', (_e: MouseEvent): void => {
@@ -140,8 +142,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 });
 
                 self.on('mouseleave', (): void => {
+                    self.removeClass('cvat_canvas_removable_interaction_point');
                     self.attr({
                         'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
+                        r: consts.BASE_POINT_SIZE / this.geometry.scale,
                     });
 
                     self.off('mousedown');
@@ -334,8 +338,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
             : [...this.interactionShapes];
         for (const shape of shapesToBeScaled) {
             if (shape.type === 'circle') {
-                (shape as SVG.Circle).radius(consts.BASE_POINT_SIZE / this.geometry.scale);
-                shape.attr('stroke-width', consts.POINTS_STROKE_WIDTH / this.geometry.scale);
+                if (shape.hasClass('cvat_canvas_removable_interaction_point')) {
+                    (shape as SVG.Circle).radius((consts.BASE_POINT_SIZE * 1.5) / this.geometry.scale);
+                    shape.attr('stroke-width', consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale);
+                } else {
+                    (shape as SVG.Circle).radius(consts.BASE_POINT_SIZE / this.geometry.scale);
+                    shape.attr('stroke-width', consts.POINTS_STROKE_WIDTH / this.geometry.scale);
+                }
             } else {
                 shape.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
             }
