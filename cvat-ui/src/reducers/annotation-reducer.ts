@@ -286,7 +286,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     },
                     contextImage: {
                         ...state.player.contextImage,
-                        data: null,
+                        ...(state.player.frame.number === number ? {} : { data: null }),
                     },
                 },
                 annotations: {
