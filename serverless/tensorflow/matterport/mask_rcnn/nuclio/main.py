@@ -11,15 +11,13 @@ import tensorflow as tf
 def init_context(context):
     context.logger.info("Init context...  0%")
 
-    if tf.test.is_gpu_available() and tf.test.is_built_with_cuda():
-        functionconfig = yaml.safe_load(open("/opt/nuclio/function-gpu.yaml"))
-    else:
-        functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+    with open("/opt/nuclio/function.yaml", 'rb') as function_file:
+        functionconfig = yaml.safe_load(function_file)
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
 
     model_handler = ModelLoader(labels)
-    setattr(context.user_data, 'model_handler', model_handler)
+    context.user_data.model_handler = model_handler
 
     context.logger.info("Init context...100%")
 

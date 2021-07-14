@@ -516,11 +516,7 @@ def init_context(context):
     cfg.freeze()
     predictor = DefaultPredictor(cfg)
 
-    setattr(context.user_data, 'model_handler', predictor)
-    functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
-    labels_spec = functionconfig['metadata']['annotations']['spec']
-    labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
-    setattr(context.user_data, "labels", labels)
+    context.user_data.model_handler = predictor
 
 def handler(context, event):
     data = event.body

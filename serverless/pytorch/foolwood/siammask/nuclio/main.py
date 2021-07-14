@@ -9,7 +9,7 @@ def init_context(context):
 
     # Read the DL model
     model = ModelHandler()
-    setattr(context.user_data, 'model', model)
+    context.user_data.model = model
 
     context.logger.info("Init context...100%")
 

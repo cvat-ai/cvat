@@ -9,13 +9,15 @@ def init_context(context):
     context.logger.info("Init context...  0%")
 
     # Read labels
-    functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+    with open("/opt/nuclio/function.yaml", 'rb') as function_file:
+        functionconfig = yaml.safe_load(function_file)
+
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
 
     # Read the DL model
     model = ModelHandler(labels)
-    setattr(context.user_data, 'model', model)
+    context.user_data.model = model
 
     context.logger.info("Init context...100%")
 

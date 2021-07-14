@@ -13,7 +13,7 @@ def init_context(context):
     context.logger.info("Init context...  0%")
 
     model = ModelHandler()
-    setattr(context.user_data, 'model', model)
+    context.user_data.model = model
 
     context.logger.info("Init context...100%")
 

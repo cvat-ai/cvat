@@ -11,14 +11,14 @@ def init_context(context):
     context.logger.info("Init context...  0%")
     model_path = "/opt/nuclio/faster_rcnn/frozen_inference_graph.pb"
     model_handler = ModelLoader(model_path)
-    setattr(context.user_data, 'model_handler', model_handler)
-    if tf.test.is_gpu_available() and tf.test.is_built_with_cuda():
-        functionconfig = yaml.safe_load(open("/opt/nuclio/function-gpu.yaml"))
-    else:
-        functionconfig = yaml.safe_load(open("/opt/nuclio/function.yaml"))
+    context.user_data.model_handler = model_handler
+
+    with open("/opt/nuclio/function.yaml", 'rb') as function_file:
+        functionconfig = yaml.safe_load(function_file)
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
-    setattr(context.user_data, "labels", labels)
+    context.user_data.labels = labels
+
     context.logger.info("Init context...100%")
 
 def handler(context, event):
