@@ -9,7 +9,7 @@ nuctl create project cvat
 for func_config in $(find "$FUNCTIONS_DIR" -name "function-gpu.yaml")
 do
     func_root=$(dirname "$func_config")
-    echo Deploying $(dirname "$func_root") function...
+    echo "Deploying $(dirname "$func_root") function..."
     nuctl deploy --project-name cvat --path "$func_root" \
         --volume "$SCRIPT_DIR/common:/opt/nuclio/common" \
         --file $func_config --platform local
