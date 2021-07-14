@@ -206,9 +206,11 @@ button.cvat-predictor-button {
     justify-content: flex-end;
 
     > div {
-        display: block;
+        display: flex;
         height: 48px;
-        margin-right: 15px;
+        align-items: center;
+        justify-content: center;
+        padding-right: 8px;
     }
 }
 
