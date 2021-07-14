@@ -162,6 +162,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private cancelListener = async (): Promise<void> => {
         const { isActivated } = this.props;
         const { fetching } = this.state;
+        this.latestResult = [];
 
         if (isActivated) {
             if (fetching && !this.interactionIsDone) {
@@ -205,11 +206,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     if (this.interactionIsAborted) {
                         // while the server request
                         // user has cancelled interaction (for example pressed ESC)
+                        this.latestResult = [];
                         return;
                     }
                 } finally {
                     this.setState({ fetching: false });
                 }
+            }
+
+            if (!this.latestResult.length) {
+                return;
             }
 
             if (this.interactionIsDone && !fetching) {

@@ -166,8 +166,9 @@ class LambdaFunction:
             elif self.kind == LambdaType.INTERACTOR:
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
-                    "pos_points": data["pos_points"],
-                    "neg_points": data["neg_points"]
+                    "pos_points": data["pos_points"][2:] if self.startswith_box else data["pos_points"],
+                    "neg_points": data["neg_points"],
+                    "obj_bbox": data["pos_points"][0:2] if self.startswith_box else None
                 })
             elif self.kind == LambdaType.REID:
                 payload.update({

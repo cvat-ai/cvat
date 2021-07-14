@@ -17,7 +17,8 @@ class MLModel {
         this._params = {
             canvas: {
                 minPosVertices: data.min_pos_points,
-                enableNegVertices: true,
+                enableNegVertices: !['DEXTR'].includes(data.name),
+                startWithBox: data.startswith_box,
             },
         };
     }

@@ -161,7 +161,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.canvas.on('mousedown.interaction', eventListener);
     }
 
-    private interactRectangle(): void {
+    private interactRectangle(shouldFinish: boolean, onContinue?: () => void): void {
         let initialized = false;
         const eventListener = (e: MouseEvent): void => {
             if (e.button === 0 && !e.altKey) {
@@ -178,11 +178,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.canvas.on('mousedown.interaction', eventListener);
         this.currentInteractionShape
             .on('drawstop', (): void => {
+                this.canvas.off('mousedown.interaction', eventListener);
                 this.interactionShapes.push(this.currentInteractionShape);
                 this.shapesWereUpdated = true;
 
-                this.canvas.off('mousedown.interaction', eventListener);
-                this.interact({ enabled: false });
+                if (shouldFinish) {
+                    this.interact({ enabled: false });
+                } else if (onContinue) {
+                    onContinue();
+                }
             })
             .addClass('cvat_canvas_shape_drawing')
             .attr({
@@ -202,9 +206,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private startInteraction(): void {
         if (this.interactionData.shapeType === 'rectangle') {
-            this.interactRectangle();
+            this.interactRectangle(true);
         } else if (this.interactionData.shapeType === 'points') {
-            this.interactPoints();
+            if (this.interactionData.startWithBox) {
+                this.interactRectangle(false, (): void => this.interactPoints());
+            } else {
+                this.interactPoints();
+            }
         } else {
             throw new Error('Interactor implementation supports only rectangle and points');
         }

@@ -78,6 +78,7 @@ export interface InteractionData {
     minPosVertices?: number;
     minNegVertices?: number;
     enableNegVertices?: boolean;
+    startWithBox?: boolean;
     enableThreshold?: boolean;
     enableSliding?: boolean;
     allowRemoveOnlyLast?: boolean;
