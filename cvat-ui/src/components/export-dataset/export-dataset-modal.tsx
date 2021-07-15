@@ -61,6 +61,13 @@ export default function ExportDatasetModal(): JSX.Element {
         dispatch(exportActions.closeExportModal());
     };
 
+    const handleValuesChange = (changedValues: any): void => {
+        if ('saveImages' in changedValues) {
+            form.setFieldsValue({ selectedFormat: undefined });
+        }
+        initActivities();
+    };
+
     const handleExport = (values: FormValues): void => {
         // have to validate format before so it would not be undefined
         dispatch(
@@ -75,7 +82,7 @@ export default function ExportDatasetModal(): JSX.Element {
             form={form}
             labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}
-            onValuesChange={initActivities}
+            onValuesChange={handleValuesChange}
             initialValues={
                 {
                     selectedFormat: undefined,
