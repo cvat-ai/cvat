@@ -3,31 +3,23 @@
 # SPDX-License-Identifier: MIT
 
 from itertools import product
-
-from django.test import TestCase
-from django.contrib.auth.models import Group, User
 from io import BytesIO
 from PIL import Image
 import os
 from os import path as osp
-import shutil
 import git
-from contextlib import contextmanager
+from git.exc import GitCommandError
 import io
+from unittest import mock
 
-# Create your tests here.
 
-import cvat.apps.dataset_repo.dataset_repo as CVATGit
-from cvat.apps.dataset_repo.dataset_repo import (Git, initial_create, push, get,
-     update_states, _onsave)
-from cvat.apps.dataset_repo.models import GitData
 from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from django.utils import timezone
-from cvat.apps.engine.models import Job, Task, User, Data
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
-from unittest import mock
+from django.contrib.auth.models import Group, User
+from cvat.apps.engine.models import Task
+from cvat.apps.dataset_repo.dataset_repo import (Git, initial_create, push, get)
+from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
 
 orig_execute = git.cmd.Git.execute
 GIT_URL = "https://1.2.3.4/repo/exist.git"
@@ -60,43 +52,28 @@ class ForceLogin:
             self.client.logout()
 
 
-def create_db_users(cls):
-    (group_admin, _) = Group.objects.get_or_create(name="admin")
-    (group_user, _) = Group.objects.get_or_create(name="user")
-    (group_annotator, _) = Group.objects.get_or_create(name="annotator")
-    (group_observer, _) = Group.objects.get_or_create(name="observer")
-
-    user_admin = User.objects.create_superuser(username="admin", email="admin_example@cvat.com",
-                                               password="admin")
-    user_admin.groups.add(group_admin)
-    user = User.objects.create_user(username="user", password="user", email="user_example@cvat.com")
-    user.groups.add(group_user)
-
-    cls.admin = user_admin
-    cls.owner = user
-    cls.assignee = user
-    cls.annotator = user
-    cls.observer = user
-    cls.user = user
-
-
 class GitRemote:
     def pull(self, refspec=None, progress=None, **kwargs):
+        _ = (refspec, progress, *kwargs)
         return 0
+
 
 class FakeHexShaObject:
     def __init__(self, hexsha):
         self.hexsha = hexsha
 
-class GitRepo:
-    def _clone(self, git_url, url, path, odb_default_type, progress, multi_options=None, **kwargs):
-        if osp.isfile(osp.join(self._working_dir, '.git')):
+
+class GitRepo(git.Repo):
+    def clone(self, path, progress=None, multi_options=None, **kwargs):
+        _ = (progress, multi_options, *kwargs)
+        if osp.isfile(osp.join(path, '.git')):
             return self
         else:
-            return git.Repo.init(path=url)
+            return git.Repo.init(path=path)
 
     def merge_base(self, *rev, **kwargs):
-        hexsha = self.git.show_ref('refs/heads/{}'.format(rev[1], '--hash')).split(" ")
+        _ = (rev, *kwargs)
+        hexsha = self.git.show_ref('refs/heads/{}'.format(rev[1])).split(" ")
         return [FakeHexShaObject(hexsha[0])]
 
 
@@ -115,7 +92,8 @@ class GitCmd:
                 env=None,
                 max_chunk_size=io.DEFAULT_BUFFER_SIZE,
                 **subprocess_kwargs
-                ):  # o, method, *args, **kwargs
+                ):
+        _ = subprocess_kwargs
         if command[1] == "push":
             return 0
         elif command[1] == "remote" and command[2] == "get-url":
@@ -125,6 +103,44 @@ class GitCmd:
                                 with_exceptions, as_process, output_stream,
                                 stdout_as_string, kill_after_timeout, with_stdout,
                                 universal_newlines, shell, env, max_chunk_size)
+
+
+class TestGit(Git):
+    def set_rep(self):
+        self._rep = git.Repo(self._cwd) # pylint: disable=W0201
+
+    def pull(self):
+        self._pull()
+
+    def create_master_branch(self):
+        self._create_master_branch()
+
+    def to_task_branch(self):
+        self._to_task_branch()
+
+    def get_cwd(self):
+        return self._cwd
+
+    def parse_url(self):
+        return Git._parse_url(self)
+
+    def get_rep(self):
+        return self._rep
+
+    def update_config(self):
+        self._update_config()
+
+    def get_working_dir(self):
+        return self._rep.git.working_dir
+
+    def configurate(self):
+        self._configurate()
+
+    def clone(self):
+        self._clone()
+
+    def reclone(self):
+        self._reclone()
 
 
 class GitUrlTest(APITestCase):
@@ -144,7 +160,23 @@ class GitUrlTest(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        create_db_users(cls)
+        (group_admin, _) = Group.objects.get_or_create(name="admin")
+        (group_user, _) = Group.objects.get_or_create(name="user")
+        Group.objects.get_or_create(name="annotator")
+        Group.objects.get_or_create(name="observer")
+
+        user_admin = User.objects.create_superuser(username="admin", email="admin_example@cvat.com",
+                                                   password="admin")
+        user_admin.groups.add(group_admin)
+        user = User.objects.create_user(username="user", password="user", email="user_example@cvat.com")
+        user.groups.add(group_user)
+
+        cls.admin = user_admin
+        cls.owner = user
+        cls.assignee = user
+        cls.annotator = user
+        cls.observer = user
+        cls.user = user
         cls.empty_task_example = {
             "name": "task",
             "owner_id": cls.owner.id,
@@ -153,12 +185,25 @@ class GitUrlTest(APITestCase):
             "segment_size": 100,
             "labels": [
                 {
+                    "label_id": 1,
                     "name": "car",
                     "color": "#2080c0",
                     "attributes": []
                   }
             ]
         }
+
+    def _run_api_v1_job_id_annotation(self, jid, data, user):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/jobs/{}/annotations?action=create'.format(jid),
+                data=data, format="json")
+
+        return response
+
+    def _get_jobs(self, task_id):
+        with ForceLogin(self.admin, self.client):
+            response = self.client.get("/api/v1/tasks/{}/jobs".format(task_id))
+        return response.data
 
     def _create_task(self, init_repos=False):
         data = {
@@ -204,12 +249,12 @@ class GitUrlTest(APITestCase):
 
     def _check_correct_urls(self, samples):
         for i, (expected, url) in enumerate(samples):
-            git = GitUrlTest.FakeGit(url)
+            fake_git = GitUrlTest.FakeGit(url)
             try:
-                actual = Git._parse_url(git)
+                actual = TestGit.parse_url(fake_git)
                 self.assertEqual(expected, actual, "URL #%s: '%s'" % (i, url))
-            except Exception:
-                self.assertFalse(True, "URL #%s: '%s'" % (i, url))
+            except Exception: # pylint: disable=broad-except
+                self.fail("URL #%s: '%s'" % (i, url))
 
     def test_correct_urls_can_be_parsed(self):
         hosts = ['host.zone', '1.2.3.4']
@@ -222,22 +267,22 @@ class GitUrlTest(APITestCase):
 
         # http samples
         protocols = ['', 'http://', 'https://']
-        for protocol, host, port, repo_group, repo, git in product(
+        for protocol, host, port, repo_group, repo, git_suffix in product(
                 protocols, hosts, ports, repo_groups, repo_repos, git_suffixes):
             url = '{protocol}{host}{port}/{repo_group}/{repo}{git}'.format(
                 protocol=protocol, host=host, port=port,
-                repo_group=repo_group, repo=repo, git=git
+                repo_group=repo_group, repo=repo, git=git_suffix
             )
             expected = ('git', host + port, '%s/%s.git' % (repo_group, repo))
             samples.append((expected, url))
 
         # git samples
         users = ['user', 'u123_.']
-        for user, host, port, repo_group, repo, git in product(
+        for user, host, port, repo_group, repo, git_suffix in product(
                 users, hosts, ports, repo_groups, repo_repos, git_suffixes):
             url = '{user}@{host}{port}:{repo_group}/{repo}{git}'.format(
                 user=user, host=host, port=port,
-                repo_group=repo_group, repo=repo, git=git
+                repo_group=repo_group, repo=repo, git=git_suffix
             )
             expected = (user, host + port, '%s/%s.git' % (repo_group, repo))
             samples.append((expected, url))
@@ -245,7 +290,8 @@ class GitUrlTest(APITestCase):
         self._check_correct_urls(samples)
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_init_repos(self):
         for git_rep_already_init in [True, False]:
             task = self._create_task(init_repos=git_rep_already_init)
@@ -253,28 +299,33 @@ class GitUrlTest(APITestCase):
             db_git = GitData()
             db_git.url = GIT_URL
 
-            cvat_git = Git(db_git, db_task, self.user)
+            cvat_git = TestGit(db_git, db_task, self.user)
             cvat_git.init_repos()
-            self.assertTrue(osp.isdir(osp.join(cvat_git._rep.git._working_dir, '.git')))
+            self.assertTrue(osp.isdir(osp.join(cvat_git.get_working_dir(), '.git')))
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_git_create_master_branch(self):
         task = self._create_task(init_repos=True)
         db_task = Task.objects.get(pk=task["id"])
         db_git = GitData()
         db_git.url = GIT_URL
 
-        cvat_git = Git(db_git, db_task, self.user)
-        cvat_git._rep = git.Repo(cvat_git._cwd)
-        cvat_git._create_master_branch()
-        self.assertTrue(osp.isfile(osp.join(cvat_git._cwd, "README.md")))
-        self.assertFalse(cvat_git._rep.is_dirty())
-        self.assertTrue(len(cvat_git._rep.heads) == 1)
-        self.assertTrue(cvat_git._rep.heads[0].name == "master")
+        cvat_git = TestGit(db_git, db_task, self.user)
+        cvat_git.set_rep()
+        cvat_git.create_master_branch()
+        cwd = cvat_git.get_cwd()
+        self.assertTrue(osp.isfile(osp.join(cwd, "README.md")))
+
+        repo = cvat_git.get_rep()
+        self.assertFalse(repo.is_dirty())
+        self.assertTrue(len(repo.heads) == 1)
+        self.assertTrue(repo.heads[0].name == "master")
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_to_task_branch(self):
         task = self._create_task(init_repos=True)
         tid = task["id"]
@@ -282,57 +333,64 @@ class GitUrlTest(APITestCase):
         db_task = Task.objects.get(pk=tid)
         db_git = GitData()
 
-        cvat_git = Git(db_git, db_task, self.user)
-        cvat_git._rep = git.Repo(cvat_git._cwd)
-        cvat_git._create_master_branch()
-        cvat_git._to_task_branch()
-        heads = [head.name for head in cvat_git._rep.heads]
+        cvat_git = TestGit(db_git, db_task, self.user)
+        cvat_git.set_rep()
+        cvat_git.create_master_branch()
+        cvat_git.to_task_branch()
+
+        repo = cvat_git.get_rep()
+        heads = [head.name for head in repo.heads]
         self.assertTrue('cvat_{}_{}'.format(tid, task_name) in heads)
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_update_config(self):
         for user in [self.admin, self.user]:
             task = self._create_task(init_repos=True)
             db_task = Task.objects.get(pk=task["id"])
             db_git = GitData()
 
-            cvat_git = Git(db_git, db_task, user)
-            cvat_git._rep = git.Repo(cvat_git._cwd)
-            cvat_git._create_master_branch()
+            cvat_git = TestGit(db_git, db_task, user)
+            cvat_git.set_rep()
+            cvat_git.create_master_branch()
 
-            cvat_git._update_config()
-            with cvat_git._rep.config_reader() as cw:
+            cvat_git.update_config()
+            repo = cvat_git.get_rep()
+            with repo.config_reader() as cw:
                 self.assertEqual(user.username, cw.get("user", "name"))
                 self.assertEqual(user.email, cw.get("user", "email"))
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_configurate(self):
         task = self._create_task(init_repos=True)
         db_task = Task.objects.get(pk=task["id"])
         db_git = GitData()
 
-        cvat_git = Git(db_git, db_task, self.user)
-        cvat_git._rep = git.Repo(cvat_git._cwd)
+        cvat_git = TestGit(db_git, db_task, self.user)
+        cvat_git.set_rep()
+        cvat_git.configurate()
 
-        cvat_git._configurate()
-
-        self.assertTrue(len(cvat_git._rep.heads))
+        repo = cvat_git.get_rep()
+        self.assertTrue(len(repo.heads))
         self.assertTrue(osp.isdir(osp.join(db_task.get_task_artifacts_dirname(), "repos_diffs_v2")))
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_clone(self):
         task = self._create_task(init_repos=False)
         db_task = Task.objects.get(pk=task["id"])
         db_git = GitData()
         db_git.url = GIT_URL
 
-        cvat_git = Git(db_git, db_task, self.user)
-        cvat_git._clone()
-        self.assertTrue(osp.isdir(osp.join(cvat_git._rep.git._working_dir, '.git')))
-        self.assertTrue(len(cvat_git._rep.heads))
+        cvat_git = TestGit(db_git, db_task, self.user)
+        cvat_git.clone()
+        repo = cvat_git.get_rep()
+        self.assertTrue(osp.isdir(osp.join(cvat_git.get_working_dir(), '.git')))
+        self.assertTrue(len(repo.heads))
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
     def test_clone_nonexistent_repo(self):
@@ -342,12 +400,14 @@ class GitUrlTest(APITestCase):
         db_git = GitData()
         db_git.url = GIT_URL
 
-        cvat_git = Git(db_git, db_task, self.user)
-        with self.assertRaises(git.exc.GitCommandError):
-           cvat_git._clone()
+        cvat_git = TestGit(db_git, db_task, self.user)
+
+        with self.assertRaises(GitCommandError):
+            cvat_git.clone()
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_reclone(self):
         for git_rep_already_init in [True, False]:
             task = self._create_task(init_repos=git_rep_already_init)
@@ -355,15 +415,15 @@ class GitUrlTest(APITestCase):
             db_git = GitData()
             db_git.url = GIT_URL
 
-            cvat_git = Git(db_git, db_task, self.user)
-            cvat_git._reclone()
-            self.assertTrue(osp.isdir(osp.join(cvat_git._rep.git._working_dir, '.git')))
-            self.assertTrue(len(cvat_git._rep.heads))
-
+            cvat_git = TestGit(db_git, db_task, self.user)
+            cvat_git.reclone()
+            self.assertTrue(osp.isdir(osp.join(cvat_git.get_working_dir(), '.git')))
+            self.assertTrue(len(cvat_git.get_rep().heads))
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
     @mock.patch('git.remote.Remote.pull', new=GitRemote.pull)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_push(self):
         task = self._create_task(init_repos=True)
         db_task = Task.objects.get(pk=task["id"])
@@ -372,15 +432,16 @@ class GitUrlTest(APITestCase):
         db_git.path = "annotation.zip"
         db_git.sync_date = timezone.now()
 
-        cvat_git = Git(db_git, db_task, self.user)
-        cvat_git._rep = git.Repo(cvat_git._cwd)
-        cvat_git._create_master_branch()
-        self.add_file(cvat_git._cwd, "file.txt")
+        cvat_git = TestGit(db_git, db_task, self.user)
+        cvat_git.set_rep()
+        cvat_git.create_master_branch()
+        self.add_file(cvat_git.get_cwd(), "file.txt")
         cvat_git.push(self.user, "", "", db_task, db_task.updated_date)
-        self.assertFalse(cvat_git._rep.is_dirty())
+        self.assertFalse(cvat_git.get_rep().is_dirty())
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_request_initial_create(self):
         task = self._create_task(init_repos=False)
         initial_create(task["id"], GIT_URL, 1, self.user)
@@ -393,7 +454,8 @@ class GitUrlTest(APITestCase):
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
     @mock.patch('git.remote.Remote.pull', new=GitRemote.pull)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     def test_request_push(self):
         task = self._create_task(init_repos=False)
         tid = task["id"]
@@ -406,7 +468,8 @@ class GitUrlTest(APITestCase):
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
     @mock.patch('git.remote.Remote.pull', new=GitRemote.pull)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     @mock.patch('git.Repo.merge_base', new=GitRepo.merge_base)
     def test_push_and_request_get(self):
         task = self._create_task(init_repos=False)
@@ -420,7 +483,8 @@ class GitUrlTest(APITestCase):
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
     @mock.patch('git.remote.Remote.pull', new=GitRemote.pull)
-    @mock.patch('git.Repo._clone', new=GitRepo._clone)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
     @mock.patch('git.Repo.merge_base', new=GitRepo.merge_base)
     def test_request_get(self):
         task = self._create_task(init_repos=False)
@@ -429,3 +493,36 @@ class GitUrlTest(APITestCase):
         response = get(tid, self.user)
 
         self.assertTrue(response["status"]["value"], "not sync")
+
+
+    @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
+    @mock.patch('git.remote.Remote.pull', new=GitRemote.pull)
+    @mock.patch('git.Repo.clone', new=GitRepo.clone)
+    @mock.patch('git.Repo.clone_from', new=GitRepo.clone)
+    def test_request_on_save(self):
+        task = self._create_task(init_repos=False)
+        tid = task["id"]
+        initial_create(tid, GIT_URL, 1, self.user)
+
+        jobs = self._get_jobs(tid)
+        ann = {
+            "version": 0,
+            "tags": [],
+            "shapes": [
+                {
+                    "type": "points",
+                    "occluded": False,
+                    "z_order": 1,
+                    "points": [42.95, 33.59],
+                    "frame": 1,
+                    "label_id": 1,
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": []
+                },
+            ],
+            "tracks": []
+        }
+        self._run_api_v1_job_id_annotation(jobs[0]["id"], ann, self.user)
+        db_git = GitData()
+        self.assertEqual(db_git.status, GitStatusChoice.NON_SYNCED)
