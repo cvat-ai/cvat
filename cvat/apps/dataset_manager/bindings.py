@@ -694,7 +694,9 @@ class ProjectData(InstanceLabelData):
 
     @property
     def tracks(self):
-        raise NotImplementedError()
+        for task in self._db_tasks.values():
+            for track in self._annotation_irs[task.id].tracks:
+                yield self._export_labeled_shape(task.id, track)
 
     @property
     def tags(self):
@@ -729,6 +731,11 @@ class ProjectData(InstanceLabelData):
     @property
     def tasks(self):
         return list(self._db_tasks.values())
+
+    @property
+    def task_data(self):
+        for task_id, task in self._db_tasks.items():
+            yield TaskData(self._annotation_irs[task_id], task, self._host)
 
     @staticmethod
     def _get_filename(path):
@@ -826,7 +833,7 @@ class CvatTaskDataExtractor(CVATDataExtractor):
 
         self._items = dm_items
 
-class CVATProjectDataExtractor(datumaro.SourceExtractor):
+class CVATProjectDataExtractor(CVATDataExtractor):
     def __init__(self, project_data: ProjectData, include_images=False):
         super().__init__()
         self._categories = self._load_categories(project_data.meta['project']['labels'])
