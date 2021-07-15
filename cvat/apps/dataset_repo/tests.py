@@ -165,10 +165,9 @@ class GitUrlTest(APITestCase):
         Group.objects.get_or_create(name="annotator")
         Group.objects.get_or_create(name="observer")
 
-        user_admin = User.objects.create_superuser(username="admin", email="admin_example@cvat.com",
-                                                   password="awdrg")
+        user_admin = User.objects.create_superuser(username="admin", email="admin_example@cvat.com")
         user_admin.groups.add(group_admin)
-        user = User.objects.create_user(username="user", password="qseft", email="user_example@cvat.com")
+        user = User.objects.create_user(username="user", email="user_example@cvat.com")
         user.groups.add(group_user)
 
         cls.admin = user_admin
