@@ -7,7 +7,7 @@
 import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" format.', () => {
-    const caseId = '91';
+    const caseId = '92';
     const cuboidCreationParams = {
         labelName: labelName,
     };
@@ -26,18 +26,22 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             .find('.cvat-menu-icon')
             .trigger('mouseover');
         cy.contains('Upload annotations').trigger('mouseover');
-        cy.contains('.cvat-menu-load-submenu-item', dumpTypeVC.split(' ')[0])
-            .should('be.visible')
-            .within(() => {
-                cy.get('.cvat-menu-load-submenu-item-button')
-                    .click()
-                    .get('input[type=file]')
-                    .attachFile(annotationVCArchiveName);
+        cy.readFile('cypress/downloads/' + annotationVCArchiveName, 'binary')
+            .then(Cypress.Blob.binaryStringToBlob)
+            .then((fileContent) => {
+                cy.contains('.cvat-menu-load-submenu-item', dumpTypeVC.split(' ')[0])
+                    .should('be.visible')
+                    .within(() => {
+                        cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
+                            fileContent: fileContent,
+                            fileName: annotationVCArchiveName,
+                        });
+                    });
             });
     }
 
     before(() => {
-        cy.openTask(taskName)
+        cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
@@ -58,7 +62,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
 
             cy.wait(2000); // Waiting for the full download.
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+            cy.task('listFiles', 'cypress/downloads').each((fileName) => {
                 if (fileName.includes(dumpTypeVC.toLowerCase())) {
                     annotationVCArchiveName = fileName;
                 }
@@ -67,13 +71,17 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
 
         it('Upload "Velodyne Points" format annotation to job.', () => {
             cy.interactMenu('Upload annotations');
-            cy.contains('.cvat-menu-load-submenu-item', dumpTypeVC.split(' ')[0])
-                .should('be.visible')
-                .within(() => {
-                    cy.get('.cvat-menu-load-submenu-item-button')
-                        .click()
-                        .get('input[type=file]')
-                        .attachFile(annotationVCArchiveName);
+            cy.readFile('cypress/downloads/' + annotationVCArchiveName, 'binary')
+                .then(Cypress.Blob.binaryStringToBlob)
+                .then((fileContent) => {
+                    cy.contains('.cvat-menu-load-submenu-item', dumpTypeVC.split(' ')[0])
+                        .should('be.visible')
+                        .within(() => {
+                            cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
+                                fileContent: fileContent,
+                                fileName: annotationVCArchiveName,
+                            });
+                        });
                 });
             cy.intercept('PUT', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsPut');
             cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');

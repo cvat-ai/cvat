@@ -556,7 +556,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                         attributes["track_id"] = -1
                         index += 1
 
-                dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1], image=None,
+                dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1].split('.')[0], image=None,
                                                annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
                                                attributes=attributes)
 
@@ -623,7 +623,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 a_value = cvat_attrs.get(a_name, a_desc['default_value'])
                 try:
                     if a_desc['input_type'] == AttributeType.NUMBER:
-                        a_value = float(a_value)
+                        if self._dimension == DimensionType.DIM_2D:
+                            a_value = float(a_value)
                     elif a_desc['input_type'] == AttributeType.CHECKBOX:
                         a_value = (a_value.lower() == 'true')
                     dm_attr[a_name] = a_value
