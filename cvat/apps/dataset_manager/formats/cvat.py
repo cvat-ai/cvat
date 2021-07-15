@@ -581,8 +581,7 @@ def _export_project(dst_file: str, project_data: ProjectData, anno_callback: Cal
             for task_data in project_data.task_data:
                 subset = get_defaulted_subset(task_data.db_task.subset, project_data.subsets)
                 subset_dir = osp.join(temp_dir, 'images', subset)
-                if not osp.exists(subset_dir):
-                    os.mkdir(subset_dir)
+                os.makedirs(subset_dir, exist_ok=True)
                 dump_media_files(task_data, subset_dir)
 
         make_zip_archive(temp_dir, dst_file)
