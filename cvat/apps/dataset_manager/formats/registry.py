@@ -82,6 +82,14 @@ def make_importer(name):
 def make_exporter(name):
     return EXPORT_FORMATS[name]()
 
+
+# Add checking for TF availability to avoid CVAT sever instance / interpreter
+# crash and provide a meaningful diagnistic message in the case of AVX
+# instructions unavailability:
+# https://github.com/openvinotoolkit/cvat/pull/1567
+import datumaro.util.tf_util as TF
+TF.enable_tf_check = True
+
 # pylint: disable=unused-import
 import cvat.apps.dataset_manager.formats.coco
 import cvat.apps.dataset_manager.formats.cvat

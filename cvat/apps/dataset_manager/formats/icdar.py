@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import (AnnotationType, Caption, Label,
-    LabelCategories, Transform)
+    LabelCategories, ItemTransform)
 
 from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
     import_dm_annotations)
@@ -16,7 +16,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from .registry import dm_env, exporter, importer
 
 
-class AddLabelToAnns(Transform):
+class AddLabelToAnns(ItemTransform):
     def __init__(self, extractor, label):
         super().__init__(extractor)
 
@@ -39,7 +39,7 @@ class AddLabelToAnns(Transform):
                 ann.label = self._label
         return item.wrap(annotations=annotations)
 
-class CaptionToLabel(Transform):
+class CaptionToLabel(ItemTransform):
     def __init__(self, extractor, label):
         super().__init__(extractor)
 
@@ -64,7 +64,7 @@ class CaptionToLabel(Transform):
             annotations.remove(ann)
         return item.wrap(annotations=annotations)
 
-class LabelToCaption(Transform):
+class LabelToCaption(ItemTransform):
     def transform_item(self, item):
         annotations = item.annotations
         anns = [p for p in annotations

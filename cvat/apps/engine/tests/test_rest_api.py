@@ -3331,9 +3331,13 @@ class TaskDataAPITestCase(APITestCase):
         response = self._create_task(None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001):
+def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001,
+        current_key=None):
+    key_info = "{}: ".format(current_key) if current_key else ""
+
     if isinstance(obj1, dict):
-        self.assertTrue(isinstance(obj2, dict), "{} != {}".format(obj1, obj2))
+        self.assertTrue(isinstance(obj2, dict),
+            "{}{} != {}".format(key_info, obj1, obj2))
         for k, v1 in obj1.items():
             if k in ignore_keys:
                 continue
@@ -3342,17 +3346,20 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001):
                 key = lambda a: a['spec_id'] if 'spec_id' in a else a['id']
                 v1.sort(key=key)
                 v2.sort(key=key)
-            compare_objects(self, v1, v2, ignore_keys)
+            compare_objects(self, v1, v2, ignore_keys, current_key=k)
     elif isinstance(obj1, list):
-        self.assertTrue(isinstance(obj2, list), "{} != {}".format(obj1, obj2))
-        self.assertEqual(len(obj1), len(obj2), "{} != {}".format(obj1, obj2))
+        self.assertTrue(isinstance(obj2, list),
+            "{}{} != {}".format(key_info, obj1, obj2))
+        self.assertEqual(len(obj1), len(obj2),
+            "{}{} != {}".format(key_info, obj1, obj2))
         for v1, v2 in zip(obj1, obj2):
-            compare_objects(self, v1, v2, ignore_keys)
+            compare_objects(self, v1, v2, ignore_keys, current_key=current_key)
     else:
         if isinstance(obj1, float) or isinstance(obj2, float):
-            self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance)
+            self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance,
+                msg=current_key)
         else:
-            self.assertEqual(obj1, obj2)
+            self.assertEqual(obj1, obj2, msg=current_key)
 
 class JobAnnotationAPITestCase(APITestCase):
     def setUp(self):
