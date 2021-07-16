@@ -105,7 +105,7 @@ tracks. Basically for every object we need to know its location on every frame.
 
 First step is to deploy [SiamMask][siammask-serverless]. The deployment process
 can depend on your operating system. On Linux you can use `serverless/deploy_cpu.sh`
-auxiliary script but below we are using `nuctl` directly.
+auxiliary script, but below we are using `nuctl` directly.
 
 ```console
 $ nuctl create project cvat
