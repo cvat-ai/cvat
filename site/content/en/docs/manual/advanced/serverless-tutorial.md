@@ -14,7 +14,7 @@ data annotation for us. And it is relatively simple to integrate your
 own ML/DL solution into CVAT.
 
 But the world is not perfect and we don't have a silver bullet which can
-solve all our problems. Usually available DL models are trained on public
+solve all our problems. Usually, available DL models are trained on public
 datasets which cannot cover all specific cases. Very often you want to
 detect objects which cannot be recognized by these models. Our annotation
 requirements can be so strict that automatically
