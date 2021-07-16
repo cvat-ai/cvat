@@ -45,7 +45,7 @@ not user-friendly. How to make CVAT run the script for you?
 You can pack the script with your DL model into a container which
 provides a standard interface for interacting with it. One way to do that is to use
 the [function as a service][faas-wiki] approach. Your script becomes a function
-inside cloud infrastructure which can be called over HTTP. The nuclio
+inside cloud infrastructure which can be called over HTTP. The Nuclio
 serverless platform helps us to implement and manage such functions.
 
 CVAT supports nuclio out of the box if it is built properly. See
