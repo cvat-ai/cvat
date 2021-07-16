@@ -48,7 +48,7 @@ the [function as a service][faas-wiki] approach. Your script becomes a function
 inside cloud infrastructure which can be called over HTTP. The Nuclio
 serverless platform helps us to implement and manage such functions.
 
-CVAT supports nuclio out of the box if it is built properly. See
+CVAT supports Nuclio out of the box if it is built properly. See
 [the installation guide][cvat-auto-annotation-guide] for instructions.
 Thus if you deploy a serverless function, the CVAT server can see it and call it
 with appropriate arguments. Of course there are some tricks how to create
@@ -64,7 +64,7 @@ In the tutorial it is assumed that you already have the cloned
 [CVAT GitHub repo][cvat-github].
 To build CVAT with serverless support you need to run `docker-compose` command
 with specific configuration files. In the case it is `docker-compose.serverless.yml`.
-It has necessary instructions how to build and deploy nuclio platform as a
+It has necessary instructions how to build and deploy Nuclio platform as a
 docker container and enable corresponding support in CVAT.
 
 ```sh
@@ -83,7 +83,7 @@ cvat_ui      /docker-entrypoint.sh ngin ...   Up             80/tcp
 nuclio       /docker-entrypoint.sh sh - ...   Up (healthy)   80/tcp, 0.0.0.0:8070->8070/tcp,:::8070->8070/tcp
 ```
 
-Next step is to deploy builtin serverless functions using nuclio command
+Next step is to deploy builtin serverless functions using Nuclio command
 line tool (aka `nuctl`). It is assumed that you followed
 [the installation guide][cvat-auto-annotation-guide] and `nuctl`
 is already installed on your operating system. Run the following
@@ -403,7 +403,7 @@ describes our function for CVAT serverless subsystem:
   correspond to the dataset.
 - `spec.description` is used to provide basic information for the model.
 
-All other parameters are described in [nuclio documentation][nuclio-doc].
+All other parameters are described in [Nuclio documentation][nuclio-doc].
 
 - `spec.handler` is the entry point to your function.
 - `spec.runtime` is the name of the language runtime.
@@ -425,7 +425,7 @@ For Nuclio platform we have to specify a couple of more parameters:
 - `spec.triggers.myHttpTrigger` describes [HTTP trigger][nuclio-http-trigger-doc]
   to handle incoming HTTP requests.
 - `spec.platform` describes some important parameters to run your functions like
-  `restartPolicy` and `mountMode`. Read nuclio documentation for more details.
+  `restartPolicy` and `mountMode`. Read Nuclio documentation for more details.
 
 ```yaml
 metadata:
@@ -492,7 +492,7 @@ spec:
 Full code can be found here: [detectron2/retinanet/nuclio/function.yaml][retinanet-function-yaml]
 
 Next step is to adapt our source code which we implemented to run the DL model
-locally to requirements of nuclio platform. First step is to load the model
+locally to requirements of Nuclio platform. First step is to load the model
 into memory using `init_context(context)` function. Read more about the function
 in [Best Practices and Common Pitfalls][nuclio-bkms-doc].
 
@@ -609,7 +609,7 @@ For `RetinaNet R101` which was added above modifications will look like:
 
 _Note: But need to know that GPU has very limited amount of memory and it doesn't
 allow to run multiple serverless functions in parallel for now using free
-open-source nuclio version on the local platform because scaling to zero
+open-source Nuclio version on the local platform because scaling to zero
 feature is absent. Theoretically it is possible to run different functions
 on different GPUs, but it requires to change source code on corresponding
 serverless functions to choose a free GPU._
@@ -727,7 +727,7 @@ port forwarding again._
 ### Troubleshooting
 
 First of all need to check that you are using the recommended version of
-nuclio framework. In my case it is `1.5.16` but you need to check [the
+Nuclio framework. In my case it is `1.5.16` but you need to check [the
 installation manual][cvat-auto-annotation-guide].
 
 ```bash
@@ -736,7 +736,7 @@ Client version:
 "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3"
 ```
 
-Check that nuclio dashboard is running and its version corresponds to `nuctl`.
+Check that Nuclio dashboard is running and its version corresponds to `nuctl`.
 
 ```bash
 docker ps --filter NAME=^nuclio$
@@ -802,7 +802,7 @@ Failed to deploy function
 </details>
 
 In this case the container was built some time ago and the port 49154 was
-assigned by nuclio. Now the port is used by `openvino-dextr` as we can
+assigned by Nuclio. Now the port is used by `openvino-dextr` as we can
 see in logs. To prove our hypothesis just need to run a couple of docker
 commands:
 
