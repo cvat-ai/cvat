@@ -1,5 +1,4 @@
-
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -70,12 +69,14 @@ class cvat_rest_api_task_images(SourceExtractor):
         self._local_dir = local_dir
         self._cache_dir = osp.join(local_dir, 'images')
 
-        with open(osp.join(url, 'config.json'), 'r') as config_file:
+        with open(osp.join(url, 'config.json'),
+                'r', encoding='utf-8') as config_file:
             config = json.load(config_file)
             config = Config(config, schema=CONFIG_SCHEMA)
         self._config = config
 
-        with open(osp.join(url, 'images_meta.json'), 'r') as images_file:
+        with open(osp.join(url, 'images_meta.json'),
+                'r', encoding='utf-8') as images_file:
             images_meta = json.load(images_file)
             image_list = images_meta['images']
 
