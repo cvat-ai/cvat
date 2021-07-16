@@ -148,8 +148,7 @@ finish the process.
 ![Create a video annotation task](/images/create_video_task.png)
 
 Open the task and use [AI tools][cvat-ai-tools-user-guide] to start tracking
-an object. Draw a bounding box around an object and it will be tracked during
-a couple of frames forward.
+an object. Draw a bounding box around an object.
 
 ![Start tracking an object](/images/start_tracking.png)
 
