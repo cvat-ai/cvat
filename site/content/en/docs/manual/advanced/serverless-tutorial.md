@@ -43,7 +43,7 @@ After that you can upload the annotation file into CVAT. It works but it is
 not user-friendly. How to make CVAT run the script for you?
 
 You can pack the script with your DL model into a container which
-provides standard interface to interact with it. One way to do that is to use
+provides a standard interface for interacting with it. One way to do that is to use
 [function as a service][faas-wiki] approach. Your script becomes a function
 inside cloud infrastructure which can be called over HTTP. The nuclio
 serverless platform helps us to implement and manage such functions.
