@@ -16,7 +16,7 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("Run SiamMask model")
     data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    buf = io.BytesIO(base64.b64decode(data["image"]))
     shape = data.get("shape")
     state = data.get("state")
     image = Image.open(buf)

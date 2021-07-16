@@ -36,7 +36,7 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("Run retinanet-R101 model")
     data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    buf = io.BytesIO(base64.b64decode(data["image"]))
     threshold = float(data.get("threshold", 0.5))
     image = convert_PIL_to_numpy(Image.open(buf), format="BGR")
 

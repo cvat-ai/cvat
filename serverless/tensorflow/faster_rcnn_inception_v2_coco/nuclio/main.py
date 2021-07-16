@@ -24,7 +24,7 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("Run faster_rcnn_inception_v2_coco model")
     data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    buf = io.BytesIO(base64.b64decode(data["image"]))
     threshold = float(data.get("threshold", 0.5))
     image = Image.open(buf)
 
