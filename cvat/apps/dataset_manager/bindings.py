@@ -6,7 +6,7 @@
 import sys
 import os.path as osp
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Mapping, NamedTuple, OrderedDict, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union
 from pathlib import Path
 
 from django.utils import timezone
@@ -479,14 +479,14 @@ class TaskData(InstanceLabelData):
 
 class ProjectData(InstanceLabelData):
     # TODO: strictify
-    LabeledShape = NamedTuple('LabledShape', [('type',Any), ('frame',Any), ('label',Any), ('points',Any), ('occluded',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any)])
+    LabeledShape = NamedTuple('LabledShape', [('type',Any), ('frame',Any), ('label',Any), ('points',Any), ('occluded',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any), ('task_id', int)])
     LabeledShape.__new__.__defaults__ = (0,0)
     TrackedShape = NamedTuple('TrackedShape',
         [('type',Any), ('frame',Any), ('points',Any), ('occluded',Any), ('outside',Any), ('keyframe',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any), ('label',Any), ('track_id',Any)],
     )
     TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
-    Track = NamedTuple('Track', [('label',Any), ('attributes',Any), ('source',Any), ('group',Any)])
-    Tag = NamedTuple('Tag', [('frame',Any), ('label',Any), ('attributes',Any), ('source',Any), ('group',Any)])
+    Track = NamedTuple('Track', [('label',Any), ('group',Any), ('source',Any), ('shapes', Any), ('task_id', int)])
+    Tag = NamedTuple('Tag', [('frame',Any), ('label',Any), ('attributes',Any), ('source',Any), ('group',Any), ('task_id', int)])
     Tag.__new__.__defaults__ = (0, )
     Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
 
@@ -500,9 +500,9 @@ class ProjectData(InstanceLabelData):
         self._host = host
         self._create_callback = create_callback
         self._MAX_ANNO_SIZE = 30000
-        self._frame_info: Dict[Tuple[int, int], dict] = dict()
+        self._frame_info: Dict[Tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
         self._frame_mapping: Dict[Tuple[str, str], Tuple[str, str]] = dict()
-        self._frame_step_mapping = None
+        self._frame_steps: Dict[int, int] = {task.id: task.data.get_frame_step() for task in self._db_tasks.values()}
 
         for task in self._db_tasks.values():
             self._subsets.add(task.subset)
@@ -549,14 +549,16 @@ class ProjectData(InstanceLabelData):
                     "path": "frame_{:06d}".format(self.abs_frame_id(task.id, frame)),
                     "width": task.data.video.width,
                     "height": task.data.video.height,
-                    "subset": task.subset,
+                    "subset": get_defaulted_subset(task.subset, self._subsets),
                 } for frame in range(task.data.size)})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
-                    "path": db_image.path,
+                    "path": mung_image_name(db_image.path,
+                        filter(lambda frame: frame["subset"] == task.subset ,self._frame_info.values())
+                    ),
                     "width": db_image.width,
                     "height": db_image.height,
-                    "subset": task.subset
+                    "subset": get_defaulted_subset(task.subset, self._subsets)
                 } for db_image in task.data.images.all()})
 
         self._frame_mapping = {
@@ -575,7 +577,7 @@ class ProjectData(InstanceLabelData):
                 ("tasks", [
                     ('task',
                         TaskData.meta_for_task(db_task, self._host)
-                    ) for db_task in self._db_project.tasks.all()
+                    ) for db_task in self._db_tasks.values()
                 ]),
 
                 ("labels", [
@@ -633,6 +635,7 @@ class ProjectData(InstanceLabelData):
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
+            task_id=task_id,
         )
 
     def _export_tag(self, tag: dict, task_id: int):
@@ -642,6 +645,7 @@ class ProjectData(InstanceLabelData):
             group=tag.get("group", 0),
             source=tag["source"],
             attributes=self._export_attributes(tag["attributes"]),
+            task_id=task_id
         )
 
     def group_by_frame(self, include_empty=False):
@@ -690,19 +694,37 @@ class ProjectData(InstanceLabelData):
     def shapes(self):
         for task in self._db_tasks.values():
             for shape in self._annotation_irs[task.id].shapes:
-                yield self._export_labeled_shape(task.id, shape)
+                yield self._export_labeled_shape(shape, task.id)
 
     @property
     def tracks(self):
+        idx = 0
         for task in self._db_tasks.values():
             for track in self._annotation_irs[task.id].tracks:
-                yield self._export_labeled_shape(task.id, track)
+                tracked_shapes = TrackManager.get_interpolated_shapes(
+                    track, 0, task.data.size
+                )
+                for tracked_shape in tracked_shapes:
+                    tracked_shape["attributes"] += track["attributes"]
+                    tracked_shape["track_id"] = idx
+                    tracked_shape["group"] = track["group"]
+                    tracked_shape["source"] = track["source"]
+                    tracked_shape["label_id"] = track["label_id"]
+                yield ProjectData.Track(
+                    label=self._get_label_name(track["label_id"]),
+                    group=track["group"],
+                    source=track["source"],
+                    shapes=[self._export_tracked_shape(shape, task.id)
+                        for shape in tracked_shapes],
+                    task_id=task.id
+                )
+                idx+=1
 
     @property
     def tags(self):
         for task in self._db_tasks.values():
             for tag in self._annotation_irs[task.id].tags:
-                yield self._export_tag(task.id, tag)
+                yield self._export_tag(tag, task.id)
 
     @property
     def meta(self):
@@ -714,15 +736,15 @@ class ProjectData(InstanceLabelData):
 
     @property
     def frame_info(self):
-        raise NotImplementedError()
+        return self._frame_info
 
     @property
     def frame_step(self):
-        raise NotImplementedError()
+        return self._frame_steps
 
     @property
-    def db_project(self):
-        raise NotImplementedError()
+    def project(self):
+        return self._db_project
 
     @property
     def subsets(self) -> List[str]:
@@ -877,7 +899,7 @@ class CVATProjectDataExtractor(CVATDataExtractor):
             dm_anno = self._read_cvat_anno(frame_data, project_data.meta['project']['labels'])
             dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
                 annotations=dm_anno, image=dm_image,
-                subset=get_defaulted_subset(frame_data.subset, project_data.subsets),
+                subset=frame_data.subset,
                 attributes={'frame': frame_data.frame}
             )
             dm_items.append(dm_item)
@@ -894,6 +916,17 @@ def GetCVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_im
 class CvatImportError(Exception):
     pass
 
+def mung_image_name(name: str, images: List[Literal["path", "width", "height", "subset"]]) -> str:
+    name, ext = name.split(osp.extsep)
+    if not any(map(lambda image: image["path"] == name, images)):
+        return name + osp.extsep + ext
+    else:
+        i = 1
+        while i < sys.maxsize:
+            if not any(map(lambda image: image["path"] == f"{name}_{i}{osp.extsep}{ext}", images)):
+                return f"{name}_{i}{osp.extsep}{ext}"
+            i += 1
+        raise Exception('Cannot mung image name')
 
 def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
     if subset:
@@ -907,7 +940,7 @@ def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
                 if f'{datumaro.DEFAULT_SUBSET_NAME}_{i}' not in subsets:
                     return f'{datumaro.DEFAULT_SUBSET_NAME}_{i}'
                 i += 1
-            raise Exception('Cannot find deafoult name for subset')
+            raise Exception('Cannot find default name for subset')
 
 
 def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label):

@@ -186,12 +186,20 @@ def dump_as_cvat_annotation(dumper, annotations):
 
     for frame_annotation in annotations.group_by_frame(include_empty=True):
         frame_id = frame_annotation.frame
-        dumper.open_image(OrderedDict([
+        image_attrs = OrderedDict([
             ("id", str(frame_id)),
             ("name", frame_annotation.name),
+        ])
+        if isinstance(annotations, ProjectData):
+            image_attrs.update(OrderedDict([
+                ("subset", frame_annotation.subset),
+                ("task_id", str(frame_annotation.task_id)),
+            ]))
+        image_attrs.update(OrderedDict([
             ("width", str(frame_annotation.width)),
             ("height", str(frame_annotation.height))
         ]))
+        dumper.open_image(image_attrs)
 
         for shape in frame_annotation.labeled_shapes:
             dump_data = OrderedDict([
@@ -304,6 +312,13 @@ def dump_as_cvat_interpolation(dumper, annotations):
             ("source", track.source),
         ])
 
+        if hasattr(track, 'task_id'):
+            task, = filter(lambda task: task.id == track.task_id, annotations.tasks)
+            dump_data.update(OrderedDict([
+                ('task_id', str(track.task_id)),
+                ('subset', get_defaulted_subset(task.subset, annotations.subsets)),
+            ]))
+
         if track.group:
             dump_data['group_id'] = str(track.group)
         dumper.open_track(dump_data)
@@ -389,11 +404,17 @@ def dump_as_cvat_interpolation(dumper, annotations):
         counter += 1
 
     for shape in annotations.shapes:
-        dump_track(counter, annotations.Track(
-            label=shape.label,
-            group=shape.group,
-            source=shape.source,
-            shapes=[annotations.TrackedShape(
+        frame_step = annotations.frame_step if isinstance(annotations, TaskData) else annotations.frame_step[shape.task_id]
+        if isinstance(annotations, TaskData):
+            stop_frame = int(annotations.meta['task']['stop_frame'])
+        else:
+            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta['project']['tasks']))[0][1]
+            stop_frame = int(task_meta['stop_frame'])
+        track = {
+            'label': shape.label,
+            'group': shape.group,
+            'source': shape.source,
+            'shapes': [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
                 occluded=shape.occluded,
@@ -411,13 +432,15 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 outside=True,
                 keyframe=True,
                 z_order=shape.z_order,
-                frame=shape.frame + annotations.frame_step,
+                frame=shape.frame + frame_step,
                 attributes=shape.attributes,
-            )] if shape.frame + annotations.frame_step < \
-                    int(annotations.meta['task']['stop_frame']) \
+            )] if shape.frame + frame_step < \
+                    stop_frame \
                else []
             ),
-        ))
+        }
+        if isinstance(annotations, ProjectData): track['task_id'] = shape.task_id
+        dump_track(counter, annotations.Track(**track))
         counter += 1
 
     dumper.close_root()
@@ -542,11 +565,10 @@ def dump_task_anno(dst_file, task_data, callback):
 def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callback: Callable):
     dumper = create_xml_dumper(dst_file)
     dumper.open_document()
-    for task_data in project_data.task_data:
-        callback(dumper, task_data)
+    callback(dumper, project_data)
     dumper.close_document()
 
-def dump_media_files(task_data: TaskData, img_dir: str):
+def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectData = None):
     ext = ''
     if task_data.meta['task']['mode'] == 'interpolation':
         ext = FrameProvider.VIDEO_FRAME_EXT
@@ -556,7 +578,8 @@ def dump_media_files(task_data: TaskData, img_dir: str):
         frame_provider.Quality.ORIGINAL,
         frame_provider.Type.BUFFER)
     for frame_id, (frame_data, _) in enumerate(frames):
-        frame_name = task_data.frame_info[frame_id]['path']
+        frame_name = task_data.frame_info[frame_id]['path'] if project_data is None \
+            else project_data.frame_info[(task_data.db_task.id, frame_id)]['path']
         img_path = osp.join(img_dir, frame_name + ext)
         os.makedirs(osp.dirname(img_path), exist_ok=True)
         with open(img_path, 'wb') as f:
@@ -582,7 +605,7 @@ def _export_project(dst_file: str, project_data: ProjectData, anno_callback: Cal
                 subset = get_defaulted_subset(task_data.db_task.subset, project_data.subsets)
                 subset_dir = osp.join(temp_dir, 'images', subset)
                 os.makedirs(subset_dir, exist_ok=True)
-                dump_media_files(task_data, subset_dir)
+                dump_media_files(task_data, subset_dir, project_data)
 
         make_zip_archive(temp_dir, dst_file)
 
