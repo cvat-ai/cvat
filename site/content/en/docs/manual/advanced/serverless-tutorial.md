@@ -6,7 +6,7 @@ weight: 100
 
 ## Introduction
 
-Now computers become our partners. They help us to solve routine tasks,
+Computers have now become our partners. They help us to solve routine problems,
 fix mistakes, find information, etc. It is a natural idea to use their
 compute power to annotate datasets. There are multiple DL models for
 classification, object detection, semantic segmentation which can do
@@ -14,43 +14,43 @@ data annotation for us. And it is relatively simple to integrate your
 own ML/DL solution into CVAT.
 
 But the world is not perfect and we don't have a silver bullet which can
-solve all our problems. Usually available DL models are trained on public
+solve all our problems. Usually, available DL models are trained on public
 datasets which cannot cover all specific cases. Very often you want to
 detect objects which cannot be recognized by these models. Our annotation
 requirements can be so strict that automatically
-annotated objects cannot be accepted as is and it is easier to annotate them
+annotated objects cannot be accepted as is, and it is easier to annotate them
 from scratch. You always need to keep in mind all these mentioned limitations.
 Even if you have a DL solution which can
-_perfectly_ annotate 50% of your data, it means that manual work will be
-reduced only twice in the best case.
+_perfectly_ annotate 50% of your data, it means that manual work will only be
+reduced in half.
 
 When we know that DL models can help us to annotate data faster, the next
 question is how to use them? In CVAT all such DL models are implemented
-as serverless functions for [nuclio][nuclio-homepage] serverless platform.
+as serverless functions for the [Nuclio][nuclio-homepage] serverless platform.
 And there are multiple implemented functions which can be
-found in [serverless][cvat-builtin-serverless] directory such as `Mask RCNN`,
+found in the [serverless][cvat-builtin-serverless] directory such as `Mask RCNN`,
 `Faster RCNN`, `SiamMask`, `Inside Outside Guidance`, `Deep Extreme Cut`, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
 these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
-understand how to use these functions in UI to automatically annotate data.
+understand how to use these functions in the UI to automatically annotate data.
 
 What is a serverless function and why is it used for automatic annotation
 in CVAT? Let's assume that you have a DL model and want to use it for
-AI assisted annotation. The naive approach is to implement a python
+AI-assisted annotation. The naive approach is to implement a Python
 script which uses the DL model to prepare a file with annotations in a
 public format like [MS COCO][mscoco-format] or [Pascal VOC][pascal-voc-format].
 After that you can upload the annotation file into CVAT. It works but it is
-not user-friendly. How to force CVAT to run the script for you?
+not user-friendly. How to make CVAT run the script for you?
 
 You can pack the script with your DL model into a container which
-provides standard interface to interact with it. One way to do that is to use
-[function as a service][faas-wiki] approach. Your script becomes a function
-inside cloud infrastructure which can be called over HTTP. The nuclio
+provides a standard interface for interacting with it. One way to do that is to use
+the [function as a service][faas-wiki] approach. Your script becomes a function
+inside cloud infrastructure which can be called over HTTP. The Nuclio
 serverless platform helps us to implement and manage such functions.
 
 CVAT supports nuclio out of the box if it is built properly. See
 [the installation guide][cvat-auto-annotation-guide] for instructions.
-Thus if you deploy a serverless function, CVAT server can see it and call
+Thus if you deploy a serverless function, the CVAT server can see it and call it
 with appropriate arguments. Of course there are some tricks how to create
 serverless functions for CVAT and we will discuss them in next sections of
 the tutorial.
@@ -133,15 +133,15 @@ nuctl get functions
 ```
 
 Let's see how it works in UI. Go to [models tab](http://localhost:8080/models)
-and check that you can see SiamMask in the list. If you cannot by a reason it
+and check that you can see SiamMask in the list. If you cannot, it
 means that there are some problems. Go to one of our public channels and ask
 for help.
 
 ![Models list with SiamMask](/images/models_list_with_siammask.png)
 
-After that go to [new task page](http://localhost:8080/tasks/create) and
-create one with [the video file][vtest-avi]. You can choose any task name,
-any labels, and even another video file if you like. In this case `Remote sources`
+After that, go to the [new task page](http://localhost:8080/tasks/create) and
+create a task with [this video file][vtest-avi]. You can choose any task name,
+any labels, and even another video file if you like. In this case, the `Remote sources`
 option was used to specify the video file. Press `submit` button at the end to
 finish the process.
 
