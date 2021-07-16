@@ -6,7 +6,7 @@ weight: 100
 
 ## Introduction
 
-Now computers become our partners. They help us to solve routine tasks,
+Computers have now become our partners. They help us to solve routine problems,
 fix mistakes, find information, etc. It is a natural idea to use their
 compute power to annotate datasets. There are multiple DL models for
 classification, object detection, semantic segmentation which can do
