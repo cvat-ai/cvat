@@ -556,7 +556,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                         attributes["track_id"] = -1
                         index += 1
 
-                dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1].split('.')[0], image=None,
+                dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1].split('.')[0],
                                                annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
                                                attributes=attributes)
 
@@ -585,20 +585,11 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             user_info = {"name": cvat_anno.meta['task']['owner']['username'],
                          "createdAt": cvat_anno.meta['task']['created'],
                          "updatedAt": cvat_anno.meta['task']['updated']}
-        index = 0
         for _, label in cvat_anno.meta['task']['labels']:
-            attributes = []
             label_categories.add(label['name'])
-
             for _, attr in label['attributes']:
-                if dimension == DimensionType.DIM_3D:
-                    attributes.append(attr['name'])
-                else:
-                    label_categories.attributes.add(attr['name'])
+                label_categories.attributes.add(attr['name'])
 
-            if attributes:
-                label_categories.items[index].attributes.update(attributes)
-                index += 1
 
         categories[datumaro.AnnotationType.label] = label_categories
 
@@ -623,8 +614,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
                 a_value = cvat_attrs.get(a_name, a_desc['default_value'])
                 try:
                     if a_desc['input_type'] == AttributeType.NUMBER:
-                        if self._dimension == DimensionType.DIM_2D:
-                            a_value = float(a_value)
+                        a_value = float(a_value)
                     elif a_desc['input_type'] == AttributeType.CHECKBOX:
                         a_value = (a_value.lower() == 'true')
                     dm_attr[a_name] = a_value

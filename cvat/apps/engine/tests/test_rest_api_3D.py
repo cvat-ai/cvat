@@ -314,7 +314,7 @@ class Task3DTest(_DbTestBase):
                          "name": "number_name",
                          "mutable": False,
                          "input_type": "number",
-                         "default_value": "-4",
+                         "default_value": "-4.0",
                          "values": ["-4", "4", "1"]
                      }
                  ]
