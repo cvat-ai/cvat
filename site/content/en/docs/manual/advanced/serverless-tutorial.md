@@ -32,7 +32,7 @@ found in the [serverless][cvat-builtin-serverless] directory such as `Mask RCNN`
 `Faster RCNN`, `SiamMask`, `Inside Outside Guidance`, `Deep Extreme Cut`, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
 these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
-understand how to use these functions in UI to automatically annotate data.
+understand how to use these functions in the UI to automatically annotate data.
 
 What is a serverless function and why is it used for automatic annotation
 in CVAT? Let's assume that you have a DL model and want to use it for
