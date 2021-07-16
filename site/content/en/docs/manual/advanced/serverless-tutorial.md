@@ -50,7 +50,7 @@ serverless platform helps us to implement and manage such functions.
 
 CVAT supports nuclio out of the box if it is built properly. See
 [the installation guide][cvat-auto-annotation-guide] for instructions.
-Thus if you deploy a serverless function, CVAT server can see it and call
+Thus if you deploy a serverless function, the CVAT server can see it and call it
 with appropriate arguments. Of course there are some tricks how to create
 serverless functions for CVAT and we will discuss them in next sections of
 the tutorial.
