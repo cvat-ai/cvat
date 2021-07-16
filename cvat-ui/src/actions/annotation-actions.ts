@@ -801,7 +801,6 @@ export function undoActionAsync(sessionInstance: any, frame: number): ThunkActio
                 true,
             );
 
-            dispatch(changeFrameAsync(undo[1]));
             await sessionInstance.actions.undo();
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
@@ -817,6 +816,11 @@ export function undoActionAsync(sessionInstance: any, frame: number): ThunkActio
                     maxZ,
                 },
             });
+
+            const undoOnFrame = undo[1];
+            if (frame !== undoOnFrame) {
+                dispatch(changeFrameAsync(undoOnFrame));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.UNDO_ACTION_FAILED,
@@ -845,7 +849,7 @@ export function redoActionAsync(sessionInstance: any, frame: number): ThunkActio
                 },
                 true,
             );
-            dispatch(changeFrameAsync(redo[1]));
+
             await sessionInstance.actions.redo();
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
@@ -861,6 +865,11 @@ export function redoActionAsync(sessionInstance: any, frame: number): ThunkActio
                     maxZ,
                 },
             });
+
+            const redoOnFrame = redo[1];
+            if (frame !== redoOnFrame) {
+                dispatch(changeFrameAsync(redoOnFrame));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.REDO_ACTION_FAILED,
@@ -1632,7 +1641,7 @@ export function hideShowContextImage(hidden: boolean): AnyAction {
     };
 }
 
-export function getContextImage(): ThunkAction {
+export function getContextImageAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
