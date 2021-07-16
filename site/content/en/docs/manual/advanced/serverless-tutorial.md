@@ -28,7 +28,7 @@ When we know that DL models can help us to annotate data faster, the next
 question is how to use them? In CVAT all such DL models are implemented
 as serverless functions for the [Nuclio][nuclio-homepage] serverless platform.
 And there are multiple implemented functions which can be
-found in [serverless][cvat-builtin-serverless] directory such as `Mask RCNN`,
+found in the [serverless][cvat-builtin-serverless] directory such as `Mask RCNN`,
 `Faster RCNN`, `SiamMask`, `Inside Outside Guidance`, `Deep Extreme Cut`, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
 these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
