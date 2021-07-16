@@ -139,7 +139,7 @@ for help.
 
 ![Models list with SiamMask](/images/models_list_with_siammask.png)
 
-After that go to [new task page](http://localhost:8080/tasks/create) and
+After that, go to the [new task page](http://localhost:8080/tasks/create) and
 create one with [the video file][vtest-avi]. You can choose any task name,
 any labels, and even another video file if you like. In this case `Remote sources`
 option was used to specify the video file. Press `submit` button at the end to
