@@ -133,7 +133,7 @@ nuctl get functions
 ```
 
 Let's see how it works in UI. Go to [models tab](http://localhost:8080/models)
-and check that you can see SiamMask in the list. If you cannot by a reason it
+and check that you can see SiamMask in the list. If you cannot, it
 means that there are some problems. Go to one of our public channels and ask
 for help.
 
