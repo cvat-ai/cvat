@@ -20,6 +20,12 @@ import {
     Workspace,
 } from './interfaces';
 
+function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
+    return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
+        prevActivatedStateID :
+        null;
+}
+
 const defaultState: AnnotationState = {
     activities: {
         loads: {},
@@ -252,6 +258,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
+            const { activatedStateID } = state.annotations;
             const {
                 number,
                 data,
@@ -264,12 +271,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 delay,
                 changeTime,
             } = action.payload;
-
-            const activatedStateID = states
-                .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID) ?
-                state.annotations.activatedStateID :
-                null;
 
             return {
                 ...state,
@@ -291,7 +292,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
-                    activatedStateID,
+                    activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
                     zLayer: {
                         min: minZ,
@@ -343,11 +344,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
             const { states } = action.payload;
+            const { activatedStateID } = state.annotations;
+
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     states,
+                    activatedStateID: updateActivatedStateID(states, activatedStateID),
                     saving: {
                         ...state.annotations.saving,
                         uploading: false,
@@ -964,21 +968,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.REDO_ACTION_SUCCESS:
         case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
+            const { activatedStateID } = state.annotations;
             const {
                 history, states, minZ, maxZ,
             } = action.payload;
-
-            const activatedStateID = states
-                .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID) ?
-                state.annotations.activatedStateID :
-                null;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID,
+                    activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
                     history,
                     zLayer: {
@@ -990,18 +989,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
+            const { activatedStateID } = state.annotations;
             const { states, minZ, maxZ } = action.payload;
-            const activatedStateID = states
-                .map((_state: any) => _state.clientID)
-                .includes(state.annotations.activatedStateID) ?
-                state.annotations.activatedStateID :
-                null;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID,
+                    activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
                     zLayer: {
                         min: minZ,
