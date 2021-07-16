@@ -467,9 +467,7 @@ spec:
         - kind: RUN
           value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
         - kind: RUN
-          value: git clone https://github.com/facebookresearch/detectron2
-        - kind: RUN
-          value: pip3 install -e detectron2
+          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@v0.4'
         - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
         - kind: RUN
@@ -507,8 +505,9 @@ located inside `main.py`.
 ```python
 
 def init_context(context):
-    cfg = get_cfg()
-    cfg.merge_from_file(CONFIG_FILE)
+    context.logger.info("Init context...  0%")
+
+    cfg = get_config('COCO-Detection/retinanet_R_101_FPN_3x.yaml')
     cfg.merge_from_list(CONFIG_OPTS)
     cfg.MODEL.RETINANET.SCORE_THRESH_TEST = CONFIDENCE_THRESHOLD
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONFIDENCE_THRESHOLD
@@ -518,7 +517,10 @@ def init_context(context):
 
     context.user_data.model_handler = predictor
 
+    context.logger.info("Init context...100%")
+
 def handler(context, event):
+    context.logger.info("Run retinanet-R101 model")
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
     threshold = float(data.get("threshold", 0.5))
