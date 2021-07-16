@@ -36,7 +36,7 @@ understand how to use these functions in the UI to automatically annotate data.
 
 What is a serverless function and why is it used for automatic annotation
 in CVAT? Let's assume that you have a DL model and want to use it for
-AI assisted annotation. The naive approach is to implement a python
+AI-assisted annotation. The naive approach is to implement a Python
 script which uses the DL model to prepare a file with annotations in a
 public format like [MS COCO][mscoco-format] or [Pascal VOC][pascal-voc-format].
 After that you can upload the annotation file into CVAT. It works but it is
