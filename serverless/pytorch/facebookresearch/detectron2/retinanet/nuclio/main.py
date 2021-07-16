@@ -5,20 +5,23 @@ from PIL import Image
 import yaml
 
 import torch
-from detectron2.config import get_cfg
+from detectron2.model_zoo import get_config
 from detectron2.data.detection_utils import convert_PIL_to_numpy
 from detectron2.engine.defaults import DefaultPredictor
 from detectron2.data.datasets.builtin_meta import COCO_CATEGORIES
 
-CONFIG_FILE = "detectron2/configs/COCO-Detection/retinanet_R_101_FPN_3x.yaml"
 CONFIG_OPTS = ["MODEL.WEIGHTS", "model_final_971ab9.pkl"]
 CONFIDENCE_THRESHOLD = 0.5
 
 def init_context(context):
     context.logger.info("Init context...  0%")
 
-    cfg = get_cfg()
-    cfg.merge_from_file(CONFIG_FILE)
+    cfg = get_config('COCO-Detection/retinanet_R_101_FPN_3x.yaml')
+    if torch.cuda.is_available():
+        CONFIG_OPTS.extend(['MODEL.DEVICE', 'cuda'])
+    else:
+        CONFIG_OPTS.extend(['MODEL.DEVICE', 'cpu'])
+
     cfg.merge_from_list(CONFIG_OPTS)
     cfg.MODEL.RETINANET.SCORE_THRESH_TEST = CONFIDENCE_THRESHOLD
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONFIDENCE_THRESHOLD
