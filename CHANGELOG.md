@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Falsely successful `cvat_ui` image build in case of OOM error that leads to the default nginx welcome page
   (<https://github.com/openvinotoolkit/cvat/pull/3379>)
 - Fixed issue when save filtered object in AAM (<https://github.com/openvinotoolkit/cvat/pull/3401>)
+- Using combined data sources (directory and image) when create a task (<https://github.com/openvinotoolkit/cvat/pull/3424>)
 
 ### Security
 
