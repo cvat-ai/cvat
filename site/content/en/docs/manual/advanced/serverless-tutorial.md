@@ -21,8 +21,8 @@ requirements can be so strict that automatically
 annotated objects cannot be accepted as is, and it is easier to annotate them
 from scratch. You always need to keep in mind all these mentioned limitations.
 Even if you have a DL solution which can
-_perfectly_ annotate 50% of your data, it means that manual work will be
-reduced only twice in the best case.
+_perfectly_ annotate 50% of your data, it means that manual work will only be
+reduced in half.
 
 When we know that DL models can help us to annotate data faster, the next
 question is how to use them? In CVAT all such DL models are implemented
