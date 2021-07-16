@@ -40,7 +40,7 @@ AI-assisted annotation. The naive approach is to implement a Python
 script which uses the DL model to prepare a file with annotations in a
 public format like [MS COCO][mscoco-format] or [Pascal VOC][pascal-voc-format].
 After that you can upload the annotation file into CVAT. It works but it is
-not user-friendly. How to force CVAT to run the script for you?
+not user-friendly. How to make CVAT run the script for you?
 
 You can pack the script with your DL model into a container which
 provides standard interface to interact with it. One way to do that is to use
