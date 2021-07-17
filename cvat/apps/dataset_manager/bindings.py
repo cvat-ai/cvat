@@ -624,11 +624,15 @@ def match_dm_item(item, task_data, root_hint=None):
     return frame_number
 
 def find_dataset_root(dm_dataset, task_data):
-    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts)).id
+    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts),
+        default=None)
+    if longest_path is None:
+        return None
+    longest_path = longest_path.id
+
     longest_match = task_data.match_frame_fuzzy(longest_path)
     if longest_match is None:
         return None
-
     longest_match = osp.dirname(task_data.frame_info[longest_match]['path'])
     prefix = longest_match[:-len(osp.dirname(longest_path)) or None]
     if prefix.endswith('/'):
