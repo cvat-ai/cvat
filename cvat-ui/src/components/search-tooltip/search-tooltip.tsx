@@ -72,10 +72,8 @@ export default function SearchTooltip(props: Props): JSX.Element {
                     ) : null}
                     {instance === 'cloudstorage' ? (
                         <Paragraph>
-                            <Text strong>credentialsType: TEMP_KEY_SECRET_KEY_TOKEN_SET</Text>
+                            <Text strong>credentialsType: KEY_SECRET_KEY_PAIR</Text>
                             <Text>
-                                <q>TEMP_KEY_SECRET_KEY_TOKEN_SET</q>
-                                or
                                 <q>KEY_SECRET_KEY_PAIR</q>
                                 or
                                 <q>ACCOUNT_NAME_TOKEN_PAIR</q>

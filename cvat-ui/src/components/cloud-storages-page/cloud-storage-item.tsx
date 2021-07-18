@@ -33,7 +33,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
     // cloudStorageInstance: {storage, preview}
     const { cloudStorageInstance } = props;
     const {
-        id, displayName, provider, owner, createdDate, updatedDate, description,
+        id, displayName, providerType, owner, createdDate, updatedDate, description,
     } = cloudStorageInstance.storage;
     const { preview } = cloudStorageInstance;
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
@@ -104,7 +104,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                     <>
                         <Paragraph>
                             <Text type='secondary'>Provider: </Text>
-                            <Text>{provider}</Text>
+                            <Text>{providerType}</Text>
                         </Paragraph>
                         <Paragraph>
                             <Text type='secondary'>Created </Text>

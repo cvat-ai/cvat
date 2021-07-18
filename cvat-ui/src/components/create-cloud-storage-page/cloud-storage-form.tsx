@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, RefObject } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Form, { FormInstance } from 'antd/lib/form';
@@ -15,9 +16,13 @@ import notification from 'antd/lib/notification';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
+import { AzureProvider, S3Provider } from '../../icons';
 
 export interface Props {
     cloudStorage?: CloudStorage;
+    formRef: RefObject<FormInstance>;
+    shouldShowCreationNotification?: any;
+    shouldShowUpdationNotification?: any;
 }
 
 interface CloudStorageForm {
@@ -31,13 +36,15 @@ interface CloudStorageForm {
     secret_key?: string;
     SAS_token?: string;
     description?: string;
-    specific_attributes?: string;
+    region?: string;
 }
 
 export default function CreateCloudStorageForm(props: Props): JSX.Element {
-    const { cloudStorage } = props;
+    const {
+        cloudStorage, formRef, shouldShowCreationNotification, shouldShowUpdationNotification,
+    } = props;
     const dispatch = useDispatch();
-    const formRef = React.createRef<FormInstance>();
+    const history = useHistory();
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
     const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
@@ -64,31 +71,26 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             credentials_type: cloudStorage.credentialsType,
             display_name: cloudStorage.displayName,
             description: cloudStorage.description,
-            specific_attributes: cloudStorage.specificAttributes,
-            provider_type: cloudStorage.provider,
+            provider_type: cloudStorage.providerType,
             resource: cloudStorage.resourceName,
         };
 
-        setProviderType(cloudStorage.provider);
+        setProviderType(cloudStorage.providerType);
         setCredentialsType(cloudStorage.credentialsType);
 
         if (cloudStorage.credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
-            // fieldsValue.account_name = cloudStorage.accountName;
-            // fieldsValue.session_token = cloudStorage.token;
             fieldsValue.account_name = fakeCredentialsData.accountName;
             fieldsValue.SAS_token = fakeCredentialsData.sessionToken;
-        } else if (cloudStorage.credentialsType === CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET) {
-            // fieldsValue.session_token = cloudStorage.token;
-            // fieldsValue.key = cloudStorage.accessKey;
-            // fieldsValue.secret_key = cloudStorage.secretKey;
-            fieldsValue.session_token = fakeCredentialsData.sessionToken;
-            fieldsValue.key = fakeCredentialsData.key;
-            fieldsValue.secret_key = fakeCredentialsData.secretKey;
         } else if (cloudStorage.credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
-            // fieldsValue.key = cloudStorage.accessKey;
-            // fieldsValue.secret_key = cloudStorage.secretKey;
             fieldsValue.key = fakeCredentialsData.key;
             fieldsValue.secret_key = fakeCredentialsData.secretKey;
+        }
+
+        if (cloudStorage.providerType === ProviderType.AWS_S3_BUCKET && cloudStorage.specificAttibutes) {
+            const region = new URLSearchParams(cloudStorage.specificAttibutes).get('region');
+            if (region) {
+                fieldsValue.region = region;
+            }
         }
 
         formRef.current?.setFieldsValue(fieldsValue);
@@ -102,12 +104,20 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
     }
 
+    const onCancel = (): void => {
+        if (history.length) {
+            history.goBack();
+        } else {
+            history.push('/cloudstorages');
+        }
+    };
+
     useEffect(() => {
         onReset();
     }, []);
 
     useEffect(() => {
-        if (Number.isInteger(newCloudStorageId)) {
+        if (Number.isInteger(newCloudStorageId) && shouldShowCreationNotification.current) {
             // Clear form
             if (formRef.current) {
                 formRef.current.resetFields();
@@ -118,14 +128,20 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 className: 'cvat-notification-create-cloud-storage-success',
             });
         }
+        if (shouldShowCreationNotification !== undefined) {
+            shouldShowCreationNotification.current = true;
+        }
     }, [newCloudStorageId]);
 
     useEffect(() => {
-        if (updatedCloudStorageId) {
+        if (updatedCloudStorageId && shouldShowUpdationNotification.current) {
             notification.info({
                 message: 'The cloud storage has been updated',
                 className: 'cvat-notification-update-cloud-storage-success',
             });
+        }
+        if (shouldShowUpdationNotification !== undefined) {
+            shouldShowUpdationNotification.current = true;
         }
     }, [updatedCloudStorageId]);
 
@@ -146,9 +162,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         if (formRef.current) {
             const formValues = await formRef.current.validateFields();
             cloudStorageData = { ...cloudStorageData, ...formValues };
-            if (typeof formValues.range !== undefined) {
-                delete cloudStorageData.range;
-                cloudStorageData.speciffic_attributes = `range=${formValues.range}`;
+            if (formValues.region !== undefined) {
+                delete cloudStorageData.region;
+                cloudStorageData.specific_attributes = `region=${formValues.region}`;
             }
 
             if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
@@ -159,7 +175,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             if (cloudStorage) {
                 cloudStorageData.id = cloudStorage.id;
                 // TODO: it may be coincide with the real account name
-                if (cloudStorageData.accoun_name === fakeCredentialsData.accountName) {
+                if (cloudStorageData.account_name === fakeCredentialsData.accountName) {
                     delete cloudStorageData.account_name;
                 }
                 if (cloudStorageData.key === fakeCredentialsData.key) {
@@ -204,51 +220,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             labelCol: { span: 8, offset: 2 },
             wrapperCol: { offset: 1 },
         };
-
-        if (
-            providerType === ProviderType.AWS_S3_BUCKET &&
-            credentialsType === CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET
-        ) {
-            return (
-                <>
-                    <Form.Item
-                        label='ACCESS KEY ID'
-                        name='key'
-                        rules={[{ required: true, message: 'Please, specify your access_key_id' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            maxLength={20}
-                            visibilityToggle={keyVisibility}
-                            onChange={() => setKeyVisibility(true)}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        label='SECRET ACCESS KEY ID'
-                        name='secret_key'
-                        rules={[{ required: true, message: 'Please, specify your secret_access_key_id' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            maxLength={40}
-                            visibilityToggle={secretKeyVisibility}
-                            onChange={() => setSecretKeyVisibility(true)}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        label='TOKEN SESSION'
-                        name='session_token'
-                        rules={[{ required: true, message: 'Please, specify your token_session' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            visibilityToggle={sessionTokenVisibility}
-                            onChange={() => setSessionTokenVisibility(true)}
-                        />
-                    </Form.Item>
-                </>
-            );
-        }
 
         if (
             providerType === ProviderType.AWS_S3_BUCKET &&
@@ -362,27 +333,24 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Input disabled={!!cloudStorage} maxLength={63} />
                 </Form.Item>
                 <Form.Item
-                    label='Credentials type'
+                    label='Authorization type'
                     name='credentials_type'
                     rules={[{ required: true, message: 'Please, specify credentials type' }]}
                     {...internalCommonProps}
                 >
                     <Select onSelect={(value: CredentialsType) => onChangeCredentialsType(value)}>
-                        <Select.Option value={CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET}>
-                            {CredentialsType.TEMP_KEY_SECRET_KEY_TOKEN_SET}
-                        </Select.Option>
                         <Select.Option value={CredentialsType.KEY_SECRET_KEY_PAIR}>
-                            {CredentialsType.KEY_SECRET_KEY_PAIR}
+                            Key id and secret access key pair
                         </Select.Option>
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>
-                            {CredentialsType.ANONYMOUS_ACCESS}
+                            Anonymous access
                         </Select.Option>
                     </Select>
                 </Form.Item>
                 {credentialsBlok()}
                 <Form.Item
-                    label='Range'
-                    name='range'
+                    label='Region'
+                    name='region'
                     tooltip='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
                     {...internalCommonProps}
                 >
@@ -410,17 +378,17 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Input disabled={!!cloudStorage} maxLength={63} />
                 </Form.Item>
                 <Form.Item
-                    label='Credentials type'
+                    label='Authorization type'
                     name='credentials_type'
                     rules={[{ required: true, message: 'Please, specify credentials type' }]}
                     {...internalCommonProps}
                 >
                     <Select onSelect={(value: CredentialsType) => onChangeCredentialsType(value)}>
                         <Select.Option value={CredentialsType.ACCOUNT_NAME_TOKEN_PAIR}>
-                            {CredentialsType.ACCOUNT_NAME_TOKEN_PAIR}
+                            Account name and SAS token
                         </Select.Option>
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>
-                            {CredentialsType.ANONYMOUS_ACCESS}
+                            Anonymous access
                         </Select.Option>
                     </Select>
                 </Form.Item>
@@ -457,8 +425,14 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         formRef.current?.resetFields(['credentials_type']);
                     }}
                 >
-                    <Select.Option value={ProviderType.AWS_S3_BUCKET}>{ProviderType.AWS_S3_BUCKET}</Select.Option>
-                    <Select.Option value={ProviderType.AZURE_CONTAINER}>{ProviderType.AZURE_CONTAINER}</Select.Option>
+                    <Select.Option value={ProviderType.AWS_S3_BUCKET}>
+                        <S3Provider />
+                        AWS S3
+                    </Select.Option>
+                    <Select.Option value={ProviderType.AZURE_CONTAINER}>
+                        <AzureProvider />
+                        Azure Blob Container
+                    </Select.Option>
                 </Select>
             </Form.Item>
             {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
@@ -467,11 +441,11 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 <Col>
                     <Button
                         htmlType='button'
-                        onClick={onReset}
+                        onClick={() => onCancel()}
                         className='cvat-cloud-storage-reset-button'
                         disabled={loading}
                     >
-                        Reset
+                        Cansel
                     </Button>
                 </Col>
                 <Col offset={1}>

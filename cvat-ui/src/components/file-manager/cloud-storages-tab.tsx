@@ -12,6 +12,8 @@ import { debounce } from 'lodash';
 
 import getCore from 'cvat-core-wrapper';
 import { CloudStorage } from 'reducers/interfaces';
+import { AzureProvider, S3Provider } from 'icons';
+import { ProviderType } from 'utils/enums';
 import CloudStorageFiles from './cloud-storages-files';
 
 interface Props {
@@ -19,6 +21,7 @@ interface Props {
     cloudStorage: CloudStorage | null;
     onSelectFiles: (files: string[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
+    // resetState: boolean;
 }
 
 async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
@@ -47,7 +50,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
     const [list, setList] = useState<CloudStorage[]>([]);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
     const {
-        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage,
+        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage, // resetState,
     } = props;
 
     useEffect(() => {
@@ -98,7 +101,13 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     }}
                     options={list.map((_cloudStorage) => ({
                         value: _cloudStorage.id.toString(),
-                        label: _cloudStorage.displayName,
+                        label:
+                            <>
+                                {(_cloudStorage.providerType === ProviderType.AWS_S3_BUCKET) ?
+                                    <S3Provider /> :
+                                    <AzureProvider />}
+                                {_cloudStorage.displayName}
+                            </>,
                     }))}
                     onSelect={(value: string) => {
                         const selectedCloudStorage =
@@ -117,7 +126,11 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     name='cloudStorageFiles'
                     rules={[{ required: true, message: 'Please, select a files' }]}
                 >
-                    <CloudStorageFiles cloudStorage={cloudStorage} onSelectFiles={onSelectFiles} />
+                    <CloudStorageFiles
+                        cloudStorage={cloudStorage}
+                        onSelectFiles={onSelectFiles}
+                        // resetState={resetState}
+                    />
                 </Form.Item>
             ) : null}
         </Form>

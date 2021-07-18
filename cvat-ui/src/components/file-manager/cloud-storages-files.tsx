@@ -10,19 +10,28 @@ import Tree from 'antd/lib/tree/Tree';
 import Spin from 'antd/lib/spin';
 import Alert from 'antd/lib/alert';
 import Empty from 'antd/lib/empty';
-
+import { EventDataNode } from 'antd/lib/tree';
 import { CloudStorage, CombinedState } from 'reducers/interfaces';
 import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
 
 interface Props {
     cloudStorage: CloudStorage;
     onSelectFiles: (checkedKeysValue: string[]) => void;
+    // resetState: boolean;
 }
 
-interface CloudStorageFile {
+interface DataNode {
     title: string;
     key: string;
     isLeaf: boolean;
+    disabled: boolean;
+    children: DataNode[];
+}
+
+interface DataStructure {
+    name: string ;
+    children: Map<string, DataStructure> | null;
+    unparsedChildren: string[] | null;
 }
 
 type Files =
@@ -33,39 +42,142 @@ type Files =
     };
 
 export default function CloudStorageFiles(props: Props): JSX.Element {
-    const { cloudStorage, onSelectFiles } = props;
+    const { cloudStorage, onSelectFiles } = props; // resetState
     const dispatch = useDispatch();
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.fetching);
     const content = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.content);
     const error = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.error);
-    const [contentNotInManifest, setContentNotInManifest] = useState<boolean>(false);
-    const [contentNotInStorage, setContentNotInStorage] = useState<boolean>(false);
+    const [treeData, setTreeData] = useState<DataNode[]>([]);
+    const [initialData, setInitialData] = useState<DataStructure>({
+        name: 'root',
+        children: null,
+        unparsedChildren: null,
+    });
+    // const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
 
-    const [treeData, setTreeData] = useState<CloudStorageFile[]>([]);
+    // useEffect(() => {
+    //     if (resetState) {
+    //         setInitialData({
+    //             name: 'root',
+    //             children: null,
+    //             unparsedChildren: null,
+    //         });
+    //     }
+    // }, [resetState]);
 
     useEffect(() => {
         dispatch(loadCloudStorageContentAsync(cloudStorage));
     }, [cloudStorage.id]);
 
+    const parseContent = (mass: string[], root = ''): Map<string, DataStructure> => {
+        const data: Map<string, DataStructure> = new Map();
+        // define directories
+        const upperDirs: Set<string> = new Set(mass.filter((path: string) => path.includes('/'))
+            .map((path: string) => path.split('/', 1)[0]));
+
+        for (const dir of upperDirs) {
+            const child: DataStructure = {
+                name: dir,
+                children: null,
+                unparsedChildren: mass.filter((path: string) => path.startsWith(`${dir}/`))
+                    .map((path: string) => path.replace(`${dir}/`, '')),
+            };
+            data.set(`${root}${dir}/`, child);
+        }
+
+        // define files
+        const rootFiles = mass.filter((path: string) => !path.includes('/'));
+
+        for (const rootFile of rootFiles) {
+            const child: DataStructure = {
+                name: rootFile,
+                children: null,
+                unparsedChildren: null,
+            };
+            data.set(`${root}${rootFile}`, child);
+        }
+        return data;
+    };
+
+    const updateData = (key: string, data: Map<string, DataStructure> | null): Map<string, DataStructure> | null => {
+        if (data === null) {
+            return data;
+        }
+
+        for (const [dataItemKey, dataItemValue] of data) {
+            if (key.startsWith(dataItemKey) && key.replace(dataItemKey, '')) {
+                data = updateData(key, dataItemValue.children);
+            } else if (dataItemKey === key) {
+                const unparsedDataItemChildren = dataItemValue.unparsedChildren;
+                if (dataItemValue && unparsedDataItemChildren) {
+                    dataItemValue.children = parseContent(unparsedDataItemChildren, dataItemKey);
+                    dataItemValue.unparsedChildren = null;
+                }
+            }
+        }
+        return data;
+    };
+
+    const onLoadData = (key: string): Promise<void> =>
+        new Promise((resolve) => {
+            if (initialData.children === null) {
+                resolve();
+                return;
+            }
+            setInitialData({
+                ...initialData,
+                children: updateData(key, initialData.children),
+            });
+            resolve();
+        });
+
+    // const onExpand = (expandedKeysValue: React.Key[]): void => {
+    //     setExpandedKeys(expandedKeys.map((key: ReactText): string => key.toLocaleString()));
+    // };
+
     useEffect(() => {
         if (content) {
             const fileNames = Object.keys(content);
-            const nodes = fileNames.map((filename: string) => ({
-                title: filename,
-                key: filename,
-                isLeaf: true,
-                disabled: content[filename].length !== 2 && !filename.includes('manifest.jsonl'),
-            }));
+            const children = parseContent(fileNames);
 
+            setInitialData({
+                ...initialData,
+                children,
+            });
+        } else {
+            setInitialData({
+                name: 'root',
+                children: null,
+                unparsedChildren: null,
+            });
+        }
+    }, [content]);
+
+    useEffect(() => {
+        const prepareNodes = (data: Map<string, DataStructure>, nodes: DataNode[]): DataNode[] => {
+            for (const [key, value] of data) {
+                const node: DataNode = {
+                    title: value.name,
+                    key,
+                    isLeaf: !value.children && !value.unparsedChildren,
+                    disabled: !value.children && !value.unparsedChildren && content[key] && content[key].length !== 2 && !key.includes('manifest.jsonl'),
+                    children: [],
+                };
+                if (value.children) {
+                    node.children = prepareNodes(value.children, []);
+                }
+                nodes.push(node);
+            }
+            return nodes;
+        };
+        if (initialData.children && content) {
+            // TODO: need to optimizate this
+            const nodes = prepareNodes(initialData.children, []);
             setTreeData(nodes);
-            setContentNotInManifest(fileNames.some((fileName: string) => !content[fileName].includes('m') && !fileName.includes('manifest.jsonl')));
-            setContentNotInStorage(fileNames.some((fileName: string) => !content[fileName].includes('s')));
         } else {
             setTreeData([]);
-            setContentNotInManifest(false);
-            setContentNotInStorage(false);
         }
-    }, [content]); // todo: extend with curent selected manifest
+    }, [initialData]); // todo: extend with curent selected manifest (need update file colors)
 
     if (isFetching) {
         return (
@@ -87,28 +199,15 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
 
     return (
         <>
-            {contentNotInManifest ? (
-                <Alert
-                    className='cvat-cloud-storage-alert-file-not-exist-in-manifest'
-                    message='Some files are not contained in the manifest'
-                    type='warning'
-                />
-            ) : null}
-            {contentNotInStorage ? (
-                <Alert
-                    className='cvat-cloud-storage-alert-file-not-exist-in-storage'
-                    message='Some files specified on the manifest were not found on the storage'
-                    type='warning'
-                />
-            ) : null}
             {treeData.length ? (
                 <Tree.DirectoryTree
                     selectable={false}
                     multiple
                     checkable
                     height={256}
-                    // FIXME: add handler for dirs and files not in manifest
                     onCheck={(checkedKeys: Files) => onSelectFiles(checkedKeys as string[])}
+                    // onExpand={(expandedKeysValue: React.Key[]) => onExpand(expandedKeysValue)}
+                    loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                     treeData={treeData}
                 />
             ) : (
