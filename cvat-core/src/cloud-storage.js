@@ -27,7 +27,7 @@
                 key: undefined,
                 secret_key: undefined,
                 session_token: undefined,
-                specific_attibutes: undefined,
+                specific_attributes: undefined,
                 owner: undefined,
                 created_date: undefined,
                 updated_date: undefined,
@@ -214,13 +214,13 @@
                         },
                     },
                     /**
-                     * @name provider
+                     * @name providerType
                      * @type {module:API.cvat.enums.ProviderType}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
-                    provider: {
+                    providerType: {
                         get: () => data.provider_type,
                         set: (key) => {
                             if (key !== undefined && !!CloudStorageProviderType[key]) {
@@ -255,7 +255,7 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     specificAttibutes: {
-                        get: () => data.specific_attibutes,
+                        get: () => data.specific_attributes,
                         set: (attributesValue) => {
                             if (typeof attributesValue === 'string') {
                                 const attrValues = new URLSearchParams(
@@ -266,7 +266,7 @@
                                 if (!attrValues) {
                                     throw new ArgumentError('Value must match the key1=value1&key2=value2');
                                 }
-                                data.specific_attibutes = attributesValue;
+                                data.specific_attributes = attributesValue;
                             } else {
                                 throw new ArgumentError('Value must be a string');
                             }
@@ -393,7 +393,7 @@
             }
 
             if (cloudStorageInstance.specificAttibutes) {
-                data.specific_attibutes = cloudStorageInstance.specificAttibutes;
+                data.specific_attributes = cloudStorageInstance.specificAttibutes;
             }
             return data;
         }
@@ -422,7 +422,7 @@
         const initialData = {
             display_name: this.displayName,
             credentials_type: this.credentialsType,
-            provider_type: this.provider,
+            provider_type: this.providerType,
             resource: this.resourceName,
         };
 
