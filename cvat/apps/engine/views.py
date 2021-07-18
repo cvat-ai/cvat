@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import json
 import os
 import os.path as osp
 import shutil
@@ -11,7 +10,7 @@ import traceback
 import uuid
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp, NamedTemporaryFile, TemporaryDirectory
+from tempfile import mkstemp, NamedTemporaryFile
 from PIL import Image as PILImage
 
 import cv2
