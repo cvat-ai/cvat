@@ -41,7 +41,7 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, check_cloud_storage_existing, Credentials
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -1202,29 +1202,16 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     def perform_create(self, serializer):
         # check that instance of cloud storage exists
         provider_type = serializer.validated_data.get('provider_type')
-        credentials = Credentials(
-            session_token=serializer.validated_data.get('session_token', ''),
-            account_name=serializer.validated_data.get('account_name', ''),
-            key=serializer.validated_data.get('key', ''),
-            secret_key=serializer.validated_data.get('secret_key', '')
-        )
-        details = {
-            'resource': serializer.validated_data.get('resource'),
-            'credentials': credentials,
-            'specific_attributes': {
-                    item.split('=')[0].strip(): item.split('=')[1].strip()
-                        for item in serializer.validated_data.get('specific_attributes').split('&')
-                    } if len(serializer.validated_data.get('specific_attributes', ''))
-                        else dict()
-        }
-        storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-        try:
-            storage.exists()
-        except Exception as ex:
-            message = str(ex)
-            slogger.glob.error(message)
-            raise
+        credentials_type = serializer.validated_data.get('credentials_type')
+        session_token = serializer.validated_data.get('session_token', '')
+        account_name = serializer.validated_data.get('account_name', '')
+        key = serializer.validated_data.get('key', '')
+        secret_key = serializer.validated_data.get('secret_key', '')
+        resource = serializer.validated_data.get('resource')
+        specific_attributes = serializer.validated_data.get('specific_attributes', '')
 
+        check_cloud_storage_existing(provider_type, credentials_type, session_token, account_name,
+            key, secret_key, resource, specific_attributes)
         owner = self.request.data.get('owner')
         if owner:
             serializer.save()
@@ -1265,14 +1252,14 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
 
     @swagger_auto_schema(
         method='get',
-        operation_summary='Method returns a mapped names of an available files from a storage and a manifest content',
+        operation_summary='Method returns a manifest content',
         manual_parameters=[
             openapi.Parameter('manifest_path', openapi.IN_QUERY,
                 description="Path to the manifest file in a cloud storage",
                 type=openapi.TYPE_STRING)
         ],
         responses={
-            '200': openapi.Response(description='Mapped names of an available files from a storage and a manifest content'),
+            '200': openapi.Response(description='A manifest content'),
         },
         tags=['cloud storages']
     )
@@ -1291,28 +1278,32 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 'specific_attributes': db_storage.get_specific_attributes()
             }
             storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-            storage.initialize_content()
-            storage_files = storage.content
-
             manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
-            with TemporaryDirectory(suffix='manifest', prefix='cvat') as tmp_dir:
-                tmp_manifest_path = os.path.join(tmp_dir, 'manifest.jsonl')
-                storage.download_file(manifest_path, tmp_manifest_path)
-                manifest = ImageManifestManager(tmp_manifest_path)
+            if not storage.is_object_exist(manifest_path):
+                import errno
+                raise FileNotFoundError(errno.ENOENT,
+                    "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
+
+            full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
+            if not os.path.exist(full_manifest_path) or \
+                    os.path.getmtime(full_manifest_path) < storage.get_file_last_modified(full_manifest_path):
+                # TODO: create sub dirs
+                storage.download_file(manifest_path, full_manifest_path)
+                manifest = ImageManifestManager(full_manifest_path)
+                # need to reset previon index
+                manifest.reset_index()
                 manifest.init_index()
                 manifest_files = manifest.data
-            content = {f:[] for f in set(storage_files) | set(manifest_files)}
-            for key, _ in content.items():
-                if key in storage_files: content[key].append('s') # storage
-                if key in manifest_files: content[key].append('m') # manifest
-
-            data = json.dumps(content)
-            return Response(data=data, content_type="aplication/json")
+            return Response(data=manifest_files, content_type="text/plain")
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
+        except FileNotFoundError as ex:
+            msg = f"{ex.strerror} {ex.filename}"
+            slogger.cloud_storage[pk].info(msg)
+            return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
             return HttpResponseBadRequest(str(ex))
 
@@ -1343,7 +1334,9 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 storage.initialize_content()
                 storage_images = [f for f in storage.content if MEDIA_TYPES['image']['has_mime_type'](f)]
                 if not len(storage_images):
-                    return HttpResponseBadRequest('Cloud storage {} does not contain any images'.format(pk))
+                    msg = 'Cloud storage {} does not contain any images'.format(pk)
+                    slogger.cloud_storage[pk].info(msg)
+                    return HttpResponseBadRequest(msg)
                 with NamedTemporaryFile() as temp_image:
                     storage.download_file(storage_images[0], temp_image.name)
                     reader = ImageListReader([temp_image.name])

@@ -556,7 +556,6 @@ class CloudProviderChoice(str, Enum):
 
 class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
-    TEMP_KEY_SECRET_KEY_TOKEN_SET = 'TEMP_KEY_SECRET_KEY_TOKEN_SET' # nosec
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR' # nosec
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
@@ -571,6 +570,13 @@ class CredentialsTypeChoice(str, Enum):
 
     def __str__(self):
         return self.value
+
+class Manifest(models.Model):
+    filename = models.CharField(max_length=1024, default='manifest.jsonl')
+    cloud_storages = models.ManyToManyField('CloudStorage')
+
+    def __str__(self):
+        return '{}'.format(self.filename)
 
 class CloudStorage(models.Model):
     # restrictions:
@@ -607,7 +613,7 @@ class CloudStorage(models.Model):
         return os.path.join(self.get_storage_dirname(), 'logs')
 
     def get_log_path(self):
-        return os.path.join(self.get_storage_dirname(), "storage.log")
+        return os.path.join(self.get_storage_logs_dirname(), "storage.log")
 
     def get_preview_path(self):
         return os.path.join(self.get_storage_dirname(), 'preview.jpeg')

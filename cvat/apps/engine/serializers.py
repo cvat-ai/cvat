@@ -11,7 +11,7 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, check_cloud_storage_existing, Credentials
 from cvat.apps.engine.log import slogger
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -771,8 +771,22 @@ class CombinedReviewSerializer(ReviewSerializer):
 
         return db_review
 
+class ManifestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Manifest
+        fields = ('filename', )
+
+    # pylint: disable=no-self-use
+    def to_internal_value(self, data):
+        return {'filename': data.get('filename')}
+
+    # pylint: disable=no-self-use
+    def to_representation(self, instance):
+        return instance.filename if instance else instance
+
 class BaseCloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
+    manifest_set = ManifestSerializer(many=True, default=[])
     class Meta:
         model = models.CloudStorage
         exclude = ['credentials']
@@ -784,13 +798,14 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
     secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
+    manifest_set = ManifestSerializer(many=True, default=[])
 
     class Meta:
         model = models.CloudStorage
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'specific_attributes', 'description', 'id'
+            'secret_key', 'specific_attributes', 'description', 'id', 'manifest_set',
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
@@ -836,11 +851,20 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                 slogger.glob.warning("Failed with creating storage\n{}".format(str(ex)))
                 raise
 
+        manifest_set = validated_data.pop('manifest_set')
+
         db_storage = models.CloudStorage.objects.create(
             credentials=credentials.convert_to_db(),
             **validated_data
         )
         db_storage.save()
+
+        manifest_file_instances = []
+        for manifest in manifest_set:
+            manifest_file = models.Manifest(**manifest)
+            manifest_file.save()
+            manifest_file_instances.append(manifest_file)
+        db_storage.manifest_set.add(*manifest_file_instances)
 
         cloud_storage_path = db_storage.get_storage_dirname()
         if os.path.isdir(cloud_storage_path):
@@ -862,9 +886,27 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
         instance.display_name = validated_data.get('display_name', instance.display_name)
-        instance.description = validated_data.get('description', instance.description)
-        instance.specific_attributes = validated_data.get('specific_attributes', instance.specific_attributes)
 
+        check_cloud_storage_existing(instance.provider_type, instance.credentials_type, credentials.session_token,
+            credentials.account_name, credentials.key, credentials.secret_key, instance.resource, instance.specific_attributes)
+
+        new_manifest_names = set(i.get('filename') for i in validated_data.get('manifest_set', []))
+        previos_manifest_names = set(i.filename for i in instance.manifest_set.all())
+        delta_to_delete = tuple(previos_manifest_names - new_manifest_names)
+        delta_to_create = tuple(new_manifest_names - previos_manifest_names)
+        if delta_to_delete:
+            instance.manifest_set.filter(filename__in=delta_to_delete).delete()
+        if delta_to_create:
+            # we cannot use bulk_create because It does not work with many-to-many relationships
+            manifest_instances = []
+            for item in delta_to_create:
+                if not models.Manifest.objects.filter(filename=item):
+                    manifest = models.Manifest(filename=item)
+                    manifest.save()
+                else:
+                    manifest = models.Manifest.objects.get(filename=item)
+                manifest_instances.append(manifest)
+            instance.manifest_set.add(*manifest_instances)
         instance.save()
         return instance
 
