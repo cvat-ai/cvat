@@ -24,7 +24,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);
-        cy.get('body').type(key);
+        cy.get('body').type(`{Shift}${key}`);
         cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
@@ -123,6 +123,9 @@ context('Canvas 3D functionality. Basic actions.', () => {
             ].forEach(([button, tooltip]) => {
                 testControlButtonTooltip(button, tooltip);
             });
+            cy.get('.cvat-objects-sidebar-tabs').within(() => {
+                cy.contains('[role="tab"]', 'Issues').should('not.exist');
+            });
         });
 
         it('Check workspace selector.', () => {
@@ -143,6 +146,8 @@ context('Canvas 3D functionality. Basic actions.', () => {
         });
 
         it('Interaction with the frame change buttons.', () => {
+            const waitTime = 1000;
+            cy.wait(waitTime);
             cy.get('.cvat-player-last-button').click();
             cy.checkFrameNum(2);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000003.pcd');
@@ -151,22 +156,28 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.checkFrameNum(0);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000001.pcd');
             testContextImage(); // Check context image on the first frame
+            cy.wait(waitTime);
             cy.get('.cvat-player-forward-button').click();
             cy.checkFrameNum(2);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000003.pcd');
+            cy.wait(waitTime);
             cy.get('.cvat-player-backward-button').click();
             cy.checkFrameNum(0);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000001.pcd');
+            cy.wait(waitTime);
             cy.get('.cvat-player-next-button').click();
             cy.checkFrameNum(1);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000002.pcd');
             testContextImage(); // Check context image on the second frame
+            cy.wait(waitTime);
             cy.get('.cvat-player-previous-button').click();
             cy.checkFrameNum(0);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000001.pcd');
+            cy.wait(waitTime);
             cy.get('.cvat-player-play-button').click();
             cy.checkFrameNum(2);
             cy.get('.cvat-player-filename-wrapper').should('contain.text', '000003.pcd');
+            cy.wait(waitTime);
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
