@@ -40,7 +40,8 @@ context('Save filtered object in AAM.', () => {
         });
 
         it(`Go to AAM and change a label for the shape. Save the changes. UI is not failed.`, () => {
-            cy.changeWorkspace('Attribute annotation', newLabelName);
+            cy.changeWorkspace('Attribute annotation');
+            cy.changeLabelAAM(newLabelName);
             cy.saveJob();
             cy.get('#cvat_canvas_shape_1').should('not.exist');
             cy.get('.attribute-annotations-sidebar-not-found-wrapper').should('exist');
