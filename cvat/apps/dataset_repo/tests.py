@@ -143,7 +143,7 @@ class TestGit(Git):
         self._reclone()
 
 
-class GitUrlTest(APITestCase):
+class GitDatasetRepoTest(APITestCase):
     class FakeGit:
         def __init__(self, url):
             self._url = url
@@ -248,7 +248,7 @@ class GitUrlTest(APITestCase):
 
     def _check_correct_urls(self, samples):
         for i, (expected, url) in enumerate(samples):
-            fake_git = GitUrlTest.FakeGit(url)
+            fake_git = GitDatasetRepoTest.FakeGit(url)
             try:
                 actual = TestGit.parse_url(fake_git)
                 self.assertEqual(expected, actual, "URL #%s: '%s'" % (i, url))
@@ -390,19 +390,6 @@ class GitUrlTest(APITestCase):
         repo = cvat_git.get_rep()
         self.assertTrue(osp.isdir(osp.join(cvat_git.get_working_dir(), '.git')))
         self.assertTrue(len(repo.heads))
-
-    @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
-    def test_clone_nonexistent_repo(self):
-        # Do not mock git.Repo._clone method and try to clone nonexistent repository
-        task = self._create_task(init_repos=False)
-        db_task = Task.objects.get(pk=task["id"])
-        db_git = GitData()
-        db_git.url = GIT_URL
-
-        cvat_git = TestGit(db_git, db_task, self.user)
-
-        with self.assertRaises(GitCommandError):
-            cvat_git.clone()
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
     @mock.patch('git.Repo.clone', new=GitRepo.clone)
