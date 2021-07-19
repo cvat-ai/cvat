@@ -34,7 +34,8 @@ context("Object can't be draggable/resizable in AAM", () => {
         });
 
         it.skip('Go to AAM', () => {
-            cy.changeWorkspace('Attribute annotation', labelName);
+            cy.changeWorkspace('Attribute annotation');
+            cy.changeLabelAAM(labelName);
             cy.get('#cvat_canvas_shape_1')
                 .then((shape) => {
                     shapeXPos = Math.floor(shape.attr('x'));

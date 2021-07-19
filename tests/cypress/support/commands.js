@@ -380,14 +380,13 @@ Cypress.Commands.add('saveSettings', () => {
     });
 });
 
-Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
+Cypress.Commands.add('changeWorkspace', (mode) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
         cy.get(`.ant-select-item-option[title="${mode}"]`).click();
     });
 
     cy.get('.cvat-workspace-selector').should('contain.text', mode);
-    cy.changeLabelAAM(labelName);
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {
