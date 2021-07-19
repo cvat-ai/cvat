@@ -10,7 +10,7 @@ import Spin from 'antd/lib/spin';
 import Image from 'antd/lib/image';
 
 import { CombinedState } from 'reducers/interfaces';
-import { hideShowContextImage, getContextImage } from 'actions/annotation-actions';
+import { hideShowContextImage, getContextImageAsync } from 'actions/annotation-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 export function adjustContextImagePosition(sidebarCollapsed: boolean): void {
@@ -26,7 +26,7 @@ export function adjustContextImagePosition(sidebarCollapsed: boolean): void {
     }
 }
 
-export default function ContextImage(): JSX.Element | null {
+function ContextImage(): JSX.Element | null {
     const dispatch = useDispatch();
     const { number: frame, hasRelatedContext } = useSelector((state: CombinedState) => state.annotation.player.frame);
     const { data: contextImageData, hidden: contextImageHidden, fetching: contextImageFetching } = useSelector(
@@ -42,7 +42,7 @@ export default function ContextImage(): JSX.Element | null {
 
     useEffect(() => {
         if (hasRelatedContext && !contextImageHidden && !requested) {
-            dispatch(getContextImage());
+            dispatch(getContextImageAsync());
             setRequested(true);
         }
     }, [contextImageHidden, requested, hasRelatedContext]);
@@ -85,3 +85,5 @@ export default function ContextImage(): JSX.Element | null {
         </div>
     );
 }
+
+export default React.memo(ContextImage);
