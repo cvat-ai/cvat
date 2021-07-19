@@ -266,6 +266,18 @@ def _create_thread(tid, data, isImport=False):
     extractor = None
     manifest_index = _get_manifest_frame_indexer()
 
+    # If upload from server_files image and directories
+    # need to update images list by all found images in directories
+    if (data['server_files']) and len(media['directory']) and len(media['image']):
+        media['image'].extend(
+            [os.path.relpath(image, upload_dir) for image in
+                MEDIA_TYPES['directory']['extractor'](
+                    source_path=[os.path.join(upload_dir, f) for f in media['directory']],
+                ).absolute_source_paths
+            ]
+        )
+        media['directory'] = []
+
     for media_type, media_files in media.items():
         if media_files:
             if extractor is not None:
