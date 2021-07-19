@@ -128,6 +128,7 @@ class LambdaFunction:
         if self.kind is LambdaType.INTERACTOR:
             response.update({
                 'min_pos_points': self.min_pos_points,
+                'min_neg_points': self.min_neg_points,
                 'startswith_box': self.startswith_box
             })
 
