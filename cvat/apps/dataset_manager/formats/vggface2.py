@@ -29,4 +29,5 @@ def _import(src_file, task_data):
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'vgg_face2', env=dm_env)
+        dataset.transform('rename', r"|([^/]+/)?(.+)|\2|")
         import_dm_annotations(dataset, task_data)
