@@ -7,6 +7,7 @@ metadata:
     spec:
     framework: pytorch
     min_pos_points: 1
+    min_neg_points: 0
     startswith_box: true
 
 spec:

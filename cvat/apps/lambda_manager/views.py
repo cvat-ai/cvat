@@ -111,6 +111,7 @@ class LambdaFunction:
         # display name for the function
         self.name = meta_anno.get('name', self.id)
         self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
+        self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
         self.gateway = gateway
 

@@ -69,8 +69,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
             return enabled && !ctrlKey && !!interactionShapes.length;
         }
 
-        const minPosVerticesAchieved = typeof minPosVertices === 'undefined' || minPosVertices <= positiveShapes.length;
-        const minNegVerticesAchieved = typeof minNegVertices === 'undefined' || minPosVertices <= negativeShapes.length;
+        const minPosVerticesDefined = Number.isInteger(minPosVertices);
+        const minNegVerticesDefined = Number.isInteger(minNegVertices) && minNegVertices >= 0;
+        const minPosVerticesAchieved = !minPosVerticesDefined || minPosVertices <= positiveShapes.length;
+        const minNegVerticesAchieved = !minNegVerticesDefined || minNegVertices <= negativeShapes.length;
         const minimumVerticesAchieved = minPosVerticesAchieved && minNegVerticesAchieved;
         return enabled && !ctrlKey && minimumVerticesAchieved && shapesWereUpdated;
     }
@@ -95,7 +97,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private interactPoints(): void {
         const eventListener = (e: MouseEvent): void => {
-            if ((e.button === 0 || (e.button === 2 && this.interactionData.enableNegVertices)) && !e.altKey) {
+            if ((e.button === 0 || (e.button === 2 && this.interactionData.minNegVertices >= 0)) && !e.altKey) {
                 e.preventDefault();
                 const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
                 if (!this.isWithinFrame(cx, cy)) return;

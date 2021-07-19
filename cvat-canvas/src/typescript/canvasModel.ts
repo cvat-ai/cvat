@@ -77,7 +77,6 @@ export interface InteractionData {
     crosshair?: boolean;
     minPosVertices?: number;
     minNegVertices?: number;
-    enableNegVertices?: boolean;
     startWithBox?: boolean;
     enableThreshold?: boolean;
     enableSliding?: boolean;
