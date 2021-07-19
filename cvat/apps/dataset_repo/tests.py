@@ -8,7 +8,6 @@ from PIL import Image
 import os
 from os import path as osp
 import git
-from git.exc import GitCommandError
 import io
 from unittest import mock
 
