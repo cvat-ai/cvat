@@ -335,7 +335,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         manual_parameters=[
             openapi.Parameter('format', openapi.IN_QUERY,
                 description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
-                type=openapi.TYPE_STRING, required=False),
+                type=openapi.TYPE_STRING, required=True),
             openapi.Parameter('filename', openapi.IN_QUERY,
                 description="Desired output file name",
                 type=openapi.TYPE_STRING, required=False),
@@ -348,6 +348,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             '201': openapi.Response(description='Annotations file is ready to download'),
             '200': openapi.Response(description='Download of file started'),
             '405': openapi.Response(description='Format is not available'),
+            '401': openapi.Response(description='Format is not specified'),
         }
     )
     @action(detail=True, methods=['GET'],
@@ -365,7 +366,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
                 filename=request.query_params.get("filename", "").lower(),
             )
         else:
-            return Response(status=500)
+            return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")

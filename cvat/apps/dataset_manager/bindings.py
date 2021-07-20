@@ -743,7 +743,7 @@ class ProjectData(InstanceLabelData):
         return self._frame_steps
 
     @property
-    def project(self):
+    def db_project(self):
         return self._db_project
 
     @property
