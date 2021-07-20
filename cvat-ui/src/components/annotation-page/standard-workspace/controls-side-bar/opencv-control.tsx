@@ -19,7 +19,7 @@ import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
-    CombinedState, ActiveControl, OpenCVTool, ObjectType,
+    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -93,17 +93,11 @@ const mapDispatchToProps = {
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
-    private interactiveStateID: number | null;
-    private interactionIsDone: boolean;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels } = props;
-
         this.activeTool = null;
-        this.interactiveStateID = null;
-        this.interactionIsDone = false;
-
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
             initializationError: false,
@@ -115,7 +109,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
-        canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -125,42 +118,17 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (this.activeTool) {
                 this.activeTool.reset();
             }
-            this.interactiveStateID = null;
-            this.interactionIsDone = false;
         }
     }
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
-        canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
-
-    private getInteractiveState(): any | null {
-        const { states } = this.props;
-        return states.filter((_state: any): boolean => _state.clientID === this.interactiveStateID)[0] || null;
-    }
-
-    private cancelListener = async (): Promise<void> => {
-        const {
-            fetchAnnotations, isActivated, jobInstance, frame,
-        } = this.props;
-
-        if (isActivated) {
-            if (this.interactiveStateID !== null) {
-                const state = this.getInteractiveState();
-                this.interactiveStateID = null;
-                await state.delete(frame);
-                fetchAnnotations();
-            }
-
-            await jobInstance.actions.freeze(false);
-        }
-    };
 
     private interactionListener = async (e: Event): Promise<void> => {
         const {
-            fetchAnnotations, updateAnnotations, isActivated, jobInstance, frame, labels, curZOrder,
+            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance,
         } = this.props;
         const { activeLabelID } = this.state;
         if (!isActivated || !this.activeTool) {
@@ -171,64 +139,36 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             shapesUpdated, isDone, threshold, shapes,
         } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
-        this.interactionIsDone = isDone;
 
         try {
-            let points: number[] = [];
             if (shapesUpdated) {
-                points = await this.runCVAlgorithm(pressedPoints, threshold);
+                const result = await this.runCVAlgorithm(pressedPoints, threshold);
+                canvasInstance.interact({
+                    enabled: true,
+                    intermediateShape: {
+                        shapeType: ShapeType.POLYGON,
+                        points: result,
+                    },
+                });
             }
 
-            if (this.interactiveStateID === null) {
-                if (!this.interactionIsDone) {
-                    await jobInstance.actions.freeze(true);
-                }
-
-                const object = new core.classes.ObjectState({
-                    ...this.activeTool.params.shape,
+            if (isDone) {
+                const finalObject = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
+                    shapeType: ShapeType.POLYGON,
                     label: labels.filter((label: any) => label.id === activeLabelID)[0],
-                    points,
+                    // need to recalculate without the latest sliding point
+                    points: await this.runCVAlgorithm(pressedPoints, threshold),
                     occluded: false,
                     zOrder: curZOrder,
                 });
-                // need a clientID of a created object to interact with it further
-                // so, we do not use createAnnotationAction
-                const [clientID] = await jobInstance.annotations.put([object]);
-                this.interactiveStateID = clientID;
-
-                // update annotations on a canvas
-                fetchAnnotations();
-                return;
-            }
-
-            const state = this.getInteractiveState();
-            if ((e as CustomEvent).detail.isDone) {
-                const finalObject = new core.classes.ObjectState({
-                    frame: state.frame,
-                    objectType: state.objectType,
-                    label: state.label,
-                    shapeType: state.shapeType,
-                    // need to recalculate without the latest sliding point
-                    points: points = await this.runCVAlgorithm(pressedPoints, threshold),
-                    occluded: state.occluded,
-                    zOrder: state.zOrder,
-                });
-                this.interactiveStateID = null;
-                await state.delete(frame);
-                await jobInstance.actions.freeze(false);
-                await jobInstance.annotations.put([finalObject]);
-                fetchAnnotations();
-            } else {
-                state.points = points;
-                updateAnnotations([state]);
-                fetchAnnotations();
+                createAnnotations(jobInstance, frame, [finalObject]);
             }
         } catch (error) {
             notification.error({
                 description: error.toString(),
-                message: 'Processing error occured',
+                message: 'OpenCV.js processing error occured',
             });
         }
     };

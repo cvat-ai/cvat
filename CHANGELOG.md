@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filter `is_active` for user list (<https://github.com/openvinotoolkit/cvat/pull/3235>)
 - Ability to export/import tasks (<https://github.com/openvinotoolkit/cvat/pull/3056>)
 - Add a tutorial for semi-automatic/automatic annotation (<https://github.com/openvinotoolkit/cvat/pull/3124>)
+- Explicit "Done" button when drawing any polyshapes (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 
 ### Changed
 
@@ -21,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update of COCO format documentation (<https://github.com/openvinotoolkit/cvat/pull/3197>)
 - Updated Webpack Dev Server config to add proxxy (<https://github.com/openvinotoolkit/cvat/pull/3368>)
 - Update to Django 3.1.12 (<https://github.com/openvinotoolkit/cvat/pull/3378>)
+- Updated visibility for removable points in AI tools (<https://github.com/openvinotoolkit/cvat/pull/3417>)
+- Updated UI handling for IOG serverless function (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 
 ### Deprecated
 
@@ -48,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/openvinotoolkit/cvat/pull/3379>)
 - Fixed issue when save filtered object in AAM (<https://github.com/openvinotoolkit/cvat/pull/3401>)
 - Context image disappears after undo/redo (<https://github.com/openvinotoolkit/cvat/pull/3416>)
+- Using combined data sources (directory and image) when create a task (<https://github.com/openvinotoolkit/cvat/pull/3424>)
 
 ### Security
 
