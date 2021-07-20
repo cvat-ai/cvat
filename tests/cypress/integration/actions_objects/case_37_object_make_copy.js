@@ -135,7 +135,7 @@ context('Object make a copy.', () => {
                         .rightclick('right'); // When click in the center of polyline: is being covered by another element: <svg xmlns="http://www.w3.org/2000/svg" ...
                 } else {
                     cy.get(`#cvat_canvas_shape_${id}`)
-                        .trigger('mousemove')
+                        .trigger('mousemove', 'right')
                         .should('have.class', 'cvat_canvas_shape_activated')
                         .rightclick();
                 }
@@ -192,12 +192,15 @@ context('Object make a copy.', () => {
         it('Copy a shape with holding "Ctrl".', () => {
             const keyCodeC = 67;
             const keyCodeV = 86;
-            cy.get('.cvat_canvas_shape').first().trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').type('{ctrl}', {release: false}); // Hold
+            cy.get('.cvat_canvas_shape')
+                .first()
+                .trigger('mousemove')
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}', { release: false }); // Hold
             cy.get('body')
-                .trigger('keydown', {keyCode: keyCodeC, ctrlKey: true})
+                .trigger('keydown', { keyCode: keyCodeC, ctrlKey: true })
                 .trigger('keyup')
-                .trigger('keydown', {keyCode: keyCodeV, ctrlKey: true})
+                .trigger('keydown', { keyCode: keyCodeV, ctrlKey: true })
                 .trigger('keyup');
             cy.get('.cvat-canvas-container').click(400, 300);
             cy.get('.cvat-canvas-container').click(500, 300);
