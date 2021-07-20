@@ -324,6 +324,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public render(): JSX.Element {
         const { isActivated, canvasInstance, labels } = this.props;
+        const { libraryInitialized } = this.state;
         const dynamcPopoverPros = isActivated ?
             {
                 overlayStyle: {
@@ -351,6 +352,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 placement='right'
                 overlayClassName='cvat-opencv-control-popover'
                 content={this.renderContent()}
+                afterVisibleChange={() => {
+                    if (libraryInitialized !== openCVWrapper.isInitialized) {
+                        this.setState({
+                            libraryInitialized: openCVWrapper.isInitialized,
+                        });
+                    }
+                }}
             >
                 <Icon {...dynamicIconProps} component={OpenCVIcon} />
             </CustomPopover>
