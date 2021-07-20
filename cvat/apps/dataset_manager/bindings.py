@@ -13,7 +13,7 @@ from django.utils import timezone
 
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label
+from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label, DimensionType, Image as Img
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
 
@@ -118,6 +118,7 @@ class InstanceLabelData:
 
 
 class TaskData(InstanceLabelData):
+    Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
         'LabeledShape', 'type, frame, label, points, occluded, attributes, source, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
@@ -128,7 +129,8 @@ class TaskData(InstanceLabelData):
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
-        'Frame', 'idx, frame, name, width, height, labeled_shapes, tags')
+        'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
+    Labels = namedtuple('Label', 'id, name, color')
 
     def __init__(self, annotation_ir, db_task, host='', create_callback=None):
         self._annotation_ir = annotation_ir
@@ -166,6 +168,7 @@ class TaskData(InstanceLabelData):
             } for frame in range(self._db_task.data.size)}
         else:
             self._frame_info = {self.rel_frame_id(db_image.frame): {
+                "id": db_image.id,
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
@@ -279,6 +282,12 @@ class TaskData(InstanceLabelData):
             attributes=self._export_attributes(shape["attributes"]),
         )
 
+    def _export_shape(self, shape):
+        return TaskData.Shape(
+            id=shape["id"],
+            label_id=shape["label_id"]
+        )
+
     def _export_tag(self, tag):
         return TaskData.Tag(
             frame=self.abs_frame_id(tag["frame"]),
@@ -286,6 +295,14 @@ class TaskData(InstanceLabelData):
             group=tag.get("group", 0),
             source=tag["source"],
             attributes=self._export_attributes(tag["attributes"]),
+        )
+
+    @staticmethod
+    def _export_label(label):
+        return TaskData.Labels(
+            id=label.id,
+            name=label.name,
+            color=label.color
         )
 
     def group_by_frame(self, include_empty=False):
@@ -296,12 +313,15 @@ class TaskData(InstanceLabelData):
             if frame not in frames:
                 frames[frame] = TaskData.Frame(
                     idx=idx,
+                    id=frame_info.get('id',0),
                     frame=frame,
                     name=frame_info['path'],
                     height=frame_info["height"],
                     width=frame_info["width"],
                     labeled_shapes=[],
                     tags=[],
+                    shapes=[],
+                    labels={}
                 )
             return frames[frame]
 
@@ -310,6 +330,7 @@ class TaskData(InstanceLabelData):
                 get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
+        shape_data = ''
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
             if shape['frame'] not in self._frame_info:
@@ -323,8 +344,13 @@ class TaskData(InstanceLabelData):
                 exported_shape = self._export_tracked_shape(shape)
             else:
                 exported_shape = self._export_labeled_shape(shape)
-            get_frame(shape['frame']).labeled_shapes.append(
-                exported_shape)
+                shape_data = self._export_shape(shape)
+            get_frame(shape['frame']).labeled_shapes.append(exported_shape)
+            if shape_data:
+                get_frame(shape['frame']).shapes.append(shape_data)
+                for label in self._label_mapping.values():
+                    label = self._export_label(label)
+                    get_frame(shape['frame']).labels.update({label.id: label})
 
         for tag in self._annotation_ir.tags:
             get_frame(tag['frame']).tags.append(self._export_tag(tag))
@@ -810,17 +836,31 @@ class CVATDataExtractor(datumaro.SourceExtractor):
 
 
 class CvatTaskDataExtractor(CVATDataExtractor):
-    def __init__(self, task_data, include_images=False):
+    def __init__(self, task_data, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
         super().__init__()
-        self._categories = self._load_categories(task_data.meta['task']['labels'])
-
+        self._categories, self._user = self._load_categories(task_data, dimension=dimension)
+        self._dimension = dimension
+        self._format_type = format_type
         dm_items = []
 
         is_video = task_data.meta['task']['mode'] == 'interpolation'
         ext = ''
         if is_video:
             ext = FrameProvider.VIDEO_FRAME_EXT
-        if include_images:
+
+        if dimension == DimensionType.DIM_3D:
+            def _make_image(image_id, **kwargs):
+                loader = osp.join(
+                    task_data.db_task.data.get_upload_dirname(), kwargs['path'])
+                related_images = []
+                image = Img.objects.get(id=image_id)
+                for i in image.related_files.all():
+                    path = osp.realpath(str(i.path))
+                    if osp.isfile(path):
+                        related_images.append(path)
+                return loader, related_images
+
+        elif include_images:
             frame_provider = FrameProvider(task_data.db_task.data)
             if is_video:
                 # optimization for videos: use numpy arrays instead of bytes
@@ -843,17 +883,72 @@ class CvatTaskDataExtractor(CVATDataExtractor):
                 'path': frame_data.name + ext,
                 'size': (frame_data.height, frame_data.width),
             }
-            if include_images:
+
+            if dimension == DimensionType.DIM_3D:
+                dm_image = _make_image(frame_data.id, **image_args)
+            elif include_images:
                 dm_image = _make_image(frame_data.idx, **image_args)
             else:
                 dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, task_data.meta['task']['labels'])
-            dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
-                annotations=dm_anno, image=dm_image,
-                attributes={'frame': frame_data.frame})
+
+            if dimension == DimensionType.DIM_2D:
+                dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
+                        annotations=dm_anno, image=dm_image,
+                        attributes={'frame': frame_data.frame
+                    })
+            elif dimension == DimensionType.DIM_3D:
+                attributes = {'frame': frame_data.frame}
+                if format_type == "sly_pointcloud":
+                    attributes["name"] = self._user["name"]
+                    attributes["createdAt"] = self._user["createdAt"]
+                    attributes["updatedAt"] = self._user["updatedAt"]
+                    attributes["labels"] = []
+                    index = 0
+                    for _, label in task_data.meta['task']['labels']:
+                        attributes["labels"].append({"label_id": index, "name": label["name"], "color": label["color"]})
+                        attributes["track_id"] = -1
+                        index += 1
+
+                dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1].split('.')[0],
+                                               annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                                               attributes=attributes)
+
             dm_items.append(dm_item)
 
         self._items = dm_items
+
+    @staticmethod
+    def _load_categories(cvat_anno, dimension):
+        categories = {}
+
+        label_categories = datumaro.LabelCategories(attributes=['occluded'])
+
+        user_info = {}
+        if dimension == DimensionType.DIM_3D:
+            user_info = {"name": cvat_anno.meta['task']['owner']['username'],
+                         "createdAt": cvat_anno.meta['task']['created'],
+                         "updatedAt": cvat_anno.meta['task']['updated']}
+        for _, label in cvat_anno.meta['task']['labels']:
+            label_categories.add(label['name'])
+            for _, attr in label['attributes']:
+                label_categories.attributes.add(attr['name'])
+
+
+        categories[datumaro.AnnotationType.label] = label_categories
+
+        return categories, user_info
+
+    def _read_cvat_anno(self, cvat_frame_anno: TaskData.Frame, labels: list):
+        categories = self.categories()
+        label_cat = categories[datumaro.AnnotationType.label]
+        def map_label(name): return label_cat.find(name)[0]
+        label_attrs = {
+            label['name']: label['attributes']
+            for _, label in labels
+        }
+
+        return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, self._format_type, self._dimension)
 
 class CVATProjectDataExtractor(CVATDataExtractor):
     def __init__(self, project_data: ProjectData, include_images=False):
@@ -943,7 +1038,7 @@ def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
             raise Exception('Cannot find default name for subset')
 
 
-def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label):
+def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name=None, dimension=DimensionType.DIM_2D):
     item_anno = []
 
     def convert_attrs(label, cvat_attrs):
@@ -962,6 +1057,8 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label):
                 raise Exception(
                     "Failed to convert attribute '%s'='%s': %s" %
                     (a_name, a_value, e))
+            if format_name == "sly_pointcloud" and (a_desc.get('input_type') == 'select' or a_desc.get('input_type') == 'radio'):
+                    dm_attr[f"{a_name}__values"] = a_desc["values"]
         return dm_attr
 
     for tag_obj in cvat_frame_anno.tags:
@@ -973,7 +1070,11 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label):
             attributes=anno_attr, group=anno_group)
         item_anno.append(anno)
 
-    for shape_obj in cvat_frame_anno.labeled_shapes:
+        shapes = []
+        for shape in cvat_frame_anno.shapes:
+            shapes.append({"id": shape.id, "label_id": shape.label_id})
+
+    for index, shape_obj in enumerate(cvat_frame_anno.labeled_shapes):
         anno_group = shape_obj.group or 0
         anno_label = map_label(shape_obj.label)
         anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
@@ -1002,7 +1103,18 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label):
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.CUBOID:
-            continue # Datumaro does not support cuboids
+            if dimension == DimensionType.DIM_3D:
+                if format_name == "sly_pointcloud":
+                    anno_id = shapes[index]["id"]
+                    anno_attr["label_id"] = shapes[index]["label_id"]
+                else:
+                    anno_id = index
+                position, rotation, scale = anno_points[0:3], anno_points[3:6], anno_points[6:9]
+                anno = datumaro.Cuboid3d(id=anno_id, position=position, rotation=rotation, scale=scale,
+                                            label=anno_label, attributes=anno_attr, group=anno_group
+                                            )
+            else:
+                continue
         else:
             raise Exception("Unknown shape type '%s'" % shape_obj.type)
 
@@ -1029,11 +1141,15 @@ def match_dm_item(item, task_data, root_hint=None):
     return frame_number
 
 def find_dataset_root(dm_dataset, task_data):
-    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts)).id
+    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts),
+        default=None)
+    if longest_path is None:
+        return None
+    longest_path = longest_path.id
+
     longest_match = task_data.match_frame_fuzzy(longest_path)
     if longest_match is None:
         return None
-
     longest_match = osp.dirname(task_data.frame_info[longest_match]['path'])
     prefix = longest_match[:-len(osp.dirname(longest_path)) or None]
     if prefix.endswith('/'):
@@ -1046,6 +1162,7 @@ def import_dm_annotations(dm_dataset, task_data):
         datumaro.AnnotationType.polygon: ShapeType.POLYGON,
         datumaro.AnnotationType.polyline: ShapeType.POLYLINE,
         datumaro.AnnotationType.points: ShapeType.POINTS,
+        datumaro.AnnotationType.cuboid_3d: ShapeType.CUBOID
     }
 
     if len(dm_dataset) == 0:
@@ -1080,11 +1197,17 @@ def import_dm_annotations(dm_dataset, task_data):
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
                 if ann.type in shapes:
+                    if ann.type == datumaro.AnnotationType.cuboid_3d:
+                        try:
+                            ann.points = [*ann.position,*ann.rotation,*ann.scale,0,0,0,0,0,0,0]
+                        except Exception as e:
+                            ann.points = ann.points
+                        ann.z_order = 0
                     task_data.add_shape(task_data.LabeledShape(
                         type=shapes[ann.type],
                         frame=frame_number,
+                        points = ann.points,
                         label=label_cat.items[ann.label].name,
-                        points=ann.points,
                         occluded=ann.attributes.get('occluded') == True,
                         z_order=ann.z_order,
                         group=group_map.get(ann.group, 0),

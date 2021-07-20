@@ -46,9 +46,11 @@ class DatumaroProjectExporter:
             if isinstance(instance_data, ProjectData):
                 image_info['subset'] = frame['subset']
 
-        with open(osp.join(save_dir, 'config.json'), 'w') as config_file:
+        with open(osp.join(save_dir, 'config.json'),
+                'w', encoding='utf-8') as config_file:
             json.dump(config, config_file)
-        with open(osp.join(save_dir, 'images_meta.json'), 'w') as images_file:
+        with open(osp.join(save_dir, 'images_meta.json'),
+                'w', encoding='utf-8') as images_file:
             json.dump(images_meta, images_file)
 
     def _export(self, instance_data, save_dir, save_images=False):

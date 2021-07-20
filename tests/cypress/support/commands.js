@@ -101,9 +101,9 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
-                        body: {
-                            is_active: isActive,
-                        },
+                    body: {
+                        is_active: isActive,
+                    },
                 });
             }
         });
@@ -124,7 +124,6 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
                 expect(superuserStatus).to.be.equal(user['is_superuser']);
                 expect(activeStatus).to.be.equal(user['is_active']);
             }
-
         });
     });
 });
@@ -179,9 +178,7 @@ Cypress.Commands.add(
         }
         cy.contains('button', 'Submit').click();
         if (expectedResult === 'success') {
-            cy.get('.cvat-notification-create-task-success')
-                .should('exist')
-                .find('[data-icon="close"]').click();
+            cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
         }
         if (!forProject) {
             cy.goToTaskList();
@@ -380,14 +377,13 @@ Cypress.Commands.add('saveSettings', () => {
     });
 });
 
-Cypress.Commands.add('changeWorkspace', (mode, labelName) => {
+Cypress.Commands.add('changeWorkspace', (mode) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
         cy.get(`.ant-select-item-option[title="${mode}"]`).click();
     });
 
     cy.get('.cvat-workspace-selector').should('contain.text', mode);
-    cy.changeLabelAAM(labelName);
 });
 
 Cypress.Commands.add('changeLabelAAM', (labelName) => {

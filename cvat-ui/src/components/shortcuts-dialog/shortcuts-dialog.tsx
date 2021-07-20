@@ -12,6 +12,7 @@ import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
     visible: boolean;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -21,10 +22,14 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         shortcuts: { visibleShortcutsHelp: visible },
+        annotation: {
+            job: { instance: jobInstance },
+        },
     } = state;
 
     return {
         visible,
+        jobInstance,
     };
 }
 
@@ -37,7 +42,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
-    const { visible, switchShortcutsDialog } = props;
+    const { visible, switchShortcutsDialog, jobInstance } = props;
     const keyMap = getApplicationKeyMap();
 
     const splitToRows = (data: string[]): JSX.Element[] =>
@@ -76,13 +81,17 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
         },
     ];
 
-    const dataSource = Object.keys(keyMap).map((key: string, id: number) => ({
-        key: id,
-        name: keyMap[key].name || key,
-        description: keyMap[key].description || '',
-        shortcut: keyMap[key].sequences,
-        action: [keyMap[key].action],
-    }));
+    const dimensionType = jobInstance ? jobInstance.task.dimension : undefined;
+
+    const dataSource = Object.keys(keyMap)
+        .filter((key: string) => !dimensionType || keyMap[key].applicable.includes(dimensionType))
+        .map((key: string, id: number) => ({
+            key: id,
+            name: keyMap[key].name || key,
+            description: keyMap[key].description || '',
+            shortcut: keyMap[key].sequences,
+            action: [keyMap[key].action],
+        }));
 
     return (
         <Modal

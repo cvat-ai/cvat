@@ -142,3 +142,22 @@
     height: 100%;
     cursor: ew-resize;
 }
+
+#cvat_canvas_loading_animation {
+    z-index: 1;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#cvat_canvas_loading_circle {
+    fill-opacity: 0;
+    stroke: #09c;
+    stroke-width: 3px;
+    stroke-dasharray: 50;
+    animation: loadingAnimation 1s linear infinite;
+}
+
+.cvat_canvas_hidden {
+    display: none;
+}

@@ -347,7 +347,10 @@ class TaskDumpUploadTest(_DbTestBase):
         with TestDir() as test_dir:
             # Dump annotations with objects type is shape
             for dump_format in dump_formats:
-                if not dump_format.ENABLED:
+                if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
+                    'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0'
+
+                ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
                 with self.subTest(format=dump_format_name):
@@ -449,7 +452,10 @@ class TaskDumpUploadTest(_DbTestBase):
         with TestDir() as test_dir:
             # Dump annotations with objects type is track
             for dump_format in dump_formats:
-                if not dump_format.ENABLED:
+                if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
+                    'Kitti Raw Format 1.0','Sly Point Cloud Format 1.0'
+
+                ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
                 with self.subTest(format=dump_format_name):
@@ -892,7 +898,10 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=dump_format_name):
                     if dump_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
-                        "Datumaro 1.0" # Datumaro 1.0 is not in the list of import format
+                        "Datumaro 1.0", # Datumaro 1.0 is not in the list of import format
+                        'Kitti Raw Format 1.0',
+                        'Sly Point Cloud Format 1.0'
+
                     ]:
                         self.skipTest("Format is fail")
                     images = self._generate_task_images(3)
@@ -999,6 +1008,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOTS PNG 1.0", # changed points values
                         "Segmentation mask 1.1", # changed points values
                         "ICDAR Segmentation 1.0", # changed points values
+                        'Kitti Raw Format 1.0',
+                        'Sly Point Cloud Format 1.0'
                     ]:
                         self.skipTest("Format is fail")
 
@@ -1177,7 +1188,7 @@ class ProjectDump(_DbTestBase):
 
         with TestDir() as test_dir:
             for dump_format in dump_formats:
-                if not dump_format.ENABLED:
+                if not dump_format.ENABLED or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
                 with self.subTest(format=dump_format_name):
@@ -1229,7 +1240,7 @@ class ProjectDump(_DbTestBase):
 
         with TestDir() as test_dir:
             for dump_format in dump_formats:
-                if not dump_format.ENABLED:
+                if not dump_format.ENABLED or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
                 with self.subTest(format=dump_format_name):
