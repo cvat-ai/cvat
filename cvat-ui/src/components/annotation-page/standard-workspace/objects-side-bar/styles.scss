@@ -397,3 +397,15 @@
 .cvat-objects-sidebar-label-item-disabled {
     opacity: 0.5;
 }
+
+.cvat-approx-poly-threshold-wrapper {
+    position: absolute;
+    background: $background-color-2;
+    top: 8px;
+    left: 50%;
+    opacity: 0.5;
+    border-radius: 6px;
+    border: 1px solid $border-color-3;
+    z-index: 100;
+    padding: 4px 12px;
+}

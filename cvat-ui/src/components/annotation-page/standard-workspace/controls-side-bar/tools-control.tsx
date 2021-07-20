@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { MutableRefObject } from 'react';
+import ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import Icon, { LoadingOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
@@ -16,7 +17,9 @@ import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
+import Slider from 'antd/lib/slider';
 
+import { Tooltip } from 'antd';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import range from 'utils/range';
@@ -102,6 +105,7 @@ interface State {
     trackingProgress: number | null;
     trackingFrames: number;
     fetching: boolean;
+    approxPolyThreshold: number;
     mode: 'detection' | 'interaction' | 'tracking';
 }
 
@@ -109,7 +113,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interactionIsAborted: boolean;
 
     private interactionIsDone: boolean;
-    private latestResult: number[];
+    private latestResponseResult: number[][];
+    private latestResult: number[][];
 
     public constructor(props: Props) {
         super(props);
@@ -117,12 +122,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id : null,
+            approxPolyThreshold: props.defaultApproxPolyThreshold,
             trackingProgress: null,
             trackingFrames: 10,
             fetching: false,
             mode: 'interaction',
         };
 
+        this.latestResponseResult = [];
         this.latestResult = [];
         this.interactionIsAborted = false;
         this.interactionIsDone = false;
@@ -135,15 +142,35 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const { isActivated } = this.props;
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        const { isActivated, defaultApproxPolyThreshold, canvasInstance } = this.props;
+        const { approxPolyThreshold, activeInteractor } = this.state;
+
         if (prevProps.isActivated && !isActivated) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
+            this.setState({
+                approxPolyThreshold: defaultApproxPolyThreshold,
+            });
         } else if (!prevProps.isActivated && isActivated) {
             // reset flags when start interaction/tracking
             this.interactionIsDone = false;
             this.interactionIsAborted = false;
             window.addEventListener('contextmenu', this.contextmenuDisabler);
+        }
+
+        if (prevState.approxPolyThreshold !== approxPolyThreshold) {
+            if (isActivated && activeInteractor !== null && this.latestResponseResult.length) {
+                this.approximateResponsePoints(this.latestResponseResult).then((points: number[][]) => {
+                    this.latestResult = points;
+                    canvasInstance.interact({
+                        enabled: true,
+                        intermediateShape: {
+                            shapeType: ShapeType.POLYGON,
+                            points: this.latestResult.flat(),
+                        },
+                    });
+                });
+            }
         }
     }
 
@@ -187,7 +214,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             isActivated,
             activeLabelID,
             canvasInstance,
-            defaultApproxPolyThreshold,
             createAnnotations,
         } = this.props;
         const { activeInteractor, fetching } = this.state;
@@ -203,33 +229,22 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             if ((e as CustomEvent).detail.shapesUpdated) {
                 this.setState({ fetching: true });
                 try {
-                    this.latestResult = await core.lambda.call(jobInstance.task, interactor, {
+                    this.latestResponseResult = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
                         pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
                         neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
                     });
+                    this.latestResult = this.latestResponseResult;
 
                     if (this.interactionIsAborted) {
                         // while the server request
                         // user has cancelled interaction (for example pressed ESC)
                         this.latestResult = [];
+                        this.latestResponseResult = [];
                         return;
                     }
 
-                    if (this.latestResult.length > 3 * 2) {
-                        if (!openCVWrapper.isInitialized) {
-                            const hide = message.loading('OpenCV.js initialization..');
-                            try {
-                                await openCVWrapper.initialize(() => {});
-                            } finally {
-                                hide();
-                            }
-                        }
-                        this.latestResult = openCVWrapper.contours.approxPoly(
-                            this.latestResult,
-                            defaultApproxPolyThreshold,
-                        );
-                    }
+                    this.latestResult = await this.approximateResponsePoints(this.latestResponseResult);
                 } finally {
                     this.setState({ fetching: false });
                 }
@@ -340,6 +355,24 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeTracker: trackers.filter((tracker: Model) => tracker.id === value)[0],
         });
     };
+
+    private async approximateResponsePoints(points: number[][]): Promise<number[][]> {
+        const { approxPolyThreshold } = this.state;
+        if (points.length > 3) {
+            if (!openCVWrapper.isInitialized) {
+                const hide = message.loading('OpenCV.js initialization..');
+                try {
+                    await openCVWrapper.initialize(() => {});
+                } finally {
+                    hide();
+                }
+            }
+
+            return openCVWrapper.contours.approxPoly(points, approxPolyThreshold);
+        }
+
+        return points;
+    }
 
     public async trackState(state: any): Promise<void> {
         const { jobInstance, frame } = this.props;
@@ -682,7 +715,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const {
             interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
-        const { fetching, trackingProgress } = this.state;
+        const {
+            fetching, trackingProgress, approxPolyThreshold, activeInteractor,
+        } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
 
@@ -722,6 +757,27 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}
                 </Modal>
+                {isActivated &&
+                activeInteractor !== null &&
+                window.document.getElementsByClassName('cvat-canvas-container')[0] ?
+                    ReactDOM.createPortal(
+                        <div className='cvat-approx-poly-threshold-wrapper'>
+                            <Text>Approximation threshold</Text>
+                            <Tooltip overlay='The value defines maximum distance when minimizing polygon points'>
+                                <Slider
+                                    value={approxPolyThreshold}
+                                    min={0.5}
+                                    max={30}
+                                    step={0.1}
+                                    onChange={(value: number) => {
+                                        this.setState({ approxPolyThreshold: value });
+                                    }}
+                                />
+                            </Tooltip>
+                        </div>,
+                        window.document.getElementsByClassName('cvat-canvas-container')[0] as HTMLDivElement,
+                    ) :
+                    null}
                 <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>

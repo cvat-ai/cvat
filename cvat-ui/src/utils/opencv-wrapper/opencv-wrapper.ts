@@ -15,7 +15,7 @@ export interface Segmentation {
 }
 
 export interface Contours {
-    approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[];
+    approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
 }
 
 export class OpenCVWrapper {
@@ -91,7 +91,7 @@ export class OpenCVWrapper {
 
         const { cv } = this;
         return {
-            approxPoly: (points: number[] | any, threshold: number, closed = true): number[] => {
+            approxPoly: (points: number[] | any, threshold: number, closed = true): number[][] => {
                 const approx = new cv.Mat();
                 try {
                     if (points instanceof cv.Mat) {
@@ -107,7 +107,7 @@ export class OpenCVWrapper {
 
                     const result = [];
                     for (let row = 0; row < approx.rows; row++) {
-                        result.push(approx.floatAt(row, 0), approx.floatAt(row, 1));
+                        result.push([approx.floatAt(row, 0), approx.floatAt(row, 1)]);
                     }
                     return result;
                 } finally {
