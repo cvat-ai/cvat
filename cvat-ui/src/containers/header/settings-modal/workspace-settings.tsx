@@ -13,6 +13,7 @@ import {
     switchShowingObjectsTextAlways,
     switchAutomaticBordering,
     switchIntelligentPolygonCrop,
+    changeDefaultApproxPolyThreshold,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -25,6 +26,7 @@ interface StateToProps {
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
+    defaultApproxPolyThreshold: number;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
 }
@@ -37,6 +39,7 @@ interface DispatchToProps {
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
+    onChangeDefaultApproxPolyThreshold(approxPolyThreshold: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -49,6 +52,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showObjectsTextAlways,
         automaticBordering,
         intelligentPolygonCrop,
+        defaultApproxPolyThreshold,
     } = workspace;
 
     return {
@@ -59,6 +63,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showObjectsTextAlways,
         automaticBordering,
         intelligentPolygonCrop,
+        defaultApproxPolyThreshold,
     };
 }
 
@@ -84,6 +89,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchIntelligentPolygonCrop(enabled: boolean): void {
             dispatch(switchIntelligentPolygonCrop(enabled));
+        },
+        onChangeDefaultApproxPolyThreshold(approxPolyThreshold: number): void {
+            dispatch(changeDefaultApproxPolyThreshold(approxPolyThreshold));
         },
     };
 }

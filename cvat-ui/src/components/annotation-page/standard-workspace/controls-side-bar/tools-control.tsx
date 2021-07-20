@@ -13,6 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
+import message from 'antd/lib/message';
 import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
 
@@ -20,6 +21,7 @@ import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
     CombinedState, ActiveControl, Model, ObjectType, ShapeType,
 } from 'reducers/interfaces';
@@ -46,6 +48,7 @@ interface StateToProps {
     trackers: Model[];
     curZOrder: number;
     aiToolsRef: MutableRefObject<any>;
+    defaultApproxPolyThreshold: number;
 }
 
 interface DispatchToProps {
@@ -60,6 +63,7 @@ const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { annotation } = state;
+    const { settings } = state;
     const { number: frame } = annotation.player.frame;
     const { instance: jobInstance } = annotation.job;
     const { instance: canvasInstance, activeControl } = annotation.canvas;
@@ -79,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
         aiToolsRef: annotation.aiToolsRef,
+        defaultApproxPolyThreshold: settings.workspace.defaultApproxPolyThreshold,
     };
 }
 
@@ -182,6 +187,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             isActivated,
             activeLabelID,
             canvasInstance,
+            defaultApproxPolyThreshold,
             createAnnotations,
         } = this.props;
         const { activeInteractor, fetching } = this.state;
@@ -208,6 +214,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         // user has cancelled interaction (for example pressed ESC)
                         this.latestResult = [];
                         return;
+                    }
+
+                    if (this.latestResult.length > 3 * 2) {
+                        if (!openCVWrapper.isInitialized) {
+                            const hide = message.loading('OpenCV.js initialization..');
+                            try {
+                                await openCVWrapper.initialize(() => {});
+                            } finally {
+                                hide();
+                            }
+                        }
+                        this.latestResult = openCVWrapper.contours.approxPoly(
+                            this.latestResult,
+                            defaultApproxPolyThreshold,
+                        );
                     }
                 } finally {
                     this.setState({ fetching: false });
