@@ -140,6 +140,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self,
                         );
+                        if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
+                            this.interactionShapes[0].removeClass('cvat_canvas_hidden');
+                        }
                         this.shapesWereUpdated = true;
                         if (this.shouldRaiseEvent(_e.ctrlKey)) {
                             this.onInteraction(this.prepareResult(), true, false);
@@ -401,6 +404,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (interactionData.intermediateShape) {
             this.intermediateShape = interactionData.intermediateShape;
             this.updateIntermediateShape();
+            if (this.interactionData.startWithBox) {
+                this.interactionShapes[0].addClass('cvat_canvas_hidden');
+            }
         } else if (interactionData.enabled) {
             this.interactionData = interactionData;
             this.initInteraction();
