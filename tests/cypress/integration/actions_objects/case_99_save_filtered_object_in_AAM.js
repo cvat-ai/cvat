@@ -33,7 +33,7 @@ context('Save filtered object in AAM.', () => {
             for (let i = 0; i < labelsList.length; i++) {
                 if (labelsList[i].innerText === labelName) {
                     cy.get(labelsList[i]).then(($el) => {
-                        if ($el.prev().length !== 0 && $el.prev().text() !== 'Add label') {
+                        if ($el.prev().length !== 0 && ! $el.prev().hasClass('cvat-constructor-viewer-new-item')) {
                             secondLabel = $el.prev().text();
                         } else if ($el.next().length !== 0) {
                             secondLabel = $el.next().text();
