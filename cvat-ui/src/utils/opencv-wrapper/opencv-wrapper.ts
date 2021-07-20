@@ -93,19 +93,26 @@ export class OpenCVWrapper {
         return {
             approxPoly: (points: number[] | any, threshold: number, closed = true): number[] => {
                 const approx = new cv.Mat();
-                if (points instanceof cv.Mat) {
-                    this.cv.approxPolyDP(points, approx, threshold, closed);
-                } else {
-                    const contour = cv.matFromArray(points.length, 2, cv.CV_32FC1, points.flat());
-                    cv.approxPolyDP(contour, approx, threshold, closed);
-                }
+                try {
+                    if (points instanceof cv.Mat) {
+                        this.cv.approxPolyDP(points, approx, threshold, closed);
+                    } else {
+                        const contour = cv.matFromArray(points.length, 2, cv.CV_32FC1, points.flat());
+                        try {
+                            cv.approxPolyDP(contour, approx, threshold, closed);
+                        } finally {
+                            contour.delete();
+                        }
+                    }
 
-                const result = [];
-                for (let row = 0; row < approx.rows; row++) {
-                    result.push(approx.floatAt(row, 0), approx.floatAt(row, 1));
+                    const result = [];
+                    for (let row = 0; row < approx.rows; row++) {
+                        result.push(approx.floatAt(row, 0), approx.floatAt(row, 1));
+                    }
+                    return result;
+                } finally {
+                    approx.delete();
                 }
-
-                return result;
             },
         };
     }
