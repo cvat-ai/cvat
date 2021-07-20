@@ -1070,7 +1070,8 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             attributes=anno_attr, group=anno_group)
         item_anno.append(anno)
 
-        shapes = []
+    shapes = []
+    if hasattr(cvat_frame_anno, 'shapes'):
         for shape in cvat_frame_anno.shapes:
             shapes.append({"id": shape.id, "label_id": shape.label_id})
 
