@@ -5338,6 +5338,90 @@ class ServerShareAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+class ServerShareDifferentTypesAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    @staticmethod
+    def _create_shared_files(shared_images):
+        image = Image.new('RGB', size=(100, 50))
+        for img in shared_images:
+            img_path = os.path.join(settings.SHARE_ROOT, img)
+            if not osp.exists(osp.dirname(img_path)):
+                os.makedirs(osp.dirname(img_path))
+            image.save(img_path, img_path.split(".")[1:][0])
+
+    def _get_request(self, path):
+        with ForceLogin(self.user, self.client):
+            response = self.client.get(path)
+        return response
+
+    def _run_api_v1_server_share(self, directory):
+        with ForceLogin(self.user, self.client):
+            response = self.client.get(
+                '/api/v1/server/share?directory={}'.format(directory))
+
+        return response
+
+    def _create_task(self, data, image_data):
+        with ForceLogin(self.user, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            tid = response.data["id"]
+
+            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+                                        data=image_data)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            response = self.client.get("/api/v1/tasks/%s" % tid)
+            task = response.data
+
+        return task
+
+    def test_api_v1_combined_image_and_directory_extractors(self):
+        shared_images = ["data1/street.png", "data1/people.jpeg", "data1/street_1.jpeg", "data1/street_2.jpeg",
+                         "data1/street_3.jpeg", "data1/subdir/image_4.jpeg", "data1/subdir/image_5.jpeg",
+                         "data1/subdir/image_6.jpeg"]
+        images_count = len(shared_images)
+        self._create_shared_files(shared_images)
+        response = self._run_api_v1_server_share("/data1")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        shared_images = [img for img in shared_images if os.path.dirname(img) != "/data1/subdir"]
+        shared_images.append("/data1/subdir/")
+        shared_images.append("/data1/")
+        remote_files = {"server_files[%d]" % i: shared_images[i] for i in range(len(shared_images))}
+
+        task = {
+            "name": "task combined image and directory extractors",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        image_data = {
+            "size": 0,
+            "image_quality": 70,
+            "compressed_chunk_type": "imageset",
+            "original_chunk_type": "imageset",
+            "client_files": [],
+            "remote_files": [],
+            "use_zip_chunks": False,
+            "use_cache": False,
+            "copy_data": False
+        }
+        image_data.update(remote_files)
+        # create task with server
+        task = self._create_task(task, image_data)
+        response = self._get_request("/api/v1/tasks/%s/data/meta" % task["id"])
+        self.assertEqual(len(response.data["frames"]), images_count)
+
+
 class TaskAnnotation2DContext(APITestCase):
     def setUp(self):
         self.client = APIClient()
