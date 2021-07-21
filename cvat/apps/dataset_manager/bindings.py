@@ -579,9 +579,7 @@ class ProjectData(InstanceLabelData):
                 } for frame in range(task.data.size)})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
-                    "path": mung_image_name(db_image.path,
-                        filter(lambda frame: frame["subset"] == task.subset ,self._frame_info.values())
-                    ),
+                    "path": mangle_image_name(db_image.path, self._frame_info.values(), task.subset),
                     "width": db_image.width,
                     "height": db_image.height,
                     "subset": get_defaulted_subset(task.subset, self._subsets)
@@ -791,21 +789,10 @@ class ProjectData(InstanceLabelData):
 
 
 class CVATDataExtractor(datumaro.SourceExtractor):
-    dm_items: List[datumaro.DatasetItem] = []
-    _categories: Dict[datumaro.AnnotationType, datumaro.LabelCategories] = {}
-
     def __init__(self):
         super().__init__()
-
-    def __iter__(self):
-        for item in self._items:
-            yield item
-
-    def __len__(self):
-        return len(self._items)
-
-    def categories(self):
-        return self._categories
+        self.dm_items: List[datumaro.DatasetItem] = []
+        self._categories: Dict[datumaro.AnnotationType, datumaro.LabelCategories] = {}
 
     @staticmethod
     def _load_categories(labels: list):
@@ -1011,17 +998,22 @@ def GetCVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_im
 class CvatImportError(Exception):
     pass
 
-def mung_image_name(name: str, images: List[Literal["path", "width", "height", "subset"]]) -> str:
-    name, ext = name.split(osp.extsep)
-    if not any(map(lambda image: image["path"] == name, images)):
-        return name + osp.extsep + ext
+def mangle_image_name(name: str, images: List[Literal["path", "width", "height", "subset"]], subset: str) -> str:
+    name, ext = name.rsplit(osp.extsep, maxsplit=1)
+    paths: Dict[str, int] = {}
+    for image in images:
+        if image['subset'] == subset:
+            paths[image['path']] = 1
+    if not paths[name]:
+        return osp.extsep.join([name, ext])
     else:
         i = 1
         while i < sys.maxsize:
-            if not any(map(lambda image: image["path"] == f"{name}_{i}{osp.extsep}{ext}", images)):
-                return f"{name}_{i}{osp.extsep}{ext}"
+            image_name = f"{name}_{i}{osp.extsep}{ext}"
+            if not paths[image_name]:
+                return image_name
             i += 1
-        raise Exception('Cannot mung image name')
+        raise Exception('Cannot mangle image name')
 
 def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
     if subset:
@@ -1057,8 +1049,6 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 raise Exception(
                     "Failed to convert attribute '%s'='%s': %s" %
                     (a_name, a_value, e))
-            if format_name == "sly_pointcloud" and (a_desc.get('input_type') == 'select' or a_desc.get('input_type') == 'radio'):
-                    dm_attr[f"{a_name}__values"] = a_desc["values"]
         return dm_attr
 
     for tag_obj in cvat_frame_anno.tags:
@@ -1107,7 +1097,6 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             if dimension == DimensionType.DIM_3D:
                 if format_name == "sly_pointcloud":
                     anno_id = shapes[index]["id"]
-                    anno_attr["label_id"] = shapes[index]["label_id"]
                 else:
                     anno_id = index
                 position, rotation, scale = anno_points[0:3], anno_points[3:6], anno_points[6:9]

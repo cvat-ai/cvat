@@ -7,7 +7,7 @@
         {
             "type": "chrome",
             "request": "launch",
-            "preLaunchTask": "npm: start - cvat-ui",
+            "preLaunchTask": "ui.js: server",
             "name": "ui.js: debug",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/cvat-ui",
@@ -45,7 +45,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "env": {
-                "CVAT_SERVERLESS":  "1"
+                "CVAT_SERVERLESS":  "1",
             },
             "args": [
                 "runserver",
@@ -56,6 +56,19 @@
             "django": true,
             "cwd": "${workspaceFolder}",
             "console": "internalConsole"
+        },
+        {
+            "name": "server: chrome",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:7000/",
+            "disableNetworkCache":true,
+            "trace": true,
+            "showAsyncStacks": true,
+            "pathMapping":{
+                "/static/engine/": "${workspaceFolder}/cvat/apps/engine/static/engine/",
+                "/static/dashboard/": "${workspaceFolder}/cvat/apps/dashboard/static/dashboard/",
+            }
         },
         {
             "name": "server: RQ - default",
@@ -194,6 +207,7 @@
         {
             "name": "server: debug",
             "configurations": [
+                "server: chrome",
                 "server: django",
                 "server: RQ - default",
                 "server: RQ - low",
