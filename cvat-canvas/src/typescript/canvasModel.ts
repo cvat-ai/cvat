@@ -77,10 +77,14 @@ export interface InteractionData {
     crosshair?: boolean;
     minPosVertices?: number;
     minNegVertices?: number;
-    enableNegVertices?: boolean;
+    startWithBox?: boolean;
     enableThreshold?: boolean;
     enableSliding?: boolean;
     allowRemoveOnlyLast?: boolean;
+    intermediateShape?: {
+        shapeType: string;
+        points: number[];
+    };
 }
 
 export interface InteractionResult {
@@ -551,7 +555,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (interactionData.enabled) {
+        if (interactionData.enabled && !interactionData.intermediateShape) {
             if (this.data.interactionData.enabled) {
                 throw new Error('Interaction has been already started');
             } else if (!interactionData.shapeType) {

@@ -50,7 +50,8 @@ context('Mutable attribute.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Go to AAM. For the 2nd and 3rd frames, change the attribute value.', () => {
-            cy.changeWorkspace('Attribute annotation', labelTrack);
+            cy.changeWorkspace('Attribute annotation');
+            cy.changeLabelAAM(labelTrack);
             testChangingAttributeValue(additionalAttrsLabelShape[0].additionalValue, attrValueSecondFrame);
             testChangingAttributeValue(attrValueSecondFrame, attrValueThirdFrame);
         });
