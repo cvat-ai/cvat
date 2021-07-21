@@ -796,7 +796,7 @@ class CVATDataExtractor(datumaro.SourceExtractor):
 
     @staticmethod
     def _load_categories(labels: list):
-        categories: Dict[datumaro.AnnotationType, datumaro.LabelCategories] = {}
+        categories: Dict[datumaro.AnnotationType, datumaro.Categories] = {}
 
         label_categories = datumaro.LabelCategories(attributes=['occluded'])
 
