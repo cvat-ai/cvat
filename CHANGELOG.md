@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support of cloud storage without copying data into CVAT: server part (<https://github.com/openvinotoolkit/cvat/pull/2620>)
 - Filter `is_active` for user list (<https://github.com/openvinotoolkit/cvat/pull/3235>)
 - Ability to export/import tasks (<https://github.com/openvinotoolkit/cvat/pull/3056>)
+- Add a tutorial for semi-automatic/automatic annotation (<https://github.com/openvinotoolkit/cvat/pull/3124>)
 - Explicit "Done" button when drawing any polyshapes (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 
 ### Changed

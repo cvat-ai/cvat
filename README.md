@@ -91,6 +91,7 @@ For more information about supported formats look at the
 | [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | X   |     |
 | [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
 | [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   | X   |
+| [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    | X   | X   |
 
 <!--lint enable maximum-line-length-->
 
@@ -162,8 +163,8 @@ Other ways to ask questions and get our support:
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
   to offer annotation services for projects of any size.
 - [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
-<!-- prettier-ignore-start -->
-<!-- Badges -->
+  <!-- prettier-ignore-start -->
+  <!-- Badges -->
 
 [docker-server-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_server.svg?style=flat-square&label=server%20pulls
 [docker-server-image-url]: https://hub.docker.com/r/openvino/cvat_server
