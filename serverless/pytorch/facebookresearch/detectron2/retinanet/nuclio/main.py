@@ -2,7 +2,6 @@ import json
 import base64
 import io
 from PIL import Image
-import yaml
 
 import torch
 from detectron2.model_zoo import get_config

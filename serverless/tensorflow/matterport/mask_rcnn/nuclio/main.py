@@ -5,7 +5,6 @@ import io
 from model_loader import ModelLoader
 import numpy as np
 import yaml
-import tensorflow as tf
 
 
 def init_context(context):

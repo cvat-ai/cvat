@@ -3,7 +3,6 @@ import base64
 import io
 from PIL import Image
 import yaml
-import tensorflow.compat.v1 as tf
 from model_loader import ModelLoader
 
 
