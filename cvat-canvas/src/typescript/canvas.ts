@@ -72,8 +72,8 @@ class CanvasImpl implements Canvas {
         return this.view.html();
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0): void {
-        this.model.setup(frameData, objectStates, zLayer);
+    public setup(frameData: any, objectStates: any[], zLayer = 0, forceUpdate=false): void {
+        this.model.setup(frameData, objectStates, zLayer, forceUpdate);
     }
 
     public setupIssueRegions(issueRegions: Record<number, number[]>): void {

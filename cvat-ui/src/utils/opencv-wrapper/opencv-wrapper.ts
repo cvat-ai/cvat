@@ -4,6 +4,7 @@
 
 import getCore from 'cvat-core-wrapper';
 import waitFor from '../wait-for';
+import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 
@@ -88,6 +89,14 @@ export class OpenCVWrapper {
         return {
             intelligentScissorsFactory: () => new IntelligentScissorsImplementation(this.cv),
         };
+    }
+
+    public get hist(): HistogramEqualization {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+
+        return new HistogramEqualizationImplementation(this.cv);
     }
 }
 

@@ -179,7 +179,7 @@ export interface CanvasModel {
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[], zLayer: number): void;
+    setup(frameData: any, objectStates: any[], zLayer: number, forceUpdate:boolean): void;
     setupIssueRegions(issueRegions: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotationAngle: number): void;
@@ -382,14 +382,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer: number): void {
+    public setup(frameData: any, objectStates: any[], zLayer: number, forceUpdate:boolean=false): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
 
-        if (frameData.number === this.data.imageID) {
+        if (frameData.number === this.data.imageID && !forceUpdate) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
