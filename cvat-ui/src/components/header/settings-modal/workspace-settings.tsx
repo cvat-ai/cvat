@@ -20,11 +20,11 @@ interface Props {
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
-    defaultApproxPolyThreshold: number;
+    defaultApproxPolyAccuracy: number;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
-    onChangeDefaultApproxPolyThreshold(approxPolyThreshold: number): void;
+    onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
@@ -40,7 +40,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showObjectsTextAlways,
         automaticBordering,
         intelligentPolygonCrop,
-        defaultApproxPolyThreshold,
+        defaultApproxPolyAccuracy,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -48,7 +48,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
         onSwitchIntelligentPolygonCrop,
-        onChangeDefaultApproxPolyThreshold,
+        onChangeDefaultApproxPolyAccuracy,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -175,21 +175,20 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-workspace-settings-approx-poly-threshold'>
                 <Col>
-                    <Text className='cvat-text-color'>Default polygon approximation threshold</Text>
+                    <Text className='cvat-text-color'>Default polygon approximation accuracy level</Text>
                 </Col>
                 <Col span={5} offset={1}>
                     <Slider
-                        min={0.5}
-                        max={30}
-                        step={0.1}
-                        value={defaultApproxPolyThreshold}
-                        onChange={onChangeDefaultApproxPolyThreshold}
+                        min={0}
+                        max={7}
+                        step={1}
+                        value={defaultApproxPolyAccuracy}
+                        dots
+                        onChange={onChangeDefaultApproxPolyAccuracy}
                     />
                 </Col>
                 <Col span={24}>
-                    <Text type='secondary'>
-                        The value defines maximum distance. Works for serverless interactors and OpenCV scissors
-                    </Text>
+                    <Text type='secondary'>Works for serverless interactors and OpenCV scissors</Text>
                 </Col>
             </Row>
         </div>

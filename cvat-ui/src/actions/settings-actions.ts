@@ -271,11 +271,11 @@ export function switchSettingsDialog(show?: boolean): AnyAction {
     };
 }
 
-export function changeDefaultApproxPolyThreshold(approxPolyThreshold: number): AnyAction {
+export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): AnyAction {
     return {
         type: SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD,
         payload: {
-            approxPolyThreshold,
+            approxPolyAccuracy,
         },
     };
 }

@@ -31,7 +31,7 @@ const defaultState: SettingsState = {
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
-        defaultApproxPolyThreshold: 2,
+        defaultApproxPolyAccuracy: 4,
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -283,7 +283,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 workspace: {
                     ...state.workspace,
-                    defaultApproxPolyThreshold: action.payload.approxPolyThreshold,
+                    defaultApproxPolyAccuracy: action.payload.approxPolyAccuracy,
                 },
             };
         }

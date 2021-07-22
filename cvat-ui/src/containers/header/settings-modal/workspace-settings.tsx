@@ -13,7 +13,7 @@ import {
     switchShowingObjectsTextAlways,
     switchAutomaticBordering,
     switchIntelligentPolygonCrop,
-    changeDefaultApproxPolyThreshold,
+    changeDefaultApproxPolyAccuracy,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -26,7 +26,7 @@ interface StateToProps {
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
-    defaultApproxPolyThreshold: number;
+    defaultApproxPolyAccuracy: number;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
 }
@@ -39,7 +39,7 @@ interface DispatchToProps {
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
-    onChangeDefaultApproxPolyThreshold(approxPolyThreshold: number): void;
+    onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -52,7 +52,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showObjectsTextAlways,
         automaticBordering,
         intelligentPolygonCrop,
-        defaultApproxPolyThreshold,
+        defaultApproxPolyAccuracy,
     } = workspace;
 
     return {
@@ -63,7 +63,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showObjectsTextAlways,
         automaticBordering,
         intelligentPolygonCrop,
-        defaultApproxPolyThreshold,
+        defaultApproxPolyAccuracy,
     };
 }
 
@@ -90,8 +90,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSwitchIntelligentPolygonCrop(enabled: boolean): void {
             dispatch(switchIntelligentPolygonCrop(enabled));
         },
-        onChangeDefaultApproxPolyThreshold(approxPolyThreshold: number): void {
-            dispatch(changeDefaultApproxPolyThreshold(approxPolyThreshold));
+        onChangeDefaultApproxPolyAccuracy(threshold: number): void {
+            dispatch(changeDefaultApproxPolyAccuracy(threshold));
         },
     };
 }

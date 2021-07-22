@@ -19,7 +19,6 @@ import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
 import Slider from 'antd/lib/slider';
 
-import { Tooltip } from 'antd';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import range from 'utils/range';
@@ -51,7 +50,7 @@ interface StateToProps {
     trackers: Model[];
     curZOrder: number;
     aiToolsRef: MutableRefObject<any>;
-    defaultApproxPolyThreshold: number;
+    defaultApproxPolyAccuracy: number;
 }
 
 interface DispatchToProps {
@@ -86,7 +85,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
         aiToolsRef: annotation.aiToolsRef,
-        defaultApproxPolyThreshold: settings.workspace.defaultApproxPolyThreshold,
+        defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
     };
 }
 
@@ -105,7 +104,7 @@ interface State {
     trackingProgress: number | null;
     trackingFrames: number;
     fetching: boolean;
-    approxPolyThreshold: number;
+    approxPolyAccuracy: number;
     mode: 'detection' | 'interaction' | 'tracking';
 }
 
@@ -122,7 +121,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id : null,
-            approxPolyThreshold: props.defaultApproxPolyThreshold,
+            approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             trackingProgress: null,
             trackingFrames: 10,
             fetching: false,
@@ -143,22 +142,22 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
-        const { isActivated, defaultApproxPolyThreshold, canvasInstance } = this.props;
-        const { approxPolyThreshold, activeInteractor } = this.state;
+        const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
+        const { approxPolyAccuracy, activeInteractor } = this.state;
 
         if (prevProps.isActivated && !isActivated) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
-            this.setState({
-                approxPolyThreshold: defaultApproxPolyThreshold,
-            });
         } else if (!prevProps.isActivated && isActivated) {
             // reset flags when start interaction/tracking
+            this.setState({
+                approxPolyAccuracy: defaultApproxPolyAccuracy,
+            });
             this.interactionIsDone = false;
             this.interactionIsAborted = false;
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
 
-        if (prevState.approxPolyThreshold !== approxPolyThreshold) {
+        if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
             if (isActivated && activeInteractor !== null && this.latestResponseResult.length) {
                 this.approximateResponsePoints(this.latestResponseResult).then((points: number[][]) => {
                     this.latestResult = points;
@@ -357,7 +356,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private async approximateResponsePoints(points: number[][]): Promise<number[][]> {
-        const { approxPolyThreshold } = this.state;
+        const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
             if (!openCVWrapper.isInitialized) {
                 const hide = message.loading('OpenCV.js initialization..');
@@ -368,7 +367,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 }
             }
 
-            return openCVWrapper.contours.approxPoly(points, approxPolyThreshold);
+            const maxAccuracy = 7;
+            const approxPolyMaxDistance = maxAccuracy - approxPolyAccuracy;
+            let threshold = 0;
+            if (approxPolyMaxDistance > 0) {
+                // 0.5 for 1, 1 for 2, 2 for 3, 4 for 4, ...
+                threshold = 2 ** (approxPolyMaxDistance - 2);
+            }
+
+            return openCVWrapper.contours.approxPoly(points, threshold);
         }
 
         return points;
@@ -716,7 +723,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const {
-            fetching, trackingProgress, approxPolyThreshold, activeInteractor,
+            fetching, trackingProgress, approxPolyAccuracy, activeInteractor,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -762,18 +769,18 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 window.document.getElementsByClassName('cvat-canvas-container')[0] ?
                     ReactDOM.createPortal(
                         <div className='cvat-approx-poly-threshold-wrapper'>
-                            <Text>Approximation threshold</Text>
-                            <Tooltip overlay='The value defines maximum distance when minimizing polygon points'>
-                                <Slider
-                                    value={approxPolyThreshold}
-                                    min={0.5}
-                                    max={30}
-                                    step={0.1}
-                                    onChange={(value: number) => {
-                                        this.setState({ approxPolyThreshold: value });
-                                    }}
-                                />
-                            </Tooltip>
+                            <Text>Approximation accuracy</Text>
+                            <Slider
+                                value={approxPolyAccuracy}
+                                min={0}
+                                max={7}
+                                step={1}
+                                dots
+                                tooltipVisible={false}
+                                onChange={(value: number) => {
+                                    this.setState({ approxPolyAccuracy: value });
+                                }}
+                            />
                         </div>,
                         window.document.getElementsByClassName('cvat-canvas-container')[0] as HTMLDivElement,
                     ) :
