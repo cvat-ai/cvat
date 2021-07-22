@@ -6,7 +6,7 @@ import React from 'react';
 import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
-import { PredictorState, Workspace } from 'reducers/interfaces';
+import { ActiveControl, PredictorState, Workspace } from 'reducers/interfaces';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -27,6 +27,7 @@ interface Props {
     saveShortcut: string;
     undoShortcut: string;
     redoShortcut: string;
+    drawShortcut: string;
     playPauseShortcut: string;
     nextFrameShortcut: string;
     previousFrameShortcut: string;
@@ -37,6 +38,7 @@ interface Props {
     focusFrameInputShortcut: string;
     predictor: PredictorState;
     isTrainingActive: boolean;
+    activeControl: ActiveControl;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
     showStatistics(): void;
@@ -56,6 +58,7 @@ interface Props {
     onURLIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
+    onFinishDraw(): void;
     jobInstance: any;
 }
 
@@ -75,6 +78,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         saveShortcut,
         undoShortcut,
         redoShortcut,
+        drawShortcut,
         playPauseShortcut,
         nextFrameShortcut,
         previousFrameShortcut,
@@ -84,6 +88,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         nextButtonType,
         predictor,
         focusFrameInputShortcut,
+        activeControl,
         showStatistics,
         switchPredictor,
         showFilters,
@@ -103,6 +108,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onURLIconClick,
         onUndoClick,
         onRedoClick,
+        onFinishDraw,
         jobInstance,
         isTrainingActive,
     } = props;
@@ -117,9 +123,12 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 saveShortcut={saveShortcut}
                 undoShortcut={undoShortcut}
                 redoShortcut={redoShortcut}
+                activeControl={activeControl}
+                drawShortcut={drawShortcut}
                 onSaveAnnotation={onSaveAnnotation}
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}
+                onFinishDraw={onFinishDraw}
             />
             <Col className='cvat-annotation-header-player-group'>
                 <Row align='middle'>

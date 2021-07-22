@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Col } from 'antd/lib/grid';
-import Icon from '@ant-design/icons';
+import Icon, { CheckOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Timeline from 'antd/lib/timeline';
@@ -14,6 +14,8 @@ import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotati
 import {
     MainMenuIcon, SaveIcon, UndoIcon, RedoIcon,
 } from 'icons';
+import { ActiveControl } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     saving: boolean;
@@ -23,9 +25,12 @@ interface Props {
     saveShortcut: string;
     undoShortcut: string;
     redoShortcut: string;
+    drawShortcut: string;
+    activeControl: ActiveControl;
     onSaveAnnotation(): void;
     onUndoClick(): void;
     onRedoClick(): void;
+    onFinishDraw(): void;
 }
 
 function LeftGroup(props: Props): JSX.Element {
@@ -37,10 +42,21 @@ function LeftGroup(props: Props): JSX.Element {
         saveShortcut,
         undoShortcut,
         redoShortcut,
+        drawShortcut,
+        activeControl,
         onSaveAnnotation,
         onUndoClick,
         onRedoClick,
+        onFinishDraw,
     } = props;
+
+    const includesDoneButton = [
+        ActiveControl.DRAW_POLYGON,
+        ActiveControl.DRAW_POLYLINE,
+        ActiveControl.DRAW_POINTS,
+        ActiveControl.AI_TOOLS,
+        ActiveControl.OPENCV_TOOLS,
+    ].includes(activeControl);
 
     return (
         <Col className='cvat-annotation-header-left-group'>
@@ -50,44 +66,53 @@ function LeftGroup(props: Props): JSX.Element {
                     Menu
                 </Button>
             </Dropdown>
-            <Button
-                title={`Save current changes ${saveShortcut}`}
-                onClick={saving ? undefined : onSaveAnnotation}
-                type='link'
-                className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}
-            >
-                <Icon component={SaveIcon} />
-                {saving ? 'Saving...' : 'Save'}
-                <Modal title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
-                    <Timeline pending={savingStatuses[savingStatuses.length - 1] || 'Pending..'}>
-                        {savingStatuses.slice(0, -1).map((status: string, id: number) => (
-                            <Timeline.Item key={id}>{status}</Timeline.Item>
-                        ))}
-                    </Timeline>
-                </Modal>
-            </Button>
-            <Button
-                title={`Undo: ${undoAction} ${undoShortcut}`}
-                disabled={!undoAction}
-                style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
-                type='link'
-                className='cvat-annotation-header-button'
-                onClick={onUndoClick}
-            >
-                <Icon component={UndoIcon} />
-                <span>Undo</span>
-            </Button>
-            <Button
-                title={`Redo: ${redoAction} ${redoShortcut}`}
-                disabled={!redoAction}
-                style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
-                type='link'
-                className='cvat-annotation-header-button'
-                onClick={onRedoClick}
-            >
-                <Icon component={RedoIcon} />
-                Redo
-            </Button>
+            <CVATTooltip overlay={`Save current changes ${saveShortcut}`}>
+                <Button
+                    onClick={saving ? undefined : onSaveAnnotation}
+                    type='link'
+                    className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}
+                >
+                    <Icon component={SaveIcon} />
+                    {saving ? 'Saving...' : 'Save'}
+                    <Modal title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
+                        <Timeline pending={savingStatuses[savingStatuses.length - 1] || 'Pending..'}>
+                            {savingStatuses.slice(0, -1).map((status: string, id: number) => (
+                                <Timeline.Item key={id}>{status}</Timeline.Item>
+                            ))}
+                        </Timeline>
+                    </Modal>
+                </Button>
+            </CVATTooltip>
+            <CVATTooltip overlay={`Undo: ${undoAction} ${undoShortcut}`}>
+                <Button
+                    style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
+                    type='link'
+                    className='cvat-annotation-header-button'
+                    onClick={onUndoClick}
+                >
+                    <Icon component={UndoIcon} />
+                    <span>Undo</span>
+                </Button>
+            </CVATTooltip>
+            <CVATTooltip overlay={`Redo: ${redoAction} ${redoShortcut}`}>
+                <Button
+                    style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
+                    type='link'
+                    className='cvat-annotation-header-button'
+                    onClick={onRedoClick}
+                >
+                    <Icon component={RedoIcon} />
+                    Redo
+                </Button>
+            </CVATTooltip>
+            {includesDoneButton ? (
+                <CVATTooltip overlay={`Press "${drawShortcut}" to finish`}>
+                    <Button type='link' className='cvat-annotation-header-button' onClick={onFinishDraw}>
+                        <CheckOutlined />
+                        Done
+                    </Button>
+                </CVATTooltip>
+            ) : null}
         </Col>
     );
 }

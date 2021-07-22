@@ -11,6 +11,15 @@ context('Context images for 2D tasks.', () => {
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'color';
     const pathToArchive = `../../${__dirname}/assets/case_90/case_90_context_image.zip`;
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        labelName: labelName,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450,
+    };
 
     function previewRotate (directionRotation, expectedDeg) {
         if (directionRotation === 'right') {
@@ -102,6 +111,16 @@ context('Context images for 2D tasks.', () => {
         it('Preview a context image. Cancel preview.', () => {
             cy.get('.ant-image-preview-wrap').type('{Esc}');
             cy.get('.ant-image-preview-wrap').should('have.attr', 'style').and('contain', 'display: none')
+        });
+
+        it('Checking issue "Context image disappears after undo/redo".', () => {
+            cy.createRectangle(createRectangleShape2Points);
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.get('.cvat-context-image').should('have.attr', 'src');
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            cy.get('.cvat-context-image').should('have.attr', 'src');
+            cy.get('#cvat_canvas_shape_1').should('exist');
         });
     });
 });
