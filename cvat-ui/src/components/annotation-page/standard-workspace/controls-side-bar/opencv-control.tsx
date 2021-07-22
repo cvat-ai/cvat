@@ -29,6 +29,9 @@ import {
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import ApproximationAccuracy, {
+    thresholdFromAccuracy,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -39,6 +42,7 @@ interface Props {
     states: any[];
     frame: number;
     curZOrder: number;
+    defaultApproxPolyAccuracy: number;
 }
 
 interface DispatchToProps {
@@ -53,6 +57,7 @@ interface State {
     initializationError: boolean;
     initializationProgress: number;
     activeLabelID: number;
+    approxPolyAccuracy: number;
 }
 
 const core = getCore();
@@ -71,11 +76,15 @@ function mapStateToProps(state: CombinedState): Props {
                 frame: { number: frame },
             },
         },
+        settings: {
+            workspace: { defaultApproxPolyAccuracy },
+        },
     } = state;
 
     return {
         isActivated: activeControl === ActiveControl.OPENCV_TOOLS,
         canvasInstance: canvasInstance as Canvas,
+        defaultApproxPolyAccuracy,
         jobInstance,
         curZOrder,
         labels,
@@ -93,15 +102,18 @@ const mapDispatchToProps = {
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
+    private latestPoints: number[] | null;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
-        const { labels } = props;
+        const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
+        this.latestPoints = null;
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
             initializationError: false,
             initializationProgress: -1,
+            approxPolyAccuracy: defaultApproxPolyAccuracy,
             activeLabelID: labels.length ? labels[0].id : null,
         };
     }
@@ -111,12 +123,33 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const { isActivated } = this.props;
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        const { approxPolyAccuracy } = this.state;
+        const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
         if (!prevProps.isActivated && isActivated) {
-            // reset flags when before using a tool
+            // reset flags & states when before using a tool
+            this.latestPoints = null;
+            this.setState({
+                approxPolyAccuracy: defaultApproxPolyAccuracy,
+            });
             if (this.activeTool) {
                 this.activeTool.reset();
+            }
+        }
+
+        if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
+            if (isActivated) {
+                const approx = openCVWrapper.contours.approxPoly(
+                    this.latestPoints,
+                    thresholdFromAccuracy(approxPolyAccuracy),
+                );
+                canvasInstance.interact({
+                    enabled: true,
+                    intermediateShape: {
+                        shapeType: ShapeType.POLYGON,
+                        points: approx.flat(),
+                    },
+                });
             }
         }
     }
@@ -127,6 +160,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private interactionListener = async (e: Event): Promise<void> => {
+        const { approxPolyAccuracy } = this.state;
         const {
             createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance,
         } = this.props;
@@ -142,24 +176,32 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
         try {
             if (shapesUpdated) {
-                const result = await this.runCVAlgorithm(pressedPoints, threshold);
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints, threshold);
+                const approx = openCVWrapper.contours.approxPoly(
+                    this.latestPoints,
+                    thresholdFromAccuracy(approxPolyAccuracy),
+                    false,
+                );
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
                         shapeType: ShapeType.POLYGON,
-                        points: result,
+                        points: approx.flat(),
                     },
                 });
             }
 
             if (isDone) {
+                // need to recalculate without the latest sliding point
+                const finalPoints = await this.runCVAlgorithm(pressedPoints, threshold);
                 const finalObject = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
                     shapeType: ShapeType.POLYGON,
                     label: labels.filter((label: any) => label.id === activeLabelID)[0],
-                    // need to recalculate without the latest sliding point
-                    points: await this.runCVAlgorithm(pressedPoints, threshold),
+                    points: openCVWrapper.contours
+                        .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
+                        .flat(),
                     occluded: false,
                     zOrder: curZOrder,
                 });
@@ -173,7 +215,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
-    private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[]> {
+    private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[] | null> {
         // Getting image data
         const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
             | HTMLCanvasElement
@@ -195,23 +237,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const segmentHeight = Math.min(2 * threshold, height - startY);
         const imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
 
-        if (!this.activeTool) return [];
+        if (!this.activeTool) return null;
 
         // Handling via OpenCV.js
         const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);
-
-        // Increasing number of points artificially
-        let minNumberOfPoints = 1;
-        // eslint-disable-next-line: eslintdot-notation
-        if (this.activeTool.params.shape.shapeType === 'polyline') {
-            minNumberOfPoints = 2;
-        } else if (this.activeTool.params.shape.shapeType === 'polygon') {
-            minNumberOfPoints = 3;
-        }
-        while (points.length < minNumberOfPoints * 2) {
-            points.push(...points.slice(points.length - 2));
-        }
-
         return points;
     }
 
@@ -324,7 +353,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public render(): JSX.Element {
         const { isActivated, canvasInstance, labels } = this.props;
-        const { libraryInitialized } = this.state;
+        const { libraryInitialized, approxPolyAccuracy } = this.state;
         const dynamcPopoverPros = isActivated ?
             {
                 overlayStyle: {
@@ -347,21 +376,31 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return !labels.length ? (
             <Icon className='cvat-opencv-control cvat-disabled-canvas-control' component={OpenCVIcon} />
         ) : (
-            <CustomPopover
-                {...dynamcPopoverPros}
-                placement='right'
-                overlayClassName='cvat-opencv-control-popover'
-                content={this.renderContent()}
-                afterVisibleChange={() => {
-                    if (libraryInitialized !== openCVWrapper.isInitialized) {
-                        this.setState({
-                            libraryInitialized: openCVWrapper.isInitialized,
-                        });
-                    }
-                }}
-            >
-                <Icon {...dynamicIconProps} component={OpenCVIcon} />
-            </CustomPopover>
+            <>
+                <CustomPopover
+                    {...dynamcPopoverPros}
+                    placement='right'
+                    overlayClassName='cvat-opencv-control-popover'
+                    content={this.renderContent()}
+                    afterVisibleChange={() => {
+                        if (libraryInitialized !== openCVWrapper.isInitialized) {
+                            this.setState({
+                                libraryInitialized: openCVWrapper.isInitialized,
+                            });
+                        }
+                    }}
+                >
+                    <Icon {...dynamicIconProps} component={OpenCVIcon} />
+                </CustomPopover>
+                {isActivated ? (
+                    <ApproximationAccuracy
+                        approxPolyAccuracy={approxPolyAccuracy}
+                        onChange={(value: number) => {
+                            this.setState({ approxPolyAccuracy: value });
+                        }}
+                    />
+                ) : null}
+            </>
         );
     }
 }

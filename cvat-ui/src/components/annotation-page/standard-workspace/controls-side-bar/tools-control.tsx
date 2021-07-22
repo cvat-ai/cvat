@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { MutableRefObject } from 'react';
-import ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import Icon, { LoadingOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
@@ -17,7 +16,6 @@ import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
-import Slider from 'antd/lib/slider';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
@@ -35,6 +33,9 @@ import {
 } from 'actions/annotation-actions';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
+import ApproximationAccuracy, {
+    thresholdFromAccuracy,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface StateToProps {
@@ -367,14 +368,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 }
             }
 
-            const maxAccuracy = 7;
-            const approxPolyMaxDistance = maxAccuracy - approxPolyAccuracy;
-            let threshold = 0;
-            if (approxPolyMaxDistance > 0) {
-                // 0.5 for 1, 1 for 2, 2 for 3, 4 for 4, ...
-                threshold = 2 ** (approxPolyMaxDistance - 2);
-            }
-
+            const threshold = thresholdFromAccuracy(approxPolyAccuracy);
             return openCVWrapper.contours.approxPoly(points, threshold);
         }
 
@@ -764,27 +758,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}
                 </Modal>
-                {isActivated &&
-                activeInteractor !== null &&
-                window.document.getElementsByClassName('cvat-canvas-container')[0] ?
-                    ReactDOM.createPortal(
-                        <div className='cvat-approx-poly-threshold-wrapper'>
-                            <Text>Approximation accuracy</Text>
-                            <Slider
-                                value={approxPolyAccuracy}
-                                min={0}
-                                max={7}
-                                step={1}
-                                dots
-                                tooltipVisible={false}
-                                onChange={(value: number) => {
-                                    this.setState({ approxPolyAccuracy: value });
-                                }}
-                            />
-                        </div>,
-                        window.document.getElementsByClassName('cvat-canvas-container')[0] as HTMLDivElement,
-                    ) :
-                    null}
+                {isActivated && activeInteractor !== null ? (
+                    <ApproximationAccuracy
+                        approxPolyAccuracy={approxPolyAccuracy}
+                        onChange={(value: number) => {
+                            this.setState({ approxPolyAccuracy: value });
+                        }}
+                    />
+                ) : null}
                 <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
