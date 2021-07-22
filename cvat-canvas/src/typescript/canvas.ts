@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -72,7 +72,7 @@ class CanvasImpl implements Canvas {
         return this.view.html();
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0, forceUpdate=false): void {
+    public setup(frameData: any, objectStates: any[], zLayer = 0, forceUpdate = false): void {
         this.model.setup(frameData, objectStates, zLayer, forceUpdate);
     }
 
