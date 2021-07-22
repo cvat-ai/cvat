@@ -127,10 +127,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private handleProjectIdChange = (value: null | number): void => {
         const { projectId, subset } = this.state;
 
-        this.setState({
+        this.setState((state) => ({
             projectId: value,
             subset: value && value === projectId ? subset : '',
-        });
+            labels: value ? [] : state.labels,
+        }));
     };
 
     private handleSubmitBasicConfiguration = (values: BaseConfiguration): void => {
