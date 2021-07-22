@@ -459,8 +459,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 project = models.Project.objects.filter(id=project_id).first()
                 if project is None:
                     raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
-                if len(project.tasks) and project.tasks.first().dimension != attrs.get('dimension'):
-                    raise serializers.ValidationError(f'Dimension ({attrs.get("dimension")}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
