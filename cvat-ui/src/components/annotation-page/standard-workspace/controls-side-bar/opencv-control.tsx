@@ -99,13 +99,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private activeTool: IntelligentScissors | null;
     private activeImageModifier: HistogramEqualization | null;
 
-
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels } = props;
         this.activeTool = null;
         this.activeImageModifier = null;
-        
+
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
             initializationError: false,
@@ -139,7 +138,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     private setupListener = async ():Promise<void> => {
         const { frame } = this.props;
-        console.log(frame, this.activeImageModifier?.currentEqualizedNumber);
         if (this.activeImageModifier && this.activeImageModifier.currentEqualizedNumber !== frame) {
             this.runImageModifier();
         }
