@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filter `is_active` for user list (<https://github.com/openvinotoolkit/cvat/pull/3235>)
 - Ability to export/import tasks (<https://github.com/openvinotoolkit/cvat/pull/3056>)
 - Explicit "Done" button when drawing any polyshapes (<https://github.com/openvinotoolkit/cvat/pull/3417>)
+- Client-side polyshapes approximation when using semi-automatic interactors & scissors (<https://github.com/openvinotoolkit/cvat/pull/3450>)
 
 ### Changed
 
