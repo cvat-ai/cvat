@@ -153,6 +153,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
             });
+            this.latestResult = [];
+            this.latestResponseResult = [];
             this.interactionIsDone = false;
             this.interactionIsAborted = false;
             window.addEventListener('contextmenu', this.contextmenuDisabler);
@@ -239,6 +241,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     if (this.interactionIsAborted) {
                         // while the server request
                         // user has cancelled interaction (for example pressed ESC)
+                        // need to clean variables that have been just set
                         this.latestResult = [];
                         this.latestResponseResult = [];
                         return;

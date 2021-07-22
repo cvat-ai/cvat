@@ -102,13 +102,13 @@ const mapDispatchToProps = {
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
-    private latestPoints: number[] | null;
+    private latestPoints: number[];
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
-        this.latestPoints = null;
+        this.latestPoints = [];
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
             initializationError: false,
@@ -128,7 +128,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
         if (!prevProps.isActivated && isActivated) {
             // reset flags & states when before using a tool
-            this.latestPoints = null;
+            this.latestPoints = [];
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
             });
@@ -215,7 +215,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
-    private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[] | null> {
+    private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[]> {
         // Getting image data
         const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
             | HTMLCanvasElement
@@ -237,7 +237,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const segmentHeight = Math.min(2 * threshold, height - startY);
         const imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
 
-        if (!this.activeTool) return null;
+        if (!this.activeTool) return [];
 
         // Handling via OpenCV.js
         const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);
