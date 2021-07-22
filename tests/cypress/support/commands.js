@@ -11,7 +11,6 @@ require('cypress-localstorage-commands');
 require('../plugins/compareImages/compareImagesCommand');
 
 let selectedValueGlobal = '';
-const projectSubsetFieldValue = 'Test';
 
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password')) => {
     cy.get('[placeholder="Username"]').type(username);
@@ -144,6 +143,7 @@ Cypress.Commands.add(
         attachToProject = false,
         projectName,
         expectedResult = 'success',
+        projectSubsetFieldValue = 'Test',
     ) => {
         cy.get('#cvat-create-task-button').click({ force: true });
         cy.url().should('include', '/tasks/create');
@@ -193,10 +193,10 @@ Cypress.Commands.add(
     },
 );
 
-Cypress.Commands.add('openTask', (taskName, fromProject) => {
+Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     cy.contains('strong', taskName).parents('.cvat-tasks-list-item').contains('a', 'Open').click({ force: true });
     cy.get('.cvat-task-details').should('exist');
-    if (fromProject) {
+    if (projectSubsetFieldValue) {
         cy.get('.cvat-project-subset-field').find('input').should('have.attr', 'value', projectSubsetFieldValue);
     }
 });
