@@ -5,9 +5,10 @@
 
 import sys
 import os.path as osp
-from collections import namedtuple
-from typing import Any, Callable, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union
+from collections import defaultdict, namedtuple
+from typing import Any, Callable, DefaultDict, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union
 from pathlib import Path
+from PIL.Image import new
 
 from django.utils import timezone
 
@@ -21,7 +22,7 @@ from .annotation import AnnotationManager, TrackManager, AnnotationIR
 
 
 class InstanceLabelData:
-    Attribute = namedtuple('Attribute', 'name, value')
+    Attribute = NamedTuple('Attribute', [('name', str), ('value', Any)])
 
     def __init__(self, instance: Union[Task, Project]) -> None:
         instance = instance.project if isinstance(instance, Task) and instance.project_id is not None else instance
@@ -110,7 +111,7 @@ class InstanceLabelData:
         exported_attributes = []
         for attr in attributes:
             attribute_name = self._get_attribute_name(attr["spec_id"])
-            exported_attributes.append(TaskData.Attribute(
+            exported_attributes.append(InstanceLabelData.Attribute(
                 name=attribute_name,
                 value=attr["value"],
             ))
@@ -504,15 +505,14 @@ class TaskData(InstanceLabelData):
         return None
 
 class ProjectData(InstanceLabelData):
-    # TODO: strictify
-    LabeledShape = NamedTuple('LabledShape', [('type',Any), ('frame',Any), ('label',Any), ('points',Any), ('occluded',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any), ('task_id', int)])
+    LabeledShape = NamedTuple('LabledShape', [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('task_id', int)])
     LabeledShape.__new__.__defaults__ = (0,0)
     TrackedShape = NamedTuple('TrackedShape',
-        [('type',Any), ('frame',Any), ('points',Any), ('occluded',Any), ('outside',Any), ('keyframe',Any), ('attributes',Any), ('source',Any), ('group',Any), ('z_order',Any), ('label',Any), ('track_id',Any)],
+        [('type', str), ('frame', int), ('points', List[float]), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
     )
     TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
-    Track = NamedTuple('Track', [('label',Any), ('group',Any), ('source',Any), ('shapes', Any), ('task_id', int)])
-    Tag = NamedTuple('Tag', [('frame',Any), ('label',Any), ('attributes',Any), ('source',Any), ('group',Any), ('task_id', int)])
+    Track = NamedTuple('Track', [('label', str), ('group', int), ('source', str), ('shapes', List[TrackedShape]), ('task_id', int)])
+    Tag = NamedTuple('Tag', [('frame', int), ('label', str), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('task_id', int)])
     Tag.__new__.__defaults__ = (0, )
     Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
 
@@ -569,6 +569,7 @@ class ProjectData(InstanceLabelData):
 
     def _init_frame_info(self):
         self._frame_info = dict()
+        original_names = DefaultDict[Tuple[str, str], int](int)
         for task in self._db_tasks.values():
             if hasattr(task.data, 'video'):
                 self._frame_info.update({(task.id, frame): {
@@ -579,7 +580,7 @@ class ProjectData(InstanceLabelData):
                 } for frame in range(task.data.size)})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
-                    "path": mangle_image_name(db_image.path, self._frame_info.values(), task.subset),
+                    "path": mangle_image_name(db_image.path, task.subset, original_names),
                     "width": db_image.width,
                     "height": db_image.height,
                     "subset": get_defaulted_subset(task.subset, self._subsets)
@@ -998,22 +999,26 @@ def GetCVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_im
 class CvatImportError(Exception):
     pass
 
-def mangle_image_name(name: str, images: List[Literal["path", "width", "height", "subset"]], subset: str) -> str:
+def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str], int]) -> str:
     name, ext = name.rsplit(osp.extsep, maxsplit=1)
-    paths: Dict[str, int] = {}
-    for image in images:
-        if image['subset'] == subset:
-            paths[image['path']] = 1
-    if not paths[name]:
+
+    if not names[(subset, name)]:
+        names[(subset, name)] += 1
         return osp.extsep.join([name, ext])
     else:
-        i = 1
-        while i < sys.maxsize:
-            image_name = f"{name}_{i}{osp.extsep}{ext}"
-            if not paths[image_name]:
-                return image_name
-            i += 1
-        raise Exception('Cannot mangle image name')
+        image_name = f"{name}_{names[(subset, name)]}"
+        if not names[(subset, image_name)]:
+            names[(subset, name)] += 1
+            return osp.extsep.join([image_name, ext])
+        else:
+            i = 1
+            while i < sys.maxsize:
+                new_image_name = f"{image_name}_{i}"
+                if not names[(subset, new_image_name)]:
+                    names[(subset, name)] += 1
+                    return osp.extsep.join([new_image_name, ext])
+                i += 1
+    raise Exception('Cannot mangle image name')
 
 def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
     if subset:
