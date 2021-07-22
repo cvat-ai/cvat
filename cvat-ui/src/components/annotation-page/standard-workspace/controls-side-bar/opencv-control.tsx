@@ -152,6 +152,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     private setupListener = async ():Promise<void> => {
         const { frame } = this.props;
+        console.log(frame, this.activeImageModifier?.currentEqualizedNumber);
         if (this.activeImageModifier && this.activeImageModifier.currentEqualizedNumber !== frame) {
             this.runImageModifier();
         }
@@ -353,7 +354,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         </CVATTooltip>
                     </Col>
                 </Row>
-
             </>
         );
     }

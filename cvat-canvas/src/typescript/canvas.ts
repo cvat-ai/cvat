@@ -28,7 +28,7 @@ const CanvasVersion = pjson.version;
 
 interface Canvas {
     html(): HTMLDivElement;
-    setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    setup(frameData: any, objectStates: any[], zLayer?: number, forceUpdate?: boolean): void;
     setupIssueRegions(issueRegions: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID?: number): void;
     rotate(rotationAngle: number): void;

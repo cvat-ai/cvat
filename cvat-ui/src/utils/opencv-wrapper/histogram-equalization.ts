@@ -31,40 +31,56 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
 
     public async equalize(src:ImageData, frameNumber: number) : Promise<ImageBitmap | undefined> {
         const hashedFrame = this.isHashed(frameNumber);
-        let matImage = null;
         if (!hashedFrame) {
             const { cv } = this;
-            const dist = new cv.Mat();
-            const channels = new cv.MatVector();
+            let matImage = null;
+            const RGBImage = new cv.Mat();
+            const YUVImage = new cv.Mat();
+            const RGBDist = new cv.Mat();
+            const YUVDist = new cv.Mat();
+            const RGBADist = new cv.Mat();
+            let channels = new cv.MatVector();
+            const equalizedY = new cv.Mat();
             try {
                 this.currentUnequalized = src;
                 this.currentEqualizedNumber = frameNumber;
                 matImage = cv.matFromImageData(src);
-                cv.cvtColor(matImage, matImage, cv.COLOR_RGBA2RGB, 0);
-                cv.cvtColor(matImage, matImage, cv.COLOR_RGB2YUV, 0);
-                cv.split(matImage, channels);
-                cv.equalizeHist(channels.get(0), channels.get(0));
-                cv.merge(channels, dist);
-                cv.cvtColor(dist, dist, cv.COLOR_YUV2RGB, 0);
-                cv.cvtColor(dist, dist, cv.COLOR_RGB2RGBA, 0);
-                const arr = new Uint8ClampedArray(dist.data, dist.cols, dist.rows);
+                cv.cvtColor(matImage, RGBImage, cv.COLOR_RGBA2RGB, 0);
+                cv.cvtColor(RGBImage, YUVImage, cv.COLOR_RGB2YUV, 0);
+                cv.split(YUVImage, channels);
+                const [Y, U, V] = [channels.get(0), channels.get(1), channels.get(2)];
+                channels.delete();
+                channels = null;
+                cv.equalizeHist(Y, equalizedY);
+                Y.delete();
+                channels = new cv.MatVector();
+                channels.push_back(equalizedY); equalizedY.delete();
+                channels.push_back(U); U.delete();
+                channels.push_back(V); V.delete();
+                cv.merge(channels, YUVDist);
+                cv.cvtColor(YUVDist, RGBDist, cv.COLOR_YUV2RGB, 0);
+                cv.cvtColor(RGBDist, RGBADist, cv.COLOR_RGB2RGBA, 0);
+                const arr = new Uint8ClampedArray(RGBADist.data, RGBADist.cols, RGBADist.rows);
                 const imgData = new ImageData(arr, src.width, src.height);
                 return createImageBitmap(imgData).then((bitmap:ImageBitmap) => {
                     this.hashFrame(bitmap, frameNumber);
                     return bitmap;
                 });
             } catch (e) {
-                console.log('error in eq');
-                console.log(e);
+                console.log('error in eq', e);
                 return undefined;
             } finally {
-                if (matImage) {
-                    matImage.delete();
-                }
-                dist.delete();
-                channels.delete();
+                if (matImage) matImage.delete();
+                if (channels) channels.delete();
+                RGBImage.delete();
+                YUVImage.delete();
+                RGBDist.delete();
+                YUVDist.delete();
+                RGBADist.delete();
             }
         } else {
+            this.currentUnequalized = src;
+            this.currentEqualizedNumber = frameNumber;
             return hashedFrame;
         }
     }
