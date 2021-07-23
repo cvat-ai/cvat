@@ -5,10 +5,9 @@
 
 import sys
 import os.path as osp
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from typing import Any, Callable, DefaultDict, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union
 from pathlib import Path
-from PIL.Image import new
 
 from django.utils import timezone
 
@@ -907,7 +906,7 @@ class CvatTaskDataExtractor(CVATDataExtractor):
         self._items = dm_items
 
     @staticmethod
-    def _load_categories(cvat_anno, dimension):
+    def _load_categories(cvat_anno, dimension): # pylint: disable=arguments-differ
         categories = {}
 
         label_categories = datumaro.LabelCategories(attributes=['occluded'])
