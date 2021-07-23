@@ -3370,6 +3370,7 @@ class JobAnnotationAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _create_task(self, owner, assignee, annotation_format=""):
+        dimension = DimensionType.DIM_2D
         data = {
             "name": "my task #1",
             "owner_id": owner.id,
@@ -3461,6 +3462,12 @@ class JobAnnotationAPITestCase(APITestCase):
                     },
                 ]
             }]
+        elif annotation_format in ['Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
+            data["labels"] = [{
+                "name": "car"},
+                {"name": "bus"}
+            ]
+            dimension = DimensionType.DIM_3D
         elif annotation_format == "ICDAR Segmentation 1.0":
             data["labels"] = [{
                 "name": "icdar",
@@ -3510,6 +3517,15 @@ class JobAnnotationAPITestCase(APITestCase):
                 "image_quality": 75,
                 "frame_filter": "step=3",
             }
+            if dimension == DimensionType.DIM_3D:
+                images = {
+                    "client_files[0]": open(
+                        os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'
+                        if annotation_format == 'Sly Point Cloud Format 1.0' else 'test_velodyne_points.zip'),
+                        'rb'),
+                    "image_quality": 100,
+                }
+
             response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -4471,7 +4487,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         def _get_initial_annotation(annotation_format):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
-                    "ICDAR Localization 1.0", "ICDAR Segmentation 1.0"]:
+                                         "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
+                                         'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4815,7 +4832,32 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     ],
                 }]
                 annotations["tags"] = tags_with_attrs
-
+            elif annotation_format in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
+                velodyne_wo_attrs = [{
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [
+                    ],
+                    "points": [-3.62, 7.95, -1.03, 0.0, 0.0, 0.0, 1.0, 1.0,
+                               1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    "type": "cuboid_3d",
+                    "occluded": False,
+                },
+                    {
+                        "frame": 0,
+                        "label_id": task["labels"][0]["id"],
+                        "group": 0,
+                        "source": "manual",
+                        "attributes": [],
+                        "points": [23.01, 8.34, -0.76, 0.0, 0.0, 0.0, 1.0, 1.0,
+                                   1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        "type": "cuboid_3d",
+                        "occluded": False,
+                    }
+                ]
+                annotations["shapes"] = velodyne_wo_attrs
             elif annotation_format == "ICDAR Recognition 1.0":
                 tags_with_attrs = [{
                     "frame": 1,
@@ -5033,6 +5075,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 data["version"] += 2 # upload is delete + put
                 self._check_response(response, data)
 
+                break
     def _check_dump_content(self, content, task, jobs, data, format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
@@ -5067,6 +5110,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         elif format_name == "PASCAL VOC 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "YOLO 1.1":
+            self.assertTrue(zipfile.is_zipfile(content))
+        elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "COCO 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
@@ -5291,6 +5336,90 @@ class ServerShareAPITestCase(APITestCase):
     def test_api_v1_server_share_no_auth(self):
         response = self._run_api_v1_server_share(None, "/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ServerShareDifferentTypesAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    @staticmethod
+    def _create_shared_files(shared_images):
+        image = Image.new('RGB', size=(100, 50))
+        for img in shared_images:
+            img_path = os.path.join(settings.SHARE_ROOT, img)
+            if not osp.exists(osp.dirname(img_path)):
+                os.makedirs(osp.dirname(img_path))
+            image.save(img_path, img_path.split(".")[1:][0])
+
+    def _get_request(self, path):
+        with ForceLogin(self.user, self.client):
+            response = self.client.get(path)
+        return response
+
+    def _run_api_v1_server_share(self, directory):
+        with ForceLogin(self.user, self.client):
+            response = self.client.get(
+                '/api/v1/server/share?directory={}'.format(directory))
+
+        return response
+
+    def _create_task(self, data, image_data):
+        with ForceLogin(self.user, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            tid = response.data["id"]
+
+            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+                                        data=image_data)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            response = self.client.get("/api/v1/tasks/%s" % tid)
+            task = response.data
+
+        return task
+
+    def test_api_v1_combined_image_and_directory_extractors(self):
+        shared_images = ["data1/street.png", "data1/people.jpeg", "data1/street_1.jpeg", "data1/street_2.jpeg",
+                         "data1/street_3.jpeg", "data1/subdir/image_4.jpeg", "data1/subdir/image_5.jpeg",
+                         "data1/subdir/image_6.jpeg"]
+        images_count = len(shared_images)
+        self._create_shared_files(shared_images)
+        response = self._run_api_v1_server_share("/data1")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        shared_images = [img for img in shared_images if os.path.dirname(img) != "/data1/subdir"]
+        shared_images.append("/data1/subdir/")
+        shared_images.append("/data1/")
+        remote_files = {"server_files[%d]" % i: shared_images[i] for i in range(len(shared_images))}
+
+        task = {
+            "name": "task combined image and directory extractors",
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        image_data = {
+            "size": 0,
+            "image_quality": 70,
+            "compressed_chunk_type": "imageset",
+            "original_chunk_type": "imageset",
+            "client_files": [],
+            "remote_files": [],
+            "use_zip_chunks": False,
+            "use_cache": False,
+            "copy_data": False
+        }
+        image_data.update(remote_files)
+        # create task with server
+        task = self._create_task(task, image_data)
+        response = self._get_request("/api/v1/tasks/%s/data/meta" % task["id"])
+        self.assertEqual(len(response.data["frames"]), images_count)
 
 
 class TaskAnnotation2DContext(APITestCase):

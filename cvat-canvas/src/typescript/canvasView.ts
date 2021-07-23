@@ -23,6 +23,7 @@ import consts from './consts';
 import {
     translateToSVG,
     translateFromSVG,
+    translateToCanvas,
     pointsToNumberArray,
     parsePoints,
     displayShapeSize,
@@ -103,7 +104,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private translateToCanvas(points: number[]): number[] {
         const { offset } = this.controller.geometry;
-        return points.map((coord: number): number => coord + offset);
+        return translateToCanvas(offset, points);
     }
 
     private translateFromCanvas(points: number[]): number[] {
@@ -1267,9 +1268,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
-            if (data.enabled && this.mode === Mode.IDLE) {
-                this.canvas.style.cursor = 'crosshair';
-                this.mode = Mode.INTERACT;
+            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape)) {
+                if (!data.intermediateShape) {
+                    this.canvas.style.cursor = 'crosshair';
+                    this.mode = Mode.INTERACT;
+                }
                 this.interactionHandler.interact(data);
             } else {
                 this.canvas.style.cursor = '';

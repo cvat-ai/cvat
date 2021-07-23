@@ -38,7 +38,7 @@ function ContextImage(): JSX.Element | null {
         if (requested) {
             setRequested(false);
         }
-    }, [frame]);
+    }, [frame, contextImageData]);
 
     useEffect(() => {
         if (hasRelatedContext && !contextImageHidden && !requested) {

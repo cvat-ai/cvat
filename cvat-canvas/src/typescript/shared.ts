@@ -181,3 +181,9 @@ export function vectorLength(vector: Vector2D): number {
     const sqrJ = vector.j ** 2;
     return Math.sqrt(sqrI + sqrJ);
 }
+
+export function translateToCanvas(offset: number, points: number[]): number[] {
+    return points.map((coord: number): number => coord + offset);
+}
+
+export type PropType<T, Prop extends keyof T> = T[Prop];

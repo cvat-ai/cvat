@@ -85,15 +85,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
 const mapDispatchToProps = {
     onInteractionStart: interactWithCanvas,
     updateAnnotations: updateAnnotationsAsync,
-    fetchAnnotations: fetchAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
+    fetchAnnotations: fetchAnnotationsAsync,
 };
 
 type Props = StateToProps & DispatchToProps;
 interface State {
     activeInteractor: Model | null;
     activeLabelID: number;
-    interactiveStateID: number | null;
     activeTracker: Model | null;
     trackingProgress: number | null;
     trackingFrames: number;
@@ -105,6 +104,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interactionIsAborted: boolean;
 
     private interactionIsDone: boolean;
+    private latestResult: number[];
 
     public constructor(props: Props) {
         super(props);
@@ -112,13 +112,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id : null,
-            interactiveStateID: null,
             trackingProgress: null,
             trackingFrames: 10,
             fetching: false,
             mode: 'interaction',
         };
 
+        this.latestResult = [];
         this.interactionIsAborted = false;
         this.interactionIsDone = false;
     }
@@ -149,12 +149,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
 
-    private getInteractiveState(): any | null {
-        const { states } = this.props;
-        const { interactiveStateID } = this.state;
-        return states.filter((_state: any): boolean => _state.clientID === interactiveStateID)[0] || null;
-    }
-
     private contextmenuDisabler = (e: MouseEvent): void => {
         if (
             e.target &&
@@ -166,10 +160,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private cancelListener = async (): Promise<void> => {
-        const {
-            isActivated, jobInstance, frame, fetchAnnotations,
-        } = this.props;
-        const { interactiveStateID, fetching } = this.state;
+        const { isActivated } = this.props;
+        const { fetching } = this.state;
+        this.latestResult = [];
 
         if (isActivated) {
             if (fetching && !this.interactionIsDone) {
@@ -177,15 +170,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.setState({ fetching: false });
                 this.interactionIsAborted = true;
             }
-
-            if (interactiveStateID !== null) {
-                const state = this.getInteractiveState();
-                this.setState({ interactiveStateID: null });
-                await state.delete(frame);
-                fetchAnnotations();
-            }
-
-            await jobInstance.actions.freeze(false);
         }
     };
 
@@ -197,28 +181,23 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             jobInstance,
             isActivated,
             activeLabelID,
-            fetchAnnotations,
-            updateAnnotations,
+            canvasInstance,
+            createAnnotations,
         } = this.props;
-        const { activeInteractor, interactiveStateID, fetching } = this.state;
+        const { activeInteractor, fetching } = this.state;
 
         if (!isActivated) {
             return;
         }
 
         try {
-            if (fetching) {
-                this.interactionIsDone = (e as CustomEvent).detail.isDone;
-                return;
-            }
-
+            this.interactionIsDone = (e as CustomEvent).detail.isDone;
             const interactor = activeInteractor as Model;
 
-            let result = [];
             if ((e as CustomEvent).detail.shapesUpdated) {
                 this.setState({ fetching: true });
                 try {
-                    result = await core.lambda.call(jobInstance.task, interactor, {
+                    this.latestResult = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
                         pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
                         neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
@@ -227,6 +206,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     if (this.interactionIsAborted) {
                         // while the server request
                         // user has cancelled interaction (for example pressed ESC)
+                        this.latestResult = [];
                         return;
                     }
                 } finally {
@@ -234,66 +214,30 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 }
             }
 
-            if (this.interactionIsDone) {
-                // while the server request, user has done interaction (for example pressed N)
+            if (!this.latestResult.length) {
+                return;
+            }
+
+            if (this.interactionIsDone && !fetching) {
                 const object = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
                     label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                     shapeType: ShapeType.POLYGON,
-                    points: result.flat(),
+                    points: this.latestResult.flat(),
                     occluded: false,
                     zOrder: curZOrder,
                 });
 
-                await jobInstance.annotations.put([object]);
-                fetchAnnotations();
+                createAnnotations(jobInstance, frame, [object]);
             } else {
-                // no shape yet, then create it and save to collection
-                if (interactiveStateID === null) {
-                    // freeze history for interaction time
-                    // (points updating shouldn't cause adding new actions to history)
-                    await jobInstance.actions.freeze(true);
-                    const object = new core.classes.ObjectState({
-                        frame,
-                        objectType: ObjectType.SHAPE,
-                        label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
+                canvasInstance.interact({
+                    enabled: true,
+                    intermediateShape: {
                         shapeType: ShapeType.POLYGON,
-                        points: result.flat(),
-                        occluded: false,
-                        zOrder: curZOrder,
-                    });
-                    // need a clientID of a created object to interact with it further
-                    // so, we do not use createAnnotationAction
-                    const [clientID] = await jobInstance.annotations.put([object]);
-
-                    // update annotations on a canvas
-                    fetchAnnotations();
-                    this.setState({ interactiveStateID: clientID });
-                    return;
-                }
-
-                const state = this.getInteractiveState();
-                if ((e as CustomEvent).detail.isDone) {
-                    const finalObject = new core.classes.ObjectState({
-                        frame: state.frame,
-                        objectType: state.objectType,
-                        label: state.label,
-                        shapeType: state.shapeType,
-                        points: result.length ? result.flat() : state.points,
-                        occluded: state.occluded,
-                        zOrder: state.zOrder,
-                    });
-                    this.setState({ interactiveStateID: null });
-                    await state.delete(frame);
-                    await jobInstance.actions.freeze(false);
-                    await jobInstance.annotations.put([finalObject]);
-                    fetchAnnotations();
-                } else {
-                    state.points = result.flat();
-                    updateAnnotations([state]);
-                    fetchAnnotations();
-                }
+                        points: this.latestResult.flat(),
+                    },
+                });
             }
         } catch (err) {
             notification.error({
@@ -633,7 +577,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame, fetchAnnotations,
+            jobInstance, detectors, curZOrder, frame,
         } = this.props;
 
         if (!detectors.length) {
@@ -672,8 +616,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }),
                         );
 
-                        await jobInstance.annotations.put(states);
-                        fetchAnnotations();
+                        createAnnotationsAsync(jobInstance, frame, states);
                     } catch (error) {
                         notification.error({
                             description: error.toString(),
