@@ -131,7 +131,7 @@ context('Redraw feature.', () => {
 
         it('Draw and redraw a cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 300, 400);
+            cy.get('.cvat-canvas-container').trigger('mousemove', 350, 400);
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the cuboid
             cy.get('.cvat-canvas-container')
