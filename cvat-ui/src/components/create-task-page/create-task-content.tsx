@@ -103,9 +103,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
             this.fileManagerContainer.reset();
 
-            this.setState({
+            this.setState((state) => ({
                 ...defaultState,
-            });
+                projectId: state.projectId,
+            }));
         }
     }
 
