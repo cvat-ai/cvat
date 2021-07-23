@@ -135,7 +135,7 @@ context('Object make a copy.', () => {
                         .rightclick('right'); // When click in the center of polyline: is being covered by another element: <svg xmlns="http://www.w3.org/2000/svg" ...
                 } else {
                     cy.get(`#cvat_canvas_shape_${id}`)
-                        .trigger('mousemove')
+                        .trigger('mousemove', 'right')
                         .should('have.class', 'cvat_canvas_shape_activated')
                         .rightclick();
                 }

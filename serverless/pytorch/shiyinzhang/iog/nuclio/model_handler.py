@@ -50,10 +50,10 @@ class ModelHandler:
             # extract a crop with padding from the image
             crop_padding = 30
             crop_bbox = [
-                max(bbox[0] - crop_padding, 0),
-                max(bbox[1] - crop_padding, 0),
-                min(bbox[2] + crop_padding, image.width - 1),
-                min(bbox[3] + crop_padding, image.height - 1)
+                max(bbox[0][0] - crop_padding, 0),
+                max(bbox[0][1] - crop_padding, 0),
+                min(bbox[1][0] + crop_padding, image.width - 1),
+                min(bbox[1][1] + crop_padding, image.height - 1)
             ]
             crop_shape = (
                 int(crop_bbox[2] - crop_bbox[0] + 1), # width

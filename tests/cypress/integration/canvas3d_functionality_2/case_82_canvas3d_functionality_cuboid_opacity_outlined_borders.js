@@ -8,7 +8,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
     const caseId = '82';
-    const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_82_canvas3d_functionality_cuboid_opacity_outlined_borders.js';
+    const screenshotsPath = 'cypress/screenshots/canvas3d_functionality_2/case_82_canvas3d_functionality_cuboid_opacity_outlined_borders.js';
     const cuboidCreationParams = {
         labelName: labelName,
         x: 250,
