@@ -31,6 +31,8 @@ services:
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat']
     working_dir: '/home/django'
+    networks:
+      - cvat
     entrypoint:
       [
         'bash',
