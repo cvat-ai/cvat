@@ -21,7 +21,8 @@ There are two ways of deploying the CVAT.
    [installation instructions](/docs/administration/basics/installation/).
    The additional step is to add a [security group and rule to allow incoming connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
 
-For any of above, don't forget to set the `CVAT_HOST` environemnt variable to the exposed AWS public IP address or hostname:
+For any of above, don't forget to set the `CVAT_HOST` environemnt variable to the exposed
+AWS public IP address or hostname:
 
 ```
 export CVAT_HOST=your-instance.amazonaws.com

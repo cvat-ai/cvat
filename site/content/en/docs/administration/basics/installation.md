@@ -311,7 +311,9 @@ services:
       # - "--api.dashboard=true"
 ```
 
-Note that this "insecure" dashboard is not recommended in production (and if your instance is publicly available); if you want to keep the dashboard in production you should read Traefik's [documentation](https://doc.traefik.io/traefik/operations/dashboard/) on how to properly secure it.
+Note that this "insecure" dashboard is not recommended in production (and if your instance is publicly available);
+if you want to keep the dashboard in production you should read Traefik's
+[documentation](https://doc.traefik.io/traefik/operations/dashboard/) on how to properly secure it.
 
 ### Additional components
 
@@ -401,15 +403,17 @@ for details.
 
 ### Deploy CVAT on the Scaleway public cloud
 
-Please follow [this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/)
+Please follow
+[this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/)
 to install and set up remote access to CVAT on a Scaleway cloud instance with data in a mounted object storage bucket.
 
 ### Deploy secure CVAT instance with HTTPS
 
-Using Traefik, you can automatically obtain TLS certificate for your domain from Let's Encrypt, enabling you to use HTTPS protocol to access your website.
+Using Traefik, you can automatically obtain TLS certificate for your domain from Let's Encrypt,
+enabling you to use HTTPS protocol to access your website.
 
-To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL` (contact email for Let's Encrypt) environment
-variables:
+To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
+(contact email for Let's Encrypt) environment variables:
 
 ```
 export CVAT_HOST=<YOUR_DOMAIN>
