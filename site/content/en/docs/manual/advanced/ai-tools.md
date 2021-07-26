@@ -29,7 +29,7 @@ In most cases specifying positive points alone is enough to build a polygon.
   a request will be sent to the server and when the process is complete a polygon will be created.
   If you are not satisfied with the result, you can set additional points or remove points.
   To delete a point, hover over the point you want to delete, if the point can be deleted,
-  it will enlarge and the cursor will turn into a cross, left-click on the point.
+  it will enlarge and the cursor will turn into a cross, then left-click on the point.
   If you want to postpone the request and create a few more points, hold down `Ctrl` and continue,
   the request will be sent after the key is released.
 
