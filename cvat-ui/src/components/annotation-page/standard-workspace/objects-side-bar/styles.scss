@@ -399,13 +399,21 @@
 }
 
 .cvat-approx-poly-threshold-wrapper {
+    width: $grid-unit-size * 32;
     position: absolute;
     background: $background-color-2;
     top: 8px;
     left: 50%;
-    opacity: 0.5;
     border-radius: 6px;
     border: 1px solid $border-color-3;
     z-index: 100;
-    padding: 4px 12px;
+    padding: $grid-unit-size / 2 $grid-unit-size * 2 $grid-unit-size / 2 $grid-unit-size / 2;
+
+    .ant-slider-track {
+        background: linear-gradient(90deg, #1890ff 0%, #61c200 100%);
+    }
+
+    .ant-slider-mark {
+        position: static;
+    }
 }

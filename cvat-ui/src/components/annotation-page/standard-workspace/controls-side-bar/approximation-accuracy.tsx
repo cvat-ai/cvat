@@ -6,19 +6,26 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
+import { Col, Row } from 'antd/lib/grid';
 
 interface Props {
     approxPolyAccuracy: number;
     onChange(value: number): void;
 }
 
+const MAX_ACCURACY = 13;
+
 export function thresholdFromAccuracy(approxPolyAccuracy: number): number {
-    const maxAccuracy = 7;
-    const approxPolyMaxDistance = maxAccuracy - approxPolyAccuracy;
+    const approxPolyMaxDistance = MAX_ACCURACY - approxPolyAccuracy;
     let threshold = 0;
     if (approxPolyMaxDistance > 0) {
-        // 0.5 for 1, 1 for 2, 2 for 3, 4 for 4, ...
-        threshold = 2 ** (approxPolyMaxDistance - 2);
+        if (approxPolyMaxDistance <= 8) {
+            // −2.75x+7y+1=0 linear made from two points (1; 0.25) and (8; 3)
+            threshold = (2.75 * approxPolyMaxDistance - 1) / 7;
+        } else {
+            // 4 for 9, 8 for 10, 16 for 11, 32 for 12, 64 for 13
+            threshold = 2 ** (approxPolyMaxDistance - 7);
+        }
     }
 
     return threshold;
@@ -30,18 +37,36 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
 
     return target ?
         ReactDOM.createPortal(
-            <div className='cvat-approx-poly-threshold-wrapper'>
-                <Text>Approximation accuracy</Text>
-                <Slider
-                    value={approxPolyAccuracy}
-                    min={0}
-                    max={7}
-                    step={1}
-                    dots
-                    tooltipVisible={false}
-                    onChange={onChange}
-                />
-            </div>,
+            <Row align='middle' className='cvat-approx-poly-threshold-wrapper'>
+                <Col span={5}>
+                    <Text>Points: </Text>
+                </Col>
+                <Col offset={1} span={18}>
+                    <Slider
+                        value={approxPolyAccuracy}
+                        min={0}
+                        max={MAX_ACCURACY}
+                        step={1}
+                        dots
+                        tooltipVisible={false}
+                        onChange={onChange}
+                        marks={{
+                            0: {
+                                style: {
+                                    color: '#1890ff',
+                                },
+                                label: <strong>less</strong>,
+                            },
+                            13: {
+                                style: {
+                                    color: '#61c200',
+                                },
+                                label: <strong>more</strong>,
+                            },
+                        }}
+                    />
+                </Col>
+            </Row>,
             target,
         ) :
         null;
