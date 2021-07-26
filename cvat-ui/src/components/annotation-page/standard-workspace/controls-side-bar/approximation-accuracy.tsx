@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import ReactDOM from 'react-dom';
 import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
@@ -14,6 +14,20 @@ interface Props {
 }
 
 export const MAX_ACCURACY = 13;
+
+export const marks: Record<number, { style: CSSProperties; label: JSX.Element }> = {};
+marks[0] = {
+    style: {
+        color: '#1890ff',
+    },
+    label: <strong>less</strong>,
+};
+marks[MAX_ACCURACY] = {
+    style: {
+        color: '#61c200',
+    },
+    label: <strong>more</strong>,
+};
 
 export function thresholdFromAccuracy(approxPolyAccuracy: number): number {
     const approxPolyMaxDistance = MAX_ACCURACY - approxPolyAccuracy;
@@ -50,20 +64,7 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
                         dots
                         tooltipVisible={false}
                         onChange={onChange}
-                        marks={{
-                            0: {
-                                style: {
-                                    color: '#1890ff',
-                                },
-                                label: <strong>less</strong>,
-                            },
-                            13: {
-                                style: {
-                                    color: '#61c200',
-                                },
-                                label: <strong>more</strong>,
-                            },
-                        }}
+                        marks={marks}
                     />
                 </Col>
             </Row>,

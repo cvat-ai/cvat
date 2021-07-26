@@ -10,7 +10,10 @@ import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
 
-import { MAX_ACCURACY } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import {
+    MAX_ACCURACY,
+    marks,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { clamp } from 'utils/math';
 
 interface Props {
@@ -178,7 +181,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col>
                     <Text className='cvat-text-color'>Default polygon approximation accuracy level</Text>
                 </Col>
-                <Col span={5} offset={1}>
+                <Col span={7} offset={1}>
                     <Slider
                         min={0}
                         max={MAX_ACCURACY}
@@ -186,6 +189,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={defaultApproxPolyAccuracy}
                         dots
                         onChange={onChangeDefaultApproxPolyAccuracy}
+                        marks={marks}
                     />
                 </Col>
                 <Col span={24}>

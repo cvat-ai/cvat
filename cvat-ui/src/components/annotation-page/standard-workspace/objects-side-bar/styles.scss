@@ -398,7 +398,15 @@
     opacity: 0.5;
 }
 
+.cvat-workspace-settings-approx-poly-threshold {
+    .ant-slider-track {
+        background: linear-gradient(90deg, #1890ff 0%, #61c200 100%);
+    }
+}
+
 .cvat-approx-poly-threshold-wrapper {
+    @extend .cvat-workspace-settings-approx-poly-threshold;
+
     width: $grid-unit-size * 32;
     position: absolute;
     background: $background-color-2;
@@ -408,10 +416,6 @@
     border: 1px solid $border-color-3;
     z-index: 100;
     padding: $grid-unit-size / 2 $grid-unit-size * 2 $grid-unit-size / 2 $grid-unit-size / 2;
-
-    .ant-slider-track {
-        background: linear-gradient(90deg, #1890ff 0%, #61c200 100%);
-    }
 
     .ant-slider-mark {
         position: static;
