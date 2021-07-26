@@ -652,7 +652,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.intelligentPolygonCrop = configuration.intelligentPolygonCrop;
         }
 
-        if (typeof configuration.forceFrameUpdate === 'boolean'){
+        if (typeof configuration.forceFrameUpdate === 'boolean') {
             this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
 
