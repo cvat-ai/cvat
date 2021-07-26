@@ -63,8 +63,8 @@ services:
       - "--entryPoints.web.address=:<YOUR_PORT>"
 ```
 
-Note that changing the port does not make sense if you are using HTTPS - port 443 is conventionally used for HTTPS connections,
-and is needed for Let's Encrypt [TLS challenge](https://doc.traefik.io/traefik/https/acme/#tlschallenge).
+Note that changing the port does not make sense if you are using HTTPS - port 443 is conventionally
+used for HTTPS connections, and is needed for Let's Encrypt [TLS challenge](https://doc.traefik.io/traefik/https/acme/#tlschallenge).
 
 ## How to configure connected share folder on Windows
 
@@ -137,7 +137,8 @@ Uploading of annotation from the Annotation view only affects the current job.
 ## How to specify multiple hostnames
 
 To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label for both the
-`cvat` and `cvat_ui` services, like so (see [the documentation](https://doc.traefik.io/traefik/routing/routers/#rule) on Traefik rules for more details):
+`cvat` and `cvat_ui` services, like so
+(see [the documentation](https://doc.traefik.io/traefik/routing/routers/#rule) on Traefik rules for more details):
 
 ```yaml
   cvat:
