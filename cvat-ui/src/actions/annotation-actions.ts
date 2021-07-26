@@ -719,7 +719,6 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
 
                 return;
             }
-
             // Start async requests
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,

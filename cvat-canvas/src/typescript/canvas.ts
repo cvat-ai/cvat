@@ -28,7 +28,7 @@ const CanvasVersion = pjson.version;
 
 interface Canvas {
     html(): HTMLDivElement;
-    setup(frameData: any, objectStates: any[], zLayer?: number, forceUpdate?: boolean): void;
+    setup(frameData: any, objectStates: any[], zLayer?: number): void;
     setupIssueRegions(issueRegions: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID?: number): void;
     rotate(rotationAngle: number): void;
@@ -72,8 +72,8 @@ class CanvasImpl implements Canvas {
         return this.view.html();
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0, forceUpdate = false): void {
-        this.model.setup(frameData, objectStates, zLayer, forceUpdate);
+    public setup(frameData: any, objectStates: any[], zLayer = 0): void {
+        this.model.setup(frameData, objectStates, zLayer);
     }
 
     public setupIssueRegions(issueRegions: Record<number, number[]>): void {

@@ -58,6 +58,7 @@ export interface Configuration {
     showProjections?: boolean;
     forceDisableEditing?: boolean;
     intelligentPolygonCrop?: boolean;
+    forceFrameUpdate?: boolean;
 }
 
 export interface DrawData {
@@ -183,7 +184,7 @@ export interface CanvasModel {
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[], zLayer: number, forceUpdate: boolean): void;
+    setup(frameData: any, objectStates: any[], zLayer: number): void;
     setupIssueRegions(issueRegions: Record<number, number[]>): void;
     activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotationAngle: number): void;
@@ -386,14 +387,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer: number, forceUpdate: boolean = false): void {
+    public setup(frameData: any, objectStates: any[], zLayer: number): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
-
-        if (frameData.number === this.data.imageID && !forceUpdate) {
+        if (frameData.number === this.data.imageID && !this.data.configuration.forceFrameUpdate) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -650,6 +650,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.intelligentPolygonCrop === 'boolean') {
             this.data.configuration.intelligentPolygonCrop = configuration.intelligentPolygonCrop;
+        }
+
+        if (typeof configuration.forceFrameUpdate === 'boolean'){
+            this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

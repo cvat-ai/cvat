@@ -15,6 +15,10 @@ export interface Segmentation {
     intelligentScissorsFactory: () => IntelligentScissors;
 }
 
+export interface ImgProc {
+    hist: () => HistogramEqualization
+}
+
 export class OpenCVWrapper {
     private initialized: boolean;
     private cv: any;
@@ -91,12 +95,13 @@ export class OpenCVWrapper {
         };
     }
 
-    public get hist(): HistogramEqualization {
+    public get imgproc(): ImgProc {
         if (!this.initialized) {
             throw new Error('Need to initialize OpenCV first');
         }
-
-        return new HistogramEqualizationImplementation(this.cv);
+        return {
+            hist: () => new HistogramEqualizationImplementation(this.cv),
+        };
     }
 }
 

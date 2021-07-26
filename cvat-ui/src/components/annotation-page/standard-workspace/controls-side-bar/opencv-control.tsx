@@ -30,6 +30,7 @@ import {
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { HistogramEqualization } from 'utils/opencv-wrapper/histogram-equalization';
+import { ImageProcessing } from 'utils/opencv-wrapper/opencv-interfaces';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -40,7 +41,7 @@ interface Props {
     states: any[];
     frame: number;
     curZOrder: number;
-    data: any;
+    frameData: any;
 }
 
 interface DispatchToProps {
@@ -55,7 +56,12 @@ interface State {
     initializationError: boolean;
     initializationProgress: number;
     activeLabelID: number;
-    activeImageModifiers: string[];
+    activeImageModifiers: ImageModifier[];
+}
+
+interface ImageModifier {
+    modifier: ImageProcessing,
+    alias: string
 }
 
 const core = getCore();
@@ -71,7 +77,7 @@ function mapStateToProps(state: CombinedState): Props {
             job: { instance: jobInstance, labels },
             canvas: { activeControl, instance: canvasInstance },
             player: {
-                frame: { number: frame, data },
+                frame: { number: frame, data: frameData },
             },
         },
     } = state;
@@ -84,7 +90,7 @@ function mapStateToProps(state: CombinedState): Props {
         labels,
         states,
         frame,
-        data,
+        frameData,
     };
 }
 
@@ -136,10 +142,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         canvasInstance.html().removeEventListener('canvas.setup', this.setupListener);
     }
 
-    private setupListener = async ():Promise<void> => {
+    private setupListener = ():void => {
         const { frame } = this.props;
-        if (this.activeImageModifier && this.activeImageModifier.currentEqualizedNumber !== frame) {
-            this.runImageModifier();
+        const { activeImageModifiers } = this.state;
+        if (activeImageModifiers.length !== 0) {
+            if (activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
+                this.runImageModifier();
+            }
         }
     };
 
@@ -233,10 +242,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private runImageModifier():void {
-        if (this.activeImageModifier) {
+        const { activeImageModifiers } = this.state;
+        if (activeImageModifiers.length !== 0) {
             const {
-                data, states, curZOrder, canvasInstance, frame,
+                frameData, states, curZOrder, canvasInstance, frame,
             } = this.props;
+            canvasInstance.configure({ forceFrameUpdate: true });
             const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
                 | HTMLCanvasElement
                 | undefined;
@@ -248,15 +259,55 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (!context) {
                 throw new Error('Canvas context is empty');
             }
-            const imageData = context.getImageData(0, 0, width, height);
-            this.activeImageModifier.equalize(imageData, frame).then((newBitmap:ImageBitmap|undefined) => {
-                if (newBitmap) {
-                    // eslint-disable-next-line no-underscore-dangle
-                    data._data.imageData = newBitmap;
-                    canvasInstance.setup(data, states, curZOrder, true);
+            let imageData = context.getImageData(0, 0, width, height);
+            for (const elem of activeImageModifiers) {
+                const newImageData = elem.modifier.processImage(imageData, frame);
+                if (newImageData) {
+                    imageData = newImageData;
+                } else {
+                    break;
                 }
+            }
+            frameData.imageData = imageData;
+            canvasInstance.setup(frameData, states, curZOrder);
+            canvasInstance.configure({ forceFrameUpdate: false });
+        }
+    }
+
+    private imageModifier(alias: string):ImageProcessing|undefined {
+        const { activeImageModifiers } = this.state;
+        for (const elem of activeImageModifiers) {
+            if (elem.alias === alias) {
+                return elem.modifier;
+            }
+        }
+        return undefined;
+    }
+
+    private disableImageModifier(alias: string):void {
+        const { activeImageModifiers } = this.state;
+        let index = -1;
+        for (let i = 0; i < activeImageModifiers.length; i++) {
+            if (activeImageModifiers[i].alias === alias) {
+                index = i;
+                break;
+            }
+        }
+        if (index !== -1) {
+            activeImageModifiers.splice(index, 1);
+            this.setState({
+                activeImageModifiers: [...activeImageModifiers],
             });
         }
+    }
+
+    private enableImageModifier(modifier: ImageProcessing, alias: string): void{
+        const { activeImageModifiers } = this.state;
+        activeImageModifiers.push({ modifier, alias });
+        this.runImageModifier();
+        this.setState({
+            activeImageModifiers: [...activeImageModifiers],
+        });
     }
 
     private renderDrawingContent(): JSX.Element {
@@ -299,45 +350,40 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private renderImageContent():JSX.Element {
-        const { activeImageModifiers } = this.state;
-        const histogramActive = activeImageModifiers.includes('histogram');
         return (
-            <>
-                <Row justify='start'>
-                    <Col>
-                        <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
-                            <Button
-                                className={histogramActive ? 'cvat-opencv-image-tool-active' : ''}
-                                onClick={() => {
-                                    if (!this.activeImageModifier) {
-                                        const { hist } = openCVWrapper;
-                                        this.activeImageModifier = hist;
-                                        this.runImageModifier();
-                                        this.setState({
-                                            activeImageModifiers: ['histogram'],
-                                        });
-                                    } else {
-                                        const {
-                                            data, states, curZOrder, canvasInstance,
-                                        } = this.props;
-                                        this.activeImageModifier.restoreImage().then((newBitmap) => {
-                                            // eslint-disable-next-line no-underscore-dangle
-                                            data._data.imageData = newBitmap;
-                                            canvasInstance.setup(data, states, curZOrder, true);
-                                        });
-                                        this.activeImageModifier = null;
-                                        this.setState({
-                                            activeImageModifiers: [],
+            <Row justify='start'>
+                <Col>
+                    <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                const modifier = this.imageModifier('histogram');
+                                if (!modifier) {
+                                    this.enableImageModifier(openCVWrapper.imgproc.hist(), 'histogram');
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    const {
+                                        frameData, states, curZOrder, canvasInstance,
+                                    } = this.props;
+                                    const oldData = modifier.restoreImage();
+                                    if (oldData) {
+                                        createImageBitmap(oldData).then((newBitmap) => {
+                                            canvasInstance.configure({ forceFrameUpdate: true });
+                                            frameData.imageData = newBitmap;
+                                            canvasInstance.setup(frameData, states, curZOrder);
+                                            canvasInstance.configure({ forceFrameUpdate: false });
                                         });
                                     }
-                                }}
-                            >
-                                <AreaChartOutlined />
-                            </Button>
-                        </CVATTooltip>
-                    </Col>
-                </Row>
-            </>
+                                    this.disableImageModifier('histogram');
+                                }
+                            }}
+                        >
+                            <AreaChartOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+            </Row>
         );
     }
 

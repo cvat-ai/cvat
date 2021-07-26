@@ -38,3 +38,21 @@ displayed as a red square which is tied to the cursor.
 
 - Once all the points are placed, you can complete the creation of the object by clicking on the icon or clicking `N`.
   As a result, a polygon will be created (read more about the polygons in the [annotation with polygons](/docs/manual/advanced/annotation-with-polygons/)).
+
+### Histogram Equalization
+
+Histogram equalization is an CV method that improves contrast in an image in order to stretch out the intensity range.
+This method usually increases the global contrast of images when its usable data
+is represented by close contrast values.
+It is useful in images with backgrounds and foregrounds that are both bright or both dark.
+
+- First, select the image tab and then click on `histogram equalization` button.
+
+  ![](/images/image221.jpg)
+
+- Then contrast of current frame will be improved.
+  If you change frame, it will be equalized too.
+  You can disable equalization by clicking `histogram equalization` button again.
+
+  ![](/images/image222.jpg)
+
