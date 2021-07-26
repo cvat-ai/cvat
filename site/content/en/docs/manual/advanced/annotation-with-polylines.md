@@ -14,7 +14,8 @@ Click `Shape` to enter drawing mode. There are two ways to draw a polyline —
 you either create points by clicking or by dragging a mouse on the screen while holding `Shift`.
 When `Shift` isn't pressed, you can zoom in/out (when scrolling the mouse wheel)
 and move (when clicking the mouse wheel and moving the mouse), you can delete
-previous points by right-clicking on it. Press `N` again to complete the shape.
+previous points by right-clicking on it.
+Press `N` again or click the `Done` button on the top panel to complete the shape.
 You can delete a point by clicking on it with pressed `Ctrl` or right-clicking on a point
 and selecting `Delete point`. Click with pressed `Shift` will open a polyline editor.
 There you can create new points(by clicking or dragging) or delete part of a polygon closing

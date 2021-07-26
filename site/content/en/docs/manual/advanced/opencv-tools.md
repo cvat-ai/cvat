@@ -36,5 +36,10 @@ displayed as a red square which is tied to the cursor.
   Increasing action threshold will affect the performance.
   During the drawing process you can remove the last point by clicking on it with the left mouse button.
 
-- Once all the points are placed, you can complete the creation of the object by clicking on the icon or clicking `N`.
+- In the process of drawing, you can select the level of approximation using the approximation accuracy switch.
+
+  ![](/images/image223.jpg)
+
+- Once all the points are placed, you can complete the creation of the object
+  by clicking on the `Done` button on the top panel or press `N` on your keyboard.
   As a result, a polygon will be created (read more about the polygons in the [annotation with polygons](/docs/manual/advanced/annotation-with-polygons/)).

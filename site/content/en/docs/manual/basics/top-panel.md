@@ -43,6 +43,14 @@ Use buttons to undo actions or redo them.
 
 ---
 
+## Done
+
+![](/images/image221.jpg)
+
+Used to complete the creation of the object. This button appears only when the object is created.
+
+---
+
 ## Player
 
 Go to the first /the latest frames.

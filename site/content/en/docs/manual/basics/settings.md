@@ -41,3 +41,6 @@ In tab `Workspace` you can:
   for shape in the attribute annotation mode.
 - Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed).
   Click `Cancel` or press `F2` to return to the annotation.
+
+- `Default polygon approximation threshold` With this setting, you can choose the default approximation level.
+  Works for serverless interactors and OpenCV scissors.
