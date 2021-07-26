@@ -8,9 +8,8 @@ import { taskName } from '../../support/const';
 
 context('Settings. Default polygon approximation accuracy level.', () => {
     const caseId = '100';
-    let sliderValueNow;
 
-    function testCheckValue(expectedValue) {
+    function testOpenSettingsWorkspace() {
         cy.document().then((doc) => {
             const settingsModal = Array.from(doc.querySelectorAll('.cvat-settings-modal'));
             if (settingsModal.length === 0) {
@@ -18,6 +17,10 @@ context('Settings. Default polygon approximation accuracy level.', () => {
                 cy.contains('[role="tab"]', 'Workspace').click();
             }
         });
+    }
+
+    function testCheckSliderAttrValuenow(expectedValue) {
+        testOpenSettingsWorkspace();
         cy.get('.cvat-workspace-settings-approx-poly-threshold').find('[role="slider"]').then((slider) => {
             expect(slider.attr('aria-valuenow')).to.be.equal(expectedValue);
         });
@@ -37,23 +40,24 @@ context('Settings. Default polygon approximation accuracy level.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Change the settingd value for "Default polygon approximation accuracy level".', () => {
-            cy.openSettings();
-            cy.contains('[role="tab"]', 'Workspace').click();
+            testOpenSettingsWorkspace();
             cy.get('.cvat-workspace-settings-approx-poly-threshold')
                 .find('[role="slider"]')
                 .type(generateString(4))
                 .then((slider) => {
-                    sliderValueNow = slider.attr('aria-valuenow');
+                    const sliderAttrValueNow = slider.attr('aria-valuenow');
+                    const sliderAttrValuemin = slider.attr('aria-valuemin');
+                    const sliderAttrValuemax = slider.attr('aria-valuemax');
                     cy.saveSettings();
                     cy.closeNotification('.cvat-notification-notice-save-settings-success');
                     cy.closeSettings();
                     cy.reload();
                     cy.closeModalUnsupportedPlatform(); // If the Firefox browser closes the modal window after reload
-                    testCheckValue(sliderValueNow);
+                    testCheckSliderAttrValuenow(sliderAttrValueNow);
                     cy.contains('strong', 'less').click();
-                    testCheckValue(slider.attr('aria-valuemin'));
+                    testCheckSliderAttrValuenow(sliderAttrValuemin);
                     cy.contains('strong', 'more').click();
-                    testCheckValue(slider.attr('aria-valuemax'));
+                    testCheckSliderAttrValuenow(sliderAttrValuemax);
                 });
         });
     });
