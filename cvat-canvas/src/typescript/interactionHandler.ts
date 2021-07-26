@@ -278,16 +278,18 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (!intermediateShape) return;
         const { shapeType, points } = intermediateShape;
         if (shapeType === 'polygon') {
+            const erroredShape = shapeType === 'polygon' && points.length < 3 * 2;
             this.drawnIntermediateShape = this.canvas
                 .polygon(stringifyPoints(translateToCanvas(geometry.offset, points)))
                 .attr({
                     'color-rendering': 'optimizeQuality',
                     'shape-rendering': 'geometricprecision',
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                    stroke: erroredShape ? 'red' : 'black',
                     fill: 'none',
                 })
                 .addClass('cvat_canvas_interact_intermediate_shape');
-            this.selectize(true, this.drawnIntermediateShape);
+            this.selectize(true, this.drawnIntermediateShape, erroredShape);
         } else {
             throw new Error(
                 `Shape type "${shapeType}" was not implemented at interactionHandler::updateIntermediateShape`,
@@ -295,7 +297,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
     }
 
-    private selectize(value: boolean, shape: SVG.Element): void {
+    private selectize(value: boolean, shape: SVG.Element, erroredShape = false): void {
         const self = this;
 
         if (value) {
@@ -307,7 +309,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 pointType(cx: number, cy: number): SVG.Circle {
                     return this.nested
                         .circle(this.options.pointSize)
-                        .stroke('black')
+                        .stroke(erroredShape ? 'red' : 'black')
                         .fill('black')
                         .center(cx, cy)
                         .attr({

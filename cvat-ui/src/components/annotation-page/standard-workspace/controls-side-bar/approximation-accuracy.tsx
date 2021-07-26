@@ -13,7 +13,7 @@ interface Props {
     onChange(value: number): void;
 }
 
-const MAX_ACCURACY = 13;
+export const MAX_ACCURACY = 13;
 
 export function thresholdFromAccuracy(approxPolyAccuracy: number): number {
     const approxPolyMaxDistance = MAX_ACCURACY - approxPolyAccuracy;
