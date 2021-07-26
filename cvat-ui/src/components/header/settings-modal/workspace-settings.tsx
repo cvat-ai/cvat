@@ -179,7 +179,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-workspace-settings-approx-poly-threshold'>
                 <Col>
-                    <Text className='cvat-text-color'>Default polygon approximation accuracy level</Text>
+                    <Text className='cvat-text-color'>Default number of points in polygon approximation</Text>
                 </Col>
                 <Col span={7} offset={1}>
                     <Slider
