@@ -101,7 +101,7 @@ Open the job info.
 
 _Overview_:
 
-- `Assinger` - the one to whom the job is assigned.
+- `Assignee` - the one to whom the job is assigned.
 - `Reviewer` – a user assigned to carry out the review,
   read more in the [review](/docs/manual/advanced/review) section.
 - `Start Frame` - the number of the first frame in this job.

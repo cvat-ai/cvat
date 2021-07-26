@@ -35,7 +35,7 @@ In most cases specifying positive points alone is enough to build a polygon.
 
   ![](/images/image188_detrac.jpg)
 
-- In the process of drawing, you can select the level of approximation using the approximation accuracy switch.
+- In the process of drawing, you can select the number of points in the polygon using the switch.
 
   ![](/images/image223.jpg)
 

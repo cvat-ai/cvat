@@ -36,7 +36,7 @@ displayed as a red square which is tied to the cursor.
   Increasing action threshold will affect the performance.
   During the drawing process you can remove the last point by clicking on it with the left mouse button.
 
-- In the process of drawing, you can select the level of approximation using the approximation accuracy switch.
+- In the process of drawing, you can select the number of points in the polygon using the switch.
 
   ![](/images/image223.jpg)
 
