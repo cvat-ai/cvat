@@ -21,14 +21,11 @@ There are two ways of deploying the CVAT.
    [installation instructions](/docs/administration/basics/installation/).
    The additional step is to add a [security group and rule to allow incoming connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
 
-For any of above, don't forget to add exposed AWS public IP address or hostname to `docker-compose.override.yml`:
+For any of above, don't forget to set the `CVAT_HOST` environemnt variable to the exposed
+AWS public IP address or hostname:
 
 ```
-version: "2.3"
-services:
-  cvat_proxy:
-    environment:
-      CVAT_HOST: your-instance.amazonaws.com
+export CVAT_HOST=your-instance.amazonaws.com
 ```
 
 In case of problems with using hostname, you can also use the public IPV4 instead of hostname.
@@ -37,5 +34,4 @@ the public IPV4 and hostname changes with every stop and reboot.
 To address this efficiently, avoid using spot instances that cannot be stopped,
 since copying the EBS to an AMI and restarting it throws problems.
 On the other hand, when a regular instance is stopped and restarted,
-the new hostname/IPV4 can be used in the `CVAT_HOST` variable in the `docker-compose.override.yml`
-and the build can happen instantly with CVAT tasks being available through the new IPV4.
+the new hostname/IPV4 can be used to set the  `CVAT_HOST` environment variable.

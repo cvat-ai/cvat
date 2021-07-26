@@ -63,7 +63,7 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
         <Autocomplete
             value={internalValue}
             placeholder='Input subset'
-            className='cvat-project-search-field'
+            className='cvat-project-search-field cvat-project-subset-field'
             onSearch={(_value) => setInternalValue(_value)}
             onSelect={(_value) => {
                 if (_value !== internalValue) {
