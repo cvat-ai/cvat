@@ -26,6 +26,20 @@ weight: 2
 
 - Install FFmpeg libraries (libav\*) version 4.0 or higher.
 
+  - For **Ubuntu 20.04**, just **skip this part** as libavlibav\* version 4.x has already been installed.
+  - For **Ubuntu 18.04**, FFmpeg installed is version 3.x. But you can install the vesion 4 by the following PPAs:
+
+  ```bash
+  sudo add-apt-repository ppa:savoury1/graphics
+  sudo add-apt-repository ppa:savoury1/multimedia
+  sudo add-apt-repository ppa:savoury1/ffmpeg4
+  sudo apt-get update
+  sudo apt-get upgrade && sudo apt-get dist-upgrade
+  sudo apt-get install ffmpeg
+  ```
+
+  > Details can be found in this [link](https://launchpad.net/~savoury1/+archive/ubuntu/ffmpeg4).
+
 - Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
   for development
 
