@@ -105,13 +105,13 @@ interface State {
     trackingProgress: number | null;
     trackingFrames: number;
     fetching: boolean;
+    pointsRecieved: boolean;
     approxPolyAccuracy: number;
     mode: 'detection' | 'interaction' | 'tracking';
 }
 
 export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interactionIsAborted: boolean;
-
     private interactionIsDone: boolean;
     private latestResponseResult: number[][];
     private latestResult: number[][];
@@ -126,6 +126,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             trackingProgress: null,
             trackingFrames: 10,
             fetching: false,
+            pointsRecieved: false,
             mode: 'interaction',
         };
 
@@ -152,6 +153,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             // reset flags when start interaction/tracking
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
+                pointsRecieved: false,
             });
             this.latestResult = [];
             this.latestResponseResult = [];
@@ -236,6 +238,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
                         neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
                     });
+
                     this.latestResult = this.latestResponseResult;
 
                     if (this.interactionIsAborted) {
@@ -249,7 +252,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                     this.latestResult = await this.approximateResponsePoints(this.latestResponseResult);
                 } finally {
-                    this.setState({ fetching: false });
+                    this.setState({ fetching: false, pointsRecieved: !!this.latestResult.length });
                 }
             }
 
@@ -720,7 +723,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const {
-            fetching, trackingProgress, approxPolyAccuracy, activeInteractor,
+            fetching, trackingProgress, approxPolyAccuracy, activeInteractor, pointsRecieved,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -761,7 +764,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}
                 </Modal>
-                {isActivated && activeInteractor !== null ? (
+                {isActivated && activeInteractor !== null && pointsRecieved ? (
                     <ApproximationAccuracy
                         approxPolyAccuracy={approxPolyAccuracy}
                         onChange={(value: number) => {
