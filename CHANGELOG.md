@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update to Django 3.1.12 (<https://github.com/openvinotoolkit/cvat/pull/3378>)
 - Updated visibility for removable points in AI tools (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 - Updated UI handling for IOG serverless function (<https://github.com/openvinotoolkit/cvat/pull/3417>)
+- Changed Nginx proxy to Traefik in `docker-compose.yml` (<https://github.com/openvinotoolkit/cvat/pull/3409>)
+- Simplify the process of deploying CVAT with HTTPS (<https://github.com/openvinotoolkit/cvat/pull/3409>)
 
 ### Deprecated
 
