@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('Settings. Default polygon approximation accuracy level.', () => {
+context('Settings. Default number of points in polygon approximation.', () => {
     const caseId = '100';
 
     function testOpenSettingsWorkspace() {
@@ -39,7 +39,7 @@ context('Settings. Default polygon approximation accuracy level.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Change the settingd value for "Default polygon approximation accuracy level".', () => {
+        it('Change the settingd value for "Default number of points in polygon approximation".', () => {
             testOpenSettingsWorkspace();
             cy.get('.cvat-workspace-settings-approx-poly-threshold')
                 .find('[role="slider"]')
