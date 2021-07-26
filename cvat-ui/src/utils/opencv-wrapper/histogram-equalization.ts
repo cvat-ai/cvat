@@ -5,7 +5,7 @@
 import { ImageProcessing } from './opencv-interfaces';
 
 export interface HistogramEqualization extends ImageProcessing{
-    processImage: (src:ImageData, frameNumber: number)=>ImageData | undefined ;
+    processImage: (src:ImageData, frameNumber: number)=>ImageData;
     restoreImage: ()=>ImageData|undefined;
 }
 
@@ -27,7 +27,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
         this.histHash = [];
     }
 
-    public processImage(src:ImageData, frameNumber: number) : ImageData | undefined {
+    public processImage(src:ImageData, frameNumber: number) : ImageData {
         const hashedFrame = this.isHashed(frameNumber);
         if (!hashedFrame) {
             const { cv } = this;
@@ -64,7 +64,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
                 return imgData;
             } catch (e) {
                 console.log('Histogram equalization error', e);
-                return undefined;
+                return src;
             } finally {
                 if (matImage) matImage.delete();
                 if (channels) channels.delete();

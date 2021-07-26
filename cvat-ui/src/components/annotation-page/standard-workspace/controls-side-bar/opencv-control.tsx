@@ -26,10 +26,10 @@ import {
     fetchAnnotationsAsync,
     updateAnnotationsAsync,
     createAnnotationsAsync,
+    changeFrameAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { HistogramEqualization } from 'utils/opencv-wrapper/histogram-equalization';
 import { ImageProcessing } from 'utils/opencv-wrapper/opencv-interfaces';
 import withVisibilityHandling from './handle-popover-visibility';
 
@@ -49,6 +49,7 @@ interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
+    changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
 }
 
 interface State {
@@ -99,17 +100,16 @@ const mapDispatchToProps = {
     updateAnnotations: updateAnnotationsAsync,
     fetchAnnotations: fetchAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
+    changeFrame: changeFrameAsync,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
-    private activeImageModifier: HistogramEqualization | null;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels } = props;
         this.activeTool = null;
-        this.activeImageModifier = null;
 
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
@@ -259,16 +259,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (!context) {
                 throw new Error('Canvas context is empty');
             }
-            let imageData = context.getImageData(0, 0, width, height);
-            for (const elem of activeImageModifiers) {
-                const newImageData = elem.modifier.processImage(imageData, frame);
-                if (newImageData) {
-                    imageData = newImageData;
-                } else {
-                    break;
-                }
-            }
-            frameData.imageData = imageData;
+            const imageData = context.getImageData(0, 0, width, height);
+            const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
+                activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
+            frameData.imageData = newImageData;
             canvasInstance.setup(frameData, states, curZOrder);
             canvasInstance.configure({ forceFrameUpdate: false });
         }
@@ -363,19 +357,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                 } else {
                                     const button = e.target as HTMLElement;
                                     button.blur();
-                                    const {
-                                        frameData, states, curZOrder, canvasInstance,
-                                    } = this.props;
-                                    const oldData = modifier.restoreImage();
-                                    if (oldData) {
-                                        createImageBitmap(oldData).then((newBitmap) => {
-                                            canvasInstance.configure({ forceFrameUpdate: true });
-                                            frameData.imageData = newBitmap;
-                                            canvasInstance.setup(frameData, states, curZOrder);
-                                            canvasInstance.configure({ forceFrameUpdate: false });
-                                        });
-                                    }
                                     this.disableImageModifier('histogram');
+                                    const { changeFrame } = this.props;
+                                    const { frame, canvasInstance } = this.props;
+                                    canvasInstance.configure({ forceFrameUpdate: true });
+                                    changeFrame(frame, false, 1, true);
                                 }
                             }}
                         >
