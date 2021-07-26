@@ -143,6 +143,7 @@ Cypress.Commands.add(
         attachToProject = false,
         projectName,
         expectedResult = 'success',
+        projectSubsetFieldValue = 'Test',
     ) => {
         cy.get('#cvat-create-task-button').click({ force: true });
         cy.url().should('include', '/tasks/create');
@@ -171,6 +172,7 @@ Cypress.Commands.add(
             cy.get('.cvat-project-search-field').within(() => {
                 cy.get('[type="search"]').should('have.value', projectName);
             });
+            cy.get('.cvat-project-subset-field').type(projectSubsetFieldValue);
             cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
         }
         cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
@@ -191,9 +193,12 @@ Cypress.Commands.add(
     },
 );
 
-Cypress.Commands.add('openTask', (taskName) => {
+Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     cy.contains('strong', taskName).parents('.cvat-tasks-list-item').contains('a', 'Open').click({ force: true });
     cy.get('.cvat-task-details').should('exist');
+    if (projectSubsetFieldValue) {
+        cy.get('.cvat-project-subset-field').find('input').should('have.attr', 'value', projectSubsetFieldValue);
+    }
 });
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
