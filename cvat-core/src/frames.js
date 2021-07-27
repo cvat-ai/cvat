@@ -124,6 +124,14 @@
             const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
             return result;
         }
+
+        get imageData() {
+            return this._data.imageData;
+        }
+
+        set imageData(imageData) {
+            this._data.imageData = imageData;
+        }
     }
 
     FrameData.prototype.data.implementation = async function (onServerRequest) {

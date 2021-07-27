@@ -6,7 +6,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
-import Icon, { ScissorOutlined } from '@ant-design/icons';
+import Icon, { AreaChartOutlined, ScissorOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
@@ -26,9 +26,11 @@ import {
     fetchAnnotationsAsync,
     updateAnnotationsAsync,
     createAnnotationsAsync,
+    changeFrameAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { ImageProcessing } from 'utils/opencv-wrapper/opencv-interfaces';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -39,6 +41,7 @@ interface Props {
     states: any[];
     frame: number;
     curZOrder: number;
+    frameData: any;
 }
 
 interface DispatchToProps {
@@ -46,6 +49,7 @@ interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
+    changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
 }
 
 interface State {
@@ -53,6 +57,12 @@ interface State {
     initializationError: boolean;
     initializationProgress: number;
     activeLabelID: number;
+    activeImageModifiers: ImageModifier[];
+}
+
+interface ImageModifier {
+    modifier: ImageProcessing,
+    alias: string
 }
 
 const core = getCore();
@@ -68,7 +78,7 @@ function mapStateToProps(state: CombinedState): Props {
             job: { instance: jobInstance, labels },
             canvas: { activeControl, instance: canvasInstance },
             player: {
-                frame: { number: frame },
+                frame: { number: frame, data: frameData },
             },
         },
     } = state;
@@ -81,6 +91,7 @@ function mapStateToProps(state: CombinedState): Props {
         labels,
         states,
         frame,
+        frameData,
     };
 }
 
@@ -89,26 +100,32 @@ const mapDispatchToProps = {
     updateAnnotations: updateAnnotationsAsync,
     fetchAnnotations: fetchAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
+    changeFrame: changeFrameAsync,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
+    private canvasForceUpdateWasEnabled: boolean;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels } = props;
         this.activeTool = null;
+        this.canvasForceUpdateWasEnabled = false;
+
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
             initializationError: false,
             initializationProgress: -1,
             activeLabelID: labels.length ? labels[0].id : null,
+            activeImageModifiers: [],
         };
     }
 
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
+        canvasInstance.html().addEventListener('canvas.setup', this.runImageModifier);
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -124,6 +141,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
+        canvasInstance.html().removeEventListener('canvas.setup', this.runImageModifier);
     }
 
     private interactionListener = async (e: Event): Promise<void> => {
@@ -173,6 +191,42 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
+    private runImageModifier = async ():Promise<void> => {
+        const { activeImageModifiers } = this.state;
+        const {
+            frameData, states, curZOrder, canvasInstance, frame,
+        } = this.props;
+        try {
+            if (activeImageModifiers.length !== 0 && activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
+                this.enableCanvasForceUpdate();
+                const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+                    | HTMLCanvasElement
+                    | undefined;
+                if (!canvas) {
+                    throw new Error('Element #cvat_canvas_background was not found');
+                }
+                const { width, height } = canvas;
+                const context = canvas.getContext('2d');
+                if (!context) {
+                    throw new Error('Canvas context is empty');
+                }
+                const imageData = context.getImageData(0, 0, width, height);
+                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
+                    activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
+                const imageBitmap = await createImageBitmap(newImageData);
+                frameData.imageData = imageBitmap;
+                canvasInstance.setup(frameData, states, curZOrder);
+            }
+        } catch (error) {
+            notification.error({
+                description: error.toString(),
+                message: 'OpenCV.js processing error occured',
+            });
+        } finally {
+            this.disableCanvasForceUpdate();
+        }
+    };
+
     private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[]> {
         // Getting image data
         const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
@@ -215,6 +269,45 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return points;
     }
 
+    private imageModifier(alias: string): ImageProcessing|null {
+        const { activeImageModifiers } = this.state;
+        return activeImageModifiers.find((imageModifier) => imageModifier.alias === alias)?.modifier || null;
+    }
+
+    private disableImageModifier(alias: string):void {
+        const { activeImageModifiers } = this.state;
+        const index = activeImageModifiers.findIndex((imageModifier) => imageModifier.alias === alias);
+        if (index !== -1) {
+            activeImageModifiers.splice(index, 1);
+            this.setState({
+                activeImageModifiers: [...activeImageModifiers],
+            });
+        }
+    }
+
+    private enableImageModifier(modifier: ImageProcessing, alias: string): void{
+        this.setState((prev: State) => ({
+            ...prev,
+            activeImageModifiers: [...prev.activeImageModifiers, { modifier, alias }],
+        }), () => {
+            this.runImageModifier();
+        });
+    }
+
+    private enableCanvasForceUpdate():void{
+        const { canvasInstance } = this.props;
+        canvasInstance.configure({ forceFrameUpdate: true });
+        this.canvasForceUpdateWasEnabled = true;
+    }
+
+    private disableCanvasForceUpdate():void{
+        if (this.canvasForceUpdateWasEnabled) {
+            const { canvasInstance } = this.props;
+            canvasInstance.configure({ forceFrameUpdate: false });
+            this.canvasForceUpdateWasEnabled = false;
+        }
+    }
+
     private renderDrawingContent(): JSX.Element {
         const { activeLabelID } = this.state;
         const { labels, canvasInstance, onInteractionStart } = this.props;
@@ -254,6 +347,36 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         );
     }
 
+    private renderImageContent():JSX.Element {
+        return (
+            <Row justify='start'>
+                <Col>
+                    <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                const modifier = this.imageModifier('histogram');
+                                if (!modifier) {
+                                    this.enableImageModifier(openCVWrapper.imgproc.hist(), 'histogram');
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    this.disableImageModifier('histogram');
+                                    const { changeFrame } = this.props;
+                                    const { frame } = this.props;
+                                    this.enableCanvasForceUpdate();
+                                    changeFrame(frame, false, 1, true);
+                                }
+                            }}
+                        >
+                            <AreaChartOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+            </Row>
+        );
+    }
+
     private renderContent(): JSX.Element {
         const { libraryInitialized, initializationProgress, initializationError } = this.state;
 
@@ -271,7 +394,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         <Tabs.TabPane key='drawing' tab='Drawing' className='cvat-opencv-control-tabpane'>
                             {this.renderDrawingContent()}
                         </Tabs.TabPane>
-                        <Tabs.TabPane disabled key='image' tab='Image' className='cvat-opencv-control-tabpane' />
+                        <Tabs.TabPane key='image' tab='Image' className='cvat-opencv-control-tabpane'>
+                            {this.renderImageContent()}
+                        </Tabs.TabPane>
                     </Tabs>
                 ) : (
                     <>
