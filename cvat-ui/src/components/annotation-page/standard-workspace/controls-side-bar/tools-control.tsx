@@ -113,6 +113,7 @@ interface State {
 export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interactionIsAborted: boolean;
     private interactionIsDone: boolean;
+    private latestUserRequest: number[];
     private latestResponseResult: number[][];
     private latestResult: number[][];
 
@@ -130,6 +131,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             mode: 'interaction',
         };
 
+        this.latestUserRequest = [];
         this.latestResponseResult = [];
         this.latestResult = [];
         this.interactionIsAborted = false;
@@ -232,7 +234,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             if ((e as CustomEvent).detail.shapesUpdated) {
                 this.setState({ fetching: true });
+                let hide = null;
                 try {
+                    hide = message.loading(`Waiting a response from ${activeInteractor?.name}..`);
                     this.latestResponseResult = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
                         pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
@@ -252,6 +256,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                     this.latestResult = await this.approximateResponsePoints(this.latestResponseResult);
                 } finally {
+                    if (hide) {
+                        hide();
+                    }
                     this.setState({ fetching: false, pointsRecieved: !!this.latestResult.length });
                 }
             }
@@ -301,7 +308,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeLabelID } = this.state;
         const [label] = jobInstance.task.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
-        if (!(e as CustomEvent).detail.isDone) {
+        const { isDone, shapesUpdated } = (e as CustomEvent).detail;
+        if (!isDone || !shapesUpdated) {
             return;
         }
 
@@ -382,7 +390,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public async trackState(state: any): Promise<void> {
-        const { jobInstance, frame } = this.props;
+        const { jobInstance, frame, fetchAnnotations } = this.props;
         const { activeTracker, trackingFrames } = this.state;
         const { clientID, points } = state;
 
@@ -434,6 +442,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
         } finally {
             this.setState({ trackingProgress: null, fetching: false });
+            fetchAnnotations();
         }
     }
 
@@ -638,7 +647,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame,
+            jobInstance, detectors, curZOrder, frame, createAnnotations,
         } = this.props;
 
         if (!detectors.length) {
@@ -677,7 +686,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }),
                         );
 
-                        createAnnotationsAsync(jobInstance, frame, states);
+                        createAnnotations(jobInstance, frame, states);
                     } catch (error) {
                         notification.error({
                             description: error.toString(),
@@ -723,7 +732,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const {
-            fetching, trackingProgress, approxPolyAccuracy, activeInteractor, pointsRecieved,
+            fetching, trackingProgress, approxPolyAccuracy, pointsRecieved, mode,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -747,35 +756,51 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        return !labels.length ? (
-            <Icon className=' cvat-tools-control cvat-disabled-canvas-control' component={AIToolsIcon} />
-        ) : (
+        const showAnyContent = !!labels.length;
+        const showInteractionContent = isActivated && mode === 'interaction' && pointsRecieved;
+        const showDetectionContent = fetching && mode === 'detection';
+        const showTrackingContent = fetching && mode === 'tracking' && trackingProgress !== null;
+        const formattedTrackingProgress = showTrackingContent ? +((trackingProgress as number) * 100).toFixed(0) : null;
+
+        const interactionContent: JSX.Element | null = showInteractionContent ? (
             <>
+                <ApproximationAccuracy
+                    approxPolyAccuracy={approxPolyAccuracy}
+                    onChange={(value: number) => {
+                        this.setState({ approxPolyAccuracy: value });
+                    }}
+                />
+            </>
+        ) : null;
+
+        const trackOrDetectModal: JSX.Element | null =
+            showDetectionContent || showTrackingContent ? (
                 <Modal
                     title='Making a server request'
                     zIndex={Number.MAX_SAFE_INTEGER}
-                    visible={fetching}
+                    visible
+                    destroyOnClose
                     closable={false}
                     footer={[]}
                 >
                     <Text>Waiting for a server response..</Text>
                     <LoadingOutlined style={{ marginLeft: '10px' }} />
-                    {trackingProgress !== null && (
-                        <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
-                    )}
+                    {showTrackingContent ? (
+                        <Progress percent={formattedTrackingProgress as number} status='active' />
+                    ) : null}
                 </Modal>
-                {isActivated && activeInteractor !== null && pointsRecieved ? (
-                    <ApproximationAccuracy
-                        approxPolyAccuracy={approxPolyAccuracy}
-                        onChange={(value: number) => {
-                            this.setState({ approxPolyAccuracy: value });
-                        }}
-                    />
-                ) : null}
+            ) : null;
+
+        return showAnyContent ? (
+            <>
                 <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
+                {interactionContent}
+                {trackOrDetectModal}
             </>
+        ) : (
+            <Icon className=' cvat-tools-control cvat-disabled-canvas-control' component={AIToolsIcon} />
         );
     }
 }
