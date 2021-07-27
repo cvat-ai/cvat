@@ -91,17 +91,34 @@ context('Actions on polygon', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Draw a polygon shape, track', () => {
+        it('Draw a polygon shape, track.', () => {
             cy.createPolygon(createPolygonShape);
             cy.createPolygon(createPolygonTrack);
         });
-        it('Draw a polygon shape, track with use parameter "number of points"', () => {
+
+        it('Draw a polygon shape, track with use parameter "number of points".', () => {
             cy.createPolygon(createPolygonShapePoints);
             cy.createPolygon(createPolygonTrackPoints);
         });
-        it('Draw a polygon shape, track with second label', () => {
+
+        it('Draw a polygon shape, track with second label.', () => {
             cy.createPolygon(createPolygonShapeSwitchLabel);
             cy.createPolygon(createPolygonTrackSwitchLabel);
+        });
+
+        it('Set start point.', () => {
+            let notFirtsPointID;
+            cy.get('#cvat_canvas_shape_4')
+                .trigger('mousemove', {scrollBehavior: false})
+                .trigger('mouseover', {scrollBehavior: false})
+                .should('have.class', 'cvat_canvas_shape_activated')
+            cy.get('.svg_select_points').not('.cvat_canvas_first_poly_point').first().then((notFirtsPoint) => {
+                notFirtsPointID = notFirtsPoint.attr('id');
+            }).rightclick({scrollBehavior: false});
+            cy.get('.cvat-canvas-point-context-menu').contains('span', 'Set start point').click({scrollBehavior: false});
+            cy.get('.svg_select_points').filter('.cvat_canvas_first_poly_point').then((firtsPoint) => {
+                expect(Number(notFirtsPointID.match(/\d+$/))).to.be.equal(Number(firtsPoint.attr('id').match(/\d+$/)) - 10);
+            });
         });
     });
 });
