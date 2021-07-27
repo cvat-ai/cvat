@@ -85,17 +85,33 @@ context('Actions on polylines', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Draw a polylines shape, track', () => {
+        it('Draw a polylines shape, track.', () => {
             cy.createPolyline(createPolylinesShape);
             cy.createPolyline(createPolylinesTrack);
         });
-        it('Draw a polylines shape, track with use parameter "number of points"', () => {
+
+        it('Draw a polylines shape, track with use parameter "number of points".', () => {
             cy.createPolyline(createPolylinesShapePoints);
             cy.createPolyline(createPolylinesTrackPoints);
         });
-        it('Draw a polylines shape, track with second label', () => {
+
+        it('Draw a polylines shape, track with second label.', () => {
             cy.createPolyline(createPolylinesShapeSwitchLabel);
             cy.createPolyline(createPolylinesTrackSwitchLabel);
+        });
+
+        it('Change direction.', () => {
+            let polyDirectionAttrDataAngle;
+            cy.get('#cvat_canvas_shape_4')
+                .trigger('mousemove', {scrollBehavior: false})
+                .trigger('mouseover', {scrollBehavior: false})
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.cvat_canvas_poly_direction').then((polyDirection) => {
+                polyDirectionAttrDataAngle = polyDirection.attr('data-angle');
+            }).click({scrollBehavior: false})
+            cy.get('.cvat_canvas_poly_direction').then((afterChangePolyDirection) => {
+                expect(polyDirectionAttrDataAngle).not.equal(afterChangePolyDirection.attr('data-angle'));
+            });
         });
     });
 });
