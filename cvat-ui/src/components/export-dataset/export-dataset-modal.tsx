@@ -66,7 +66,7 @@ function ExportDatasetModal(): JSX.Element {
     const handleExport = useCallback((values: FormValues): void => {
         // have to validate format before so it would not be undefined
         dispatch(
-            exportDatasetAsync(instance, values.selectedFormat as string, values.customName || '', values.saveImages),
+            exportDatasetAsync(instance, values.selectedFormat as string, values.customName ? `${values.customName}.zip` : '', values.saveImages),
         );
         closeModal();
     }, [instance?.id, instance instanceof core.classes.Project]);
@@ -130,7 +130,7 @@ function ExportDatasetModal(): JSX.Element {
                     <Checkbox>Save images</Checkbox>
                 </Form.Item>
                 <Form.Item label='Custom name' name='customName'>
-                    <Input placeholder='Custom name for a dataset' />
+                    <Input placeholder='Custom name for a dataset' suffix='.zip' />
                 </Form.Item>
             </Form>
         </Modal>
