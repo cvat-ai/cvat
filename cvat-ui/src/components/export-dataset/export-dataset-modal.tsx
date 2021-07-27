@@ -5,6 +5,7 @@
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import Modal from 'antd/lib/modal';
+import Notification from 'antd/lib/notification';
 import { useSelector, useDispatch } from 'react-redux';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
@@ -56,19 +57,17 @@ function ExportDatasetModal(): JSX.Element {
         dispatch(exportActions.closeExportModal());
     };
 
-    const handleValuesChange = (changedValues: any): void => {
-        if ('saveImages' in changedValues) {
-            form.setFieldsValue({ selectedFormat: undefined });
-        }
-        initActivities();
-    };
-
     const handleExport = useCallback((values: FormValues): void => {
         // have to validate format before so it would not be undefined
         dispatch(
             exportDatasetAsync(instance, values.selectedFormat as string, values.customName ? `${values.customName}.zip` : '', values.saveImages),
         );
         closeModal();
+        Notification.info({
+            message: 'Dataset export started',
+            description: `Dataset export was started for ${instanceType} #${instance?.id}. ` +
+                'Download will start automaticly as soon as the dataset is ready.',
+        });
     }, [instance?.id, instance instanceof core.classes.Project]);
 
     return (
@@ -83,7 +82,6 @@ function ExportDatasetModal(): JSX.Element {
                 form={form}
                 labelCol={{ span: 8 }}
                 wrapperCol={{ span: 16 }}
-                onValuesChange={handleValuesChange}
                 initialValues={
                     {
                         selectedFormat: undefined,
