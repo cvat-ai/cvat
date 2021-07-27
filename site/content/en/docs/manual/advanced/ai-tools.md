@@ -37,7 +37,7 @@ In most cases specifying positive points alone is enough to build a polygon.
 
 - In the process of drawing, you can select the number of points in the polygon using the switch.
 
-  ![](/images/image222.jpg)
+  ![](/images/image224.jpg)
 
 - To finish interaction, click on the `Done` button on the top panel or press `N` on your keyboard.
 

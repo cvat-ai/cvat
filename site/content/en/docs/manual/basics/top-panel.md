@@ -45,7 +45,7 @@ Use buttons to undo actions or redo them.
 
 ## Done
 
-![](/images/image221.jpg)
+![](/images/image223.jpg)
 
 Used to complete the creation of the object. This button appears only when the object is created.
 
