@@ -105,11 +105,13 @@ const mapDispatchToProps = {
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
+    private canvasForceUpdateWasEnabled: boolean;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels } = props;
         this.activeTool = null;
+        this.canvasForceUpdateWasEnabled = false;
 
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
@@ -123,7 +125,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
-        canvasInstance.html().addEventListener('canvas.setup', this.setupListener);
+        canvasInstance.html().addEventListener('canvas.setup', this.runImageModifier);
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -139,18 +141,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
-        canvasInstance.html().removeEventListener('canvas.setup', this.setupListener);
+        canvasInstance.html().removeEventListener('canvas.setup', this.runImageModifier);
     }
-
-    private setupListener = ():void => {
-        const { frame } = this.props;
-        const { activeImageModifiers } = this.state;
-        if (activeImageModifiers.length !== 0) {
-            if (activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
-                this.runImageModifier();
-            }
-        }
-    };
 
     private interactionListener = async (e: Event): Promise<void> => {
         const {
@@ -199,6 +191,41 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
+    private runImageModifier = ():void => {
+        const { activeImageModifiers } = this.state;
+        const {
+            frameData, states, curZOrder, canvasInstance, frame,
+        } = this.props;
+        try {
+            if (activeImageModifiers.length !== 0 && activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
+                this.enableCanvasForceUpdate();
+                const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+                    | HTMLCanvasElement
+                    | undefined;
+                if (!canvas) {
+                    throw new Error('Element #cvat_canvas_background was not found');
+                }
+                const { width, height } = canvas;
+                const context = canvas.getContext('2d');
+                if (!context) {
+                    throw new Error('Canvas context is empty');
+                }
+                const imageData = context.getImageData(0, 0, width, height);
+                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
+                    activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
+                frameData.imageData = newImageData;
+                canvasInstance.setup(frameData, states, curZOrder);
+            }
+        } catch (error) {
+            notification.error({
+                description: error.toString(),
+                message: 'OpenCV.js processing error occured',
+            });
+        } finally {
+            this.disableCanvasForceUpdate();
+        }
+    };
+
     private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[]> {
         // Getting image data
         const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
@@ -241,41 +268,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return points;
     }
 
-    private runImageModifier(): void {
-        const { activeImageModifiers } = this.state;
-        const {
-            frameData, states, curZOrder, canvasInstance, frame,
-        } = this.props;
-        try {
-            if (activeImageModifiers.length !== 0) {
-                canvasInstance.configure({ forceFrameUpdate: true });
-                const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-                    | HTMLCanvasElement
-                    | undefined;
-                if (!canvas) {
-                    throw new Error('Element #cvat_canvas_background was not found');
-                }
-                const { width, height } = canvas;
-                const context = canvas.getContext('2d');
-                if (!context) {
-                    throw new Error('Canvas context is empty');
-                }
-                const imageData = context.getImageData(0, 0, width, height);
-                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
-                    activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
-                frameData.imageData = newImageData;
-                canvasInstance.setup(frameData, states, curZOrder);
-            }
-        } catch (error) {
-            notification.error({
-                description: error.toString(),
-                message: 'OpenCV.js processing error occured',
-            });
-        } finally {
-            canvasInstance.configure({ forceFrameUpdate: false });
-        }
-    }
-
     private imageModifier(alias: string): ImageProcessing|null {
         const { activeImageModifiers } = this.state;
         return activeImageModifiers.find((imageModifier) => imageModifier.alias === alias)?.modifier || null;
@@ -299,6 +291,20 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         this.setState({
             activeImageModifiers: [...activeImageModifiers],
         });
+    }
+
+    private enableCanvasForceUpdate():void{
+        const { canvasInstance } = this.props;
+        canvasInstance.configure({ forceFrameUpdate: true });
+        this.canvasForceUpdateWasEnabled = true;
+    }
+
+    private disableCanvasForceUpdate():void{
+        if (this.canvasForceUpdateWasEnabled) {
+            const { canvasInstance } = this.props;
+            canvasInstance.configure({ forceFrameUpdate: false });
+            this.canvasForceUpdateWasEnabled = false;
+        }
     }
 
     private renderDrawingContent(): JSX.Element {
@@ -356,8 +362,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                     button.blur();
                                     this.disableImageModifier('histogram');
                                     const { changeFrame } = this.props;
-                                    const { frame, canvasInstance } = this.props;
-                                    canvasInstance.configure({ forceFrameUpdate: true });
+                                    const { frame } = this.props;
+                                    this.enableCanvasForceUpdate();
                                     changeFrame(frame, false, 1, true);
                                 }
                             }}
