@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Modal from 'antd/lib/modal';
 import { useSelector, useDispatch } from 'react-redux';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -25,7 +25,7 @@ type FormValues = {
     customName: string | undefined;
 };
 
-export default function ExportDatasetModal(): JSX.Element {
+function ExportDatasetModal(): JSX.Element {
     const [instanceType, setInstanceType] = useState('');
     const [activities, setActivities] = useState<string[]>([]);
     const [form] = Form.useForm();
@@ -34,21 +34,16 @@ export default function ExportDatasetModal(): JSX.Element {
     const modalVisible = useSelector((state: CombinedState) => state.export.modalVisible);
     const dumpers = useSelector((state: CombinedState) => state.formats.annotationFormats.dumpers);
     const {
-        tasks: { datasets: taskExportActivities, annotations: taskDumpActivities },
-        projects: { datasets: projectExportActivities, annotations: projectDumpActivities },
+        tasks: taskExportActivities, projects: projectExportActivities,
     } = useSelector((state: CombinedState) => state.export);
 
     const initActivities = (): void => {
         if (instance instanceof core.classes.Project) {
             setInstanceType('project');
-            setActivities(
-                (form.getFieldValue('saveImages') ? projectExportActivities : projectDumpActivities)[instance.id] || [],
-            );
+            setActivities(projectExportActivities[instance.id] || []);
         } else if (instance instanceof core.classes.Task) {
             setInstanceType('task');
-            setActivities(
-                (form.getFieldValue('saveImages') ? taskExportActivities : taskDumpActivities)[instance.id] || [],
-            );
+            setActivities(taskExportActivities[instance.id] || []);
         }
     };
 
@@ -68,35 +63,35 @@ export default function ExportDatasetModal(): JSX.Element {
         initActivities();
     };
 
-    const handleExport = (values: FormValues): void => {
+    const handleExport = useCallback((values: FormValues): void => {
         // have to validate format before so it would not be undefined
         dispatch(
             exportDatasetAsync(instance, values.selectedFormat as string, values.customName || '', values.saveImages),
         );
         closeModal();
-    };
+    }, [instance?.id, instance instanceof core.classes.Project]);
 
     return (
-        <Form
-            name='Export dataset'
-            form={form}
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
-            onValuesChange={handleValuesChange}
-            initialValues={
-                {
-                    selectedFormat: undefined,
-                    saveImages: false,
-                    customName: undefined,
-                } as FormValues
-            }
-            onFinish={handleExport}
+        <Modal
+            title={`Export ${instanceType} #${instance?.id} as a dataset`}
+            visible={modalVisible}
+            onCancel={closeModal}
+            onOk={() => form.submit()}
         >
-            <Modal
-                title={`Export ${instanceType} #${instance?.id} as a dataset`}
-                visible={modalVisible}
-                onCancel={closeModal}
-                onOk={() => form.submit()}
+            <Form
+                name='Export dataset'
+                form={form}
+                labelCol={{ span: 8 }}
+                wrapperCol={{ span: 16 }}
+                onValuesChange={handleValuesChange}
+                initialValues={
+                    {
+                        selectedFormat: undefined,
+                        saveImages: false,
+                        customName: undefined,
+                    } as FormValues
+                }
+                onFinish={handleExport}
             >
                 <Form.Item
                     name='selectedFormat'
@@ -108,7 +103,8 @@ export default function ExportDatasetModal(): JSX.Element {
                             .sort((a: any, b: any) => a.name.localeCompare(b.name))
                             .filter(
                                 (dumper: any): boolean =>
-                                    !(instance instanceof core.classes.Task && dumper.dimension !== instance.dimension),
+                                    !(instance instanceof core.classes.Task) ||
+                                    dumper.dimension === instance?.dimension,
                             )
                             .map(
                                 (dumper: any): JSX.Element => {
@@ -134,9 +130,11 @@ export default function ExportDatasetModal(): JSX.Element {
                     <Checkbox>Save images</Checkbox>
                 </Form.Item>
                 <Form.Item label='Custom name' name='customName'>
-                    <Input placeholder='Custom name for dataset' />
+                    <Input placeholder='Custom name for a dataset' />
                 </Form.Item>
-            </Modal>
-        </Form>
+            </Form>
+        </Modal>
     );
 }
+
+export default React.memo(ExportDatasetModal);

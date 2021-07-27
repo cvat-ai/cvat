@@ -201,7 +201,7 @@
                         },
                     },
                     /**
-                     * Tasks linked with the project
+                     * Tasks related with the project
                      * @name tasks
                      * @type {module:API.cvat.classes.Task[]}
                      * @memberof module:API.cvat.classes.Project
@@ -212,7 +212,7 @@
                         get: () => [...data.tasks],
                     },
                     /**
-                     * Subsets array for linked tasks
+                     * Subsets array for related tasks
                      * @name subsets
                      * @type {string[]}
                      * @memberof module:API.cvat.classes.Project
@@ -253,8 +253,8 @@
                 }),
             );
 
-            // When we call a function, for example: task.annotations.get()
-            // In the method get we lose the task context
+            // When we call a function, for example: project.annotations.get()
+            // In the method get we lose the project context
             // So, we need return it
             this.annotations = {
                 exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
@@ -294,7 +294,7 @@
         }
 
         /**
-         * Method deletes a task from a server
+         * Method deletes a project from a server
          * @method delete
          * @memberof module:API.cvat.classes.Project
          * @readonly

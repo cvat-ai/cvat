@@ -26,8 +26,6 @@ interface OwnProps {
 interface StateToProps {
     annotationFormats: any;
     loadActivity: string | null;
-    dumpActivities: string[] | null;
-    exportActivities: string[] | null;
     inferenceIsActive: boolean;
     exportIsActive: boolean;
 }
@@ -50,14 +48,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         formats: { annotationFormats },
         tasks: {
             activities: {
-                dumps, loads, exports: activeExports, backups,
+                loads, backups,
             },
         },
     } = state;
 
     return {
-        dumpActivities: tid in dumps ? dumps[tid] : null,
-        exportActivities: tid in activeExports ? activeExports[tid] : null,
         loadActivity: tid in loads ? loads[tid] : null,
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
@@ -93,8 +89,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         taskInstance,
         annotationFormats: { loaders, dumpers },
         loadActivity,
-        dumpActivities,
-        exportActivities,
         inferenceIsActive,
         exportIsActive,
 
@@ -142,8 +136,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             loaders={loaders}
             dumpers={dumpers}
             loadActivity={loadActivity}
-            dumpActivities={dumpActivities}
-            exportActivities={exportActivities}
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}

@@ -4,19 +4,15 @@
 
 import { ExportActions, ExportActionTypes } from 'actions/export-actions';
 import getCore from 'cvat-core-wrapper';
+import deepCopy from 'utils/deep-copy';
+
 import { ExportState } from './interfaces';
 
 const core = getCore();
 
 const defaultState: ExportState = {
-    tasks: {
-        datasets: {},
-        annotations: {},
-    },
-    projects: {
-        datasets: {},
-        annotations: {},
-    },
+    tasks: {},
+    projects: {},
     instance: null,
     modalVisible: false,
 };
@@ -36,13 +32,8 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                 instance: null,
             };
         case ExportActionTypes.EXPORT_DATASET: {
-            const { instance, format, saveImages } = action.payload;
-            let activities;
-            if (instance instanceof core.classes.Project) {
-                activities = saveImages ? state.projects.datasets : state.projects.annotations;
-            } else {
-                activities = saveImages ? state.tasks.datasets : state.tasks.annotations;
-            }
+            const { instance, format } = action.payload;
+            const activities = deepCopy(instance instanceof core.classes.Project ? state.projects : state.tasks);
 
             activities[instance.id] =
                 instance.id in activities && !activities[instance.id].includes(format) ?
@@ -51,30 +42,14 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
 
             return {
                 ...state,
-                tasks: {
-                    datasets: instance instanceof core.classes.Task && saveImages ? activities : state.tasks.datasets,
-                    annotations:
-                        instance instanceof core.classes.Task && !saveImages ? activities : state.tasks.annotations,
-                },
-                projects: {
-                    datasets:
-                        instance instanceof core.classes.Project && saveImages ? activities : state.projects.datasets,
-                    annotations:
-                        instance instanceof core.classes.Project && !saveImages ?
-                            activities :
-                            state.projects.annotations,
-                },
+                tasks: instance instanceof core.classes.Task ? activities : state.tasks,
+                projects: instance instanceof core.classes.Project ? activities : state.projects,
             };
         }
         case ExportActionTypes.EXPORT_DATASET_FAILED:
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { instance, format, saveImages } = action.payload;
-            let activities;
-            if (instance instanceof core.classes.Project) {
-                activities = saveImages ? state.projects.datasets : state.projects.annotations;
-            } else {
-                activities = saveImages ? state.tasks.datasets : state.tasks.annotations;
-            }
+            const { instance, format } = action.payload;
+            const activities = deepCopy(instance instanceof core.classes.Project ? state.projects : state.tasks);
 
             activities[instance.id] = activities[instance.id].filter(
                 (exporterName: string): boolean => exporterName !== format,
@@ -82,19 +57,8 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
 
             return {
                 ...state,
-                tasks: {
-                    datasets: instance instanceof core.classes.Task && saveImages ? activities : state.tasks.datasets,
-                    annotations:
-                        instance instanceof core.classes.Task && !saveImages ? activities : state.tasks.annotations,
-                },
-                projects: {
-                    datasets:
-                        instance instanceof core.classes.Project && saveImages ? activities : state.projects.datasets,
-                    annotations:
-                        instance instanceof core.classes.Project && !saveImages ?
-                            activities :
-                            state.projects.annotations,
-                },
+                tasks: instance instanceof core.classes.Task ? activities : state.tasks,
+                projects: instance instanceof core.classes.Project ? activities : state.projects,
             };
         }
         default:

@@ -8,6 +8,7 @@ import Modal from 'antd/lib/modal';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
+import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
 
@@ -16,8 +17,6 @@ interface Props {
     loaders: any[];
     dumpers: any[];
     loadActivity: string | null;
-    dumpActivities: string[] | null;
-    exportActivities: string[] | null;
     isReviewer: boolean;
     jobInstance: any;
     onClickMenu(params: MenuInfo, file?: File): void;
@@ -165,7 +164,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 menuKey: Actions.LOAD_JOB_ANNO,
                 taskDimension: jobInstance.task.dimension,
             })}
-            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export Task dataset</Menu.Item>
+            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
                 <a href={`/tasks/${taskID}`} onClick={(e: React.MouseEvent) => e.preventDefault()}>
@@ -178,6 +177,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
             )}
             {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
+            <ExportDatasetModal />
         </Menu>
     );
 }

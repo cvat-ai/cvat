@@ -398,24 +398,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
-            const taskID = action.payload.task.id;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        dumping: {
-                            message:
-                                'Could not dump annotations for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case TasksActionTypes.DELETE_TASK_FAILED: {
             const { taskID } = action.payload;
             return {

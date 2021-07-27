@@ -10,7 +10,7 @@
     const { checkObjectType } = require('./common');
     const { Project } = require('./project');
     const { Task, Job } = require('./session');
-    const { Loader, Dumper } = require('./annotation-formats');
+    const { Loader } = require('./annotation-formats');
     const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
 
     const jobCache = new WeakMap();
@@ -234,22 +234,6 @@
         await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, loader.name);
     }
 
-    async function dumpAnnotations(session, name, dumper) {
-        if (!(dumper instanceof Dumper)) {
-            throw new ArgumentError('A dumper must be instance of Dumper class');
-        }
-
-        let result = null;
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        if (sessionType === 'job') {
-            result = await serverProxy.annotations.dumpAnnotations(session.task.id, name, dumper.name);
-        } else {
-            result = await serverProxy.annotations.dumpAnnotations(session.id, name, dumper.name);
-        }
-
-        return result;
-    }
-
     function importAnnotations(session, data) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
@@ -282,7 +266,7 @@
             throw new ArgumentError('Format must be a string');
         }
         if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
-            throw new ArgumentError('A dataset can only be created from a task or project');
+            throw new ArgumentError('A dataset can only be created from a job, task or project');
         }
         if (typeof saveImages !== 'boolean') {
             throw new ArgumentError('Save images parameter must be a boolean');
@@ -379,7 +363,6 @@
         annotationsStatistics,
         selectObject,
         uploadAnnotations,
-        dumpAnnotations,
         importAnnotations,
         exportAnnotations,
         exportDataset,

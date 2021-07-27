@@ -86,14 +86,6 @@ export interface TasksState {
     count: number;
     current: Task[];
     activities: {
-        dumps: {
-            // dumps in different formats at the same time
-            [tid: number]: string[]; // dumper names
-        };
-        exports: {
-            // exports in different formats at the same time
-            [tid: number]: string[]; // dumper names
-        };
         loads: {
             // only one loading simultaneously
             [tid: number]: string; // loader name
@@ -114,20 +106,10 @@ export interface TasksState {
 
 export interface ExportState {
     tasks: {
-        datasets: {
-            [tid: number]: string[];
-        };
-        annotations: {
-            [tid: number]: string[];
-        };
+        [tid: number]: string[];
     };
     projects: {
-        datasets: {
-            [pid: number]: string[];
-        };
-        annotations: {
-            [pid: number]: string[];
-        };
+        [pid: number]: string[];
     };
     instance: any;
     modalVisible: boolean;

@@ -19,8 +19,6 @@ interface Props {
     loaders: any[];
     dumpers: any[];
     loadActivity: string | null;
-    dumpActivities: string[] | null;
-    exportActivities: string[] | null;
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
     onClickMenu: (params: MenuInfo, file?: File) => void;
@@ -108,14 +106,14 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                 menuKey: Actions.LOAD_TASK_ANNO,
                 taskDimension,
             })}
-            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export Task dataset</Menu.Item>
+            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
                 Automatic annotation
             </Menu.Item>
             <Menu.Item key={Actions.EXPORT_TASK} disabled={exportIsActive}>
                 {exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
-                Export Task
+                Export task
             </Menu.Item>
             <hr />
             <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>

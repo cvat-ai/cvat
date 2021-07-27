@@ -41,7 +41,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item
                 onClick={() => dispatch(exportActions.openExportModal(projectInstance))}
             >
-                Export dataset
+                Export project dataset
             </Menu.Item>
         </Menu>
     );

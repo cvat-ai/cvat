@@ -15,15 +15,14 @@ export enum ExportActionTypes {
 export const exportActions = {
     openExportModal: (instance: any) => createAction(ExportActionTypes.OPEN_EXPORT_MODAL, { instance }),
     closeExportModal: () => createAction(ExportActionTypes.CLOSE_EXPORT_MODAL),
-    exportDataset: (instance: any, format: any, saveImages: boolean) =>
-        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format, saveImages }),
-    exportDatasetSuccess: (instance: any, format: any, saveImages: boolean) =>
-        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format, saveImages }),
-    exportDatasetFailed: (instance: any, format: any, saveImages: boolean, error: any) =>
+    exportDataset: (instance: any, format: string) =>
+        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format }),
+    exportDatasetSuccess: (instance: any, format: string) =>
+        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format }),
+    exportDatasetFailed: (instance: any, format: string, error: any) =>
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
             instance,
             format,
-            saveImages,
             error,
         }),
 };
@@ -34,16 +33,16 @@ export const exportDatasetAsync = (
     name: string,
     saveImages: boolean,
 ): ThunkAction => async (dispatch) => {
-    dispatch(exportActions.exportDataset(instance, format, saveImages));
+    dispatch(exportActions.exportDataset(instance, format));
 
     try {
         const url = await instance.annotations.exportDataset(format, saveImages, name);
         const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
         downloadAnchor.href = url;
         downloadAnchor.click();
-        dispatch(exportActions.exportDatasetSuccess(instance, format, saveImages));
+        dispatch(exportActions.exportDatasetSuccess(instance, format));
     } catch (error) {
-        dispatch(exportActions.exportDatasetFailed(instance, format, saveImages, error));
+        dispatch(exportActions.exportDatasetFailed(instance, format, error));
     }
 };
 

@@ -25,8 +25,6 @@ interface StateToProps {
     annotationFormats: any;
     jobInstance: any;
     loadActivity: string | null;
-    dumpActivities: string[] | null;
-    exportActivities: string[] | null;
     user: any;
 }
 
@@ -49,7 +47,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         formats: { annotationFormats },
         tasks: {
-            activities: { dumps, loads, exports: activeExports },
+            activities: { loads },
         },
         auth: { user },
     } = state;
@@ -58,8 +56,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const jobID = jobInstance.id;
 
     return {
-        dumpActivities: taskID in dumps ? dumps[taskID] : null,
-        exportActivities: taskID in activeExports ? activeExports[taskID] : null,
         loadActivity: taskID in loads || jobID in jobLoads ? loads[taskID] || jobLoads[jobID] : null,
         jobInstance,
         annotationFormats,
@@ -105,8 +101,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         annotationFormats: { loaders, dumpers },
         history,
         loadActivity,
-        dumpActivities,
-        exportActivities,
         loadAnnotations,
         showExportModal,
         removeAnnotations,
@@ -159,8 +153,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             loaders={loaders}
             dumpers={dumpers}
             loadActivity={loadActivity}
-            dumpActivities={dumpActivities}
-            exportActivities={exportActivities}
             onClickMenu={onClickMenu}
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}
             saveAnnotations={saveAnnotations}
