@@ -38,7 +38,7 @@ displayed as a red square which is tied to the cursor.
 
 - In the process of drawing, you can select the number of points in the polygon using the switch.
 
-  ![](/images/image223.jpg)
+  ![](/images/image222.jpg)
 
 - Once all the points are placed, you can complete the creation of the object
   by clicking on the `Done` button on the top panel or press `N` on your keyboard.
