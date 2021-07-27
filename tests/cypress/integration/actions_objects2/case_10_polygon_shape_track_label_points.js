@@ -111,13 +111,27 @@ context('Actions on polygon', () => {
             cy.get('#cvat_canvas_shape_4')
                 .trigger('mousemove', {scrollBehavior: false})
                 .trigger('mouseover', {scrollBehavior: false})
-                .should('have.class', 'cvat_canvas_shape_activated')
+                .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('.svg_select_points').not('.cvat_canvas_first_poly_point').first().then((notFirtsPoint) => {
                 notFirtsPointID = notFirtsPoint.attr('id');
             }).rightclick({scrollBehavior: false});
             cy.get('.cvat-canvas-point-context-menu').contains('span', 'Set start point').click({scrollBehavior: false});
             cy.get('.svg_select_points').filter('.cvat_canvas_first_poly_point').then((firtsPoint) => {
                 expect(Number(notFirtsPointID.match(/\d+$/))).to.be.equal(Number(firtsPoint.attr('id').match(/\d+$/)) - 10);
+            });
+        });
+
+        it('Change direction.', () => {
+            let polyDirectionAttrDataAngle;
+            cy.get('#cvat_canvas_shape_4')
+                .trigger('mousemove', {scrollBehavior: false})
+                .trigger('mouseover', {scrollBehavior: false})
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.cvat_canvas_poly_direction').then((polyDirection) => {
+                polyDirectionAttrDataAngle = polyDirection.attr('data-angle');
+            }).click({scrollBehavior: false})
+            cy.get('.cvat_canvas_poly_direction').then((afterChangePolyDirection) => {
+                expect(polyDirectionAttrDataAngle).not.equal(afterChangePolyDirection.attr('data-angle'));
             });
         });
     });
