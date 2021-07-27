@@ -419,5 +419,7 @@
 
     .ant-slider-mark {
         position: static;
+        margin-top: 4px;
+        pointer-events: none;
     }
 }

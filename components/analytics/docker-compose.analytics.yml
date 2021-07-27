@@ -1,12 +1,10 @@
 version: '3.3'
 services:
-  cvat_elasticsearch:
+  elasticsearch:
     container_name: cvat_elasticsearch
     image: cvat_elasticsearch
     networks:
-      default:
-        aliases:
-          - elasticsearch
+      - cvat
     build:
       context: ./components/analytics/elasticsearch
       args:
@@ -15,18 +13,16 @@ services:
       - cvat_events:/usr/share/elasticsearch/data
     restart: always
 
-  cvat_kibana:
+  kibana:
     container_name: cvat_kibana
     image: cvat_kibana
     networks:
-      default:
-        aliases:
-          - kibana
+      - cvat
     build:
       context: ./components/analytics/kibana
       args:
         ELK_VERSION: 6.4.0
-    depends_on: ['cvat_elasticsearch']
+    depends_on: ['elasticsearch']
     restart: always
 
   cvat_kibana_setup:
@@ -35,6 +31,8 @@ services:
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat']
     working_dir: '/home/django'
+    networks:
+      - cvat
     entrypoint:
       [
         'bash',
@@ -56,13 +54,11 @@ services:
     environment:
       no_proxy: elasticsearch,kibana,${no_proxy}
 
-  cvat_logstash:
+  logstash:
     container_name: cvat_logstash
     image: cvat_logstash
     networks:
-      default:
-        aliases:
-          - logstash
+      - cvat
     build:
       context: ./components/analytics/logstash
       args:
@@ -73,7 +69,7 @@ services:
       LOGSTASH_OUTPUT_HOST: elasticsearch:9200
       LOGSTASH_OUTPUT_USER:
       LOGSTASH_OUTPUT_PASS:
-    depends_on: ['cvat_elasticsearch']
+    depends_on: ['elasticsearch']
     restart: always
 
   cvat:

@@ -7,7 +7,7 @@
         {
             "type": "chrome",
             "request": "launch",
-            "preLaunchTask": "ui.js: server",
+            "preLaunchTask": "npm: start - cvat-ui",
             "name": "ui.js: debug",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/cvat-ui",
@@ -45,7 +45,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "env": {
-                "CVAT_SERVERLESS":  "1",
+                "CVAT_SERVERLESS":  "1"
             },
             "args": [
                 "runserver",
@@ -207,7 +207,6 @@
         {
             "name": "server: debug",
             "configurations": [
-                "server: chrome",
                 "server: django",
                 "server: RQ - default",
                 "server: RQ - low",
