@@ -286,11 +286,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private enableImageModifier(modifier: ImageProcessing, alias: string): void{
-        const { activeImageModifiers } = this.state;
-        activeImageModifiers.push({ modifier, alias });
-        this.runImageModifier();
-        this.setState({
-            activeImageModifiers: [...activeImageModifiers],
+        this.setState((prev: State) => ({
+            ...prev,
+            activeImageModifiers: [...prev.activeImageModifiers, { modifier, alias }],
+        }), () => {
+            this.runImageModifier();
         });
     }
 
