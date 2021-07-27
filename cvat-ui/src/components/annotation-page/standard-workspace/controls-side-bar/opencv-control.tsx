@@ -191,7 +191,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
-    private runImageModifier = ():void => {
+    private runImageModifier = async ():Promise<void> => {
         const { activeImageModifiers } = this.state;
         const {
             frameData, states, curZOrder, canvasInstance, frame,
@@ -213,7 +213,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 const imageData = context.getImageData(0, 0, width, height);
                 const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
                     activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
-                frameData.imageData = newImageData;
+                const imageBitmap = await createImageBitmap(newImageData);
+                frameData.imageData = imageBitmap;
                 canvasInstance.setup(frameData, states, curZOrder);
             }
         } catch (error) {
