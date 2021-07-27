@@ -4,6 +4,5 @@
 
 export interface ImageProcessing {
     processImage: (src: ImageData, frameNumber: number) => ImageData;
-    restoreImage: () => ImageData|undefined;
     currentProcessedImage: number|undefined
 }

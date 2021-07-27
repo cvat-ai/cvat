@@ -6,7 +6,6 @@ import { ImageProcessing } from './opencv-interfaces';
 
 export interface HistogramEqualization extends ImageProcessing{
     processImage: (src:ImageData, frameNumber: number)=>ImageData;
-    restoreImage: ()=>ImageData|undefined;
 }
 
 interface HashedImage{
@@ -19,7 +18,6 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
     private readonly bufferSize: number = 20;
     private cv:any;
     private histHash: HashedImage[];
-    private currentUnequalized: ImageData | undefined;
     public currentProcessedImage: number | undefined;
 
     constructor(cv:any) {
@@ -28,7 +26,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
     }
 
     public processImage(src:ImageData, frameNumber: number) : ImageData {
-        const hashedFrame = this.isHashed(frameNumber);
+        const hashedFrame = this.hashedFrame(frameNumber);
         if (!hashedFrame) {
             const { cv } = this;
             let matImage = null;
@@ -40,7 +38,6 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
             let channels = new cv.MatVector();
             const equalizedY = new cv.Mat();
             try {
-                this.currentUnequalized = src;
                 this.currentProcessedImage = frameNumber;
                 matImage = cv.matFromImageData(src);
                 cv.cvtColor(matImage, RGBImage, cv.COLOR_RGBA2RGB, 0);
@@ -75,30 +72,23 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
                 RGBADist.delete();
             }
         } else {
-            this.currentUnequalized = src;
             this.currentProcessedImage = frameNumber;
             return hashedFrame;
         }
     }
 
-    private isHashed(frameNumber: number): ImageData|undefined {
-        for (const elem of this.histHash) {
-            if (elem.frameNumber === frameNumber) {
-                elem.timestamp = window.performance.now();
-                return elem.frameData;
-            }
+    private hashedFrame(frameNumber: number): ImageData|null {
+        const hashed = this.histHash.find((_hashed) => _hashed.frameNumber === frameNumber);
+        if (hashed) {
+            hashed.timestamp = Date.now();
         }
-        return undefined;
-    }
-
-    public restoreImage():ImageData|undefined {
-        return this.currentUnequalized;
+        return hashed?.frameData || null;
     }
 
     private hashFrame(frameData:ImageData, frameNumber:number):void{
         if (this.histHash.length >= this.bufferSize) {
             const leastRecentlyUsed = this.histHash[0];
-            const currentTimestamp = window.performance.now();
+            const currentTimestamp = Date.now();
             let diff = currentTimestamp - leastRecentlyUsed.timestamp;
             let leastIndex = 0;
             for (let i = 1; i < this.histHash.length; i++) {
@@ -113,7 +103,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
         this.histHash.push({
             frameData,
             frameNumber,
-            timestamp: window.performance.now(),
+            timestamp: Date.now(),
         });
     }
 }

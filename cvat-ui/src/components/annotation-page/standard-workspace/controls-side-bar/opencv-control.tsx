@@ -241,52 +241,49 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return points;
     }
 
-    private runImageModifier():void {
+    private runImageModifier(): void {
         const { activeImageModifiers } = this.state;
-        if (activeImageModifiers.length !== 0) {
-            const {
-                frameData, states, curZOrder, canvasInstance, frame,
-            } = this.props;
-            canvasInstance.configure({ forceFrameUpdate: true });
-            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-                | HTMLCanvasElement
-                | undefined;
-            if (!canvas) {
-                throw new Error('Element #cvat_canvas_background was not found');
+        const {
+            frameData, states, curZOrder, canvasInstance, frame,
+        } = this.props;
+        try {
+            if (activeImageModifiers.length !== 0) {
+                canvasInstance.configure({ forceFrameUpdate: true });
+                const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+                    | HTMLCanvasElement
+                    | undefined;
+                if (!canvas) {
+                    throw new Error('Element #cvat_canvas_background was not found');
+                }
+                const { width, height } = canvas;
+                const context = canvas.getContext('2d');
+                if (!context) {
+                    throw new Error('Canvas context is empty');
+                }
+                const imageData = context.getImageData(0, 0, width, height);
+                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
+                    activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
+                frameData.imageData = newImageData;
+                canvasInstance.setup(frameData, states, curZOrder);
             }
-            const { width, height } = canvas;
-            const context = canvas.getContext('2d');
-            if (!context) {
-                throw new Error('Canvas context is empty');
-            }
-            const imageData = context.getImageData(0, 0, width, height);
-            const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
-                activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
-            frameData.imageData = newImageData;
-            canvasInstance.setup(frameData, states, curZOrder);
+        } catch (error) {
+            notification.error({
+                description: error.toString(),
+                message: 'OpenCV.js processing error occured',
+            });
+        } finally {
             canvasInstance.configure({ forceFrameUpdate: false });
         }
     }
 
-    private imageModifier(alias: string):ImageProcessing|undefined {
+    private imageModifier(alias: string): ImageProcessing|null {
         const { activeImageModifiers } = this.state;
-        for (const elem of activeImageModifiers) {
-            if (elem.alias === alias) {
-                return elem.modifier;
-            }
-        }
-        return undefined;
+        return activeImageModifiers.find((imageModifier) => imageModifier.alias === alias)?.modifier || null;
     }
 
     private disableImageModifier(alias: string):void {
         const { activeImageModifiers } = this.state;
-        let index = -1;
-        for (let i = 0; i < activeImageModifiers.length; i++) {
-            if (activeImageModifiers[i].alias === alias) {
-                index = i;
-                break;
-            }
-        }
+        const index = activeImageModifiers.findIndex((imageModifier) => imageModifier.alias === alias);
         if (index !== -1) {
             activeImageModifiers.splice(index, 1);
             this.setState({
