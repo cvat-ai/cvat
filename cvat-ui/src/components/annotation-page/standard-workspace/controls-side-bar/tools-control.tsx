@@ -185,7 +185,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
                 pointsRecieved: false,
             });
-
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
 
