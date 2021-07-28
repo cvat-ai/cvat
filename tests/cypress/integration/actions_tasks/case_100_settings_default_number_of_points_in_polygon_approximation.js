@@ -39,7 +39,7 @@ context('Settings. Default number of points in polygon approximation.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Change the settingd value for "Default number of points in polygon approximation".', () => {
+        it('Change the setting value for "Default number of points in polygon approximation".', () => {
             testOpenSettingsWorkspace();
             cy.get('.cvat-workspace-settings-approx-poly-threshold')
                 .find('[role="slider"]')
