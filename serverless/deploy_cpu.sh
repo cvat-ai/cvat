@@ -6,7 +6,9 @@ FUNCTIONS_DIR=${1:-$SCRIPT_DIR}
 
 nuctl create project cvat
 
-for func_config in $(find "$FUNCTIONS_DIR" -name "function.yaml")
+shopt -s globstar
+
+for func_config in "$FUNCTIONS_DIR"/**/function.yaml
 do
     func_root=$(dirname "$func_config")
     echo Deploying $(dirname "$func_root") function...

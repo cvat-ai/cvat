@@ -28,15 +28,11 @@ export default function ProjectSearchField(props: Props): JSX.Element {
     const [projects, setProjects] = useState<Project[]>([]);
 
     const handleSearch = (searchValue: string): void => {
-        if (searchValue) {
-            core.projects.searchNames(searchValue).then((result: Project[]) => {
-                if (result) {
-                    setProjects(result);
-                }
-            });
-        } else {
-            setProjects([]);
-        }
+        core.projects.searchNames(searchValue).then((result: Project[]) => {
+            if (result) {
+                setProjects(result);
+            }
+        });
         setSearchPhrase(searchValue);
         onSelect(null);
     };

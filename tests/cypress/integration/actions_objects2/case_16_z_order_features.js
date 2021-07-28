@@ -70,7 +70,8 @@ context('Actions on polygon', () => {
         });
 
         it('Activate first shape', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').trigger('mouseover');
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mousemove').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
 
         it('First shape is over the second shape', () => {
