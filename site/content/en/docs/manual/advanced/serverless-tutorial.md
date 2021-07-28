@@ -898,7 +898,7 @@ $ docker logs nuclio-nuclio-pth.shiyinzhang.iog
 
 </details>
 
-### Problem with running nuctl from windows 10
+### Problem with running nuctl on Windows 10
 
 If you encounter the problem with running `nuctl` on Windows 10, you can do the following:
 
