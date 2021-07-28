@@ -898,6 +898,55 @@ $ docker logs nuclio-nuclio-pth.shiyinzhang.iog
 
 </details>
 
+### Problem with running nuctl from windows 10
+
+If you encounter the problem with running `nuctl` on Windows 10, you can do the following:
+
+1. Install [Ubuntu 18.04 from Microsoft store](https://www.microsoft.com/en-us/p/ubuntu-1804-lts/9n9tngvndl3q)
+
+1. Enable integration for Ubuntu-18.04 in the settings `Docker Desktop` in the `Resourcrces` `WSL integration` tab (it is understood that `Docker` and `WSL 2` are installed on windows)
+
+    ![Docker WSL integration Ubuntu 18.04](/images/docker_wsl_integration.jpg)
+
+1. Install `curl` on Ubuntu with use command:
+    ```sh
+    sudo apt install curl
+    ```
+1. Installation `nuctl` on Ubuntu, using the command from [manuals on nuclio CLI](https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md):
+    ```sh
+    curl -s https://api.github.com/repos/nuclio/nuclio/releases/1.5.16 \
+                | grep -i "browser_download_url.*nuctl.*$(uname)" \
+                | cut -d : -f 2,3 \
+                | tr -d \" \
+                | wget -O nuctl -qi - && chmod +x nuctl
+    ```
+1. Installation `git` on Ubuntu:
+    ```sh
+    sudo apt install git
+    ```
+1. Clone the repository and move to the repository folder:
+    ```sh
+    git clone https://github.com/openvinotoolkit/cvat.git
+    cd cvat
+    ```
+
+1. After that, run the commands from this tutorial through Ubuntu.
+
+### Problem with the deployment of models
+
+If you did not automatically assign a port when you deployed the model (this may be due to firewall settings), try adding a port yourself before you deploy the model. Add the `port: 32001` attribute to the `function.yaml` file of each model. Different ports should be prescribed for different models.
+
+```diff
+triggers:
+myHttpTrigger:
+    maxWorkers: 1
+    kind: 'http'
+    workerAvailabilityTimeoutMilliseconds: 10000
+    attributes:
++     port: 32001
+      maxRequestBodySize: 33554432 # 32MB
+```
+
 [detectron2-github]: https://github.com/facebookresearch/detectron2
 [detectron2-requirements]: https://detectron2.readthedocs.io/en/latest/tutorials/install.html
 [pytorch-install]: https://pytorch.org/get-started/locally/
