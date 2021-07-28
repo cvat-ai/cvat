@@ -251,6 +251,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 // run server request
                 this.setState({ fetching: true });
                 const response = await core.lambda.call(jobInstance.task, interactor, data);
+                // approximation with cv.approxPolyDP
+                const approximated = await this.approximateResponsePoints(response);
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
                     // new interaction session or the session is aborted
@@ -258,8 +260,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 }
 
                 this.interaction.latestResponse = response;
-                // approximation with cv.approxPolyDP
-                this.interaction.latestResult = await this.approximateResponsePoints(response);
+                this.interaction.latestResult = approximated;
+
                 this.setState({ pointsRecieved: !!response.length });
             } finally {
                 if (this.interaction.id === interactionId && this.interaction.hideMessage) {
