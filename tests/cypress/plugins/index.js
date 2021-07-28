@@ -8,6 +8,7 @@ const { imageGenerator } = require('../plugins/imageGenerator/addPlugin');
 const { createZipArchive } = require('../plugins/createZipArchive/addPlugin');
 const { compareImages } = require('../plugins/compareImages/addPlugin');
 const fs = require('fs');
+const clipboardy = require('clipboardy');
 
 module.exports = (on, config) => {
     require('@cypress/code-coverage/task')(on, config);
@@ -24,6 +25,11 @@ module.exports = (on, config) => {
         listFiles(folderName) {
             return fs.readdirSync(folderName);
         },
+    });
+    on('task', {
+        getClipboard () {
+            return clipboardy.read();
+        }
     });
     // Try to resolve "Cypress failed to make a connection to the Chrome DevTools Protocol"
     // https://github.com/cypress-io/cypress/issues/7450

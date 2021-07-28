@@ -10,6 +10,7 @@ require('./commands_filters_feature');
 require('./commands_models');
 require('@cypress/code-coverage/support');
 require('cypress-plugin-tab');
+require('cypress-real-events');
 
 before(() => {
     if (Cypress.browser.family !== 'chromium') {

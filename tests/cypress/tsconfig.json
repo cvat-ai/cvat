@@ -1,0 +1,5 @@
+{
+    "compilerOptions": {
+        "types": ["cypress", "cypress-real-events"]
+    }
+}
