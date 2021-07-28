@@ -902,7 +902,7 @@ $ docker logs nuclio-nuclio-pth.shiyinzhang.iog
 
 If you encounter the problem with running `nuctl` on Windows 10, you can do the following:
 
-1. Install [Ubuntu 18.04 from Microsoft store](https://www.microsoft.com/en-us/p/ubuntu-1804-lts/9n9tngvndl3q)
+1. Install [Ubuntu 18.04 from Microsoft store][ubuntu-18-04-microsoft-store]
 
 1. Enable integration for Ubuntu-18.04 in the settings `Docker Desktop` in the `Resourcrces` `WSL integration` tab (it is understood that `Docker` and `WSL 2` are installed on windows)
 
@@ -912,7 +912,7 @@ If you encounter the problem with running `nuctl` on Windows 10, you can do the 
     ```sh
     sudo apt install curl
     ```
-1. Installation `nuctl` on Ubuntu, using the command from [manuals on nuclio CLI](https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md):
+1. Installation `nuctl` on Ubuntu, using the command from [manuals on nuclio CLI][nuctl-manual]:
     ```sh
     curl -s https://api.github.com/repos/nuclio/nuclio/releases/1.5.16 \
                 | grep -i "browser_download_url.*nuctl.*$(uname)" \
@@ -971,3 +971,5 @@ myHttpTrigger:
 [vtest-avi]: https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
 [intel-openvino-url]: https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html
 [cvat-auto-annotation-user-guide]: https://openvinotoolkit.github.io/cvat/docs/manual/advanced/automatic-annotation/
+[ubuntu-18-04-microsoft-store]: https://www.microsoft.com/en-us/p/ubuntu-1804-lts/9n9tngvndl3q
+[nuctl-manual]: https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md
