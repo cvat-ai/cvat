@@ -31,7 +31,7 @@ const defaultState: SettingsState = {
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
-        defaultApproxPolyAccuracy: 4,
+        defaultApproxPolyAccuracy: 9,
     },
     player: {
         canvasBackgroundColor: '#ffffff',

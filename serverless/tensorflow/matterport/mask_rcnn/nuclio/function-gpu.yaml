@@ -1,0 +1,135 @@
+metadata:
+  name: tf-matterport-mask-rcnn
+  namespace: cvat
+  annotations:
+    name: Mask RCNN via Tensorflow
+    type: detector
+    framework: tensorflow
+    spec: |
+      [
+        { "id": 0, "name": "BG" },
+        { "id": 1, "name": "person" },
+        { "id": 2, "name": "bicycle" },
+        { "id": 3, "name": "car" },
+        { "id": 4, "name": "motorcycle" },
+        { "id": 5, "name": "airplane" },
+        { "id": 6, "name": "bus" },
+        { "id": 7, "name": "train" },
+        { "id": 8, "name": "truck" },
+        { "id": 9, "name": "boat" },
+        { "id": 10, "name": "traffic_light" },
+        { "id": 11, "name": "fire_hydrant" },
+        { "id": 12, "name": "stop_sign" },
+        { "id": 13, "name": "parking_meter" },
+        { "id": 14, "name": "bench" },
+        { "id": 15, "name": "bird" },
+        { "id": 16, "name": "cat" },
+        { "id": 17, "name": "dog" },
+        { "id": 18, "name": "horse" },
+        { "id": 19, "name": "sheep" },
+        { "id": 20, "name": "cow" },
+        { "id": 21, "name": "elephant" },
+        { "id": 22, "name": "bear" },
+        { "id": 23, "name": "zebra" },
+        { "id": 24, "name": "giraffe" },
+        { "id": 25, "name": "backpack" },
+        { "id": 26, "name": "umbrella" },
+        { "id": 27, "name": "handbag" },
+        { "id": 28, "name": "tie" },
+        { "id": 29, "name": "suitcase" },
+        { "id": 30, "name": "frisbee" },
+        { "id": 31, "name": "skis" },
+        { "id": 32, "name": "snowboard" },
+        { "id": 33, "name": "sports_ball" },
+        { "id": 34, "name": "kite" },
+        { "id": 35, "name": "baseball_bat" },
+        { "id": 36, "name": "baseball_glove" },
+        { "id": 37, "name": "skateboard" },
+        { "id": 38, "name": "surfboard" },
+        { "id": 39, "name": "tennis_racket" },
+        { "id": 40, "name": "bottle" },
+        { "id": 41, "name": "wine_glass" },
+        { "id": 42, "name": "cup" },
+        { "id": 43, "name": "fork" },
+        { "id": 44, "name": "knife" },
+        { "id": 45, "name": "spoon" },
+        { "id": 46, "name": "bowl" },
+        { "id": 47, "name": "banana" },
+        { "id": 48, "name": "apple" },
+        { "id": 49, "name": "sandwich" },
+        { "id": 50, "name": "orange" },
+        { "id": 51, "name": "broccoli" },
+        { "id": 52, "name": "carrot" },
+        { "id": 53, "name": "hot_dog" },
+        { "id": 54, "name": "pizza" },
+        { "id": 55, "name": "donut" },
+        { "id": 56, "name": "cake" },
+        { "id": 57, "name": "chair" },
+        { "id": 58, "name": "couch" },
+        { "id": 59, "name": "potted_plant" },
+        { "id": 60, "name": "bed" },
+        { "id": 61, "name": "dining_table" },
+        { "id": 62, "name": "toilet" },
+        { "id": 63, "name": "tv" },
+        { "id": 64, "name": "laptop" },
+        { "id": 65, "name": "mouse" },
+        { "id": 66, "name": "remote" },
+        { "id": 67, "name": "keyboard" },
+        { "id": 68, "name": "cell_phone" },
+        { "id": 69, "name": "microwave" },
+        { "id": 70, "name": "oven" },
+        { "id": 71, "name": "toaster" },
+        { "id": 72, "name": "sink" },
+        { "id": 73, "name": "refrigerator" },
+        { "id": 74, "name": "book" },
+        { "id": 75, "name": "clock" },
+        { "id": 76, "name": "vase" },
+        { "id": 77, "name": "scissors" },
+        { "id": 78, "name": "teddy_bear" },
+        { "id": 79, "name": "hair_drier" },
+        { "id": 80, "name": "toothbrush" }
+      ]
+
+spec:
+  description: Mask RCNN optimized for GPU
+
+  runtime: 'python:3.6'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: MASK_RCNN_DIR
+      value: /opt/nuclio/Mask_RCNN
+  build:
+    image: cvat/tf.matterport.mask_rcnn
+    baseImage: tensorflow/tensorflow:1.15.5-gpu-py3
+    directives:
+      postCopy:
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y git curl
+        - kind: RUN
+          value: git clone --depth 1 https://github.com/matterport/Mask_RCNN.git
+        - kind: RUN
+          value: curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5
+        - kind: RUN
+          value: pip3 install numpy cython pyyaml keras==2.1.0 scikit-image Pillow
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

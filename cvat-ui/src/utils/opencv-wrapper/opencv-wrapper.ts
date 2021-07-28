@@ -4,6 +4,7 @@
 
 import getCore from 'cvat-core-wrapper';
 import waitFor from '../wait-for';
+import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 
@@ -16,6 +17,10 @@ export interface Segmentation {
 
 export interface Contours {
     approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
+}
+
+export interface ImgProc {
+    hist: () => HistogramEqualization
 }
 
 export class OpenCVWrapper {
@@ -124,6 +129,15 @@ export class OpenCVWrapper {
 
         return {
             intelligentScissorsFactory: () => new IntelligentScissorsImplementation(this.cv),
+        };
+    }
+
+    public get imgproc(): ImgProc {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+        return {
+            hist: () => new HistogramEqualizationImplementation(this.cv),
         };
     }
 }

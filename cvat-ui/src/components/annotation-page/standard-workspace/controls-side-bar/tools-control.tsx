@@ -301,7 +301,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeLabelID } = this.state;
         const [label] = jobInstance.task.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
-        if (!(e as CustomEvent).detail.isDone) {
+        const { isDone, shapesUpdated } = (e as CustomEvent).detail;
+        if (!isDone || !shapesUpdated) {
             return;
         }
 
@@ -382,7 +383,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public async trackState(state: any): Promise<void> {
-        const { jobInstance, frame } = this.props;
+        const { jobInstance, frame, fetchAnnotations } = this.props;
         const { activeTracker, trackingFrames } = this.state;
         const { clientID, points } = state;
 
@@ -434,6 +435,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
         } finally {
             this.setState({ trackingProgress: null, fetching: false });
+            fetchAnnotations();
         }
     }
 
@@ -638,7 +640,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame,
+            jobInstance, detectors, curZOrder, frame, createAnnotations,
         } = this.props;
 
         if (!detectors.length) {
@@ -677,7 +679,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }),
                         );
 
-                        createAnnotationsAsync(jobInstance, frame, states);
+                        createAnnotations(jobInstance, frame, states);
                     } catch (error) {
                         notification.error({
                             description: error.toString(),

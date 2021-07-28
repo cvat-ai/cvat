@@ -108,9 +108,9 @@ spec:
 
       postCopy:
         - kind: RUN
-          value: curl -O http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
-        - kind: RUN
-          value: tar -xzf faster_rcnn_inception_v2_coco_2018_01_28.tar.gz && rm faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
+          value:
+            curl -O http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz &&
+            tar -xzf faster_rcnn_inception_v2_coco_2018_01_28.tar.gz && rm faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
         - kind: RUN
           value: ln -s faster_rcnn_inception_v2_coco_2018_01_28 faster_rcnn
         - kind: RUN

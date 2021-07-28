@@ -10,7 +10,7 @@ import { taskName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Basic actions.', () => {
     const caseId = '56';
     const screenshotsPath =
-        'cypress/screenshots/canvas3d_functionality/case_56_canvas3d_functionality_basic_actions.js';
+        'cypress/screenshots/canvas3d_functionality_2/case_56_canvas3d_functionality_basic_actions.js';
 
     function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover').screenshot(screenshotNameBefore);

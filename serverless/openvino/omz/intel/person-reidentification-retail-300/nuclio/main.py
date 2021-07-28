@@ -8,15 +8,15 @@ def init_context(context):
     context.logger.info("Init context...  0%")
 
     model = ModelHandler()
-    setattr(context.user_data, 'model', model)
+    context.user_data.model = model
 
     context.logger.info("Init context...100%")
 
 def handler(context, event):
     context.logger.info("Run person-reidentification-retail-0300 model")
     data = event.body
-    buf0 = io.BytesIO(base64.b64decode(data["image0"].encode('utf-8')))
-    buf1 = io.BytesIO(base64.b64decode(data["image1"].encode('utf-8')))
+    buf0 = io.BytesIO(base64.b64decode(data["image0"]))
+    buf1 = io.BytesIO(base64.b64decode(data["image1"]))
     threshold = float(data.get("threshold", 0.5))
     max_distance = float(data.get("max_distance", 50))
     image0 = Image.open(buf0)

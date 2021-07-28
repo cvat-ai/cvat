@@ -689,7 +689,8 @@ export function getPredictionsAsync(): ThunkAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number): ThunkAction {
+export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number,
+    forceUpdate?: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
@@ -700,7 +701,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
-            if (toFrame === frame) {
+            if (toFrame === frame && !forceUpdate) {
                 dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
@@ -719,7 +720,6 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
 
                 return;
             }
-
             // Start async requests
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
