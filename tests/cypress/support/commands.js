@@ -597,6 +597,7 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
                 }
             }
             cy.contains('button', 'Done').click();
+            cy.get('.cvat-constructor-viewer').should('be.visible');
         }
     });
 });

@@ -27,13 +27,19 @@ In most cases specifying positive points alone is enough to build a polygon.
   Left click creates a positive point and right click creates a negative point.
   `Deep extreme cut` model requires a minimum of 4 points. After you set 4 positive points,
   a request will be sent to the server and when the process is complete a polygon will be created.
-  If you are not satisfied with the result, you can set additional points or remove points by left-clicking on it.
+  If you are not satisfied with the result, you can set additional points or remove points.
+  To delete a point, hover over the point you want to delete, if the point can be deleted,
+  it will enlarge and the cursor will turn into a cross, then left-click on the point.
   If you want to postpone the request and create a few more points, hold down `Ctrl` and continue,
   the request will be sent after the key is released.
 
   ![](/images/image188_detrac.jpg)
 
-- To finish interaction, click on the icon on the controls sidebar or press `N` on your keyboard.
+- In the process of drawing, you can select the number of points in the polygon using the switch.
+
+  ![](/images/image224.jpg)
+
+- To finish interaction, click on the `Done` button on the top panel or press `N` on your keyboard.
 
 - When the object is finished, you can edit it like a polygon.
   You can read about editing polygons in the [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/) section.

@@ -1,18 +1,13 @@
-#
 # Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
-#
+
 version: '3.3'
 
 services:
   cvat_db:
     container_name: cvat_db
     image: postgres:10-alpine
-    networks:
-      default:
-        aliases:
-          - db
     restart: always
     environment:
       POSTGRES_USER: root
@@ -20,15 +15,15 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - cvat_db:/var/lib/postgresql/data
+    networks:
+      - cvat
 
   cvat_redis:
     container_name: cvat_redis
     image: redis:4.0-alpine
-    networks:
-      default:
-        aliases:
-          - redis
     restart: always
+    networks:
+      - cvat
 
   cvat:
     container_name: cvat
@@ -43,47 +38,61 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.cvat.loadbalancer.server.port=8080
+      - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
+          PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+      - traefik.http.routers.cvat.entrypoints=web
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
+    networks:
+      - cvat
 
   cvat_ui:
     container_name: cvat_ui
     image: openvino/cvat_ui
     restart: always
+    depends_on:
+      - cvat
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.cvat-ui.loadbalancer.server.port=80
+      - traefik.http.routers.cvat-ui.rule=Host(`${CVAT_HOST:-localhost}`)
+      - traefik.http.routers.cvat-ui.entrypoints=web
     networks:
-      default:
-        aliases:
-          - ui
-    depends_on:
       - cvat
 
-  cvat_proxy:
-    container_name: cvat_proxy
-    image: nginx:stable-alpine
-    restart: always
-    depends_on:
-      - cvat
-      - cvat_ui
-    environment:
-      CVAT_HOST: localhost
+  traefik:
+    image: traefik:v2.4
+    container_name: traefik
+    command:
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=cvat"
+      - "--entryPoints.web.address=:8080"
+    # Uncomment to get Traefik dashboard
+    #   - "--entryPoints.dashboard.address=:8090"
+    #   - "--api.dashboard=true"
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.dashboard.entrypoints=dashboard
+    #   - traefik.http.routers.dashboard.service=api@internal
+    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
     ports:
-      - '8080:80'
+      - 8080:8080
+      - 8090:8090
     volumes:
-      - ./cvat_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
-    command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
-
-networks:
-  default:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.28.0.0/24
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - cvat
 
 volumes:
   cvat_db:
   cvat_data:
   cvat_keys:
   cvat_logs:
+
+networks:
+  cvat:

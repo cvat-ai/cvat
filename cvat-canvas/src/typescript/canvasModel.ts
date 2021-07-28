@@ -58,6 +58,7 @@ export interface Configuration {
     showProjections?: boolean;
     forceDisableEditing?: boolean;
     intelligentPolygonCrop?: boolean;
+    forceFrameUpdate?: boolean;
 }
 
 export interface DrawData {
@@ -392,8 +393,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
-
-        if (frameData.number === this.data.imageID) {
+        if (frameData.number === this.data.imageID && !this.data.configuration.forceFrameUpdate) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -650,6 +650,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.intelligentPolygonCrop === 'boolean') {
             this.data.configuration.intelligentPolygonCrop = configuration.intelligentPolygonCrop;
+        }
+
+        if (typeof configuration.forceFrameUpdate === 'boolean') {
+            this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

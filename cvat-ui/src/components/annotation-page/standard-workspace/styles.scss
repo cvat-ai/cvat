@@ -228,6 +228,15 @@
     }
 }
 
+.cvat-opencv-image-tool {
+    @extend .cvat-opencv-drawing-tool;
+}
+
+.cvat-opencv-image-tool-active {
+    color: #40a9ff;
+    border-color: #40a9ff;
+}
+
 .cvat-setup-tag-popover-content,
 .cvat-draw-shape-popover-content {
     padding: $grid-unit-size;
