@@ -56,8 +56,7 @@ export class OpenCVWrapper {
             if (value instanceof Uint8Array) {
                 decodedScript += decoder.decode(value);
                 receivedLength += value.length;
-                const percentage =
-                    typeof contentLength === 'number' ? (receivedLength * 100) / +(contentLength as string) : 0;
+                const percentage = contentLength ? (receivedLength * 100) / +(contentLength as string) : 0;
                 onProgress(+percentage.toFixed(0));
             }
         }
