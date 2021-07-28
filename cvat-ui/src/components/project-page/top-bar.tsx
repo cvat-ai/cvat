@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,9 @@ import Text from 'antd/lib/typography/Text';
 
 import { Project } from 'reducers/interfaces';
 import ActionsMenu from 'components/projects-page/actions-menu';
+import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { MenuIcon } from 'icons';
+import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 
 interface DetailsComponentProps {
     projectInstance: Project;
@@ -38,6 +40,8 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
                         <Icon className='cvat-menu-icon' component={MenuIcon} />
                     </Button>
                 </Dropdown>
+                <MoveTaskModal />
+                <ModelRunnerDialog />
             </Col>
         </Row>
     );
