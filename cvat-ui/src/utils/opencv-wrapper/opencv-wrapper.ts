@@ -56,6 +56,8 @@ export class OpenCVWrapper {
             if (value instanceof Uint8Array) {
                 decodedScript += decoder.decode(value);
                 receivedLength += value.length;
+                // Cypress workaround: content-length is always zero in cypress, it is done optional here
+                // Just progress bar will be disabled
                 const percentage = contentLength ? (receivedLength * 100) / +(contentLength as string) : 0;
                 onProgress(+percentage.toFixed(0));
             }
