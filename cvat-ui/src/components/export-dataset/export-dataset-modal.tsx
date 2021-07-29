@@ -82,7 +82,7 @@ function ExportDatasetModal(): JSX.Element {
             visible={modalVisible}
             onCancel={closeModal}
             onOk={() => form.submit()}
-            className={`cvat-modal-export-${instanceType}-dataset`}
+            className={`cvat-modal-export-${instanceType}`}
         >
             <Form
                 name='Export dataset'
