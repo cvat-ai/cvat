@@ -73,7 +73,7 @@ function ExportDatasetModal(): JSX.Element {
             description: `Dataset export was started for ${instanceType} #${instance?.id}. ` +
                 'Download will start automaticly as soon as the dataset is ready.',
         });
-    }, [instance?.id, instance instanceof core.classes.Project]);
+    }, [instance?.id, instance instanceof core.classes.Project, instanceType]);
 
     return (
         <Modal
