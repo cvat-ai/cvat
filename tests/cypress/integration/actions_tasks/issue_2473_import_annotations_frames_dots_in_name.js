@@ -66,10 +66,15 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         it('Save job. Dump annotation to YOLO format. Remove annotation. Save job.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
-            cy.interactMenu('Dump annotations');
-            cy.get('.cvat-menu-dump-submenu-item').within(() => {
-                cy.contains(dumpType).click();
-            });
+            cy.interactMenu('Export task dataset');
+            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .trigger('wheel', {deltaY: 700})
+                .contains('.cvat-modal-export-option-item', dumpType)
+                .click();
+            cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
+            cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
             cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);
             cy.removeAnnotations();
