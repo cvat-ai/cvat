@@ -62,7 +62,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Ctrl+C`                   | Copy shape to CVAT internal clipboard                                                                    |
 | `Ctrl+V`                   | Paste a shape from internal CVAT clipboard                                                               |
 | Hold `Ctrl` while pasting  | When pasting shape from the buffer for multiple pasting.                                                 |
-| `Crtl+B`                   | Make a copy of the object on the following frames                                                        |
+| `Ctrl+B`                   | Make a copy of the object on the following frames                                                        |
 | `Ctrl+(0..9)`              | Changes a label for an activated object or for the next drawn object if no objects are activated         |
 |                            | _Operations are available only for track_                                                                |
 | `K`                        | Change keyframe property for an active track                                                             |

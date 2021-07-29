@@ -559,6 +559,7 @@ export interface WorkspaceSettingsState {
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
+    defaultApproxPolyAccuracy: number;
 }
 
 export interface ShapesSettingsState {

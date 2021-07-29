@@ -281,6 +281,40 @@ which starts containers and add JSON such as the following:
 These environment variables are set automatically within any container.
 Please see the [Docker documentation](https://docs.docker.com/network/proxy/) for more details.
 
+### Using the Traefik dashboard
+
+If you are customizing the docker compose files and you come upon some unexpected issues, using the Traefik
+dashboard might be very useful to see if the problem is with Traefik configuration, or with some of the services.
+
+You can enable the Traefik dashboard by uncommenting the following lines from `docker-compose.yml`
+
+```
+services:
+  traefik:
+    # Uncomment to get Traefik dashboard
+    #   - "--entryPoints.dashboard.address=:8090"
+    #   - "--api.dashboard=true"
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.dashboard.entrypoints=dashboard
+    #   - traefik.http.routers.dashboard.service=api@internal
+    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
+```
+
+and if you are using `docker-compose.https.yml`, also uncomment these lines
+```
+services:
+  traefik:
+    command:
+      # Uncomment to get Traefik dashboard
+      # - "--entryPoints.dashboard.address=:8090"
+      # - "--api.dashboard=true"
+```
+
+Note that this "insecure" dashboard is not recommended in production (and if your instance is publicly available);
+if you want to keep the dashboard in production you should read Traefik's
+[documentation](https://doc.traefik.io/traefik/operations/dashboard/) on how to properly secure it.
+
 ### Additional components
 
 - [Analytics: management and monitoring of data annotation team](/docs/administration/advanced/analytics/)
@@ -304,24 +338,14 @@ created by `up`.
 docker-compose down
 ```
 
-### Advanced settings
+### Use your own domain
 
-If you want to access your instance of CVAT outside of your localhost you should
-specify the `CVAT_HOST` environment variable. The best way to do that is to create
-[docker-compose.override.yml](https://docs.docker.com/compose/extends/) and put
-all your extra settings here.
+If you want to access your instance of CVAT outside of your localhost (on another domain),
+you should specify the `CVAT_HOST` environment variable, like this:
 
-```yml
-version: '3.3'
-
-services:
-  cvat_proxy:
-    environment:
-      CVAT_HOST: .example.com
 ```
-
-Please don't forget include this file to docker-compose commands using the `-f`
-option (in some cases it can be omitted).
+export CVAT_HOST=<YOUR_DOMAIN>
+```
 
 ### Share path
 
@@ -379,249 +403,27 @@ for details.
 
 ### Deploy CVAT on the Scaleway public cloud
 
-Please follow [this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/)
+Please follow
+[this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/)
 to install and set up remote access to CVAT on a Scaleway cloud instance with data in a mounted object storage bucket.
 
 ### Deploy secure CVAT instance with HTTPS
 
-Certificates (issued by let's encrypt) to cloud instance.
+Using Traefik, you can automatically obtain TLS certificate for your domain from Let's Encrypt,
+enabling you to use HTTPS protocol to access your website.
 
-#### Prerequisites
-
-We assume that:
-
-- you have a virtual instance (machine) in the cloud provider with docker installed;
-- there is no root permissions required if user is in docker group;
-- there is no services listen 80 and 443 tcp ports on virtual instance.
-
-There are multiple approaches. Our approach suggests:
-
-- easy setup automatic certificate updates;
-- leave certificates in safe place on docker host (protect from `docker-compose down` cleanup);
-- no unnecessary certificate files copying between container and host.
-
-#### Roadmap
-
-We will go through the following sequence of steps to get CVAT over HTTPS:
-
-- Install [acme.sh](https://github.com/acmesh-official/acme.sh) on the virtual instance (docker host).
-- Configure Nginx site template `HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` used in `cvat_proxy` container.
-- Deploy CVAT services in the most common way with docker-compose utilizes default HTTP scheme.
-- Create the https certificates with `acme.sh` client.
-- Reconfigure Nginx to serve over HTTPS.
-- Make sure that certificates will be able to automatically update via cron job.
-
-#### Step-by-step instructions
-
-##### 1. Make the proxy listen on 80 and 443 ports
-
-Prepare nginx for the ACME challenge via webroot method
-
-Let's assume the server domain name is `CVAT.example.com`.
-
-Clone repo and point you shell in cvat repository directory, usually `cd $HOME/cvat`:
-
-Install and create the required directories for letsencrypt webroot operation and acme folder passthrough.
-
-```bash
-# on the docker host
-
-# this will create ~/.acme.sh directory
-curl https://get.acme.sh | sh
-
-# create a subdirs for acme-challenge webroot manually
-mkdir -p $HOME/cvat/letsencrypt-webroot/.well-known/acme-challenge
-```
-
-Create `docker-compose.override.yml` in repo root like follows:
-
-> modify CVAT_HOST with your own domain name
-> (nginx tests the request’s header field “Host” to determine which server the request should be routed to)
-
-```yaml
-version: '3.3'
-
-services:
-  cvat_proxy:
-    environment:
-      CVAT_HOST: CVAT.example.com
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - ./letsencrypt-webroot:/var/tmp/letsencrypt-webroot
-      - /etc/ssl/private:/etc/ssl/private
-
-  cvat:
-    environment:
-      ALLOWED_HOSTS: '*'
-```
-
-Update a CVAT site proxy template `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` on docker(system) host.
-Site config updates from this template each time `cvat_proxy` container start.
-
-Add a location to server with `server_name ${CVAT_HOST};` ahead others:
+To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
+(contact email for Let's Encrypt) environment variables:
 
 ```
-    location ^~ /.well-known/acme-challenge/ {
-      default_type "text/plain";
-      root /var/tmp/letsencrypt-webroot;
-    }
+export CVAT_HOST=<YOUR_DOMAIN>
+export ACME_EMAIL=<YOUR_EMAIL>
 ```
 
-Make the changes where necessary, e.g. base.py or somewhere else.
-
-Build the containers with new configurations updated in `docker-compose.override.yml`
-
-E.g. including `analytics` module:
+Then, use the `docker-compose.https.yml` file to override the base `docker-compose.yml` file:
 
 ```
-docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml -f docker-compose.override.yml up -d --build
+docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
-Your server should be available (and unsecured) at `http://CVAT.example.com`
-
-Something went wrong ? The most common cause is a containers and images cache which were built earlier.
-
-This will enable serving `http://CVAT.example.com/.well-known/acme-challenge/`
-route from `/var/tmp/letsencrypt-webroot` directory on the container's filesystem
-which is bind mounted from docker host `$HOME/cvat/letsencrypt-webroot`.
-That volume needed for issue and renewing certificates only.
-
-Another volume `/etc/ssl/private` should be used within web server according to [acme.sh](https://github.com/acmesh-official/acme.sh#3-install-the-cert-to-apachenginx-etc) documentation
-
-At this point your deployment is up and running, ready for run acme-challenge for issue a new certificate
-
-##### 2. Issue a certificate and run HTTPS versions with `acme.sh` helper
-
-###### Create certificate files using an ACME challenge on docker host
-
-**Prepare certificates**
-
-Point you shell in cvat repository directory, usually `cd $HOME/cvat` on docker host.
-
-Let’s Encrypt provides rate limits to ensure fair usage by as many people as possible.
-They recommend utilize their staging environment instead of the production API during testing.
-So first try to get a test certificate.
-
-```
-~/.acme.sh/acme.sh --issue --staging -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
-```
-
-> Debug note: nginx server logs for cvat_proxy are not saved in container. You shall see it at docker host by with: `docker logs cvat_proxy`.
-
-If certificates is issued a successful we can test a renew:
-
-```
-~/.acme.sh/acme.sh --renew --force --staging -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
-```
-
-**Remove test certificate, if success**
-
-```
-~/.acme.sh/acme.sh --remove -d CVAT.example.com --debug
-rm -r /root/.acme.sh/CVAT.example.com
-```
-
-**Issue a production certificate**
-
-```
-~/.acme.sh/acme.sh --issue -d CVAT.example.com -w $HOME/cvat/letsencrypt-webroot --debug
-```
-
-**Install production certificate and a user cron job (`crontab -e`) for update it**
-
-This will copy necessary certificate files to a permanent directory for serve.
-According to acme.sh [documentation](https://github.com/acmesh-official/acme.sh#3-install-the-cert-to-apachenginx-etc)
-
-Additionally, we must create a directory for our domain.
-Acme supports a valid install configuration options in domain config file
-E.g. `~/.acme.sh/CVAT.example.com/lsoft-cvat.cvisionlab.com.conf`.
-
-```
-mkdir /etc/ssl/private/CVAT.example.com
-
-acme.sh --install-cert -d CVAT.example.com \
---cert-file /etc/ssl/private/CVAT.example.com/site.cer  \
---key-file /etc/ssl/private/CVAT.example.com/site.key  \
---fullchain-file /etc/ssl/private/CVAT.example.com/fullchain.cer \
---reloadcmd "/usr/bin/docker restart cvat_proxy"
-```
-
-Down the cvat_proxy container for setup https with issued certificate.
-
-```bash
-docker stop cvat_proxy
-```
-
-**Reconfigure nginx for use certificates**
-
-Bring the configuration file `$HOME/cvat/cvat_proxy/conf.d/cvat.conf.template` to the following form:
-
-- add location with redirect `return 301` from http to https port;
-- change main cvat server to listen on 443 port;
-- add ssl certificates options.
-
-Final configuration file should look like:
-
-> for a more accurate proxy configuration according to upstream,
-> do not neglect the verification with
-> this configuration [file](https://github.com/openvinotoolkit/cvat/blob/v1.2.0/cvat_proxy/conf.d/cvat.conf.template).
-
-```
-server {
-    listen       80;
-    server_name  _ default;
-    return       404;
-}
-
-server {
-    listen       80;
-    server_name  ${CVAT_HOST};
-
-    location ^~ /.well-known/acme-challenge/ {
-      default_type "text/plain";
-      root /var/tmp/letsencrypt-webroot;
-    }
-
-    location / {
-      return 301 https://$server_name$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    server_name ${CVAT_HOST};
-
-    ssl_certificate /etc/ssl/private/${CVAT_HOST}/site.cer;
-    ssl_certificate_key /etc/ssl/private/${CVAT_HOST}/site.key;
-    ssl_trusted_certificate /etc/ssl/private/${CVAT_HOST}/fullchain.cer;
-
-    # security options
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-    ssl_prefer_server_ciphers on;
-    ssl_stapling on;
-    ssl_session_timeout 24h;
-    ssl_session_cache shared:SSL:2m;
-    ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA:!3DES';
-
-    proxy_pass_header       X-CSRFToken;
-    proxy_set_header        Host $http_host;
-    proxy_pass_header       Set-Cookie;
-
-    location ~* /api/.*|git/.*|analytics/.*|static/.*|admin(?:/(.*))?.*|documentation/.*|django-rq(?:/(.*))? {
-        proxy_pass              http://cvat:8080;
-    }
-
-    location / {
-        proxy_pass              http://cvat_ui;
-    }
-}
-
-```
-
-Start cvat_proxy container with https enabled.
-
-```bash
-docker start cvat_proxy
-```
+Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).

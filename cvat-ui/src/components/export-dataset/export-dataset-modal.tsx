@@ -74,7 +74,7 @@ function ExportDatasetModal(): JSX.Element {
                 'Download will start automaticly as soon as the dataset is ready.',
             className: `cvat-notification-notice-export-${instanceType}-start`,
         });
-    }, [instance?.id, instance instanceof core.classes.Project]);
+    }, [instance?.id, instance instanceof core.classes.Project, instanceType]);
 
     return (
         <Modal
