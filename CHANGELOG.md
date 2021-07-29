@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Context image disappears after undo/redo (<https://github.com/openvinotoolkit/cvat/pull/3416>)
 - Using combined data sources (directory and image) when create a task (<https://github.com/openvinotoolkit/cvat/pull/3424>)
 - Creating task with labels in project (<https://github.com/openvinotoolkit/cvat/pull/3454>)
+- Move task and autoannotation modals were invisible from project page (<https://github.com/openvinotoolkit/cvat/pull/3475>)
 
 ### Security
 
