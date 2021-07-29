@@ -70,7 +70,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
-                    cy.contains('[role="menuitem"]', 'Export task').click().trigger('mouseout');
+                    cy.contains('[role="menuitem"]', new RegExp('^Export task$')).click().trigger('mouseout');
                 });
             cy.wait('@exportTask', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@exportTask').its('response.statusCode').should('equal', 201);

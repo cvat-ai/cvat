@@ -6,8 +6,9 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Export as a dataset.', () => {
+context('Export task dataset.', () => {
     const caseId = '47';
+    const exportFormat = 'CVAT for images';
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -17,22 +18,31 @@ context('Export as a dataset.', () => {
         secondX: 500,
         secondY: 200,
     };
+    let datasetArchiveName = '';
 
     before(() => {
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
-        cy.saveJob();
+        cy.saveJob('PATCH', 200, 'saveJobExportDataset');
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Go to Menu. Press "Export as a dataset" -> "CVAT for images".', () => {
+        it(`Go to Menu. Press "Export task dataset" with the "${exportFormat}" format.`, () => {
             cy.intercept('GET', '/api/v1/tasks/**/dataset**').as('exportDataset');
-            cy.interactMenu('Export as a dataset');
-            cy.get('.cvat-menu-export-submenu-item').within(() => {
-                cy.contains('CVAT for images').click();
+            cy.interactMenu('Export task dataset');
+            cy.get('.cvat-modal-export-task-dataset').within(() => {
+                cy.get('.cvat-modal-export-select').should('contain.text', exportFormat);
+                cy.get('[type="checkbox"]').should('not.be.checked').check();
+                cy.contains('button', 'OK').click();
             });
             cy.wait('@exportDataset', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@exportDataset').its('response.statusCode').should('equal', 201);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.includes(exportFormat.toLowerCase())) {
+                    datasetArchiveName = fileName;
+                    cy.readZipArchive(datasetArchiveName)
+                }
+            });
         });
     });
 });
