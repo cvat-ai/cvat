@@ -13,6 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
+import message from 'antd/lib/message';
 import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
 
@@ -20,6 +21,7 @@ import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
     CombinedState, ActiveControl, Model, ObjectType, ShapeType,
 } from 'reducers/interfaces';
@@ -31,6 +33,9 @@ import {
 } from 'actions/annotation-actions';
 import DetectorRunner from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
+import ApproximationAccuracy, {
+    thresholdFromAccuracy,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface StateToProps {
@@ -46,6 +51,7 @@ interface StateToProps {
     trackers: Model[];
     curZOrder: number;
     aiToolsRef: MutableRefObject<any>;
+    defaultApproxPolyAccuracy: number;
 }
 
 interface DispatchToProps {
@@ -60,6 +66,7 @@ const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { annotation } = state;
+    const { settings } = state;
     const { number: frame } = annotation.player.frame;
     const { instance: jobInstance } = annotation.job;
     const { instance: canvasInstance, activeControl } = annotation.canvas;
@@ -79,6 +86,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
         aiToolsRef: annotation.aiToolsRef,
+        defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
     };
 }
 
@@ -97,14 +105,16 @@ interface State {
     trackingProgress: number | null;
     trackingFrames: number;
     fetching: boolean;
+    pointsRecieved: boolean;
+    approxPolyAccuracy: number;
     mode: 'detection' | 'interaction' | 'tracking';
 }
 
 export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interactionIsAborted: boolean;
-
     private interactionIsDone: boolean;
-    private latestResult: number[];
+    private latestResponseResult: number[][];
+    private latestResult: number[][];
 
     public constructor(props: Props) {
         super(props);
@@ -112,12 +122,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id : null,
+            approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             trackingProgress: null,
             trackingFrames: 10,
             fetching: false,
+            pointsRecieved: false,
             mode: 'interaction',
         };
 
+        this.latestResponseResult = [];
         this.latestResult = [];
         this.interactionIsAborted = false;
         this.interactionIsDone = false;
@@ -130,15 +143,38 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const { isActivated } = this.props;
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
+        const { approxPolyAccuracy, activeInteractor } = this.state;
+
         if (prevProps.isActivated && !isActivated) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
         } else if (!prevProps.isActivated && isActivated) {
             // reset flags when start interaction/tracking
+            this.setState({
+                approxPolyAccuracy: defaultApproxPolyAccuracy,
+                pointsRecieved: false,
+            });
+            this.latestResult = [];
+            this.latestResponseResult = [];
             this.interactionIsDone = false;
             this.interactionIsAborted = false;
             window.addEventListener('contextmenu', this.contextmenuDisabler);
+        }
+
+        if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
+            if (isActivated && activeInteractor !== null && this.latestResponseResult.length) {
+                this.approximateResponsePoints(this.latestResponseResult).then((points: number[][]) => {
+                    this.latestResult = points;
+                    canvasInstance.interact({
+                        enabled: true,
+                        intermediateShape: {
+                            shapeType: ShapeType.POLYGON,
+                            points: this.latestResult.flat(),
+                        },
+                    });
+                });
+            }
         }
     }
 
@@ -197,20 +233,26 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             if ((e as CustomEvent).detail.shapesUpdated) {
                 this.setState({ fetching: true });
                 try {
-                    this.latestResult = await core.lambda.call(jobInstance.task, interactor, {
+                    this.latestResponseResult = await core.lambda.call(jobInstance.task, interactor, {
                         frame,
                         pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
                         neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
                     });
 
+                    this.latestResult = this.latestResponseResult;
+
                     if (this.interactionIsAborted) {
                         // while the server request
                         // user has cancelled interaction (for example pressed ESC)
+                        // need to clean variables that have been just set
                         this.latestResult = [];
+                        this.latestResponseResult = [];
                         return;
                     }
+
+                    this.latestResult = await this.approximateResponsePoints(this.latestResponseResult);
                 } finally {
-                    this.setState({ fetching: false });
+                    this.setState({ fetching: false, pointsRecieved: !!this.latestResult.length });
                 }
             }
 
@@ -259,7 +301,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeLabelID } = this.state;
         const [label] = jobInstance.task.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
-        if (!(e as CustomEvent).detail.isDone) {
+        const { isDone, shapesUpdated } = (e as CustomEvent).detail;
+        if (!isDone || !shapesUpdated) {
             return;
         }
 
@@ -320,8 +363,27 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         });
     };
 
+    private async approximateResponsePoints(points: number[][]): Promise<number[][]> {
+        const { approxPolyAccuracy } = this.state;
+        if (points.length > 3) {
+            if (!openCVWrapper.isInitialized) {
+                const hide = message.loading('OpenCV.js initialization..');
+                try {
+                    await openCVWrapper.initialize(() => {});
+                } finally {
+                    hide();
+                }
+            }
+
+            const threshold = thresholdFromAccuracy(approxPolyAccuracy);
+            return openCVWrapper.contours.approxPoly(points, threshold);
+        }
+
+        return points;
+    }
+
     public async trackState(state: any): Promise<void> {
-        const { jobInstance, frame } = this.props;
+        const { jobInstance, frame, fetchAnnotations } = this.props;
         const { activeTracker, trackingFrames } = this.state;
         const { clientID, points } = state;
 
@@ -373,6 +435,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
         } finally {
             this.setState({ trackingProgress: null, fetching: false });
+            fetchAnnotations();
         }
     }
 
@@ -577,7 +640,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame,
+            jobInstance, detectors, curZOrder, frame, createAnnotations,
         } = this.props;
 
         if (!detectors.length) {
@@ -616,7 +679,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }),
                         );
 
-                        createAnnotationsAsync(jobInstance, frame, states);
+                        createAnnotations(jobInstance, frame, states);
                     } catch (error) {
                         notification.error({
                             description: error.toString(),
@@ -661,7 +724,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const {
             interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
-        const { fetching, trackingProgress } = this.state;
+        const {
+            fetching, trackingProgress, approxPolyAccuracy, activeInteractor, pointsRecieved,
+        } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
 
@@ -701,6 +766,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
                     )}
                 </Modal>
+                {isActivated && activeInteractor !== null && pointsRecieved ? (
+                    <ApproximationAccuracy
+                        approxPolyAccuracy={approxPolyAccuracy}
+                        onChange={(value: number) => {
+                            this.setState({ approxPolyAccuracy: value });
+                        }}
+                    />
+                ) : null}
                 <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>

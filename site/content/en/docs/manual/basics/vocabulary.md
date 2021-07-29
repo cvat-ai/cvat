@@ -34,3 +34,10 @@ Tracks are created in `Track mode`
 - _Manual_ which is created by a person
 - _Semi-automatic_ which is created mainly automatically, but the user provides some data (e.g. interpolation)
 - _Automatic_ which is created automatically without a person in the loop
+
+---
+
+**Approximation** allows you to reduce the number of points in the polygon.
+Can be used to reduce the annotation file and to facilitate editing polygons.
+
+![](/images/approximation_accuracy.gif)

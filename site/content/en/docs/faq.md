@@ -46,21 +46,25 @@ You should free up disk space or change the threshold, to do so check: [Elastics
 
 ## How to change default CVAT hostname or port
 
-The best way to do that is to create docker-compose.override.yml and override the host and port settings here.
+To change the hostname, simply set the `CVAT_HOST` environemnt variable
 
-version: "3.3"
-
-```yaml
-services:
-  cvat_proxy:
-    environment:
-      CVAT_HOST: example.com
-    ports:
-      - '80:80'
+```
+export CVAT_HOST=<YOUR_HOSTNAME>
 ```
 
-Please don't forget to include this file in docker-compose commands
-using the `-f` option (in some cases it can be omitted).
+If you want to change the port, change the `entryPoints.web.address` part of `traefik` image command in `docker-compose.yml`
+
+```
+services:
+  traefik:
+    command:
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=test"
+      - "--entryPoints.web.address=:<YOUR_PORT>"
+```
+
+Note that changing the port does not make sense if you are using HTTPS - port 443 is conventionally
+used for HTTPS connections, and is needed for Let's Encrypt [TLS challenge](https://doc.traefik.io/traefik/https/acme/#tlschallenge).
 
 ## How to configure connected share folder on Windows
 
@@ -130,13 +134,21 @@ You should build CVAT images with ['Analytics' component](https://github.com/ope
 You can upload annotation for a multi-job task from the Dasboard view or the Task view.
 Uploading of annotation from the Annotation view only affects the current job.
 
-## How to specify multiple hostnames for CVAT_HOST
+## How to specify multiple hostnames
+
+To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label for both the
+`cvat` and `cvat_ui` services, like so
+(see [the documentation](https://doc.traefik.io/traefik/routing/routers/#rule) on Traefik rules for more details):
 
 ```yaml
-services:
-  cvat_proxy:
-    environment:
-      CVAT_HOST: example1.com example2.com
+  cvat:
+    labels:
+      - traefik.http.routers.cvat.rule=(Host(`example1.com`) || Host(`example2.com`)) &&
+          PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+
+  cvat_ui:
+    labels:
+      - traefik.http.routers.cvat-ui.rule=Host(`example1.com`) || Host(`example2.com`)
 ```
 
 ## How to create a task with multiple jobs
