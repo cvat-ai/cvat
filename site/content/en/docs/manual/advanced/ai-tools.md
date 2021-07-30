@@ -47,7 +47,7 @@ A list of available out-of-the-box interactors is placed below.
 
 ### Deep extreme cut (DEXTR)
 
-This is an optimized (with Deep Learning Deployment Toolkit) version of the original model, introduced at the end of 2017.
+This is an optimized version of the original model, introduced at the end of 2017.
 It uses the information about extreme points of an object to get its mask. The mask then converted to a polygon.
 For now this is the fastest interactor on CPU.
 
@@ -55,13 +55,19 @@ For now this is the fastest interactor on CPU.
 
 ### Feature backpropagating refinement scheme (f-BRS)
 
-The model allows to get a mask for an object using positive points (which should be clicked on the foreground), and negative points (which should be clicked on the background, if necessary). It is recommended to run the model on GPU, if possible.
+The model allows to get a mask for an object using positive points
+(should be clicked on the foreground), and negative points
+(should be clicked on the background, if necessary).
+It is recommended to run the model on GPU, if possible.
 
 ![](/images/fbrs_example.gif)
 
 ### Inside-Outside-Guidance
 
-The model uses a bounding box and inside/outside points to create a mask. First of all, you need to create a bounding box, wrapping the object. Then you need to use positive and negative points to say the model where is a foreground, and where is a background. Negative points are optional.
+The model uses a bounding box and inside/outside points to create a mask.
+First of all, you need to create a bounding box, wrapping the object.
+Then you need to use positive and negative points to say the model where is a foreground,
+and where is a background. Negative points are optional.
 
 ![](/images/iog_example.gif)
 
