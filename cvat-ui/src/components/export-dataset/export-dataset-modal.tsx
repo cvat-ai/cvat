@@ -45,9 +45,9 @@ function ExportDatasetModal(): JSX.Element {
         } else if (instance instanceof core.classes.Task) {
             setInstanceType('task');
             setActivities(taskExportActivities[instance.id] || []);
-            if (instance.mode === 'interpolation') {
+            if (instance.mode === 'interpolation' && instance.dimension === '2d') {
                 form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
-            } else if (instance.mode === 'annotation') {
+            } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
                 form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
             }
         }
