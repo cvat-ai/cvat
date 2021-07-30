@@ -54,7 +54,7 @@
     "@types/react": "^16.14.10",
     "@types/react-color": "^3.0.4",
     "@types/react-dom": "^16.9.14",
-    "@types/react-redux": "^7.1.16",
+    "@types/react-redux": "^7.1.18",
     "@types/react-resizable": "^1.7.2",
     "@types/react-router": "^5.1.15",
     "@types/react-router-dom": "^5.1.7",
