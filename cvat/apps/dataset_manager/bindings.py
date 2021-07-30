@@ -955,19 +955,23 @@ class CVATProjectDataExtractor(CVATDataExtractor):
                 if is_video:
                     # optimization for videos: use numpy arrays instead of bytes
                     # some formats or transforms can require image data
-                    def _make_image(i, **kwargs):
-                        loader = lambda _: frame_provider.get_frame(i,
-                            quality=frame_provider.Quality.ORIGINAL,
-                            out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-                        return Image(loader=loader, **kwargs)
+                    def image_maker_factory(frame_provider):
+                        def _make_image(i, **kwargs):
+                            loader = lambda _: frame_provider.get_frame(i,
+                                quality=frame_provider.Quality.ORIGINAL,
+                                out_type=frame_provider.Type.NUMPY_ARRAY)[0]
+                            return Image(loader=loader, **kwargs)
+                        return _make_image
                 else:
                     # for images use encoded data to avoid recoding
-                    def _make_image(i, **kwargs):
-                        loader = lambda _: frame_provider.get_frame(i,
-                            quality=frame_provider.Quality.ORIGINAL,
-                            out_type=frame_provider.Type.BUFFER)[0].getvalue()
-                        return ByteImage(data=loader, **kwargs)
-                image_maker_per_task[task.id] = _make_image
+                    def image_maker_factory(frame_provider):
+                        def _make_image(i, **kwargs):
+                            loader = lambda _: frame_provider.get_frame(i,
+                                quality=frame_provider.Quality.ORIGINAL,
+                                out_type=frame_provider.Type.BUFFER)[0].getvalue()
+                            return ByteImage(data=loader, **kwargs)
+                        return _make_image
+                image_maker_per_task[task.id] = image_maker_factory(frame_provider)
 
         for frame_data in project_data.group_by_frame(include_empty=True):
             image_args = {
