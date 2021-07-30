@@ -72,6 +72,7 @@ function ExportDatasetModal(): JSX.Element {
             message: 'Dataset export started',
             description: `Dataset export was started for ${instanceType} #${instance?.id}. ` +
                 'Download will start automaticly as soon as the dataset is ready.',
+            className: `cvat-notification-notice-export-${instanceType}-start`,
         });
     }, [instance?.id, instance instanceof core.classes.Project, instanceType]);
 
@@ -81,6 +82,7 @@ function ExportDatasetModal(): JSX.Element {
             visible={modalVisible}
             onCancel={closeModal}
             onOk={() => form.submit()}
+            className={`cvat-modal-export-${instanceType}`}
         >
             <Form
                 name='Export dataset'
