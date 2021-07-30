@@ -4,7 +4,7 @@
 
 import React, { MutableRefObject } from 'react';
 import { connect } from 'react-redux';
-import Icon, { LoadingOutlined } from '@ant-design/icons';
+import Icon, { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
@@ -16,6 +16,7 @@ import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
+import Dropdown from 'antd/lib/dropdown';
 import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
@@ -38,6 +39,7 @@ import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import withVisibilityHandling from './handle-popover-visibility';
+import ToolsTooltips from './interactor-tooltips';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -643,8 +645,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Text className='cvat-text-color'>Interactor</Text>
                     </Col>
                 </Row>
-                <Row align='middle' justify='center'>
-                    <Col span={24}>
+                <Row align='middle' justify='space-between'>
+                    <Col span={22}>
                         <Select
                             style={{ width: '100%' }}
                             defaultValue={interactors[0].name}
@@ -662,6 +664,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 ),
                             )}
                         </Select>
+                    </Col>
+                    <Col span={2} className='cvat-interactors-tips-icon-container'>
+                        <Dropdown overlay={<ToolsTooltips tool={activeInteractor?.name} />}>
+                            <QuestionCircleOutlined />
+                        </Dropdown>
                     </Col>
                 </Row>
                 <Row align='middle' justify='end'>
