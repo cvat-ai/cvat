@@ -101,16 +101,32 @@ context('Actions on polylines', () => {
         });
 
         it('Change direction.', () => {
-            let polyDirectionAttrDataAngle;
+            let firtsPointCoords = {
+                x: 0,
+                y: 0,
+            };
+            let lastPointCoords = {
+                x: 0,
+                y: 0,
+            };
             cy.get('#cvat_canvas_shape_4')
                 .trigger('mousemove', {scrollBehavior: false})
                 .trigger('mouseover', {scrollBehavior: false})
                 .should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('.cvat_canvas_poly_direction').then((polyDirection) => {
-                polyDirectionAttrDataAngle = polyDirection.attr('data-angle');
-            }).click({scrollBehavior: false})
-            cy.get('.cvat_canvas_poly_direction').then((afterChangePolyDirection) => {
-                expect(polyDirectionAttrDataAngle).not.equal(afterChangePolyDirection.attr('data-angle'));
+            cy.get('.svg_select_points_point').first().then((firtsPoint) => {
+                firtsPointCoords.x = firtsPoint.attr('cx');
+                firtsPointCoords.y = firtsPoint.attr('cy');
+                cy.get('.svg_select_points_point').last().then((lastPoint) => {
+                    lastPointCoords.x = lastPoint.attr('cx');
+                    lastPointCoords.y = lastPoint.attr('cy');
+                    cy.get('.cvat_canvas_first_poly_point')
+                        .should('have.attr', 'cx', firtsPointCoords.x)
+                        .and('have.attr', 'cy', firtsPointCoords.y)
+                    cy.get('.cvat_canvas_poly_direction').click({scrollBehavior: false});
+                    cy.get('.cvat_canvas_first_poly_point')
+                        .should('have.attr', 'cx', lastPointCoords.x)
+                        .and('have.attr', 'cy', lastPointCoords.y)
+                });
             });
         });
     });
