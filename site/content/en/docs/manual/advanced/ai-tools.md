@@ -56,7 +56,7 @@ For now this is the fastest interactor on CPU.
 ### Feature backpropagating refinement scheme (f-BRS)
 
 The model allows to get a mask for an object using positive points
-(should be clicked on the foreground), and negative points
+(should be left-clicked on the foreground), and negative points
 (should be right-clicked on the background, if necessary).
 It is recommended to run the model on GPU, if possible.
 
