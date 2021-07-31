@@ -57,7 +57,7 @@ For now this is the fastest interactor on CPU.
 
 The model allows to get a mask for an object using positive points
 (should be clicked on the foreground), and negative points
-(should be clicked on the background, if necessary).
+(should be right-clicked on the background, if necessary).
 It is recommended to run the model on GPU, if possible.
 
 ![](/images/fbrs_example.gif)
