@@ -21,10 +21,14 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
     opencvShapeParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
-    const keyCodeN = 78;
-    cy.get('.cvat-canvas-container')
-        .trigger('keydown', { keyCode: keyCodeN })
-        .trigger('keyup', { keyCode: keyCodeN });
+    if (opencvShapeParams.useDoneButton) {
+        cy.contains('span', 'Done').click();
+    } else {
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
+    }
     cy.opncvCheckObjectParameters('POLYGON');
 });
 

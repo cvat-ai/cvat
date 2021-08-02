@@ -28,8 +28,24 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
             { x: 450, y: 300 },
             { x: 400, y: 350 },
         ],
+        useDoneButton: true,
     };
     const keyCodeN = 78;
+    const pointsMap = [
+        { x: 300, y: 400 },
+        { x: 350, y: 500 },
+        { x: 400, y: 450 },
+        { x: 450, y: 500 },
+        { x: 400, y: 550 },
+    ]
+
+    function generateString(countPointsToMove) {
+        let action = '';
+        for (let i = 0; i < countPointsToMove; i++) {
+            action += '{rightarrow}';
+        }
+        return action;
+    }
 
     before(() => {
         cy.openTask(taskName);
@@ -49,8 +65,34 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
             cy.opencvCreateShape(createOpencvShape);
         });
 
-        it('Create a shape with "Intelligent cissors".', () => {
+        it('Create a shape with "Intelligent cissors" and "Done" button.', () => {
             cy.opencvCreateShape(createOpencvShapeSecondLabel);
+        });
+
+        it('Change the number of points when the shape is drawn.', () => {
+            cy.get('body').focus();
+            cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+            cy.get('.cvat-opencv-drawing-tool').click();
+            pointsMap.forEach((element) => {
+                cy.get('.cvat-canvas-container').click(element.x, element.y);
+            });
+            cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
+                // Get count of points
+                const intermediateShapeNumberPointsBeforeChange = intermediateShape.attr('points').split(' ').length;
+                // Change number of points
+                cy.get('.cvat-approx-poly-threshold-wrapper')
+                    .find('[role="slider"]')
+                    .type(generateString(4))
+                cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
+                    // Get count of points againe
+                    const intermediateShapeNumberPointsAfterChange = intermediateShape.attr('points').split(' ').length;
+                    // expected 7 to be below 10
+                    expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(intermediateShapeNumberPointsAfterChange);
+                });
+            });
+            cy.get('.cvat-canvas-container')
+                .trigger('keydown', { keyCode: keyCodeN })
+                .trigger('keyup', { keyCode: keyCodeN });
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
