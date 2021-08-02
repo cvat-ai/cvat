@@ -2,34 +2,42 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { KeyMap } from 'utils/mousetrap-react';
 import { connect } from 'react-redux';
-
+import { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { hideShowContextImage } from 'actions/annotation-actions';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import {
+    groupObjects,
+    pasteShapeAsync,
+    redrawShapeAsync,
+    repeatDrawShapeAsync,
+    resetAnnotationsGroup,
+} from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard3D-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    contextImageHide: boolean;
-    loaded: boolean;
+    labels: any[];
+    jobInstance: any;
 }
 
 interface DispatchToProps {
-    hideShowContextImage(hidden: boolean): void;
+    repeatDrawShape(): void;
+    redrawShape(): void;
+    pasteShape(): void;
+    resetGroup(): void;
+    groupObjects(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
-            player: {
-                contextImage: { hidden: contextImageHide, loaded },
-            },
+            job: { labels, instance: jobInstance },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -39,15 +47,27 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
         normalizedKeyMap,
         keyMap,
-        contextImageHide,
-        loaded,
+        labels,
+        jobInstance,
     };
 }
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        hideShowContextImage(hidden: boolean): void {
-            dispatch(hideShowContextImage(hidden));
+        repeatDrawShape(): void {
+            dispatch(repeatDrawShapeAsync());
+        },
+        redrawShape(): void {
+            dispatch(redrawShapeAsync());
+        },
+        pasteShape(): void {
+            dispatch(pasteShapeAsync());
+        },
+        groupObjects(enabled: boolean): void {
+            dispatch(groupObjects(enabled));
+        },
+        resetGroup(): void {
+            dispatch(resetAnnotationsGroup());
         },
     };
 }

@@ -4,7 +4,7 @@
 
 import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
-import { Canvas, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 
@@ -30,10 +30,13 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
-    [key: string]: string | number | null | undefined;
+    [key: string]: string | boolean | number | null | undefined;
 }
 
-export type Project = any;
+export interface Project {
+    instance: any;
+    preview: string;
+}
 
 export interface ProjectsState {
     initialized: boolean;
@@ -70,10 +73,15 @@ export interface Task {
 }
 
 export interface TasksState {
+    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
     hideEmpty: boolean;
+    moveTask: {
+        modalVisible: boolean;
+        taskId: number | null;
+    };
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -97,6 +105,9 @@ export interface TasksState {
             taskId: number | null;
             status: string;
             error: string;
+        };
+        backups: {
+            [tid: number]: boolean;
         };
     };
 }
@@ -242,9 +253,12 @@ export interface NotificationsState {
             updating: null | ErrorState;
             dumping: null | ErrorState;
             loading: null | ErrorState;
-            exporting: null | ErrorState;
+            exportingAsDataset: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            exporting: null | ErrorState;
+            importing: null | ErrorState;
+            moving: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -269,6 +283,7 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
+            contextImageFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;
             creating: null | ErrorState;
@@ -309,6 +324,8 @@ export interface NotificationsState {
     messages: {
         tasks: {
             loadingDone: string;
+            importingDone: string;
+            movingDone: string;
         };
         models: {
             inferenceDone: string;
@@ -417,6 +434,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
+            hasRelatedContext: boolean;
             data: any | null;
             fetching: boolean;
             delay: number;
@@ -425,8 +443,8 @@ export interface AnnotationState {
         playing: boolean;
         frameAngles: number[];
         contextImage: {
-            loaded: boolean;
-            data: string;
+            fetching: boolean;
+            data: string | null;
             hidden: boolean;
         };
     };
@@ -434,6 +452,7 @@ export interface AnnotationState {
         activeInteractor?: Model | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
+        activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
         activeLabelID: number;
         activeObjectType: ObjectType;
@@ -478,7 +497,6 @@ export interface AnnotationState {
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
-    tabContentHeight: number;
     workspace: Workspace;
     predictor: PredictorState;
     aiToolsRef: MutableRefObject<any>;
@@ -538,6 +556,7 @@ export interface WorkspaceSettingsState {
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
+    defaultApproxPolyAccuracy: number;
 }
 
 export interface ShapesSettingsState {

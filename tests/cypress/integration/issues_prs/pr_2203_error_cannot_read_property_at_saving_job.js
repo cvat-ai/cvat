@@ -33,7 +33,8 @@ context('Check error сannot read property at saving job', () => {
         });
 
         it('Go to AAM', () => {
-            cy.changeWorkspace('Attribute annotation', labelName);
+            cy.changeWorkspace('Attribute annotation');
+            cy.changeLabelAAM(labelName);
         });
 
         it('Save job and go to previous frame at saving job', () => {

@@ -10,7 +10,7 @@ import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
 import {
-    SettingsState, GridColor, FrameSpeed, ColorBy,
+    SettingsState, GridColor, FrameSpeed, ColorBy, DimensionType,
 } from './interfaces';
 
 const defaultState: SettingsState = {
@@ -31,6 +31,7 @@ const defaultState: SettingsState = {
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
+        defaultApproxPolyAccuracy: 9,
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -277,6 +278,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    defaultApproxPolyAccuracy: action.payload.approxPolyAccuracy,
+                },
+            };
+        }
         case SettingsActionTypes.SWITCH_SETTINGS_DIALOG: {
             return {
                 ...state,
@@ -298,6 +308,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     resetZoom: job && job.task.mode === 'annotation',
+                },
+                shapes: {
+                    ...defaultState.shapes,
+                    ...(job.task.dimension === DimensionType.DIM_3D ?
+                        {
+                            opacity: 40,
+                            selectedOpacity: 60,
+                        } :
+                        {}),
                 },
             };
         }

@@ -5,7 +5,7 @@
 from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import AnnotationType, Transform
+from datumaro.components.extractor import AnnotationType, ItemTransform
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
@@ -15,7 +15,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from .registry import dm_env, exporter, importer
 
 
-class KeepTracks(Transform):
+class KeepTracks(ItemTransform):
     def transform_item(self, item):
         return item.wrap(annotations=[a for a in item.annotations
             if 'track_id' in a.attributes])

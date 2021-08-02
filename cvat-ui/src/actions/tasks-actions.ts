@@ -35,6 +35,13 @@ export enum TasksActionTypes {
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
+    EXPORT_TASK = 'EXPORT_TASK',
+    EXPORT_TASK_SUCCESS = 'EXPORT_TASK_SUCCESS',
+    EXPORT_TASK_FAILED = 'EXPORT_TASK_FAILED',
+    IMPORT_TASK = 'IMPORT_TASK',
+    IMPORT_TASK_SUCCESS = 'IMPORT_TASK_SUCCESS',
+    IMPORT_TASK_FAILED = 'IMPORT_TASK_FAILED',
+    SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
 function getTasks(): AnyAction {
@@ -213,6 +220,49 @@ export function loadAnnotationsAsync(
     };
 }
 
+function importTask(): AnyAction {
+    const action = {
+        type: TasksActionTypes.IMPORT_TASK,
+        payload: {},
+    };
+
+    return action;
+}
+
+function importTaskSuccess(task: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.IMPORT_TASK_SUCCESS,
+        payload: {
+            task,
+        },
+    };
+
+    return action;
+}
+
+function importTaskFailed(error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.IMPORT_TASK_FAILED,
+        payload: {
+            error,
+        },
+    };
+
+    return action;
+}
+
+export function importTaskAsync(file: File): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(importTask());
+            const taskInstance = await cvat.classes.Task.import(file);
+            dispatch(importTaskSuccess(taskInstance));
+        } catch (error) {
+            dispatch(importTaskFailed(error));
+        }
+    };
+}
+
 function exportDataset(task: any, exporter: any): AnyAction {
     const action = {
         type: TasksActionTypes.EXPORT_DATASET,
@@ -264,6 +314,56 @@ export function exportDatasetAsync(task: any, exporter: any): ThunkAction<Promis
         }
 
         dispatch(exportDatasetSuccess(task, exporter));
+    };
+}
+
+function exportTask(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.EXPORT_TASK,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function exportTaskSuccess(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.EXPORT_TASK_SUCCESS,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function exportTaskFailed(taskID: number, error: Error): AnyAction {
+    const action = {
+        type: TasksActionTypes.EXPORT_TASK_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
+export function exportTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(exportTask(taskInstance.id));
+
+        try {
+            const url = await taskInstance.export();
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = url;
+            downloadAnchor.click();
+            dispatch(exportTaskSuccess(taskInstance.id));
+        } catch (error) {
+            dispatch(exportTaskFailed(taskInstance.id, error));
+        }
     };
 }
 
@@ -518,4 +618,47 @@ export function hideEmptyTasks(hideEmpty: boolean): AnyAction {
     };
 
     return action;
+}
+
+export function switchMoveTaskModalVisible(visible: boolean, taskId: number | null = null): AnyAction {
+    const action = {
+        type: TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE,
+        payload: {
+            taskId,
+            visible,
+        },
+    };
+
+    return action;
+}
+
+interface LabelMap {
+    label_id: number;
+    new_label_name: string | null;
+    clear_attributes: boolean;
+}
+
+export function moveTaskToProjectAsync(
+    taskInstance: any,
+    projectId: any,
+    labelMap: LabelMap[],
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(updateTask());
+        try {
+            // eslint-disable-next-line no-param-reassign
+            taskInstance.labels = labelMap.map((mapper) => {
+                const [label] = taskInstance.labels.filter((_label: any) => mapper.label_id === _label.id);
+                label.name = mapper.new_label_name;
+                return label;
+            });
+            // eslint-disable-next-line no-param-reassign
+            taskInstance.projectId = projectId;
+            await taskInstance.save();
+            const [task] = await cvat.tasks.get({ id: taskInstance.id });
+            dispatch(updateTaskSuccess(task, task.id));
+        } catch (error) {
+            dispatch(updateTaskFailed(error, taskInstance));
+        }
+    };
 }

@@ -19,7 +19,15 @@
      */
     class FrameData {
         constructor({
-            width, height, name, taskID, frameNumber, startFrame, stopFrame, decodeForward,
+            width,
+            height,
+            name,
+            taskID,
+            frameNumber,
+            startFrame,
+            stopFrame,
+            decodeForward,
+            has_related_context: hasRelatedContext,
         }) {
             Object.defineProperties(
                 this,
@@ -72,6 +80,18 @@
                         value: frameNumber,
                         writable: false,
                     },
+                    /**
+                     * True if some context images are associated with this frame
+                     * @name hasRelatedContext
+                     * @type {boolean}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
+                    hasRelatedContext: {
+                        value: hasRelatedContext,
+                        writable: false,
+                    },
                     startFrame: {
                         value: startFrame,
                         writable: false,
@@ -103,6 +123,14 @@
         async data(onServerRequest = () => {}) {
             const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
             return result;
+        }
+
+        get imageData() {
+            return this._data.imageData;
+        }
+
+        set imageData(imageData) {
+            this._data.imageData = imageData;
         }
     }
 

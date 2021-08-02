@@ -8,7 +8,12 @@ import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
+import Slider from 'antd/lib/slider';
 
+import {
+    MAX_ACCURACY,
+    marks,
+} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { clamp } from 'utils/math';
 
 interface Props {
@@ -19,16 +24,18 @@ interface Props {
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
+    defaultApproxPolyAccuracy: number;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
+    onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
 }
 
-export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
+function WorkspaceSettingsComponent(props: Props): JSX.Element {
     const {
         autoSave,
         autoSaveInterval,
@@ -37,6 +44,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showObjectsTextAlways,
         automaticBordering,
         intelligentPolygonCrop,
+        defaultApproxPolyAccuracy,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -44,6 +52,7 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
         onSwitchIntelligentPolygonCrop,
+        onChangeDefaultApproxPolyAccuracy,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -168,6 +177,27 @@ export default function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
+            <Row className='cvat-workspace-settings-approx-poly-threshold'>
+                <Col>
+                    <Text className='cvat-text-color'>Default number of points in polygon approximation</Text>
+                </Col>
+                <Col span={7} offset={1}>
+                    <Slider
+                        min={0}
+                        max={MAX_ACCURACY}
+                        step={1}
+                        value={defaultApproxPolyAccuracy}
+                        dots
+                        onChange={onChangeDefaultApproxPolyAccuracy}
+                        marks={marks}
+                    />
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>Works for serverless interactors and OpenCV scissors</Text>
+                </Col>
+            </Row>
         </div>
     );
 }
+
+export default React.memo(WorkspaceSettingsComponent);

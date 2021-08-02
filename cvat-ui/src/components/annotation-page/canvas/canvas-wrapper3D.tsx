@@ -10,33 +10,56 @@ import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
 import { ResizableBox } from 'react-resizable';
-import { Workspace } from 'reducers/interfaces';
 import {
-    CAMERA_ACTION, Canvas3d, MouseInteraction, ViewType,
+    ColorBy, ContextMenuType, ObjectType, Workspace,
+} from 'reducers/interfaces';
+import {
+    CameraAction, Canvas3d, ViewType, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';
-import ContextImage from '../standard3D-workspace/context-image/context-image';
-import CVATTooltip from '../../common/cvat-tooltip';
+import { Canvas } from 'cvat-canvas-wrapper';
+import ContextImage from 'components/annotation-page/standard-workspace/context-image/context-image';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import { LogType } from 'cvat-logger';
+import getCore from 'cvat-core-wrapper';
+
+const cvat = getCore();
 
 interface Props {
-    canvasInstance: Canvas3d;
+    opacity: number;
+    selectedOpacity: number;
+    outlined: boolean;
+    outlineColor: string;
+    colorBy: ColorBy;
+    frameFetching: boolean;
+    canvasInstance: Canvas3d | Canvas;
     jobInstance: any;
     frameData: any;
     curZLayer: number;
-    contextImageHide: boolean;
-    loaded: boolean;
-    data: string;
     annotations: any[];
+    contextMenuVisibility: boolean;
+    activeLabelID: number;
+    activatedStateID: number | null;
+    activeObjectType: ObjectType;
     onSetupCanvas: () => void;
-    getContextImage(): void;
+    onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
+    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onActivateObject(activatedStateID: number | null): void;
+    onUpdateAnnotations(states: any[]): void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
+    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onEditShape: (enabled: boolean) => void;
+    onDragCanvas: (enabled: boolean) => void;
+    onShapeDrawn: () => void;
     workspace: Workspace;
-    animateID: any;
     automaticBordering: boolean;
     showObjectsTextAlways: boolean;
+    frame: number;
 }
 
 interface ViewSize {
     fullHeight: number;
+    fullWidth: number;
     vertical: number;
     top: number;
     side: number;
@@ -45,7 +68,7 @@ interface ViewSize {
 
 function viewSizeReducer(
     state: ViewSize,
-    action: { type: ViewType | 'set'; e?: SyntheticEvent; data?: ViewSize },
+    action: { type: ViewType | 'set' | 'resize'; e?: SyntheticEvent; data?: ViewSize },
 ): ViewSize {
     const event = (action.e as unknown) as MouseEvent;
     const canvas3dContainer = document.getElementById('canvas3d-container');
@@ -98,6 +121,33 @@ function viewSizeReducer(
                 };
             case 'set':
                 return action.data as ViewSize;
+            case 'resize': {
+                const canvasPerspectiveContainer = document.getElementById('cvat-canvas3d-perspective');
+                let midState = { ...state };
+                if (canvasPerspectiveContainer) {
+                    if (state.fullHeight !== canvas3dContainer.clientHeight) {
+                        const diff = canvas3dContainer.clientHeight - state.fullHeight;
+                        midState = {
+                            ...midState,
+                            fullHeight: canvas3dContainer.clientHeight,
+                            vertical: state.vertical + diff,
+                        };
+                    }
+                    if (state.fullWidth !== canvasPerspectiveContainer.clientWidth) {
+                        const oldWidth = state.fullWidth;
+                        const width = canvasPerspectiveContainer.clientWidth;
+                        midState = {
+                            ...midState,
+                            fullWidth: width,
+                            top: (state.top / oldWidth) * width,
+                            side: (state.side / oldWidth) * width,
+                            front: (state.front / oldWidth) * width,
+                        };
+                    }
+                    return midState;
+                }
+                return state;
+            }
             default:
                 throw new Error();
         }
@@ -109,6 +159,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     const animateId = useRef(0);
     const [viewSize, setViewSize] = useReducer(viewSizeReducer, {
         fullHeight: 0,
+        fullWidth: 0,
         vertical: 0,
         top: 0,
         side: 0,
@@ -120,71 +171,122 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     const frontView = useRef<HTMLDivElement | null>(null);
 
     const {
-        frameData, contextImageHide, getContextImage, loaded, data, annotations, curZLayer,
+        opacity,
+        outlined,
+        outlineColor,
+        selectedOpacity,
+        colorBy,
+        contextMenuVisibility,
+        frameData,
+        onResetCanvas,
+        onSetupCanvas,
+        annotations,
+        frame,
+        jobInstance,
+        activeLabelID,
+        activeObjectType,
+        onShapeDrawn,
+        onCreateAnnotations,
+        frameFetching,
     } = props;
+    const { canvasInstance } = props as { canvasInstance: Canvas3d };
 
     const onCanvasSetup = (): void => {
-        const { onSetupCanvas } = props;
         onSetupCanvas();
     };
 
-    const animateCanvas = (): void => {
-        const { canvasInstance } = props;
+    const onCanvasDragStart = (): void => {
+        const { onDragCanvas } = props;
+        onDragCanvas(true);
+    };
 
+    const onCanvasDragDone = (): void => {
+        const { onDragCanvas } = props;
+        onDragCanvas(false);
+    };
+
+    const animateCanvas = (): void => {
         canvasInstance.render();
         animateId.current = requestAnimationFrame(animateCanvas);
     };
 
     const updateCanvas = (): void => {
-        const { canvasInstance } = props;
-
         if (frameData !== null) {
-            canvasInstance.setup(frameData);
+            canvasInstance.setup(
+                frameData,
+                annotations.filter((e) => e.objectType !== ObjectType.TAG),
+            );
         }
     };
 
-    const onMouseClick = (event: MouseEvent): void => {
-        const { canvasInstance } = props;
-        canvasInstance.mouseControls(MouseInteraction.CLICK, event);
-    };
-
-    const onMouseDoubleClick = (event: MouseEvent): void => {
-        const { canvasInstance } = props;
-        canvasInstance.mouseControls(MouseInteraction.DOUBLE_CLICK, event);
-    };
-
-    const onMouseHover = (event: MouseEvent): void => {
-        const { canvasInstance } = props;
-        canvasInstance.mouseControls(MouseInteraction.HOVER, event);
-    };
-
     const onCanvasCancel = (): void => {
-        const { onResetCanvas } = props;
         onResetCanvas();
     };
 
-    const initialSetup = (): void => {
-        const { canvasInstance } = props;
+    const onCanvasShapeDrawn = (event: any): void => {
+        if (!event.detail.continue) {
+            onShapeDrawn();
+        }
 
-        const canvasInstanceDOM = canvasInstance.html();
-        // Events
-        canvasInstanceDOM.perspective.addEventListener('canvas.setup', onCanvasSetup);
-        canvasInstanceDOM.perspective.addEventListener('mousemove', onMouseHover);
-        canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
-        canvasInstanceDOM.perspective.addEventListener(MouseInteraction.DOUBLE_CLICK, onMouseDoubleClick);
-        canvasInstanceDOM.perspective.addEventListener(MouseInteraction.CLICK, onMouseClick);
+        const { state, duration } = event.detail;
+        const isDrawnFromScratch = !state.label;
+        if (isDrawnFromScratch) {
+            jobInstance.logger.log(LogType.drawObject, { count: 1, duration });
+        } else {
+            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration });
+        }
+
+        state.objectType = state.objectType || activeObjectType;
+        state.label = state.label || jobInstance.task.labels.filter((label: any) => label.id === activeLabelID)[0];
+        state.occluded = state.occluded || false;
+        state.frame = frame;
+        state.zOrder = 0;
+        const objectState = new cvat.classes.ObjectState(state);
+        onCreateAnnotations(jobInstance, frame, [objectState]);
     };
 
-    const keyControls = (key: KeyboardEvent): void => {
-        const { canvasInstance } = props;
+    const onCanvasClick = (e: MouseEvent): void => {
+        const { onUpdateContextMenu } = props;
+        if (contextMenuVisibility) {
+            onUpdateContextMenu(false, e.clientX, e.clientY, ContextMenuType.CANVAS_SHAPE);
+        }
+    };
+
+    const initialSetup = (): void => {
+        const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
+        canvasInstanceDOM.perspective.addEventListener('canvas.setup', onCanvasSetup);
+        canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
+        canvasInstanceDOM.perspective.addEventListener('canvas.dragstart', onCanvasDragStart);
+        canvasInstanceDOM.perspective.addEventListener('canvas.dragstop', onCanvasDragDone);
+    };
+
+    const keyControlsKeyDown = (key: KeyboardEvent): void => {
         canvasInstance.keyControls(key);
     };
 
+    const keyControlsKeyUp = (key: KeyboardEvent): void => {
+        if (key.code === 'ControlLeft') {
+            canvasInstance.keyControls(key);
+        }
+    };
+
+    const onCanvasShapeSelected = (event: any): void => {
+        const { onActivateObject } = props;
+        const { clientID } = event.detail;
+        onActivateObject(clientID);
+        canvasInstance.activate(clientID);
+    };
+
+    const onCanvasEditDone = (event: any): void => {
+        const { onEditShape, onUpdateAnnotations } = props;
+        onEditShape(false);
+        const { state, points } = event.detail;
+        state.points = points;
+        onUpdateAnnotations([state]);
+    };
+
     useEffect(() => {
-        const { canvasInstance } = props;
-
         const canvasInstanceDOM = canvasInstance.html();
-
         if (
             perspectiveView &&
             perspectiveView.current &&
@@ -206,6 +308,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                     type: 'set',
                     data: {
                         fullHeight: canvas3dContainer.clientHeight,
+                        fullWidth: canvas3dContainer.clientWidth,
                         vertical: canvas3dContainer.clientHeight / 2,
                         top: width,
                         side: width,
@@ -215,7 +318,8 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             }
         }
 
-        document.addEventListener('keydown', keyControls);
+        document.addEventListener('keydown', keyControlsKeyDown);
+        document.addEventListener('keyup', keyControlsKeyUp);
 
         initialSetup();
         updateCanvas();
@@ -223,29 +327,89 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
         return () => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.setup', onCanvasSetup);
-            canvasInstanceDOM.perspective.removeEventListener('mousemove', onMouseHover);
             canvasInstanceDOM.perspective.removeEventListener('canvas.canceled', onCanvasCancel);
-            canvasInstanceDOM.perspective.removeEventListener(MouseInteraction.DOUBLE_CLICK, onMouseDoubleClick);
-            canvasInstanceDOM.perspective.removeEventListener(MouseInteraction.CLICK, onMouseClick);
-            document.removeEventListener('keydown', keyControls);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.dragstart', onCanvasDragStart);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.dragstop', onCanvasDragDone);
+            document.removeEventListener('keydown', keyControlsKeyDown);
+            document.removeEventListener('keyup', keyControlsKeyUp);
             cancelAnimationFrame(animateId.current);
         };
     }, []);
 
-    useEffect(() => {
-        updateCanvas();
-    }, [frameData, annotations, curZLayer]);
+    const updateShapesView = (): void => {
+        (canvasInstance as Canvas3d).configureShapes({
+            opacity,
+            outlined,
+            outlineColor,
+            selectedOpacity,
+            colorBy,
+        });
+    };
 
-    const screenKeyControl = (code: CAMERA_ACTION): void => {
-        const { canvasInstance } = props;
-        canvasInstance.keyControls(new KeyboardEvent('keydown', { code, altKey: true }));
+    const onContextMenu = (event: any): void => {
+        const { onUpdateContextMenu, onActivateObject } = props;
+        onActivateObject(event.detail.clientID);
+        onUpdateContextMenu(
+            event.detail.clientID !== null,
+            event.detail.clientX,
+            event.detail.clientY,
+            ContextMenuType.CANVAS_SHAPE,
+        );
+    };
+
+    const onResize = (): void => {
+        setViewSize({
+            type: 'resize',
+        });
+    };
+
+    const onCanvasObjectsGroupped = (event: any): void => {
+        const { onGroupAnnotations, onGroupObjects } = props;
+
+        onGroupObjects(false);
+
+        const { states } = event.detail;
+        onGroupAnnotations(jobInstance, frame, states);
+    };
+
+    useEffect(() => {
+        updateShapesView();
+    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy]);
+
+    useEffect(() => {
+        const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
+        updateCanvas();
+        canvasInstanceDOM.perspective.addEventListener('canvas.drawn', onCanvasShapeDrawn);
+        canvasInstanceDOM.perspective.addEventListener('canvas.selected', onCanvasShapeSelected);
+        canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
+        canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
+        canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
+        canvasInstanceDOM.perspective.addEventListener('canvas.fit', onResize);
+        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped);
+        window.addEventListener('resize', onResize);
+
+        return () => {
+            canvasInstanceDOM.perspective.removeEventListener('canvas.drawn', onCanvasShapeDrawn);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.selected', onCanvasShapeSelected);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
+            canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.fit', onResize);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped);
+            window.removeEventListener('resize', onResize);
+        };
+    }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
+
+    const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
+        canvasInstance.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
     };
 
     const ArrowGroup = (): ReactElement => (
         <span className='cvat-canvas3d-perspective-arrow-directions'>
-            <CVATTooltip title='Arrow Up' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Up' placement='topRight'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.TILT_UP)}
+                    data-cy='arrow-up'
+                    onClick={() => screenKeyControl(CameraAction.TILT_UP, false, true)}
                     type='button'
                     className='cvat-canvas3d-perspective-arrow-directions-icons-up'
                 >
@@ -253,27 +417,27 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 </button>
             </CVATTooltip>
             <br />
-            <CVATTooltip title='Arrow Left' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Left' placement='topRight'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.ROTATE_LEFT)}
+                    onClick={() => screenKeyControl(CameraAction.ROTATE_LEFT, false, true)}
                     type='button'
                     className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
                 >
                     <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
                 </button>
             </CVATTooltip>
-            <CVATTooltip title='Arrow Bottom' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Bottom' placement='topRight'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.TILT_DOWN)}
+                    onClick={() => screenKeyControl(CameraAction.TILT_DOWN, false, true)}
                     type='button'
                     className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
                 >
                     <ArrowDownOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
                 </button>
             </CVATTooltip>
-            <CVATTooltip title='Arrow Right' placement='topRight'>
+            <CVATTooltip title='Shift+Arrow Right' placement='topRight'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.ROTATE_RIGHT)}
+                    onClick={() => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true)}
                     type='button'
                     className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
                 >
@@ -287,7 +451,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         <span className='cvat-canvas3d-perspective-directions'>
             <CVATTooltip title='Alt+U' placement='topLeft'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_UP)}
+                    onClick={() => screenKeyControl(CameraAction.MOVE_UP, true, false)}
                     type='button'
                     className='cvat-canvas3d-perspective-directions-icon'
                 >
@@ -296,7 +460,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             </CVATTooltip>
             <CVATTooltip title='Alt+I' placement='topLeft'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.ZOOM_IN)}
+                    onClick={() => screenKeyControl(CameraAction.ZOOM_IN, true, false)}
                     type='button'
                     className='cvat-canvas3d-perspective-directions-icon'
                 >
@@ -305,7 +469,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             </CVATTooltip>
             <CVATTooltip title='Alt+O' placement='topLeft'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_DOWN)}
+                    onClick={() => screenKeyControl(CameraAction.MOVE_DOWN, true, false)}
                     type='button'
                     className='cvat-canvas3d-perspective-directions-icon'
                 >
@@ -315,7 +479,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             <br />
             <CVATTooltip title='Alt+J' placement='topLeft'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_LEFT)}
+                    onClick={() => screenKeyControl(CameraAction.MOVE_LEFT, true, false)}
                     type='button'
                     className='cvat-canvas3d-perspective-directions-icon'
                 >
@@ -324,7 +488,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             </CVATTooltip>
             <CVATTooltip title='Alt+K' placement='topLeft'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.ZOOM_OUT)}
+                    onClick={() => screenKeyControl(CameraAction.ZOOM_OUT, true, false)}
                     type='button'
                     className='cvat-canvas3d-perspective-directions-icon'
                 >
@@ -333,7 +497,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             </CVATTooltip>
             <CVATTooltip title='Alt+L' placement='topLeft'>
                 <button
-                    onClick={() => screenKeyControl(CAMERA_ACTION.MOVE_RIGHT)}
+                    onClick={() => screenKeyControl(CameraAction.MOVE_RIGHT, true, false)}
                     type='button'
                     className='cvat-canvas3d-perspective-directions-icon'
                 >
@@ -345,13 +509,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
     return (
         <Layout.Content className='cvat-canvas3d-fullsize' id='canvas3d-container'>
-            <ContextImage
-                frame={frameData}
-                contextImageHide={contextImageHide}
-                getContextImage={getContextImage}
-                loaded={loaded}
-                data={data}
-            />
+            <ContextImage />
             <ResizableBox
                 className='cvat-resizable'
                 width={Infinity}
@@ -360,7 +518,12 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 handle={<span className='cvat-resizable-handle-horizontal' />}
                 onResize={(e: SyntheticEvent) => setViewSize({ type: ViewType.PERSPECTIVE, e })}
             >
-                <div className='cvat-canvas3d-perspective'>
+                {frameFetching ? (
+                    <svg id='cvat_canvas_loading_animation'>
+                        <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
+                    </svg>
+                ) : null}
+                <div className='cvat-canvas3d-perspective' id='cvat-canvas3d-perspective'>
                     <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
                     <ArrowGroup />
                     <ControlGroup />

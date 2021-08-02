@@ -86,9 +86,6 @@ class AnnotationIR:
                     drop_count += 1
                 else:
                     break
-            # Need to leave the last shape if all shapes are outside
-            if drop_count == len(shapes):
-                drop_count -= 1
 
             return shapes[drop_count:]
 
@@ -103,8 +100,12 @@ class AnnotationIR:
             if scoped_shapes:
                 if not scoped_shapes[0]['keyframe']:
                     segment_shapes.insert(0, scoped_shapes[0])
-                if not scoped_shapes[-1]['keyframe']:
+                if not scoped_shapes[-1]['keyframe'] and \
+                        scoped_shapes[-1]['outside']:
                     segment_shapes.append(scoped_shapes[-1])
+                elif stop + 1 < len(interpolated_shapes) and \
+                        interpolated_shapes[stop + 1]['outside']:
+                    segment_shapes.append(interpolated_shapes[stop + 1])
 
             # Should delete 'interpolation_shapes' and 'keyframe' keys because
             # Track and TrackedShape models don't expect these fields
@@ -113,7 +114,8 @@ class AnnotationIR:
                 shape.pop('keyframe', None)
 
         track['shapes'] = segment_shapes
-        track['frame'] = track['shapes'][0]['frame']
+        if 0 < len(segment_shapes):
+            track['frame'] = track['shapes'][0]['frame']
         return track
 
     def slice(self, start, stop):
@@ -123,8 +125,13 @@ class AnnotationIR:
             for t in self.tags if self._is_shape_inside(t, start, stop)]
         splitted_data.shapes = [deepcopy(s)
             for s in self.shapes if self._is_shape_inside(s, start, stop)]
-        splitted_data.tracks = [self._slice_track(t, start, stop)
-            for t in self.tracks if self._is_track_inside(t, start, stop)]
+        splitted_tracks = []
+        for t in self.tracks:
+            if self._is_track_inside(t, start, stop):
+                track = self._slice_track(t, start, stop)
+                if 0 < len(track['shapes']):
+                    splitted_tracks.append(track)
+        splitted_data.tracks = splitted_tracks
 
         return splitted_data
 
@@ -430,24 +437,6 @@ class TrackManager(ObjectManager):
                 obj["interpolated_shapes"].append(shape)
 
     @staticmethod
-    def normalize_shape(shape):
-        points = list(shape["points"])
-        if len(points) == 2:
-            points.extend(points) # duplicate points for single point case
-        points = np.asarray(points).reshape(-1, 2)
-        broken_line = geometry.LineString(points)
-        points = []
-        for off in range(0, 100, 1):
-            p = broken_line.interpolate(off / 100, True)
-            points.append(p.x)
-            points.append(p.y)
-
-        shape = copy(shape)
-        shape["points"] = points
-
-        return shape
-
-    @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
         def copy_shape(source, frame, points=None):
             copied = deepcopy(source)
@@ -464,11 +453,7 @@ class TrackManager(ObjectManager):
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
-                points = None
-                if shape1["outside"]:
-                    points = np.asarray(shape0["points"])
-                else:
-                    points = shape0["points"] + diff * offset
+                points = shape0["points"] + diff * offset
 
                 shapes.append(copy_shape(shape0, frame, points.tolist()))
 
@@ -690,11 +675,7 @@ class TrackManager(ObjectManager):
             distance = shape1["frame"] - shape0["frame"]
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
-                points = None
-                if shape1["outside"]:
-                    points = np.asarray(shape0["points"])
-                else:
-                    points = interpolate_position(shape0, shape1, offset)
+                points = interpolate_position(shape0, shape1, offset)
 
                 shapes.append(copy_shape(shape0, frame, points))
 

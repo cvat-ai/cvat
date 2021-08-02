@@ -28,18 +28,16 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const projects = useSelector((state: CombinedState) => state.projects.current);
+    const projects = useSelector((state: CombinedState) => state.projects.current).map((project) => project.instance);
     const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
     const tasks = useSelector((state: CombinedState) => state.tasks.current);
-    const projectSubsets = useSelector((state: CombinedState) => {
-        const [project] = state.projects.current.filter((_project) => _project.id === id);
-        return project ? ([...new Set(project.tasks.map((task: any) => task.subset))] as string[]) : [];
-    });
 
     const [project] = projects.filter((_project) => _project.id === id);
+    const projectSubsets = [''];
+    if (project) projectSubsets.push(...project.subsets);
     const deleteActivity = project && id in deletes ? deletes[id] : null;
 
     useEffect(() => {
@@ -90,7 +88,7 @@ export default function ProjectPageComponent(): JSX.Element {
                         </Button>
                     </Col>
                 </Row>
-                {projectSubsets.map((subset) => (
+                {projectSubsets.map((subset: string) => (
                     <React.Fragment key={subset}>
                         {subset && <Title level={4}>{subset}</Title>}
                         {tasks

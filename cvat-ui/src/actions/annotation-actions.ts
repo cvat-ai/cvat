@@ -7,7 +7,7 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
-import { RectDrawingMethod } from 'cvat-canvas-wrapper';
+import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -146,7 +146,6 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
-    UPDATE_TAB_CONTENT_HEIGHT = 'UPDATE_TAB_CONTENT_HEIGHT',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
@@ -196,6 +195,8 @@ export enum AnnotationActionTypes {
     GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
     HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
     GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
+    GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
+    GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -574,15 +575,6 @@ export function activateObject(activatedStateID: number | null, activatedAttribu
     };
 }
 
-export function updateTabContentHeight(tabContentHeight: number): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_TAB_CONTENT_HEIGHT,
-        payload: {
-            tabContentHeight,
-        },
-    };
-}
-
 export function collapseSidebar(): AnyAction {
     return {
         type: AnnotationActionTypes.COLLAPSE_SIDEBAR,
@@ -697,7 +689,8 @@ export function getPredictionsAsync(): ThunkAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number): ThunkAction {
+export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number,
+    forceUpdate?: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
@@ -708,13 +701,14 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
-            if (toFrame === frame) {
+            if (toFrame === frame && !forceUpdate) {
                 dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
                         number: state.annotation.player.frame.number,
                         data: state.annotation.player.frame.data,
                         filename: state.annotation.player.frame.filename,
+                        hasRelatedContext: state.annotation.player.frame.hasRelatedContext,
                         delay: state.annotation.player.frame.delay,
                         changeTime: state.annotation.player.frame.changeTime,
                         states: state.annotation.annotations.states,
@@ -726,7 +720,6 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
 
                 return;
             }
-
             // Start async requests
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
@@ -766,6 +759,7 @@ export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameSte
                     number: toFrame,
                     data,
                     filename: data.filename,
+                    hasRelatedContext: data.hasRelatedContext,
                     states,
                     minZ,
                     maxZ,
@@ -807,7 +801,6 @@ export function undoActionAsync(sessionInstance: any, frame: number): ThunkActio
                 true,
             );
 
-            dispatch(changeFrameAsync(undo[1]));
             await sessionInstance.actions.undo();
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
@@ -823,6 +816,11 @@ export function undoActionAsync(sessionInstance: any, frame: number): ThunkActio
                     maxZ,
                 },
             });
+
+            const undoOnFrame = undo[1];
+            if (frame !== undoOnFrame) {
+                dispatch(changeFrameAsync(undoOnFrame));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.UNDO_ACTION_FAILED,
@@ -851,7 +849,7 @@ export function redoActionAsync(sessionInstance: any, frame: number): ThunkActio
                 },
                 true,
             );
-            dispatch(changeFrameAsync(redo[1]));
+
             await sessionInstance.actions.redo();
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
@@ -867,6 +865,11 @@ export function redoActionAsync(sessionInstance: any, frame: number): ThunkActio
                     maxZ,
                 },
             });
+
+            const redoOnFrame = redo[1];
+            if (frame !== redoOnFrame) {
+                dispatch(changeFrameAsync(redoOnFrame));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.REDO_ACTION_FAILED,
@@ -1031,6 +1034,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     states,
                     frameNumber,
                     frameFilename: frameData.filename,
+                    frameHasRelatedContext: frameData.hasRelatedContext,
                     frameData,
                     colors,
                     filters,
@@ -1139,6 +1143,7 @@ export function rememberObject(createParams: {
     activeShapeType?: ShapeType;
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
+    activeCuboidDrawingMethod?: CuboidDrawingMethod;
 }): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
@@ -1430,8 +1435,9 @@ export function pasteShapeAsync(): ThunkAction {
                     activeControl,
                 },
             });
-
-            canvasInstance.cancel();
+            if (canvasInstance instanceof Canvas) {
+                canvasInstance.cancel();
+            }
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
                     objectType: ObjectType.TAG,
@@ -1484,11 +1490,12 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 activeShapeType,
                 activeNumOfPoints,
                 activeRectDrawingMethod,
+                activeCuboidDrawingMethod,
             },
         } = getStore().getState().annotation;
 
         let activeControl = ActiveControl.CURSOR;
-        if (activeInteractor) {
+        if (activeInteractor && canvasInstance instanceof Canvas) {
             if (activeInteractor.type === 'tracker') {
                 canvasInstance.interact({
                     enabled: true,
@@ -1506,7 +1513,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
             return;
         }
-
         if (activeShapeType === ShapeType.RECTANGLE) {
             activeControl = ActiveControl.DRAW_RECTANGLE;
         } else if (activeShapeType === ShapeType.POINTS) {
@@ -1518,7 +1524,6 @@ export function repeatDrawShapeAsync(): ThunkAction {
         } else if (activeShapeType === ShapeType.CUBOID) {
             activeControl = ActiveControl.DRAW_CUBOID;
         }
-
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
             payload: {
@@ -1526,7 +1531,9 @@ export function repeatDrawShapeAsync(): ThunkAction {
             },
         });
 
-        canvasInstance.cancel();
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.cancel();
+        }
         if (activeObjectType === ObjectType.TAG) {
             const objectState = new cvat.classes.ObjectState({
                 objectType: ObjectType.TAG,
@@ -1538,6 +1545,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
+                cuboidDrawingMethod: activeCuboidDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),
@@ -1575,8 +1583,9 @@ export function redrawShapeAsync(): ThunkAction {
                         activeControl,
                     },
                 });
-
-                canvasInstance.cancel();
+                if (canvasInstance instanceof Canvas) {
+                    canvasInstance.cancel();
+                }
                 canvasInstance.draw({
                     enabled: true,
                     redraw: activatedStateID,
@@ -1632,35 +1641,27 @@ export function hideShowContextImage(hidden: boolean): AnyAction {
     };
 }
 
-export function getContextImage(): ThunkAction {
+export function getContextImageAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
-        const { frame, contextImage } = state.annotation.player;
+        const { number: frameNumber } = state.annotation.player.frame;
 
         try {
-            const context = await job.frames.contextImage(job.task.id, frame.number);
-            const loaded = true;
-            const contextImageHide = contextImage.hidden;
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
-                payload: {
-                    context,
-                    loaded,
-                    contextImageHide,
-                },
+                payload: {},
+            });
+
+            const contextImageData = await job.frames.contextImage(job.task.id, frameNumber);
+            dispatch({
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS,
+                payload: { contextImageData },
             });
         } catch (error) {
-            const context = '';
-            const loaded = true;
-            const contextImageHide = contextImage.hidden;
             dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
-                payload: {
-                    context,
-                    loaded,
-                    contextImageHide,
-                },
+                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED,
+                payload: { error },
             });
         }
     };

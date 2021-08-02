@@ -352,7 +352,7 @@ function setupCuboidPoints(points: Point[]): any[] {
         ? Math.abs(points[1].y - points[0].y)
         : Math.abs(points[1].y - points[2].y);
 
-    // seperate into left and right point
+    // separate into left and right point
     // we pick the first and third point because we know assume they will be on
     // opposite corners
     if (points[0].x < points[2].x) {

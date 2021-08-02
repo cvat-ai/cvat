@@ -50,12 +50,13 @@ context('Mutable attribute.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Go to AAM. For the 2nd and 3rd frames, change the attribute value.', () => {
-            cy.changeWorkspace('Attribute annotation', labelTrack);
+            cy.changeWorkspace('Attribute annotation');
+            cy.changeLabelAAM(labelTrack);
             testChangingAttributeValue(additionalAttrsLabelShape[0].additionalValue, attrValueSecondFrame);
             testChangingAttributeValue(attrValueSecondFrame, attrValueThirdFrame);
         });
 
-        it('Go to Standard mode. The object detaild have correct values on the corresponding frames.', () => {
+        it('Go to Standard mode. The object details have correct values on the corresponding frames.', () => {
             cy.changeWorkspace('Standard');
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove', { scrollBehavior: false })

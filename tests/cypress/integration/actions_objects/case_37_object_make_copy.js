@@ -102,7 +102,7 @@ context('Object make a copy.', () => {
                 cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
                     cy.get('[aria-label="more"]').trigger('mouseover').wait(300); // Wait dropdown menu transition
                 });
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the tast element from cvat-object-item-menu array
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the last element from cvat-object-item-menu array
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click();
                 coordX += 100;
@@ -135,7 +135,7 @@ context('Object make a copy.', () => {
                         .rightclick('right'); // When click in the center of polyline: is being covered by another element: <svg xmlns="http://www.w3.org/2000/svg" ...
                 } else {
                     cy.get(`#cvat_canvas_shape_${id}`)
-                        .trigger('mousemove')
+                        .trigger('mousemove', 'right')
                         .should('have.class', 'cvat_canvas_shape_activated')
                         .rightclick();
                 }
@@ -145,7 +145,7 @@ context('Object make a copy.', () => {
                     .find('[aria-label="more"]')
                     .trigger('mouseover')
                     .wait(300); // Wait dropdown menu transition;
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the tast element from cvat-object-item-menu array
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the last element from cvat-object-item-menu array
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click(); // Deactivate all objects and hide context menu
                 coordX += 100;
@@ -168,5 +168,51 @@ context('Object make a copy.', () => {
                 }
             },
         );
+
+        it('Copy a shape to an another frame.', () => {
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}c');
+            cy.get('.cvat-player-next-button').click();
+            cy.get('body').type('{ctrl}v');
+            cy.get('.cvat-canvas-container').click();
+            cy.get('.cvat-player-previous-button').click();
+        });
+
+        it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', () => {
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}c');
+            cy.get('body').type('{ctrl}v');
+            cy.get('.cvat-player-next-button').click();
+            cy.get('.cvat-canvas-container').click(300, 300);
+            cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {
+                expect(sidebarItems.length).to.be.equal(2);
+            });
+        });
+
+        it('Copy a shape with holding "Ctrl".', () => {
+            const keyCodeC = 67;
+            const keyCodeV = 86;
+            cy.get('.cvat_canvas_shape')
+                .first()
+                .trigger('mousemove')
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}', { release: false }); // Hold
+            cy.get('body')
+                .trigger('keydown', { keyCode: keyCodeC, ctrlKey: true })
+                .trigger('keyup')
+                .trigger('keydown', { keyCode: keyCodeV, ctrlKey: true })
+                .trigger('keyup');
+            cy.get('.cvat-canvas-container').click(400, 300);
+            cy.get('.cvat-canvas-container').click(500, 300);
+            cy.get('body').type('{ctrl}'); // Unhold
+            cy.get('.cvat-canvas-container').click(600, 300);
+            cy.get('.cvat_canvas_shape_drawing').should('not.exist');
+            cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {
+                expect(sidebarItems.length).to.be.equal(5);
+            });
+            cy.get('.cvat_canvas_shape').then((shapes) => {
+                expect(shapes.length).to.be.equal(5);
+            });
+        });
     });
 });

@@ -13,6 +13,7 @@ const core = getCore();
 type Props = {
     value: number | null;
     onSelect: (id: number | null) => void;
+    filter?: (value: Project, index: number, array: Project[]) => unknown;
 };
 
 type Project = {
@@ -21,21 +22,17 @@ type Project = {
 };
 
 export default function ProjectSearchField(props: Props): JSX.Element {
-    const { value, onSelect } = props;
+    const { value, filter, onSelect } = props;
     const [searchPhrase, setSearchPhrase] = useState('');
 
     const [projects, setProjects] = useState<Project[]>([]);
 
     const handleSearch = (searchValue: string): void => {
-        if (searchValue) {
-            core.projects.searchNames(searchValue).then((result: Project[]) => {
-                if (result) {
-                    setProjects(result);
-                }
-            });
-        } else {
-            setProjects([]);
-        }
+        core.projects.searchNames(searchValue).then((result: Project[]) => {
+            if (result) {
+                setProjects(result);
+            }
+        });
         setSearchPhrase(searchValue);
         onSelect(null);
     };
@@ -43,8 +40,12 @@ export default function ProjectSearchField(props: Props): JSX.Element {
     const handleFocus = (open: boolean): void => {
         if (!projects.length && open) {
             core.projects.searchNames().then((result: Project[]) => {
-                if (result) {
-                    setProjects(result);
+                let projectsResponse = result;
+                if (typeof filter === 'function') {
+                    projectsResponse = projectsResponse.filter(filter);
+                }
+                if (projectsResponse) {
+                    setProjects(projectsResponse);
                 }
             });
         }

@@ -6,8 +6,6 @@
 
 .cvat-objects-appearance-collapse.ant-collapse {
     width: 100%;
-    bottom: 0;
-    position: absolute;
     border-radius: 0;
 
     > .ant-collapse-item {
@@ -29,7 +27,7 @@
         > .ant-collapse-content {
             background: $background-color-2;
             border-bottom: none;
-            height: 230px;
+            padding-bottom: $grid-unit-size * 3;
 
             > .ant-collapse-content-box {
                 padding: 10px;
@@ -398,4 +396,30 @@
 
 .cvat-objects-sidebar-label-item-disabled {
     opacity: 0.5;
+}
+
+.cvat-workspace-settings-approx-poly-threshold {
+    .ant-slider-track {
+        background: linear-gradient(90deg, #1890ff 0%, #61c200 100%);
+    }
+}
+
+.cvat-approx-poly-threshold-wrapper {
+    @extend .cvat-workspace-settings-approx-poly-threshold;
+
+    width: $grid-unit-size * 32;
+    position: absolute;
+    background: $background-color-2;
+    top: 8px;
+    left: 50%;
+    border-radius: 6px;
+    border: 1px solid $border-color-3;
+    z-index: 100;
+    padding: $grid-unit-size / 2 $grid-unit-size * 2 $grid-unit-size / 2 $grid-unit-size / 2;
+
+    .ant-slider-mark {
+        position: static;
+        margin-top: 4px;
+        pointer-events: none;
+    }
 }

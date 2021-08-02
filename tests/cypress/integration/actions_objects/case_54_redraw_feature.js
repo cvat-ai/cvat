@@ -129,15 +129,23 @@ context('Redraw feature.', () => {
             });
         });
 
-        it.skip('Draw and redraw a cuboid.', () => {
-            // Need to fix issue https://github.com/openvinotoolkit/cvat/issues/2873
+        it('Draw and redraw a cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 300, 400);
+            cy.get('.cvat-canvas-container').trigger('mousemove', 350, 400);
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the cuboid
             cy.get('.cvat-canvas-container')
                 .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 50)
                 .click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 50);
+            // Check issue 3219. Press "N" during the redrawing of the cuboid
+            cy.get('.cvat-canvas-container').trigger('mousemove', 350, 300);
+            cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the cuboid
+            cy.get('.cvat-canvas-container')
+                .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 100)
+                .trigger('mousemove', createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 100);
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+            cy.get('.cvat_canvas_shape_drawing').should('not.exist');
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(5);
             });

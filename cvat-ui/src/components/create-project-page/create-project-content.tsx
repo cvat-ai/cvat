@@ -96,7 +96,7 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     );
 }
 
-function AdvanvedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
+function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
@@ -147,6 +147,7 @@ export default function CreateProjectContent(): JSX.Element {
             notification.info({
                 message: 'The project has been created',
                 btn,
+                className: 'cvat-notification-create-project-success',
             });
         }
 
@@ -197,7 +198,7 @@ export default function CreateProjectContent(): JSX.Element {
                 />
             </Col>
             <Col span={24}>
-                <AdvanvedConfigurationForm formRef={advancedFormRef} />
+                <AdvancedConfigurationForm formRef={advancedFormRef} />
             </Col>
             <Col span={24}>
                 <Button type='primary' onClick={onSumbit}>

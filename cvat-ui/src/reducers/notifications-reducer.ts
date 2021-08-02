@@ -42,9 +42,12 @@ const defaultState: NotificationsState = {
             updating: null,
             dumping: null,
             loading: null,
-            exporting: null,
+            exportingAsDataset: null,
             deleting: null,
             creating: null,
+            exporting: null,
+            importing: null,
+            moving: null,
         },
         formats: {
             fetching: null,
@@ -69,6 +72,7 @@ const defaultState: NotificationsState = {
             saving: null,
             jobFetching: null,
             frameFetching: null,
+            contextImageFetching: null,
             changingLabelColor: null,
             updating: null,
             creating: null,
@@ -109,6 +113,8 @@ const defaultState: NotificationsState = {
     messages: {
         tasks: {
             loadingDone: '',
+            importingDone: '',
+            movingDone: '',
         },
         models: {
             inferenceDone: '',
@@ -310,7 +316,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     tasks: {
                         ...state.errors.tasks,
-                        exporting: {
+                        exportingAsDataset: {
                             message:
                                 'Could not export dataset for the ' +
                                 `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
@@ -435,6 +441,49 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-create-task-failed',
                         },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.EXPORT_TASK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        exporting: {
+                            message: 'Could not export the task',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        importing: {
+                            message: 'Could not import the task',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
+            const taskID = action.payload.task.id;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        importingDone: `Task has been imported succesfully <a href="/tasks/${taskID}">Open task</a>`,
                     },
                 },
             };
@@ -684,6 +733,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         frameFetching: {
                             message: `Could not receive frame ${action.payload.number}`,
                             reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        contextImageFetching: {
+                            message: 'Could not fetch context image from the server',
+                            reason: action.payload.error,
                         },
                     },
                 },

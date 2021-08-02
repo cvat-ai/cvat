@@ -1,12 +1,12 @@
 click==7.1.2
-Django==3.1.10
+Django==3.1.13
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-cacheops==5.0.1
 django-compressor==2.4
 django-rq==2.3.2
 EasyProcess==0.3
-Pillow==8.2.0
+Pillow==8.3.0
 numpy==1.19.5
 python-ldap==3.3.1
 pytz==2020.1
@@ -45,9 +45,11 @@ tensorflow==2.4.1 # Optional requirement of Datumaro
 patool==1.12
 diskcache==5.0.2
 open3d==0.11.2
+boto3==1.17.61
+azure-storage-blob==12.8.1
 # --no-binary=datumaro: workaround for pip to install
 # opencv-headless instead of regular opencv, to actually run setup script
 # --no-binary=pycocotools: workaround for binary incompatibility on numpy 1.20
 # of pycocotools and tensorflow 2.4.1
 # when pycocotools is installed by wheel in python 3.8+
-datumaro==0.1.8 --no-binary=datumaro --no-binary=pycocotools
+datumaro==0.1.10.1 --no-binary=datumaro --no-binary=pycocotools

@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019-2020 Intel Corporation
+# Copyright (C) 2019-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -346,7 +346,7 @@ class JobAnnotation:
             labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
             # It is not important for us that data had some "invalid" objects
-            # which were skipped (not acutally deleted). The main idea is to
+            # which were skipped (not actually deleted). The main idea is to
             # say that all requested objects are absent in DB after the method.
             self.ir_data.tags = data['tags']
             self.ir_data.shapes = data['shapes']
