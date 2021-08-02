@@ -58,10 +58,12 @@ function InteractorTooltips(props: Props): JSX.Element {
                         <Text strong>{' Ctrl '}</Text>
                         <Text>key</Text>
                     </Paragraph>
-                    <Paragraph>
-                        <Text>Positive points can be added by left-clicking the image. </Text>
-                        <Text>Negative points can be added by right-clicking the image. </Text>
-                    </Paragraph>
+                    {['f-BRS', 'IOG'].includes(tool) ? (
+                        <Paragraph>
+                            <Text>Positive points can be added by left-clicking the image. </Text>
+                            <Text>Negative points can be added by right-clicking the image. </Text>
+                        </Paragraph>
+                    ) : null}
                 </>
             ) : null}
             {gif ? <Image className='cvat-interactor-tip-image' alt='Example gif' src={gif} /> : null}
