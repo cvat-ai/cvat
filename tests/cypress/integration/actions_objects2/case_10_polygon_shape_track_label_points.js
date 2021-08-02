@@ -91,17 +91,58 @@ context('Actions on polygon', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Draw a polygon shape, track', () => {
+        it('Draw a polygon shape, track.', () => {
             cy.createPolygon(createPolygonShape);
             cy.createPolygon(createPolygonTrack);
         });
-        it('Draw a polygon shape, track with use parameter "number of points"', () => {
+
+        it('Draw a polygon shape, track with use parameter "number of points".', () => {
             cy.createPolygon(createPolygonShapePoints);
             cy.createPolygon(createPolygonTrackPoints);
         });
-        it('Draw a polygon shape, track with second label', () => {
+
+        it('Draw a polygon shape, track with second label.', () => {
             cy.createPolygon(createPolygonShapeSwitchLabel);
             cy.createPolygon(createPolygonTrackSwitchLabel);
+        });
+
+        it('Set start point.', () => {
+            let notFirtsPointCoords = {
+                x: 0,
+                y: 0,
+            };
+            let firtsPointCoords = {
+                x: 0,
+                y: 0,
+            };
+            cy.get('#cvat_canvas_shape_4')
+                .trigger('mousemove', {scrollBehavior: false})
+                .trigger('mouseover', {scrollBehavior: false})
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.svg_select_points').not('.cvat_canvas_first_poly_point').first().then((notFirtsPoint) => {
+                notFirtsPointCoords.x = notFirtsPoint.attr('cx');
+                notFirtsPointCoords.y = notFirtsPoint.attr('cy');
+            }).rightclick({scrollBehavior: false});
+            cy.get('.cvat-canvas-point-context-menu').contains('span', 'Set start point').click({scrollBehavior: false});
+            cy.get('.cvat_canvas_first_poly_point').then((firtsPoint) => {
+                firtsPointCoords.x = firtsPoint.attr('cx');
+                firtsPointCoords.y = firtsPoint.attr('cy');
+                expect(notFirtsPointCoords).to.deep.equal(firtsPointCoords);
+            });
+        });
+
+        it('Change direction.', () => {
+            let polyDirectionAttrDataAngle;
+            cy.get('#cvat_canvas_shape_4')
+                .trigger('mousemove', {scrollBehavior: false})
+                .trigger('mouseover', {scrollBehavior: false})
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.cvat_canvas_poly_direction').then((polyDirection) => {
+                polyDirectionAttrDataAngle = polyDirection.attr('data-angle');
+            }).click({scrollBehavior: false})
+            cy.get('.cvat_canvas_poly_direction').then((afterChangePolyDirection) => {
+                expect(polyDirectionAttrDataAngle).not.equal(afterChangePolyDirection.attr('data-angle'));
+            });
         });
     });
 });

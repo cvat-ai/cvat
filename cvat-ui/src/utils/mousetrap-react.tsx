@@ -11,6 +11,7 @@ export interface KeyMapItem {
     sequences: string[];
     displayedSequences?: string[];
     action: 'keydown' | 'keyup' | 'keypress';
+    applicable: any[];
 }
 
 export interface KeyMap {

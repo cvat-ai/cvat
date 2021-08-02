@@ -85,17 +85,49 @@ context('Actions on polylines', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Draw a polylines shape, track', () => {
+        it('Draw a polylines shape, track.', () => {
             cy.createPolyline(createPolylinesShape);
             cy.createPolyline(createPolylinesTrack);
         });
-        it('Draw a polylines shape, track with use parameter "number of points"', () => {
+
+        it('Draw a polylines shape, track with use parameter "number of points".', () => {
             cy.createPolyline(createPolylinesShapePoints);
             cy.createPolyline(createPolylinesTrackPoints);
         });
-        it('Draw a polylines shape, track with second label', () => {
+
+        it('Draw a polylines shape, track with second label.', () => {
             cy.createPolyline(createPolylinesShapeSwitchLabel);
             cy.createPolyline(createPolylinesTrackSwitchLabel);
+        });
+
+        it('Change direction.', () => {
+            let firtsPointCoords = {
+                x: 0,
+                y: 0,
+            };
+            let lastPointCoords = {
+                x: 0,
+                y: 0,
+            };
+            cy.get('#cvat_canvas_shape_4')
+                .trigger('mousemove', {scrollBehavior: false})
+                .trigger('mouseover', {scrollBehavior: false})
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.svg_select_points_point').first().then((firtsPoint) => {
+                firtsPointCoords.x = firtsPoint.attr('cx');
+                firtsPointCoords.y = firtsPoint.attr('cy');
+                cy.get('.svg_select_points_point').last().then((lastPoint) => {
+                    lastPointCoords.x = lastPoint.attr('cx');
+                    lastPointCoords.y = lastPoint.attr('cy');
+                    cy.get('.cvat_canvas_first_poly_point')
+                        .should('have.attr', 'cx', firtsPointCoords.x)
+                        .and('have.attr', 'cy', firtsPointCoords.y)
+                    cy.get('.cvat_canvas_poly_direction').click({scrollBehavior: false});
+                    cy.get('.cvat_canvas_first_poly_point')
+                        .should('have.attr', 'cx', lastPointCoords.x)
+                        .and('have.attr', 'cy', lastPointCoords.y)
+                });
+            });
         });
     });
 });

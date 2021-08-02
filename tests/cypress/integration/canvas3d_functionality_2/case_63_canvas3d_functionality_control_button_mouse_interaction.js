@@ -9,7 +9,7 @@ import { taskName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
     const caseId = '63';
     const screenshotsPath =
-        'cypress/screenshots/canvas3d_functionality/case_63_canvas3d_functionality_control_button_mouse_interaction.js';
+        'cypress/screenshots/canvas3d_functionality_2/case_63_canvas3d_functionality_control_button_mouse_interaction.js';
 
     function testPerspectiveChangeOnButtonClick(
         button,

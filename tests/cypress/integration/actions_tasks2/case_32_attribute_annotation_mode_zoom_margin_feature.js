@@ -37,7 +37,8 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
         cy.createTag(labelName);
 
         // go to AAM workspace
-        cy.changeWorkspace('Attribute annotation', labelName);
+        cy.changeWorkspace('Attribute annotation');
+        cy.changeLabelAAM(labelName);
     });
 
     describe(`Testing case "${caseId}"`, () => {

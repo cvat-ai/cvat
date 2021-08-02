@@ -26,6 +26,7 @@ export enum SettingsActionTypes {
     SWITCH_AUTO_SAVE = 'SWITCH_AUTO_SAVE',
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
+    CHANGE_DEFAULT_APPROX_POLY_THRESHOLD = 'CHANGE_DEFAULT_APPROX_POLY_THRESHOLD',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
     SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
@@ -266,6 +267,15 @@ export function switchSettingsDialog(show?: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_SETTINGS_DIALOG,
         payload: {
             show,
+        },
+    };
+}
+
+export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD,
+        payload: {
+            approxPolyAccuracy,
         },
     };
 }

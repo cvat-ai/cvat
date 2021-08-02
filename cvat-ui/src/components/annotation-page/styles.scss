@@ -16,7 +16,7 @@
 .ant-layout-header.cvat-annotation-header {
     background-color: $background-color-2;
     border-bottom: 1px solid $border-color-1;
-    height: 54px;
+    height: 48px;
     padding: 0;
 
     > div:first-child {
@@ -39,14 +39,14 @@
 
 .ant-btn.cvat-annotation-header-button {
     padding: 0;
-    width: 54px;
-    height: 54px;
-    text-align: center;
+    width: 48px;
+    height: 48px;
     user-select: none;
     color: $text-color;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     margin: 0 3px;
 
     > span:not([role='img']) {
@@ -55,21 +55,15 @@
     }
 
     > span[role='img'] {
-        transform: scale(0.8);
-        padding: 3px;
+        font-size: 24px;
     }
 
     &:hover > span[role='img'] {
-        transform: scale(0.85);
+        transform: scale(1.1);
     }
 
     &:active > span[role='img'] {
-        transform: scale(0.8);
-    }
-
-    > * {
-        display: block;
-        line-height: 0;
+        transform: scale(1.05);
     }
 
     &.filters-armed {
@@ -135,7 +129,7 @@ button.cvat-predictor-button {
 }
 
 .cvat-annotation-header-player-group > div {
-    height: 54px;
+    height: 48px;
     line-height: 0;
     flex-wrap: nowrap;
 }
@@ -212,9 +206,11 @@ button.cvat-predictor-button {
     justify-content: flex-end;
 
     > div {
-        display: block;
-        height: 54px;
-        margin-right: 15px;
+        display: flex;
+        height: 48px;
+        align-items: center;
+        justify-content: center;
+        padding-right: 8px;
     }
 }
 
