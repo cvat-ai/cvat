@@ -80,8 +80,7 @@ context('Move a task between projects.', () => {
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
-        // Waiting to fix https://github.com/openvinotoolkit/cvat/issues/3281
-        it.skip('Move a task between projects from a project.', () => {
+        it('Move a task between projects from a project.', () => {
             checkTask(secondProject.name, 'not.exist');
             checkTask(firtsProject.name, 'exist');
             cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label);
