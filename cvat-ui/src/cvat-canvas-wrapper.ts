@@ -22,7 +22,7 @@ export function convertShapesForInteractor(shapes: InteractionResult[], button: 
     };
 
     return shapes
-        .filter((shape: InteractionResult): boolean => shape.shapeType === 'points' && shape.button === button)
+        .filter((shape: InteractionResult): boolean => shape.button === button)
         .map((shape: InteractionResult): number[] => shape.points)
         .flat()
         .reduce(reducer, []);

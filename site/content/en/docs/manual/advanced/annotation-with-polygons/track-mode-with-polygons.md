@@ -12,7 +12,7 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
    ![](/images/image184.jpg)
 
 1. Create a polygon the same way as in the case of [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).
-   Press `N` to complete the polygon.
+   Press `N` or click the `Done` button on the top panel to complete the polygon.
 
 1. Pay attention to the fact that the created polygon has a starting point and a direction,
    these elements are important for annotation of the following frames.

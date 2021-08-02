@@ -1,13 +1,11 @@
 version: '3.3'
 services:
-  serverless:
+  nuclio:
     container_name: nuclio
     image: quay.io/nuclio/dashboard:1.5.16-amd64
     restart: always
     networks:
-      default:
-        aliases:
-          - nuclio
+      - cvat
     volumes:
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock

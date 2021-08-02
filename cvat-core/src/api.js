@@ -20,6 +20,7 @@ function build() {
     const { Project } = require('./project');
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
+    const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
 
     const enums = require('./enums');
@@ -801,6 +802,7 @@ function build() {
             Comment,
             Issue,
             Review,
+            FrameData,
             CloudStorage,
         },
     };
