@@ -14,9 +14,14 @@ interface Props {
 function InteractorTooltips(props: Props): JSX.Element {
     const { tool } = props;
 
-    const DEXTR_GIF = 'https://openvinotoolkit.github.io/cvat/images/gif019_detrac.gif';
+    const DEXTR_GIF = 'https://openvinotoolkit.github.io/cvat/images/dextr_example.gif';
+    const FBRS_GIF = 'https://openvinotoolkit.github.io/cvat/images/fbrs_example.gif';
+    const IOG_GIF = 'https://openvinotoolkit.github.io/cvat/images/iog_example.gif';
     const DEXTR_DESC =
         'The interactor allows to get a mask of an object using its extreme points (more or equal 4). You can add a point left-clicking the image';
+    const FBRS_DESC = 'The interactor allows to get a mask for an object using positive points, and negative points.';
+    const IOG_DESC =
+        'The interactor allows to get a mask of an object using its wrapping boundig box, positive, and negative points inside it';
 
     const UNKNOWN_DESC = 'Selected interactor does not have tips';
 
@@ -31,6 +36,14 @@ function InteractorTooltips(props: Props): JSX.Element {
             gif = DEXTR_GIF;
             desc = DEXTR_DESC;
             break;
+        case 'f-BRS':
+            gif = FBRS_GIF;
+            desc = FBRS_DESC;
+            break;
+        case 'IOG':
+            gif = IOG_GIF;
+            desc = IOG_DESC;
+            break;
         default:
             desc = UNKNOWN_DESC;
     }
@@ -39,13 +52,19 @@ function InteractorTooltips(props: Props): JSX.Element {
         <div className='cvat-interactor-tip-container'>
             <Paragraph>{desc}</Paragraph>
             {tool ? (
-                <Paragraph>
-                    <Text>You can prevent server requests holding</Text>
-                    <Text strong>{' Ctrl '}</Text>
-                    <Text>key</Text>
-                </Paragraph>
+                <>
+                    <Paragraph>
+                        <Text>You can prevent server requests holding</Text>
+                        <Text strong>{' Ctrl '}</Text>
+                        <Text>key</Text>
+                    </Paragraph>
+                    <Paragraph>
+                        <Text>Positive points can be added by left-clicking the image. </Text>
+                        <Text>Negative points can be added by right-clicking the image. </Text>
+                    </Paragraph>
+                </>
             ) : null}
-            {gif ? <Image className='cvat-interactor-tip-image' alt='Example gif' src={DEXTR_GIF} /> : null}
+            {gif ? <Image className='cvat-interactor-tip-image' alt='Example gif' src={gif} /> : null}
         </div>
     );
 }
