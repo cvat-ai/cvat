@@ -830,7 +830,7 @@ class CVATDataExtractor(datumaro.SourceExtractor):
 
 
 class CvatTaskDataExtractor(CVATDataExtractor):
-    def __init__(self, task_data, include_images, format_type, dimension):
+    def __init__(self, task_data, include_images = False, format_type = None, dimension = DimensionType.DIM_2D):
         super().__init__()
         self._categories, self._user = self._load_categories(task_data.meta['task'], dimension=dimension)
         self._dimension = dimension
@@ -922,7 +922,7 @@ class CvatTaskDataExtractor(CVATDataExtractor):
         return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, self._format_type, self._dimension)
 
 class CVATProjectDataExtractor(CVATDataExtractor):
-    def __init__(self, project_data: ProjectData, include_images: bool, format_type: str, dimension: DimensionType):
+    def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
         super().__init__()
         self._categories, self._user = self._load_categories(project_data.meta['project'], dimension)
         self._dimension = dimension
