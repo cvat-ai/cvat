@@ -63,7 +63,7 @@ module.exports = (env) => ({
                                 },
                             ],
                         ],
-                        presets: [['@babel/preset-env'], ['@babel/preset-react'], ['@babel/typescript']],
+                        presets: ['@babel/preset-env', '@babel/preset-react', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -81,9 +81,7 @@ module.exports = (env) => ({
                     {
                         loader: 'postcss-loader',
                         options: {
-                            postcssOptions: {
-                                plugins: [['postcss-preset-env']],
-                            },
+                            plugins: [require('postcss-preset-env')],
                         },
                     },
                     'sass-loader',
