@@ -6,7 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Actions on polylines', () => {
+context('Actions on polylines.', () => {
     const caseId = '11';
     const newLabelName = `New label for case ${caseId}`;
     const createPolylinesShape = {
@@ -18,7 +18,6 @@ context('Actions on polylines', () => {
             { x: 250, y: 250 },
         ],
         complete: true,
-        numberOfPoints: null,
     };
     const createPolylinesTrack = {
         type: 'Track',
@@ -29,7 +28,6 @@ context('Actions on polylines', () => {
             { x: 350, y: 350 },
         ],
         complete: true,
-        numberOfPoints: null,
     };
     const createPolylinesShapePoints = {
         type: 'Shape',
@@ -63,8 +61,7 @@ context('Actions on polylines', () => {
             { x: 650, y: 200 },
             { x: 650, y: 250 },
         ],
-        complete: true,
-        numberOfPoints: null,
+        useDoneButton: true,
     };
     const createPolylinesTrackSwitchLabel = {
         type: 'Track',
@@ -75,7 +72,6 @@ context('Actions on polylines', () => {
             { x: 750, y: 250 },
         ],
         complete: true,
-        numberOfPoints: null,
     };
 
     before(() => {
@@ -95,7 +91,7 @@ context('Actions on polylines', () => {
             cy.createPolyline(createPolylinesTrackPoints);
         });
 
-        it('Draw a polylines shape, track with second label.', () => {
+        it('Draw a polylines shape with second label and "Done" button, track with second label.', () => {
             cy.createPolyline(createPolylinesShapeSwitchLabel);
             cy.createPolyline(createPolylinesTrackSwitchLabel);
         });

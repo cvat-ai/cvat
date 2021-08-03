@@ -312,6 +312,9 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     createPointParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
+    if (createPointParams.useDoneButton) {
+        cy.contains('span', 'Done').click();
+    }
     if (createPointParams.complete) {
         const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
@@ -357,6 +360,9 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     createPolygonParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
+    if (createPolygonParams.useDoneButton) {
+        cy.contains('span', 'Done').click();
+    }
     if (createPolygonParams.complete) {
         const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
@@ -498,6 +504,9 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     createPolylineParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
+    if (createPolylineParams.useDoneButton) {
+        cy.contains('span', 'Done').click();
+    }
     if (createPolylineParams.complete) {
         const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
