@@ -361,7 +361,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
                 rq_id="/api/v1/projects/{}/annotations/{}".format(pk, format_name),
                 request=request,
                 action=request.query_params.get("action", "").lower(),
-                callback=dm.views.export_project_annotation,
+                callback=dm.views.export_project_annotations,
                 format_name=format_name,
                 filename=request.query_params.get("filename", "").lower(),
             )
