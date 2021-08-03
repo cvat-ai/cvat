@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- TDB
+- Additional inline tips in interactors with demo gifs (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 
 ### Changed
 
-- TDB
+- Non-blocking UI when using interactors (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 
 ### Deprecated
 
@@ -43,7 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Explicit "Done" button when drawing any polyshapes (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 - Histogram equalization with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/3447>)
 - Client-side polyshapes approximation when using semi-automatic interactors & scissors (<https://github.com/openvinotoolkit/cvat/pull/3450>)
-- Additional inline tips in interactors with demo gifs (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 
 ### Changed
 
@@ -55,7 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated UI handling for IOG serverless function (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 - Changed Nginx proxy to Traefik in `docker-compose.yml` (<https://github.com/openvinotoolkit/cvat/pull/3409>)
 - Simplify the process of deploying CVAT with HTTPS (<https://github.com/openvinotoolkit/cvat/pull/3409>)
-- Non-blocking UI when using interactors (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 
 ### Fixed
 
