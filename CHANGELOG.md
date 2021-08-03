@@ -13,23 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- TBD
+- TDB
 
 ### Deprecated
 
-- TBD
+- TDB
 
 ### Removed
 
-- TBD
+- TDB
 
 ### Fixed
 
-- TBD
+- TDB
 
 ### Security
 
-- TBD
+- TDB
 
 ## \[1.5.0] - 2021-08-02
 
