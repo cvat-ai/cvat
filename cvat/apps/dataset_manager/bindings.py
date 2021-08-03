@@ -570,19 +570,20 @@ class ProjectData(InstanceLabelData):
         self._frame_info = dict()
         original_names = DefaultDict[Tuple[str, str], int](int)
         for task in self._db_tasks.values():
+            defaulted_subset = get_defaulted_subset(task.subset, self._subsets)
             if hasattr(task.data, 'video'):
                 self._frame_info.update({(task.id, frame): {
                     "path": "frame_{:06d}".format(self.abs_frame_id(task.id, frame)),
                     "width": task.data.video.width,
                     "height": task.data.video.height,
-                    "subset": get_defaulted_subset(task.subset, self._subsets),
+                    "subset": defaulted_subset,
                 } for frame in range(task.data.size)})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
-                    "path": mangle_image_name(db_image.path, task.subset, original_names),
+                    "path": mangle_image_name(db_image.path, defaulted_subset, original_names),
                     "width": db_image.width,
                     "height": db_image.height,
-                    "subset": get_defaulted_subset(task.subset, self._subsets)
+                    "subset": defaulted_subset
                 } for db_image in task.data.images.all()})
 
         self._frame_mapping = {
