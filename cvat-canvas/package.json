@@ -9,6 +9,12 @@
   },
   "author": "Intel",
   "license": "MIT",
+  "browserslist": [
+    "Chrome >= 63",
+    "Firefox > 58",
+    "not IE 11",
+    "> 2%"
+  ],
   "dependencies": {
     "svg.draggable.js": "2.2.2",
     "svg.draw.js": "^2.0.4",

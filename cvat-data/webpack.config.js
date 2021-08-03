@@ -29,14 +29,7 @@ const cvatData = {
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: 'Chrome >= 63, Firefox > 58, not IE 11, > 2%', // https://browserslist.dev
-                                },
-                            ],
-                        ],
+                        presets: [['@babel/preset-env']],
                         sourceType: 'unambiguous',
                     },
                 },

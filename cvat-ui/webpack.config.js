@@ -63,16 +63,7 @@ module.exports = (env) => ({
                                 },
                             ],
                         ],
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: 'Chrome >= 63, Firefox > 58, not IE 11, > 2%', // https://browserslist.dev
-                                },
-                            ],
-                            ['@babel/preset-react'],
-                            ['@babel/typescript'],
-                        ],
+                        presets: [['@babel/preset-env'], ['@babel/preset-react'], ['@babel/typescript']],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -87,7 +78,14 @@ module.exports = (env) => ({
                             importLoaders: 2,
                         },
                     },
-                    'postcss-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            postcssOptions: {
+                                plugins: [['postcss-preset-env']],
+                            },
+                        },
+                    },
                     'sass-loader',
                 ],
             },

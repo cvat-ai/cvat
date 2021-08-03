@@ -96,15 +96,7 @@ const webConfig = {
                     loader: 'babel-loader',
                     options: {
                         plugins: ['@babel/plugin-proposal-class-properties'],
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: 'Chrome >= 63, Firefox > 58, not IE 11, > 2%', // https://browserslist.dev
-                                },
-                            ],
-                            ['@babel/typescript'],
-                        ],
+                        presets: [['@babel/preset-env'], ['@babel/typescript']],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -120,7 +112,14 @@ const webConfig = {
                             importLoaders: 2,
                         },
                     },
-                    'postcss-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            postcssOptions: {
+                                plugins: [['postcss-preset-env']],
+                            },
+                        },
+                    },
                     'sass-loader',
                 ],
             },

@@ -9,27 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- TBD
 
 ### Changed
 
--
+- TBD
 
 ### Deprecated
 
--
+- TBD
 
 ### Removed
 
--
+- TBD
 
 ### Fixed
 
--
+- TBD
 
 ### Security
 
--
+- TBD
 
 ## \[1.5.0] - 2021-08-02
 
