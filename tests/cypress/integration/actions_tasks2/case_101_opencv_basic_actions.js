@@ -37,7 +37,7 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
         { x: 400, y: 450 },
         { x: 450, y: 500 },
         { x: 400, y: 550 },
-    ]
+    ];
 
     function generateString(countPointsToMove) {
         let action = '';
@@ -45,6 +45,11 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
             action += '{rightarrow}';
         }
         return action;
+    }
+
+    function openOpencvControlPopover() {
+        cy.get('body').focus();
+        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
     }
 
     before(() => {
@@ -55,7 +60,7 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
-            cy.get('.cvat-tools-control').click();
+            openOpencvControlPopover();
             cy.get('.cvat-opencv-control-popover-visible').find('.cvat-opencv-initialization-button').click();
             // Intelligent cissors button be visible
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
@@ -69,9 +74,8 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
             cy.opencvCreateShape(createOpencvShapeSecondLabel);
         });
 
-        it('Change the number of points when the shape is drawn.', () => {
-            cy.get('body').focus();
-            cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+        it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
+            openOpencvControlPopover();
             cy.get('.cvat-opencv-drawing-tool').click();
             pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y);
@@ -90,13 +94,24 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
                     expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(intermediateShapeNumberPointsAfterChange);
                 });
             });
-            cy.get('.cvat-canvas-container')
-                .trigger('keydown', { keyCode: keyCodeN })
-                .trigger('keyup', { keyCode: keyCodeN });
+            cy.get('body').type('{Esc}'); // Cancel drawing
+            cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
+            cy.get('.cvat_canvas_shape').should('have.length', 2);
+        });
+
+        it('Check "Histogram Equalization" feature.', () => {
+            openOpencvControlPopover();
+            cy.get('.cvat-opencv-control-popover-visible').contains('[role="tab"]', 'Image').click();
+            cy.get('.cvat-opencv-image-tool').click().should('have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
+            cy.get('.cvat-canvas-histogram-equalization-active').should('exist');
+            cy.get('.cvat-opencv-image-tool').click().should('not.have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
+            cy.get('.cvat-canvas-histogram-equalization-active').should('not.exist');
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
         it.skip('Redraw the shape created with "Intelligent cissors".', () => {
+            cy.get('.cvat-canvas-container').click();
+            cy.get('.cvat-opencv-control-popover').should('be.hidden');
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove')
                 .trigger('mouseover')
