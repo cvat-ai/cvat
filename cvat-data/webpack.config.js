@@ -33,7 +33,7 @@ const cvatData = {
                             [
                                 '@babel/preset-env',
                                 {
-                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
+                                    targets: 'Chrome >= 63, Firefox > 58, not IE 11, > 2%', // https://browserslist.dev
                                 },
                             ],
                         ],

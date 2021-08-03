@@ -56,7 +56,7 @@ const webConfig = {
                             [
                                 '@babel/preset-env',
                                 {
-                                    targets: '> 2.5%',
+                                    targets: 'Chrome >= 63, Firefox > 58, not IE 11, > 2%', // https://browserslist.dev
                                 },
                             ],
                         ],

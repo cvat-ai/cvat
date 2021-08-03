@@ -7,7 +7,7 @@ module.exports = {
     parser: false,
     plugins: {
         'postcss-preset-env': {
-            browsers: '> 2.5%', // https://github.com/browserslist/browserslist
+            browsers: 'Chrome >= 63, Firefox > 63, not IE 11, > 2%', // https://browserslist.dev
         },
     },
 };
