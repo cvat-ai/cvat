@@ -8,7 +8,7 @@ The tool is designed for semi-automatic and automatic annotation using DL models
 The tool is available only if there is a corresponding model.
 For more details about DL models read the [Models](/docs/manual/advanced/models/) section.
 
-### Interactors
+## Interactors
 
 Interactors are used to create a polygon semi-automatically.
 Supported DL models are not bound to the label and can be used for any objects.
@@ -17,6 +17,7 @@ For some kinds of segmentation negative points are available.
 Positive points are the points related to the object.
 Negative points should be placed outside the boundary of the object.
 In most cases specifying positive points alone is enough to build a polygon.
+A list of available out-of-the-box interactors is placed below.
 
 - Before you start, select the magic wand on the controls sidebar and go to the `Interactors` tab.
   Then select a label for the polygon and a required DL model.
@@ -44,7 +45,33 @@ In most cases specifying positive points alone is enough to build a polygon.
 - When the object is finished, you can edit it like a polygon.
   You can read about editing polygons in the [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/) section.
 
-### Detectors
+### Deep extreme cut (DEXTR)
+
+This is an optimized version of the original model, introduced at the end of 2017.
+It uses the information about extreme points of an object to get its mask. The mask then converted to a polygon.
+For now this is the fastest interactor on CPU.
+
+![](/images/dextr_example.gif)
+
+### Feature backpropagating refinement scheme (f-BRS)
+
+The model allows to get a mask for an object using positive points
+(should be left-clicked on the foreground), and negative points
+(should be right-clicked on the background, if necessary).
+It is recommended to run the model on GPU, if possible.
+
+![](/images/fbrs_example.gif)
+
+### Inside-Outside-Guidance
+
+The model uses a bounding box and inside/outside points to create a mask.
+First of all, you need to create a bounding box, wrapping the object.
+Then you need to use positive and negative points to say the model where is a foreground,
+and where is a background. Negative points are optional.
+
+![](/images/iog_example.gif)
+
+## Detectors
 
 Detectors are used to automatically annotate one frame. Supported DL models are suitable only for certain labels.
 
