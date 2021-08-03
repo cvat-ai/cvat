@@ -306,21 +306,25 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private disableImageModifier(alias: string):void {
         const { activeImageModifiers } = this.state;
         const index = activeImageModifiers.findIndex((imageModifier) => imageModifier.alias === alias);
+        const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background');
         if (index !== -1) {
             activeImageModifiers.splice(index, 1);
             this.setState({
                 activeImageModifiers: [...activeImageModifiers],
             });
         }
+        canvas.classList.remove('cvat-canvas-histogram-equalization-active');
     }
 
     private enableImageModifier(modifier: ImageProcessing, alias: string): void{
+        const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background');
         this.setState((prev: State) => ({
             ...prev,
             activeImageModifiers: [...prev.activeImageModifiers, { modifier, alias }],
         }), () => {
             this.runImageModifier();
         });
+        canvas.classList.add('cvat-canvas-histogram-equalization-active');
     }
 
     private enableCanvasForceUpdate():void{
