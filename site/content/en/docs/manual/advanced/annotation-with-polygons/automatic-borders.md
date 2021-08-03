@@ -28,7 +28,7 @@ the outline of polygons existing in the annotation.
 
   ![](/images/image159_mapillary_vistas.jpg)
 
-- Сlick on the last point and the outline to this point will be built automatically.
+- Click on the last point and the outline to this point will be built automatically.
 
   ![](/images/image160_mapillary_vistas.jpg)
 
