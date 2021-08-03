@@ -103,7 +103,7 @@ def export_project_as_dataset(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=True)
 
 
-def export_project_annotation(project_id, dst_format=None, server_url=None):
+def export_project_annotations(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=False)
 
 def clear_export_cache(task_id, file_path, file_ctime):
