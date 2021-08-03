@@ -33,6 +33,18 @@
         padding-top: 10px;
     }
 
+    @media screen and (min-height: 900px) {
+        > div:nth-child(2) {
+            height: 88%;
+        }
+    }
+
+    @media screen and (min-height: 1200px) {
+        > div:nth-child(2) {
+            height: 93%;
+        }
+    }
+
     > div:nth-child(3) {
         padding-top: 10px;
     }

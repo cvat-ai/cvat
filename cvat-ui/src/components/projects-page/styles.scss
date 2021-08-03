@@ -5,8 +5,8 @@
 @import '../../base.scss';
 
 .cvat-projects-page {
-    padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size * 5;
+    margin-top: $grid-unit-size * 2;
+    margin-bottom: $grid-unit-size * 5;
     height: 100%;
     position: fixed;
     width: 100%;
@@ -71,9 +71,20 @@
     justify-content: center;
 }
 
-.cvat-projects-project-item-title,
 .cvat-projects-project-item-card-preview {
+    .ant-empty {
+        margin: $grid-unit-size;
+    }
+
+    & img {
+        object-fit: cover;
+    }
+
+    height: 100%;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
 }
 
 .cvat-porjects-project-item-description {
@@ -107,17 +118,22 @@
 }
 
 .cvat-projects-project-item-card {
-    .ant-empty {
-        margin: $grid-unit-size;
-        height: $grid-unit-size * 16;
+    .ant-card-cover {
+        flex: 1;
+        height: 0;
     }
 
-    img {
-        height: $grid-unit-size * 18;
-        object-fit: cover;
-    }
+    width: 25%;
+    border-width: 4px;
+    display: flex;
+    flex-direction: column;
 }
 
 .cvat-project-list-content {
     padding-bottom: $grid-unit-size;
+}
+
+.cvat-projects-list {
+    display: flex;
+    flex-wrap: wrap;
 }

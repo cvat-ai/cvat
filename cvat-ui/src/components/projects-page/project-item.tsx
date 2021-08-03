@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -26,6 +26,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
         projectInstance: { instance, preview },
     } = props;
 
+    const [height, setHeight] = useState('');
     const history = useHistory();
     const ownerName = instance.owner ? instance.owner.username : null;
     const updated = moment(instance.updatedDate).fromNow();
@@ -37,6 +38,26 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     };
 
     const style: React.CSSProperties = {};
+
+    const NUMBER_OF_RAWS = 3;
+    useEffect(() => {
+        const resize = (): void => {
+            const container = window.document.getElementsByClassName('cvat-projects-page')[0];
+            if (container) {
+                const { clientHeight } = container;
+                setHeight(`${Math.round(clientHeight * 0.8) / NUMBER_OF_RAWS}px`);
+            }
+        };
+
+        resize();
+        window.addEventListener('resize', resize);
+
+        return () => {
+            window.removeEventListener('resize', resize);
+        };
+    }, []);
+
+    style.height = height;
 
     if (deleted) {
         style.pointerEvents = 'none';
