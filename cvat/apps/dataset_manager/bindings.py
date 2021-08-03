@@ -793,7 +793,7 @@ class CVATDataExtractor(datumaro.SourceExtractor):
     def __init__(self):
         super().__init__()
         self.dm_items: List[datumaro.DatasetItem] = []
-        self._categories: Dict[datumaro.AnnotationType, datumaro.LabelCategories] = {}
+        self._categories: Dict[datumaro.AnnotationType, datumaro.Categories] = {}
 
     @staticmethod
     def _load_categories(labels: list):
