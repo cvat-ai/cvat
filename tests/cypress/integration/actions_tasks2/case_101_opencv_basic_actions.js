@@ -98,8 +98,8 @@ context('OpenCV. Intelligent cissors. Basic actions.', () => {
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
         it.skip('Redraw the shape created with "Intelligent cissors".', () => {
             cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove', {scrollBehavior: false})
-                .trigger('mouseover', {scrollBehavior: false})
+                .trigger('mousemove')
+                .trigger('mouseover')
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }).trigger('keyup');
             cy.get('.cvat-tools-control').should('have.attr', 'tabindex');
