@@ -5,7 +5,7 @@
 title: 'Installation Guide'
 linkTitle: 'Installation Guide'
 weight: 1
-description: 'CVAT installation guide for different operating systems'
+description: 'A CVAT installation guide for different operating systems.'
 
 ---
 

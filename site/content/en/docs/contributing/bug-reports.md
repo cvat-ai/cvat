@@ -2,6 +2,7 @@
 title: 'Bug reports'
 linkTitle: 'Bug reports'
 weight: 7
+description: 'Guidelines and an example of how to report a bug.'
 ---
 
 A bug is a _demonstrable problem_ that is caused by the code in the repository.
