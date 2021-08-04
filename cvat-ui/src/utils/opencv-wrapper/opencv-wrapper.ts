@@ -15,6 +15,10 @@ export interface Segmentation {
     intelligentScissorsFactory: () => IntelligentScissors;
 }
 
+export interface Contours {
+    approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
+}
+
 export interface ImgProc {
     hist: () => HistogramEqualization
 }
@@ -83,6 +87,39 @@ export class OpenCVWrapper {
 
     public get isInitialized(): boolean {
         return this.initialized;
+    }
+
+    public get contours(): Contours {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+
+        const { cv } = this;
+        return {
+            approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
+                const isArrayOfArrays = Array.isArray(points[0]);
+                if (points.length < 3) {
+                    // one pair of coordinates [x, y], approximation not possible
+                    return (isArrayOfArrays ? points : [points]) as number[][];
+                }
+                const rows = isArrayOfArrays ? points.length : points.length / 2;
+                const cols = 2;
+
+                const approx = new cv.Mat();
+                const contour = cv.matFromArray(rows, cols, cv.CV_32FC1, points.flat());
+                try {
+                    cv.approxPolyDP(contour, approx, threshold, closed); // approx output type is CV_32F
+                    const result = [];
+                    for (let row = 0; row < approx.rows; row++) {
+                        result.push([approx.floatAt(row, 0), approx.floatAt(row, 1)]);
+                    }
+                    return result;
+                } finally {
+                    approx.delete();
+                    contour.delete();
+                }
+            },
+        };
     }
 
     public get segmentation(): Segmentation {

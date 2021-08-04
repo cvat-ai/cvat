@@ -92,7 +92,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         if (points.length > 1) {
             let matImage = null;
             const contour = new cv.Mat();
-            const approx = new cv.Mat();
 
             try {
                 const [prev, cur] = points.slice(-2);
@@ -123,11 +122,10 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 tool.applyImage(matImage);
                 tool.buildMap(new cv.Point(prevX, prevY));
                 tool.getContour(new cv.Point(curX, curY), contour);
-                cv.approxPolyDP(contour, approx, 2, false);
 
                 const pathSegment = [];
-                for (let row = 0; row < approx.rows; row++) {
-                    pathSegment.push(approx.intAt(row, 0) + offsetX, approx.intAt(row, 1) + offsetY);
+                for (let row = 0; row < contour.rows; row++) {
+                    pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
                 }
                 state.anchors[points.length - 1] = {
                     point: cur,
@@ -140,7 +138,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 }
 
                 contour.delete();
-                approx.delete();
             }
         } else {
             state.path.push(...pointsToNumberArray(applyOffset(points.slice(-1), -offsetX, -offsetY)));
