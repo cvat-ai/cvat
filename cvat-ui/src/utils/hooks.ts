@@ -16,12 +16,12 @@ export interface ICardHeightHOC {
     numberOfRows: number;
     paddings: number;
     containerClassName: string;
-    otherContentClassNames: string[];
+    siblingClassNames: string[];
 }
 
 export function useCardHeightHOC(params: ICardHeightHOC): () => string {
     const {
-        numberOfRows, paddings, containerClassName, otherContentClassNames,
+        numberOfRows, paddings, containerClassName, siblingClassNames,
     } = params;
 
     return (): string => {
@@ -29,13 +29,13 @@ export function useCardHeightHOC(params: ICardHeightHOC): () => string {
         useEffect(() => {
             const resize = (): void => {
                 const container = window.document.getElementsByClassName(containerClassName)[0];
-                const others = otherContentClassNames.map(
+                const siblings = siblingClassNames.map(
                     (classname: string): Element | undefined => window.document.getElementsByClassName(classname)[0],
                 );
 
                 if (container) {
                     const { clientHeight: containerHeight } = container;
-                    const othersHeight = others.reduce<number>((acc: number, el: Element | undefined): number => {
+                    const othersHeight = siblings.reduce<number>((acc: number, el: Element | undefined): number => {
                         if (el) {
                             return acc + el.clientHeight;
                         }
