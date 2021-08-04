@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -15,19 +15,27 @@ import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState, Project } from 'reducers/interfaces';
+import { useCardHeightHOC } from 'utils/hooks';
 import ProjectActionsMenuComponent from './actions-menu';
 
 interface Props {
     projectInstance: Project;
 }
 
+const useCardHeight = useCardHeightHOC({
+    containerClassName: 'cvat-projects-page',
+    otherContentClassNames: ['cvat-projects-pagination', 'cvat-projects-top-bar'],
+    paddings: 40,
+    numberOfRows: 3,
+});
+
 export default function ProjectItemComponent(props: Props): JSX.Element {
     const {
         projectInstance: { instance, preview },
     } = props;
 
-    const [height, setHeight] = useState('');
     const history = useHistory();
+    const height = useCardHeight();
     const ownerName = instance.owner ? instance.owner.username : null;
     const updated = moment(instance.updatedDate).fromNow();
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
@@ -37,34 +45,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
         history.push(`/projects/${instance.id}`);
     };
 
-    const style: React.CSSProperties = {};
-
-    const NUMBER_OF_RAWS = 3;
-    useEffect(() => {
-        const resize = (): void => {
-            const container = window.document.getElementsByClassName('cvat-projects-page')[0];
-            const topBar = window.document.getElementsByClassName('cvat-projects-top-bar')[0];
-            const pagination = window.document.getElementsByClassName('cvat-projects-pagination')[0];
-            if (container && topBar && pagination) {
-                const { clientHeight: containerHeight } = container;
-                const { clientHeight: topBarHeight } = topBar;
-                const { clientHeight: paginationHeight } = pagination;
-                const paddings = 40;
-                const cardHeight = (containerHeight - (topBarHeight + paginationHeight + paddings)) / NUMBER_OF_RAWS;
-                setHeight(`${Math.round(cardHeight)}px`);
-            }
-        };
-
-        resize();
-        window.addEventListener('resize', resize);
-
-        return () => {
-            window.removeEventListener('resize', resize);
-        };
-    }, []);
-
-    style.height = height;
-
+    const style: React.CSSProperties = { height };
     if (deleted) {
         style.pointerEvents = 'none';
         style.opacity = 0.5;
