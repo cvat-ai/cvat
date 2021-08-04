@@ -351,7 +351,6 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
                 selectedValueGlobal = $labelValue.text();
             });
             if (createPolygonParams.numberOfPoints) {
-                createPolygonParams.finishWithHotkey = false;
                 cy.get('.ant-input-number-input').clear().type(createPolygonParams.numberOfPoints);
             }
             cy.contains('button', createPolygonParams.type).click();
@@ -497,7 +496,6 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
             selectedValueGlobal = $labelValue.text();
         });
         if (createPolylineParams.numberOfPoints) {
-            createPolylineParams.finishWithHotkey = false;
             cy.get('.ant-input-number-input').clear().type(createPolylineParams.numberOfPoints);
         }
         cy.contains('button', createPolylineParams.type).click();
