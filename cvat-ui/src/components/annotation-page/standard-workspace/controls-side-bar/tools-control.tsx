@@ -638,6 +638,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             );
         }
 
+        const minNegVertices: number = activeInteractor ? activeInteractor.params.canvas.minNegVertices : -1;
+
         return (
             <>
                 <Row justify='start'>
@@ -666,7 +668,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                     <Col span={2} className='cvat-interactors-tips-icon-container'>
-                        <Dropdown overlay={<ToolsTooltips tool={activeInteractor?.name} />}>
+                        <Dropdown
+                            overlay={
+                                <ToolsTooltips withNegativePoints={minNegVertices >= 0} tool={activeInteractor?.name} />
+                            }
+                        >
                             <QuestionCircleOutlined />
                         </Dropdown>
                     </Col>

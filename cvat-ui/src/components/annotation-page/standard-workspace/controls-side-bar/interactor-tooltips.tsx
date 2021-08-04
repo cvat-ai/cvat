@@ -9,10 +9,11 @@ import Text from 'antd/lib/typography/Text';
 
 interface Props {
     tool?: string;
+    withNegativePoints?: boolean;
 }
 
 function InteractorTooltips(props: Props): JSX.Element {
-    const { tool } = props;
+    const { tool, withNegativePoints } = props;
 
     const DEXTR_GIF = 'https://openvinotoolkit.github.io/cvat/images/dextr_example.gif';
     const FBRS_GIF = 'https://openvinotoolkit.github.io/cvat/images/fbrs_example.gif';
@@ -58,12 +59,12 @@ function InteractorTooltips(props: Props): JSX.Element {
                         <Text strong>{' Ctrl '}</Text>
                         <Text>key</Text>
                     </Paragraph>
-                    {['f-BRS', 'IOG'].includes(tool) ? (
-                        <Paragraph>
-                            <Text>Positive points can be added by left-clicking the image. </Text>
+                    <Paragraph>
+                        <Text>Positive points can be added by left-clicking the image. </Text>
+                        {withNegativePoints ? (
                             <Text>Negative points can be added by right-clicking the image. </Text>
-                        </Paragraph>
-                    ) : null}
+                        ) : null}
+                    </Paragraph>
                 </>
             ) : null}
             {gif ? <Image className='cvat-interactor-tip-image' alt='Example gif' src={gif} /> : null}
