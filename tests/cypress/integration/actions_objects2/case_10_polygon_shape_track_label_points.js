@@ -18,7 +18,6 @@ context('Actions on polygon.', () => {
             { x: 250, y: 200 },
             { x: 250, y: 250 },
         ],
-        complete: true,
     };
     const createPolygonTrack = {
         reDraw: false,
@@ -29,7 +28,6 @@ context('Actions on polygon.', () => {
             { x: 350, y: 200 },
             { x: 350, y: 350 },
         ],
-        complete: true,
     };
     const createPolygonShapePoints = {
         reDraw: false,
@@ -66,7 +64,7 @@ context('Actions on polygon.', () => {
             { x: 650, y: 200 },
             { x: 650, y: 250 },
         ],
-        useDoneButton: true,
+        finishWithButton: true,
     };
     const createPolygonTrackSwitchLabel = {
         reDraw: false,
@@ -77,7 +75,7 @@ context('Actions on polygon.', () => {
             { x: 750, y: 200 },
             { x: 750, y: 250 },
         ],
-        complete: true,
+        finishWithButton: true,
     };
 
     before(() => {
@@ -97,7 +95,7 @@ context('Actions on polygon.', () => {
             cy.createPolygon(createPolygonTrackPoints);
         });
 
-        it('Draw a polygon shape with second label and "Done" button, track with second label.', () => {
+        it('Draw a polygon shape, track with second label and "Done" button.', () => {
             cy.createPolygon(createPolygonShapeSwitchLabel);
             cy.createPolygon(createPolygonTrackSwitchLabel);
         });
