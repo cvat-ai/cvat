@@ -55,7 +55,7 @@
     "@types/react-color": "^3.0.5",
     "@types/react-dom": "^16.9.14",
     "@types/react-redux": "^7.1.18",
-    "@types/react-resizable": "^1.7.2",
+    "@types/react-resizable": "^1.7.3",
     "@types/react-router": "^5.1.16",
     "@types/react-router-dom": "^5.1.8",
     "@types/react-share": "^3.0.3",
