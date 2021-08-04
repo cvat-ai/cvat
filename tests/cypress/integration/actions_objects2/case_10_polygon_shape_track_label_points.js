@@ -6,7 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Actions on polygon', () => {
+context('Actions on polygon.', () => {
     const caseId = '10';
     const newLabelName = `New label for case ${caseId}`;
     const createPolygonShape = {
@@ -18,8 +18,6 @@ context('Actions on polygon', () => {
             { x: 250, y: 200 },
             { x: 250, y: 250 },
         ],
-        complete: true,
-        numberOfPoints: null,
     };
     const createPolygonTrack = {
         reDraw: false,
@@ -30,8 +28,6 @@ context('Actions on polygon', () => {
             { x: 350, y: 200 },
             { x: 350, y: 350 },
         ],
-        complete: true,
-        numberOfPoints: null,
     };
     const createPolygonShapePoints = {
         reDraw: false,
@@ -68,8 +64,7 @@ context('Actions on polygon', () => {
             { x: 650, y: 200 },
             { x: 650, y: 250 },
         ],
-        complete: true,
-        numberOfPoints: null,
+        finishWithButton: true,
     };
     const createPolygonTrackSwitchLabel = {
         reDraw: false,
@@ -80,8 +75,7 @@ context('Actions on polygon', () => {
             { x: 750, y: 200 },
             { x: 750, y: 250 },
         ],
-        complete: true,
-        numberOfPoints: null,
+        finishWithButton: true,
     };
 
     before(() => {
@@ -101,7 +95,7 @@ context('Actions on polygon', () => {
             cy.createPolygon(createPolygonTrackPoints);
         });
 
-        it('Draw a polygon shape, track with second label.', () => {
+        it('Draw a polygon shape, track with second label and "Done" button.', () => {
             cy.createPolygon(createPolygonShapeSwitchLabel);
             cy.createPolygon(createPolygonTrackSwitchLabel);
         });

@@ -10,8 +10,8 @@ import 'svg.select.js';
 import 'svg.draw.js';
 
 import consts from './consts';
-import { Point, Equation, CuboidModel, Orientation, Edge } from './cuboid';
-import { parsePoints, clamp } from './shared';
+import { Equation, CuboidModel, Orientation, Edge } from './cuboid';
+import { Point, parsePoints, clamp } from './shared';
 
 // Update constructor
 const originalDraw = SVG.Element.prototype.draw;
