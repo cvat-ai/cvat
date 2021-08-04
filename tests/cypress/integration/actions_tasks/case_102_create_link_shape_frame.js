@@ -7,7 +7,7 @@
 import { taskName, labelName } from '../../support/const';
 
 context('Create a link for shape, frame.', () => {
-    const caseId = '101';
+    const caseId = '102';
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -26,15 +26,12 @@ context('Create a link for shape, frame.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Create a link for the shape.', () => {
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove', {scrollBehavior: false})
-                .trigger('mouseover', {scrollBehavior: false})
-                .should('have.class', 'cvat_canvas_shape_activated')
             cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated')
             cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Create object URL').realClick();
             cy.task('getClipboard').then(($clipboard) => {
                 const url = $clipboard;
-                cy.log(url);
+                cy.task('log', `URL: ${url}`);
             });
         });
     });

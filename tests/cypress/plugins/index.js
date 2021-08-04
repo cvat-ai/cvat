@@ -28,7 +28,8 @@ module.exports = (on, config) => {
     });
     on('task', {
         getClipboard () {
-            return clipboardy.read();
+            const clipboard = clipboardy.readSync();
+            return clipboard;
         }
     });
     // Try to resolve "Cypress failed to make a connection to the Chrome DevTools Protocol"
@@ -37,6 +38,17 @@ module.exports = (on, config) => {
         if (browser.name === 'chrome') {
             if (browser.isHeadless) {
                 launchOptions.args.push('--disable-gpu');
+            }
+            launchOptions.preferences.default.profile = {
+                content_settings: {
+                    exceptions: {
+                        clipboard: {
+                            'http://localhost:8080':{
+                                settings: 1,
+                            },
+                        },
+                    },
+                },
             }
         }
         return launchOptions;
