@@ -6,8 +6,8 @@
 @import '../../styles.scss';
 
 .cvat-tasks-page {
-    padding-top: 15px;
-    padding-bottom: 40px;
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
     height: 100%;
     width: 100%;
 

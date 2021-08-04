@@ -43,9 +43,15 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     useEffect(() => {
         const resize = (): void => {
             const container = window.document.getElementsByClassName('cvat-projects-page')[0];
-            if (container) {
-                const { clientHeight } = container;
-                setHeight(`${Math.round(clientHeight * 0.8) / NUMBER_OF_RAWS}px`);
+            const topBar = window.document.getElementsByClassName('cvat-projects-top-bar')[0];
+            const pagination = window.document.getElementsByClassName('cvat-projects-pagination')[0];
+            if (container && topBar && pagination) {
+                const { clientHeight: containerHeight } = container;
+                const { clientHeight: topBarHeight } = topBar;
+                const { clientHeight: paginationHeight } = pagination;
+                const paddings = 40;
+                const cardHeight = (containerHeight - (topBarHeight + paginationHeight + paddings)) / NUMBER_OF_RAWS;
+                setHeight(`${Math.round(cardHeight)}px`);
             }
         };
 

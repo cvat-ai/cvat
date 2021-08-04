@@ -5,10 +5,9 @@
 @import '../../base.scss';
 
 .cvat-projects-page {
-    margin-top: $grid-unit-size * 2;
-    margin-bottom: $grid-unit-size * 5;
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
     height: 100%;
-    position: fixed;
     width: 100%;
 
     > div:nth-child(1) {
@@ -71,39 +70,6 @@
     justify-content: center;
 }
 
-.cvat-projects-project-item-card-preview {
-    .ant-empty {
-        margin: $grid-unit-size;
-    }
-
-    & img {
-        object-fit: cover;
-    }
-
-    height: 100%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-}
-
-.cvat-porjects-project-item-description {
-    display: flex;
-    justify-content: space-between;
-
-    // actions button
-    > div:nth-child(2) {
-        display: flex;
-        align-self: flex-end;
-        justify-content: center;
-
-        > button {
-            color: $text-color;
-            width: inherit;
-        }
-    }
-}
-
 .ant-menu.cvat-project-actions-menu {
     box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
 
@@ -118,6 +84,46 @@
 }
 
 .cvat-projects-project-item-card {
+    .cvat-projects-project-item-card-preview {
+        .ant-empty {
+            margin: $grid-unit-size;
+            height: inherit;
+            display: grid;
+
+            > div:first-child {
+                margin: auto;
+            }
+        }
+
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        object-fit: cover;
+        cursor: pointer;
+    }
+
+    .cvat-projects-project-item-title {
+        cursor: pointer;
+    }
+
+    .cvat-porjects-project-item-description {
+        display: flex;
+        justify-content: space-between;
+
+        // actions button
+        > div:nth-child(2) {
+            display: flex;
+            align-self: flex-end;
+            justify-content: center;
+
+            > button {
+                color: $text-color;
+                width: inherit;
+            }
+        }
+    }
+
     .ant-card-cover {
         flex: 1;
         height: 0;
