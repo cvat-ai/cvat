@@ -3,6 +3,19 @@
   "version": "1.0.2",
   "description": "",
   "main": "src/js/cvat-data.js",
+  "scripts": {
+    "patch": "cd src/js && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
+    "build": "npm run patch; webpack --config ./webpack.config.js",
+    "server": "npm run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+  },
+  "author": "Intel",
+  "license": "MIT",
+  "browserslist": [
+    "Chrome >= 63",
+    "Firefox > 58",
+    "not IE 11",
+    "> 2%"
+  ],
   "devDependencies": {
     "@babel/cli": "^7.13.16",
     "@babel/core": "^7.4.4",
@@ -23,12 +36,5 @@
   "dependencies": {
     "async-mutex": "^0.3.1",
     "jszip": "3.7.0"
-  },
-  "scripts": {
-    "patch": "cd src/js && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
-    "build": "npm run patch; webpack --config ./webpack.config.js",
-    "server": "npm run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
-  },
-  "author": "Intel",
-  "license": "MIT"
+  }
 }
