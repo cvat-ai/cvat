@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { connect } from 'react-redux';
 import { Col } from 'antd/lib/grid';
-import Icon, { CheckOutlined } from '@ant-design/icons';
+import Icon, { BorderOutlined, CheckOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Timeline from 'antd/lib/timeline';
@@ -14,7 +15,7 @@ import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotati
 import {
     MainMenuIcon, SaveIcon, UndoIcon, RedoIcon,
 } from 'icons';
-import { ActiveControl } from 'reducers/interfaces';
+import { ActiveControl, CombinedState } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
@@ -26,11 +27,32 @@ interface Props {
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
+    blockShortcut: string;
+    blockMode: boolean;
     activeControl: ActiveControl;
     onSaveAnnotation(): void;
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
+    onSwitchBlockMode(): void;
+}
+
+interface StateToProps {
+    blockMode: boolean;
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const {
+        settings: {
+            workspace: {
+                blockMode,
+            },
+        },
+    } = state;
+
+    return {
+        blockMode,
+    };
 }
 
 function LeftGroup(props: Props): JSX.Element {
@@ -43,11 +65,14 @@ function LeftGroup(props: Props): JSX.Element {
         undoShortcut,
         redoShortcut,
         drawShortcut,
+        blockShortcut,
         activeControl,
+        blockMode,
         onSaveAnnotation,
         onUndoClick,
         onRedoClick,
         onFinishDraw,
+        onSwitchBlockMode,
     } = props;
 
     const includesDoneButton = [
@@ -55,6 +80,10 @@ function LeftGroup(props: Props): JSX.Element {
         ActiveControl.DRAW_POLYLINE,
         ActiveControl.DRAW_POINTS,
         ActiveControl.AI_TOOLS,
+        ActiveControl.OPENCV_TOOLS,
+    ].includes(activeControl);
+
+    const includesBlockButton = [
         ActiveControl.OPENCV_TOOLS,
     ].includes(activeControl);
 
@@ -113,8 +142,16 @@ function LeftGroup(props: Props): JSX.Element {
                     </Button>
                 </CVATTooltip>
             ) : null}
+            {includesBlockButton ? (
+                <CVATTooltip overlay={`Press "${blockShortcut}" to switch`}>
+                    <Button type='link' className={`cvat-annotation-header-button ${blockMode ? 'cvat-button-active' : ''}`} onClick={onSwitchBlockMode}>
+                        <BorderOutlined />
+                        Block
+                    </Button>
+                </CVATTooltip>
+            ) : null}
         </Col>
     );
 }
 
-export default React.memo(LeftGroup);
+export default connect(mapStateToProps)(LeftGroup);

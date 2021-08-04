@@ -21,6 +21,7 @@ export interface IntelligentScissors {
     reset(): void;
     run(points: number[], image: ImageData, offsetX: number, offsetY: number): number[];
     params: IntelligentScissorsParams;
+    switchBlockMode():void;
 }
 
 function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[] {
@@ -46,12 +47,17 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             }
             >; // point index : start index in path
             image: any | null;
+            blocked: boolean;
         };
     };
 
     public constructor(cv: any) {
         this.cv = cv;
         this.reset();
+    }
+
+    public switchBlockMode(): void {
+        this.scissors.state.blocked = !this.scissors.state.blocked;
     }
 
     public reset(): void {
@@ -66,6 +72,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 path: [],
                 anchors: {},
                 image: null,
+                blocked: false,
             },
         };
 
@@ -118,15 +125,27 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                     state.path = state.path.slice(0, state.anchors[points.length - 1].start);
                     delete state.anchors[points.length - 1];
                 }
-
-                tool.applyImage(matImage);
-                tool.buildMap(new cv.Point(prevX, prevY));
-                tool.getContour(new cv.Point(curX, curY), contour);
-
                 const pathSegment = [];
-                for (let row = 0; row < contour.rows; row++) {
-                    pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
+                if (!state.blocked) {
+                    tool.applyImage(matImage);
+                    tool.buildMap(new cv.Point(prevX, prevY));
+                    tool.getContour(new cv.Point(curX, curY), contour);
+
+                    for (let row = 0; row < contour.rows; row++) {
+                        pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
+                    }
+                } else {
+                    const xDiff = prevX - curX;
+                    const yDiff = prevY - curY;
+                    if (xDiff !== 0 && yDiff !== 0) {
+                        const pathLength = Math.sqrt((xDiff) ** 2 + (yDiff) ** 2);
+                        const pathOffsetValue = 0.4;
+                        const pathOffsetRatio = pathOffsetValue / pathLength;
+                        pathSegment.push((curX + offsetX) + xDiff * pathOffsetRatio,
+                            (curY + offsetY) + yDiff * pathOffsetRatio);
+                    }
                 }
+
                 state.anchors[points.length - 1] = {
                     point: cur,
                     start: state.path.length,
@@ -140,13 +159,13 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 contour.delete();
             }
         } else {
+            state.path = [];
             state.path.push(...pointsToNumberArray(applyOffset(points.slice(-1), -offsetX, -offsetY)));
             state.anchors[0] = {
                 point: points[0],
                 start: 0,
             };
         }
-
         return [...state.path];
     }
 

@@ -33,6 +33,7 @@ import {
     CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl,
 } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { switchBlockMode } from 'actions/settings-actions';
 
 interface StateToProps {
     jobInstance: any;
@@ -49,6 +50,7 @@ interface StateToProps {
     redoAction?: string;
     autoSave: boolean;
     autoSaveInterval: number;
+    blockMode: boolean;
     workspace: Workspace;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
@@ -72,6 +74,7 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
+    onSwitchBlockMode(blockMode: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -92,7 +95,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             player: { frameSpeed, frameStep },
-            workspace: { autoSave, autoSaveInterval },
+            workspace: { autoSave, autoSaveInterval, blockMode },
         },
         shortcuts: { keyMap, normalizedKeyMap },
         plugins: { list },
@@ -113,6 +116,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
         autoSave,
         autoSaveInterval,
+        blockMode,
         workspace,
         keyMap,
         normalizedKeyMap,
@@ -166,6 +170,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             if (predictorEnabled) {
                 dispatch(getPredictionsAsync());
             }
+        },
+        onSwitchBlockMode(blockMode: boolean):void{
+            dispatch(switchBlockMode(blockMode));
         },
     };
 }
@@ -431,6 +438,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         canvasInstance.draw({ enabled: false });
     };
 
+    private onSwitchBlockMode = (): void => {
+        const { blockMode, onSwitchBlockMode } = this.props;
+        onSwitchBlockMode(!blockMode);
+    };
+
     private onURLIconClick = (): void => {
         const { frameNumber } = this.props;
         const { origin, pathname } = window.location;
@@ -566,6 +578,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
             PLAY_PAUSE: keyMap.PLAY_PAUSE,
             FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
+            SWITCH_BLOCK_MODE: keyMap.SWITCH_BLOCK_MODE,
         };
 
         const handlers = {
@@ -633,6 +646,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     this.inputFrameRef.current.focus();
                 }
             },
+            SWITCH_BLOCK_MODE: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.onSwitchBlockMode();
+            },
         };
 
         return (
@@ -672,6 +689,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     undoShortcut={normalizedKeyMap.UNDO}
                     redoShortcut={normalizedKeyMap.REDO}
                     drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
+                    blockShortcut={normalizedKeyMap.SWITCH_BLOCK_MODE}
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                     nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
                     previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
@@ -683,6 +701,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                     onFinishDraw={this.onFinishDraw}
+                    onSwitchBlockMode={this.onSwitchBlockMode}
                     jobInstance={jobInstance}
                     isTrainingActive={isTrainingActive}
                     activeControl={activeControl}

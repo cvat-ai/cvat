@@ -28,6 +28,7 @@ interface Props {
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
+    blockShortcut: string;
     playPauseShortcut: string;
     nextFrameShortcut: string;
     previousFrameShortcut: string;
@@ -59,6 +60,7 @@ interface Props {
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
+    onSwitchBlockMode(): void;
     jobInstance: any;
 }
 
@@ -79,6 +81,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         undoShortcut,
         redoShortcut,
         drawShortcut,
+        blockShortcut,
         playPauseShortcut,
         nextFrameShortcut,
         previousFrameShortcut,
@@ -109,6 +112,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onUndoClick,
         onRedoClick,
         onFinishDraw,
+        onSwitchBlockMode,
         jobInstance,
         isTrainingActive,
     } = props;
@@ -125,10 +129,12 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 redoShortcut={redoShortcut}
                 activeControl={activeControl}
                 drawShortcut={drawShortcut}
+                blockShortcut={blockShortcut}
                 onSaveAnnotation={onSaveAnnotation}
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}
                 onFinishDraw={onFinishDraw}
+                onSwitchBlockMode={onSwitchBlockMode}
             />
             <Col className='cvat-annotation-header-player-group'>
                 <Row align='middle'>

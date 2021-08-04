@@ -34,6 +34,7 @@ export enum SettingsActionTypes {
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
+    SWITCH_BLOCK_MODE = 'SWITCH_BLOCK_MODE',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -276,6 +277,15 @@ export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): Any
         type: SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD,
         payload: {
             approxPolyAccuracy,
+        },
+    };
+}
+
+export function switchBlockMode(blockMode: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_BLOCK_MODE,
+        payload: {
+            blockMode,
         },
     };
 }

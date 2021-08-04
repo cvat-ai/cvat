@@ -557,6 +557,7 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
+    blockMode: boolean,
 }
 
 export interface ShapesSettingsState {

@@ -46,6 +46,7 @@ interface Props {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     frameData: any;
+    blockMode: boolean;
 }
 
 interface DispatchToProps {
@@ -87,7 +88,7 @@ function mapStateToProps(state: CombinedState): Props {
             },
         },
         settings: {
-            workspace: { defaultApproxPolyAccuracy },
+            workspace: { defaultApproxPolyAccuracy, blockMode },
         },
     } = state;
 
@@ -101,6 +102,7 @@ function mapStateToProps(state: CombinedState): Props {
         states,
         frame,
         frameData,
+        blockMode,
     };
 }
 
@@ -142,7 +144,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { approxPolyAccuracy } = this.state;
-        const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
+        const {
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode,
+        } = this.props;
+
         if (!prevProps.isActivated && isActivated) {
             // reset flags & states before using a tool
             this.latestPoints = [];
@@ -168,6 +173,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     },
                 });
             }
+        }
+
+        if ((prevProps.blockMode !== blockMode) && isActivated && this.activeTool) {
+            this.activeTool.switchBlockMode();
         }
     }
 
