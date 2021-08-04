@@ -34,6 +34,7 @@ import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { ImageProcessing } from 'utils/opencv-wrapper/opencv-interfaces';
+import { switchBlockMode } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -55,6 +56,7 @@ interface DispatchToProps {
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
+    onSwitchBlockMode(blockMode: boolean):void;
 }
 
 interface State {
@@ -112,6 +114,7 @@ const mapDispatchToProps = {
     fetchAnnotations: fetchAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
     changeFrame: changeFrameAsync,
+    onSwitchBlockMode: switchBlockMode,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
@@ -145,7 +148,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { approxPolyAccuracy } = this.state;
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode,
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode, onSwitchBlockMode,
         } = this.props;
 
         if (!prevProps.isActivated && isActivated) {
@@ -174,9 +177,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 });
             }
         }
-
         if ((prevProps.blockMode !== blockMode) && isActivated && this.activeTool) {
             this.activeTool.switchBlockMode();
+        } else if (!isActivated && this.activeTool) {
+            this.activeTool.switchBlockMode(false);
+            onSwitchBlockMode(false);
         }
     }
 
@@ -200,7 +205,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             shapesUpdated, isDone, threshold, shapes,
         } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
-
         try {
             if (shapesUpdated) {
                 this.latestPoints = await this.runCVAlgorithm(pressedPoints, threshold);
@@ -286,6 +290,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         if (!canvas) {
             throw new Error('Element #cvat_canvas_background was not found');
         }
+        if (pressedPoints.length === 0 || !this.activeTool) return [];
 
         const { width, height } = canvas;
         const context = canvas.getContext('2d');
@@ -299,8 +304,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const segmentWidth = Math.min(2 * threshold, width - startX);
         const segmentHeight = Math.min(2 * threshold, height - startY);
         const imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
-
-        if (!this.activeTool) return [];
 
         // Handling via OpenCV.js
         const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);

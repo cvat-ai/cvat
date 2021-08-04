@@ -137,14 +137,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         _e.preventDefault();
                         _e.stopPropagation();
                         self.remove();
+                        this.shapesWereUpdated = true;
+                        const shouldRiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self,
                         );
                         if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
                             this.interactionShapes[0].style({ visibility: '' });
                         }
-                        this.shapesWereUpdated = true;
-                        if (this.shouldRaiseEvent(_e.ctrlKey)) {
+                        if (shouldRiseEvent) {
                             this.onInteraction(this.prepareResult(), true, false);
                         }
                     });

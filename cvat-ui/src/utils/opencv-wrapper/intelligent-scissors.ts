@@ -21,7 +21,7 @@ export interface IntelligentScissors {
     reset(): void;
     run(points: number[], image: ImageData, offsetX: number, offsetY: number): number[];
     params: IntelligentScissorsParams;
-    switchBlockMode():void;
+    switchBlockMode(mode?:boolean):void;
 }
 
 function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[] {
@@ -56,8 +56,12 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         this.reset();
     }
 
-    public switchBlockMode(): void {
-        this.scissors.state.blocked = !this.scissors.state.blocked;
+    public switchBlockMode(mode?:boolean): void {
+        if (mode) {
+            this.scissors.state.blocked = mode;
+        } else {
+            this.scissors.state.blocked = !this.scissors.state.blocked;
+        }
     }
 
     public reset(): void {
@@ -115,7 +119,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                             delete state.anchors[+i];
                         }
                     }
-
                     return [...state.path];
                 }
 
@@ -143,6 +146,8 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                         const pathOffsetRatio = pathOffsetValue / pathLength;
                         pathSegment.push((curX + offsetX) + xDiff * pathOffsetRatio,
                             (curY + offsetY) + yDiff * pathOffsetRatio);
+                    } else {
+                        pathSegment.push(curX + offsetX + 0.25, curY + offsetY + 0.25);
                     }
                 }
 
