@@ -37,6 +37,7 @@ services:
     depends_on:
       - cvat_redis
       - cvat_db
+      - cvat_opa
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
@@ -74,6 +75,20 @@ services:
       - ./cvat_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./cvat_proxy/conf.d/cvat.conf.template:/etc/nginx/conf.d/cvat.conf.template:ro
     command: /bin/sh -c "envsubst '$$CVAT_HOST' < /etc/nginx/conf.d/cvat.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+
+  cvat_opa:
+    container_name: cvat_opa
+    image: openpolicyagent/opa:0.30.2-rootless
+    restart: always
+    networks:
+      default:
+        aliases:
+          - opa
+    volumes:
+      - ./cvat/apps/auth/rules.rego:/rules.rego
+    ports:
+      - '8181:8181'
+    command: run --server --addr :8181 /rules.rego
 
 networks:
   default:
