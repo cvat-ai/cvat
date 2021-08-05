@@ -32,7 +32,13 @@ semi-automatic and automatic annotation'
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions. Download [version 1.5.16](https://github.com/nuclio/nuclio/releases/tag/1.5.16).
   It is important that the version you download matches the version in
-  [docker-compose.serverless.yml](https://github.com/openvinotoolkit/cvat/blob/develop/components/serverless/docker-compose.serverless.yml)
+  [docker-compose.serverless.yml](https://github.com/openvinotoolkit/cvat/blob/develop/components/serverless/docker-compose.serverless.yml).
+  For example, using wget.
+
+  ```
+  wget https://github.com/nuclio/nuclio/releases/download/<version>/nuctl-<version>-linux-amd64
+  ```
+
   After downloading the nuclio, give it a proper permission and do a softlink
 
   ```
