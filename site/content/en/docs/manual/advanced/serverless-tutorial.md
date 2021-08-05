@@ -898,47 +898,8 @@ $ docker logs nuclio-nuclio-pth.shiyinzhang.iog
 
 </details>
 
-### Problem with running nuctl on Windows 10
-
-If you encounter the problem with running `nuctl` on Windows 10, you can do the following:
-
-1. Install [Ubuntu 18.04 from Microsoft store][ubuntu-18-04-microsoft-store].
-
-1. Enable integration for Ubuntu-18.04 in the settings `Docker Desktop` in the `Resourcrces` `WSL integration` tab
-   (it is understood that `Docker` and `WSL 2` are installed on windows):
-
-   ![Docker WSL integration Ubuntu 18.04](/images/docker_wsl_integration.jpg)
-
-1. Install `curl` on Ubuntu with use command:
-   ```sh
-   sudo apt install curl
-   ```
-1. Installation `nuctl` on Ubuntu, using the command from [manuals on nuclio CLI][nuctl-manual]:
-   ```sh
-   curl -s https://api.github.com/repos/nuclio/nuclio/releases/1.5.16 \
-               | grep -i "browser_download_url.*nuctl.*$(uname)" \
-               | cut -d : -f 2,3 \
-               | tr -d \" \
-               | wget -O nuctl -qi - && chmod +x nuctl
-   ```
-1. Installation `git` on Ubuntu:
-   ```sh
-   sudo apt install git
-   ```
-1. Clone the repository and move to the repository folder:
-   ```sh
-   git clone https://github.com/openvinotoolkit/cvat.git
-   cd cvat
-   ```
-
-1. After that, run the commands from this tutorial through Ubuntu.
-
-### Problem with the deployment of models
-
-If you did not automatically assign a port when you deployed the model (this may be due to firewall settings),
-try adding a port yourself before you deploy the model.
-Add the `port: 32001` attribute to the `function.yaml` file of each model.
-Different ports should be prescribed for different models.
+If before model deployment you see that the `NODE PORT` is 0, you need to assign it manually.
+Add the `port: 32001` attribute to the `function.yaml` file of each model, before you deploy the model. Different ports should be prescribed for different models.
 
 ```diff
 triggers:
@@ -950,6 +911,24 @@ myHttpTrigger:
 +     port: 32001
       maxRequestBodySize: 33554432 # 32MB
 ```
+
+### Installation serverless functions on Windows 10 with using the Ubuntu subsystem
+
+If you encounter a problem running serverless functions on Windows 10, you can use the Ubuntu subsystem, for this do the following:
+
+1. Install  `WSL 2` and `Docker Desktop` as described in [installation manual][cvat-installation-guide-windows-10]
+
+1. Install [Ubuntu 18.04 from Microsoft store][ubuntu-1804-microsoft-store].
+
+1. Enable integration for Ubuntu-18.04 in the settings of `Docker Desktop` in the `Resources` `WSL integration` tab:
+
+   ![Docker WSL integration Ubuntu 18.04](/images/docker_wsl_integration.jpg)
+
+1. Then you can download and install `nuctl` on Ubuntu, using the [automatic annotation guide][cvat-auto-annotation-guide]
+
+1. Install `git` and clone repository on Ubuntu, as described in the [installation manual][cvat-installation-guide-ubuntu-1804]
+
+1. After that, run the commands from this tutorial through Ubuntu.
 
 [detectron2-github]: https://github.com/facebookresearch/detectron2
 [detectron2-requirements]: https://detectron2.readthedocs.io/en/latest/tutorials/install.html
@@ -965,15 +944,16 @@ myHttpTrigger:
 [retinanet-main-py]: https://github.com/openvinotoolkit/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
 [nuclio-homepage]: https://nuclio.io/
 [cvat-builtin-serverless]: https://github.com/openvinotoolkit/cvat/tree/develop/serverless
-[cvat-auto-annotation-guide]: https://openvinotoolkit.github.io/cvat/docs/administration/advanced/installation_automatic_annotation
+[cvat-auto-annotation-guide]: /docs/administration/advanced/installation_automatic_annotation
+[cvat-installation-guide-windows-10]: /docs/administration/basics/installation/#windows-10
+[cvat-installation-guide-ubuntu-1804]: /docs/administration/basics/installation/#ubuntu-1804-x86_64amd64
 [mscoco-format]: https://cocodataset.org/#format-data
 [pascal-voc-format]: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/index.html
 [faas-wiki]: https://en.wikipedia.org/wiki/Function_as_a_service
-[cvat-ai-tools-user-guide]: https://openvinotoolkit.github.io/cvat/docs/manual/advanced/ai-tools/
+[cvat-ai-tools-user-guide]: /docs/manual/advanced/ai-tools/
 [cvat-github]: https://github.com/openvinotoolkit/cvat
 [siammask-serverless]: https://github.com/openvinotoolkit/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio
 [vtest-avi]: https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
 [intel-openvino-url]: https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html
-[cvat-auto-annotation-user-guide]: https://openvinotoolkit.github.io/cvat/docs/manual/advanced/automatic-annotation/
-[ubuntu-18-04-microsoft-store]: https://www.microsoft.com/en-us/p/ubuntu-1804-lts/9n9tngvndl3q
-[nuctl-manual]: https://github.com/nuclio/nuclio/blob/development/docs/reference/nuctl/nuctl.md
+[cvat-auto-annotation-user-guide]: /docs/manual/advanced/automatic-annotation/
+[ubuntu-1804-microsoft-store]: https://www.microsoft.com/en-us/p/ubuntu-1804-lts/9n9tngvndl3q
