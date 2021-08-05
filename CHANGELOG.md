@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TDB
+- Fixed multiple tasks moving (<https://github.com/openvinotoolkit/cvat/pull/3517>)
 
 ### Security
 
