@@ -63,9 +63,12 @@ def export(dst_format, task_id=None, project_id=None, server_url=None, save_imag
         output_path = '%s.%s' % (output_base, exporter.EXT)
         output_path = osp.join(cache_dir, output_path)
 
-        task_time = timezone.localtime(db_instance.updated_date).timestamp()
+        instance_time = timezone.localtime(db_instance.updated_date).timestamp()
+        if isinstance(db_instance, Project):
+            tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date).timestamp(), db_instance.tasks.all()))
+            instance_time = max(tasks_update + [instance_time])
         if not (osp.exists(output_path) and \
-                task_time <= osp.getmtime(output_path)):
+                instance_time <= osp.getmtime(output_path)):
             os.makedirs(cache_dir, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                 temp_file = osp.join(temp_dir, 'result')

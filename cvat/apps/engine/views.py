@@ -1460,9 +1460,12 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
 
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
-        last_task_update_time = timezone.localtime(db_instance.updated_date)
+        last_instance_update_time = timezone.localtime(db_instance.updated_date)
+        if isinstance(db_instance, Project):
+            tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
+            last_instance_update_time = max(tasks_update + [last_instance_update_time])
         request_time = rq_job.meta.get('request_time', None)
-        if request_time is None or request_time < last_task_update_time:
+        if request_time is None or request_time < last_instance_update_time:
             rq_job.cancel()
             rq_job.delete()
         else:
@@ -1471,7 +1474,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                 if action == "download" and osp.exists(file_path):
                     rq_job.delete()
 
-                    timestamp = datetime.strftime(last_task_update_time,
+                    timestamp = datetime.strftime(last_instance_update_time,
                         "%Y_%m_%d_%H_%M_%S")
                     filename = filename or \
                         "{}_{}-{}-{}{}".format(
