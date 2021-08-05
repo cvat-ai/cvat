@@ -15,7 +15,7 @@ export default function ProjectListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const projectsCount = useSelector((state: CombinedState) => state.projects.count);
     const { page } = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const projectInstances = useSelector((state: CombinedState) => state.projects.current);
+    const projects = useSelector((state: CombinedState) => state.projects.current);
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
 
     function changePage(p: number): void {
@@ -27,28 +27,13 @@ export default function ProjectListComponent(): JSX.Element {
         );
     }
 
-    const projects = projectInstances.reduce<Project[][]>((rows, key, index) => {
-        if (index % 4 === 0) {
-            rows.push([key]);
-        } else {
-            rows[rows.length - 1].push(key);
-        }
-        return rows;
-    }, []);
-
     return (
         <>
             <Row justify='center' align='middle' className='cvat-project-list-content'>
                 <Col className='cvat-projects-list' md={22} lg={18} xl={16} xxl={14}>
                     {projects.map(
-                        (row: Project[]): JSX.Element => (
-                            <Row key={row[0].instance.id} gutter={[8, 8]}>
-                                {row.map((project: Project) => (
-                                    <Col span={6} key={project.instance.id}>
-                                        <ProjectItem projectInstance={project} />
-                                    </Col>
-                                ))}
-                            </Row>
+                        (project: Project): JSX.Element => (
+                            <ProjectItem key={project.instance.id} projectInstance={project} />
                         ),
                     )}
                 </Col>

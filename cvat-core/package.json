@@ -11,6 +11,12 @@
   },
   "author": "Intel",
   "license": "MIT",
+  "browserslist": [
+    "Chrome >= 63",
+    "Firefox > 58",
+    "not IE 11",
+    "> 2%"
+  ],
   "devDependencies": {
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",

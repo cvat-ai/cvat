@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- TDB
+- Notification if the browser does not support nesassary API
 
 ### Changed
 
