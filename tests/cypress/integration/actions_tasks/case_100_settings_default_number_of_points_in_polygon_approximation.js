@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
+import { generateString } from '../../support/utils';
 
 context('Settings. Default number of points in polygon approximation.', () => {
     const caseId = '100';
@@ -26,14 +27,6 @@ context('Settings. Default number of points in polygon approximation.', () => {
         });
     }
 
-    function generateString(countPointsToMove) {
-        let action = '';
-        for (let i = 0; i < countPointsToMove; i++) {
-            action += '{rightarrow}';
-        }
-        return action;
-    }
-
     before(() => {
         cy.openTaskJob(taskName);
     });
@@ -43,7 +36,7 @@ context('Settings. Default number of points in polygon approximation.', () => {
             testOpenSettingsWorkspace();
             cy.get('.cvat-workspace-settings-approx-poly-threshold')
                 .find('[role="slider"]')
-                .type(generateString(4))
+                .type(generateString(4, 'rightarrow'))
                 .then((slider) => {
                     const sliderAttrValueNow = slider.attr('aria-valuenow');
                     const sliderAttrValuemin = slider.attr('aria-valuemin');

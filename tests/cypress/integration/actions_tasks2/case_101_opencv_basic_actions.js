@@ -4,21 +4,12 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
+import { generateString } from '../../support/utils';
 
 context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
     const caseId = '101';
-    const createOpencvShape = {
-        labelName: labelName,
-        pointsMap: [
-            { x: 200, y: 200 },
-            { x: 250, y: 200 },
-            { x: 300, y: 250 },
-            { x: 350, y: 300 },
-            { x: 300, y: 350 },
-        ],
-    };
-    const newLabel = `${createOpencvShape.labelName} new`
+    const newLabel = `${caseId}`
     const createOpencvShapeSecondLabel = {
         labelName: newLabel,
         pointsMap: [
@@ -39,14 +30,6 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
         { x: 400, y: 550 },
     ];
 
-    function generateString(countPointsToMove) {
-        let action = '';
-        for (let i = 0; i < countPointsToMove; i++) {
-            action += '{rightarrow}';
-        }
-        return action;
-    }
-
     function openOpencvControlPopover() {
         cy.get('body').focus();
         cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
@@ -66,11 +49,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
         });
 
-        it('Create a shape with "Intelligent cissors".', () => {
-            cy.opencvCreateShape(createOpencvShape);
-        });
-
-        it('Create a shape with "Intelligent cissors" and "Done" button.', () => {
+        it('Create a shape with "Intelligent cissors" with the label change and "Done" button.', () => {
             cy.opencvCreateShape(createOpencvShapeSecondLabel);
         });
 
@@ -86,7 +65,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
                 // Change number of points
                 cy.get('.cvat-approx-poly-threshold-wrapper')
                     .find('[role="slider"]')
-                    .type(generateString(4))
+                    .type(generateString(4, 'rightarrow'));
                 cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                     // Get count of points againe
                     const intermediateShapeNumberPointsAfterChange = intermediateShape.attr('points').split(' ').length;
