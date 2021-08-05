@@ -39,6 +39,7 @@ context('Create a link for shape, frame.', () => {
                 expect(url).include('type=');
                 expect(url).include('serverID=');
                 cy.visit(url);
+                cy.closeModalUnsupportedPlatform();
                 cy.get('.cvat-canvas-container').should('be.visible');
                 cy.get('#cvat_canvas_shape_1').should('be.visible');
             });
