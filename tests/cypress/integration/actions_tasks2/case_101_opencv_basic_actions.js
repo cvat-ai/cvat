@@ -4,12 +4,22 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { taskName, labelName } from '../../support/const';
 import { generateString } from '../../support/utils';
 
 context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
     const caseId = '101';
     const newLabel = `Case ${caseId}`
+    const createOpencvShape = {
+        labelName: labelName,
+        pointsMap: [
+            { x: 200, y: 200 },
+            { x: 250, y: 200 },
+            { x: 300, y: 250 },
+            { x: 350, y: 300 },
+            { x: 300, y: 350 },
+        ],
+    };
     const createOpencvShapeSecondLabel = {
         labelName: newLabel,
         pointsMap: [
@@ -49,7 +59,8 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
         });
 
-        it('Create a shape with "Intelligent cissors" with the label change and "Done" button.', () => {
+        it('Create a shape with "Intelligent cissors". Create the second shape with the label change and "Done" button.', () => {
+            cy.opencvCreateShape(createOpencvShape);
             cy.opencvCreateShape(createOpencvShapeSecondLabel);
         });
 
@@ -75,7 +86,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             });
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
-            cy.get('.cvat_canvas_shape').should('have.length', 1);
+            cy.get('.cvat_canvas_shape').should('have.length', 2);
         });
 
         it('Check "Histogram Equalization" feature.', () => {
