@@ -29,9 +29,7 @@ Cypress.Commands.add(
             cy.contains('Submit').click();
         });
         if (expectedResult == 'success') {
-            cy.get('.cvat-notification-create-project-success')
-                .should('exist')
-                .find('[data-icon="close"]').click();
+            cy.get('.cvat-notification-create-project-success').should('exist').find('[data-icon="close"]').click();
         } else if (expectedResult == 'fail') {
             cy.get('.cvat-notification-create-project-success').should('not.exist');
         }
@@ -61,7 +59,7 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
     if (expectedResult === 'success') {
         cy.get('.cvat-projects-project-item-card').should('have.css', 'opacity', '0.5');
     } else if (expectedResult === 'fail') {
-        cy.get('.cvat-projects-project-item-card').should('not.have.attr', 'style');
+        cy.get('.cvat-projects-project-item-card').should('not.have.css', 'opacity', '0.5');
     }
 });
 
@@ -96,19 +94,25 @@ Cypress.Commands.add('closeNotification', (className) => {
 Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTask) => {
     if (fromTask) {
         cy.contains('.cvat-text-color', 'Actions').click();
-        cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
-            cy.contains('Move to project').click();
-        });
+        cy.get('.ant-dropdown')
+            .not('.ant-dropdown-hidden')
+            .within(() => {
+                cy.contains('Move to project').click();
+            });
     } else {
         cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').click();
-        cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
-            cy.contains('Move to project').click();
-        });
+        cy.get('.ant-dropdown')
+            .not('.ant-dropdown-hidden')
+            .within(() => {
+                cy.contains('Move to project').click();
+            });
     }
     cy.get('.cvat-task-move-modal').find('.cvat-project-search-field').click();
-    cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
-        cy.get(`[title="${projectName}"]`).click();
-    });
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .within(() => {
+            cy.get(`[title="${projectName}"]`).click();
+        });
     if (labelMappingFrom !== labelMappingTo) {
         cy.get('.cvat-move-task-label-mapper-item').within(() => {
             cy.contains(labelMappingFrom).should('exist');
@@ -122,5 +126,5 @@ Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, lab
     }
     cy.get('.cvat-task-move-modal').within(() => {
         cy.contains('button', 'OK').click();
-    })
+    });
 });
