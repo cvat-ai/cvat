@@ -2,6 +2,7 @@
 title: 'Automatic annotation'
 linkTitle: 'Automatic annotation'
 weight: 27
+description: 'Guide to using the automatic annotation of tasks.'
 ---
 
 Automatic Annotation is used for creating preliminary annotations.

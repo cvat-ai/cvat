@@ -2,6 +2,7 @@
 title: 'Workspace'
 linkTitle: 'Workspace'
 weight: 22
+description: 'Overview of available functions on the workspace of the annotation tool.'
 ---
 
 This is the main field in which drawing and editing objects takes place.

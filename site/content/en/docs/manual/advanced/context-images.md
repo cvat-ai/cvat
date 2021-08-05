@@ -2,6 +2,7 @@
 title: 'Context images for 2d task'
 linkTitle: 'Context images'
 weight: 23
+description: 'Guide to adding additional contextual images to a task.'
 ---
 
 When you create a task, you can provide the images with additional contextual images. 

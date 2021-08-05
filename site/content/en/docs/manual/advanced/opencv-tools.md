@@ -2,6 +2,7 @@
 title: 'OpenCV tools'
 linkTitle: 'OpenCV tools'
 weight: 14
+description: 'Guide to using Computer Vision algorithms during annotation.'
 ---
 
 The tool based on [Open CV](https://opencv.org/) Computer Vision library

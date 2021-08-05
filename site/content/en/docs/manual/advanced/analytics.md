@@ -1,6 +1,6 @@
 ---
-title: 'Analytics'
-linkTitle: 'Analytics'
+title: 'Analytics Monitoring'
+linkTitle: 'Analytics Monitoring'
 weight: 28
 ---
 
