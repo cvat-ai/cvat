@@ -21,7 +21,7 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
     opencvShapeParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
-    if (opencvShapeParams.useDoneButton) {
+    if (opencvShapeParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else {
         const keyCodeN = 78;
@@ -33,7 +33,6 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
 });
 
 Cypress.Commands.add('opncvCheckObjectParameters', (objectType) => {
-    cy.get('.cvat-opencv-control-popover').should('be.hidden');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -41,7 +40,7 @@ Cypress.Commands.add('opncvCheckObjectParameters', (objectType) => {
             listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
         }
         const maxId = Math.max(...listCanvasShapeId);
-        cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').and('be.visible');
+        cy.get(`#cvat_canvas_shape_${maxId}`).should('be.visible');
         cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
             .should('contain', maxId)
             .and('contain', objectType)

@@ -9,7 +9,7 @@ import { generateString } from '../../support/utils';
 
 context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
     const caseId = '101';
-    const newLabel = `${caseId}`
+    const newLabel = `Case ${caseId}`
     const createOpencvShapeSecondLabel = {
         labelName: newLabel,
         pointsMap: [
@@ -19,7 +19,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             { x: 450, y: 300 },
             { x: 400, y: 350 },
         ],
-        useDoneButton: true,
+        finishWithButton: true,
     };
     const keyCodeN = 78;
     const pointsMap = [
@@ -75,7 +75,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             });
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
-            cy.get('.cvat_canvas_shape').should('have.length', 2);
+            cy.get('.cvat_canvas_shape').should('have.length', 1);
         });
 
         it('Check "Histogram Equalization" feature.', () => {
