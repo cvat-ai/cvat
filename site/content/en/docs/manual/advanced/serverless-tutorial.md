@@ -899,7 +899,8 @@ $ docker logs nuclio-nuclio-pth.shiyinzhang.iog
 </details>
 
 If before model deployment you see that the `NODE PORT` is 0, you need to assign it manually.
-Add the `port: 32001` attribute to the `function.yaml` file of each model, before you deploy the model. Different ports should be prescribed for different models.
+Add the `port: 32001` attribute to the `function.yaml` file of each model, before you deploy the model.
+Different ports should be prescribed for different models.
 
 ```diff
 triggers:
@@ -914,7 +915,8 @@ myHttpTrigger:
 
 ### Installation serverless functions on Windows 10 with using the Ubuntu subsystem
 
-If you encounter a problem running serverless functions on Windows 10, you can use the Ubuntu subsystem, for this do the following:
+If you encounter a problem running serverless functions on Windows 10,
+you can use the Ubuntu subsystem, for this do the following:
 
 1. Install  `WSL 2` and `Docker Desktop` as described in [installation manual][cvat-installation-guide-windows-10]
 
@@ -924,9 +926,11 @@ If you encounter a problem running serverless functions on Windows 10, you can 
 
    ![Docker WSL integration Ubuntu 18.04](/images/docker_wsl_integration.jpg)
 
-1. Then you can download and install `nuctl` on Ubuntu, using the [automatic annotation guide][cvat-auto-annotation-guide]
+1. Then you can download and install `nuctl` on Ubuntu,
+   using the [automatic annotation guide][cvat-auto-annotation-guide].
 
-1. Install `git` and clone repository on Ubuntu, as described in the [installation manual][cvat-installation-guide-ubuntu-1804]
+1. Install `git` and clone repository on Ubuntu,
+   as described in the [installation manual][cvat-installation-guide-ubuntu-1804].
 
 1. After that, run the commands from this tutorial through Ubuntu.
 
