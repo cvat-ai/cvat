@@ -182,8 +182,12 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
+    tip: {
+        message: string;
+        gif: string;
+    };
     params: {
-        canvas: Record<string, unknown>;
+        canvas: Record<string, number | boolean>;
     };
 }
 

@@ -113,6 +113,8 @@ class LambdaFunction:
         self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
         self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
+        self.example_gif_url = meta_anno.get('example_gif_url', '')
+        self.help_message = meta_anno.get('help_message', '')
         self.gateway = gateway
 
     def to_dict(self):
@@ -129,7 +131,9 @@ class LambdaFunction:
             response.update({
                 'min_pos_points': self.min_pos_points,
                 'min_neg_points': self.min_neg_points,
-                'startswith_box': self.startswith_box
+                'startswith_box': self.startswith_box,
+                'help_message': self.help_message,
+                'example_gif_url': self.example_gif_url
             })
 
         if self.kind is LambdaType.TRACKER:

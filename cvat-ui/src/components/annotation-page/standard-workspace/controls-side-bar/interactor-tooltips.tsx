@@ -8,52 +8,23 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 
 interface Props {
-    tool?: string;
+    name?: string;
+    gif?: string;
+    message?: string;
     withNegativePoints?: boolean;
 }
 
 function InteractorTooltips(props: Props): JSX.Element {
-    const { tool, withNegativePoints } = props;
-
-    const DEXTR_GIF = 'https://openvinotoolkit.github.io/cvat/images/dextr_example.gif';
-    const FBRS_GIF = 'https://openvinotoolkit.github.io/cvat/images/fbrs_example.gif';
-    const IOG_GIF = 'https://openvinotoolkit.github.io/cvat/images/iog_example.gif';
-    const DEXTR_DESC =
-        'The interactor allows to get a mask of an object using its extreme points (more or equal 4). You can add a point left-clicking the image';
-    const FBRS_DESC = 'The interactor allows to get a mask for an object using positive points, and negative points.';
-    const IOG_DESC =
-        'The interactor allows to get a mask of an object using its wrapping boundig box, positive, and negative points inside it';
-
-    const UNKNOWN_DESC = 'Selected interactor does not have tips';
-
-    let gif = null;
-    let desc = '';
-
-    switch (tool) {
-        case undefined:
-            desc = 'Select an interactor to see description';
-            break;
-        case 'DEXTR':
-            gif = DEXTR_GIF;
-            desc = DEXTR_DESC;
-            break;
-        case 'f-BRS':
-            gif = FBRS_GIF;
-            desc = FBRS_DESC;
-            break;
-        case 'IOG':
-            gif = IOG_GIF;
-            desc = IOG_DESC;
-            break;
-        default:
-            desc = UNKNOWN_DESC;
-    }
-
+    const {
+        name, gif, message, withNegativePoints,
+    } = props;
+    const UNKNOWN_MESSAGE = 'Selected interactor does not have a help message';
+    const desc = message || UNKNOWN_MESSAGE;
     return (
         <div className='cvat-interactor-tip-container'>
-            <Paragraph>{desc}</Paragraph>
-            {tool ? (
+            {name ? (
                 <>
+                    <Paragraph>{desc}</Paragraph>
                     <Paragraph>
                         <Text>You can prevent server requests holding</Text>
                         <Text strong>{' Ctrl '}</Text>
@@ -65,9 +36,11 @@ function InteractorTooltips(props: Props): JSX.Element {
                             <Text>Negative points can be added by right-clicking the image. </Text>
                         ) : null}
                     </Paragraph>
+                    {gif ? <Image className='cvat-interactor-tip-image' alt='Example gif' src={gif} /> : null}
                 </>
-            ) : null}
-            {gif ? <Image className='cvat-interactor-tip-image' alt='Example gif' src={gif} /> : null}
+            ) : (
+                <Text>Select an interactor to see help message</Text>
+            )}
         </div>
     );
 }
