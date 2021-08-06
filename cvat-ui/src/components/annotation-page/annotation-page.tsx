@@ -44,7 +44,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         saveLogs();
         const root = window.document.getElementById('root');
         if (root) {
-            root.style.minHeight = '600px';
+            root.style.minHeight = '720px';
         }
 
         return () => {

@@ -90,6 +90,7 @@ interface StateToProps {
     maxZLayer: number;
     curZLayer: number;
     automaticBordering: boolean;
+    intelligentPolygonCrop: boolean;
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
     canvasBackgroundColor: string;
@@ -188,9 +189,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedAttributeID,
         selectedStatesID,
         annotations,
-        opacity,
+        opacity: opacity / 100,
         colorBy,
-        selectedOpacity,
+        selectedOpacity: selectedOpacity / 100,
         outlined,
         outlineColor,
         showBitmap,
@@ -198,12 +199,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         grid,
         gridSize,
         gridColor,
-        gridOpacity,
+        gridOpacity: gridOpacity / 100,
         activeLabelID,
         activeObjectType,
-        brightnessLevel,
-        contrastLevel,
-        saturationLevel,
+        brightnessLevel: brightnessLevel / 100,
+        contrastLevel: contrastLevel / 100,
+        saturationLevel: saturationLevel / 100,
         resetZoom,
         aamZoomMargin,
         showObjectsTextAlways,

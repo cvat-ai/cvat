@@ -998,6 +998,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.adoptedContent,
             this.adoptedText,
             this.autoborderHandler,
+            this.geometry,
+            this.configuration,
         );
         this.editHandler = new EditHandlerImpl(this.onEditDone.bind(this), this.adoptedContent, this.autoborderHandler);
         this.mergeHandler = new MergeHandlerImpl(
@@ -1026,6 +1028,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onInteraction.bind(this),
             this.adoptedContent,
             this.geometry,
+            this.configuration,
         );
 
         // Setup event handlers
@@ -1117,6 +1120,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
+            this.interactionHandler.configurate(this.configuration);
 
             // remove if exist and not enabled
             // this.setupObjects([]);

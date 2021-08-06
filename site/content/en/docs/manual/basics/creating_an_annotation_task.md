@@ -2,6 +2,7 @@
 title: 'Creating an annotation task'
 linkTitle: 'Creating an annotation task'
 weight: 2
+description: 'Instructions on how to create and configure an annotation task.'
 ---
 
 1. Create an annotation task pressing `Create new task` button on the tasks page or on the project page.

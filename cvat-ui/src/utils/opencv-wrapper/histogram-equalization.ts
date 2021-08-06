@@ -60,8 +60,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
                 this.hashFrame(imgData, frameNumber);
                 return imgData;
             } catch (e) {
-                console.log('Histogram equalization error', e);
-                return src;
+                throw new Error(e.toString());
             } finally {
                 if (matImage) matImage.delete();
                 if (channels) channels.delete();

@@ -2,6 +2,7 @@
 title: 'Shape mode (basics)'
 linkTitle: 'Shape mode'
 weight: 10
+description: 'Usage examples and basic operations available during annotation in shape mode.'
 ---
 Usage examples:
 

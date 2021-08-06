@@ -2,6 +2,7 @@
 title: 'Task details'
 linkTitle: 'Task details'
 weight: 3
+description: 'Overview of the Task details page.'
 ---
 
 Task details is a task page which contains a preview, a progress bar
