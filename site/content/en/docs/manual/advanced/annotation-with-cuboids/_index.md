@@ -2,6 +2,7 @@
 title: 'Annotation with cuboids'
 linkTitle: 'Annotation with cuboids'
 weight: 17
+description: 'Guide to creating and editing cuboids.'
 ---
 
 It is used to annotate 3 dimensional objects such as cars, boxes, etc...

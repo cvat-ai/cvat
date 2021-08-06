@@ -2,6 +2,7 @@
 title: 'Shape mode (advanced)'
 linkTitle: 'Shape mode'
 weight: 4
+description: 'Advanced operations available during annotation in shape mode.'
 ---
 
 Basic operations in the mode were described in section [shape mode (basics)](/docs/manual/basics/shape-mode-basics/).

@@ -2,6 +2,7 @@
 title: 'AI Tools'
 linkTitle: 'AI Tools'
 weight: 15
+description: 'Overview of semi-automatic and automatic annotation tools available in CVAT.'
 ---
 
 The tool is designed for semi-automatic and automatic annotation using DL models.

@@ -2,6 +2,7 @@
 title: 'Top Panel'
 linkTitle: 'Top Panel'
 weight: 21
+description: 'Overview of controls available on the top panel of the annotation tool.'
 ---
 
 ![](/images/image035.jpg)
