@@ -4,7 +4,7 @@
 
 import React, { MutableRefObject } from 'react';
 import { connect } from 'react-redux';
-import Icon, { LoadingOutlined } from '@ant-design/icons';
+import Icon, { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
@@ -16,6 +16,8 @@ import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Progress from 'antd/lib/progress';
 import InputNumber from 'antd/lib/input-number';
+import Dropdown from 'antd/lib/dropdown';
+import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
@@ -37,6 +39,7 @@ import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import withVisibilityHandling from './handle-popover-visibility';
+import ToolsTooltips from './interactor-tooltips';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -111,10 +114,21 @@ interface State {
 }
 
 export class ToolsControlComponent extends React.PureComponent<Props, State> {
-    private interactionIsAborted: boolean;
-    private interactionIsDone: boolean;
-    private latestResponseResult: number[][];
-    private latestResult: number[][];
+    private interaction: {
+        id: string | null;
+        isAborted: boolean;
+        latestResponse: number[][];
+        latestResult: number[][];
+        latestRequest: null | {
+            interactor: Model;
+            data: {
+                frame: number;
+                neg_points: number[][];
+                pos_points: number[][];
+            };
+        } | null;
+        hideMessage: (() => void) | null;
+    };
 
     public constructor(props: Props) {
         super(props);
@@ -130,10 +144,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             mode: 'interaction',
         };
 
-        this.latestResponseResult = [];
-        this.latestResult = [];
-        this.interactionIsAborted = false;
-        this.interactionIsDone = false;
+        this.interaction = {
+            id: null,
+            isAborted: false,
+            latestResponse: [],
+            latestResult: [],
+            latestRequest: null,
+            hideMessage: null,
+        };
     }
 
     public componentDidMount(): void {
@@ -145,32 +163,42 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
-        const { approxPolyAccuracy, activeInteractor } = this.state;
+        const { approxPolyAccuracy, mode } = this.state;
 
         if (prevProps.isActivated && !isActivated) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
+            // hide interaction message if exists
+            if (this.interaction.hideMessage) {
+                this.interaction.hideMessage();
+                this.interaction.hideMessage = null;
+            }
         } else if (!prevProps.isActivated && isActivated) {
             // reset flags when start interaction/tracking
+            this.interaction = {
+                id: null,
+                isAborted: false,
+                latestResponse: [],
+                latestResult: [],
+                latestRequest: null,
+                hideMessage: null,
+            };
+
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
                 pointsRecieved: false,
             });
-            this.latestResult = [];
-            this.latestResponseResult = [];
-            this.interactionIsDone = false;
-            this.interactionIsAborted = false;
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
 
         if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
-            if (isActivated && activeInteractor !== null && this.latestResponseResult.length) {
-                this.approximateResponsePoints(this.latestResponseResult).then((points: number[][]) => {
-                    this.latestResult = points;
+            if (isActivated && mode === 'interaction' && this.interaction.latestResponse.length) {
+                this.approximateResponsePoints(this.interaction.latestResponse).then((points: number[][]) => {
+                    this.interaction.latestResult = points;
                     canvasInstance.interact({
                         enabled: true,
                         intermediateShape: {
                             shapeType: ShapeType.POLYGON,
-                            points: this.latestResult.flat(),
+                            points: this.interaction.latestResult.flat(),
                         },
                     });
                 });
@@ -196,96 +224,109 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private cancelListener = async (): Promise<void> => {
-        const { isActivated } = this.props;
         const { fetching } = this.state;
-        this.latestResult = [];
-
-        if (isActivated) {
-            if (fetching && !this.interactionIsDone) {
-                // user pressed ESC
-                this.setState({ fetching: false });
-                this.interactionIsAborted = true;
-            }
+        if (fetching) {
+            // user pressed ESC
+            this.setState({ fetching: false });
+            this.interaction.isAborted = true;
         }
     };
 
-    private onInteraction = async (e: Event): Promise<void> => {
-        const {
-            frame,
-            labels,
-            curZOrder,
-            jobInstance,
-            isActivated,
-            activeLabelID,
-            canvasInstance,
-            createAnnotations,
-        } = this.props;
+    private runInteractionRequest = async (interactionId: string): Promise<void> => {
+        const { jobInstance, canvasInstance } = this.props;
         const { activeInteractor, fetching } = this.state;
 
-        if (!isActivated) {
+        const { id, latestRequest } = this.interaction;
+        if (id !== interactionId || !latestRequest || fetching) {
+            // current interaction request is not relevant (new interaction session has started)
+            // or a user didn't add more points
+            // or one server request is on processing
             return;
         }
 
+        const { interactor, data } = latestRequest;
+        this.interaction.latestRequest = null;
+
         try {
-            this.interactionIsDone = (e as CustomEvent).detail.isDone;
-            const interactor = activeInteractor as Model;
-
-            if ((e as CustomEvent).detail.shapesUpdated) {
+            this.interaction.hideMessage = message.loading(`Waiting a response from ${activeInteractor?.name}..`, 0);
+            try {
+                // run server request
                 this.setState({ fetching: true });
-                try {
-                    this.latestResponseResult = await core.lambda.call(jobInstance.task, interactor, {
-                        frame,
-                        pos_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 0),
-                        neg_points: convertShapesForInteractor((e as CustomEvent).detail.shapes, 2),
-                    });
+                const response = await core.lambda.call(jobInstance.task, interactor, data);
+                // approximation with cv.approxPolyDP
+                const approximated = await this.approximateResponsePoints(response);
 
-                    this.latestResult = this.latestResponseResult;
-
-                    if (this.interactionIsAborted) {
-                        // while the server request
-                        // user has cancelled interaction (for example pressed ESC)
-                        // need to clean variables that have been just set
-                        this.latestResult = [];
-                        this.latestResponseResult = [];
-                        return;
-                    }
-
-                    this.latestResult = await this.approximateResponsePoints(this.latestResponseResult);
-                } finally {
-                    this.setState({ fetching: false, pointsRecieved: !!this.latestResult.length });
+                if (this.interaction.id !== interactionId || this.interaction.isAborted) {
+                    // new interaction session or the session is aborted
+                    return;
                 }
+
+                this.interaction.latestResponse = response;
+                this.interaction.latestResult = approximated;
+
+                this.setState({ pointsRecieved: !!response.length });
+            } finally {
+                if (this.interaction.id === interactionId && this.interaction.hideMessage) {
+                    this.interaction.hideMessage();
+                    this.interaction.hideMessage = null;
+                }
+
+                this.setState({ fetching: false });
             }
 
-            if (!this.latestResult.length) {
-                return;
-            }
-
-            if (this.interactionIsDone && !fetching) {
-                const object = new core.classes.ObjectState({
-                    frame,
-                    objectType: ObjectType.SHAPE,
-                    label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
-                    shapeType: ShapeType.POLYGON,
-                    points: this.latestResult.flat(),
-                    occluded: false,
-                    zOrder: curZOrder,
-                });
-
-                createAnnotations(jobInstance, frame, [object]);
-            } else {
+            if (this.interaction.latestResult.length) {
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
                         shapeType: ShapeType.POLYGON,
-                        points: this.latestResult.flat(),
+                        points: this.interaction.latestResult.flat(),
                     },
                 });
             }
+
+            setTimeout(() => this.runInteractionRequest(interactionId));
         } catch (err) {
             notification.error({
                 description: err.toString(),
                 message: 'Interaction error occured',
             });
+        }
+    };
+
+    private onInteraction = (e: Event): void => {
+        const { frame, isActivated } = this.props;
+        const { activeInteractor } = this.state;
+
+        if (!isActivated) {
+            return;
+        }
+
+        if (!this.interaction.id) {
+            this.interaction.id = lodash.uniqueId('interaction_');
+        }
+
+        const { shapesUpdated, isDone, shapes } = (e as CustomEvent).detail;
+        if (isDone) {
+            // make an object from current result
+            // do not make one more request
+            // prevent future requests if possible
+            this.interaction.isAborted = true;
+            this.interaction.latestRequest = null;
+            if (this.interaction.latestResult.length) {
+                this.constructFromPoints(this.interaction.latestResult);
+            }
+        } else if (shapesUpdated) {
+            const interactor = activeInteractor as Model;
+            this.interaction.latestRequest = {
+                interactor,
+                data: {
+                    frame,
+                    pos_points: convertShapesForInteractor(shapes, 0),
+                    neg_points: convertShapesForInteractor(shapes, 2),
+                },
+            };
+
+            this.runInteractionRequest(this.interaction.id);
         }
     };
 
@@ -306,7 +347,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        this.interactionIsDone = true;
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
             const state = new core.classes.ObjectState({
@@ -363,11 +403,29 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         });
     };
 
+    private constructFromPoints(points: number[][]): void {
+        const {
+            frame, labels, curZOrder, jobInstance, activeLabelID, createAnnotations,
+        } = this.props;
+
+        const object = new core.classes.ObjectState({
+            frame,
+            objectType: ObjectType.SHAPE,
+            label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
+            shapeType: ShapeType.POLYGON,
+            points: points.flat(),
+            occluded: false,
+            zOrder: curZOrder,
+        });
+
+        createAnnotations(jobInstance, frame, [object]);
+    }
+
     private async approximateResponsePoints(points: number[][]): Promise<number[][]> {
         const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
             if (!openCVWrapper.isInitialized) {
-                const hide = message.loading('OpenCV.js initialization..');
+                const hide = message.loading('OpenCV.js initialization..', 0);
                 try {
                     await openCVWrapper.initialize(() => {});
                 } finally {
@@ -580,6 +638,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             );
         }
 
+        const minNegVertices = activeInteractor ? (activeInteractor.params.canvas.minNegVertices as number) : -1;
+
         return (
             <>
                 <Row justify='start'>
@@ -587,8 +647,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <Text className='cvat-text-color'>Interactor</Text>
                     </Col>
                 </Row>
-                <Row align='middle' justify='center'>
-                    <Col span={24}>
+                <Row align='middle' justify='space-between'>
+                    <Col span={22}>
                         <Select
                             style={{ width: '100%' }}
                             defaultValue={interactors[0].name}
@@ -606,6 +666,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 ),
                             )}
                         </Select>
+                    </Col>
+                    <Col span={2} className='cvat-interactors-tips-icon-container'>
+                        <Dropdown
+                            overlay={(
+                                <ToolsTooltips
+                                    name={activeInteractor?.name}
+                                    withNegativePoints={minNegVertices >= 0}
+                                    {...(activeInteractor?.tip || {})}
+                                />
+                            )}
+                        >
+                            <QuestionCircleOutlined />
+                        </Dropdown>
                     </Col>
                 </Row>
                 <Row align='middle' justify='end'>
@@ -725,7 +798,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const {
-            fetching, trackingProgress, approxPolyAccuracy, activeInteractor, pointsRecieved,
+            fetching, trackingProgress, approxPolyAccuracy, pointsRecieved, mode,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -749,35 +822,51 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        return !labels.length ? (
-            <Icon className=' cvat-tools-control cvat-disabled-canvas-control' component={AIToolsIcon} />
-        ) : (
+        const showAnyContent = !!labels.length;
+        const showInteractionContent = isActivated && mode === 'interaction' && pointsRecieved;
+        const showDetectionContent = fetching && mode === 'detection';
+        const showTrackingContent = fetching && mode === 'tracking' && trackingProgress !== null;
+        const formattedTrackingProgress = showTrackingContent ? +((trackingProgress as number) * 100).toFixed(0) : null;
+
+        const interactionContent: JSX.Element | null = showInteractionContent ? (
             <>
+                <ApproximationAccuracy
+                    approxPolyAccuracy={approxPolyAccuracy}
+                    onChange={(value: number) => {
+                        this.setState({ approxPolyAccuracy: value });
+                    }}
+                />
+            </>
+        ) : null;
+
+        const trackOrDetectModal: JSX.Element | null =
+            showDetectionContent || showTrackingContent ? (
                 <Modal
                     title='Making a server request'
                     zIndex={Number.MAX_SAFE_INTEGER}
-                    visible={fetching}
+                    visible
+                    destroyOnClose
                     closable={false}
                     footer={[]}
                 >
                     <Text>Waiting for a server response..</Text>
                     <LoadingOutlined style={{ marginLeft: '10px' }} />
-                    {trackingProgress !== null && (
-                        <Progress percent={+(trackingProgress * 100).toFixed(0)} status='active' />
-                    )}
+                    {showTrackingContent ? (
+                        <Progress percent={formattedTrackingProgress as number} status='active' />
+                    ) : null}
                 </Modal>
-                {isActivated && activeInteractor !== null && pointsRecieved ? (
-                    <ApproximationAccuracy
-                        approxPolyAccuracy={approxPolyAccuracy}
-                        onChange={(value: number) => {
-                            this.setState({ approxPolyAccuracy: value });
-                        }}
-                    />
-                ) : null}
+            ) : null;
+
+        return showAnyContent ? (
+            <>
                 <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
+                {interactionContent}
+                {trackOrDetectModal}
             </>
+        ) : (
+            <Icon className=' cvat-tools-control cvat-disabled-canvas-control' component={AIToolsIcon} />
         );
     }
 }

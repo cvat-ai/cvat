@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Notification if the browser does not support nesassary API
+- Additional inline tips in interactors with demo gifs (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 
 ### Changed
 
-- TDB
+- Non-blocking UI when using interactors (<https://github.com/openvinotoolkit/cvat/pull/3473>)
+- "Selected opacity" slider now defines opacity level for shapes being drawnSelected opacity (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 
 ### Deprecated
 
@@ -874,20 +876,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```
 ## [Unreleased]
 ### Added
--
+- TDB
 
 ### Changed
--
+- TDB
 
 ### Deprecated
--
+- TDB
 
 ### Removed
--
+- TDB
 
 ### Fixed
--
+- TDB
 
 ### Security
--
+- TDB
 ```

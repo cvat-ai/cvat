@@ -958,8 +958,12 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         },
 
         paintOrientationLines() {
-            const fillColor = this.attr('fill');
-            const strokeColor = this.attr('stroke');
+            // style has higher priority than attr, so then try to fetch it if exists
+            // https://stackoverflow.com/questions/47088409/svg-attributes-beaten-by-cssstyle-in-priority]
+            // we use getComputedStyle to get actual, not-inlined css property (come from the corresponding css class)
+            const computedStyles = getComputedStyle(this.node);
+            const fillColor = computedStyles['fill'] || this.attr('fill');
+            const strokeColor = computedStyles['stroke'] || this.attr('stroke');
             const selectedColor = this.attr('face-stroke') || '#b0bec5';
             this.frontTopEdge.stroke({ color: selectedColor });
             this.frontLeftEdge.stroke({ color: selectedColor });
