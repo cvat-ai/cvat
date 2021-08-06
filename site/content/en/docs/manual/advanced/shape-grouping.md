@@ -2,7 +2,7 @@
 title: 'Shape grouping'
 linkTitle: 'Shape grouping'
 weight: 21
-description: 'Guide to grouping multiple shapes during annotation.'
+description: 'Grouping multiple shapes during annotation.'
 ---
 
 This feature allows us to group several shapes.

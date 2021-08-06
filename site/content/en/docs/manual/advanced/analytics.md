@@ -2,6 +2,7 @@
 title: 'Analytics Monitoring'
 linkTitle: 'Analytics Monitoring'
 weight: 28
+description: 'Using Analytics to monitor usage statistics.'
 ---
 
 If your CVAT instance was created with analytics support, you can press the `Analytics` button in the dashboard
