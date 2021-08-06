@@ -465,29 +465,39 @@
                 }
             }
 
-            async function exportDataset(id, format) {
-                const { backendAPI } = config;
-                let url = `${backendAPI}/tasks/${id}/dataset?format=${format}`;
-
-                return new Promise((resolve, reject) => {
-                    async function request() {
-                        try {
-                            const response = await Axios.get(`${url}`, {
-                                proxy: config.proxy,
-                            });
-                            if (response.status === 202) {
-                                setTimeout(request, 3000);
-                            } else {
-                                url = `${url}&action=download`;
-                                resolve(url);
-                            }
-                        } catch (errorData) {
-                            reject(generateError(errorData));
-                        }
+            function exportDataset(instanceType) {
+                return async function (id, format, name, saveImages) {
+                    const { backendAPI } = config;
+                    const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
+                    let query = `format=${encodeURIComponent(format)}`;
+                    if (name) {
+                        const filename = name.replace(/\//g, '_');
+                        query += `&filename=${encodeURIComponent(filename)}`;
                     }
+                    let url = `${baseURL}?${query}`;
 
-                    setTimeout(request);
-                });
+                    return new Promise((resolve, reject) => {
+                        async function request() {
+                            Axios.get(`${url}`, {
+                                proxy: config.proxy,
+                            })
+                                .then((response) => {
+                                    if (response.status === 202) {
+                                        setTimeout(request, 3000);
+                                    } else {
+                                        query = `${query}&action=download`;
+                                        url = `${baseURL}?${query}`;
+                                        resolve(url);
+                                    }
+                                })
+                                .catch((errorData) => {
+                                    reject(generateError(errorData));
+                                });
+                        }
+
+                        setTimeout(request);
+                    });
+                };
             }
 
             async function exportTask(id) {
@@ -1135,7 +1145,9 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
+                    const predicate = () => (
+                        !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId
+                    );
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
@@ -1199,6 +1211,7 @@
                             save: saveProject,
                             create: createProject,
                             delete: deleteProject,
+                            exportDataset: exportDataset('projects'),
                         }),
                         writable: false,
                     },
@@ -1209,7 +1222,7 @@
                             saveTask,
                             createTask,
                             deleteTask,
-                            exportDataset,
+                            exportDataset: exportDataset('tasks'),
                             exportTask,
                             importTask,
                         }),

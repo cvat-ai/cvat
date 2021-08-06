@@ -18,6 +18,7 @@ function build() {
     const Review = require('./review');
     const { Job, Task } = require('./session');
     const { Project } = require('./project');
+    const implementProject = require('./project-implementation');
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
     const { FrameData } = require('./frames');
@@ -754,7 +755,7 @@ function build() {
          */
         classes: {
             User,
-            Project,
+            Project: implementProject(Project),
             Task,
             Job,
             Log,

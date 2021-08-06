@@ -8,9 +8,8 @@ import Modal from 'antd/lib/modal';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import DumpSubmenu from 'components/actions-menu/dump-submenu';
+import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
-import ExportSubmenu from 'components/actions-menu/export-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
 
 interface Props {
@@ -18,8 +17,6 @@ interface Props {
     loaders: any[];
     dumpers: any[];
     loadActivity: string | null;
-    dumpActivities: string[] | null;
-    exportActivities: string[] | null;
     isReviewer: boolean;
     jobInstance: any;
     onClickMenu(params: MenuInfo, file?: File): void;
@@ -28,7 +25,6 @@ interface Props {
 }
 
 export enum Actions {
-    DUMP_TASK_ANNO = 'dump_task_anno',
     LOAD_JOB_ANNO = 'load_job_anno',
     EXPORT_TASK_DATASET = 'export_task_dataset',
     REMOVE_ANNO = 'remove_anno',
@@ -41,12 +37,8 @@ export enum Actions {
 
 export default function AnnotationMenuComponent(props: Props): JSX.Element {
     const {
-        taskMode,
         loaders,
-        dumpers,
         loadActivity,
-        dumpActivities,
-        exportActivities,
         isReviewer,
         jobInstance,
         onClickMenu,
@@ -163,13 +155,6 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
 
     return (
         <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
-            {DumpSubmenu({
-                taskMode,
-                dumpers,
-                dumpActivities,
-                menuKey: Actions.DUMP_TASK_ANNO,
-                taskDimension: jobInstance.task.dimension,
-            })}
             {LoadSubmenu({
                 loaders,
                 loadActivity,
@@ -179,13 +164,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 menuKey: Actions.LOAD_JOB_ANNO,
                 taskDimension: jobInstance.task.dimension,
             })}
-            {ExportSubmenu({
-                exporters: dumpers,
-                exportActivities,
-                menuKey: Actions.EXPORT_TASK_DATASET,
-                taskDimension: jobInstance.task.dimension,
-            })}
-
+            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
                 <a href={`/tasks/${taskID}`} onClick={(e: React.MouseEvent) => e.preventDefault()}>
@@ -198,6 +177,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
             )}
             {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
+            <ExportDatasetModal />
         </Menu>
     );
 }

@@ -67,9 +67,11 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
                 .find('.cvat-item-open-task-actions > .cvat-menu-icon')
                 .trigger('mouseover');
             cy.intercept('GET', '/api/v1/tasks/**?action=export').as('exportTask');
-            cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
-                cy.contains('[role="menuitem"]', 'Export Task').click().trigger('mouseout');
-            });
+            cy.get('.ant-dropdown')
+                .not('.ant-dropdown-hidden')
+                .within(() => {
+                    cy.contains('[role="menuitem"]', new RegExp('^Export task$')).click().trigger('mouseout');
+                });
             cy.wait('@exportTask', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@exportTask').its('response.statusCode').should('equal', 201);
             cy.deleteTask(taskName);
@@ -82,10 +84,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
 
         it('Import the task. Check id, labels, shape.', () => {
             cy.intercept('POST', '/api/v1/tasks?action=import').as('importTask');
-            cy.get('.cvat-import-task')
-                .click()
-                .find('input[type=file]')
-                .attachFile(taskBackupArchiveFullName);
+            cy.get('.cvat-import-task').click().find('input[type=file]').attachFile(taskBackupArchiveFullName);
             cy.wait('@importTask', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@importTask').its('response.statusCode').should('equal', 201);
             cy.contains('Task has been imported succesfully').should('exist').and('be.visible');

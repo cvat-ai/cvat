@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Notification if the browser does not support nesassary API
+- Added ability to export project as a dataset (<https://github.com/openvinotoolkit/cvat/pull/3365>)
 - Additional inline tips in interactors with demo gifs (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 
 ### Changed

@@ -68,9 +68,10 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         it('Save job. Dump annotation. Remove annotation. Save job.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
-            cy.interactMenu('Dump annotations');
-            cy.get('.cvat-menu-dump-submenu-item').within(() => {
-                cy.contains(dumpType).click();
+            cy.interactMenu('Export task dataset');
+            cy.get('.cvat-modal-export-task').within(() => {
+                cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
+                cy.contains('button', 'OK').click();
             });
             cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);

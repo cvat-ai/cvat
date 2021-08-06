@@ -101,9 +101,9 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
-                        body: {
-                            is_active: isActive,
-                        },
+                    body: {
+                        is_active: isActive,
+                    },
                 });
             }
         });
@@ -124,7 +124,6 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
                 expect(superuserStatus).to.be.equal(user['is_superuser']);
                 expect(activeStatus).to.be.equal(user['is_active']);
             }
-
         });
     });
 });
@@ -181,9 +180,7 @@ Cypress.Commands.add(
         }
         cy.contains('button', 'Submit').click();
         if (expectedResult === 'success') {
-            cy.get('.cvat-notification-create-task-success')
-                .should('exist')
-                .find('[data-icon="close"]').click();
+            cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
         }
         if (!forProject) {
             cy.goToTaskList();
