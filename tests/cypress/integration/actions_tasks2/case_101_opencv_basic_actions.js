@@ -93,9 +93,8 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             openOpencvControlPopover();
             cy.get('.cvat-opencv-control-popover-visible').contains('[role="tab"]', 'Image').click();
             cy.get('.cvat-opencv-image-tool').click().should('have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
-            cy.get('.cvat-canvas-histogram-equalization-active').should('exist');
+            cy.get('.cvat-notification-notice-opencv-processing-error').should('not.exist');
             cy.get('.cvat-opencv-image-tool').click().should('not.have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
-            cy.get('.cvat-canvas-histogram-equalization-active').should('not.exist');
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
