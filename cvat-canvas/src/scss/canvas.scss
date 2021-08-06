@@ -24,7 +24,6 @@ polyline.cvat_shape_action_opacity {
 }
 
 .cvat_shape_drawing_opacity {
-    fill-opacity: 0.2;
     stroke-opacity: 1;
 }
 
@@ -161,9 +160,8 @@ polyline.cvat_canvas_shape_splitting {
 
 .cvat_canvas_removable_interaction_point {
     cursor:
-        url(
-            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K'
-        ) 10 10,
+        url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K')
+        10 10,
         auto;
 }
 

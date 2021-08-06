@@ -34,8 +34,8 @@ export default function MoveTaskModal(): JSX.Element {
     const [labelMap, setLabelMap] = useState<{ [key: string]: LabelMapperItemValue }>({});
 
     const initValues = (): void => {
+        const labelValues: { [key: string]: LabelMapperItemValue } = {};
         if (task) {
-            const labelValues: { [key: string]: LabelMapperItemValue } = {};
             task.labels.forEach((label: any) => {
                 labelValues[label.id] = {
                     labelId: label.id,
@@ -43,8 +43,8 @@ export default function MoveTaskModal(): JSX.Element {
                     clearAttributes: true,
                 };
             });
-            setLabelMap(labelValues);
         }
+        setLabelMap(labelValues);
     };
 
     const onCancel = (): void => {

@@ -14,6 +14,10 @@ class MLModel {
         this._framework = data.framework;
         this._description = data.description;
         this._type = data.type;
+        this._tip = {
+            message: data.help_message,
+            gif: data.animated_gif,
+        };
         this._params = {
             canvas: {
                 minPosVertices: data.min_pos_points,
@@ -83,6 +87,17 @@ class MLModel {
         return {
             canvas: { ...this._params.canvas },
         };
+    }
+
+    /**
+     * @typedef {Object} MlModelTip
+     * @property {string} message A short message for a user about the model
+     * @property {string} gif A gif URL to be shawn to a user as an example
+     * @returns {MlModelTip}
+     * @readonly
+     */
+    get tip() {
+        return { ...this._tip };
     }
 }
 

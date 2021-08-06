@@ -2,6 +2,7 @@
 title: 'Setup additional components in development environment'
 linkTitle: 'Setup additional components in development environment'
 weight: 3
+description: 'Deploying a DL model as a serverless function and Cypress tests.'
 ---
 
 ## DL models as serverless functions

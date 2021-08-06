@@ -2,6 +2,7 @@
 title: 'Projects'
 linkTitle: 'Projects'
 weight: 3
+description: 'Creating projects in CVAT.'
 ---
 
 At CVAT, you can create a project containing tasks of the same type.
