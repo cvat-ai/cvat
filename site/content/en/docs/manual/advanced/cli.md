@@ -12,7 +12,7 @@ comprehensive CVAT administration tool in the future.
 
 Overview of functionality:
 
-- Create a new task (supports name, bug tracker, labels JSON, local/share/remote files)
+- Create a new task (supports name, bug tracker, project, labels JSON, local/share/remote files)
 - Delete tasks (supports deleting a list of task IDs)
 - List all tasks (supports basic CSV or JSON output)
 - Download JPEG frames (supports a list of frame IDs)
