@@ -16,7 +16,7 @@ class MLModel {
         this._type = data.type;
         this._tip = {
             message: data.help_message,
-            gif: data.example_gif_url,
+            gif: data.animated_gif,
         };
         this._params = {
             canvas: {
