@@ -1,17 +1,17 @@
-package projects
+package tasks
 import data.utils
 
 default allow = false
 
 allow {
     input.method == utils.POST
-    input.path == ["projects"]
+    input.path == ["tasks"]
     utils.has_privilege(utils.BUSINESS)
 }
 
 allow {
     input.method == utils.POST
-    input.path == ["projects"]
-    count(input.user.projects) < input.restrictions.USER_PROJECTS_COUNT
+    input.path == ["tasks"]
+    count(input.user.tasks) < input.restrictions.USER_TASKS_COUNT
     utils.has_privilege(utils.USER)
 }

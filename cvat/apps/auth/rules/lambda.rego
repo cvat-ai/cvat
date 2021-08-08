@@ -3,28 +3,35 @@ import data.utils
 
 default allow = false
 
-# All users can see the list of functions and get information
-# about a particular lambda function (GET /lambda/functions/*).
 allow {
     input.method == utils.GET
-    input.path[0] == "lambda"
-    input.path[1] == "functions"
-    utils.has_privilege(utils.WORKER)
+    input.path == ["lambda", "functions"]
 }
 
-# All users can call a lambda function for one frame
+allow {
+    input.method == utils.GET
+    function_id = input.path[2]
+    input.path == ["lambda", "functions", function_id]
+}
+
 allow {
     input.method == utils.POST
-    input.path[0] == "lambda"
-    input.path[1] == "functions"
-    count(input.path) == 3 # /lambda/functions/{func_id}
+    function_id = input.path[2]
+    input.path == ["lambda", "functions", function_id]
     utils.has_privilege(utils.WORKER)
 }
 
 # Business can call a lambda function for jobs, tasks, and projects
 allow {
-    {utils.POST, utils.GET}[input.method]
-    input.path[0] == "lambda"
-    input.path[1] == "requests"
+    allowed_methods = {utils.POST, utils.GET}
+    allowed_methods[input.method]
+    input.path == ["lambda", "requests"]
+    utils.has_privilege(utils.BUSINESS)
+}
+
+allow {
+    input.method == utils.GET
+    request_id = input.path[2]
+    input.path == ["lambda", "requests", request_id]
     utils.has_privilege(utils.BUSINESS)
 }

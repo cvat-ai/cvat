@@ -8,42 +8,44 @@ allow {
     utils.is_admin
 }
 
-# Non-workers can create 1 non-public storage
 allow {
     input.method == utils.POST
-    input.path == ["storages"]
-    input.storage.visibility != utils.PUBLIC
-    utils.has_privilege(utils.USER)
-    input.storages.count < 1
-}
-
-# Business account can create non-public storages
-allow {
-    input.method == utils.POST
-    input.path == ["storages"]
-    input.storage.visibility != utils.PUBLIC
-    utils.has_privilege(utils.BUSINESS)
-}
-
-# All can GET, DELETE, PATCH own storages
-allow {
-    input.method != utils.POST
-    input.storage.owner.id == input.user.id
+    input.path == ["cloudstorages"]
     utils.has_privilege(utils.USER)
 }
 
-# All can see public storages
 allow {
     input.method == utils.GET
-    input.storage.visibility == utils.PUBLIC
-    utils.has_privilege(utils.USER)
+    storage_id := input.path[1]
+    input.path == ["cloudstorages", storage_id]
+    input.storage.owner.id == input.user.id
+}
+
+allow {
+    input.method == utils.DELETE
+    storage_id := input.path[1]
+    input.path == ["cloudstorages", storage_id]
+    input.storage.owner.id == input.user.id
+}
+
+allow {
+    input.method == utils.PATCH
+    storage_id := input.path[1]
+    input.path == ["cloudstorages", storage_id]
+    input.storage.owner.id == input.user.id
+}
+
+allow {
+    input.method == utils.GET
+    storage_id := input.path[1]
+    input.path == ["cloudstorages", storage_id, "content"]
+    input.storage.owner.id == input.user.id
 }
 
 filter = v {
     utils.is_admin
     v := ["all"]
 } else = v {
-    utils.has_any_role
-    v := ["own", "public"]
+    v := ["own"]
 }
 
