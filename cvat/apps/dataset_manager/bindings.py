@@ -799,17 +799,12 @@ class CVATDataExtractorMixin:
         raise NotImplementedError()
 
     @staticmethod
-    def _load_categories(meta: dict, dimension):
+    def _load_categories(labels: list):
         categories: Dict[datumaro.AnnotationType, datumaro.Categories] = {}
 
         label_categories = datumaro.LabelCategories(attributes=['occluded'])
 
-        user_info = {}
-        if dimension == DimensionType.DIM_3D:
-            user_info = {"name": meta['owner']['username'],
-                         "createdAt": meta['created'],
-                         "updatedAt": meta['updated']}
-        for _, label in meta['labels']:
+        for _, label in labels:
             label_categories.add(label['name'])
             for _, attr in label['attributes']:
                 label_categories.attributes.add(attr['name'])
@@ -817,7 +812,15 @@ class CVATDataExtractorMixin:
 
         categories[datumaro.AnnotationType.label] = label_categories
 
-        return categories, user_info
+        return categories
+
+    @staticmethod
+    def _load_user_info(meta: dict):
+        return {
+            "name": meta['owner']['username'],
+            "createdAt": meta['created'],
+            "updatedAt": meta['updated']
+        }
 
     def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, TaskData.Frame], labels: list):
         categories = self.categories()
@@ -834,7 +837,8 @@ class CVATDataExtractorMixin:
 class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
     def __init__(self, task_data, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
         super().__init__()
-        self._categories, self._user = self._load_categories(task_data.meta['task'], dimension=dimension)
+        self._categories = self._load_categories(task_data.meta['task']['labels'])
+        self._user = self._load_user_info(task_data.meta['task']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
         dm_items = []
@@ -926,7 +930,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
 class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
     def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
         super().__init__()
-        self._categories, self._user = self._load_categories(project_data.meta['project'], dimension)
+        self._categories = self._load_categories(project_data.meta['project']['labels'])
+        self._user = self._load_user_info(project_data.meta['project']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
 
