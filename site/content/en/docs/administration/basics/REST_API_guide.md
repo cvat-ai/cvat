@@ -2,6 +2,7 @@
 title: 'REST API guide'
 linkTitle: 'REST API'
 weight: 12
+description: 'Instructions on how to interact with REST API and getting swagger documentation.'
 ---
 
 To access swagger documentation you need to be authorized.

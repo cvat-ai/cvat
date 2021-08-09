@@ -51,13 +51,14 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
         it('Save a job. Dump with "Point Cloud" format.', () => {
             cy.saveJob('PATCH', 200, 'saveJob');
             cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
-            cy.interactMenu('Dump annotations');
-            cy.get('.cvat-menu-dump-submenu-item').then((subMenu) => {
-                expect(subMenu.length).to.be.equal(2);
-            });
-            cy.get('.cvat-menu-dump-submenu-item').within(() => {
-                cy.contains(dumpTypePC).click();
-            });
+            cy.interactMenu('Export task dataset');
+            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .contains('.cvat-modal-export-option-item', dumpTypePC)
+                .click();
+            cy.get('.cvat-modal-export-select').should('contain.text', dumpTypePC);
+            cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
             cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);
             cy.removeAnnotations();

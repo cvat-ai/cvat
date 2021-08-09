@@ -9,6 +9,12 @@
   },
   "author": "Intel",
   "license": "MIT",
+  "browserslist": [
+    "Chrome >= 63",
+    "Firefox > 58",
+    "not IE 11",
+    "> 2%"
+  ],
   "devDependencies": {
     "@babel/cli": "^7.13.16",
     "@babel/core": "^7.5.5",
@@ -34,7 +40,7 @@
     "style-loader": "^1.0.0",
     "typescript": "^3.5.3",
     "webpack": "^4.44.2",
-    "webpack-cli": "^3.3.6",
+    "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {

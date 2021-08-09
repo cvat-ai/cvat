@@ -2,7 +2,7 @@
 title: 'Command line interface (CLI)'
 linkTitle: 'CLI'
 weight: 32
-description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/cli)
+description: 'Guide to working with CVAT tasks in the command line interface. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/cli).'
 ---
 
 **Description**
@@ -12,7 +12,7 @@ comprehensive CVAT administration tool in the future.
 
 Overview of functionality:
 
-- Create a new task (supports name, bug tracker, labels JSON, local/share/remote files)
+- Create a new task (supports name, bug tracker, project, labels JSON, local/share/remote files)
 - Delete tasks (supports deleting a list of task IDs)
 - List all tasks (supports basic CSV or JSON output)
 - Download JPEG frames (supports a list of frame IDs)

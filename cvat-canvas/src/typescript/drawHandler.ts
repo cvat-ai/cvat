@@ -50,6 +50,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private crosshair: Crosshair;
     private drawData: DrawData;
     private geometry: Geometry;
+    private configuration: Configuration;
     private autoborderHandler: AutoborderHandler;
     private autobordersEnabled: boolean;
 
@@ -371,6 +372,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
             });
     }
 
@@ -527,6 +529,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
             });
 
         this.drawPolyshape();
@@ -597,6 +600,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
             });
     }
 
@@ -654,6 +658,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
             });
         this.pasteShape();
 
@@ -686,6 +691,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -709,6 +715,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'face-stroke': 'black',
+                'fill-opacity': this.configuration.creationOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -845,6 +852,8 @@ export class DrawHandlerImpl implements DrawHandler {
         canvas: SVG.Container,
         text: SVG.Container,
         autoborderHandler: AutoborderHandler,
+        geometry: Geometry,
+        configuration: Configuration,
     ) {
         this.autoborderHandler = autoborderHandler;
         this.autobordersEnabled = false;
@@ -855,7 +864,8 @@ export class DrawHandlerImpl implements DrawHandler {
         this.initialized = false;
         this.canceled = false;
         this.drawData = null;
-        this.geometry = null;
+        this.geometry = geometry;
+        this.configuration = configuration;
         this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
@@ -874,6 +884,20 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public configurate(configuration: Configuration): void {
+        this.configuration = configuration;
+
+        const isFillableRect = this.drawData
+            && this.drawData.shapeType === 'rectangle'
+            && (this.drawData.rectDrawingMethod === RectDrawingMethod.CLASSIC || this.drawData.initialState);
+        const isFillableCuboid = this.drawData
+            && this.drawData.shapeType === 'cuboid'
+            && (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CLASSIC || this.drawData.initialState);
+        const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
+
+        if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
+            this.drawInstance.fill({ opacity: configuration.creationOpacity });
+        }
+
         if (typeof configuration.autoborders === 'boolean') {
             this.autobordersEnabled = configuration.autoborders;
             if (this.drawInstance) {

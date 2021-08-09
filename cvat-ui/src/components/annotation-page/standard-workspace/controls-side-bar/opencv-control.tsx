@@ -249,6 +249,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             notification.error({
                 description: error.toString(),
                 message: 'OpenCV.js processing error occured',
+                className: 'cvat-notification-notice-opencv-processing-error',
             });
         }
     };
@@ -283,6 +284,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             notification.error({
                 description: error.toString(),
                 message: 'OpenCV.js processing error occured',
+                className: 'cvat-notification-notice-opencv-processing-error',
             });
         } finally {
             this.disableCanvasForceUpdate();

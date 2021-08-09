@@ -37,7 +37,8 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
             );
         });
 
-        it('Repeat draw.', () => {
+        // Temporarily disabling the test until it is fixed https://github.com/openvinotoolkit/cvat/issues/3438#issuecomment-892432089
+        it.skip('Repeat draw.', () => {
             cy.get('body').type('n');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 450, 250).dblclick(450, 250);

@@ -2,6 +2,7 @@
 title: 'Using the issue tracker'
 linkTitle: 'Using the issue tracker'
 weight: 6
+description: 'Information and rules for using the issue tracker.'
 ---
 
 The issue tracker is the preferred channel for [bug reports](#bugs),

@@ -8,18 +8,26 @@ import Crosshair from './crosshair';
 import {
     translateToSVG, PropType, stringifyPoints, translateToCanvas,
 } from './shared';
+
 import { InteractionData, InteractionResult, Geometry } from './canvasModel';
 import { getCVATStore } from '../../../cvat-ui/src/cvat-store';
 import { switchBlockMode } from '../../../cvat-ui/src/actions/settings-actions';
 import { ActiveControl } from '../../../cvat-ui/src/reducers/interfaces';
+
+import {
+    InteractionData, InteractionResult, Geometry, Configuration,
+} from './canvasModel';
+
 export interface InteractionHandler {
     transform(geometry: Geometry): void;
     interact(interactData: InteractionData): void;
+    configurate(config: Configuration): void;
     cancel(): void;
 }
 
 export class InteractionHandlerImpl implements InteractionHandler {
     private onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void;
+    private configuration: Configuration;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private interactionData: InteractionData;
@@ -200,7 +208,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            });
+            })
+            .fill({ opacity: this.configuration.creationOpacity, color: 'white' });
     }
 
     private initInteraction(): void {
@@ -295,8 +304,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     'shape-rendering': 'geometricprecision',
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                     stroke: erroredShape ? 'red' : 'black',
-                    fill: 'none',
                 })
+                .fill({ opacity: this.configuration.creationOpacity, color: 'white' })
                 .addClass('cvat_canvas_interact_intermediate_shape');
             this.selectize(true, this.drawnIntermediateShape, erroredShape);
         } else {
@@ -348,12 +357,14 @@ export class InteractionHandlerImpl implements InteractionHandler {
         ) => void,
         canvas: SVG.Container,
         geometry: Geometry,
+        configuration: Configuration,
     ) {
         this.onInteraction = (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean): void => {
             this.shapesWereUpdated = false;
             onInteraction(shapes, shapesUpdated, isDone, this.threshold ? this.thresholdRectSize / 2 : null);
         };
         this.canvas = canvas;
+        this.configuration = configuration;
         this.geometry = geometry;
         this.shapesWereUpdated = false;
         this.interactionShapes = [];
@@ -558,6 +569,25 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.onInteraction(this.prepareResult(), this.shouldRaiseEvent(false), true);
             this.release();
             this.interactionData = interactionData;
+        }
+    }
+
+    public configurate(configuration: Configuration): void {
+        this.configuration = configuration;
+        if (this.drawnIntermediateShape) {
+            this.drawnIntermediateShape.fill({
+                opacity: configuration.creationOpacity,
+            });
+        }
+
+        // when interactRectangle
+        if (this.currentInteractionShape && this.currentInteractionShape.type === 'rect') {
+            this.currentInteractionShape.fill({ opacity: configuration.creationOpacity });
+        }
+
+        // when interactPoints with startwithbbox
+        if (this.interactionShapes[0] && this.interactionShapes[0].type === 'rect') {
+            this.interactionShapes[0].fill({ opacity: configuration.creationOpacity });
         }
     }
 

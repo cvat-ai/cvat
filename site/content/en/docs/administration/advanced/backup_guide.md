@@ -2,6 +2,7 @@
 title: 'Backup guide'
 linkTitle: 'Backup guide'
 weight: 11
+description: 'Instructions on how to backup CVAT data with Docker.'
 ---
 
 <!--lint disable heading-style-->

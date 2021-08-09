@@ -11,16 +11,16 @@ context('Move a task between projects.', () => {
         label: 'car',
         attrName: 'color',
         attrVaue: 'red',
-        multiAttrParams: false
-    }
+        multiAttrParams: false,
+    };
 
     const secondProject = {
         name: `Second project case ${caseID}`,
         label: 'bicycle',
         attrName: 'color',
         attrVaue: 'yellow',
-        multiAttrParams: false
-    }
+        multiAttrParams: false,
+    };
 
     const taskName = `Task case ${caseID}`;
     const imagesCount = 1;
@@ -39,14 +39,24 @@ context('Move a task between projects.', () => {
     const attachToProject = false;
     const multiAttrParams = false;
 
-    function checkTask (project, expectedResult) {
+    function checkTask(project, expectedResult) {
         cy.goToProjectsList();
         cy.openProject(project);
         cy.get('.cvat-tasks-list-item').should(expectedResult);
     }
 
     before(() => {
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, firtsProject.label, imagesCount);
+        cy.imageGenerator(
+            imagesFolder,
+            imageFileName,
+            width,
+            height,
+            color,
+            posX,
+            posY,
+            firtsProject.label,
+            imagesCount,
+        );
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.visit('/');
         cy.login();
@@ -54,8 +64,20 @@ context('Move a task between projects.', () => {
 
     beforeEach(() => {
         cy.goToProjectsList();
-        cy.createProjects(firtsProject.name, firtsProject.label, firtsProject.attrName, firtsProject.attrVaue, firtsProject.multiAttrParams);
-        cy.createProjects(secondProject.name, secondProject.label, secondProject.attrName, secondProject.attrVaue, secondProject.multiAttrParams);
+        cy.createProjects(
+            firtsProject.name,
+            firtsProject.label,
+            firtsProject.attrName,
+            firtsProject.attrVaue,
+            firtsProject.multiAttrParams,
+        );
+        cy.createProjects(
+            secondProject.name,
+            secondProject.label,
+            secondProject.attrName,
+            secondProject.attrVaue,
+            secondProject.multiAttrParams,
+        );
         cy.openProject(firtsProject.name);
         cy.createAnnotationTask(
             taskName,
@@ -80,8 +102,7 @@ context('Move a task between projects.', () => {
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
-        // Waiting to fix https://github.com/openvinotoolkit/cvat/issues/3281
-        it.skip('Move a task between projects from a project.', () => {
+        it('Move a task between projects from a project.', () => {
             checkTask(secondProject.name, 'not.exist');
             checkTask(firtsProject.name, 'exist');
             cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label);

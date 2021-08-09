@@ -311,6 +311,9 @@ def _create_thread(tid, data, isImport=False):
         validate_dimension.set_path(upload_dir)
         validate_dimension.validate()
 
+    if db_task.project is not None and db_task.project.tasks.count() > 1 and db_task.project.tasks.first().dimension != validate_dimension.dimension:
+        raise Exception(f'Dimension ({validate_dimension.dimension}) of the task must be the same as other tasks in project ({db_task.project.tasks.first().dimension})')
+
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         db_task.dimension = models.DimensionType.DIM_3D
 
