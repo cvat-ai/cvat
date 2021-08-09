@@ -9,7 +9,9 @@ import {
     translateToSVG, PropType, stringifyPoints, translateToCanvas,
 } from './shared';
 import { InteractionData, InteractionResult, Geometry } from './canvasModel';
-
+import { getCVATStore } from '../../../cvat-ui/src/cvat-store';
+import { switchBlockMode } from '../../../cvat-ui/src/actions/settings-actions';
+import { ActiveControl } from '../../../cvat-ui/src/reducers/interfaces';
 export interface InteractionHandler {
     transform(geometry: Geometry): void;
     interact(interactData: InteractionData): void;
@@ -30,6 +32,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private thresholdRectSize: number;
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
     private drawnIntermediateShape: SVG.Shape;
+    private thresholdWasModified: boolean;
 
     private prepareResult(): InteractionResult[] {
         return this.interactionShapes.map(
@@ -203,11 +206,16 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private initInteraction(): void {
         if (this.interactionData.crosshair) {
             this.addCrosshair();
+        }else if(this.crosshair){
+            this.removeCrosshair()
         }
-
         if (this.interactionData.enableThreshold) {
             this.addThreshold();
+        }else if(this.threshold){
+            this.threshold.remove();
+            this.threshold = null;
         }
+        document.getElementById('cvat_canvas_wrapper').style.cursor = 'crosshair';
     }
 
     private startInteraction(): void {
@@ -360,6 +368,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             x: 0,
             y: 0,
         };
+        this.thresholdWasModified = false;
 
         this.canvas.on('mousemove.interaction', (e: MouseEvent): void => {
             const [x, y] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
@@ -393,6 +402,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
             if (e.ctrlKey) {
                 if (this.threshold) {
+                    this.thresholdWasModified = true;
                     const { x, y } = this.cursorPosition;
                     e.preventDefault();
                     if (e.deltaY > 0) {
@@ -405,13 +415,91 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 }
             }
         });
-
-        document.body.addEventListener('keyup', (e: KeyboardEvent): void => {
-            if (e.keyCode === 17 && this.shouldRaiseEvent(false)) {
-                // 17 is ctrl
-                this.onInteraction(this.prepareResult(), true, false);
+        window.addEventListener('keyup', (e: KeyboardEvent) => {
+            if(!this.checkCursorPosition()){
+                if(e.keyCode === 17){
+                    const store = getCVATStore();
+                    const state = store.getState();
+                    const {
+                        settings: {
+                            workspace: {
+                                blockMode
+                            }
+                        },
+                        annotation: {
+                            canvas: {
+                                activeControl
+                            }
+                        }
+                    } = state;
+                    if(activeControl.includes(ActiveControl.AI_TOOLS)){
+                        // on interactors
+                        this.interactBlockMode(false, false);
+                    }else{
+                        // on scissors
+                        if(!this.thresholdWasModified){
+                            this.thresholdWasModified = false;
+                            this.interactBlockMode(!blockMode, true);
+                        }
+                    }
+                }
+                if (e.keyCode === 17 && this.shouldRaiseEvent(false)) {
+                    // 17 is ctrl
+                    this.onInteraction(this.prepareResult(), true, false);
+                }
             }
         });
+
+        window.addEventListener('keydown', (e:KeyboardEvent):void=>{
+            if(!this.checkCursorPosition()){
+                if(e.keyCode === 17){
+                    const store = getCVATStore();
+                    const state = store.getState();
+                    const {
+                        annotation: {
+                            canvas: {
+                                activeControl
+                            }
+                        }
+                    } = state;
+                    if(activeControl.includes(ActiveControl.AI_TOOLS)){
+                        // on interactors
+                        this.interactBlockMode(true, false);
+                    }
+                    this.thresholdWasModified = false;
+                }
+            }
+        })
+    }
+
+    private interactBlockMode(enabled:boolean, canvasInteraction:boolean){
+        const store = getCVATStore();
+        const state = store.getState();
+        const {
+            annotation: {
+                canvas: {
+                    instance: canvasInstance
+                }
+            }
+        } = state;
+        if(canvasInteraction && enabled){
+            canvasInstance.interact({
+                enabled: true,
+                crosshair: false,
+                enableThreshold: false,
+            })
+        }else if (canvasInteraction){
+            canvasInstance.interact({
+                enabled: true,
+                crosshair: true,
+                enableThreshold: true,
+            })
+        }
+        store.dispatch(switchBlockMode(enabled));
+    }
+
+    private checkCursorPosition():boolean{
+        return this.cursorPosition.x === 0 && this.cursorPosition.y === 0;
     }
 
     public transform(geometry: Geometry): void {
@@ -456,7 +544,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.interactionShapes[0].style({ visibility: 'hidden' });
             }
         } else if (interactionData.enabled) {
-            this.interactionData = interactionData;
+            this.interactionData = {...this.interactionData, ...interactionData};
             this.initInteraction();
             this.startInteraction();
         } else {

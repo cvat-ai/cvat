@@ -439,7 +439,24 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onSwitchBlockMode = (): void => {
-        const { blockMode, onSwitchBlockMode } = this.props;
+        const {
+            blockMode, onSwitchBlockMode, canvasInstance, activeControl,
+        } = this.props;
+        if (canvasInstance instanceof Canvas) {
+            if (!blockMode && activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
+                canvasInstance.interact({
+                    enabled: true,
+                    crosshair: false,
+                    enableThreshold: false,
+                });
+            } else if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
+                canvasInstance.interact({
+                    enabled: true,
+                    crosshair: true,
+                    enableThreshold: true,
+                });
+            }
+        }
         onSwitchBlockMode(!blockMode);
     };
 
@@ -689,7 +706,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     undoShortcut={normalizedKeyMap.UNDO}
                     redoShortcut={normalizedKeyMap.REDO}
                     drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
-                    blockShortcut={normalizedKeyMap.SWITCH_BLOCK_MODE}
+                    // this shortcut is handled in interactionHandler.ts separatelly
+                    blockShortcut='Ctrl'
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                     nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
                     previousFrameShortcut={normalizedKeyMap.PREV_FRAME}

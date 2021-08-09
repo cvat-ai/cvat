@@ -194,7 +194,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private interactionListener = async (e: Event): Promise<void> => {
         const { approxPolyAccuracy } = this.state;
         const {
-            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance,
+            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance, blockMode,
         } = this.props;
         const { activeLabelID } = this.state;
         if (!isActivated || !this.activeTool) {
@@ -207,32 +207,37 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
         try {
             if (shapesUpdated) {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints, threshold);
-                const approx = openCVWrapper.contours.approxPoly(
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints, blockMode ? 0 : threshold);
+                const [x, y] = this.latestPoints.slice(-2);
+                this.latestPoints.splice(this.latestPoints.length - 2, 2);
+                const points = openCVWrapper.contours.approxPoly(
                     this.latestPoints,
                     thresholdFromAccuracy(approxPolyAccuracy),
                     false,
                 );
+                points.push([x, y]);
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
                         shapeType: ShapeType.POLYGON,
-                        points: approx.flat(),
+                        points: points.flat(),
                     },
                 });
             }
 
             if (isDone) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints, threshold);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints, blockMode ? 0 : threshold);
+                const points = openCVWrapper.contours.approxPoly(
+                    finalPoints,
+                    thresholdFromAccuracy(approxPolyAccuracy),
+                );
                 const finalObject = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
                     shapeType: ShapeType.POLYGON,
                     label: labels.filter((label: any) => label.id === activeLabelID)[0],
-                    points: openCVWrapper.contours
-                        .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
-                        .flat(),
+                    points: points.flat(),
                     occluded: false,
                     zOrder: curZOrder,
                 });
@@ -297,14 +302,17 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         if (!context) {
             throw new Error('Canvas context is empty');
         }
-
+        let imageData;
         const [x, y] = pressedPoints.slice(-2);
         const startX = Math.round(Math.max(0, x - threshold));
         const startY = Math.round(Math.max(0, y - threshold));
-        const segmentWidth = Math.min(2 * threshold, width - startX);
-        const segmentHeight = Math.min(2 * threshold, height - startY);
-        const imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
-
+        if (threshold !== 0) {
+            const segmentWidth = Math.min(2 * threshold, width - startX);
+            const segmentHeight = Math.min(2 * threshold, height - startY);
+            imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
+        } else {
+            imageData = context.getImageData(0, 0, width, height);
+        }
         // Handling via OpenCV.js
         const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);
         return points;

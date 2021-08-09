@@ -150,7 +150,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                         pathSegment.push(curX + offsetX + 0.25, curY + offsetY + 0.25);
                     }
                 }
-
                 state.anchors[points.length - 1] = {
                     point: cur,
                     start: state.path.length,

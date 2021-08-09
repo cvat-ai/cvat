@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Col } from 'antd/lib/grid';
-import Icon, { BorderOutlined, CheckOutlined } from '@ant-design/icons';
+import Icon, { StopOutlined, CheckOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Timeline from 'antd/lib/timeline';
@@ -85,6 +85,7 @@ function LeftGroup(props: Props): JSX.Element {
 
     const includesBlockButton = [
         ActiveControl.OPENCV_TOOLS,
+        ActiveControl.AI_TOOLS,
     ].includes(activeControl);
 
     return (
@@ -143,9 +144,9 @@ function LeftGroup(props: Props): JSX.Element {
                 </CVATTooltip>
             ) : null}
             {includesBlockButton ? (
-                <CVATTooltip overlay={`Press "${blockShortcut}" to switch`}>
+                <CVATTooltip overlay={`Postpone running the algorithm "${blockShortcut}"`}>
                     <Button type='link' className={`cvat-annotation-header-button ${blockMode ? 'cvat-button-active' : ''}`} onClick={onSwitchBlockMode}>
-                        <BorderOutlined />
+                        <StopOutlined />
                         Block
                     </Button>
                 </CVATTooltip>
