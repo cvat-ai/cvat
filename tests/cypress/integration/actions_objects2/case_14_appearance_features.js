@@ -78,6 +78,7 @@ context('Appearance features', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.createPoint(createPointsShape);
         });
+
         it('Set opacity level for shapes to 100. All shapes are filled.', () => {
             cy.get('.cvat-appearance-opacity-slider')
                 .click('right')
@@ -101,7 +102,8 @@ context('Appearance features', () => {
                     });
             });
         });
-        it('Set selected opacity to 0.', () => {
+
+        it('Set "Selected opacity" to 0.', () => {
             cy.get('.cvat-appearance-selected-opacity-slider')
                 .click('left')
                 .within(() => {
@@ -113,7 +115,8 @@ context('Appearance features', () => {
                         });
                 });
         });
-        it('Activate the box, the polygon and the cuboid. Boxes are transparent during activated.', () => {
+
+        it('Activate the rectangle, the polygon and the cuboid. Shapes are transparent during activated.', () => {
             for (const i of ['#cvat_canvas_shape_1', '#cvat_canvas_shape_2', '#cvat_canvas_shape_4']) {
                 cy.get(i)
                     .trigger('mousemove')
@@ -121,10 +124,9 @@ context('Appearance features', () => {
                     .and('have.css', 'fill-opacity', ariaValuenow);
             }
         });
-        it('Activate checkbox "show projections".', () => {
+
+        it('Activate checkbox "show projections". Activated the cuboid. Projection lines are visible.', () => {
             cy.get('.cvat-appearance-cuboid-projections-checkbox').click();
-        });
-        it('Activated the cuboid. Projection lines are visible.', () => {
             cy.get('#cvat_canvas_shape_4')
                 .trigger('mousemove', { force: true })
                 .should('have.attr', 'projections', 'true');
@@ -132,6 +134,7 @@ context('Appearance features', () => {
             // Deactivate all objects
             cy.get('.cvat-canvas-container').click(500, 500);
         });
+
         it('Activate checkbox "outlined borders" with a red color. The borders are red on the objects.', () => {
             cy.get('.cvat-appearance-outlinded-borders-checkbox').click();
             cy.get('.cvat-appearance-outlined-borders-button').click();
@@ -140,12 +143,14 @@ context('Appearance features', () => {
                 cy.get(object).should('have.attr', 'stroke', `#${strokeColor}`);
             });
         });
+
         it('Set "Color by" to instance. The shapes changed a color.', () => {
             cy.changeAppearance('Instance');
             cy.get('.cvat_canvas_shape').each((object) => {
                 cy.get(object).should('have.css', 'fill').and('not.equal', fill);
             });
         });
+
         it('Set "Color by" to group. The shapes are white.', () => {
             cy.changeAppearance('Group');
             cy.get('.cvat_canvas_shape').each((object) => {
@@ -161,6 +166,17 @@ context('Appearance features', () => {
             // Disable "Outlined borders" and check css "stroke" for polyline.
             cy.get('.cvat-appearance-outlinded-borders-checkbox').click();
             cy.get('#cvat_canvas_shape_3').should('have.css', 'stroke', 'rgb(224, 224, 224)'); // have CSS property stroke with the value rgb(224, 224, 224)
+        });
+
+        it('"Selected opacity" slider now defines opacity level of shapes being drawn.', () => {
+            cy.interactControlButton('draw-rectangle');
+            cy.get('.cvat-draw-rectangle-popover-visible').contains('button', 'Shape').click();
+            cy.get('.cvat-canvas-container')
+                .click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY + 400);
+            cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'fill-opacity', 0);
+            cy.get('.cvat-appearance-selected-opacity-slider').click('right')
+            cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'fill-opacity', 1);
+            cy.get('body').type('{Esc}');
         });
     });
 });
