@@ -445,15 +445,23 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         if (canvasInstance instanceof Canvas) {
             if (!blockMode && activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
                 canvasInstance.interact({
-                    enabled: true,
+                    allowRemoveOnlyLast: true,
                     crosshair: false,
+                    enableSliding: true,
                     enableThreshold: false,
+                    enabled: true,
+                    minPosVertices: 1,
+                    shapeType: 'points',
                 });
             } else if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
                 canvasInstance.interact({
-                    enabled: true,
+                    allowRemoveOnlyLast: true,
                     crosshair: true,
+                    enableSliding: true,
                     enableThreshold: true,
+                    enabled: true,
+                    minPosVertices: 1,
+                    shapeType: 'points',
                 });
             }
         }

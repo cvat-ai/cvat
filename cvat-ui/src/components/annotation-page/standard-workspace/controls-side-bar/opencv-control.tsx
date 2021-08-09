@@ -48,6 +48,7 @@ interface Props {
     defaultApproxPolyAccuracy: number;
     frameData: any;
     blockMode: boolean;
+    activeControl: ActiveControl;
 }
 
 interface DispatchToProps {
@@ -96,6 +97,7 @@ function mapStateToProps(state: CombinedState): Props {
 
     return {
         isActivated: activeControl === ActiveControl.OPENCV_TOOLS,
+        activeControl,
         canvasInstance: canvasInstance as Canvas,
         defaultApproxPolyAccuracy,
         jobInstance,
@@ -148,7 +150,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { approxPolyAccuracy } = this.state;
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode, onSwitchBlockMode,
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode, onSwitchBlockMode, activeControl
         } = this.props;
 
         if (!prevProps.isActivated && isActivated) {
@@ -179,7 +181,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
         if ((prevProps.blockMode !== blockMode) && isActivated && this.activeTool) {
             this.activeTool.switchBlockMode();
-        } else if (!isActivated && this.activeTool) {
+        } else if (!isActivated && this.activeTool && ![ActiveControl.AI_TOOLS].includes(activeControl)) {
             this.activeTool.switchBlockMode(false);
             onSwitchBlockMode(false);
         }

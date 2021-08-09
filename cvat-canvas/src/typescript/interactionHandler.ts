@@ -379,7 +379,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.threshold) {
                 this.threshold.center(x, y);
             }
-
             if (this.interactionData.enableSliding && this.interactionShapes.length) {
                 if (this.isWithinFrame(x, y)) {
                     if (this.interactionData.enableThreshold && !this.isWithinThreshold(x, y)) return;
@@ -432,7 +431,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                             }
                         }
                     } = state;
-                    if(activeControl.includes(ActiveControl.AI_TOOLS)){
+                    if([ActiveControl.AI_TOOLS].includes(activeControl)){
                         // on interactors
                         this.interactBlockMode(false, false);
                     }else{
@@ -462,7 +461,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                             }
                         }
                     } = state;
-                    if(activeControl.includes(ActiveControl.AI_TOOLS)){
+                    if([ActiveControl.AI_TOOLS].includes(activeControl)){
                         // on interactors
                         this.interactBlockMode(true, false);
                     }
@@ -484,15 +483,23 @@ export class InteractionHandlerImpl implements InteractionHandler {
         } = state;
         if(canvasInteraction && enabled){
             canvasInstance.interact({
-                enabled: true,
+                allowRemoveOnlyLast: true,
                 crosshair: false,
+                enableSliding: true,
                 enableThreshold: false,
+                enabled: true,
+                minPosVertices: 1,
+                shapeType: 'points'
             })
         }else if (canvasInteraction){
             canvasInstance.interact({
-                enabled: true,
+                allowRemoveOnlyLast: true,
                 crosshair: true,
+                enableSliding: true,
                 enableThreshold: true,
+                enabled: true,
+                minPosVertices: 1,
+                shapeType: 'points'
             })
         }
         store.dispatch(switchBlockMode(enabled));
@@ -544,7 +551,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.interactionShapes[0].style({ visibility: 'hidden' });
             }
         } else if (interactionData.enabled) {
-            this.interactionData = {...this.interactionData, ...interactionData};
+            this.interactionData = interactionData;
             this.initInteraction();
             this.startInteraction();
         } else {
