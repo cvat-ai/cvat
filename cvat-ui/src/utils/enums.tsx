@@ -12,14 +12,3 @@ export enum CredentialsType {
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR',
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
 }
-
-export interface TempKeySecreyKeyTokenSet {
-    keyId: string | null;
-    secretKey: string | null;
-    sessionToken: string | null;
-}
-
-export interface AccountNameTokenPair {
-    accountName: string | null;
-    sasToken: string | null;
-}
