@@ -4,6 +4,4 @@ class AuthConfig(AppConfig):
     name = 'auth'
 
     def ready(self):
-        from .auth import register_signals
-
-        register_signals()
+        from . import signals # pylint: disable=unused-import
