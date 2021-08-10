@@ -148,8 +148,7 @@ export function loadCloudStorageContentAsync(cloudStorage: CloudStorage): ThunkA
         dispatch(cloudStoragesActions.loadCloudStorageContent());
         try {
             const result = await cloudStorage.getContent();
-            const content = JSON.parse(result);
-            dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorage.id, content));
+            dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorage.id, result));
         } catch (error) {
             dispatch(cloudStoragesActions.loadCloudStorageContentFailed(cloudStorage.id, error));
         }

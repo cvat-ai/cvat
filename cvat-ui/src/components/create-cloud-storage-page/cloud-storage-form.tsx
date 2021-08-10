@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, RefObject } from 'react';
+import React, {
+    useState, useEffect, RefObject, useRef, MutableRefObject,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -13,16 +15,18 @@ import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 
+import { MinusCircleOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { AzureProvider, S3Provider } from '../../icons';
+import S3Region from './s3-region';
 
 export interface Props {
     cloudStorage?: CloudStorage;
     formRef: RefObject<FormInstance>;
-    shouldShowCreationNotification?: any;
-    shouldShowUpdationNotification?: any;
+    shouldShowCreationNotification?: MutableRefObject<boolean>;
+    shouldShowUpdationNotification?: MutableRefObject<boolean>;
 }
 
 interface CloudStorageForm {
@@ -37,6 +41,8 @@ interface CloudStorageForm {
     SAS_token?: string;
     description?: string;
     region?: string;
+    // TODO: it will be required parameter
+    manifests?: string[];
 }
 
 export default function CreateCloudStorageForm(props: Props): JSX.Element {
@@ -47,6 +53,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const history = useHistory();
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
+    const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
     const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
     const attaching = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.attaching);
     const updating = useSelector((state: CombinedState) => state.cloudStorages.activities.updates.updating);
@@ -66,6 +73,106 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState<boolean>(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState<boolean>(false);
 
+    const [manifestFiles, setManifestFiles] = useState<Map<string, string>>(new Map());
+    const maxManifestsCount = useRef<number>(5);
+    const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState<boolean>(false);
+
+    const generateManifestId = (): string => `${manifestFiles.size}`;
+
+    const updateManifestFields = (): void => {
+        const newManifestFormItems = [];
+        for (const [k, v] of manifestFiles) {
+            newManifestFormItems.push({
+                id: k,
+                name: v,
+            });
+        }
+        formRef.current?.setFieldsValue({
+            manifests: [
+                ...newManifestFormItems,
+            ],
+        });
+    };
+
+    useEffect(() => {
+        if (limitingAddingManifestNotification) {
+            notification.warning({
+                message: `Unable to add manifest. The maximum number of files is ${maxManifestsCount.current}`,
+                className: 'cvat-notification-limiting-adding-manifest',
+            });
+        }
+    }, [limitingAddingManifestNotification]);
+
+    const handleUpdateManifestPath = (manifestName: string | undefined, manifestId: string): void => {
+        if (manifestName !== undefined) {
+            setManifestFiles(manifestFiles.set(manifestId, manifestName));
+        }
+    };
+
+    const handleDeleteManifestItem = (key: string): void => {
+        if (maxManifestsCount.current === manifestFiles.size && limitingAddingManifestNotification) {
+            setLimitingAddingManifestNotification(false);
+        }
+        const copyManifestFiles = manifestFiles;
+        copyManifestFiles.delete(key);
+        setManifestFiles(copyManifestFiles);
+        updateManifestFields();
+    };
+
+    const handleAddManifestItem = (): void => {
+        if (maxManifestsCount.current <= manifestFiles.size) {
+            setLimitingAddingManifestNotification(true);
+        } else {
+            setManifestFiles(manifestFiles.set(generateManifestId(), ''));
+            updateManifestFields();
+        }
+    };
+
+    const renderManifest = (key: string, value: string): JSX.Element => (
+        <Form.Item key={key} shouldUpdate>
+            {() => (
+                <Row
+                    justify='space-between'
+                    align='top'
+                >
+                    <Col>
+                        <Form.Item
+                            name={[key, 'name']}
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'Please specify a manifest name',
+                                }]}
+                            initialValue={value}
+                        >
+                            <Input
+                                placeholder='manifest.jsonl'
+                                onChange={(event) => handleUpdateManifestPath(event.target.value, key)}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col>
+                        <Form.Item>
+                            <Button
+                                type='link'
+                                onClick={() => handleDeleteManifestItem(key)}
+                            >
+                                <MinusCircleOutlined />
+                            </Button>
+                        </Form.Item>
+                    </Col>
+                </Row>
+            )}
+        </Form.Item>
+    );
+
+    // eslint-disable-next-line arrow-body-style
+    const renderManifests = () => {
+        return (): JSX.Element[] => (
+            Array.from(manifestFiles.entries()).map((item: any): JSX.Element => renderManifest(item[0], item[1]))
+        );
+    };
+
     function initializeFields(): void {
         const fieldsValue: CloudStorageForm = {
             credentials_type: cloudStorage.credentialsType,
@@ -78,6 +185,14 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         setProviderType(cloudStorage.providerType);
         setCredentialsType(cloudStorage.credentialsType);
 
+        // initialize manifests state
+        const newManifests = manifestFiles;
+        for (const manifest of cloudStorage.manifests) {
+            newManifests.set(generateManifestId(), manifest);
+        }
+        setManifestFiles(newManifests);
+        updateManifestFields();
+
         if (cloudStorage.credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
             fieldsValue.account_name = fakeCredentialsData.accountName;
             fieldsValue.SAS_token = fakeCredentialsData.sessionToken;
@@ -88,6 +203,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         if (cloudStorage.providerType === ProviderType.AWS_S3_BUCKET && cloudStorage.specificAttibutes) {
             const region = new URLSearchParams(cloudStorage.specificAttibutes).get('region');
+            // FIXME
             if (region) {
                 fieldsValue.region = region;
             }
@@ -100,6 +216,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         if (cloudStorage) {
             initializeFields();
         } else {
+            setManifestFiles(new Map());
             formRef.current?.resetFields();
         }
     }
@@ -117,11 +234,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     }, []);
 
     useEffect(() => {
-        if (Number.isInteger(newCloudStorageId) && shouldShowCreationNotification.current) {
+        if (Number.isInteger(newCloudStorageId) && shouldShowCreationNotification &&
+                shouldShowCreationNotification.current) {
             // Clear form
-            if (formRef.current) {
-                formRef.current.resetFields();
-            }
+            onReset();
 
             notification.info({
                 message: 'The cloud storage has been attached',
@@ -134,7 +250,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     }, [newCloudStorageId]);
 
     useEffect(() => {
-        if (updatedCloudStorageId && shouldShowUpdationNotification.current) {
+        if (updatedCloudStorageId && shouldShowUpdationNotification && shouldShowUpdationNotification.current) {
+            onReset();
             notification.info({
                 message: 'The cloud storage has been updated',
                 className: 'cvat-notification-update-cloud-storage-success',
@@ -146,7 +263,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     }, [updatedCloudStorageId]);
 
     useEffect(() => {
-        if (cloudStorage) {
+        if (cloudStorage && cloudStorage.credentialsType !== CredentialsType.ANONYMOUS_ACCESS) {
             notification.info({
                 message: `For security reasons, your credentials are hidden and represented by fake values
                     that will not be taken into account when updating the cloud storage.
@@ -164,12 +281,17 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             cloudStorageData = { ...cloudStorageData, ...formValues };
             if (formValues.region !== undefined) {
                 delete cloudStorageData.region;
-                cloudStorageData.specific_attributes = `region=${formValues.region}`;
+                cloudStorageData.specific_attributes = `region=${selectedRegion}`;
             }
 
             if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
                 delete cloudStorageData.SAS_token;
                 cloudStorageData.session_token = formValues.SAS_token;
+            }
+
+            if (cloudStorageData.manifests) {
+                delete cloudStorageData.manifests;
+                cloudStorageData.manifest_set = formRef.current.getFieldValue('manifests').map((manifest: any): string => manifest.name);
             }
 
             if (cloudStorage) {
@@ -199,13 +321,29 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             key: undefined,
             secret_key: undefined,
             session_token: undefined,
-            accoun_name: undefined,
+            account_name: undefined,
         });
+    };
+
+    const onFocusCredentialsItem = (
+        credential: 'key' | 'secretKey' | 'accountName' | 'sessionToken',
+        key: 'key' | 'secret_key' | 'account_name' | 'session_token',
+    ): void => {
+        // reset fake credential when updating a cloud storage and cursor is in this field
+        if (cloudStorage && formRef.current?.getFieldValue(key) === fakeCredentialsData[credential]) {
+            formRef.current.setFieldsValue({
+                [key]: undefined,
+            });
+        }
     };
 
     const onChangeCredentialsType = (value: CredentialsType): void => {
         setCredentialsType(value);
         resetCredentialsValues();
+    };
+
+    const onSelectRegion = (key: string): void => {
+        setSelectedRegion(key);
     };
 
     const commonProps = {
@@ -237,6 +375,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             maxLength={20}
                             visibilityToggle={keyVisibility}
                             onChange={() => setKeyVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('key', 'key')}
                         />
                     </Form.Item>
                     <Form.Item
@@ -249,6 +388,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             maxLength={40}
                             visibilityToggle={secretKeyVisibility}
                             onChange={() => setSecretKeyVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('secretKey', 'secret_key')}
                         />
                     </Form.Item>
                 </>
@@ -272,6 +412,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             maxLength={24}
                             visibilityToggle={accountNameVisibility}
                             onChange={() => setAccountNameVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('accountName', 'account_name')}
                         />
                     </Form.Item>
                     <Form.Item
@@ -283,6 +424,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         <Input.Password
                             visibilityToggle={sessionTokenVisibility}
                             onChange={() => setSessionTokenVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('sessionToken', 'session_token')}
                         />
                     </Form.Item>
                 </>
@@ -348,14 +490,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     </Select>
                 </Form.Item>
                 {credentialsBlok()}
-                <Form.Item
-                    label='Region'
-                    name='region'
-                    tooltip='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
-                    {...internalCommonProps}
-                >
-                    <Input maxLength={14} />
-                </Form.Item>
+                <S3Region onSelectRegion={onSelectRegion} internalCommonProps={internalCommonProps} />
             </>
         );
     };
@@ -437,6 +572,18 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             </Form.Item>
             {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
             {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
+            <Form.Item
+                name='manifests'
+                label='Manifests'
+                rules={[{ required: true, message: 'Please, specify at least one manifest file' }]}
+            >
+                <Button type='link' onClick={handleAddManifestItem} className='cvat-add-manifest-button'>
+                    <PlusCircleOutlined />
+                </Button>
+            </Form.Item>
+            <Form.List name='manifests'>
+                {renderManifests()}
+            </Form.List>
             <Row justify='end'>
                 <Col>
                     <Button

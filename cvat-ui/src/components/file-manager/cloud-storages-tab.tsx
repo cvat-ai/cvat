@@ -10,6 +10,7 @@ import AutoComplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
 import { debounce } from 'lodash';
 
+import Select from 'antd/lib/select';
 import getCore from 'cvat-core-wrapper';
 import { CloudStorage } from 'reducers/interfaces';
 import { AzureProvider, S3Provider } from 'icons';
@@ -21,7 +22,6 @@ interface Props {
     cloudStorage: CloudStorage | null;
     onSelectFiles: (files: string[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
-    // resetState: boolean;
 }
 
 async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
@@ -38,6 +38,8 @@ async function searchCloudStorages(filter: Record<string, string>): Promise<Clou
     return [];
 }
 
+const { Option } = Select;
+
 const searchCloudStoragesWrapper = debounce((phrase, setList) => {
     const filter = { displayName: phrase };
     searchCloudStorages(filter).then((list) => {
@@ -50,8 +52,9 @@ export default function CloudStorageTab(props: Props): JSX.Element {
     const [list, setList] = useState<CloudStorage[]>([]);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
     const {
-        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage, // resetState,
+        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage,
     } = props;
+    const [selectedManifest, setSelectedManifest] = useState<string | null>(null);
 
     useEffect(() => {
         searchCloudStorages({}).then((data) => {
@@ -69,6 +72,12 @@ export default function CloudStorageTab(props: Props): JSX.Element {
             searchCloudStoragesWrapper(searchPhrase, setList);
         }
     }, [searchPhrase, initialList]);
+
+    useEffect(() => {
+        if (selectedManifest) {
+            cloudStorage.manifestPath = selectedManifest;
+        }
+    }, [selectedManifest]);
 
     const onBlur = (): void => {
         if (!searchPhrase && cloudStorage) {
@@ -122,14 +131,28 @@ export default function CloudStorageTab(props: Props): JSX.Element {
 
             {cloudStorage ? (
                 <Form.Item
+                    label='Select manifest file'
+                    name='manifestSelect'
+                    rules={[{ required: true, message: 'Please, specify a manifest file' }]}
+                >
+                    <Select onSelect={(value: string) => setSelectedManifest(value)}>
+                        {cloudStorage.manifests.map((manifest: string): JSX.Element => (
+                            <Option key={manifest} value={manifest}>{manifest}</Option>
+                        ))}
+                    </Select>
+                </Form.Item>
+            ) : null}
+
+            {cloudStorage && selectedManifest ? (
+                <Form.Item
                     label='Files'
                     name='cloudStorageFiles'
                     rules={[{ required: true, message: 'Please, select a files' }]}
                 >
                     <CloudStorageFiles
                         cloudStorage={cloudStorage}
+                        manifest={selectedManifest}
                         onSelectFiles={onSelectFiles}
-                        // resetState={resetState}
                     />
                 </Form.Item>
             ) : null}

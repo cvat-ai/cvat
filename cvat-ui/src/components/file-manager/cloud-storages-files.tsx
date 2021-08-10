@@ -16,8 +16,8 @@ import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
 
 interface Props {
     cloudStorage: CloudStorage;
+    manifest: string;
     onSelectFiles: (checkedKeysValue: string[]) => void;
-    // resetState: boolean;
 }
 
 interface DataNode {
@@ -42,7 +42,7 @@ type Files =
     };
 
 export default function CloudStorageFiles(props: Props): JSX.Element {
-    const { cloudStorage, onSelectFiles } = props; // resetState
+    const { cloudStorage, manifest, onSelectFiles } = props;
     const dispatch = useDispatch();
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.fetching);
     const content = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.content);
@@ -55,19 +55,9 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
     });
     // const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
 
-    // useEffect(() => {
-    //     if (resetState) {
-    //         setInitialData({
-    //             name: 'root',
-    //             children: null,
-    //             unparsedChildren: null,
-    //         });
-    //     }
-    // }, [resetState]);
-
     useEffect(() => {
         dispatch(loadCloudStorageContentAsync(cloudStorage));
-    }, [cloudStorage.id]);
+    }, [cloudStorage.id, manifest]); // cloudStorage.manifestPath
 
     const parseContent = (mass: string[], root = ''): Map<string, DataStructure> => {
         const data: Map<string, DataStructure> = new Map();
@@ -106,6 +96,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
 
         for (const [dataItemKey, dataItemValue] of data) {
             if (key.startsWith(dataItemKey) && key.replace(dataItemKey, '')) {
+                // eslint-disable-next-line no-param-reassign
                 data = updateData(key, dataItemValue.children);
             } else if (dataItemKey === key) {
                 const unparsedDataItemChildren = dataItemValue.unparsedChildren;
@@ -137,8 +128,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
 
     useEffect(() => {
         if (content) {
-            const fileNames = Object.keys(content);
-            const children = parseContent(fileNames);
+            const children = parseContent(content);
 
             setInitialData({
                 ...initialData,
@@ -160,7 +150,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                     title: value.name,
                     key,
                     isLeaf: !value.children && !value.unparsedChildren,
-                    disabled: !value.children && !value.unparsedChildren && content[key] && content[key].length !== 2 && !key.includes('manifest.jsonl'),
+                    disabled: !!value.children || !!value.unparsedChildren,
                     children: [],
                 };
                 if (value.children) {
@@ -177,7 +167,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
         } else {
             setTreeData([]);
         }
-    }, [initialData]); // todo: extend with curent selected manifest (need update file colors)
+    }, [initialData]);
 
     if (isFetching) {
         return (
@@ -205,10 +195,13 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                     multiple
                     checkable
                     height={256}
-                    onCheck={(checkedKeys: Files) => onSelectFiles(checkedKeys as string[])}
+                    onCheck={(checkedKeys: Files) => (
+                        onSelectFiles((checkedKeys as string[]).concat([manifest]))
+                    )}
                     // onExpand={(expandedKeysValue: React.Key[]) => onExpand(expandedKeysValue)}
                     loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                     treeData={treeData}
+                    // defaultCheckedKeys={}
                 />
             ) : (
                 <Empty className='cvat-empty-cloud-storages-tree' description='The storage is empty' />
