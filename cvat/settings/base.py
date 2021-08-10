@@ -103,7 +103,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cvat.apps.authentication',
+    'cvat.apps.auth',
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
@@ -130,9 +130,6 @@ INSTALLED_APPS = [
     'rest_auth.registration'
 ]
 
-if strtobool(os.environ.get("ADAPTIVE_AUTO_ANNOTATION", 'false')):
-    INSTALLED_APPS.append('cvat.apps.training')
-
 SITE_ID = 1
 
 REST_FRAMEWORK = {
@@ -140,8 +137,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.authentication.auth.TokenAuthentication',
-        'cvat.apps.authentication.auth.SignatureAuthentication',
+        'cvat.apps.auth.TokenAuthenticationEx',
+        'cvat.apps.auth.auth.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
     ],
@@ -175,7 +172,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 
 REST_AUTH_SERIALIZERS = {
-    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.authentication.serializers.PasswordResetSerializerEx',
+    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.auth.serializers.PasswordResetSerializerEx',
 }
 
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
@@ -225,7 +222,9 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
-DJANGO_AUTH_DEFAULT_GROUPS = []
+DJANGO_AUTH_DEFAULT_ROLES = [] # no roles by default
+DJANGO_AUTH_ADMIN = 'ADMIN'
+DJANGO_AUTH_ROLES = ['WORKER', 'USER', 'BUSINESS', DJANGO_AUTH_ADMIN]
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 

@@ -12,6 +12,6 @@ allow {
 allow {
     input.method == utils.POST
     input.path == ["projects"]
-    count(input.user.projects) < input.restrictions.USER_PROJECTS_COUNT
+    count(input.owner.projects) < input.restrictions.USER_PROJECTS_COUNT
     utils.has_privilege(utils.USER)
 }

@@ -2,6 +2,7 @@ package auth
 import data.utils
 
 default allow = false
+
 allow {
     input.method == utils.POST
     input.path == ["auth", "login"]

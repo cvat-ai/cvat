@@ -5,7 +5,7 @@
 from django.http import HttpResponseBadRequest, JsonResponse
 from rules.contrib.views import permission_required, objectgetter
 
-from cvat.apps.authentication.decorators import login_required
+from cvat.apps.auth.decorators import login_required
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine import models
 from cvat.apps.dataset_repo.models import GitData

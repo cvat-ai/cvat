@@ -18,11 +18,11 @@ DELETE := "DELETE"
 PATCH := "PATCH"
 
 has_role(name) {
-    input.user.system_roles[_] == name
+    input.user.roles[_] == name
 }
 
 has_any_role {
-    count(input.user.system_roles) != 0
+    count(input.user.roles) != 0
 }
 
 get_privilege(role) = ret {
@@ -35,7 +35,7 @@ get_privilege(role) = ret {
 }
 
 has_privilege(role) {
-    privileges = [x | x := get_privilege(input.user.system_roles[_])]
+    privileges = [x | x := get_privilege(input.user.roles[_])]
     highest_privilege := sort(privileges)[0]
     highest_privilege <= get_privilege(role)
 }

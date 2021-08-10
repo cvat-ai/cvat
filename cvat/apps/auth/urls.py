@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ from rest_auth.views import (
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
 from allauth.account import app_settings as allauth_settings
 
-from cvat.apps.authentication.views import SigningView, RegisterView
+from cvat.apps.auth.views import SigningView, RegisterViewEx
 
 urlpatterns = [
     path('login', LoginView.as_view(), name='rest_login'),
@@ -20,7 +20,7 @@ urlpatterns = [
 
 if settings.DJANGO_AUTH_TYPE == 'BASIC':
     urlpatterns += [
-        path('register', RegisterView.as_view(), name='rest_register'),
+        path('register', RegisterViewEx.as_view(), name='rest_register'),
         path('password/reset', PasswordResetView.as_view(),
             name='rest_password_reset'),
         path('password/reset/confirm', PasswordResetConfirmView.as_view(),
