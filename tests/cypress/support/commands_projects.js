@@ -94,19 +94,15 @@ Cypress.Commands.add('closeNotification', (className) => {
 Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTask) => {
     if (fromTask) {
         cy.contains('.cvat-text-color', 'Actions').click();
-        cy.get('.ant-dropdown')
-            .not('.ant-dropdown-hidden')
-            .within(() => {
-                cy.contains('Move to project').click();
-            });
     } else {
         cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').click();
-        cy.get('.ant-dropdown')
-            .not('.ant-dropdown-hidden')
-            .within(() => {
-                cy.contains('Move to project').click();
-            });
     }
+    cy.get('.cvat-actions-menu')
+        .should('be.visible')
+        .find('[role="menuitem"]')
+        .filter(':contains("Move to project")')
+        .last()
+        .click();
     cy.get('.cvat-task-move-modal').find('.cvat-project-search-field').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
