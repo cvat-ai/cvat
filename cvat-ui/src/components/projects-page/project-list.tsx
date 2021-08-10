@@ -27,6 +27,13 @@ export default function ProjectListComponent(): JSX.Element {
         );
     }
 
+    const dimensions = {
+        md: 22,
+        lg: 18,
+        xl: 16,
+        xxl: 16,
+    };
+
     return (
         <>
             <Row justify='center' align='middle' className='cvat-project-list-content'>
