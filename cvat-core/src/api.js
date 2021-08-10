@@ -21,7 +21,7 @@ function build() {
     const implementProject = require('./project-implementation');
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
-    const { FrameData } = require('./frames');  
+    const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
 
 
