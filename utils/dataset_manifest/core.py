@@ -223,6 +223,9 @@ class _Index:
             self._index = json.load(index_file,
                 object_hook=lambda d: {int(k): v for k, v in d.items()})
 
+    def remove(self):
+        os.remove(self._path)
+
     def create(self, manifest, skip):
         assert os.path.exists(manifest), 'A manifest file not exists, index cannot be created'
         with open(manifest, 'r+') as manifest_file:
@@ -289,6 +292,11 @@ class _ManifestManager(ABC):
         else:
             self._index.create(self._manifest.path, 3 if self._manifest.TYPE == 'video' else 2)
             self._index.dump()
+
+    def reset_index(self):
+        self._index = _Index(os.path.dirname(self._manifest.path))
+        if os.path.exists(self._index.path):
+            self._index.remove()
 
     @abstractmethod
     def create(self, content, **kwargs):
