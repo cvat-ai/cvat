@@ -8,3 +8,4 @@ keys/
 logs/
 static/
 templates/
+*/webpack.config.js

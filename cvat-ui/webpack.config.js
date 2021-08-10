@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
-module.exports = {
+module.exports = (env) => ({
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
@@ -30,6 +30,17 @@ module.exports = {
         inline: true,
         port: 3000,
         historyApiFallback: true,
+        proxy: [
+            {
+                context: (param) =>
+                    param.match(
+                        /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                    ),
+                target: env && env.API_URL,
+                secure: false,
+                changeOrigin: true,
+            },
+        ],
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
@@ -52,16 +63,7 @@ module.exports = {
                                 },
                             ],
                         ],
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
-                                },
-                            ],
-                            ['@babel/preset-react'],
-                            ['@babel/typescript'],
-                        ],
+                        presets: ['@babel/preset-env', '@babel/preset-react', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -76,7 +78,12 @@ module.exports = {
                             importLoaders: 2,
                         },
                     },
-                    'postcss-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            plugins: [require('postcss-preset-env')],
+                        },
+                    },
                     'sass-loader',
                 ],
             },
@@ -134,4 +141,4 @@ module.exports = {
         ]),
     ],
     node: { fs: 'empty' },
-};
+});

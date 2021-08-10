@@ -266,6 +266,18 @@ def _create_thread(tid, data, isImport=False):
     extractor = None
     manifest_index = _get_manifest_frame_indexer()
 
+    # If upload from server_files image and directories
+    # need to update images list by all found images in directories
+    if (data['server_files']) and len(media['directory']) and len(media['image']):
+        media['image'].extend(
+            [os.path.relpath(image, upload_dir) for image in
+                MEDIA_TYPES['directory']['extractor'](
+                    source_path=[os.path.join(upload_dir, f) for f in media['directory']],
+                ).absolute_source_paths
+            ]
+        )
+        media['directory'] = []
+
     for media_type, media_files in media.items():
         if media_files:
             if extractor is not None:
@@ -298,6 +310,9 @@ def _create_thread(tid, data, isImport=False):
         isinstance(extractor, MEDIA_TYPES['zip']['extractor'])):
         validate_dimension.set_path(upload_dir)
         validate_dimension.validate()
+
+    if db_task.project is not None and db_task.project.tasks.count() > 1 and db_task.project.tasks.first().dimension != validate_dimension.dimension:
+        raise Exception(f'Dimension ({validate_dimension.dimension}) of the task must be the same as other tasks in project ({db_task.project.tasks.first().dimension})')
 
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         db_task.dimension = models.DimensionType.DIM_3D

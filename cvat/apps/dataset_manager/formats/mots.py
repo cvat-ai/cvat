@@ -5,25 +5,25 @@
 from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import AnnotationType, Transform
+from datumaro.components.extractor import AnnotationType, ItemTransform
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     find_dataset_root, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 
 
-class KeepTracks(Transform):
+class KeepTracks(ItemTransform):
     def transform_item(self, item):
         return item.wrap(annotations=[a for a in item.annotations
             if 'track_id' in a.attributes])
 
 @exporter(name='MOTS PNG', ext='ZIP', version='1.0')
-def _export(dst_file, task_data, save_images=False):
-    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
-        task_data, include_images=save_images), env=dm_env)
+def _export(dst_file, instance_data, save_images=False):
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+        instance_data, include_images=save_images), env=dm_env)
     dataset.transform(KeepTracks) # can only export tracks
     dataset.transform('polygons_to_masks')
     dataset.transform('boxes_to_masks')

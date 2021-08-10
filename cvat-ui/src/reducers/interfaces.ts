@@ -86,14 +86,6 @@ export interface TasksState {
     count: number;
     current: Task[];
     activities: {
-        dumps: {
-            // dumps in different formats at the same time
-            [tid: number]: string[]; // dumper names
-        };
-        exports: {
-            // exports in different formats at the same time
-            [tid: number]: string[]; // dumper names
-        };
         loads: {
             // only one loading simultaneously
             [tid: number]: string; // loader name
@@ -110,6 +102,17 @@ export interface TasksState {
             [tid: number]: boolean;
         };
     };
+}
+
+export interface ExportState {
+    tasks: {
+        [tid: number]: string[];
+    };
+    projects: {
+        [pid: number]: string[];
+    };
+    instance: any;
+    modalVisible: boolean;
 }
 
 export interface FormatsState {
@@ -182,8 +185,12 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
+    tip: {
+        message: string;
+        gif: string;
+    };
     params: {
-        canvas: Record<string, unknown>;
+        canvas: Record<string, number | boolean>;
     };
 }
 
@@ -556,6 +563,7 @@ export interface WorkspaceSettingsState {
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
+    defaultApproxPolyAccuracy: number;
 }
 
 export interface ShapesSettingsState {
@@ -616,6 +624,7 @@ export interface CombinedState {
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;
+    export: ExportState;
 }
 
 export enum DimensionType {

@@ -411,6 +411,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validated_project_id = validated_data.get('project_id', None)
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_data.get('project_id', None))
+            if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
+                    raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
@@ -453,8 +455,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         # When moving task labels can be mapped to one, but when not names must be unique
         if 'project_id' in attrs.keys() and self.instance is not None:
             project_id = attrs.get('project_id')
-            if project_id is not None and not models.Project.objects.filter(id=project_id).count():
-                raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+            if project_id is not None:
+                project = models.Project.objects.filter(id=project_id).first()
+                if project is None:
+                    raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()

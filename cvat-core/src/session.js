@@ -42,16 +42,6 @@
                         return result;
                     },
 
-                    async dump(dumper, name = null) {
-                        const result = await PluginRegistry.apiWrapper.call(
-                            this,
-                            prototype.annotations.dump,
-                            dumper,
-                            name,
-                        );
-                        return result;
-                    },
-
                     async statistics() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.statistics);
                         return result;
@@ -148,11 +138,13 @@
                         return result;
                     },
 
-                    async exportDataset(format) {
+                    async exportDataset(format, saveImages, customName = '') {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             prototype.annotations.exportDataset,
                             format,
+                            saveImages,
+                            customName,
                         );
                         return result;
                     },
@@ -326,21 +318,6 @@
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @throws {module:API.cvat.exceptions.ServerError}
-             * @instance
-             * @async
-             */
-            /**
-             * Dump of annotations to a file.
-             * Method always dumps annotations for a whole task.
-             * @method dump
-             * @memberof Session.annotations
-             * @param {module:API.cvat.classes.Dumper} dumper - a dumper
-             * @param {string} [name = null] - a name of a file with annotations
-             * which will be used to dump
-             * @returns {string} URL which can be used in order to get a dump file
-             * @throws {module:API.cvat.exceptions.PluginError}
-             * @throws {module:API.cvat.exceptions.ServerError}
-             * @throws {module:API.cvat.exceptions.ArgumentError}
              * @instance
              * @async
              */
@@ -877,7 +854,6 @@
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 put: Object.getPrototypeOf(this).annotations.put.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
-                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
                 merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
@@ -1591,7 +1567,6 @@
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 put: Object.getPrototypeOf(this).annotations.put.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
-                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
                 merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
@@ -1731,7 +1706,6 @@
         selectObject,
         annotationsStatistics,
         uploadAnnotations,
-        dumpAnnotations,
         importAnnotations,
         exportAnnotations,
         exportDataset,
@@ -1964,13 +1938,8 @@
         return result;
     };
 
-    Job.prototype.annotations.dump.implementation = async function (dumper, name) {
-        const result = await dumpAnnotations(this, name, dumper);
-        return result;
-    };
-
-    Job.prototype.annotations.exportDataset.implementation = async function (format) {
-        const result = await exportDataset(this.task, format);
+    Job.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
+        const result = await exportDataset(this.task, format, customName, saveImages);
         return result;
     };
 
@@ -2271,11 +2240,6 @@
         return result;
     };
 
-    Task.prototype.annotations.dump.implementation = async function (dumper, name) {
-        const result = await dumpAnnotations(this, name, dumper);
-        return result;
-    };
-
     Task.prototype.annotations.import.implementation = function (data) {
         const result = importAnnotations(this, data);
         return result;
@@ -2286,8 +2250,8 @@
         return result;
     };
 
-    Task.prototype.annotations.exportDataset.implementation = async function (format) {
-        const result = await exportDataset(this, format);
+    Task.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
+        const result = await exportDataset(this, format, customName, saveImages);
         return result;
     };
 

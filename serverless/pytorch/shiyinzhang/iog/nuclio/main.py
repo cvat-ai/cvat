@@ -13,7 +13,7 @@ def init_context(context):
     context.logger.info("Init context...  0%")
 
     model = ModelHandler()
-    setattr(context.user_data, 'model', model)
+    context.user_data.model = model
 
     context.logger.info("Init context...100%")
 
@@ -24,7 +24,7 @@ def handler(context, event):
     neg_points = data["neg_points"]
     obj_bbox = data.get("obj_bbox", None)
     threshold = data.get("threshold", 0.8)
-    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    buf = io.BytesIO(base64.b64decode(data["image"]))
     image = Image.open(buf)
 
     if obj_bbox is None:

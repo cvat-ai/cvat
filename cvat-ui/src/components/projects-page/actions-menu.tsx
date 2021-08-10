@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import Modal from 'antd/lib/modal';
 import Menu from 'antd/lib/menu';
 
 import { deleteProjectAsync } from 'actions/projects-actions';
+import { exportActions } from 'actions/export-actions';
 
 interface Props {
     projectInstance: any;
@@ -37,6 +38,11 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     return (
         <Menu className='cvat-project-actions-menu'>
             <Menu.Item onClick={onDeleteProject}>Delete</Menu.Item>
+            <Menu.Item
+                onClick={() => dispatch(exportActions.openExportModal(projectInstance))}
+            >
+                Export project dataset
+            </Menu.Item>
         </Menu>
     );
 }

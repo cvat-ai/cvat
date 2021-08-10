@@ -30,7 +30,7 @@ import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-ba
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    CombinedState, FrameSpeed, Workspace, PredictorState,
+    CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl,
 } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
@@ -55,6 +55,7 @@ interface StateToProps {
     canvasInstance: Canvas | Canvas3d;
     forceExit: boolean;
     predictor: PredictorState;
+    activeControl: ActiveControl;
     isTrainingActive: boolean;
 }
 
@@ -85,7 +86,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 history,
             },
             job: { instance: jobInstance },
-            canvas: { ready: canvasIsReady, instance: canvasInstance },
+            canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
             workspace,
             predictor,
         },
@@ -118,6 +119,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         forceExit,
         predictor,
+        activeControl,
         isTrainingActive: list.PREDICT,
     };
 }
@@ -220,48 +222,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const {
-            jobInstance,
-            frameSpeed,
-            frameNumber,
-            frameDelay,
-            playing,
-            canvasIsReady,
-            canvasInstance,
-            onSwitchPlay,
-            onChangeFrame,
-            autoSaveInterval,
-        } = this.props;
+        const { autoSaveInterval } = this.props;
 
         if (autoSaveInterval !== prevProps.autoSaveInterval) {
             if (this.autoSaveInterval) window.clearInterval(this.autoSaveInterval);
             this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
         }
-
-        if (playing && canvasIsReady) {
-            if (frameNumber < jobInstance.stopFrame) {
-                let framesSkipped = 0;
-                if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {
-                    framesSkipped = 1;
-                }
-                if (frameSpeed === FrameSpeed.Fastest && frameNumber + 2 < jobInstance.stopFrame) {
-                    framesSkipped = 2;
-                }
-
-                setTimeout(() => {
-                    const { playing: stillPlaying } = this.props;
-                    if (stillPlaying) {
-                        if (canvasInstance.isAbleToChangeFrame()) {
-                            onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
-                        } else {
-                            onSwitchPlay(false);
-                        }
-                    }
-                }, frameDelay);
-            } else {
-                onSwitchPlay(false);
-            }
-        }
+        this.play();
     }
 
     public componentWillUnmount(): void {
@@ -451,6 +418,19 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private onFinishDraw = (): void => {
+        const { activeControl, canvasInstance } = this.props;
+        if (
+            [ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl) &&
+            canvasInstance instanceof Canvas
+        ) {
+            canvasInstance.interact({ enabled: false });
+            return;
+        }
+
+        canvasInstance.draw({ enabled: false });
+    };
+
     private onURLIconClick = (): void => {
         const { frameNumber } = this.props;
         const { origin, pathname } = window.location;
@@ -472,6 +452,47 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         }
         return undefined;
     };
+
+    private play(): void {
+        const {
+            jobInstance,
+            frameSpeed,
+            frameNumber,
+            frameDelay,
+            playing,
+            canvasIsReady,
+            canvasInstance,
+            onSwitchPlay,
+            onChangeFrame,
+        } = this.props;
+
+        if (playing && canvasIsReady) {
+            if (frameNumber < jobInstance.stopFrame) {
+                let framesSkipped = 0;
+                if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {
+                    framesSkipped = 1;
+                }
+                if (frameSpeed === FrameSpeed.Fastest && frameNumber + 2 < jobInstance.stopFrame) {
+                    framesSkipped = 2;
+                }
+
+                setTimeout(() => {
+                    const { playing: stillPlaying } = this.props;
+                    if (stillPlaying) {
+                        if (canvasInstance.isAbleToChangeFrame()) {
+                            onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
+                        } else if (jobInstance.task.dimension === DimensionType.DIM_2D) {
+                            onSwitchPlay(false);
+                        } else {
+                            setTimeout(() => this.play(), frameDelay);
+                        }
+                    }
+                }, frameDelay);
+            } else {
+                onSwitchPlay(false);
+            }
+        }
+    }
 
     private autoSave(): void {
         const { autoSave, saving } = this.props;
@@ -520,10 +541,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             normalizedKeyMap,
             canvasInstance,
             predictor,
+            isTrainingActive,
+            activeControl,
             searchAnnotations,
             changeWorkspace,
             switchPredictor,
-            isTrainingActive,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -649,6 +671,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     saveShortcut={normalizedKeyMap.SAVE_JOB}
                     undoShortcut={normalizedKeyMap.UNDO}
                     redoShortcut={normalizedKeyMap.REDO}
+                    drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                     nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
                     previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
@@ -659,8 +682,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
+                    onFinishDraw={this.onFinishDraw}
                     jobInstance={jobInstance}
                     isTrainingActive={isTrainingActive}
+                    activeControl={activeControl}
                 />
             </>
         );

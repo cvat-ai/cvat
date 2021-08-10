@@ -2,6 +2,7 @@
 title: 'Creating an annotation task'
 linkTitle: 'Creating an annotation task'
 weight: 2
+description: 'Instructions on how to create and configure an annotation task.'
 ---
 
 1. Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
@@ -12,16 +13,19 @@ weight: 2
    ## Basic configuration
 
    ### Name
+
    The name of the task to be created.
 
    ![](/images/image005.jpg)
 
    ### Projects
+
    The project that this task will be related with.
 
    ![](/images/image193.jpg)
 
    ### Labels
+
    There are two ways of working with labels (available only if the task is not related to the project):
 
    - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
@@ -66,6 +70,7 @@ weight: 2
    In `Raw` and `Constructor` mode, you can press the `Copy` button to copy the list of labels.
 
    ### Select files
+
    Press tab `My computer` to choose some files for annotation from your PC.
    If you select tab `Connected file share` you can choose files for annotation from your network.
    If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
@@ -77,63 +82,67 @@ weight: 2
    ### Data formats for a 3D task
 
    To create a 3D task, you need to use the following directory structures:
-    {{< tabpane >}}
-    {{< tab header="Velodyne" >}}
-    VELODYNE FORMAT
-    Structure:
-      velodyne_points/
-          data/
-              image_01.bin
-      IMAGE_00  # unknown dirname, Generally image_01.png can be under IMAGE_00, IMAGE_01, IMAGE_02, IMAGE_03, etc
-          data/
-              image_01.png
-    {{< /tab >}}
-    {{< tab header="3D pointcloud" >}}
-    3D POINTCLOUD DATA FORMAT
-    Structure:
-      pointcloud/
-          00001.pcd
-      related_images/
-          00001_pcd/
-              image_01.png # or any other image
-    {{< /tab >}}
-    {{< tab header="3D Option 1" >}}
-    3D, DEFAULT DATAFORMAT Option 1
-    Structure:
-    data/
-      image.pcd
-      image.png
-    {{< /tab >}}
-    {{< tab header="3D Option 2" >}}
-    3D, DEFAULT DATAFORMAT Option 2
-    Structure:
-      data/
-        image_1/
-            image_1.pcd
-            context_1.png  # or any other name
-            context_2.jpg
-    {{< /tab >}}
-    {{< /tabpane >}}
+   {{< tabpane >}}
+   {{< tab header="Velodyne" >}}
+   VELODYNE FORMAT
+   Structure:
+   velodyne_points/
+   data/
+   image_01.bin
+   IMAGE_00 # unknown dirname, Generally image_01.png can be under IMAGE_00, IMAGE_01, IMAGE_02, IMAGE_03, etc
+   data/
+   image_01.png
+   {{< /tab >}}
+   {{< tab header="3D pointcloud" >}}
+   3D POINTCLOUD DATA FORMAT
+   Structure:
+   pointcloud/
+   00001.pcd
+   related_images/
+   00001_pcd/
+   image_01.png # or any other image
+   {{< /tab >}}
+   {{< tab header="3D Option 1" >}}
+   3D, DEFAULT DATAFORMAT Option 1
+   Structure:
+   data/
+   image.pcd
+   image.png
+   {{< /tab >}}
+   {{< tab header="3D Option 2" >}}
+   3D, DEFAULT DATAFORMAT Option 2
+   Structure:
+   data/
+   image_1/
+   image_1.pcd
+   context_1.png # or any other name
+   context_2.jpg
+   {{< /tab >}}
+   {{< /tabpane >}}
 
    ## Advanced configuration
 
    ![](/images/image128_use_cache.jpg)
 
    ### Use zip chunks
+
    Force to use zip chunks as compressed data. Actual for videos only.
 
    ### Use cache
+
    Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
    which will reduce the task creation time (by preparing chunks when requests are received)
    and store data in a cache of limited size with a policy of evicting less popular items.
    See more [here](/docs/manual/advanced/data_on_fly/).
 
    ### Image Quality
+
    Use this option to specify quality of uploaded images.
    The option helps to load high resolution datasets faster.
    Use the value from `5` (almost completely compressed images) to `100` (not compressed images).
 
    ## Overlap Size
+
    Use this option to make overlapped segments.
    The option makes tracks continuous from one segment into another.
    Use it for interpolation mode. There are several options for using the parameter:
@@ -157,22 +166,27 @@ weight: 2
      even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
    ### Segment size
+
    Use this option to divide a huge dataset into a few smaller segments.
    For example, one job cannot be annotated by several labelers (it isn't supported).
    Thus using "segment size" you can create several jobs for the same annotation task.
    It will help you to parallel data annotation process.
 
    ### Start frame
+
    Frame from which video in task begins.
 
    ### Stop frame
+
    Frame on which video in task ends.
 
    ### Frame Step
+
    Use this option to filter video frames.
    For example, enter `25` to leave every twenty fifth frame in the video or every twenty fifth image.
 
    ### Chunk size
+
    Defines a number of frames to be packed in a chunk when send from client to server.
    Server defines automatically if empty.
 
@@ -184,6 +198,7 @@ weight: 2
    - More: 1 - 4
 
    ### Dataset Repository
+
    URL link of the repository optionally specifies the path to the repository for storage
    (`default: annotation / <dump_file_name> .zip`).
    The .zip and .xml file extension of annotation are supported.
@@ -198,10 +213,12 @@ weight: 2
    The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
 
    ### Use LFS
+
    If the annotation file is large, you can create a repository with
    [LFS](https://git-lfs.github.com/) support.
 
    ### Issue tracker
+
    Specify full issue tracker's URL if it's necessary.
 
    Push `Submit` button and it will be added into the list of annotation tasks.
@@ -237,6 +254,8 @@ weight: 2
      - Velodyn points format 1.0 (Available in 3d task)
    - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
      Presence depends on how you build CVAT instance.
+   - `Export task` — Export a task into a zip archive.
+     Read more in the [export/import a task](/docs/manual/advanced/export-import/) section.
    - `Move to project` — Moving the task to the project (can be used to move a task from one project to another).
      Note that attributes reset during the moving process. In case of label mismatch,
      you can create or delete necessary labels in the project/task.
@@ -245,4 +264,4 @@ weight: 2
 
 ---
 
-   Push `Open` button to go to [task details](/docs/manual/basics/task-details/).
+Push `Open` button to go to [task details](/docs/manual/basics/task-details/).
