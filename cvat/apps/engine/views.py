@@ -1277,6 +1277,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 'specific_attributes': db_storage.get_specific_attributes()
             }
             storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+            if not db_storage.manifest_set.count():
+                raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
             if not storage.is_object_exist(manifest_path):
                 import errno
@@ -1284,15 +1286,15 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                     "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
 
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-            if not os.path.exist(full_manifest_path) or \
-                    os.path.getmtime(full_manifest_path) < storage.get_file_last_modified(full_manifest_path):
+            if not os.path.exists(full_manifest_path):
+                # or \ os.path.getmtime(full_manifest_path) < storage.get_file_last_modified(full_manifest_path):
                 # TODO: create sub dirs
                 storage.download_file(manifest_path, full_manifest_path)
-                manifest = ImageManifestManager(full_manifest_path)
-                # need to reset previon index
-                manifest.reset_index()
-                manifest.init_index()
-                manifest_files = manifest.data
+            manifest = ImageManifestManager(full_manifest_path)
+            # need to reset previon index
+            manifest.reset_index()
+            manifest.init_index()
+            manifest_files = manifest.data
             return Response(data=manifest_files, content_type="text/plain")
 
         except CloudStorageModel.DoesNotExist:

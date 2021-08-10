@@ -778,7 +778,7 @@ class ManifestSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def to_internal_value(self, data):
-        return {'filename': data.get('filename')}
+        return {'filename': data }
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):
