@@ -1013,7 +1013,7 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
 
                 dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1].split('.')[0],
                                                annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
-                                               attributes=attributes)
+                                               attributes=attributes, subset=frame_data.subset)
             dm_items.append(dm_item)
 
         self._items = dm_items
