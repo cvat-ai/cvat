@@ -759,7 +759,7 @@ function build() {
              * @typedef {Object} CloudStorageFilter
              * @property {string} displayName Check if displayName contains this value
              * @property {string} resourceName Check if resourceName contains this value
-             * @property {module:API.cvat.enums.ProviderType} provider Check if provider equal this value
+             * @property {module:API.cvat.enums.ProviderType} providerType Check if providerType equal this value
              * @property {integer} id Check if id equals this value
              * @property {integer} page Get specific page
              * (default REST API returns 20 clouds storages per request.
