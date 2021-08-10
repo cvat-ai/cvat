@@ -25,7 +25,7 @@ import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, Model, ObjectType, ShapeType,
+    CombinedState, ActiveControl, Model, ObjectType, ShapeType, BlockMode,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -38,6 +38,7 @@ import LabelSelector from 'components/label-selector/label-selector';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import { switchBlockMode } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -55,6 +56,7 @@ interface StateToProps {
     curZOrder: number;
     aiToolsRef: MutableRefObject<any>;
     defaultApproxPolyAccuracy: number;
+    blockMode: BlockMode;
 }
 
 interface DispatchToProps {
@@ -62,6 +64,7 @@ interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
+    onSwitchBlockMode(blockMode: BlockMode):void;
 }
 
 const core = getCore();
@@ -75,6 +78,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { instance: canvasInstance, activeControl } = annotation.canvas;
     const { models } = state;
     const { interactors, detectors, trackers } = models;
+    const { blockMode } = state.settings.workspace;
 
     return {
         interactors,
@@ -90,6 +94,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         curZOrder: annotation.annotations.zLayer.cur,
         aiToolsRef: annotation.aiToolsRef,
         defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
+        blockMode,
     };
 }
 
@@ -98,6 +103,7 @@ const mapDispatchToProps = {
     updateAnnotations: updateAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
     fetchAnnotations: fetchAnnotationsAsync,
+    onSwitchBlockMode: switchBlockMode,
 };
 
 type Props = StateToProps & DispatchToProps;
@@ -776,7 +782,18 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Text>
                     </Col>
                 </Row>
-                <Tabs type='card' tabBarGutter={8}>
+                <Tabs
+                    type='card'
+                    tabBarGutter={8}
+                    onChange={(key:string) => {
+                        const { onSwitchBlockMode, blockMode } = this.props;
+                        if (key === 'interactors' && !blockMode.showButton) {
+                            onSwitchBlockMode({ showButton: true });
+                        } else if (blockMode.showButton) {
+                            onSwitchBlockMode({ showButton: false });
+                        }
+                    }}
+                >
                     <Tabs.TabPane key='interactors' tab='Interactors'>
                         {this.renderLabelBlock()}
                         {this.renderInteractorBlock()}

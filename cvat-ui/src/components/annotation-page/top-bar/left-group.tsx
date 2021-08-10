@@ -15,7 +15,7 @@ import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotati
 import {
     MainMenuIcon, SaveIcon, UndoIcon, RedoIcon,
 } from 'icons';
-import { ActiveControl, CombinedState } from 'reducers/interfaces';
+import { ActiveControl, CombinedState, BlockMode } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
@@ -28,7 +28,7 @@ interface Props {
     redoShortcut: string;
     drawShortcut: string;
     blockShortcut: string;
-    blockMode: boolean;
+    blockMode: BlockMode;
     activeControl: ActiveControl;
     onSaveAnnotation(): void;
     onUndoClick(): void;
@@ -38,7 +38,7 @@ interface Props {
 }
 
 interface StateToProps {
-    blockMode: boolean;
+    blockMode: BlockMode;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -86,7 +86,7 @@ function LeftGroup(props: Props): JSX.Element {
     const includesBlockButton = [
         ActiveControl.OPENCV_TOOLS,
         ActiveControl.AI_TOOLS,
-    ].includes(activeControl);
+    ].includes(activeControl) && blockMode.showButton;
 
     return (
         <Col className='cvat-annotation-header-left-group'>
@@ -145,7 +145,7 @@ function LeftGroup(props: Props): JSX.Element {
             ) : null}
             {includesBlockButton ? (
                 <CVATTooltip overlay={`Postpone running the algorithm "${blockShortcut}"`}>
-                    <Button type='link' className={`cvat-annotation-header-button ${blockMode ? 'cvat-button-active' : ''}`} onClick={onSwitchBlockMode}>
+                    <Button type='link' className={`cvat-annotation-header-button ${blockMode.enabled ? 'cvat-button-active' : ''}`} onClick={onSwitchBlockMode}>
                         <StopOutlined />
                         Block
                     </Button>

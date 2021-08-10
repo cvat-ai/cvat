@@ -30,7 +30,7 @@ import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-ba
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl,
+    CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl, BlockMode,
 } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { switchBlockMode } from 'actions/settings-actions';
@@ -50,7 +50,7 @@ interface StateToProps {
     redoAction?: string;
     autoSave: boolean;
     autoSaveInterval: number;
-    blockMode: boolean;
+    blockMode: BlockMode;
     workspace: Workspace;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
@@ -74,7 +74,7 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
-    onSwitchBlockMode(blockMode: boolean): void;
+    onSwitchBlockMode(blockMode: BlockMode): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -171,7 +171,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(getPredictionsAsync());
             }
         },
-        onSwitchBlockMode(blockMode: boolean):void{
+        onSwitchBlockMode(blockMode: BlockMode):void{
             dispatch(switchBlockMode(blockMode));
         },
     };
@@ -443,7 +443,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             blockMode, onSwitchBlockMode, canvasInstance, activeControl,
         } = this.props;
         if (canvasInstance instanceof Canvas) {
-            if (!blockMode && activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
+            if (!blockMode.enabled && activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
                 canvasInstance.interact({
                     allowRemoveOnlyLast: true,
                     crosshair: false,
@@ -465,7 +465,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 });
             }
         }
-        onSwitchBlockMode(!blockMode);
+        onSwitchBlockMode({ enabled: !blockMode.enabled });
     };
 
     private onURLIconClick = (): void => {
@@ -603,7 +603,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
             PLAY_PAUSE: keyMap.PLAY_PAUSE,
             FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
-            SWITCH_BLOCK_MODE: keyMap.SWITCH_BLOCK_MODE,
         };
 
         const handlers = {
@@ -670,10 +669,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 if (this.inputFrameRef.current) {
                     this.inputFrameRef.current.focus();
                 }
-            },
-            SWITCH_BLOCK_MODE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                this.onSwitchBlockMode();
             },
         };
 

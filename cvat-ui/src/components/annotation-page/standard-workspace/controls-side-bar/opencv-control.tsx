@@ -19,7 +19,7 @@ import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
-    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType,
+    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, BlockMode,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -47,7 +47,7 @@ interface Props {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     frameData: any;
-    blockMode: boolean;
+    blockMode: BlockMode;
     activeControl: ActiveControl;
 }
 
@@ -57,7 +57,7 @@ interface DispatchToProps {
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
-    onSwitchBlockMode(blockMode: boolean):void;
+    onSwitchBlockMode(blockMode: BlockMode):void;
 }
 
 interface State {
@@ -150,7 +150,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { approxPolyAccuracy } = this.state;
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode, onSwitchBlockMode, activeControl
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode, onSwitchBlockMode, activeControl,
         } = this.props;
 
         if (!prevProps.isActivated && isActivated) {
@@ -179,11 +179,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 });
             }
         }
-        if ((prevProps.blockMode !== blockMode) && isActivated && this.activeTool) {
+        const blockModeChanged = prevProps.blockMode.enabled !== blockMode.enabled;
+        const currentToolHasBlockMode = [ActiveControl.AI_TOOLS].includes(activeControl);
+        if (blockModeChanged && isActivated && this.activeTool) {
             this.activeTool.switchBlockMode();
-        } else if (!isActivated && this.activeTool && ![ActiveControl.AI_TOOLS].includes(activeControl)) {
+        } else if (blockModeChanged && !isActivated && this.activeTool && !currentToolHasBlockMode) {
             this.activeTool.switchBlockMode(false);
-            onSwitchBlockMode(false);
+            onSwitchBlockMode({ enabled: false });
         }
     }
 
@@ -389,6 +391,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                         enabled: true,
                                         ...this.activeTool.params.canvas,
                                     });
+                                    const { onSwitchBlockMode, blockMode } = this.props;
+                                    if (!blockMode.showButton) {
+                                        onSwitchBlockMode({ showButton: true });
+                                    }
                                 }}
                             >
                                 <ScissorOutlined />

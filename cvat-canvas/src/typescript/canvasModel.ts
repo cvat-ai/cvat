@@ -565,7 +565,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-        const thresholdChanged = this.data.interactionData.enableThreshold !== interactionData.enableThreshold
+        const thresholdChanged = this.data.interactionData.enableThreshold !== interactionData.enableThreshold;
         if (interactionData.enabled && !interactionData.intermediateShape && !thresholdChanged) {
             if (this.data.interactionData.enabled) {
                 throw new Error('Interaction has been already started');

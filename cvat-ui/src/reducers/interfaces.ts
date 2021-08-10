@@ -195,6 +195,12 @@ export interface Model {
 }
 
 export type OpenCVTool = IntelligentScissors;
+
+export interface BlockMode {
+    enabled?: boolean;
+    showButton?: boolean;
+}
+
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',
@@ -564,7 +570,7 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
-    blockMode: boolean,
+    blockMode: BlockMode;
 }
 
 export interface ShapesSettingsState {

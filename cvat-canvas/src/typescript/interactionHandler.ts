@@ -9,7 +9,6 @@ import {
     translateToSVG, PropType, stringifyPoints, translateToCanvas,
 } from './shared';
 
-import { InteractionData, InteractionResult, Geometry } from './canvasModel';
 import { getCVATStore } from '../../../cvat-ui/src/cvat-store';
 import { switchBlockMode } from '../../../cvat-ui/src/actions/settings-actions';
 import { ActiveControl } from '../../../cvat-ui/src/reducers/interfaces';
@@ -215,12 +214,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private initInteraction(): void {
         if (this.interactionData.crosshair) {
             this.addCrosshair();
-        }else if(this.crosshair){
-            this.removeCrosshair()
+        } else if (this.crosshair) {
+            this.removeCrosshair();
         }
         if (this.interactionData.enableThreshold) {
             this.addThreshold();
-        }else if(this.threshold){
+        } else if (this.threshold) {
             this.threshold.remove();
             this.threshold = null;
         }
@@ -425,32 +424,30 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 }
             }
         });
-        window.addEventListener('keyup', (e: KeyboardEvent) => {
-            if(!this.checkCursorPosition()){
-                if(e.keyCode === 17){
+        window.addEventListener('keyup', (e: KeyboardEvent): void => {
+            if (!this.checkCursorPosition()) {
+                if (e.keyCode === 17) {
                     const store = getCVATStore();
                     const state = store.getState();
                     const {
                         settings: {
                             workspace: {
-                                blockMode
-                            }
+                                blockMode,
+                            },
                         },
                         annotation: {
                             canvas: {
-                                activeControl
-                            }
-                        }
+                                activeControl,
+                            },
+                        },
                     } = state;
-                    if([ActiveControl.AI_TOOLS].includes(activeControl)){
+                    if ([ActiveControl.AI_TOOLS].includes(activeControl)) {
                         // on interactors
                         this.interactBlockMode(false, false);
-                    }else{
+                    } else if (!this.thresholdWasModified) {
                         // on scissors
-                        if(!this.thresholdWasModified){
-                            this.thresholdWasModified = false;
-                            this.interactBlockMode(!blockMode, true);
-                        }
+                        this.thresholdWasModified = false;
+                        this.interactBlockMode(!blockMode.enabled, true);
                     }
                 }
                 if (e.keyCode === 17 && this.shouldRaiseEvent(false)) {
@@ -460,39 +457,40 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
         });
 
-        window.addEventListener('keydown', (e:KeyboardEvent):void=>{
-            if(!this.checkCursorPosition()){
-                if(e.keyCode === 17){
+        window.addEventListener('keydown', (e: KeyboardEvent): void => {
+            if (!this.checkCursorPosition()) {
+                if (e.keyCode === 17) {
                     const store = getCVATStore();
                     const state = store.getState();
                     const {
                         annotation: {
                             canvas: {
-                                activeControl
-                            }
-                        }
+                                activeControl,
+                            },
+                        },
                     } = state;
-                    if([ActiveControl.AI_TOOLS].includes(activeControl)){
+                    if ([ActiveControl.AI_TOOLS].includes(activeControl)) {
                         // on interactors
                         this.interactBlockMode(true, false);
                     }
                     this.thresholdWasModified = false;
                 }
             }
-        })
+        });
     }
 
-    private interactBlockMode(enabled:boolean, canvasInteraction:boolean){
+    // eslint-disable-next-line class-methods-use-this
+    private interactBlockMode(enabled: boolean, canvasInteraction: boolean): void {
         const store = getCVATStore();
         const state = store.getState();
         const {
             annotation: {
                 canvas: {
-                    instance: canvasInstance
-                }
-            }
+                    instance: canvasInstance,
+                },
+            },
         } = state;
-        if(canvasInteraction && enabled){
+        if (canvasInteraction && enabled) {
             canvasInstance.interact({
                 allowRemoveOnlyLast: true,
                 crosshair: false,
@@ -500,9 +498,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 enableThreshold: false,
                 enabled: true,
                 minPosVertices: 1,
-                shapeType: 'points'
-            })
-        }else if (canvasInteraction){
+                shapeType: 'points',
+            });
+        } else if (canvasInteraction) {
             canvasInstance.interact({
                 allowRemoveOnlyLast: true,
                 crosshair: true,
@@ -510,13 +508,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 enableThreshold: true,
                 enabled: true,
                 minPosVertices: 1,
-                shapeType: 'points'
-            })
+                shapeType: 'points',
+            });
         }
-        store.dispatch(switchBlockMode(enabled));
+        store.dispatch(switchBlockMode({ enabled }));
     }
 
-    private checkCursorPosition():boolean{
+    private checkCursorPosition(): boolean {
         return this.cursorPosition.x === 0 && this.cursorPosition.y === 0;
     }
 

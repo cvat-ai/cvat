@@ -32,7 +32,10 @@ const defaultState: SettingsState = {
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
         defaultApproxPolyAccuracy: 9,
-        blockMode: false,
+        blockMode: {
+            enabled: false,
+            showButton: false,
+        },
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -293,7 +296,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 workspace: {
                     ...state.workspace,
-                    blockMode: action.payload.blockMode,
+                    blockMode: { ...state.workspace.blockMode, ...action.payload.blockMode },
                 },
             };
         }

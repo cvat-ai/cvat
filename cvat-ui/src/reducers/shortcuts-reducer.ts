@@ -180,14 +180,6 @@ const defaultKeyMap = ({
         action: 'keydown',
         applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
     },
-    SWITCH_BLOCK_MODE: {
-        name: 'Block mode',
-        description:
-            'Activate or deactivate block mode for tools',
-        sequences: ['b'],
-        action: 'keydown',
-        applicable: [DimensionType.DIM_2D],
-    },
     OPEN_REVIEW_ISSUE: {
         name: 'Open an issue',
         description: 'Create a new issues in the review workspace',
