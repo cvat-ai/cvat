@@ -21,9 +21,10 @@ In most cases specifying positive points alone is enough to build a polygon.
 A list of available out-of-the-box interactors is placed below.
 
 - Before you start, select the magic wand on the controls sidebar and go to the `Interactors` tab.
-  Then select a label for the polygon and a required DL model.
+  Then select a label for the polygon and a required DL model. To view help about each of the
+  models, you can click the `Question mark` icon.
 
-  ![](/images/image114.jpg)
+  ![](/images/image225_detrac.jpg)
 
 - Click `Interact` to enter the interaction mode. Now you can place positive and/or negative points.
   Left click creates a positive point and right click creates a negative point.
@@ -40,6 +41,9 @@ A list of available out-of-the-box interactors is placed below.
 - In the process of drawing, you can select the number of points in the polygon using the switch.
 
   ![](/images/image224.jpg)
+
+- You can use the `Selected opacity` slider in the `Objects sidebar` to change the opacity of the polygon.
+  You can read more in the [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance) section.
 
 - To finish interaction, click on the `Done` button on the top panel or press `N` on your keyboard.
 
