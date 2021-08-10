@@ -444,7 +444,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     if ([ActiveControl.AI_TOOLS].includes(activeControl)) {
                         // on interactors
                         this.interactBlockMode(false, false);
-                    } else if (!this.thresholdWasModified) {
+                    } else if ([ActiveControl.OPENCV_TOOLS].includes(activeControl) && !this.thresholdWasModified) {
                         // on scissors
                         this.thresholdWasModified = false;
                         this.interactBlockMode(!blockMode.enabled, true);
