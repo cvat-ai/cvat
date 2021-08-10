@@ -211,9 +211,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
         try {
             if (shapesUpdated) {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints, blockMode ? 0 : threshold);
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints, blockMode.enabled ? 0 : threshold);
                 const [x, y] = this.latestPoints.slice(-2);
-                this.latestPoints.splice(this.latestPoints.length - 2, 2);
+                if (blockMode.enabled) {
+                    // disable approximation for lastest two points to disable fickering
+                    this.latestPoints.splice(this.latestPoints.length - 2, 2);
+                }
                 const points = openCVWrapper.contours.approxPoly(
                     this.latestPoints,
                     thresholdFromAccuracy(approxPolyAccuracy),
@@ -231,7 +234,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
             if (isDone) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints, blockMode ? 0 : threshold);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints, blockMode.enabled ? 0 : threshold);
                 const points = openCVWrapper.contours.approxPoly(
                     finalPoints,
                     thresholdFromAccuracy(approxPolyAccuracy),
