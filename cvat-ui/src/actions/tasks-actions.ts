@@ -18,12 +18,6 @@ export enum TasksActionTypes {
     LOAD_ANNOTATIONS = 'LOAD_ANNOTATIONS',
     LOAD_ANNOTATIONS_SUCCESS = 'LOAD_ANNOTATIONS_SUCCESS',
     LOAD_ANNOTATIONS_FAILED = 'LOAD_ANNOTATIONS_FAILED',
-    DUMP_ANNOTATIONS = 'DUMP_ANNOTATIONS',
-    DUMP_ANNOTATIONS_SUCCESS = 'DUMP_ANNOTATIONS_SUCCESS',
-    DUMP_ANNOTATIONS_FAILED = 'DUMP_ANNOTATIONS_FAILED',
-    EXPORT_DATASET = 'EXPORT_DATASET',
-    EXPORT_DATASET_SUCCESS = 'EXPORT_DATASET_SUCCESS',
-    EXPORT_DATASET_FAILED = 'EXPORT_DATASET_FAILED',
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
@@ -105,60 +99,6 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
         dispatch(getInferenceStatusAsync());
 
         dispatch(getTasksSuccess(array, await Promise.all(promises), result.count, query));
-    };
-}
-
-function dumpAnnotation(task: any, dumper: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.DUMP_ANNOTATIONS,
-        payload: {
-            task,
-            dumper,
-        },
-    };
-
-    return action;
-}
-
-function dumpAnnotationSuccess(task: any, dumper: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.DUMP_ANNOTATIONS_SUCCESS,
-        payload: {
-            task,
-            dumper,
-        },
-    };
-
-    return action;
-}
-
-function dumpAnnotationFailed(task: any, dumper: any, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.DUMP_ANNOTATIONS_FAILED,
-        payload: {
-            task,
-            dumper,
-            error,
-        },
-    };
-
-    return action;
-}
-
-export function dumpAnnotationsAsync(task: any, dumper: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            dispatch(dumpAnnotation(task, dumper));
-            const url = await task.annotations.dump(dumper);
-            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-            downloadAnchor.href = url;
-            downloadAnchor.click();
-        } catch (error) {
-            dispatch(dumpAnnotationFailed(task, dumper, error));
-            return;
-        }
-
-        dispatch(dumpAnnotationSuccess(task, dumper));
     };
 }
 
@@ -260,60 +200,6 @@ export function importTaskAsync(file: File): ThunkAction<Promise<void>, {}, {}, 
         } catch (error) {
             dispatch(importTaskFailed(error));
         }
-    };
-}
-
-function exportDataset(task: any, exporter: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_DATASET,
-        payload: {
-            task,
-            exporter,
-        },
-    };
-
-    return action;
-}
-
-function exportDatasetSuccess(task: any, exporter: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_DATASET_SUCCESS,
-        payload: {
-            task,
-            exporter,
-        },
-    };
-
-    return action;
-}
-
-function exportDatasetFailed(task: any, exporter: any, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_DATASET_FAILED,
-        payload: {
-            task,
-            exporter,
-            error,
-        },
-    };
-
-    return action;
-}
-
-export function exportDatasetAsync(task: any, exporter: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(exportDataset(task, exporter));
-
-        try {
-            const url = await task.annotations.exportDataset(exporter.name);
-            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-            downloadAnchor.href = url;
-            downloadAnchor.click();
-        } catch (error) {
-            dispatch(exportDatasetFailed(task, exporter, error));
-        }
-
-        dispatch(exportDatasetSuccess(task, exporter));
     };
 }
 

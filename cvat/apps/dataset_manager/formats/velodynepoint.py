@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, \
+from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, TaskData, \
     import_dm_annotations
 from .registry import dm_env
 
@@ -19,6 +19,9 @@ from .registry import exporter, importer
 
 @exporter(name='Kitti Raw Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, task_data, save_images=False):
+
+    if not isinstance(task_data, TaskData):
+        raise Exception("Export to \"Kitti raw\" format is working only with tasks temporarily")
 
     dataset = Dataset.from_extractors(CvatTaskDataExtractor(
         task_data, include_images=save_images, format_type="kitti_raw", dimension=DimensionType.DIM_3D), env=dm_env)

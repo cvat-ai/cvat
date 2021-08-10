@@ -2,6 +2,7 @@
 title: 'Pull requests'
 linkTitle: 'Pull requests'
 weight: 9
+description: 'Instructions on how to create a pull request.'
 ---
 
 Good pull requests - patches, improvements, new features - are a fantastic

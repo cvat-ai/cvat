@@ -16,9 +16,13 @@ import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
+import { ExportActionTypes } from 'actions/export-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 
+import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
+
+const core = getCore();
 
 const defaultState: NotificationsState = {
     errors: {
@@ -315,8 +319,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.EXPORT_DATASET_FAILED: {
-            const taskID = action.payload.task.id;
+        case ExportActionTypes.EXPORT_DATASET_FAILED: {
+            const instanceID = action.payload.instance.id;
+            const instanceType = action.payload.instance instanceof core.classes.Project ? 'project' : 'task';
             return {
                 ...state,
                 errors: {
@@ -326,7 +331,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         exportingAsDataset: {
                             message:
                                 'Could not export dataset for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                                `<a href="/${instanceType}s/${instanceID}" target="_blank">` +
+                                `${instanceType} ${instanceID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -394,24 +400,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-update-task-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
-            const taskID = action.payload.task.id;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        dumping: {
-                            message:
-                                'Could not dump annotations for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
-                            reason: action.payload.error.toString(),
                         },
                     },
                 },

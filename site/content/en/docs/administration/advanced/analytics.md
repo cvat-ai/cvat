@@ -2,10 +2,10 @@
 
 ---
 
-title: 'Analytics for Computer Vision Annotation Tool (CVAT)'
-linkTitle: 'Analytics'
+title: 'Installation Analytics'
+linkTitle: 'Installation Analytics'
 weight: 2
-description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics)
+description: 'Instructions for deployment and customization of Analytics. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics).'
 
 ---
 

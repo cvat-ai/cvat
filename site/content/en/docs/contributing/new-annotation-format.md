@@ -2,7 +2,7 @@
 title: 'How to add a new annotation format support'
 linkTitle: 'New annotation format support'
 weight: 10
-description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats)
+description: 'Instructions on adding support for new annotation formats. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats).'
 ---
 
 1. Add a python script to `dataset_manager/formats`

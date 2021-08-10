@@ -2,6 +2,7 @@
 title: 'Search'
 linkTitle: 'Search'
 weight: 2
+description: 'Overview of available search options.'
 ---
 
 There are several options how to use the search.

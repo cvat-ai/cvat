@@ -2,6 +2,7 @@
 title: 'Filter'
 linkTitle: 'Filter'
 weight: 20
+description: 'Guide to using the Filter feature in CVAT.'
 ---
 
 There are some reasons to use the feature:

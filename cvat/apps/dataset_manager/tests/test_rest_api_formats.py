@@ -7,6 +7,7 @@ import json
 import os.path as osp
 import os
 import av
+from django.http import response
 import numpy as np
 import random
 import xml.etree.ElementTree as ET
@@ -25,6 +26,10 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
+
+projects_path = osp.join(osp.dirname(__file__), 'assets', 'projects.json')
+with open(projects_path) as file:
+    projects = json.load(file)
 
 tasks_path = osp.join(osp.dirname(__file__), 'assets', 'tasks.json')
 with open(tasks_path) as file:
@@ -133,8 +138,8 @@ class _DbTestBase(APITestCase):
         return response
 
     @staticmethod
-    def _generate_task_images(count): # pylint: disable=no-self-use
-        images = {"client_files[%d]" % i: generate_image_file("image_%d.jpg" % i) for i in range(count)}
+    def _generate_task_images(count, name_offsets = 0): # pylint: disable=no-self-use
+        images = {"client_files[%d]" % i: generate_image_file("image_%d.jpg" % (i + name_offsets)) for i in range(count)}
         images["image_quality"] = 75
         return images
 
@@ -158,6 +163,14 @@ class _DbTestBase(APITestCase):
             task = response.data
 
         return task
+
+    def _create_project(self, data):
+        with ForceLogin(self.user, self.client):
+            response = self.client.post('/api/v1/projects', data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            project = response.data
+
+        return project
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
@@ -297,11 +310,22 @@ class _DbTestBase(APITestCase):
     def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
         return f"/api/v1/jobs/{job_id}/annotations?format={upload_format_name}"
 
-    def _generate_url_dump_dataset(self, task_id):
+    def _generate_url_dump_task_dataset(self, task_id):
         return f"/api/v1/tasks/{task_id}/dataset"
+
+    def _generate_url_dump_project_annotations(self, project_id, format_name):
+        return f"/api/v1/projects/{project_id}/annotations?format={format_name}"
+
+    def _generate_url_dump_project_dataset(self, project_id, format_name):
+        return f"/api/v1/projects/{project_id}/dataset?format={format_name}"
 
     def _remove_annotations(self, url, user):
         response = self._delete_request(url, user)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        return response
+
+    def _delete_project(self, project_id, user):
+        response = self._delete_request(f'/api/v1/projects/{project_id}', user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
@@ -789,7 +813,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
                     # dump annotations
-                    url = self._generate_url_dump_dataset(task_id)
+                    url = self._generate_url_dump_task_dataset(task_id)
                     for user, edata in list(expected.items()):
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -1147,3 +1171,108 @@ class TaskDumpUploadTest(_DbTestBase):
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+
+class ProjectDump(_DbTestBase):
+    def test_api_v1_export_dataset(self):
+        test_name = self._testMethodName
+        dump_formats = dm.views.get_export_formats()
+
+        expected = {
+            self.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
+                         'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True},
+            self.user: {'name': 'user', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
+                        'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True},
+            None: {'name': 'none', 'code': status.HTTP_401_UNAUTHORIZED, 'create code': status.HTTP_401_UNAUTHORIZED,
+                   'accept code': status.HTTP_401_UNAUTHORIZED, 'file_exists': False},
+        }
+
+        with TestDir() as test_dir:
+            for dump_format in dump_formats:
+                if not dump_format.ENABLED or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
+                    continue
+                dump_format_name = dump_format.DISPLAY_NAME
+                with self.subTest(format=dump_format_name):
+                    project = self._create_project(projects['main'])
+                    pid = project['id']
+                    images = self._generate_task_images(3)
+                    tasks['task in project #1']['project_id'] = pid
+                    self._create_task(tasks['task in project #1'], images)
+                    images = self._generate_task_images(3, 3)
+                    tasks['task in project #2']['project_id'] = pid
+                    self._create_task(tasks['task in project #2'], images)
+                    url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
+
+                    for user, edata in list(expected.items()):
+                        user_name = edata['name']
+                        file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
+                        data = {
+                            "format": dump_format_name,
+                        }
+                        response = self._get_request_with_data(url, data, user)
+                        self.assertEqual(response.status_code, edata["accept code"])
+                        response = self._get_request_with_data(url, data, user)
+                        self.assertEqual(response.status_code, edata["create code"])
+                        data = {
+                            "format": dump_format_name,
+                            "action": "download",
+                        }
+                        response = self._get_request_with_data(url, data, user)
+                        self.assertEqual(response.status_code, edata["code"])
+                        if response.status_code == status.HTTP_200_OK:
+                            content = BytesIO(b"".join(response.streaming_content))
+                            with open(file_zip_name, "wb") as f:
+                                f.write(content.getvalue())
+                        self.assertEqual(response.status_code, edata['code'])
+                        self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+
+    def test_api_v1_export_annotatios(self):
+        test_name = self._testMethodName
+        dump_formats = dm.views.get_export_formats()
+
+        expected = {
+            self.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
+                         'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True},
+            self.user: {'name': 'user', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
+                        'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True},
+            None: {'name': 'none', 'code': status.HTTP_401_UNAUTHORIZED, 'create code': status.HTTP_401_UNAUTHORIZED,
+                   'accept code': status.HTTP_401_UNAUTHORIZED, 'file_exists': False},
+        }
+
+        with TestDir() as test_dir:
+            for dump_format in dump_formats:
+                if not dump_format.ENABLED or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
+                    continue
+                dump_format_name = dump_format.DISPLAY_NAME
+                with self.subTest(format=dump_format_name):
+                    project = self._create_project(projects['main'])
+                    pid = project['id']
+                    images = self._generate_task_images(3)
+                    tasks['task in project #1']['project_id'] = pid
+                    self._create_task(tasks['task in project #1'], images)
+                    images = self._generate_task_images(3, 3)
+                    tasks['task in project #2']['project_id'] = pid
+                    self._create_task(tasks['task in project #2'], images)
+                    url = self._generate_url_dump_project_annotations(project['id'], dump_format_name)
+
+                    for user, edata in list(expected.items()):
+                        user_name = edata['name']
+                        file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
+                        data = {
+                            "format": dump_format_name,
+                        }
+                        response = self._get_request_with_data(url, data, user)
+                        self.assertEqual(response.status_code, edata["accept code"])
+                        response = self._get_request_with_data(url, data, user)
+                        self.assertEqual(response.status_code, edata["create code"])
+                        data = {
+                            "format": dump_format_name,
+                            "action": "download",
+                        }
+                        response = self._get_request_with_data(url, data, user)
+                        self.assertEqual(response.status_code, edata["code"])
+                        if response.status_code == status.HTTP_200_OK:
+                            content = BytesIO(b"".join(response.streaming_content))
+                            with open(file_zip_name, "wb") as f:
+                                f.write(content.getvalue())
+                        self.assertEqual(response.status_code, edata['code'])
+                        self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])

@@ -20,7 +20,7 @@ export interface Contours {
 }
 
 export interface ImgProc {
-    hist: () => HistogramEqualization
+    hist: () => HistogramEqualization;
 }
 
 export class OpenCVWrapper {
@@ -41,10 +41,6 @@ export class OpenCVWrapper {
         const contentLength = response.headers.get('Content-Length');
         const { body } = response;
 
-        if (contentLength === null) {
-            throw new Error('Content length is null, but necessary');
-        }
-
         if (body === null) {
             throw new Error('Response body is null, but necessary');
         }
@@ -64,7 +60,9 @@ export class OpenCVWrapper {
             if (value instanceof Uint8Array) {
                 decodedScript += decoder.decode(value);
                 receivedLength += value.length;
-                const percentage = (receivedLength * 100) / +(contentLength as string);
+                // Cypress workaround: content-length is always zero in cypress, it is done optional here
+                // Just progress bar will be disabled
+                const percentage = contentLength ? (receivedLength * 100) / +(contentLength as string) : 0;
                 onProgress(+percentage.toFixed(0));
             }
         }
