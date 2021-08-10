@@ -945,12 +945,13 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
             ext_per_task[task.id] = FrameProvider.VIDEO_FRAME_EXT if is_video else ''
             if self._dimension == DimensionType.DIM_3D:
                 def image_maker_factory(task):
+                    images_query = task.data.images.prefetch_related()
                     def _make_image(i, **kwargs):
                         loader = osp.join(
                             task.data.get_upload_dirname(), kwargs['path'],
                         )
                         related_images = []
-                        image = Img.objects.get(id=i)
+                        image = images_query.get(id=i)
                         for i in image.related_files.all():
                             path = osp.realpath(str(i.path))
                             if osp.isfile(path):
