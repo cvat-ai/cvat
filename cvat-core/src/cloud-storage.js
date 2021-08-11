@@ -32,6 +32,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 manifest_path: undefined,
+                manifest_set: undefined,
             };
 
             for (const property in data) {
@@ -206,7 +207,7 @@
                     manifestPath: {
                         get: () => data.manifest_path,
                         set: (value) => {
-                            if (typeof value !== 'string') {
+                            if (typeof value === 'string') {
                                 data.manifest_path = value;
                             } else {
                                 throw new ArgumentError('Value must be a string');
@@ -302,6 +303,28 @@
                      */
                     updatedDate: {
                         get: () => data.updated_date,
+                    },
+                    /**
+                     * @name manifests
+                     * @type {string[]}
+                     * @memberof module:API.cvat.classes.CloudStorage
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    manifests: {
+                        get: () => data.manifest_set,
+                        set: (manifests) => {
+                            if (Array.isArray(manifests)) {
+                                for (const elem of manifests) {
+                                    if (typeof elem !== 'string') {
+                                        throw new ArgumentError('Each element of the manifests array must be a string');
+                                    }
+                                }
+                                data.manifest_set = manifests;
+                            } else {
+                                throw new ArgumentError('Value must be an array');
+                            }
+                        },
                     },
                 }),
             );
@@ -409,6 +432,10 @@
                 initialData.credentials_type = this.credentialsType;
             }
 
+            if (this.manifests) {
+                initialData.manifest_set = this.manifests;
+            }
+
             const cloudStorageData = {
                 ...initialData,
                 ...prepareOptionalFields(this),
@@ -424,6 +451,7 @@
             credentials_type: this.credentialsType,
             provider_type: this.providerType,
             resource: this.resourceName,
+            manifest_set: this.manifests,
         };
 
         const cloudStorageData = {
