@@ -169,14 +169,75 @@ context('Appearance features', () => {
         });
 
         it('"Selected opacity" slider now defines opacity level of shapes being drawn.', () => {
-            cy.interactControlButton('draw-rectangle');
-            cy.get('.cvat-draw-rectangle-popover-visible').contains('button', 'Shape').click();
-            cy.get('.cvat-canvas-container')
-                .click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY + 400);
-            cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'fill-opacity', 0);
-            cy.get('.cvat-appearance-selected-opacity-slider').click('right')
-            cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'fill-opacity', 1);
-            cy.get('body').type('{Esc}');
+            function testDrawShapeCheckOpacity({ shape, drawingMethod, shapeType, fillOpacityBefore, fillOpacityAfter, opacityBefore, opacityAfter }) {
+                cy.interactControlButton(`draw-${shape}`);
+                cy.get(`.cvat-draw-${shape}-popover-visible`).within(() => {
+                    if (drawingMethod) {
+                        cy.contains('.ant-radio-wrapper', drawingMethod).click();
+                    }
+                    cy.contains('button', shapeType).click();
+                });
+                cy.get('.cvat-canvas-container').click(100, 450);
+                if (fillOpacityBefore != null || fillOpacityAfter != null) {
+                    cy.get('.cvat-appearance-selected-opacity-slider').click('left');
+                    cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'fill-opacity', fillOpacityBefore);
+                    cy.get('.cvat-appearance-selected-opacity-slider').click('right');
+                    cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'fill-opacity', fillOpacityAfter);
+                } else if (opacityBefore != null || opacityAfter != null) {
+                    cy.get('.cvat-appearance-selected-opacity-slider').click('left');
+                    cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'opacity', opacityBefore);
+                    cy.get('.cvat-appearance-selected-opacity-slider').click('right');
+                    cy.get('.cvat_canvas_shape_drawing').should('have.attr', 'opacity', opacityAfter);
+                } else {
+                    cy.get('.cvat_canvas_shape_drawing').should('not.have.attr', 'opacity');
+                    cy.get('.cvat_canvas_shape_drawing').should('not.have.attr', 'fill-opacity');
+                }
+                cy.get('body').type('{Esc}');
+            }
+            // affect opacity level
+            testDrawShapeCheckOpacity({
+                shape: 'rectangle',
+                drawingMethod: 'By 2 Points',
+                shapeType: 'Shape',
+                fillOpacityBefore: 0,
+                fillOpacityAfter: 1,
+            });
+            // not affect opacity level
+            testDrawShapeCheckOpacity({
+                shape: 'rectangle',
+                drawingMethod: 'By 4 Points',
+                shapeType: 'Shape',
+                opacityBefore: 0,
+                opacityAfter: 0,
+            });
+            // not affect opacity level
+            testDrawShapeCheckOpacity({
+                shape: 'polyline',
+                shapeType: 'Shape',
+                fillOpacityBefore: 0,
+                fillOpacityAfter: 0,
+            });
+            // not affect opacity level
+            testDrawShapeCheckOpacity({
+                shape: 'points',
+                shapeType: 'Shape',
+                opacityBefore: 0,
+                opacityAfter: 0,
+            });
+            // affect opacity level
+            testDrawShapeCheckOpacity({
+                shape: 'cuboid',
+                drawingMethod: 'From rectangle',
+                shapeType: 'Shape',
+                fillOpacityBefore: 0,
+                fillOpacityAfter: 1,
+            });
+            // not have 'fill-opacity' or 'opacity' attributes
+            testDrawShapeCheckOpacity({
+                shape: 'cuboid',
+                drawingMethod: 'By 4 Points',
+                shapeType: 'Shape',
+            });
         });
     });
 });
