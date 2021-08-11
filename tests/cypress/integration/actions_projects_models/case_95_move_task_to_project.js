@@ -11,6 +11,10 @@ context('Move a task to a project.', () => {
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
+        nameSecond: `Case ${caseID} second`,
+        labelSecond: 'Car',
+        attrNameSecons: 'Color',
+        attrValueSecond: 'Red',
     };
 
     const project = {
@@ -37,6 +41,8 @@ context('Move a task to a project.', () => {
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, task.name, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.goToTaskList();
+        cy.createAnnotationTask(task.nameSecond, task.labelSecond, task.attrNameSecons, task.attrValueSecond, archiveName);
     });
 
     beforeEach(() => {
@@ -58,9 +64,12 @@ context('Move a task to a project.', () => {
             cy.get('.cvat-tasks-list-item').should('not.exist');
             cy.goToTaskList();
             cy.movingTask(task.name, project.name, task.label, project.label);
+            // Check issue 3403
+            cy.goToTaskList();
+            cy.movingTask(task.nameSecond, project.name, task.labelSecond, project.label);
             cy.goToProjectsList();
             cy.openProject(project.name);
-            cy.get('.cvat-tasks-list-item').should('exist');
+            cy.get('.cvat-tasks-list-item').should('exist').and('have.length', 2);
         });
 
         it('Move a task from task.', () => {
