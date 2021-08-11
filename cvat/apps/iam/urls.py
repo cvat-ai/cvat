@@ -10,7 +10,7 @@ from rest_auth.views import (
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
 from allauth.account import app_settings as allauth_settings
 
-from cvat.apps.auth.views import SigningView, RegisterViewEx
+from cvat.apps.iam.views import SigningView, RegisterViewEx
 
 urlpatterns = [
     path('login', LoginView.as_view(), name='rest_login'),

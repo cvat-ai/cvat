@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 class AuthConfig(AppConfig):
-    name = 'auth'
+    name = 'iam'
 
     def ready(self):
         from . import signals # pylint: disable=unused-import

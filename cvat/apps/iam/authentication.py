@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from . import signature
 from django.core import signing
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication

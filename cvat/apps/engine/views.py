@@ -39,7 +39,6 @@ from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.auth import auth
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer

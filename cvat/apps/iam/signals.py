@@ -59,5 +59,6 @@ elif settings.DJANGO_AUTH_TYPE == 'LDAP':
         user.save()
         user.groups.set(user_groups)
 
-    # Map groups from LDAP to roles
+    # Map groups from LDAP to roles, convert a user to super user if he/she
+    # has an admin group.
     django_auth_ldap.backend.populate_user.connect(create_user)

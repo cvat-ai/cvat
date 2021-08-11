@@ -103,7 +103,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cvat.apps.auth',
+    'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
@@ -137,8 +137,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.auth.TokenAuthenticationEx',
-        'cvat.apps.auth.auth.SignatureAuthentication',
+        'cvat.apps.iam.TokenAuthenticationEx',
+        'cvat.apps.iam.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
     ],
@@ -172,7 +172,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 
 REST_AUTH_SERIALIZERS = {
-    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.auth.serializers.PasswordResetSerializerEx',
+    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
