@@ -4,7 +4,7 @@
 
 import { AnyAction } from 'redux';
 import {
-    GridColor, ColorBy, SettingsState, BlockMode,
+    GridColor, ColorBy, SettingsState, ToolsBlockerState,
 } from 'reducers/interfaces';
 
 export enum SettingsActionTypes {
@@ -283,11 +283,11 @@ export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): Any
     };
 }
 
-export function switchBlockMode(blockMode: BlockMode): AnyAction {
+export function switchBlockMode(toolsBlockerState: ToolsBlockerState): AnyAction {
     return {
         type: SettingsActionTypes.SWITCH_BLOCK_MODE,
         payload: {
-            blockMode,
+            toolsBlockerState,
         },
     };
 }

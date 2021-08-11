@@ -25,7 +25,7 @@ import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, Model, ObjectType, ShapeType, BlockMode,
+    CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -56,7 +56,8 @@ interface StateToProps {
     curZOrder: number;
     aiToolsRef: MutableRefObject<any>;
     defaultApproxPolyAccuracy: number;
-    blockMode: BlockMode;
+    toolsBlockerState: ToolsBlockerState;
+    activeControl: ActiveControl;
 }
 
 interface DispatchToProps {
@@ -64,7 +65,7 @@ interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
-    onSwitchBlockMode(blockMode: BlockMode):void;
+    onSwitchBlockMode(toolsBlockerState: ToolsBlockerState):void;
 }
 
 const core = getCore();
@@ -78,7 +79,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { instance: canvasInstance, activeControl } = annotation.canvas;
     const { models } = state;
     const { interactors, detectors, trackers } = models;
-    const { blockMode } = state.settings.workspace;
+    const { toolsBlockerState } = state.settings.workspace;
 
     return {
         interactors,
@@ -94,7 +95,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         curZOrder: annotation.annotations.zLayer.cur,
         aiToolsRef: annotation.aiToolsRef,
         defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
-        blockMode,
+        toolsBlockerState,
+        activeControl,
     };
 }
 
@@ -206,6 +208,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             shapeType: ShapeType.POLYGON,
                             points: this.interaction.latestResult.flat(),
                         },
+                        onChangeBlockState: this.onChangeBlockState,
                     });
                 });
             }
@@ -287,6 +290,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         shapeType: ShapeType.POLYGON,
                         points: this.interaction.latestResult.flat(),
                     },
+                    onChangeBlockState: this.onChangeBlockState,
                 });
             }
 
@@ -407,6 +411,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({
             activeTracker: trackers.filter((tracker: Model) => tracker.id === value)[0],
         });
+    };
+
+    private onChangeBlockState = (event:string):void => {
+        const { activeControl, onSwitchBlockMode } = this.props;
+        if ([ActiveControl.AI_TOOLS].includes(activeControl) && event === 'keydown') {
+            onSwitchBlockMode({ algorithmsLocked: true });
+        } else if ([ActiveControl.AI_TOOLS].includes(activeControl) && event === 'keyup') {
+            onSwitchBlockMode({ algorithmsLocked: false });
+        }
     };
 
     private constructFromPoints(points: number[][]): void {
@@ -697,11 +710,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onClick={() => {
                                 this.setState({ mode: 'interaction' });
 
+                                const { onSwitchBlockMode, toolsBlockerState } = this.props;
+                                if (!toolsBlockerState.buttonVisible) {
+                                    onSwitchBlockMode({ buttonVisible: true, algorithmsLocked: false });
+                                }
+
                                 if (activeInteractor) {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
                                         shapeType: 'points',
                                         enabled: true,
+                                        onChangeBlockState: this.onChangeBlockState,
                                         ...activeInteractor.params.canvas,
                                     });
 
@@ -786,11 +805,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     type='card'
                     tabBarGutter={8}
                     onChange={(key:string) => {
-                        const { onSwitchBlockMode, blockMode } = this.props;
-                        if (key === 'interactors' && !blockMode.showButton) {
-                            onSwitchBlockMode({ showButton: true });
-                        } else if (blockMode.showButton) {
-                            onSwitchBlockMode({ showButton: false });
+                        const { onSwitchBlockMode, toolsBlockerState } = this.props;
+                        if (key === 'interactors' && !toolsBlockerState.buttonVisible) {
+                            onSwitchBlockMode({ buttonVisible: !toolsBlockerState.buttonVisible });
+                        } else if (toolsBlockerState.buttonVisible) {
+                            onSwitchBlockMode({ buttonVisible: false });
                         }
                     }}
                 >

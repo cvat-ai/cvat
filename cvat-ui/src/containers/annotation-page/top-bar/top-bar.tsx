@@ -30,7 +30,7 @@ import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-ba
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl, BlockMode,
+    CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl, ToolsBlockerState,
 } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { switchBlockMode } from 'actions/settings-actions';
@@ -50,7 +50,7 @@ interface StateToProps {
     redoAction?: string;
     autoSave: boolean;
     autoSaveInterval: number;
-    blockMode: BlockMode;
+    toolsBlockerState: ToolsBlockerState;
     workspace: Workspace;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
@@ -74,7 +74,7 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
-    onSwitchBlockMode(blockMode: BlockMode): void;
+    onSwitchBlockMode(toolsBlockerState: ToolsBlockerState): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -95,7 +95,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             player: { frameSpeed, frameStep },
-            workspace: { autoSave, autoSaveInterval, blockMode },
+            workspace: { autoSave, autoSaveInterval, toolsBlockerState },
         },
         shortcuts: { keyMap, normalizedKeyMap },
         plugins: { list },
@@ -116,7 +116,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
         autoSave,
         autoSaveInterval,
-        blockMode,
+        toolsBlockerState,
         workspace,
         keyMap,
         normalizedKeyMap,
@@ -171,8 +171,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(getPredictionsAsync());
             }
         },
-        onSwitchBlockMode(blockMode: BlockMode):void{
-            dispatch(switchBlockMode(blockMode));
+        onSwitchBlockMode(toolsBlockerState: ToolsBlockerState):void{
+            dispatch(switchBlockMode(toolsBlockerState));
         },
     };
 }
@@ -440,32 +440,22 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     private onSwitchBlockMode = (): void => {
         const {
-            blockMode, onSwitchBlockMode, canvasInstance, activeControl,
+            toolsBlockerState, onSwitchBlockMode, canvasInstance, activeControl,
         } = this.props;
         if (canvasInstance instanceof Canvas) {
-            if (!blockMode.enabled && activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
+            if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
                 canvasInstance.interact({
                     allowRemoveOnlyLast: true,
-                    crosshair: false,
+                    crosshair: toolsBlockerState.algorithmsLocked,
                     enableSliding: true,
-                    enableThreshold: false,
-                    enabled: true,
-                    minPosVertices: 1,
-                    shapeType: 'points',
-                });
-            } else if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
-                canvasInstance.interact({
-                    allowRemoveOnlyLast: true,
-                    crosshair: true,
-                    enableSliding: true,
-                    enableThreshold: true,
+                    enableThreshold: toolsBlockerState.algorithmsLocked,
                     enabled: true,
                     minPosVertices: 1,
                     shapeType: 'points',
                 });
             }
         }
-        onSwitchBlockMode({ enabled: !blockMode.enabled });
+        onSwitchBlockMode({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
     };
 
     private onURLIconClick = (): void => {

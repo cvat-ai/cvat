@@ -19,7 +19,7 @@ import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
-    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, BlockMode,
+    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -47,7 +47,7 @@ interface Props {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     frameData: any;
-    blockMode: BlockMode;
+    toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
 }
 
@@ -57,7 +57,7 @@ interface DispatchToProps {
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
-    onSwitchBlockMode(blockMode: BlockMode):void;
+    onSwitchBlockMode(blockMode: ToolsBlockerState):void;
 }
 
 interface State {
@@ -91,7 +91,7 @@ function mapStateToProps(state: CombinedState): Props {
             },
         },
         settings: {
-            workspace: { defaultApproxPolyAccuracy, blockMode },
+            workspace: { defaultApproxPolyAccuracy, toolsBlockerState },
         },
     } = state;
 
@@ -106,7 +106,7 @@ function mapStateToProps(state: CombinedState): Props {
         states,
         frame,
         frameData,
-        blockMode,
+        toolsBlockerState,
     };
 }
 
@@ -150,7 +150,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { approxPolyAccuracy } = this.state;
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, blockMode, onSwitchBlockMode, activeControl,
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, toolsBlockerState, onSwitchBlockMode, activeControl,
         } = this.props;
 
         if (!prevProps.isActivated && isActivated) {
@@ -179,13 +179,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 });
             }
         }
-        const blockModeChanged = prevProps.blockMode.enabled !== blockMode.enabled;
+        const blockModeChanged = prevProps.toolsBlockerState.algorithmsLocked !== toolsBlockerState.algorithmsLocked;
         const currentToolHasBlockMode = [ActiveControl.AI_TOOLS].includes(activeControl);
         if (blockModeChanged && isActivated && this.activeTool) {
             this.activeTool.switchBlockMode();
         } else if (blockModeChanged && !isActivated && this.activeTool && !currentToolHasBlockMode) {
             this.activeTool.switchBlockMode(false);
-            onSwitchBlockMode({ enabled: false });
+            onSwitchBlockMode({ algorithmsLocked: false });
         }
     }
 
@@ -198,7 +198,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private interactionListener = async (e: Event): Promise<void> => {
         const { approxPolyAccuracy } = this.state;
         const {
-            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance, blockMode,
+            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance, toolsBlockerState,
         } = this.props;
         const { activeLabelID } = this.state;
         if (!isActivated || !this.activeTool) {
@@ -211,9 +211,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
         try {
             if (shapesUpdated) {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints, blockMode.enabled ? 0 : threshold);
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints,
+                    toolsBlockerState.algorithmsLocked ? 0 : threshold);
                 const [x, y] = this.latestPoints.slice(-2);
-                if (blockMode.enabled) {
+                if (toolsBlockerState.algorithmsLocked) {
                     // disable approximation for lastest two points to disable fickering
                     this.latestPoints.splice(this.latestPoints.length - 2, 2);
                 }
@@ -229,12 +230,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         shapeType: ShapeType.POLYGON,
                         points: points.flat(),
                     },
+                    onChangeBlockState: this.onChangeBlockState,
                 });
             }
 
             if (isDone) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints, blockMode.enabled ? 0 : threshold);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints,
+                    toolsBlockerState.algorithmsLocked ? 0 : threshold);
                 const points = openCVWrapper.contours.approxPoly(
                     finalPoints,
                     thresholdFromAccuracy(approxPolyAccuracy),
@@ -255,6 +258,25 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 description: error.toString(),
                 message: 'OpenCV.js processing error occured',
                 className: 'cvat-notification-notice-opencv-processing-error',
+            });
+        }
+    };
+
+    private onChangeBlockState = (event:string, thresholdWasModified: boolean):void => {
+        const {
+            activeControl, toolsBlockerState, onSwitchBlockMode, canvasInstance,
+        } = this.props;
+        if ([ActiveControl.OPENCV_TOOLS].includes(activeControl) && event === 'keyup' && !thresholdWasModified) {
+            onSwitchBlockMode({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
+            canvasInstance.interact({
+                allowRemoveOnlyLast: true,
+                crosshair: toolsBlockerState.algorithmsLocked,
+                enableSliding: true,
+                enableThreshold: toolsBlockerState.algorithmsLocked,
+                enabled: true,
+                minPosVertices: 1,
+                shapeType: 'points',
+                onChangeBlockState: this.onChangeBlockState,
             });
         }
     };
@@ -392,11 +414,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                     onInteractionStart(this.activeTool, activeLabelID);
                                     canvasInstance.interact({
                                         enabled: true,
+                                        onChangeBlockState: this.onChangeBlockState,
                                         ...this.activeTool.params.canvas,
                                     });
-                                    const { onSwitchBlockMode, blockMode } = this.props;
-                                    if (!blockMode.showButton) {
-                                        onSwitchBlockMode({ showButton: true });
+                                    const { onSwitchBlockMode, toolsBlockerState } = this.props;
+                                    if (!toolsBlockerState.buttonVisible) {
+                                        onSwitchBlockMode({ buttonVisible: true, algorithmsLocked: false });
                                     }
                                 }}
                             >

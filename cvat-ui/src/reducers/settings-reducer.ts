@@ -32,9 +32,9 @@ const defaultState: SettingsState = {
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
         defaultApproxPolyAccuracy: 9,
-        blockMode: {
-            enabled: false,
-            showButton: false,
+        toolsBlockerState: {
+            algorithmsLocked: false,
+            buttonVisible: false,
         },
     },
     player: {
@@ -296,7 +296,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 workspace: {
                     ...state.workspace,
-                    blockMode: { ...state.workspace.blockMode, ...action.payload.blockMode },
+                    toolsBlockerState: { ...state.workspace.toolsBlockerState, ...action.payload.toolsBlockerState },
                 },
             };
         }

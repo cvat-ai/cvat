@@ -9,10 +9,6 @@ import {
     translateToSVG, PropType, stringifyPoints, translateToCanvas,
 } from './shared';
 
-import { getCVATStore } from '../../../cvat-ui/src/cvat-store';
-import { switchBlockMode } from '../../../cvat-ui/src/actions/settings-actions';
-import { ActiveControl } from '../../../cvat-ui/src/reducers/interfaces';
-
 import {
     InteractionData, InteractionResult, Geometry, Configuration,
 } from './canvasModel';
@@ -148,14 +144,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         _e.stopPropagation();
                         self.remove();
                         this.shapesWereUpdated = true;
-                        const shouldRiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self,
                         );
                         if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
                             this.interactionShapes[0].style({ visibility: '' });
                         }
-                        if (shouldRiseEvent) {
+                        if (this.shouldRaiseEvent(_e.ctrlKey)) {
                             this.onInteraction(this.prepareResult(), true, false);
                         }
                     });
@@ -424,33 +419,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 }
             }
         });
+
         window.addEventListener('keyup', (e: KeyboardEvent): void => {
-            if (!this.checkCursorPosition()) {
-                if (e.keyCode === 17) {
-                    const store = getCVATStore();
-                    const state = store.getState();
-                    const {
-                        settings: {
-                            workspace: {
-                                blockMode,
-                            },
-                        },
-                        annotation: {
-                            canvas: {
-                                activeControl,
-                            },
-                        },
-                    } = state;
-                    if ([ActiveControl.AI_TOOLS].includes(activeControl)) {
-                        // on interactors
-                        this.interactBlockMode(false, false);
-                    } else if ([ActiveControl.OPENCV_TOOLS].includes(activeControl) && !this.thresholdWasModified) {
-                        // on scissors
-                        this.thresholdWasModified = false;
-                        this.interactBlockMode(!blockMode.enabled, true);
-                    }
+            if (this.interactionData.enabled && e.keyCode === 17) {
+                if (this.interactionData.onChangeBlockState) {
+                    this.interactionData.onChangeBlockState('keyup', this.thresholdWasModified);
                 }
-                if (e.keyCode === 17 && this.shouldRaiseEvent(false)) {
+                if (this.shouldRaiseEvent(false)) {
                     // 17 is ctrl
                     this.onInteraction(this.prepareResult(), true, false);
                 }
@@ -458,64 +433,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         window.addEventListener('keydown', (e: KeyboardEvent): void => {
-            if (!this.checkCursorPosition()) {
-                if (e.keyCode === 17) {
-                    const store = getCVATStore();
-                    const state = store.getState();
-                    const {
-                        annotation: {
-                            canvas: {
-                                activeControl,
-                            },
-                        },
-                    } = state;
-                    if ([ActiveControl.AI_TOOLS].includes(activeControl)) {
-                        // on interactors
-                        this.interactBlockMode(true, false);
-                    }
-                    this.thresholdWasModified = false;
+            if (this.interactionData.enabled && e.keyCode === 17) {
+                if (this.interactionData.onChangeBlockState) {
+                    this.interactionData.onChangeBlockState('keydown', this.thresholdWasModified);
                 }
+                this.thresholdWasModified = false;
             }
         });
-    }
-
-    // eslint-disable-next-line class-methods-use-this
-    private interactBlockMode(enabled: boolean, canvasInteraction: boolean): void {
-        const store = getCVATStore();
-        const state = store.getState();
-        const {
-            annotation: {
-                canvas: {
-                    instance: canvasInstance,
-                },
-            },
-        } = state;
-        if (canvasInteraction && enabled) {
-            canvasInstance.interact({
-                allowRemoveOnlyLast: true,
-                crosshair: false,
-                enableSliding: true,
-                enableThreshold: false,
-                enabled: true,
-                minPosVertices: 1,
-                shapeType: 'points',
-            });
-        } else if (canvasInteraction) {
-            canvasInstance.interact({
-                allowRemoveOnlyLast: true,
-                crosshair: true,
-                enableSliding: true,
-                enableThreshold: true,
-                enabled: true,
-                minPosVertices: 1,
-                shapeType: 'points',
-            });
-        }
-        store.dispatch(switchBlockMode({ enabled }));
-    }
-
-    private checkCursorPosition(): boolean {
-        return this.cursorPosition.x === 0 && this.cursorPosition.y === 0;
     }
 
     public transform(geometry: Geometry): void {
