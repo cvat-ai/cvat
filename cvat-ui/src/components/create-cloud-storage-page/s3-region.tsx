@@ -14,11 +14,10 @@ import consts from '../../consts';
 
 const { Option } = Select;
 interface Props {
+    selectedRegion: undefined | string;
     onSelectRegion: any;
     internalCommonProps: any;
 }
-
-consts.DEFAULT_AWS_S3_REGIONS.map((v) => v);
 
 function prepareDefaultRegions(): Map<string, string> {
     const temp = new Map<string, string>();
@@ -29,7 +28,7 @@ function prepareDefaultRegions(): Map<string, string> {
 }
 
 export default function S3Region(props: Props): JSX.Element {
-    const { onSelectRegion, internalCommonProps } = props;
+    const { selectedRegion, onSelectRegion, internalCommonProps } = props;
     const [regions, setRegions] = useState<Map<string, string>>(prepareDefaultRegions());
     const [newRegionKey, setNewRegionKey] = useState<string>('');
     const [newRegionName, setNewRegionName] = useState<string>('');
@@ -37,9 +36,15 @@ export default function S3Region(props: Props): JSX.Element {
 
     useEffect(() => {
         if (regions) {
-            setRegionOptions(Array.from(regions.entries()).map(([key, value]): JSX.Element => (
-                <Option key={key} value={value}>{value}</Option>
-            )));
+            setRegionOptions(
+                Array.from(regions.entries()).map(
+                    ([key, value]): JSX.Element => (
+                        <Option key={key} value={value}>
+                            {value}
+                        </Option>
+                    ),
+                ),
+            );
         } else {
             setRegionOptions([]);
         }
@@ -68,6 +73,7 @@ export default function S3Region(props: Props): JSX.Element {
         >
             <Select
                 placeholder='Select region'
+                defaultValue={selectedRegion ? regions.get(selectedRegion) : undefined}
                 dropdownRender={(menu) => (
                     <div>
                         {menu}
@@ -88,14 +94,12 @@ export default function S3Region(props: Props): JSX.Element {
                             />
                             <Button
                                 type='link'
-                                style={
-                                    {
-                                        flex: 'none',
-                                        padding: '8px',
-                                        display: 'block',
-                                        cursor: 'pointer',
-                                    }
-                                }
+                                style={{
+                                    flex: 'none',
+                                    padding: '8px',
+                                    display: 'block',
+                                    cursor: 'pointer',
+                                }}
                                 onClick={handleAddingRegion}
                             >
                                 <PlusOutlined />
