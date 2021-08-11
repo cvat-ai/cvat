@@ -33,7 +33,6 @@ interface State {
     expandedKeys: string[];
     active: 'local' | 'share' | 'remote' | 'cloudStorage';
     cloudStorage: CloudStorage | null;
-    // resetCloudStorageState: boolean;
 }
 
 interface Props {
@@ -57,7 +56,6 @@ export class FileManager extends React.PureComponent<Props, State> {
                 cloudStorage: [],
             },
             cloudStorage: null,
-            // resetCloudStorageState: false,
             expandedKeys: [],
             active: 'local',
         };
@@ -114,7 +112,6 @@ export class FileManager extends React.PureComponent<Props, State> {
                 cloudStorage: [],
             },
             cloudStorage: null,
-            // resetCloudStorageState: true,
         });
     }
 
@@ -257,7 +254,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderCloudStorageSelector(): JSX.Element {
-        const { cloudStorage } = this.state; // resetCloudStorageState
+        const { cloudStorage } = this.state;
         return (
             <Tabs.TabPane
                 key='cloudStorage'
@@ -271,7 +268,6 @@ export class FileManager extends React.PureComponent<Props, State> {
                         this.setState({ cloudStorage: _cloudStorage });
                     }}
                     formRef={this.cloudStorageTabFormRef}
-                    // resetState={resetCloudStorageState}
                 />
             </Tabs.TabPane>
         );
