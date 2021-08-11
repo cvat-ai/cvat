@@ -84,6 +84,10 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
                     expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(intermediateShapeNumberPointsAfterChange);
                 });
             });
+            cy.get('.cvat-appearance-selected-opacity-slider').click('left');
+            cy.get('.cvat_canvas_interact_intermediate_shape').should('have.attr', 'fill-opacity', 0);
+            cy.get('.cvat-appearance-selected-opacity-slider').click('right');
+            cy.get('.cvat_canvas_interact_intermediate_shape').should('have.attr', 'fill-opacity', 1);
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
             cy.get('.cvat_canvas_shape').should('have.length', 2);
