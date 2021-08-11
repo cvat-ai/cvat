@@ -217,6 +217,13 @@ context('Appearance features', () => {
                 fillOpacityBefore: 0,
                 fillOpacityAfter: 0,
             });
+            // affect opacity level
+            testDrawShapeCheckOpacity({
+                shape: 'polygon',
+                shapeType: 'Shape',
+                fillOpacityBefore: 0,
+                fillOpacityAfter: 1,
+            });
             // not affect opacity level
             testDrawShapeCheckOpacity({
                 shape: 'points',
