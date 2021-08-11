@@ -20,15 +20,18 @@ Negative points should be placed outside the boundary of the object.
 In most cases specifying positive points alone is enough to build a polygon.
 A list of available out-of-the-box interactors is placed below.
 
-- Before you start, select the magic wand on the controls sidebar and go to the `Interactors` tab.
-  Then select a label for the polygon and a required DL model.
+- Before you start, select the `magic wand` on the controls sidebar and go to the `Interactors` tab.
+  Then select a label for the polygon and a required DL model. To view help about each of the
+  models, you can click the `Question mark` icon.
 
-  ![](/images/image114.jpg)
+  ![](/images/image114_detrac.jpg)
 
-- Click `Interact` to enter the interaction mode. Now you can place positive and/or negative points.
+- Click `Interact` to enter the interaction mode. Depending on the selected model,
+  the method of markup will also differ.
+  Now you can place positive and/or negative points. The [IOG](#inside-outside-guidance) model also uses a rectangle.
   Left click creates a positive point and right click creates a negative point.
-  `Deep extreme cut` model requires a minimum of 4 points. After you set 4 positive points,
-  a request will be sent to the server and when the process is complete a polygon will be created.
+  After placing the required number of points (the number is different depending on the model),
+  the request will be sent to the server and when the process is complete a polygon will be created.
   If you are not satisfied with the result, you can set additional points or remove points.
   To delete a point, hover over the point you want to delete, if the point can be deleted,
   it will enlarge and the cursor will turn into a cross, then left-click on the point.
@@ -40,6 +43,9 @@ A list of available out-of-the-box interactors is placed below.
 - In the process of drawing, you can select the number of points in the polygon using the switch.
 
   ![](/images/image224.jpg)
+
+- You can use the `Selected opacity` slider in the `Objects sidebar` to change the opacity of the polygon.
+  You can read more in the [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance) section.
 
 - To finish interaction, click on the `Done` button on the top panel or press `N` on your keyboard.
 

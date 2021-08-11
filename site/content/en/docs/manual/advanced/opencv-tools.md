@@ -41,6 +41,9 @@ displayed as a red square which is tied to the cursor.
 
   ![](/images/image224.jpg)
 
+- You can use the `Selected opacity` slider in the `Objects sidebar` to change the opacity of the polygon.
+  You can read more in the [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance) section.
+
 - Once all the points are placed, you can complete the creation of the object
   by clicking on the `Done` button on the top panel or press `N` on your keyboard.
   As a result, a polygon will be created (read more about the polygons in the [annotation with polygons](/docs/manual/advanced/annotation-with-polygons/)).
