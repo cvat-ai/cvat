@@ -31,7 +31,6 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypePC,
             };
             cy.exportTask(exportDatasetPCFormat);
-            cy.wait(2000) // Waiting for a full file download
             const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDatasetPCFormat.format.toLowerCase()}.*.zip$`);
             cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
                 if (fileName.match(regex)) {
@@ -47,7 +46,6 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypeVC,
             };
             cy.exportTask(exportDatasetVCFormat);
-            cy.wait(2000) // Waiting for a full file download
             const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDatasetVCFormat.format.toLowerCase()}.*.zip$`);
             cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
                 if (fileName.match(regex)) {

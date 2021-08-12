@@ -732,4 +732,5 @@ Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) =>
     cy.closeNotification('.cvat-notification-notice-export-task-start');
     cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
+    cy.wait(2000) // Waiting for a full file download
 });

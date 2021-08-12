@@ -37,7 +37,6 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                 format: dumpTypeVC,
             };
             cy.exportTask(exportAnnotation);
-
             const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportAnnotation.format.toLowerCase()}.*.zip$`);
             cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
                 if (fileName.match(regex)) {
@@ -55,7 +54,6 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                 archiveCustomeName: 'task_export_3d_annotation_custome_name_vc_format'
             };
             cy.exportTask(exportAnnotationRenameArchive);
-
             const regex = new RegExp(`^${exportAnnotationRenameArchive.archiveCustomeName}.zip$`);
             cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
                 if (fileName.match(regex)) {
