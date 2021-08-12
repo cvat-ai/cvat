@@ -34,9 +34,9 @@ function ExportDatasetModal(): JSX.Element {
     const instance = useSelector((state: CombinedState) => state.export.instance);
     const modalVisible = useSelector((state: CombinedState) => state.export.modalVisible);
     const dumpers = useSelector((state: CombinedState) => state.formats.annotationFormats.dumpers);
-    const {
-        tasks: taskExportActivities, projects: projectExportActivities,
-    } = useSelector((state: CombinedState) => state.export);
+    const { tasks: taskExportActivities, projects: projectExportActivities } = useSelector(
+        (state: CombinedState) => state.export,
+    );
 
     const initActivities = (): void => {
         if (instance instanceof core.classes.Project) {
@@ -62,19 +62,28 @@ function ExportDatasetModal(): JSX.Element {
         dispatch(exportActions.closeExportModal());
     };
 
-    const handleExport = useCallback((values: FormValues): void => {
-        // have to validate format before so it would not be undefined
-        dispatch(
-            exportDatasetAsync(instance, values.selectedFormat as string, values.customName ? `${values.customName}.zip` : '', values.saveImages),
-        );
-        closeModal();
-        Notification.info({
-            message: 'Dataset export started',
-            description: `Dataset export was started for ${instanceType} #${instance?.id}. ` +
-                'Download will start automaticly as soon as the dataset is ready.',
-            className: `cvat-notification-notice-export-${instanceType}-start`,
-        });
-    }, [instance?.id, instance instanceof core.classes.Project, instanceType]);
+    const handleExport = useCallback(
+        (values: FormValues): void => {
+            // have to validate format before so it would not be undefined
+            dispatch(
+                exportDatasetAsync(
+                    instance,
+                    values.selectedFormat as string,
+                    values.customName ? `${values.customName}.zip` : '',
+                    values.saveImages,
+                ),
+            );
+            closeModal();
+            Notification.info({
+                message: 'Dataset export started',
+                description:
+                    `Dataset export was started for ${instanceType} #${instance?.id}. ` +
+                    'Download will start automaticly as soon as the dataset is ready.',
+                className: `cvat-notification-notice-export-${instanceType}-start`,
+            });
+        },
+        [instance?.id, instance instanceof core.classes.Project, instanceType],
+    );
 
     return (
         <Modal
@@ -106,11 +115,7 @@ function ExportDatasetModal(): JSX.Element {
                     <Select placeholder='Select dataset format' className='cvat-modal-export-select'>
                         {dumpers
                             .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                            .filter(
-                                (dumper: any): boolean =>
-                                    !(instance instanceof core.classes.Task) ||
-                                    dumper.dimension === instance?.dimension,
-                            )
+                            .filter((dumper: any): boolean => dumper.dimension === instance?.dimension)
                             .map(
                                 (dumper: any): JSX.Element => {
                                     const pending = (activities || []).includes(dumper.name);
