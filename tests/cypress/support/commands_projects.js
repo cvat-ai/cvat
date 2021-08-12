@@ -78,7 +78,7 @@ Cypress.Commands.add('exportProject', ({ projectName, as, type, dumpType, archiv
         cy.get('.cvat-modal-export-project').find('[type="checkbox"]').should('not.be.checked').check();
     }
     if (archiveCustomeName) {
-        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-input').type(archiveCustomeName);
+        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
     }
     cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
