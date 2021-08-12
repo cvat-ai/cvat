@@ -1306,7 +1306,12 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
-            return HttpResponseBadRequest(str(ex))
+            # check that cloud storage was not deleted
+            if not storage.exists():
+                msg = 'The resource {} is no longer available. It may have been deleted'.format(storage.name)
+            else:
+                msg = str(ex)
+            return HttpResponseBadRequest(msg)
 
     @swagger_auto_schema(
         method='get',
@@ -1353,7 +1358,12 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
         except Exception as ex:
-            return HttpResponseBadRequest(str(ex))
+            # check that cloud storage was not deleted
+            if not storage.exists():
+                msg = 'The resource {} is no longer available. It may have been deleted'.format(storage.name)
+            else:
+                msg = str(ex)
+            return HttpResponseBadRequest(msg)
 
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(

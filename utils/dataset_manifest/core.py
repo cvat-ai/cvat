@@ -339,6 +339,10 @@ class _ManifestManager(ABC):
     def data(self):
         pass
 
+    @abstractmethod
+    def get_subset(self, subset_names):
+        pass
+
 class VideoManifestManager(_ManifestManager):
     def __init__(self, manifest_path):
         super().__init__(manifest_path)
@@ -402,7 +406,10 @@ class VideoManifestManager(_ManifestManager):
 
     @property
     def data(self):
-        return [self.video_name]
+        return (self.video_name)
+
+    def get_subset(self, subset_names):
+        raise NotImplementedError()
 
 #TODO: add generic manifest structure file validation
 class ManifestValidator:
@@ -484,4 +491,14 @@ class ImageManifestManager(_ManifestManager):
 
     @property
     def data(self):
-        return [f"{image['name']}{image['extension']}" for _, image in self]
+        return (f"{image['name']}{image['extension']}" for _, image in self)
+
+    def get_subset(self, subset_names):
+        return ({
+            'name': f"{image['name']}",
+            'extension': f"{image['extension']}",
+            'width': image['width'],
+            'height': image['height'],
+            'meta': image['meta'],
+            'checksum': f"{image['checksum']}"
+        } for _, image in self if f"{image['name']}{image['extension']}" in subset_names)
