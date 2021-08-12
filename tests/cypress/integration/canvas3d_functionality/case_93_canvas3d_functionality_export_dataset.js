@@ -52,6 +52,22 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                     cy.fixture(fileName).should('exist');
                 }
             });
+        });
+
+        it('Export as a dataset with renaming the archive.', () => {
+            const exportDatasetVCFormatRenameArchive = {
+                as: 'exportDatasetVCFormatRenameArchive',
+                type: 'dataset',
+                format: dumpTypeVC,
+                archiveCustomeName: 'task_export_3d_dataset_custome_name_vc_format'
+            };
+            cy.exportTask(exportDatasetVCFormatRenameArchive);
+            const regex = new RegExp(`^${exportDatasetVCFormatRenameArchive.archiveCustomeName}.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.fixture(fileName).should('exist');
+                }
+            });
             cy.removeAnnotations();
             cy.saveJob('PUT');
         });

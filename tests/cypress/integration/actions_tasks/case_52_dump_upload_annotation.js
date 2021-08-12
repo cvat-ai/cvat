@@ -66,7 +66,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Save job. Dump annotation with renaming an archive.', () => {
+        it('Save job. Dump annotation with renaming the archive.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
             const exportAnnotationRenameArchive = {
                 as: 'exportAnnotationsRenameArchive',

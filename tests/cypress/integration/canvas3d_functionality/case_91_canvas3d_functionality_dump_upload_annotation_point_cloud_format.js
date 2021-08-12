@@ -46,7 +46,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             });
         });
 
-        it('Export with "Point Cloud" format. Renaming an archive', () => {
+        it('Export with "Point Cloud" format. Renaming the archive', () => {
             const exportAnnotationRenameArchive = {
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',

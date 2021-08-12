@@ -41,7 +41,7 @@ context('Export task dataset.', () => {
             });
         });
 
-        it('Export a task as dataset with renaming a archive.', () => {
+        it('Export a task as dataset with renaming the archive.', () => {
             const exportDataset = {
                 as: 'exportDatasetRenameArchive',
                 type: 'dataset',
