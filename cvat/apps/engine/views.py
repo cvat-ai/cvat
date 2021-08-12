@@ -239,6 +239,8 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
     def get_serializer_class(self):
+        if self.request.path.endswith('tasks'):
+            return TaskSerializer
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
         if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
