@@ -50,7 +50,7 @@ anchor = "smart"
     weight = 50
     url = "https://cvat.org"
 [[menu.main]]
-	name = "GitHub"
+    name = "GitHub"
     weight = 60
     url = "https://github.com/openvinotoolkit/cvat"
     pre = "<i class='fab fa-github'></i>"
