@@ -42,7 +42,7 @@ Cypress.Commands.add('openProject', (projectName) => {
     cy.get('.cvat-project-details').should('exist');
 });
 
-Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 'success') => {
+Cypress.Commands.add('projectActions', (projectName) => {
     cy.contains('.cvat-projects-project-item-title', projectName)
         .parents('.cvat-projects-project-item-card')
         .within(() => {
@@ -50,6 +50,10 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
                 cy.get('[type="button"]').trigger('mouseover');
             });
         });
+});
+
+Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 'success') => {
+    cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Delete').click();
     cy.get('.cvat-modal-confirm-remove-project')
         .should('contain', `The project ${projectID} will be deleted`)
@@ -61,6 +65,25 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
     } else if (expectedResult === 'fail') {
         cy.get('.cvat-projects-project-item-card').should('not.have.css', 'opacity', '0.5');
     }
+});
+
+Cypress.Commands.add('exportProject', ({ projectName, as, type, dumpType, archiveCustomeName }) => {
+    cy.projectActions(projectName);
+    cy.intercept('GET', `/api/v1/projects/**/${type}**`).as(as);
+    cy.get('.cvat-project-actions-menu').contains('Export project dataset').click();
+    cy.get('.cvat-modal-export-project').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', dumpType).click();
+    cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
+    if (type === 'dataset') {
+        cy.get('.cvat-modal-export-project').find('[type="checkbox"]').should('not.be.checked').check();
+    }
+    if (archiveCustomeName) {
+        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    }
+    cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
+    cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
+    cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
+    cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
