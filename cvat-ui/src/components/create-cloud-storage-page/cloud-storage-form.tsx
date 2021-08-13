@@ -285,7 +285,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
             if (cloudStorageData.manifests) {
                 delete cloudStorageData.manifests;
-                cloudStorageData.manifest_set = formRef.current
+                cloudStorageData.manifests = formRef.current
                     .getFieldValue('manifests')
                     .map((manifest: any): string => manifest.name);
             }
