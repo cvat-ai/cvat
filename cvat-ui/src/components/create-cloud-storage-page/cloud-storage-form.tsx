@@ -73,24 +73,23 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState<boolean>(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState<boolean>(false);
 
-    const [manifestFiles, setManifestFiles] = useState<Map<string, string>>(new Map());
+    const [manifestNames, setManifestNames] = useState<string[]>([]);
     const maxManifestsCount = useRef<number>(5);
     const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState<boolean>(false);
 
-    const generateManifestId = (): string => `${manifestFiles.size}`;
-
     const updateManifestFields = (): void => {
-        const newManifestFormItems = [];
-        for (const [k, v] of manifestFiles) {
-            newManifestFormItems.push({
-                id: k,
-                name: v,
-            });
-        }
+        const newManifestFormItems = manifestNames.map((name, idx) => ({
+            id: idx,
+            name,
+        }));
         formRef.current?.setFieldsValue({
             manifests: [...newManifestFormItems],
         });
     };
+
+    useEffect(() => {
+        updateManifestFields();
+    }, [manifestNames]);
 
     useEffect(() => {
         if (limitingAddingManifestNotification) {
@@ -101,32 +100,28 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
     }, [limitingAddingManifestNotification]);
 
-    const handleUpdateManifestPath = (manifestName: string | undefined, manifestId: string): void => {
+    const handleUpdateManifestPath = (manifestName: string | undefined, manifestId: number): void => {
         if (manifestName !== undefined) {
-            setManifestFiles(manifestFiles.set(manifestId, manifestName));
+            setManifestNames(manifestNames.map((name, idx) => (idx !== manifestId ? name : manifestName)));
         }
     };
 
-    const handleDeleteManifestItem = (key: string): void => {
-        if (maxManifestsCount.current === manifestFiles.size && limitingAddingManifestNotification) {
+    const handleDeleteManifestItem = (key: number): void => {
+        if (maxManifestsCount.current === manifestNames.length && limitingAddingManifestNotification) {
             setLimitingAddingManifestNotification(false);
         }
-        const copyManifestFiles = manifestFiles;
-        copyManifestFiles.delete(key);
-        setManifestFiles(copyManifestFiles);
-        updateManifestFields();
+        setManifestNames(manifestNames.filter((name, idx) => idx !== key));
     };
 
     const handleAddManifestItem = (): void => {
-        if (maxManifestsCount.current <= manifestFiles.size) {
+        if (maxManifestsCount.current <= manifestNames.length) {
             setLimitingAddingManifestNotification(true);
         } else {
-            setManifestFiles(manifestFiles.set(generateManifestId(), ''));
-            updateManifestFields();
+            setManifestNames(manifestNames.concat(['']));
         }
     };
 
-    const renderManifest = (key: string, value: string): JSX.Element => (
+    const renderManifest = (key: number, value: string): JSX.Element => (
         <Form.Item key={key} shouldUpdate>
             {() => (
                 <Row justify='space-between' align='top'>
@@ -161,8 +156,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
     // eslint-disable-next-line arrow-body-style
     const renderManifests = () => {
-        return (): JSX.Element[] =>
-            Array.from(manifestFiles.entries()).map((item: any): JSX.Element => renderManifest(item[0], item[1]));
+        return (): JSX.Element[] => manifestNames.map((name, idx): JSX.Element => renderManifest(idx, name));
     };
 
     function initializeFields(): void {
@@ -177,13 +171,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         setProviderType(cloudStorage.providerType);
         setCredentialsType(cloudStorage.credentialsType);
 
-        // initialize manifests state
-        const newManifests = manifestFiles;
-        for (const manifest of cloudStorage.manifests) {
-            newManifests.set(generateManifestId(), manifest);
-        }
-        setManifestFiles(newManifests);
-        updateManifestFields();
+        setManifestNames([...cloudStorage.manifests]);
 
         if (cloudStorage.credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
             fieldsValue.account_name = fakeCredentialsData.accountName;
@@ -207,7 +195,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         if (cloudStorage) {
             initializeFields();
         } else {
-            setManifestFiles(new Map());
+            setManifestNames([]);
             setSelectedRegion(undefined);
             formRef.current?.resetFields();
         }
