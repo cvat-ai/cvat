@@ -573,7 +573,7 @@ class CredentialsTypeChoice(str, Enum):
 
 class Manifest(models.Model):
     filename = models.CharField(max_length=1024, default='manifest.jsonl')
-    cloud_storages = models.ManyToManyField('CloudStorage')
+    cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.CASCADE, null=True, related_name='manifests')
 
     def __str__(self):
         return '{}'.format(self.filename)

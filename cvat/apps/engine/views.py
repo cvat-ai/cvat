@@ -2,9 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import errno
 import io
 import os
 import os.path as osp
+import pytz
 import shutil
 import traceback
 import uuid
@@ -1277,18 +1279,19 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 'specific_attributes': db_storage.get_specific_attributes()
             }
             storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-            if not db_storage.manifest_set.count():
+            if not db_storage.manifests.count():
                 raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
             if not storage.is_object_exist(manifest_path):
-                import errno
                 raise FileNotFoundError(errno.ENOENT,
                     "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
 
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-            if not os.path.exists(full_manifest_path):
-                # or \ os.path.getmtime(full_manifest_path) < storage.get_file_last_modified(full_manifest_path):
-                # TODO: create sub dirs
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                # create sub dirs
+                if os.path.dirname(manifest_path):
+    	            os.makedirs(os.path.dirname(full_manifest_path), exist_ok=True)
                 storage.download_file(manifest_path, full_manifest_path)
             manifest = ImageManifestManager(full_manifest_path)
             # need to reset previon index
