@@ -2,5 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from . authentication import (TokenAuthenticationEx,
+# pylint: disable=unused-import
+from .authentication import (TokenAuthenticationEx,
     SignatureAuthentication)
+from .decorators import login_required

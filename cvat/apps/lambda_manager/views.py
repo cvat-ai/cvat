@@ -11,7 +11,6 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
-from cvat.apps.auth import auth
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
@@ -539,11 +538,7 @@ class FunctionViewSet(viewsets.ViewSet):
     lookup_field = 'func_id'
 
     def get_permissions(self):
-        http_method = self.request.method
         permissions = [IsAuthenticated]
-
-        if http_method in ["POST"]:
-            permissions.append(auth.TaskAccessPermission)
 
         return [perm() for perm in permissions]
 
@@ -578,11 +573,7 @@ class FunctionViewSet(viewsets.ViewSet):
 
 class RequestViewSet(viewsets.ViewSet):
     def get_permissions(self):
-        http_method = self.request.method
         permissions = [IsAuthenticated]
-
-        if http_method in ["POST", "DELETE"]:
-            permissions.append(auth.TaskChangePermission)
 
         return [perm() for perm in permissions]
 

@@ -85,10 +85,10 @@ services:
         aliases:
           - opa
     volumes:
-      - ./cvat/apps/auth/rules.rego:/rules.rego
+      - ./cvat/apps/iam/rules:/rules
     ports:
       - '8181:8181'
-    command: run --server --addr :8181 /rules.rego
+    command: run --server --addr :8181 /rules
 
 networks:
   default:

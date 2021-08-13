@@ -12,7 +12,7 @@ from drf_yasg import openapi
 from django.views.generic import RedirectView
 from django.conf import settings
 from cvat.apps.restrictions.views import RestrictionsViewSet
-from cvat.apps.authentication.decorators import login_required
+from cvat.apps.iam import login_required
 from cvat.apps.training.views import PredictView
 
 schema_view = get_schema_view(
@@ -71,6 +71,6 @@ urlpatterns = [
        schema_view.with_ui('redoc', cache_timeout=0)), name='schema-redoc'),
 
     # entry point for API
-    path('api/v1/auth/', include('cvat.apps.auth.urls')),
+    path('api/v1/auth/', include('cvat.apps.iam.urls')),
     path('api/v1/', include((router.urls, 'cvat'), namespace='v1'))
 ]
