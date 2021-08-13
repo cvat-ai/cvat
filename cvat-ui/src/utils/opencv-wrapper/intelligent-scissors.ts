@@ -138,11 +138,14 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                     const yDiff = prevY - curY;
                     if (xDiff !== 0 && yDiff !== 0) {
                         const pathLength = Math.sqrt((xDiff) ** 2 + (yDiff) ** 2);
+                        // absolute offset value
                         const pathOffsetValue = 0.4;
+                        // get how much absolute offset takes from path length
                         const pathOffsetRatio = pathOffsetValue / pathLength;
                         pathSegment.push((curX + offsetX) + xDiff * pathOffsetRatio,
                             (curY + offsetY) + yDiff * pathOffsetRatio);
                     } else {
+                        // in case points have the same coordinates just use constant offset
                         pathSegment.push(curX + offsetX + 0.25, curY + offsetY + 0.25);
                     }
                 }
