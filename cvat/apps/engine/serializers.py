@@ -893,7 +893,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         if delta_to_delete:
             instance.manifests.filter(filename__in=delta_to_delete).delete()
         if delta_to_create:
-            manifest_instances = [models.Manifest(filename=f, cloud_storage=instance.id) for f in delta_to_create]
+            manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
             models.Manifest.objects.bulk_create(manifest_instances)
         instance.save()
         return instance
