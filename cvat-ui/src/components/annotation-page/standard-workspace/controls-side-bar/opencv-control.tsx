@@ -265,7 +265,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
-    private onChangeBlockState = (event:string, thresholdWasModified: boolean):void => {
+    private onChangeToolsBlockerState = (event:string, thresholdWasModified: boolean):void => {
         const {
             activeControl, toolsBlockerState, onSwitchToolsBlockerState, canvasInstance,
         } = this.props;
@@ -275,7 +275,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 enabled: true,
                 crosshair: toolsBlockerState.algorithmsLocked,
                 enableThreshold: toolsBlockerState.algorithmsLocked,
-                onChangeBlockState: this.onChangeBlockState,
+                onChangeToolsBlockerState: this.onChangeToolsBlockerState,
             });
         }
     };
@@ -413,7 +413,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                     onInteractionStart(this.activeTool, activeLabelID);
                                     canvasInstance.interact({
                                         enabled: true,
-                                        onChangeBlockState: this.onChangeBlockState,
+                                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                                         ...this.activeTool.params.canvas,
                                     });
                                 }}

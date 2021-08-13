@@ -434,8 +434,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         window.addEventListener('keyup', (e: KeyboardEvent): void => {
             if (this.interactionData.enabled && e.keyCode === 17) {
-                if (this.interactionData.onChangeBlockState) {
-                    this.interactionData.onChangeBlockState('keyup', this.thresholdWasModified);
+                if (this.interactionData.onChangeToolsBlockerState) {
+                    this.interactionData.onChangeToolsBlockerState('keyup', this.thresholdWasModified);
                 }
                 if (this.shouldRaiseEvent(false)) {
                     // 17 is ctrl
@@ -446,8 +446,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         window.addEventListener('keydown', (e: KeyboardEvent): void => {
             if (this.interactionData.enabled && e.keyCode === 17) {
-                if (this.interactionData.onChangeBlockState) {
-                    this.interactionData.onChangeBlockState('keydown', this.thresholdWasModified);
+                if (this.interactionData.onChangeToolsBlockerState) {
+                    this.interactionData.onChangeToolsBlockerState('keydown', this.thresholdWasModified);
                 }
                 this.thresholdWasModified = false;
             }

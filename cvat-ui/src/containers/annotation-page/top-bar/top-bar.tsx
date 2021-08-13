@@ -438,20 +438,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         canvasInstance.draw({ enabled: false });
     };
 
-    private onSwitchBlockMode = (): void => {
+    private onSwitchToolsBlockerState = (): void => {
         const {
             toolsBlockerState, onSwitchToolsBlockerState, canvasInstance, activeControl,
         } = this.props;
         if (canvasInstance instanceof Canvas) {
             if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
                 canvasInstance.interact({
-                    allowRemoveOnlyLast: true,
-                    crosshair: toolsBlockerState.algorithmsLocked,
-                    enableSliding: true,
-                    enableThreshold: toolsBlockerState.algorithmsLocked,
                     enabled: true,
-                    minPosVertices: 1,
-                    shapeType: 'points',
+                    crosshair: toolsBlockerState.algorithmsLocked,
+                    enableThreshold: toolsBlockerState.algorithmsLocked,
                 });
             }
         }
@@ -713,7 +709,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                     onFinishDraw={this.onFinishDraw}
-                    onSwitchBlockMode={this.onSwitchBlockMode}
+                    onSwitchToolsBlockerState={this.onSwitchToolsBlockerState}
                     toolsBlockerState={toolsBlockerState}
                     jobInstance={jobInstance}
                     isTrainingActive={isTrainingActive}

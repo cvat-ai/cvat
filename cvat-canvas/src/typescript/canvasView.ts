@@ -1272,8 +1272,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
-            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape || !!data.onChangeBlockState)) {
-                if (!data.intermediateShape || !!data.onChangeBlockState) {
+            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape || !!data.onChangeToolsBlockerState)) {
+                if (!data.intermediateShape || !!data.onChangeToolsBlockerState) {
                     this.canvas.style.cursor = 'crosshair';
                     this.mode = Mode.INTERACT;
                 }

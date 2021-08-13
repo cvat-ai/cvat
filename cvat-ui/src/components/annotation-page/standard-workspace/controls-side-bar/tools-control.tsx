@@ -208,7 +208,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             shapeType: ShapeType.POLYGON,
                             points: this.interaction.latestResult.flat(),
                         },
-                        onChangeBlockState: this.onChangeBlockState,
+                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                     });
                 });
             }
@@ -290,7 +290,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         shapeType: ShapeType.POLYGON,
                         points: this.interaction.latestResult.flat(),
                     },
-                    onChangeBlockState: this.onChangeBlockState,
+                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
             }
 
@@ -413,7 +413,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         });
     };
 
-    private onChangeBlockState = (event:string):void => {
+    private onChangeToolsBlockerState = (event:string):void => {
         const { isActivated, onSwitchToolsBlockerState } = this.props;
         if (isActivated && event === 'keydown') {
             onSwitchToolsBlockerState({ algorithmsLocked: true });
@@ -715,7 +715,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     canvasInstance.interact({
                                         shapeType: 'points',
                                         enabled: true,
-                                        onChangeBlockState: this.onChangeBlockState,
+                                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                                         ...activeInteractor.params.canvas,
                                     });
 

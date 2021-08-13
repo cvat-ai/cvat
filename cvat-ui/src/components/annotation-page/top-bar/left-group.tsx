@@ -33,7 +33,7 @@ interface Props {
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
-    onSwitchBlockMode(): void;
+    onSwitchToolsBlockerState(): void;
 }
 
 function LeftGroup(props: Props): JSX.Element {
@@ -53,7 +53,7 @@ function LeftGroup(props: Props): JSX.Element {
         onUndoClick,
         onRedoClick,
         onFinishDraw,
-        onSwitchBlockMode,
+        onSwitchToolsBlockerState,
     } = props;
 
     const includesDoneButton = [
@@ -126,7 +126,7 @@ function LeftGroup(props: Props): JSX.Element {
             ) : null}
             {includesToolsBlockerButton ? (
                 <CVATTooltip overlay={`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `}>
-                    <Button type='link' className={`cvat-annotation-header-button ${toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''}`} onClick={onSwitchBlockMode}>
+                    <Button type='link' className={`cvat-annotation-header-button ${toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''}`} onClick={onSwitchToolsBlockerState}>
                         <StopOutlined />
                         Block
                     </Button>

@@ -63,7 +63,7 @@ interface Props {
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
-    onSwitchBlockMode(): void;
+    onSwitchToolsBlockerState(): void;
     jobInstance: any;
 }
 
@@ -116,7 +116,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onUndoClick,
         onRedoClick,
         onFinishDraw,
-        onSwitchBlockMode,
+        onSwitchToolsBlockerState,
         jobInstance,
         isTrainingActive,
     } = props;
@@ -139,7 +139,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}
                 onFinishDraw={onFinishDraw}
-                onSwitchBlockMode={onSwitchBlockMode}
+                onSwitchToolsBlockerState={onSwitchToolsBlockerState}
             />
             <Col className='cvat-annotation-header-player-group'>
                 <Row align='middle'>
