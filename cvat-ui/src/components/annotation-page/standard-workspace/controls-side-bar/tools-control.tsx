@@ -57,7 +57,6 @@ interface StateToProps {
     aiToolsRef: MutableRefObject<any>;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
-    activeControl: ActiveControl;
 }
 
 interface DispatchToProps {
@@ -96,7 +95,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aiToolsRef: annotation.aiToolsRef,
         defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
         toolsBlockerState,
-        activeControl,
     };
 }
 

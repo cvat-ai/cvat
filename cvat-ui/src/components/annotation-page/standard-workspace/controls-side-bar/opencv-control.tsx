@@ -241,16 +241,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 // need to recalculate without the latest sliding point
                 const finalPoints = await this.runCVAlgorithm(pressedPoints,
                     toolsBlockerState.algorithmsLocked ? 0 : threshold);
-                const points = openCVWrapper.contours.approxPoly(
-                    finalPoints,
-                    thresholdFromAccuracy(approxPolyAccuracy),
-                );
                 const finalObject = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
                     shapeType: ShapeType.POLYGON,
                     label: labels.filter((label: any) => label.id === activeLabelID)[0],
-                    points: points.flat(),
+                    points: openCVWrapper.contours
+                        .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
+                        .flat(),
                     occluded: false,
                     zOrder: curZOrder,
                 });

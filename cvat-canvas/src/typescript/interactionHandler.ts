@@ -495,7 +495,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.interactionData.startWithBox) {
                 this.interactionShapes[0].style({ visibility: 'hidden' });
             }
-        } else if (this.visualComponentsChanged(interactionData)) {
+        } else if (interactionData.enabled && this.visualComponentsChanged(interactionData)) {
             this.interactionData = { ...this.interactionData, ...interactionData };
             this.initInteraction();
         } else if (interactionData.enabled) {
