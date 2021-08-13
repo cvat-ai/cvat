@@ -42,32 +42,11 @@ You can remove the project and all related tasks through the Action menu.
 
 ### Export project
 
-It is possible to download an entire project instead of exporting individual tasks.
-To export a project, do the following:
+It is possible to download an entire project instead of exporting individual tasks. In this case,
+annotations for all tasks in a project will be available in a single archive.
+To export a project, do the following on the `Project` page:
+  - Open the `Actions` menu.
+  - Press the `Export project dataset` button.
 
-1. Open the `Actions` menu.
-1. Press the `Export project dataset` button.
-1. In the pop-up menu choose the format for exporting the project. Exporting is available in several formats:
-   - [CVAT for video](/docs/manual/advanced/xml_format/#interpolation)
-   - [CVAT for images](/docs/manual/advanced/xml_format/#annotation)
-   - [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
-   - [(VOC) Segmentation mask](http://host.robots.ox.ac.uk/pascal/VOC/)
-   - [YOLO](https://pjreddie.com/darknet/yolo/)
-   - [COCO](http://cocodataset.org/#format-data)
-   - [TFRecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)
-   - [MOT](https://motchallenge.net/)
-   - [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0/)
-   - [Datumaro](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/datumaro)
-   - [ImageNet](http://www.image-net.org/)
-   - [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)
-   - [WIDER Face](http://shuoyang1213.me/WIDERFACE/)
-   - [VGGFace2](https://github.com/ox-vgg/vgg_face2)
-   - [Market-1501](https://www.aitribune.com/dataset/2018051063)
-   - [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)
-
-    For 3D tasks, the following formats are available:
-    - [Kitti Raw Format 1.0](http://www.cvlibs.net/datasets/kitti/raw_data.php)
-    - Sly Point Cloud Format 1.0  - Supervisely Point Cloud dataset
-
-1. To download images with the dataset, tick the `Save images` box.
-1. (Optional) To name the resulting archive, use the `Custom name` field.
+Additional information about exporting tasks can be found in the
+[Downloading annotations](/docs/manual/advanced/downloading-annotations/) section.

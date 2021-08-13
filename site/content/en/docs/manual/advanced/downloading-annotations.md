@@ -14,9 +14,9 @@ weight: 1
 1. Choose the format for exporting the dataset. Exporting is available in several formats:
 
    - [CVAT for video](/docs/manual/advanced/xml_format/#interpolation)
-     is highlighted if a task has the interpolation mode.
+     choose if the task is created in interpolation mode.
    - [CVAT for images](/docs/manual/advanced/xml_format/#annotation)
-     is highlighted if a task has the annotation mode.
+     choose if a task is created in annotation mode.
 
    ![](/images/image029.jpg 'Example XML format')
 
@@ -47,6 +47,3 @@ weight: 1
 1. (Optional) To name the resulting archive, use the `Custom name` field.
 
     ![](/images/image225.jpg)
-
-It is also possible to export an entire project, instead of individual tasks. Information about that
-is available in the [Projects](/docs/manual/advanced/projects/#export-project) section.
