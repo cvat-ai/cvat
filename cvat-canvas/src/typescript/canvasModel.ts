@@ -87,7 +87,7 @@ export interface InteractionData {
         shapeType: string;
         points: number[];
     };
-    onChangeToolsBlockerState?: (event: string, thresholdWasModified: boolean) => void;
+    onChangeToolsBlockerState?: (event: string) => void;
 }
 
 export interface InteractionResult {

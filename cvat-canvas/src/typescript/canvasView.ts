@@ -1272,14 +1272,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
-            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape || !!data.onChangeToolsBlockerState)) {
-                if (!data.intermediateShape || !!data.onChangeToolsBlockerState) {
+            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape)) {
+                if (!data.intermediateShape) {
                     this.canvas.style.cursor = 'crosshair';
                     this.mode = Mode.INTERACT;
                 }
                 this.interactionHandler.interact(data);
             } else {
-                this.canvas.style.cursor = '';
+                if (!data.enabled) {
+                    this.canvas.style.cursor = '';
+                }
                 if (this.mode !== Mode.IDLE) {
                     this.interactionHandler.interact(data);
                 }

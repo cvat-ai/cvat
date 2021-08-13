@@ -265,11 +265,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
-    private onChangeToolsBlockerState = (event:string, thresholdWasModified: boolean):void => {
+    private onChangeToolsBlockerState = (event:string):void => {
         const {
-            activeControl, toolsBlockerState, onSwitchToolsBlockerState, canvasInstance,
+            isActivated, toolsBlockerState, onSwitchToolsBlockerState, canvasInstance,
         } = this.props;
-        if ([ActiveControl.OPENCV_TOOLS].includes(activeControl) && event === 'keyup' && !thresholdWasModified) {
+        if (isActivated && event === 'keyup') {
             onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
             canvasInstance.interact({
                 enabled: true,
