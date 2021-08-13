@@ -144,13 +144,14 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         _e.stopPropagation();
                         self.remove();
                         this.shapesWereUpdated = true;
+                        const shouldRaiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self,
                         );
                         if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
                             this.interactionShapes[0].style({ visibility: '' });
                         }
-                        if (this.shouldRaiseEvent(_e.ctrlKey)) {
+                        if (shouldRaiseEvent) {
                             this.onInteraction(this.prepareResult(), true, false);
                         }
                     });
@@ -218,7 +219,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.threshold.remove();
             this.threshold = null;
         }
-        document.getElementById('cvat_canvas_wrapper').style.cursor = 'crosshair';
     }
 
     private startInteraction(): void {
@@ -342,6 +342,19 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
     }
 
+    private visualComponentsChanged(interactionData: InteractionData): boolean {
+        if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
+            && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
+            return true;
+        }
+        if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
+            && this.interactionData.crosshair !== interactionData.crosshair) {
+            return true;
+        }
+
+        return false;
+    }
+
     public constructor(
         onInteraction: (
             shapes: InteractionResult[] | null,
@@ -373,7 +386,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             x: 0,
             y: 0,
         };
-        this.thresholdWasModified = false;
 
         this.canvas.on('mousemove.interaction', (e: MouseEvent): void => {
             const [x, y] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
@@ -483,6 +495,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.interactionData.startWithBox) {
                 this.interactionShapes[0].style({ visibility: 'hidden' });
             }
+        } else if (this.visualComponentsChanged(interactionData)) {
+            this.interactionData = { ...this.interactionData, ...interactionData };
+            this.initInteraction();
         } else if (interactionData.enabled) {
             this.interactionData = interactionData;
             this.initInteraction();

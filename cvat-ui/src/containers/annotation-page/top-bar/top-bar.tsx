@@ -33,7 +33,7 @@ import {
     CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl, ToolsBlockerState,
 } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { switchBlockMode } from 'actions/settings-actions';
+import { switchToolsBlockerState } from 'actions/settings-actions';
 
 interface StateToProps {
     jobInstance: any;
@@ -74,7 +74,7 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
-    onSwitchBlockMode(toolsBlockerState: ToolsBlockerState): void;
+    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -171,8 +171,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(getPredictionsAsync());
             }
         },
-        onSwitchBlockMode(toolsBlockerState: ToolsBlockerState):void{
-            dispatch(switchBlockMode(toolsBlockerState));
+        onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void{
+            dispatch(switchToolsBlockerState(toolsBlockerState));
         },
     };
 }
@@ -440,7 +440,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     private onSwitchBlockMode = (): void => {
         const {
-            toolsBlockerState, onSwitchBlockMode, canvasInstance, activeControl,
+            toolsBlockerState, onSwitchToolsBlockerState, canvasInstance, activeControl,
         } = this.props;
         if (canvasInstance instanceof Canvas) {
             if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
@@ -455,7 +455,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 });
             }
         }
-        onSwitchBlockMode({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
+        onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
     };
 
     private onURLIconClick = (): void => {
@@ -573,6 +573,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             searchAnnotations,
             changeWorkspace,
             switchPredictor,
+            toolsBlockerState,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -700,7 +701,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     redoShortcut={normalizedKeyMap.REDO}
                     drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                     // this shortcut is handled in interactionHandler.ts separatelly
-                    blockShortcut='Ctrl'
+                    switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                     nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
                     previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
@@ -713,6 +714,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onRedoClick={this.redo}
                     onFinishDraw={this.onFinishDraw}
                     onSwitchBlockMode={this.onSwitchBlockMode}
+                    toolsBlockerState={toolsBlockerState}
                     jobInstance={jobInstance}
                     isTrainingActive={isTrainingActive}
                     activeControl={activeControl}

@@ -1272,8 +1272,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
-            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape)) {
-                if (!data.intermediateShape) {
+            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape || !!data.onChangeBlockState)) {
+                if (!data.intermediateShape || !!data.onChangeBlockState) {
                     this.canvas.style.cursor = 'crosshair';
                     this.mode = Mode.INTERACT;
                 }
@@ -1569,7 +1569,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addObjects(states: any[]): void {
         const { displayAllText } = this.configuration;
-
         for (const state of states) {
             const points: number[] = state.points as number[];
             const translatedPoints: number[] = this.translateToCanvas(points);

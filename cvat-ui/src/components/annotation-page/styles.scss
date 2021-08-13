@@ -128,8 +128,8 @@ button.cvat-predictor-button {
     pointer-events: none;
 }
 
-.ant-btn.cvat-button-active {
-    color: #40a9ff;
+.cvat-button-active.ant-btn {
+    color: $border-color-hover;
 }
 
 .cvat-annotation-header-player-group > div {

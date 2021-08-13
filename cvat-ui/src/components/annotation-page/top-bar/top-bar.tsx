@@ -6,7 +6,9 @@ import React from 'react';
 import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
-import { ActiveControl, PredictorState, Workspace } from 'reducers/interfaces';
+import {
+    ActiveControl, PredictorState, ToolsBlockerState, Workspace,
+} from 'reducers/interfaces';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -28,7 +30,7 @@ interface Props {
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
-    blockShortcut: string;
+    switchToolsBlockerShortcut: string;
     playPauseShortcut: string;
     nextFrameShortcut: string;
     previousFrameShortcut: string;
@@ -40,6 +42,7 @@ interface Props {
     predictor: PredictorState;
     isTrainingActive: boolean;
     activeControl: ActiveControl;
+    toolsBlockerState: ToolsBlockerState;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
     showStatistics(): void;
@@ -81,7 +84,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         undoShortcut,
         redoShortcut,
         drawShortcut,
-        blockShortcut,
+        switchToolsBlockerShortcut,
         playPauseShortcut,
         nextFrameShortcut,
         previousFrameShortcut,
@@ -92,6 +95,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         predictor,
         focusFrameInputShortcut,
         activeControl,
+        toolsBlockerState,
         showStatistics,
         switchPredictor,
         showFilters,
@@ -129,7 +133,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 redoShortcut={redoShortcut}
                 activeControl={activeControl}
                 drawShortcut={drawShortcut}
-                blockShortcut={blockShortcut}
+                switchToolsBlockerShortcut={switchToolsBlockerShortcut}
+                toolsBlockerState={toolsBlockerState}
                 onSaveAnnotation={onSaveAnnotation}
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}

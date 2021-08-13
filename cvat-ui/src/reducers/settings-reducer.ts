@@ -291,7 +291,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
-        case SettingsActionTypes.SWITCH_BLOCK_MODE: {
+        case SettingsActionTypes.SWITCH_TOOLS_BLOCKER_STATE: {
             return {
                 ...state,
                 workspace: {
@@ -330,6 +330,18 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                             selectedOpacity: 60,
                         } :
                         {}),
+                },
+            };
+        }
+        case AnnotationActionTypes.INTERACT_WITH_CANVAS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    toolsBlockerState: {
+                        buttonVisible: true,
+                        algorithmsLocked: false,
+                    },
                 },
             };
         }

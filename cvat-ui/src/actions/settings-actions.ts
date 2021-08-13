@@ -36,7 +36,7 @@ export enum SettingsActionTypes {
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
-    SWITCH_BLOCK_MODE = 'SWITCH_BLOCK_MODE',
+    SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -283,9 +283,9 @@ export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): Any
     };
 }
 
-export function switchBlockMode(toolsBlockerState: ToolsBlockerState): AnyAction {
+export function switchToolsBlockerState(toolsBlockerState: ToolsBlockerState): AnyAction {
     return {
-        type: SettingsActionTypes.SWITCH_BLOCK_MODE,
+        type: SettingsActionTypes.SWITCH_TOOLS_BLOCKER_STATE,
         payload: {
             toolsBlockerState,
         },

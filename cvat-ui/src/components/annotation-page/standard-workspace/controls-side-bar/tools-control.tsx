@@ -38,7 +38,7 @@ import LabelSelector from 'components/label-selector/label-selector';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
-import { switchBlockMode } from 'actions/settings-actions';
+import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -65,7 +65,7 @@ interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
-    onSwitchBlockMode(toolsBlockerState: ToolsBlockerState):void;
+    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
 }
 
 const core = getCore();
@@ -105,7 +105,7 @@ const mapDispatchToProps = {
     updateAnnotations: updateAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
     fetchAnnotations: fetchAnnotationsAsync,
-    onSwitchBlockMode: switchBlockMode,
+    onSwitchToolsBlockerState: switchToolsBlockerState,
 };
 
 type Props = StateToProps & DispatchToProps;
@@ -414,11 +414,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private onChangeBlockState = (event:string):void => {
-        const { activeControl, onSwitchBlockMode } = this.props;
-        if ([ActiveControl.AI_TOOLS].includes(activeControl) && event === 'keydown') {
-            onSwitchBlockMode({ algorithmsLocked: true });
-        } else if ([ActiveControl.AI_TOOLS].includes(activeControl) && event === 'keyup') {
-            onSwitchBlockMode({ algorithmsLocked: false });
+        const { isActivated, onSwitchToolsBlockerState } = this.props;
+        if (isActivated && event === 'keydown') {
+            onSwitchToolsBlockerState({ algorithmsLocked: true });
+        } else if (isActivated && event === 'keyup') {
+            onSwitchToolsBlockerState({ algorithmsLocked: false });
         }
     };
 
@@ -710,11 +710,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onClick={() => {
                                 this.setState({ mode: 'interaction' });
 
-                                const { onSwitchBlockMode, toolsBlockerState } = this.props;
-                                if (!toolsBlockerState.buttonVisible) {
-                                    onSwitchBlockMode({ buttonVisible: true, algorithmsLocked: false });
-                                }
-
                                 if (activeInteractor) {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
@@ -805,12 +800,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     type='card'
                     tabBarGutter={8}
                     onChange={(key:string) => {
-                        const { onSwitchBlockMode, toolsBlockerState } = this.props;
-                        if (key === 'interactors' && !toolsBlockerState.buttonVisible) {
-                            onSwitchBlockMode({ buttonVisible: !toolsBlockerState.buttonVisible });
-                        } else if (toolsBlockerState.buttonVisible) {
-                            onSwitchBlockMode({ buttonVisible: false });
-                        }
+                        const { onSwitchToolsBlockerState } = this.props;
+                        onSwitchToolsBlockerState({ buttonVisible: key === 'interactors' });
                     }}
                 >
                     <Tabs.TabPane key='interactors' tab='Interactors'>

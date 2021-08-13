@@ -56,12 +56,8 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         this.reset();
     }
 
-    public switchBlockMode(mode?:boolean): void {
-        if (mode) {
-            this.scissors.state.blocked = mode;
-        } else {
-            this.scissors.state.blocked = !this.scissors.state.blocked;
-        }
+    public switchBlockMode(mode:boolean): void {
+        this.scissors.state.blocked = mode;
     }
 
     public reset(): void {
@@ -99,7 +95,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         const { tool, state } = scissors;
 
         const points = applyOffset(numberArrayToPoints(coordinates), offsetX, offsetY);
-
         if (points.length > 1) {
             let matImage = null;
             const contour = new cv.Mat();
@@ -138,6 +133,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                         pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
                     }
                 } else {
+                    // this code creates small offset in prev point direction to make anchors hoverable
                     const xDiff = prevX - curX;
                     const yDiff = prevY - curY;
                     if (xDiff !== 0 && yDiff !== 0) {
