@@ -45,8 +45,8 @@ You can remove the project and all related tasks through the Action menu.
 It is possible to download an entire project instead of exporting individual tasks. In this case,
 annotations for all tasks in a project will be available in a single archive.
 To export a project, do the following on the `Project` page:
-  - Open the `Actions` menu.
-  - Press the `Export project dataset` button.
+- Open the `Actions` menu.
+- Press the `Export project dataset` button.
 
 Additional information about exporting tasks can be found in the
 [Downloading annotations](/docs/manual/advanced/downloading-annotations/) section.

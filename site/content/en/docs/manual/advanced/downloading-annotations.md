@@ -46,4 +46,4 @@ weight: 1
 
 1. (Optional) To name the resulting archive, use the `Custom name` field.
 
-    ![](/images/image225.jpg)
+  ![](/images/image225.jpg)
