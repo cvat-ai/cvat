@@ -32,7 +32,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 manifest_path: undefined,
-                manifest_set: undefined,
+                manifests: undefined,
             };
 
             for (const property in data) {
@@ -312,7 +312,7 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     manifests: {
-                        get: () => data.manifest_set,
+                        get: () => data.manifests,
                         set: (manifests) => {
                             if (Array.isArray(manifests)) {
                                 for (const elem of manifests) {
@@ -320,7 +320,7 @@
                                         throw new ArgumentError('Each element of the manifests array must be a string');
                                     }
                                 }
-                                data.manifest_set = manifests;
+                                data.manifests = manifests;
                             } else {
                                 throw new ArgumentError('Value must be an array');
                             }
@@ -433,7 +433,7 @@
             }
 
             if (this.manifests) {
-                initialData.manifest_set = this.manifests;
+                initialData.manifests = this.manifests;
             }
 
             const cloudStorageData = {
@@ -451,7 +451,7 @@
             credentials_type: this.credentialsType,
             provider_type: this.providerType,
             resource: this.resourceName,
-            manifest_set: this.manifests,
+            manifests: this.manifests,
         };
 
         const cloudStorageData = {
