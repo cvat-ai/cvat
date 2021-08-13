@@ -72,8 +72,8 @@ class SignatureAuthentication(BaseAuthentication):
         """
         Returns authenticated user if URL signature is valid.
         """
-        signer = signature.Signer()
-        sign = request.query_params.get(signature.QUERY_PARAM)
+        signer = Signer()
+        sign = request.query_params.get(Signer.QUERY_PARAM)
         if not sign:
             return
 
