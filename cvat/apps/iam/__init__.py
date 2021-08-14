@@ -6,3 +6,4 @@
 from .authentication import (TokenAuthenticationEx,
     SignatureAuthentication)
 from .decorators import login_required
+from .permissions import (LambdaPermission, ServerPermission)
