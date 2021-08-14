@@ -88,7 +88,7 @@ services:
       - ./cvat/apps/iam/rules:/rules
     ports:
       - '8181:8181'
-    command: run --server --addr :8181 /rules
+    command: run --server --addr :8181 --set=decision_logs.console=true /rules
 
 networks:
   default:
