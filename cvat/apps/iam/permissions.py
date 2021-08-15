@@ -22,7 +22,7 @@ class ServerPermission(BasePermission):
             json=payload)
         return r.json()["result"]
 
-class LambdaPermission(BaseException):
+class LambdaPermission(BasePermission):
     # pylint: disable=no-self-use
     def has_permission(self, request, view):
         payload = {
@@ -30,7 +30,29 @@ class LambdaPermission(BaseException):
                 "path": request.path.split('/')[3:],
                 "method": request.method,
                 "user": {
+                    "id": request.user.id,
                     "roles": [group.name for group in request.user.groups.all()]
+                }
+            }
+        }
+        r = requests.post('http://localhost:8181/v1/data/lambda/allow',
+            json=payload)
+        return r.json()["result"]
+
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, resource):
+        payload = {
+            "input": {
+                "path": request.path.split('/')[3:],
+                "method": request.method,
+                "user": {
+                    "id": request.user.id,
+                    "roles": [group.name for group in request.user.groups.all()]
+                },
+                "resource": {
+                    "owner": {
+                        "id": getattr(resource, "owner_id")
+                    }
                 }
             }
         }

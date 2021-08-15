@@ -15,21 +15,8 @@ allow {
 }
 
 allow {
-    input.method == utils.GET
-    storage_id := input.path[1]
-    input.path == ["cloudstorages", storage_id]
-    input.storage.owner.id == input.user.id
-}
-
-allow {
-    input.method == utils.DELETE
-    storage_id := input.path[1]
-    input.path == ["cloudstorages", storage_id]
-    input.storage.owner.id == input.user.id
-}
-
-allow {
-    input.method == utils.PATCH
+    allowed_methods = {utils.GET, utils.PATCH, utils.DELETE}
+    allowed_methods[input.method]
     storage_id := input.path[1]
     input.path == ["cloudstorages", storage_id]
     input.storage.owner.id == input.user.id
