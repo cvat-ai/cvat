@@ -4,6 +4,7 @@
   "viewportWidth": 1300,
   "viewportHeight": 960,
   "defaultCommandTimeout": 25000,
+  "downloadsFolder": "cypress/fixtures",
   "env": {
     "user": "admin",
     "email": "admin@localhost.company",
