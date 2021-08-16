@@ -69,6 +69,10 @@ function LeftGroup(props: Props): JSX.Element {
         ActiveControl.AI_TOOLS,
     ].includes(activeControl) && toolsBlockerState.buttonVisible;
 
+    const shouldEnableToolsBlockerOnClick = [
+        ActiveControl.OPENCV_TOOLS,
+    ].includes(activeControl);
+
     return (
         <Col className='cvat-annotation-header-left-group'>
             <Dropdown overlay={<AnnotationMenuContainer />}>
@@ -126,7 +130,11 @@ function LeftGroup(props: Props): JSX.Element {
             ) : null}
             {includesToolsBlockerButton ? (
                 <CVATTooltip overlay={`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `}>
-                    <Button type='link' className={`cvat-annotation-header-button ${toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''}`} onClick={onSwitchToolsBlockerState}>
+                    <Button
+                        type='link'
+                        className={`cvat-annotation-header-button ${toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''}`}
+                        onClick={shouldEnableToolsBlockerOnClick ? onSwitchToolsBlockerState : undefined}
+                    >
                         <StopOutlined />
                         Block
                     </Button>

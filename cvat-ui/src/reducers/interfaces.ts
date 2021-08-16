@@ -185,6 +185,7 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
+    onChangeToolsBlockerState: (event:string) => void;
     tip: {
         message: string;
         gif: string;

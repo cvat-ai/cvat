@@ -628,6 +628,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     });
 
                                     onInteractionStart(activeTracker, activeLabelID);
+                                    const { onSwitchToolsBlockerState } = this.props;
+                                    onSwitchToolsBlockerState({ buttonVisible: false });
                                 }
                             }}
                         >
@@ -710,13 +712,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                                 if (activeInteractor) {
                                     canvasInstance.cancel();
+                                    activeInteractor.onChangeToolsBlockerState = this.onChangeToolsBlockerState;
                                     canvasInstance.interact({
                                         shapeType: 'points',
                                         enabled: true,
-                                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                                         ...activeInteractor.params.canvas,
                                     });
-
                                     onInteractionStart(activeInteractor, activeLabelID);
                                 }
                             }}
@@ -771,6 +772,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         );
 
                         createAnnotations(jobInstance, frame, states);
+                        const { onSwitchToolsBlockerState } = this.props;
+                        onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error) {
                         notification.error({
                             description: error.toString(),
@@ -797,10 +800,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <Tabs
                     type='card'
                     tabBarGutter={8}
-                    onChange={(key:string) => {
-                        const { onSwitchToolsBlockerState } = this.props;
-                        onSwitchToolsBlockerState({ buttonVisible: key === 'interactors' });
-                    }}
                 >
                     <Tabs.TabPane key='interactors' tab='Interactors'>
                         {this.renderLabelBlock()}

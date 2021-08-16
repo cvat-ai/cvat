@@ -14,6 +14,7 @@ export interface IntelligentScissorsParams {
         enableSliding: boolean;
         allowRemoveOnlyLast: boolean;
         minPosVertices: number;
+        onChangeToolsBlockerState: (event:string)=>void;
     };
 }
 
@@ -35,6 +36,7 @@ function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[]
 
 export default class IntelligentScissorsImplementation implements IntelligentScissors {
     private cv: any;
+    private onChangeToolsBlockerState: (event:string)=>void;
     private scissors: {
         tool: any;
         state: {
@@ -51,8 +53,9 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         };
     };
 
-    public constructor(cv: any) {
+    public constructor(cv: any, onChangeToolsBlockerState:(event:string)=>void) {
         this.cv = cv;
+        this.onChangeToolsBlockerState = onChangeToolsBlockerState;
         this.reset();
     }
 
@@ -133,21 +136,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                         pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
                     }
                 } else {
-                    // this code creates small offset in prev point direction to make anchors hoverable
-                    const xDiff = prevX - curX;
-                    const yDiff = prevY - curY;
-                    if (xDiff !== 0 && yDiff !== 0) {
-                        const pathLength = Math.sqrt((xDiff) ** 2 + (yDiff) ** 2);
-                        // absolute offset value
-                        const pathOffsetValue = 0.4;
-                        // get how much absolute offset takes from path length
-                        const pathOffsetRatio = pathOffsetValue / pathLength;
-                        pathSegment.push((curX + offsetX) + xDiff * pathOffsetRatio,
-                            (curY + offsetY) + yDiff * pathOffsetRatio);
-                    } else {
-                        // in case points have the same coordinates just use constant offset
-                        pathSegment.push(curX + offsetX + 0.25, curY + offsetY + 0.25);
-                    }
+                    pathSegment.push(curX + offsetX, curY + offsetY);
                 }
                 state.anchors[points.length - 1] = {
                     point: cur,
@@ -189,6 +178,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 enableSliding: true,
                 allowRemoveOnlyLast: true,
                 minPosVertices: 1,
+                onChangeToolsBlockerState: this.onChangeToolsBlockerState,
             },
         };
     }

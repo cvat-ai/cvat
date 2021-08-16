@@ -339,19 +339,24 @@ export class InteractionHandlerImpl implements InteractionHandler {
         const handler = shape.remember('_selectHandler');
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
+            // move green circle group(anchors) and polygon(lastChild) to the top of svg to make anchors hoverable
+            handler.parent.node.prepend(handler.nested.node);
+            handler.parent.node.prepend(handler.parent.node.lastChild);
         }
     }
 
     private visualComponentsChanged(interactionData: InteractionData): boolean {
-        if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
-            && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
-            return true;
+        const allowedKeys = ['enabled', 'crosshair', 'enableThreshold', 'onChangeToolsBlockerState'];
+        if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
+            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
+                && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
+                return true;
+            }
+            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
+                && this.interactionData.crosshair !== interactionData.crosshair) {
+                return true;
+            }
         }
-        if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
-            && this.interactionData.crosshair !== interactionData.crosshair) {
-            return true;
-        }
-
         return false;
     }
 

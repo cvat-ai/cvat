@@ -406,12 +406,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         <CVATTooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
                                 onClick={() => {
-                                    this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
+                                    this.activeTool = openCVWrapper.segmentation
+                                        .intelligentScissorsFactory(this.onChangeToolsBlockerState);
                                     canvasInstance.cancel();
                                     onInteractionStart(this.activeTool, activeLabelID);
                                     canvasInstance.interact({
                                         enabled: true,
-                                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                                         ...this.activeTool.params.canvas,
                                     });
                                 }}
