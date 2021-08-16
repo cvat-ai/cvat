@@ -8,10 +8,12 @@ import { connect } from 'react-redux';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
+import { Layout } from 'antd';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';
 import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
+import FooterDrawer from 'components/login-page/intel-footer-drawer';
 
 interface StateToProps {
     fetching: boolean;
@@ -46,27 +48,33 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
     };
 
     const { fetching, onResetPassword } = props;
+    const { Content } = Layout;
 
     return (
-        <Row justify='center' align='middle'>
-            <Col {...sizes}>
-                <Title level={2}> Reset password </Title>
-                <ResetPasswordForm
-                    fetching={fetching}
-                    onSubmit={(resetPasswordData: ResetPasswordData): void => {
-                        onResetPassword(resetPasswordData.email);
-                    }}
-                />
-                <Row justify='start' align='top'>
-                    <Col>
-                        <Text strong>
-                            Go to
-                            <Link to='/auth/login'> login page </Link>
-                        </Text>
+        <Layout>
+            <Content>
+                <Row justify='center' align='middle' style={{height:'100%'}}>
+                    <Col {...sizes}>
+                        <Title level={2}> Reset password </Title>
+                        <ResetPasswordForm
+                            fetching={fetching}
+                            onSubmit={(resetPasswordData: ResetPasswordData): void => {
+                                onResetPassword(resetPasswordData.email);
+                            }}
+                        />
+                        <Row justify='start' align='top'>
+                            <Col>
+                                <Text strong>
+                                    Go to
+                                    <Link to='/auth/login'> login page </Link>
+                                </Text>
+                            </Col>
+                        </Row>
                     </Col>
                 </Row>
-            </Col>
-        </Row>
+            </Content>
+            <FooterDrawer />
+        </Layout>
     );
 }
 
