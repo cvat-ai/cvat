@@ -41,4 +41,4 @@ function FooterDrawer(): JSX.Element {
     );
 }
 
-export default FooterDrawer;
+export default React.memo(FooterDrawer);
