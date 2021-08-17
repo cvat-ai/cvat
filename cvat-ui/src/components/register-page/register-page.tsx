@@ -44,7 +44,7 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
     return (
         <Layout>
             <Content>
-                <Row justify='center' align='middle' style={{height:'100%'}}>
+                <Row justify='center' align='middle' style={{ height: '100%' }}>
                     <Col {...sizes}>
                         <Title level={2}> Create an account </Title>
                         <RegisterForm

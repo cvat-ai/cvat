@@ -12,8 +12,8 @@ import { Layout } from 'antd';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';
-import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
 import FooterDrawer from 'components/login-page/intel-footer-drawer';
+import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
 
 interface StateToProps {
     fetching: boolean;
@@ -53,7 +53,7 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
     return (
         <Layout>
             <Content>
-                <Row justify='center' align='middle' style={{height:'100%'}}>
+                <Row justify='center' align='middle' style={{ height: '100%' }}>
                     <Col {...sizes}>
                         <Title level={2}> Reset password </Title>
                         <ResetPasswordForm

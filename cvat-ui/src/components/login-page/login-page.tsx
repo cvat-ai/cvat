@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,13 +31,12 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
 
     const { Content } = Layout;
 
-
     const { fetching, onLogin, renderResetPassword } = props;
 
     return (
         <Layout>
-            <Content >
-                <Row justify='center' align='middle' style={{height:'100%'}}>
+            <Content>
+                <Row justify='center' align='middle' style={{ height: '100%' }}>
                     <Col {...sizes}>
                         <Title level={2}> Login </Title>
                         <LoginForm
