@@ -73,8 +73,8 @@ export default class LabelForm extends React.Component<Props> {
         });
 
         if (this.formRef.current) {
-            this.formRef.current.resetFields();
             this.formRef.current.setFieldsValue({ attributes: [] });
+            this.formRef.current.resetFields();
         }
 
         if (!this.continueAfterSubmit) {
@@ -159,11 +159,11 @@ export default class LabelForm extends React.Component<Props> {
     private renderAttributeValuesInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id >= 0 : false;
-        const existedValues = attr ? attr.values : [];
+        const existingValues = attr ? attr.values : [];
 
         const validator = (_: any, values: string[]): Promise<void> => {
-            if (locked && existedValues) {
-                if (!equalArrayHead(existedValues, values)) {
+            if (locked && existingValues) {
+                if (!equalArrayHead(existingValues, values)) {
                     return Promise.reject(new Error('You can only append new values'));
                 }
             }
@@ -182,7 +182,7 @@ export default class LabelForm extends React.Component<Props> {
                 <Form.Item
                     name={[key, 'values']}
                     fieldKey={[fieldInstance.fieldKey, 'values']}
-                    initialValue={existedValues}
+                    initialValue={existingValues}
                     rules={[
                         {
                             required: true,
