@@ -6,7 +6,6 @@ import React from 'react';
 import { Layout } from 'antd';
 
 import { isPublic } from 'utils/enviroment';
-
 import consts from 'consts';
 
 function FooterDrawer(): JSX.Element {
