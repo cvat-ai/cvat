@@ -34,6 +34,7 @@
                 task_subsets: undefined,
                 training_project: undefined,
                 task_ids: undefined,
+                dimension: undefined,
             };
 
             for (const property in data) {
@@ -153,7 +154,7 @@
                     /**
                      * @name createdDate
                      * @type {string}
-                     * @memberof module:API.cvat.classes.Task
+                     * @memberof module:API.cvat.classes.Project
                      * @readonly
                      * @instance
                      */
@@ -163,12 +164,23 @@
                     /**
                      * @name updatedDate
                      * @type {string}
-                     * @memberof module:API.cvat.classes.Task
+                     * @memberof module:API.cvat.classes.Project
                      * @readonly
                      * @instance
                      */
                     updatedDate: {
                         get: () => data.updated_date,
+                    },
+                    /**
+                     * Dimesion of the tasks in the project, if no task dimension is null
+                     * @name dimension
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Project
+                     * @readonly
+                     * @instance
+                     */
+                    dimension: {
+                        get: () => data.dimension,
                     },
                     /**
                      * After project has been created value can be appended only.

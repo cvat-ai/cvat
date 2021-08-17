@@ -513,7 +513,7 @@ class ProjectData(InstanceLabelData):
     Track = NamedTuple('Track', [('label', str), ('group', int), ('source', str), ('shapes', List[TrackedShape]), ('task_id', int)])
     Tag = NamedTuple('Tag', [('frame', int), ('label', str), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('task_id', int)])
     Tag.__new__.__defaults__ = (0, )
-    Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
+    Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
 
     def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str, create_callback: Callable = None):
         self._annotation_irs = annotation_irs
@@ -581,6 +581,7 @@ class ProjectData(InstanceLabelData):
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
                     "path": mangle_image_name(db_image.path, defaulted_subset, original_names),
+                    "id": db_image.id,
                     "width": db_image.width,
                     "height": db_image.height,
                     "subset": defaulted_subset
@@ -683,6 +684,7 @@ class ProjectData(InstanceLabelData):
                     task_id=task_id,
                     subset=frame_info["subset"],
                     idx=idx,
+                    id=frame_info.get('id',0),
                     frame=abs_frame,
                     name=frame_info["path"],
                     height=frame_info["height"],
@@ -807,10 +809,18 @@ class CVATDataExtractorMixin:
             for _, attr in label['attributes']:
                 label_categories.attributes.add(attr['name'])
 
+
         categories[datumaro.AnnotationType.label] = label_categories
 
         return categories
 
+    @staticmethod
+    def _load_user_info(meta: dict):
+        return {
+            "name": meta['owner']['username'],
+            "createdAt": meta['created'],
+            "updatedAt": meta['updated']
+        }
 
     def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, TaskData.Frame], labels: list):
         categories = self.categories()
@@ -827,7 +837,8 @@ class CVATDataExtractorMixin:
 class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
     def __init__(self, task_data, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
         super().__init__()
-        self._categories, self._user = self._load_categories(task_data, dimension=dimension)
+        self._categories = self._load_categories(task_data.meta['task']['labels'])
+        self._user = self._load_user_info(task_data.meta['task']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
         dm_items = []
@@ -893,11 +904,9 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
                     attributes["createdAt"] = self._user["createdAt"]
                     attributes["updatedAt"] = self._user["updatedAt"]
                     attributes["labels"] = []
-                    index = 0
-                    for _, label in task_data.meta['task']['labels']:
-                        attributes["labels"].append({"label_id": index, "name": label["name"], "color": label["color"]})
+                    for (idx, (_, label)) in enumerate(task_data.meta['task']['labels']):
+                        attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"]})
                         attributes["track_id"] = -1
-                        index += 1
 
                 dm_item = datumaro.DatasetItem(id=osp.split(frame_data.name)[-1].split('.')[0],
                                                annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
@@ -906,27 +915,6 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
             dm_items.append(dm_item)
 
         self._items = dm_items
-
-    @staticmethod
-    def _load_categories(cvat_anno, dimension): # pylint: disable=arguments-differ
-        categories = {}
-
-        label_categories = datumaro.LabelCategories(attributes=['occluded'])
-
-        user_info = {}
-        if dimension == DimensionType.DIM_3D:
-            user_info = {"name": cvat_anno.meta['task']['owner']['username'],
-                         "createdAt": cvat_anno.meta['task']['created'],
-                         "updatedAt": cvat_anno.meta['task']['updated']}
-        for _, label in cvat_anno.meta['task']['labels']:
-            label_categories.add(label['name'])
-            for _, attr in label['attributes']:
-                label_categories.attributes.add(attr['name'])
-
-
-        categories[datumaro.AnnotationType.label] = label_categories
-
-        return categories, user_info
 
     def _read_cvat_anno(self, cvat_frame_anno: TaskData.Frame, labels: list):
         categories = self.categories()
@@ -940,9 +928,12 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
         return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, self._format_type, self._dimension)
 
 class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
-    def __init__(self, project_data: ProjectData, include_images: bool = False):
+    def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
         super().__init__()
         self._categories = self._load_categories(project_data.meta['project']['labels'])
+        self._user = self._load_user_info(project_data.meta['project']) if dimension == DimensionType.DIM_3D else {}
+        self._dimension = dimension
+        self._format_type = format_type
 
         dm_items: List[datumaro.DatasetItem] = []
 
@@ -952,12 +943,28 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
         for task in project_data.tasks:
             is_video = task.mode == 'interpolation'
             ext_per_task[task.id] = FrameProvider.VIDEO_FRAME_EXT if is_video else ''
-            if include_images:
-                frame_provider = FrameProvider(task.data)
+            if self._dimension == DimensionType.DIM_3D:
+                def image_maker_factory(task):
+                    images_query = task.data.images.prefetch_related()
+                    def _make_image(i, **kwargs):
+                        loader = osp.join(
+                            task.data.get_upload_dirname(), kwargs['path'],
+                        )
+                        related_images = []
+                        image = images_query.get(id=i)
+                        for i in image.related_files.all():
+                            path = osp.realpath(str(i.path))
+                            if osp.isfile(path):
+                                related_images.append(path)
+                        return loader, related_images
+                    return _make_image
+                image_maker_per_task[task.id] = image_maker_factory(task)
+            elif include_images:
                 if is_video:
                     # optimization for videos: use numpy arrays instead of bytes
                     # some formats or transforms can require image data
-                    def image_maker_factory(frame_provider):
+                    def image_maker_factory(task):
+                        frame_provider = FrameProvider(task.data)
                         def _make_image(i, **kwargs):
                             loader = lambda _: frame_provider.get_frame(i,
                                 quality=frame_provider.Quality.ORIGINAL,
@@ -966,30 +973,48 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
                         return _make_image
                 else:
                     # for images use encoded data to avoid recoding
-                    def image_maker_factory(frame_provider):
+                    def image_maker_factory(task):
+                        frame_provider = FrameProvider(task.data)
                         def _make_image(i, **kwargs):
                             loader = lambda _: frame_provider.get_frame(i,
                                 quality=frame_provider.Quality.ORIGINAL,
                                 out_type=frame_provider.Type.BUFFER)[0].getvalue()
                             return ByteImage(data=loader, **kwargs)
                         return _make_image
-                image_maker_per_task[task.id] = image_maker_factory(frame_provider)
+                image_maker_per_task[task.id] = image_maker_factory(task)
 
         for frame_data in project_data.group_by_frame(include_empty=True):
             image_args = {
                 'path': frame_data.name + ext_per_task[frame_data.task_id],
                 'size': (frame_data.height, frame_data.width),
             }
-            if include_images:
+            if self._dimension == DimensionType.DIM_3D:
+                dm_image = image_maker_per_task[frame_data.task_id](frame_data.id, **image_args)
+            elif include_images:
                 dm_image = image_maker_per_task[frame_data.task_id](frame_data.idx, **image_args)
             else:
                 dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, project_data.meta['project']['labels'])
-            dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
-                annotations=dm_anno, image=dm_image,
-                subset=frame_data.subset,
-                attributes={'frame': frame_data.frame}
-            )
+            if self._dimension == DimensionType.DIM_2D:
+                dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
+                    annotations=dm_anno, image=dm_image,
+                    subset=frame_data.subset,
+                    attributes={'frame': frame_data.frame}
+                )
+            else:
+                attributes = {'frame': frame_data.frame}
+                if format_type == "sly_pointcloud":
+                    attributes["name"] = self._user["name"]
+                    attributes["createdAt"] = self._user["createdAt"]
+                    attributes["updatedAt"] = self._user["updatedAt"]
+                    attributes["labels"] = []
+                    for (idx, (_, label)) in enumerate(project_data.meta['project']['labels']):
+                        attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"]})
+                        attributes["track_id"] = -1
+
+                dm_item = datumaro.DatasetItem(id=osp.splitext(osp.split(frame_data.name)[-1])[0],
+                                               annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                                               attributes=attributes, subset=frame_data.subset)
             dm_items.append(dm_item)
 
         self._items = dm_items
@@ -1004,11 +1029,11 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
         return len(self._items)
 
 
-def GetCVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_images: bool=False):
+def GetCVATDataExtractor(instance_data: Union[ProjectData, TaskData], include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
     if isinstance(instance_data, ProjectData):
-        return CVATProjectDataExtractor(instance_data, include_images)
+        return CVATProjectDataExtractor(instance_data, include_images, format_type, dimension)
     else:
-        return CvatTaskDataExtractor(instance_data, include_images)
+        return CvatTaskDataExtractor(instance_data, include_images, format_type, dimension)
 
 class CvatImportError(Exception):
     pass
