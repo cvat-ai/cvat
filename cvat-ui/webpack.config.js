@@ -30,6 +30,7 @@ module.exports = (env) => ({
         inline: true,
         port: 3000,
         historyApiFallback: true,
+        host: process.env.CVAT_UI_HOST || 'localhost',
         proxy: [
             {
                 context: (param) =>

@@ -212,6 +212,7 @@ function HeaderContainer(props: Props): JSX.Element {
         <Menu className='cvat-header-menu' mode='vertical'>
             {user.isStaff && (
                 <Menu.Item
+                    key='admin_page'
                     onClick={(): void => {
                         // false positive
                         // eslint-disable-next-line
@@ -223,16 +224,21 @@ function HeaderContainer(props: Props): JSX.Element {
                 </Menu.Item>
             )}
 
-            <Menu.Item title={`Press ${switchSettingsShortcut} to switch`} onClick={() => switchSettingsDialog(true)}>
+            <Menu.Item
+                key='settings'
+                title={`Press ${switchSettingsShortcut} to switch`}
+                onClick={() => switchSettingsDialog(true)}
+            >
                 <SettingOutlined />
                 Settings
             </Menu.Item>
-            <Menu.Item onClick={showAboutModal}>
+            <Menu.Item key='about' onClick={showAboutModal}>
                 <InfoCircleOutlined />
                 About
             </Menu.Item>
             {renderChangePasswordItem && (
                 <Menu.Item
+                    key='change_password'
                     className='cvat-header-menu-change-password'
                     onClick={(): void => switchChangePasswordDialog(true)}
                     disabled={changePasswordFetching}
@@ -242,7 +248,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 </Menu.Item>
             )}
 
-            <Menu.Item onClick={onLogout} disabled={logoutFetching}>
+            <Menu.Item key='logout' onClick={onLogout} disabled={logoutFetching}>
                 {logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />}
                 Logout
             </Menu.Item>
