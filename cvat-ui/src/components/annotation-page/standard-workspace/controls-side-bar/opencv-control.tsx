@@ -210,8 +210,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (shapesUpdated) {
                 this.latestPoints = await this.runCVAlgorithm(pressedPoints,
                     toolsBlockerState.algorithmsLocked ? 0 : threshold);
-                let points;
-                if (toolsBlockerState.algorithmsLocked) {
+                let points = [];
+                if (toolsBlockerState.algorithmsLocked && this.latestPoints.length > 2) {
                     // disable approximation for lastest two points to disable fickering
                     const [x, y] = this.latestPoints.slice(-2);
                     this.latestPoints.splice(this.latestPoints.length - 2, 2);
@@ -323,7 +323,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         if (!canvas) {
             throw new Error('Element #cvat_canvas_background was not found');
         }
-        if (!this.activeTool) return [];
+        if (!this.activeTool || pressedPoints.length === 0) return [];
 
         const { width, height } = canvas;
         const context = canvas.getContext('2d');
