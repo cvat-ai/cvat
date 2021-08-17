@@ -239,7 +239,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
             if (isDone) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints, threshold);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints,
+                    toolsBlockerState.algorithmsLocked ? 0 : threshold);
                 const finalObject = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
