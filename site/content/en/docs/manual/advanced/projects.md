@@ -36,7 +36,8 @@ Here you can do the following:
    Start typing an assignee's name and/or choose the right person out of the dropdown list.
 1. `Tasks` — is a list of all tasks for a particular project.
 
-It is possible to choose a subset for tasks in the project. Available options are `Train`, `Test` and `Validation`.
+It is possible to choose a subset for tasks in the project. You can use the available options
+(`Train`, `Test`, `Validation`) or set your own.
 
 You can remove the project and all related tasks through the Action menu.
 
