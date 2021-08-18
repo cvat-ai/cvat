@@ -1,0 +1,15 @@
+{{ $page_rel := .Page.RelPermalink | safeURL }}
+<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	{{ .Site.Params.version_menu }}
+</a>
+<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+	{{ range .Site.Params.versions }}
+		{{ $ver := .version }}
+			{{ if eq $ver "develop" }}
+				{{ $page_rel_trim := strings.TrimLeft "/" $page_rel | safeURL }}
+					<a class="dropdown-item" href="{{ .url }}{{ $page_rel_trim }}">{{ $ver }}</a>
+			{{ else }}
+				<a class="dropdown-item" href="{{ .url }}{{ $page_rel }}">{{ $ver }}</a>
+			{{ end }}
+	{{ end }}
+</div>
