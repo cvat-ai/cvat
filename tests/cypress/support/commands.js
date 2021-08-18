@@ -267,7 +267,14 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`).find('.ant-select-selection-item').click();
+    cy.get(`.cvat-${objectType}-popover-visible`).should(($popover) => {
+        expect($popover).to.be.visible;
+        expect($popover).not.have.css('pointer-events', 'none');
+        expect($popover).not.have.class('ant-popover-hidden');
+    });
+    cy.get(`.cvat-${objectType}-popover-visible`)
+        .find('.ant-select-selection-item')
+        .click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .find(`.ant-select-item-option[title="${labelName}"]`)
@@ -275,7 +282,11 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    cy.get('.cvat-draw-shape-popover').should('be.hidden');
+    cy.get('.cvat-draw-shape-popover').should(($popover) => {
+        expect($popover).to.be.hidden;
+        expect($popover).to.have.css('pointer-events', 'none');
+        expect($popover).to.have.class('ant-popover-hidden');
+    });
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -283,7 +294,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
             listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
         }
         const maxId = Math.max(...listCanvasShapeId);
-        cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').and('be.visible');
+        cy.get(`#cvat_canvas_shape_${maxId}`).should('be.visible');
         cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
