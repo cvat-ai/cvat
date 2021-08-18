@@ -1,6 +1,8 @@
 #from dataclasses import dataclass
 from abc import ABC, abstractmethod, abstractproperty
 from io import BytesIO
+import os
+import os.path
 
 import boto3
 from boto3.s3.transfer import TransferConfig
@@ -44,6 +46,7 @@ class _CloudStorage(ABC):
     def download_file(self, key, path):
         file_obj = self.download_fileobj(key)
         if isinstance(file_obj, BytesIO):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb') as f:
                 f.write(file_obj.getvalue())
         else:

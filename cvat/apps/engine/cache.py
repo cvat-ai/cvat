@@ -87,7 +87,7 @@ class CacheInteraction:
                     name = f"{item['name']}{item['extension']}"
                     if name not in cloud_storage_instance:
                         raise Exception('{} file was not found on a {} storage'.format(name, cloud_storage_instance.name))
-                    with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=name, delete=False) as temp_file:
+                    with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=name.replace(os.path.sep, '#'), delete=False) as temp_file:
                         source_path = temp_file.name
                         buf = cloud_storage_instance.download_fileobj(name)
                         temp_file.write(buf.getvalue())
