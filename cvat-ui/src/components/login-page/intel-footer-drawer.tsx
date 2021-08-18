@@ -17,7 +17,7 @@ function FooterDrawer(): JSX.Element | null {
             © Intel Corporation |
             <a target='_blank' rel='noopener noreferrer' href={INTEL_TERMS_OF_USE_URL}> Terms of Use </a>
             |
-            <a target='_blank' rel='noopener noreferrer' data-cookie-notice="true" href={INTEL_COOKIES_URL}> Cookies </a>
+            <a target='_blank' rel='noopener noreferrer' data-cookie-notice='true' href={INTEL_COOKIES_URL}> Cookies </a>
             |
             <a target='_blank' rel='noopener noreferrer' href={INTEL_PRIVACY_URL}> Privacy </a>
         </Footer>
