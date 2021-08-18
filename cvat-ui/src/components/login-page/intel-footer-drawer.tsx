@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,6 @@ import React from 'react';
 import { Layout } from 'antd';
 
 import { isPublic } from 'utils/enviroment';
-
 import consts from 'consts';
 
 function FooterDrawer(): JSX.Element | null {
@@ -25,4 +24,4 @@ function FooterDrawer(): JSX.Element | null {
     ) : null;
 }
 
-export default FooterDrawer;
+export default React.memo(FooterDrawer);
