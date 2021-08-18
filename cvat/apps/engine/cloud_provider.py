@@ -11,6 +11,8 @@ from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError
 from azure.storage.blob import PublicAccess
 
+from google.cloud import storage
+
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
 
@@ -76,6 +78,14 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             container=resource,
             account_name=credentials.account_name,
             sas_token=credentials.session_token
+        )
+    elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
+        instance = GoogleCloudStorage(
+            bucket_name=resource,
+            service_account_json=credentials.key_file_path,
+            prefix=specific_attributes.get('prefix'),
+            location=specific_attributes.get('location'),
+            project=specific_attributes.get('project')
         )
     else:
         raise NotImplementedError()
@@ -256,14 +266,89 @@ class AzureBlobContainer(_CloudStorage):
 class GOOGLE_DRIVE(_CloudStorage):
     pass
 
+class GoogleCloudStorage(_CloudStorage):
+
+    def __init__(self, bucket_name, prefix=None, service_account_json=None, project=None, location=None):
+        super().__init__()
+        if service_account_json:
+            self._storage_client = storage.Client.from_service_account_json(service_account_json)
+        else:
+            self._storage_client = storage.Client()
+
+        bucket = self._storage_client.lookup_bucket(bucket_name)
+        if bucket is None:
+            bucket = self._storage_client.bucket(bucket_name, user_project=project)
+
+        self._bucket = bucket
+        self._bucket_location = location
+        self._prefix = prefix
+
+    @property
+    def bucket(self):
+        return self._bucket
+
+    @property
+    def name(self):
+        return self._bucket.name
+
+    def exists(self):
+        return self._storage_client.lookup_bucket(self.name) is not None
+
+    def initialize_content(self):
+        self._files = [
+            {
+                'name': blob.name
+            }
+            for blob in self._storage_client.list_blobs(
+                self.bucket, prefix=self._prefix
+            )
+        ]
+
+    def download_fileobj(self, key):
+        buf = BytesIO()
+        blob = self.bucket.blob(key)
+        self._storage_client.download_blob_to_file(blob, buf)
+        buf.seek(0)
+        return buf
+
+    def is_object_exist(self, key):
+        return self.bucket.blob(key).exists()
+
+    def upload_file(self, file_obj, file_name):
+        self.bucket.blob(file_name).upload_from_file(file_obj)
+
+    def create(self):
+        try:
+            self._bucket = self._storage_client.create_bucket(
+                self.bucket,
+                location=self._bucket_location
+            )
+            slogger.glob.info(
+                'Bucket {} has been created at {} region for {}'.format(
+                    self.name,
+                    self.bucket.location,
+                    self.bucket.user_project,
+                ))
+        except Exception as ex:
+            msg = str(ex)
+            slogger.glob.info(msg)
+            raise Exception(msg)
+
+    def get_file_last_modified(self, key):
+        blob = self.bucket.blob(key)
+        blob.reload()
+        return blob.updated
+
+
 class Credentials:
-    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'credentials_type')
+    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
 
     def __init__(self, **credentials):
         self.key = credentials.get('key', '')
         self.secret_key = credentials.get('secret_key', '')
         self.session_token = credentials.get('session_token', '')
         self.account_name = credentials.get('account_name', '')
+        self.key_file_path = credentials.get('key_file_path', '')
         self.credentials_type = credentials.get('credentials_type', None)
 
     def convert_to_db(self):
@@ -271,6 +356,7 @@ class Credentials:
             CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET : \
                 " ".join([self.key, self.secret_key, self.session_token]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
+            CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "",
         }
         return converted_credentials[self.credentials_type]
@@ -281,6 +367,8 @@ class Credentials:
             self.key, self.secret_key, self.session_token = credentials.get('value').split()
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
             self.account_name, self.session_token = credentials.get('value').split()
+        elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
+            self.key_file_path = credentials.get('value')
         else:
             self.account_name, self.session_token, self.key, self.secret_key = ('', '', '', '')
             self.credentials_type = None
@@ -291,6 +379,7 @@ class Credentials:
         self.secret_key = credentials.get('secret_key', self.secret_key)
         self.session_token = credentials.get('session_token', self.session_token)
         self.account_name = credentials.get('account_name', self.account_name)
+        self.key_file_path = credentials.get('key_file_path', self.key_file_path)
 
     def values(self):
-        return [self.key, self.secret_key, self.session_token, self.account_name]
+        return [self.key, self.secret_key, self.session_token, self.account_name, self.key_file_path]
