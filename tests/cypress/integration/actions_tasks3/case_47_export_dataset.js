@@ -26,18 +26,35 @@ context('Export task dataset.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it(`Go to Menu. Press "Export task dataset" with the "${exportFormat}" format.`, () => {
-            cy.intercept('GET', '/api/v1/tasks/**/dataset**').as('exportDataset');
-            cy.interactMenu('Export task dataset');
-            cy.get('.cvat-modal-export-task').within(() => {
-                cy.get('.cvat-modal-export-select').should('contain.text', exportFormat);
-                cy.get('[type="checkbox"]').should('not.be.checked').check();
-                cy.contains('button', 'OK').click();
+        it('Export a task as dataset.', () => {
+            const exportDataset = {
+                as: 'exportDataset',
+                type: 'dataset',
+                format: exportFormat,
+            };
+            cy.exportTask(exportDataset);
+            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDataset.format.toLowerCase()}.*.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
+                }
             });
-            cy.get('.cvat-notification-notice-export-task-start').should('exist');
-            cy.closeNotification('.cvat-notification-notice-export-task-start');
-            cy.wait('@exportDataset', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-            cy.wait('@exportDataset').its('response.statusCode').should('equal', 201);
+        });
+
+        it('Export a task as dataset with renaming the archive.', () => {
+            const exportDataset = {
+                as: 'exportDatasetRenameArchive',
+                type: 'dataset',
+                format: exportFormat,
+                archiveCustomeName: 'task_export_dataset_custome_name'
+            };
+            cy.exportTask(exportDataset);
+            const regex = new RegExp(`^${exportDataset.archiveCustomeName}.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
+                }
+            });
         });
     });
 });

@@ -99,6 +99,14 @@ class MLModel {
     get tip() {
         return { ...this._tip };
     }
+
+    /**
+     * @param {(event:string)=>void} onChangeToolsBlockerState Set canvas onChangeToolsBlockerState callback
+     * @returns {void}
+     */
+    set onChangeToolsBlockerState(onChangeToolsBlockerState) {
+        this._params.canvas.onChangeToolsBlockerState = onChangeToolsBlockerState;
+    }
 }
 
 module.exports = MLModel;

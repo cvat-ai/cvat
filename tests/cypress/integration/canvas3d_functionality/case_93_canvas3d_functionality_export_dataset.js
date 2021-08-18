@@ -15,21 +15,6 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
     const dumpTypePC = 'Sly Point Cloud Format';
     const dumpTypeVC = 'Kitti Raw Format';
 
-    function exportDataset (format, as) {
-        cy.intercept('GET', '/api/v1/tasks/**/dataset**').as(as);
-        cy.interactMenu('Export task dataset');
-        cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
-        cy.get('.ant-select-dropdown')
-            .not('.ant-select-dropdown-hidden')
-            .contains('.cvat-modal-export-option-item', format)
-            .click();
-        cy.get('.cvat-modal-export-select').should('contain.text', format);
-        cy.get('.cvat-modal-export-task').find('[type="checkbox"]').should('not.be.checked').check();
-        cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
-        cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-        cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
-    }
-
     before(() => {
         cy.openTask(taskName);
         cy.openJob();
@@ -40,11 +25,49 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Export as a dataset with "Point Cloud" format.', () => {
-            exportDataset(dumpTypePC, 'exportDatasetPC');
+            const exportDatasetPCFormat = {
+                as: 'exportDatasetPCFormat',
+                type: 'dataset',
+                format: dumpTypePC,
+            };
+            cy.exportTask(exportDatasetPCFormat);
+            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDatasetPCFormat.format.toLowerCase()}.*.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.fixture(fileName).should('exist');
+                }
+            });
         });
 
         it('Export as a dataset with "Velodyne Points" format.', () => {
-            exportDataset(dumpTypeVC, 'exportDatasetVC');
+            const exportDatasetVCFormat = {
+                as: 'exportDatasetVCFormat',
+                type: 'dataset',
+                format: dumpTypeVC,
+            };
+            cy.exportTask(exportDatasetVCFormat);
+            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDatasetVCFormat.format.toLowerCase()}.*.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.fixture(fileName).should('exist');
+                }
+            });
+        });
+
+        it('Export as a dataset with renaming the archive.', () => {
+            const exportDatasetVCFormatRenameArchive = {
+                as: 'exportDatasetVCFormatRenameArchive',
+                type: 'dataset',
+                format: dumpTypeVC,
+                archiveCustomeName: 'task_export_3d_dataset_custome_name_vc_format'
+            };
+            cy.exportTask(exportDatasetVCFormatRenameArchive);
+            const regex = new RegExp(`^${exportDatasetVCFormatRenameArchive.archiveCustomeName}.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.fixture(fileName).should('exist');
+                }
+            });
             cy.removeAnnotations();
             cy.saveJob('PUT');
         });
