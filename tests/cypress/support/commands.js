@@ -267,11 +267,10 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`).should(($popover) => {
-        expect($popover).to.be.visible;
-        expect($popover).not.have.css('pointer-events', 'none');
-        expect($popover).not.have.class('ant-popover-hidden');
-    });
+    cy.get(`.cvat-${objectType}-popover-visible`)
+        .should('be.visible')
+        .should('have.attr', 'style')
+        .and('not.include', 'pointer-events');
     cy.get(`.cvat-${objectType}-popover-visible`)
         .find('.ant-select-selection-item')
         .click();
@@ -282,11 +281,10 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    cy.get('.cvat-draw-shape-popover').should(($popover) => {
-        expect($popover).to.be.hidden;
-        expect($popover).to.have.css('pointer-events', 'none');
-        expect($popover).to.have.class('ant-popover-hidden');
-    });
+    cy.get('.cvat-draw-shape-popover')
+        .should('be.hidden')
+        .should('have.attr', 'style')
+        .and('include', 'pointer-events');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
