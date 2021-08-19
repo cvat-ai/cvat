@@ -116,11 +116,7 @@ function ExportDatasetModal(): JSX.Element {
                     <Select placeholder='Select dataset format' className='cvat-modal-export-select'>
                         {dumpers
                             .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                            .filter(
-                                (dumper: any): boolean =>
-                                    !(instance instanceof core.classes.Task) ||
-                                    dumper.dimension === instance?.dimension,
-                            )
+                            .filter((dumper: any): boolean => dumper.dimension === instance?.dimension)
                             .map(
                                 (dumper: any): JSX.Element => {
                                     const pending = (activities || []).includes(dumper.name);

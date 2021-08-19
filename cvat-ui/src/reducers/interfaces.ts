@@ -185,6 +185,7 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
+    onChangeToolsBlockerState: (event:string) => void;
     tip: {
         message: string;
         gif: string;
@@ -195,6 +196,12 @@ export interface Model {
 }
 
 export type OpenCVTool = IntelligentScissors;
+
+export interface ToolsBlockerState {
+    algorithmsLocked?: boolean;
+    buttonVisible?: boolean;
+}
+
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',
@@ -564,6 +571,7 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
+    toolsBlockerState: ToolsBlockerState;
 }
 
 export interface ShapesSettingsState {

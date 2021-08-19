@@ -8,6 +8,7 @@ import Crosshair from './crosshair';
 import {
     translateToSVG, PropType, stringifyPoints, translateToCanvas,
 } from './shared';
+
 import {
     InteractionData, InteractionResult, Geometry, Configuration,
 } from './canvasModel';
@@ -34,6 +35,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private thresholdRectSize: number;
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
     private drawnIntermediateShape: SVG.Shape;
+    private thresholdWasModified: boolean;
 
     private prepareResult(): InteractionResult[] {
         return this.interactionShapes.map(
@@ -141,14 +143,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         _e.preventDefault();
                         _e.stopPropagation();
                         self.remove();
+                        this.shapesWereUpdated = true;
+                        const shouldRaiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self,
                         );
                         if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
                             this.interactionShapes[0].style({ visibility: '' });
                         }
-                        this.shapesWereUpdated = true;
-                        if (this.shouldRaiseEvent(_e.ctrlKey)) {
+                        if (shouldRaiseEvent) {
                             this.onInteraction(this.prepareResult(), true, false);
                         }
                     });
@@ -207,10 +210,14 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private initInteraction(): void {
         if (this.interactionData.crosshair) {
             this.addCrosshair();
+        } else if (this.crosshair) {
+            this.removeCrosshair();
         }
-
         if (this.interactionData.enableThreshold) {
             this.addThreshold();
+        } else if (this.threshold) {
+            this.threshold.remove();
+            this.threshold = null;
         }
     }
 
@@ -332,7 +339,25 @@ export class InteractionHandlerImpl implements InteractionHandler {
         const handler = shape.remember('_selectHandler');
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
+            // move green circle group(anchors) and polygon(lastChild) to the top of svg to make anchors hoverable
+            handler.parent.node.prepend(handler.nested.node);
+            handler.parent.node.prepend(handler.parent.node.lastChild);
         }
+    }
+
+    private visualComponentsChanged(interactionData: InteractionData): boolean {
+        const allowedKeys = ['enabled', 'crosshair', 'enableThreshold', 'onChangeToolsBlockerState'];
+        if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
+            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
+                && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
+                return true;
+            }
+            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
+                && this.interactionData.crosshair !== interactionData.crosshair) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public constructor(
@@ -376,7 +401,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.threshold) {
                 this.threshold.center(x, y);
             }
-
             if (this.interactionData.enableSliding && this.interactionShapes.length) {
                 if (this.isWithinFrame(x, y)) {
                     if (this.interactionData.enableThreshold && !this.isWithinThreshold(x, y)) return;
@@ -399,6 +423,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
             if (e.ctrlKey) {
                 if (this.threshold) {
+                    this.thresholdWasModified = true;
                     const { x, y } = this.cursorPosition;
                     e.preventDefault();
                     if (e.deltaY > 0) {
@@ -412,10 +437,24 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
         });
 
-        document.body.addEventListener('keyup', (e: KeyboardEvent): void => {
-            if (e.keyCode === 17 && this.shouldRaiseEvent(false)) {
-                // 17 is ctrl
-                this.onInteraction(this.prepareResult(), true, false);
+        window.addEventListener('keyup', (e: KeyboardEvent): void => {
+            if (this.interactionData.enabled && e.keyCode === 17) {
+                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                    this.interactionData.onChangeToolsBlockerState('keyup');
+                }
+                if (this.shouldRaiseEvent(false)) {
+                    // 17 is ctrl
+                    this.onInteraction(this.prepareResult(), true, false);
+                }
+            }
+        });
+
+        window.addEventListener('keydown', (e: KeyboardEvent): void => {
+            if (this.interactionData.enabled && e.keyCode === 17) {
+                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                    this.interactionData.onChangeToolsBlockerState('keydown');
+                }
+                this.thresholdWasModified = false;
             }
         });
     }
@@ -461,6 +500,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.interactionData.startWithBox) {
                 this.interactionShapes[0].style({ visibility: 'hidden' });
             }
+        } else if (interactionData.enabled && this.visualComponentsChanged(interactionData)) {
+            this.interactionData = { ...this.interactionData, ...interactionData };
+            this.initInteraction();
         } else if (interactionData.enabled) {
             this.interactionData = interactionData;
             this.initInteraction();
