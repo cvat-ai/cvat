@@ -1279,7 +1279,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
                 this.interactionHandler.interact(data);
             } else {
-                this.canvas.style.cursor = '';
+                if (!data.enabled) {
+                    this.canvas.style.cursor = '';
+                }
                 if (this.mode !== Mode.IDLE) {
                     this.interactionHandler.interact(data);
                 }
@@ -1569,7 +1571,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addObjects(states: any[]): void {
         const { displayAllText } = this.configuration;
-
         for (const state of states) {
             const points: number[] = state.points as number[];
             const translatedPoints: number[] = this.translateToCanvas(points);

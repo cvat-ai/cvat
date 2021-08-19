@@ -12,7 +12,7 @@ const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
 
 export interface Segmentation {
-    intelligentScissorsFactory: () => IntelligentScissors;
+    intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) => IntelligentScissors;
 }
 
 export interface Contours {
@@ -126,7 +126,8 @@ export class OpenCVWrapper {
         }
 
         return {
-            intelligentScissorsFactory: () => new IntelligentScissorsImplementation(this.cv),
+            intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) =>
+                new IntelligentScissorsImplementation(this.cv, onChangeToolsBlockerState),
         };
     }
 

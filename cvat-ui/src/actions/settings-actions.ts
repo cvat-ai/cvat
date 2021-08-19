@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { GridColor, ColorBy, SettingsState } from 'reducers/interfaces';
+import {
+    GridColor, ColorBy, SettingsState, ToolsBlockerState,
+} from 'reducers/interfaces';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -34,6 +36,7 @@ export enum SettingsActionTypes {
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
+    SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -276,6 +279,15 @@ export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): Any
         type: SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD,
         payload: {
             approxPolyAccuracy,
+        },
+    };
+}
+
+export function switchToolsBlockerState(toolsBlockerState: ToolsBlockerState): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_TOOLS_BLOCKER_STATE,
+        payload: {
+            toolsBlockerState,
         },
     };
 }

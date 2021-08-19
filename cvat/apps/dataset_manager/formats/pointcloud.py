@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor, TaskData,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
                                                 import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
@@ -18,10 +18,7 @@ from .registry import dm_env, exporter, importer
 @exporter(name='Sly Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, task_data, save_images=False):
 
-    if not isinstance(task_data, TaskData):
-        raise Exception("Export to \"Sly Point Cloud\" format is working only with tasks temporarily")
-
-    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
         task_data, include_images=save_images, format_type='sly_pointcloud', dimension=DimensionType.DIM_3D), env=dm_env)
 
     with TemporaryDirectory() as temp_dir:

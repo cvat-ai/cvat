@@ -30,9 +30,10 @@ import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-ba
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl,
+    CombinedState, FrameSpeed, Workspace, PredictorState, DimensionType, ActiveControl, ToolsBlockerState,
 } from 'reducers/interfaces';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { switchToolsBlockerState } from 'actions/settings-actions';
 
 interface StateToProps {
     jobInstance: any;
@@ -49,6 +50,7 @@ interface StateToProps {
     redoAction?: string;
     autoSave: boolean;
     autoSaveInterval: number;
+    toolsBlockerState: ToolsBlockerState;
     workspace: Workspace;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
@@ -72,6 +74,7 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     switchPredictor(predictorEnabled: boolean): void;
+    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -92,7 +95,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             player: { frameSpeed, frameStep },
-            workspace: { autoSave, autoSaveInterval },
+            workspace: { autoSave, autoSaveInterval, toolsBlockerState },
         },
         shortcuts: { keyMap, normalizedKeyMap },
         plugins: { list },
@@ -113,6 +116,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
         autoSave,
         autoSaveInterval,
+        toolsBlockerState,
         workspace,
         keyMap,
         normalizedKeyMap,
@@ -166,6 +170,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             if (predictorEnabled) {
                 dispatch(getPredictionsAsync());
             }
+        },
+        onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void{
+            dispatch(switchToolsBlockerState(toolsBlockerState));
         },
     };
 }
@@ -431,6 +438,22 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         canvasInstance.draw({ enabled: false });
     };
 
+    private onSwitchToolsBlockerState = (): void => {
+        const {
+            toolsBlockerState, onSwitchToolsBlockerState, canvasInstance, activeControl,
+        } = this.props;
+        if (canvasInstance instanceof Canvas) {
+            if (activeControl.includes(ActiveControl.OPENCV_TOOLS)) {
+                canvasInstance.interact({
+                    enabled: true,
+                    crosshair: toolsBlockerState.algorithmsLocked,
+                    enableThreshold: toolsBlockerState.algorithmsLocked,
+                });
+            }
+        }
+        onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
+    };
+
     private onURLIconClick = (): void => {
         const { frameNumber } = this.props;
         const { origin, pathname } = window.location;
@@ -546,6 +569,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             searchAnnotations,
             changeWorkspace,
             switchPredictor,
+            toolsBlockerState,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -672,6 +696,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     undoShortcut={normalizedKeyMap.UNDO}
                     redoShortcut={normalizedKeyMap.REDO}
                     drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
+                    // this shortcut is handled in interactionHandler.ts separatelly
+                    switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                     nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
                     previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
@@ -683,6 +709,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                     onFinishDraw={this.onFinishDraw}
+                    onSwitchToolsBlockerState={this.onSwitchToolsBlockerState}
+                    toolsBlockerState={toolsBlockerState}
                     jobInstance={jobInstance}
                     isTrainingActive={isTrainingActive}
                     activeControl={activeControl}
