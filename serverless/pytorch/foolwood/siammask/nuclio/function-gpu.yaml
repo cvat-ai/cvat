@@ -18,7 +18,7 @@ spec:
 
   build:
     image: cvat/pth.foolwood.siammask
-    baseImage: ubuntu:20.04
+    baseImage: nvidia/cuda:11.1-devel-ubuntu20.04
 
     directives:
       preCopy:
@@ -43,6 +43,8 @@ spec:
         - kind: RUN
           value: pip install -r SiamMask/requirements.txt jsonpickle
         - kind: RUN
+          value: pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+        - kind: RUN
           value: conda install -y gcc_linux-64
         - kind: RUN
           value: cd SiamMask && bash make.sh && cd -
@@ -58,6 +60,10 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
 
   platform:
     attributes:
