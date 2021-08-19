@@ -12,7 +12,12 @@ Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noCh
 
 Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
     cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
-    cy.get('.cvat-draw-cuboid-popover-visible').find('[type="search"]').click({ force: true });
+    cy.get('.cvat-draw-cuboid-popover-visible').should(($popover) => {
+        expect($popover).to.be.visible;
+        expect($popover).not.have.css('pointer-events', 'none');
+        expect($popover).not.have.class('ant-popover-hidden');
+    });
+    cy.get('.cvat-draw-cuboid-popover-visible').find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
@@ -23,4 +28,9 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
         .trigger('mousemove', cuboidCreationParams.x, cuboidCreationParams.y)
         .dblclick(cuboidCreationParams.x, cuboidCreationParams.y);
     cy.wait(1000); // Waiting for a cuboid creation
+    cy.get('.cvat-draw-shape-popover').should(($popover) => {
+        expect($popover).to.be.hidden;
+        expect($popover).to.have.css('pointer-events', 'none');
+        expect($popover).to.have.class('ant-popover-hidden');
+    });
 });
