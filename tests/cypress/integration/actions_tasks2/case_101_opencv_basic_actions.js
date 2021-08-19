@@ -54,6 +54,10 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
             openOpencvControlPopover();
+            cy.get('.cvat-opencv-control-popover-visible')
+                .should('be.visible')
+                .should('have.attr', 'style')
+                .and('not.include', 'pointer-events');
             cy.get('.cvat-opencv-control-popover-visible').find('.cvat-opencv-initialization-button').click();
             // Intelligent cissors button be visible
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
@@ -95,6 +99,10 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
 
         it('Check "Histogram Equalization" feature.', () => {
             openOpencvControlPopover();
+            cy.get('.cvat-opencv-control-popover-visible')
+                .should('be.visible')
+                .should('have.attr', 'style')
+                .and('not.include', 'pointer-events');
             cy.get('.cvat-opencv-control-popover-visible').contains('[role="tab"]', 'Image').click();
             cy.get('.cvat-opencv-image-tool').click().should('have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
             cy.get('.cvat-notification-notice-opencv-processing-error').should('not.exist');

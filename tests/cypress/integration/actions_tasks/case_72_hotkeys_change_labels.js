@@ -111,6 +111,10 @@ context('Hotkeys to change labels feature.', () => {
         it('Changing default label before drawing a shape.', () => {
             cy.interactControlButton('draw-rectangle');
             cy.switchLabel(firstLabelCurrentVal, 'draw-rectangle');
+            cy.get('.cvat-draw-rectangle-popover-visible')
+                .should('be.visible')
+                .should('have.attr', 'style')
+                .and('not.include', 'pointer-events');
             cy.get('.cvat-draw-rectangle-popover-visible').within(() => {
                 cy.contains('button', 'Shape').click();
             });

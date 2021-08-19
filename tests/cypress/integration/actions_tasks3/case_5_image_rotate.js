@@ -11,14 +11,20 @@ context('Check if the image is rotated', () => {
 
     function imageRotate(direction = 'anticlockwise') {
         cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
-        cy.get('.cvat-rotate-canvas-popover-visible').should('exist');
+        cy.get('.cvat-rotate-canvas-popover-visible')
+            .should('be.visible')
+            .should('have.attr', 'style')
+            .and('not.include', 'pointer-events');
         if (direction === 'clockwise') {
             cy.get('.cvat-rotate-canvas-controls-right').click();
         } else {
             cy.get('.cvat-rotate-canvas-controls-left').click();
         }
         cy.get('.cvat-canvas-container').click(); // Hide popover
-        cy.get('.cvat-rotate-canvas-popover-visible').should('not.exist');
+        cy.get('.cvat-rotate-canvas-popover')
+            .should('be.hidden')
+            .should('have.attr', 'style')
+            .and('include', 'pointer-events');
     }
 
     function scaleFitImage() {
@@ -35,7 +41,10 @@ context('Check if the image is rotated', () => {
                 scaleAfter = Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
                 cy.expect(scaleBefore).to.be.greaterThan(scaleAfter);
                 cy.get('#cvat_canvas_content').dblclick();
-                cy.get('.cvat-rotate-canvas-popover-visible').should('not.exist');
+                cy.get('.cvat-rotate-canvas-popover')
+                    .should('be.hidden')
+                    .should('have.attr', 'style')
+                    .and('include', 'pointer-events');
                 cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', scaleBefore);
             });
     }
