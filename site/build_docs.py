@@ -54,7 +54,7 @@ def generate_docs(repo, output_dir, tags):
 
     generate_versioning_config(os.path.join(cwd, 'site', 'versioning.toml'), (t.name for t in tags), '/..')
     for tag in tags:
-        repo.git.checkout(tag.name)
+        repo.git.checkout(tag.name, '--', 'site/content/en/docs')
         destination_dir = os.path.join(output_dir, tag.name)
         os.makedirs(destination_dir)
         run_hugo(content_loc, destination_dir)
