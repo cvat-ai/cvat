@@ -64,7 +64,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             cy.opencvCreateShape(createOpencvShapeSecondLabel);
         });
 
-        it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
+        it('Change the number of points when the shape is drawn. Intelligent scissors blocking feature. Cancel drawing.', () => {
             openOpencvControlPopover();
             cy.get('.cvat-opencv-drawing-tool').click();
             pointsMap.forEach((element) => {
@@ -88,6 +88,12 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             cy.get('.cvat_canvas_interact_intermediate_shape').should('have.attr', 'fill-opacity', 0);
             cy.get('.cvat-appearance-selected-opacity-slider').click('right');
             cy.get('.cvat_canvas_interact_intermediate_shape').should('have.attr', 'fill-opacity', 1);
+            // Intelligent scissors blocking feature
+            cy.get('.cvat_canvas_threshold').should('exist');
+            cy.contains('span', 'Block').click();
+            cy.get('.cvat_canvas_threshold').should('not.exist');
+            cy.contains('span', 'Block').click();
+            cy.get('.cvat_canvas_threshold').should('exist');
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
             cy.get('.cvat_canvas_shape').should('have.length', 2);
