@@ -282,7 +282,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
     cy.get('.cvat-draw-shape-popover')
-        .should('be.hidden')
+        .should('have.class', 'ant-popover-hidden')
         .should('have.attr', 'style')
         .and('include', 'pointer-events');
     let listCanvasShapeId = [];
