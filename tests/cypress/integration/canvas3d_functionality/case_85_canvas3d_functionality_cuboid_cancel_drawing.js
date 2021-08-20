@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Cancel drawing.', () => {
     const caseId = '85';
     const screenshotsPath =
-        'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_сancel_drawing.js';
+        'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_cancel_drawing.js';
 
     before(() => {
         cy.openTask(taskName);
@@ -19,7 +19,7 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Cancel drawing.', () => {
-            cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
+            cy.get('.cvat-draw-cuboid-control').trigger('mouseover').wait(300);
             cy.get('.cvat-draw-cuboid-popover-visible')
                 .should('be.visible')
                 .should('have.attr', 'style')

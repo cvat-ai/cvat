@@ -11,7 +11,7 @@ Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noCh
 });
 
 Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
-    cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
+    cy.get('.cvat-draw-cuboid-control').trigger('mouseover').wait(300);
     cy.get('.cvat-draw-cuboid-popover-visible')
         .should('be.visible')
         .should('have.attr', 'style')
