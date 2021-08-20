@@ -281,10 +281,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    cy.get('.cvat-draw-shape-popover')
-        .should('have.class', 'ant-popover-hidden')
-        .should('have.attr', 'style')
-        .and('include', 'pointer-events');
+    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover-visible`).should('not.exist');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
