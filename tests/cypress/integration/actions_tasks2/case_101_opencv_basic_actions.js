@@ -84,10 +84,22 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
                     expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(intermediateShapeNumberPointsAfterChange);
                 });
             });
-            cy.get('.cvat-appearance-selected-opacity-slider').click('left');
-            cy.get('.cvat_canvas_interact_intermediate_shape').should('have.attr', 'fill-opacity', 0);
-            cy.get('.cvat-appearance-selected-opacity-slider').click('right');
-            cy.get('.cvat_canvas_interact_intermediate_shape').should('have.attr', 'fill-opacity', 1);
+            cy.get('.cvat-appearance-selected-opacity-slider')
+                .click('left')
+                .find('[role="slider"]')
+                .then((sliderSelectedOpacityLeft) => {
+                    const sliderSelectedOpacityValuenow = sliderSelectedOpacityLeft.attr('aria-valuenow');
+                    cy.get('.cvat_canvas_interact_intermediate_shape')
+                        .should('have.attr', 'fill-opacity', sliderSelectedOpacityValuenow / 100);
+            });
+            cy.get('.cvat-appearance-selected-opacity-slider')
+                .click('right')
+                .find('[role="slider"]')
+                .then((sliderSelectedOpacityRight) => {
+                    const sliderSelectedOpacityValuenow = sliderSelectedOpacityRight.attr('aria-valuenow');
+                    cy.get('.cvat_canvas_interact_intermediate_shape')
+                        .should('have.attr', 'fill-opacity', sliderSelectedOpacityValuenow / 100);
+            });
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
             cy.get('.cvat_canvas_shape').should('have.length', 2);
