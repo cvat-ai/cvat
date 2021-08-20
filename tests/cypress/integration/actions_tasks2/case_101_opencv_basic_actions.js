@@ -103,7 +103,11 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
                 .should('be.visible')
                 .should('have.attr', 'style')
                 .and('not.include', 'pointer-events');
-            cy.get('.cvat-opencv-control-popover-visible').contains('[role="tab"]', 'Image').click();
+            cy.get('.cvat-opencv-control-popover-visible')
+                .contains('[role="tab"]', 'Image')
+                .click()
+                .parents('.ant-tabs-tab')
+                .should('have.class', 'ant-tabs-tab-active');
             cy.get('.cvat-opencv-image-tool').click().should('have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
             cy.get('.cvat-notification-notice-opencv-processing-error').should('not.exist');
             cy.get('.cvat-opencv-image-tool').click().should('not.have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
