@@ -7,7 +7,7 @@
 import { taskName, labelName } from '../../support/const';
 import { generateString } from '../../support/utils';
 
-context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
+context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
     const caseId = '101';
     const newLabel = `Case ${caseId}`
     const createOpencvShape = {
