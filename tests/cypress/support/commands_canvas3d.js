@@ -11,17 +11,8 @@ Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noCh
 });
 
 Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
-    cy.get('.cvat-draw-cuboid-control').trigger('mouseover').wait(300);
-    cy.get('.cvat-draw-cuboid-popover-visible')
-        .should('be.visible')
-        .should('have.attr', 'style')
-        .and('not.include', 'pointer-events');
-    cy.get('.cvat-draw-cuboid-popover-visible').find('.ant-select-selection-item').click();
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .within(() => {
-            cy.contains(new RegExp(`^${cuboidCreationParams.labelName}$`)).click();
-        });
+    cy.interactControlButton('draw-cuboid');
+    cy.switchLabel(cuboidCreationParams.labelName, 'draw-cuboid');
     cy.get('.cvat-draw-cuboid-popover-visible').find('button').click();
     cy.get('.cvat-canvas3d-perspective')
         .trigger('mousemove', cuboidCreationParams.x, cuboidCreationParams.y)
