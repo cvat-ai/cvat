@@ -112,7 +112,7 @@ context('Hotkeys to change labels feature.', () => {
             cy.interactControlButton('draw-rectangle');
             cy.switchLabel(firstLabelCurrentVal, 'draw-rectangle');
             cy.get('.cvat-draw-rectangle-popover-visible')
-                .should('be.visible')
+                .should('not.have.class', 'ant-popover-hidden')
                 .should('have.attr', 'style')
                 .and('not.include', 'pointer-events');
             cy.get('.cvat-draw-rectangle-popover-visible').within(() => {

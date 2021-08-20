@@ -268,7 +268,7 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
     cy.get(`.cvat-${objectType}-popover-visible`)
-        .should('be.visible')
+        .should('not.have.class', 'ant-popover-hidden')
         .should('have.attr', 'style')
         .and('not.include', 'pointer-events');
     cy.get(`.cvat-${objectType}-popover-visible`)

@@ -12,7 +12,7 @@ context('Check if the image is rotated', () => {
     function imageRotate(direction = 'anticlockwise') {
         cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
         cy.get('.cvat-rotate-canvas-popover-visible')
-            .should('be.visible')
+            .should('not.have.class', 'ant-popover-hidden')
             .should('have.attr', 'style')
             .and('not.include', 'pointer-events');
         if (direction === 'clockwise') {

@@ -55,7 +55,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
         it('Load OpenCV.', () => {
             openOpencvControlPopover();
             cy.get('.cvat-opencv-control-popover-visible')
-                .should('be.visible')
+                .should('not.have.class', 'ant-popover-hidden')
                 .should('have.attr', 'style')
                 .and('not.include', 'pointer-events');
             cy.get('.cvat-opencv-control-popover-visible').find('.cvat-opencv-initialization-button').click();
@@ -100,7 +100,7 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
         it('Check "Histogram Equalization" feature.', () => {
             openOpencvControlPopover();
             cy.get('.cvat-opencv-control-popover-visible')
-                .should('be.visible')
+                .should('not.have.class', 'ant-popover-hidden')
                 .should('have.attr', 'style')
                 .and('not.include', 'pointer-events');
             cy.get('.cvat-opencv-control-popover-visible')
