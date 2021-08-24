@@ -73,6 +73,8 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // Get count of points
                 const intermediateShapeNumberPointsBeforeChange = intermediateShape.attr('points').split(' ').length;
+                // expected 7 to be above 5
+                expect(intermediateShapeNumberPointsBeforeChange).to.be.gt(pointsMap.length);
                 // Change number of points
                 cy.get('.cvat-approx-poly-threshold-wrapper')
                     .find('[role="slider"]')
@@ -91,6 +93,25 @@ context('OpenCV. Intelligent cissors. Histogram Equalization.', () => {
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
             cy.get('.cvat_canvas_shape').should('have.length', 2);
+        });
+
+        it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
+            openOpencvControlPopover();
+            cy.get('.cvat-opencv-drawing-tool').click();
+            cy.contains('span', 'Block').click();
+            cy.get('.cvat_canvas_threshold').should('not.exist');
+            pointsMap.forEach((element) => {
+                cy.get('.cvat-canvas-container').click(element.x, element.y);
+            });
+            cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
+                // Get count of points
+                const intermediateShapeNumberPoints = intermediateShape.attr('points').split(' ').length;
+                // The last point on the crosshair
+                expect(intermediateShapeNumberPoints - 1).to.be.equal(pointsMap.length)
+            });
+            cy.get('body').type('{Ctrl}'); // Checking hotkey
+            cy.get('.cvat_canvas_threshold').should('exist');
+            cy.get('body').type('{Esc}'); // Cancel drawing
         });
 
         it('Check "Histogram Equalization" feature.', () => {
