@@ -14,14 +14,11 @@ import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
-import Progress from 'antd/lib/progress';
-import InputNumber from 'antd/lib/input-number';
 import Dropdown from 'antd/lib/dropdown';
 import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
-import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -121,8 +118,6 @@ interface State {
     activeInteractor: Model | null;
     activeLabelID: number;
     activeTracker: Model | null;
-    trackingProgress: number | null;
-    trackingFrames: number;
     trackedShapes: TrackedShape[];
     fetching: boolean;
     pointsRecieved: boolean;
@@ -155,8 +150,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeLabelID: props.labels.length ? props.labels[0].id : null,
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             trackedShapes: [],
-            trackingProgress: null,
-            trackingFrames: 10,
             fetching: false,
             pointsRecieved: false,
             mode: 'interaction',
@@ -403,9 +396,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             // update annotations on a canvas
             fetchAnnotations();
-            // const states = await jobInstance.annotations.get(frame);
-            // const [objectState] = states.filter((_state: any): boolean => _state.clientID === clientID);
-            // await this.trackState(objectState);
         } catch (err) {
             notification.error({
                 description: err.toString(),
@@ -610,7 +600,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     });
 
                     fetchAnnotations();
-                    // TODO: block navigation
                 } catch (error) {
                     notification.error({
                         message: 'Tracking error occured',
@@ -660,70 +649,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         return points;
     }
 
-    public async trackState(state: any): Promise<void> {
-        const { jobInstance, frame, fetchAnnotations } = this.props;
-        const { activeTracker, trackingFrames } = this.state;
-        const { clientID, points } = state;
-
-        const tracker = activeTracker as Model;
-        try {
-            this.setState({ trackingProgress: 0, fetching: true });
-            let response = await core.lambda.call(jobInstance.task, tracker, {
-                task: jobInstance.task,
-                frame,
-                shapes: [points],
-            });
-
-            for (const offset of range(1, trackingFrames + 1)) {
-                /* eslint-disable no-await-in-loop */
-                const states = await jobInstance.annotations.get(frame + offset);
-                const [objectState] = states.filter((_state: any): boolean => _state.clientID === clientID);
-                response = await core.lambda.call(jobInstance.task, tracker, {
-                    task: jobInstance.task,
-                    frame: frame + offset,
-                    shapes: response.shapes,
-                    states: response.states,
-                });
-
-                const reduced = response.shapes[0].reduce(
-                    (acc: number[], value: number, index: number): number[] => {
-                        if (index % 2) {
-                            // y
-                            acc[1] = Math.min(acc[1], value);
-                            acc[3] = Math.max(acc[3], value);
-                        } else {
-                            // x
-                            acc[0] = Math.min(acc[0], value);
-                            acc[2] = Math.max(acc[2], value);
-                        }
-                        return acc;
-                    },
-                    [
-                        Number.MAX_SAFE_INTEGER,
-                        Number.MAX_SAFE_INTEGER,
-                        Number.MIN_SAFE_INTEGER,
-                        Number.MIN_SAFE_INTEGER,
-                    ],
-                );
-
-                objectState.points = reduced;
-                await objectState.save();
-
-                this.setState({ trackingProgress: offset / trackingFrames });
-            }
-        } finally {
-            this.setState({ trackingProgress: null, fetching: false });
-            fetchAnnotations();
-        }
-    }
-
-    public trackingAvailable(): boolean {
-        const { activeTracker, trackingFrames } = this.state;
-        const { trackers } = this.props;
-
-        return !!trackingFrames && !!trackers.length && activeTracker !== null;
-    }
-
     private renderLabelBlock(): JSX.Element {
         const { labels } = this.props;
         const { activeLabelID } = this.state;
@@ -752,9 +677,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const {
             trackers, canvasInstance, jobInstance, frame, onInteractionStart,
         } = this.props;
-        const {
-            activeTracker, activeLabelID, fetching, trackingFrames,
-        } = this.state;
+        const { activeTracker, activeLabelID, fetching } = this.state;
 
         if (!trackers.length) {
             return (
@@ -790,27 +713,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 ),
                             )}
                         </Select>
-                    </Col>
-                </Row>
-                <Row align='middle' justify='start' style={{ marginTop: '5px' }}>
-                    <Col>
-                        <Text>Tracking frames</Text>
-                    </Col>
-                    <Col offset={2}>
-                        <InputNumber
-                            value={trackingFrames}
-                            step={1}
-                            min={1}
-                            precision={0}
-                            max={jobInstance.stopFrame - frame}
-                            onChange={(value: number | undefined | string | null): void => {
-                                if (typeof value !== 'undefined' && value !== null) {
-                                    this.setState({
-                                        trackingFrames: +value,
-                                    });
-                                }
-                            }}
-                        />
                     </Col>
                 </Row>
                 <Row align='middle' justify='end'>
@@ -1022,7 +924,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const {
-            fetching, trackingProgress, approxPolyAccuracy, pointsRecieved, mode,
+            fetching, approxPolyAccuracy, pointsRecieved, mode,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -1049,8 +951,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const showAnyContent = !!labels.length;
         const showInteractionContent = isActivated && mode === 'interaction' && pointsRecieved;
         const showDetectionContent = fetching && mode === 'detection';
-        const showTrackingContent = fetching && mode === 'tracking' && trackingProgress !== null;
-        const formattedTrackingProgress = showTrackingContent ? +((trackingProgress as number) * 100).toFixed(0) : null;
 
         const interactionContent: JSX.Element | null = showInteractionContent ? (
             <>
@@ -1063,23 +963,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             </>
         ) : null;
 
-        const trackOrDetectModal: JSX.Element | null =
-            showDetectionContent || showTrackingContent ? (
-                <Modal
-                    title='Making a server request'
-                    zIndex={Number.MAX_SAFE_INTEGER}
-                    visible
-                    destroyOnClose
-                    closable={false}
-                    footer={[]}
-                >
-                    <Text>Waiting for a server response..</Text>
-                    <LoadingOutlined style={{ marginLeft: '10px' }} />
-                    {showTrackingContent ? (
-                        <Progress percent={formattedTrackingProgress as number} status='active' />
-                    ) : null}
-                </Modal>
-            ) : null;
+        const detectionContent: JSX.Element | null = showDetectionContent ? (
+            <Modal
+                title='Making a server request'
+                zIndex={Number.MAX_SAFE_INTEGER}
+                visible
+                destroyOnClose
+                closable={false}
+                footer={[]}
+            >
+                <Text>Waiting for a server response..</Text>
+                <LoadingOutlined style={{ marginLeft: '10px' }} />
+            </Modal>
+        ) : null;
 
         return showAnyContent ? (
             <>
@@ -1087,7 +983,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
                 {interactionContent}
-                {trackOrDetectModal}
+                {detectionContent}
             </>
         ) : (
             <Icon className=' cvat-tools-control cvat-disabled-canvas-control' component={AIToolsIcon} />
