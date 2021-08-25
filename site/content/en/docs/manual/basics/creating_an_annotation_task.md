@@ -49,10 +49,10 @@ There are two ways of working with labels (available only if the task is not rel
      - Text — is used when an attribute is entered as a text.
      - Number — is used when an attribute is entered as a number.
   1. Set values for the attribute. The values could be separated by pressing `Enter`.
-    The entered value is displayed as a separate element which could be deleted
-    by pressing `Backspace` or clicking the close button (x).
-    If the specified way of displaying the attribute is Text or Number,
-    the entered value will be displayed as text by default (e.g. you can specify the text format).
+     The entered value is displayed as a separate element which could be deleted
+     by pressing `Backspace` or clicking the close button (x).
+     If the specified way of displaying the attribute is Text or Number,
+     the entered value will be displayed as text by default (e.g. you can specify the text format).
   1. Checkbox `Mutable` determines if an attribute would be changed frame to frame.
   1. You can delete the attribute by clicking the close button (x).
 
