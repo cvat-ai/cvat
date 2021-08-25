@@ -197,6 +197,7 @@ export enum AnnotationActionTypes {
     GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
     GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
     GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
+    SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -689,8 +690,12 @@ export function getPredictionsAsync(): ThunkAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number,
-    forceUpdate?: boolean): ThunkAction {
+export function changeFrameAsync(
+    toFrame: number,
+    fillBuffer?: boolean,
+    frameStep?: number,
+    forceUpdate?: boolean,
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
@@ -1664,5 +1669,14 @@ export function getContextImageAsync(): ThunkAction {
                 payload: { error },
             });
         }
+    };
+}
+
+export function switchNavigationBlocked(navigationBlocked: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_NAVIGATION_BLOCKED,
+        payload: {
+            navigationBlocked,
+        },
     };
 }

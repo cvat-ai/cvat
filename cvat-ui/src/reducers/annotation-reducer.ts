@@ -64,6 +64,7 @@ const defaultState: AnnotationState = {
         },
         playing: false,
         frameAngles: [],
+        navigationBlocked: false,
         contextImage: {
             fetching: false,
             data: null,
@@ -1216,6 +1217,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.player.contextImage,
                         fetching: false,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_NAVIGATION_BLOCKED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    navigationBlocked: action.payload.navigationBlocked,
                 },
             };
         }

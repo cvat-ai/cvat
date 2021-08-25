@@ -29,6 +29,7 @@ import {
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
+    switchNavigationBlocked as switchNavigationBlockedAction,
     fetchAnnotationsAsync,
     updateAnnotationsAsync,
     createAnnotationsAsync,
@@ -65,6 +66,7 @@ interface DispatchToProps {
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
+    switchNavigationBlocked(navigationBlocked: boolean): void;
 }
 
 const core = getCore();
@@ -104,6 +106,7 @@ const mapDispatchToProps = {
     createAnnotations: createAnnotationsAsync,
     fetchAnnotations: fetchAnnotationsAsync,
     onSwitchToolsBlockerState: switchToolsBlockerState,
+    switchNavigationBlocked: switchNavigationBlockedAction,
 };
 
 type Props = StateToProps & DispatchToProps;
@@ -177,7 +180,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
-        const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
+        const {
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, switchNavigationBlocked,
+        } = this.props;
         const { approxPolyAccuracy, mode } = this.state;
 
         if (prevProps.isActivated && !isActivated) {
@@ -221,7 +226,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
         }
 
-        this.checkTrackedStates(prevProps);
+        switchNavigationBlocked(true);
+        this.checkTrackedStates(prevProps).finally(() => {
+            switchNavigationBlocked(false);
+        });
     }
 
     public componentWillUnmount(): void {
@@ -377,7 +385,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 points,
                 frame,
                 occluded: false,
-                source: 'auto',
                 attributes: {},
             });
 
