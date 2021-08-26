@@ -25,7 +25,7 @@ import range from 'utils/range';
 import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, Model, ObjectType, ShapeType,
+    CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -38,6 +38,7 @@ import LabelSelector from 'components/label-selector/label-selector';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -55,6 +56,7 @@ interface StateToProps {
     curZOrder: number;
     aiToolsRef: MutableRefObject<any>;
     defaultApproxPolyAccuracy: number;
+    toolsBlockerState: ToolsBlockerState;
 }
 
 interface DispatchToProps {
@@ -62,6 +64,7 @@ interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
+    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
 }
 
 const core = getCore();
@@ -75,6 +78,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { instance: canvasInstance, activeControl } = annotation.canvas;
     const { models } = state;
     const { interactors, detectors, trackers } = models;
+    const { toolsBlockerState } = state.settings.workspace;
 
     return {
         interactors,
@@ -90,6 +94,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         curZOrder: annotation.annotations.zLayer.cur,
         aiToolsRef: annotation.aiToolsRef,
         defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
+        toolsBlockerState,
     };
 }
 
@@ -98,6 +103,7 @@ const mapDispatchToProps = {
     updateAnnotations: updateAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
     fetchAnnotations: fetchAnnotationsAsync,
+    onSwitchToolsBlockerState: switchToolsBlockerState,
 };
 
 type Props = StateToProps & DispatchToProps;
@@ -200,6 +206,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             shapeType: ShapeType.POLYGON,
                             points: this.interaction.latestResult.flat(),
                         },
+                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                     });
                 });
             }
@@ -281,6 +288,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         shapeType: ShapeType.POLYGON,
                         points: this.interaction.latestResult.flat(),
                     },
+                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
             }
 
@@ -401,6 +409,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({
             activeTracker: trackers.filter((tracker: Model) => tracker.id === value)[0],
         });
+    };
+
+    private onChangeToolsBlockerState = (event:string):void => {
+        const { isActivated, onSwitchToolsBlockerState } = this.props;
+        if (isActivated && event === 'keydown') {
+            onSwitchToolsBlockerState({ algorithmsLocked: true });
+        } else if (isActivated && event === 'keyup') {
+            onSwitchToolsBlockerState({ algorithmsLocked: false });
+        }
     };
 
     private constructFromPoints(points: number[][]): void {
@@ -611,6 +628,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     });
 
                                     onInteractionStart(activeTracker, activeLabelID);
+                                    const { onSwitchToolsBlockerState } = this.props;
+                                    onSwitchToolsBlockerState({ buttonVisible: false });
                                 }
                             }}
                         >
@@ -693,12 +712,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                                 if (activeInteractor) {
                                     canvasInstance.cancel();
+                                    activeInteractor.onChangeToolsBlockerState = this.onChangeToolsBlockerState;
                                     canvasInstance.interact({
                                         shapeType: 'points',
                                         enabled: true,
                                         ...activeInteractor.params.canvas,
                                     });
-
                                     onInteractionStart(activeInteractor, activeLabelID);
                                 }
                             }}
@@ -753,6 +772,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         );
 
                         createAnnotations(jobInstance, frame, states);
+                        const { onSwitchToolsBlockerState } = this.props;
+                        onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error) {
                         notification.error({
                             description: error.toString(),
@@ -776,7 +797,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Text>
                     </Col>
                 </Row>
-                <Tabs type='card' tabBarGutter={8}>
+                <Tabs
+                    type='card'
+                    tabBarGutter={8}
+                >
                     <Tabs.TabPane key='interactors' tab='Interactors'>
                         {this.renderLabelBlock()}
                         {this.renderInteractorBlock()}

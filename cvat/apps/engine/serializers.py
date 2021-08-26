@@ -504,13 +504,15 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
     training_project = TrainingProjectSerializer(required=False, allow_null=True)
+    dimension = serializers.CharField(max_length=16, required=False)
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
-                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project')
-        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
+                  'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'training_project', 'dimension')
+        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
         ordering = ['-id']
 
 
@@ -519,6 +521,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         task_subsets = set(instance.tasks.values_list('subset', flat=True))
         task_subsets.discard('')
         response['task_subsets'] = list(task_subsets)
+        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
         return response
 
 class ProjectSerializer(ProjectWithoutTaskSerializer):
@@ -580,7 +583,9 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
         return value
 
     def to_representation(self, instance):
-        return serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
+        response = serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
+        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
+        return response
 
 class ExceptionSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=255)

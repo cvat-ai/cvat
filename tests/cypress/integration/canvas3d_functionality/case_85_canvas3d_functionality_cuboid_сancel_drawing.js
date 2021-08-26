@@ -8,10 +8,11 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Cancel drawing.', () => {
     const caseId = '85';
-    const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_сancel_drawing.js';
+    const screenshotsPath =
+        'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_сancel_drawing.js';
 
     before(() => {
-        cy.openTask(taskName)
+        cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
     });
