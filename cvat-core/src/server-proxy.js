@@ -1145,9 +1145,7 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => (
-                        !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId
-                    );
+                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
@@ -1252,13 +1250,35 @@
                 let response = null;
                 try {
                     const url = `${backendAPI}/cloudstorages/${id}/preview`;
-                    response = await Axios.get(url, {
+                    response = await workerAxios.get(url, {
                         proxy: config.proxy,
-                        responseType: 'blob',
+                        responseType: 'arraybuffer',
                     });
                 } catch (errorData) {
-                    const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError(`Could not get preview for the cloud storage ${id} from the server`, code);
+                    throw generateError({
+                        ...errorData,
+                        message: '',
+                        response: {
+                            ...errorData.response,
+                            data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
+                        },
+                    });
+                }
+
+                return new Blob([new Uint8Array(response)]);
+            }
+
+            async function getCloudStorageStatus(id) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    const url = `${backendAPI}/cloudstorages/${id}/status`;
+                    response = await Axios.get(url, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -1409,6 +1429,7 @@
                             get: getCloudStorages,
                             getContent: getCloudStorageContent,
                             getPreview: getCloudStoragePreview,
+                            getStatus: getCloudStorageStatus,
                             create: createCloudStorage,
                             delete: deleteCloudStorage,
                             update: updateCloudStorage,

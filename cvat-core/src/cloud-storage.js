@@ -390,6 +390,21 @@
             const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getPreview);
             return result;
         }
+
+        /**
+         * Method returns cloud storage status
+         * @method getStatus
+         * @memberof module:API.cvat.classes.CloudStorage
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async getStatus() {
+            const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getStatus);
+            return result;
+        }
     }
 
     CloudStorage.prototype.save.implementation = async function () {
@@ -492,6 +507,11 @@
                     reject(error);
                 });
         });
+    };
+
+    CloudStorage.prototype.getStatus.implementation = async function () {
+        const result = await serverProxy.cloudStorages.getStatus(this.id);
+        return result;
     };
 
     module.exports = {

@@ -1544,12 +1544,12 @@
                      */
                     cloudStorageId: {
                         get: () => data.cloud_storage_id,
-                        set: (cloudStorageId) => {
-                            if (!Number.isInteger(cloudStorageId) || cloudStorageId <= 0) {
-                                throw new ArgumentError('Value must be a positive integer');
-                            }
-                            data.cloud_storage_id = cloudStorageId;
-                        },
+                        // set: (cloudStorageId) => {
+                        //     if (!Number.isInteger(cloudStorageId) || cloudStorageId <= 0) {
+                        //         throw new ArgumentError('Value must be a positive integer');
+                        //     }
+                        //     data.cloud_storage_id = cloudStorageId;
+                        // },
                     },
                     _internalData: {
                         get: () => data,
