@@ -1,10 +1,16 @@
-#from dataclasses import dataclass
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+import os
+import boto3
+
 from abc import ABC, abstractmethod, abstractproperty
+from enum import Enum
 from io import BytesIO
 
-import boto3
 from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import WaiterError
+from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
 
 from azure.storage.blob import BlobServiceClient
@@ -13,6 +19,18 @@ from azure.storage.blob import PublicAccess
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
+
+class Status(str, Enum):
+    AVAILABLE = 'AVAILABLE'
+    NOT_FOUND = 'NOT_FOUND'
+    FORBIDDEN = 'FORBIDDEN'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
 
 class _CloudStorage(ABC):
 
@@ -32,11 +50,19 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def get_file_last_modified(self, key):
+    def _head(self):
         pass
 
     @abstractmethod
-    def exists(self):
+    def get_status(self):
+        pass
+
+    @abstractmethod
+    def get_file_status(self, key):
+        pass
+
+    @abstractmethod
+    def get_file_last_modified(self, key):
         pass
 
     @abstractmethod
@@ -50,6 +76,7 @@ class _CloudStorage(ABC):
     def download_file(self, key, path):
         file_obj = self.download_fileobj(key)
         if isinstance(file_obj, BytesIO):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb') as f:
                 f.write(file_obj.getvalue())
         else:
@@ -89,40 +116,7 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
         raise NotImplementedError()
     return instance
 
-def check_cloud_storage_existing(provider_type,
-                                credentials_type,
-                                session_token,
-                                account_name,
-                                key,
-                                secret_key,
-                                resource,
-                                specific_attributes):
-    credentials = Credentials(
-        key=key,
-        secret_key=secret_key,
-        session_token=session_token,
-        account_name=account_name,
-        credentials_type=credentials_type)
-    details = {
-        'resource': resource,
-        'credentials': credentials,
-        'specific_attributes': {
-                item.split('=')[0].strip(): item.split('=')[1].strip()
-                    for item in specific_attributes.split('&')
-                } if len(specific_attributes)
-                    else dict()
-    }
-    storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-    if not storage.exists():
-        message = str('The resource {} unavailable'.format(resource))
-        slogger.glob.error(message)
-        raise Exception(message)
-
 class AWS_S3(_CloudStorage):
-    waiter_config = {
-        'Delay': 1, # The amount of time in seconds to wait between attempts. Default: 5
-        'MaxAttempts': 2, # The maximum number of attempts to be made. Default: 20
-    }
     transfer_config = {
         'max_io_queue': 10,
     }
@@ -166,34 +160,35 @@ class AWS_S3(_CloudStorage):
     def name(self):
         return self._bucket.name
 
-    def exists(self):
-        waiter = self._client_s3.get_waiter('bucket_exists')
-        try:
-            waiter.wait(
-                Bucket=self.name,
-                WaiterConfig=self.waiter_config
-            )
-            return True
-        except WaiterError:
-            return False
-
-    def is_object_exist(self, key_object):
-        waiter = self._client_s3.get_waiter('object_exists')
-        try:
-            waiter.wait(
-                Bucket=self.name,
-                Key=key_object,
-                WaiterConfig=self.waiter_config,
-            )
-            return True
-        except WaiterError:
-            return False
+    def _head(self):
+        return self._client_s3.head_bucket(Bucket=self.name)
 
     def _head_file(self, key):
-        return self._client_s3.head_object(
-            Bucket=self.name,
-            Key=key
-        )
+        return self._client_s3.head_object(Bucket=self.name, Key=key)
+
+    def get_status(self):
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object
+        # return only 3 codes: 200, 403, 404
+        try:
+            self._head()
+            return Status.AVAILABLE
+        except ClientError as ex:
+            code = ex.response['Error']['Code']
+            if code == '403':
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
+
+    def get_file_status(self, key):
+        try:
+            self._head_file(key)
+            return Status.AVAILABLE
+        except ClientError as ex:
+            code = ex.response['Error']['Code']
+            if code == '403':
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
 
     def get_file_last_modified(self, key):
         return self._head_file(key).get('LastModified')
@@ -276,12 +271,24 @@ class AzureBlobContainer(_CloudStorage):
             slogger.glob.info(msg)
             raise Exception(msg)
 
-    def exists(self):
-        return self._container_client.exists(timeout=2)
+    def _head(self):
+        #TODO
+        raise NotImplementedError()
 
-    def is_object_exist(self, file_name):
-        blob_client = self._container_client.get_blob_client(file_name)
-        return blob_client.exists()
+    def get_status(self):
+        # TODO
+        raise NotImplementedError()
+
+    def get_file_status(self, key):
+        # TODO
+        raise NotImplementedError()
+
+    # def exists(self):
+    #     return self._container_client.exists(timeout=2)
+
+    # def is_object_exist(self, file_name):
+    #     blob_client = self._container_client.get_blob_client(file_name)
+    #     return blob_client.exists()
 
     def _head_file(self, key):
         blob_client = self.container.get_blob_client(key)
@@ -352,10 +359,23 @@ class Credentials:
 
     def mapping_with_new_values(self, credentials):
         self.credentials_type = credentials.get('credentials_type', self.credentials_type)
-        self.key = credentials.get('key', self.key)
-        self.secret_key = credentials.get('secret_key', self.secret_key)
-        self.session_token = credentials.get('session_token', self.session_token)
-        self.account_name = credentials.get('account_name', self.account_name)
+        if self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
+            self.key = ''
+            self.secret_key = ''
+            self.session_token = ''
+            self.account_name = credentials.get('account_name', self.account_name)
+        elif self.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
+            self.key = credentials.get('key', self.key)
+            self.secret_key = credentials.get('secret_key', self.secret_key)
+            self.session_token = ''
+            self.account_name = ''
+        elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
+            self.session_token = credentials.get('session_token', self.session_token)
+            self.account_name = credentials.get('account_name', self.account_name)
+            self.key = ''
+            self.secret_key = ''
+        else:
+            raise NotImplementedError('Mapping credentials: unsupported credentials type')
 
     def values(self):
         return [self.key, self.secret_key, self.session_token, self.account_name]

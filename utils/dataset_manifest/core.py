@@ -268,6 +268,7 @@ class _ManifestManager(ABC):
     }
     def __init__(self, path, *args, **kwargs):
         self._manifest = _Manifest(path)
+        self._index = _Index(os.path.dirname(self._manifest.path))
 
     def _parse_line(self, line):
         """ Getting a random line from the manifest file """
@@ -286,7 +287,6 @@ class _ManifestManager(ABC):
                 return json.loads(properties)
 
     def init_index(self):
-        self._index = _Index(os.path.dirname(self._manifest.path))
         if os.path.exists(self._index.path):
             self._index.load()
         else:
@@ -294,7 +294,6 @@ class _ManifestManager(ABC):
             self._index.dump()
 
     def reset_index(self):
-        self._index = _Index(os.path.dirname(self._manifest.path))
         if os.path.exists(self._index.path):
             self._index.remove()
 

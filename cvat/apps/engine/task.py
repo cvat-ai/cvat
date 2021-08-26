@@ -255,6 +255,17 @@ def _create_thread(tid, data, isImport=False):
             first_sorted_media_image = sorted(media['image'])[0]
             cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
 
+            # prepare task manifest file from cloud storage manifest file
+            manifest = ImageManifestManager(db_data.get_manifest_path())
+            cloud_storage_manifest = ImageManifestManager(
+                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file[0])
+            )
+            cloud_storage_manifest.init_index()
+            media_files = sorted(media['image'])
+            content = cloud_storage_manifest.get_subset(media_files)
+            manifest.create(content)
+            manifest.init_index()
+
     av_scan_paths(upload_dir)
 
     job = rq.get_current_job()
@@ -366,16 +377,6 @@ def _create_thread(tid, data, isImport=False):
             if not (db_data.storage == models.StorageChoice.CLOUD_STORAGE):
                 w, h = extractor.get_image_size(0)
             else:
-                manifest = ImageManifestManager(db_data.get_manifest_path())
-                # prepare task manifest file from cloud storage manifest file
-                cloud_storage_manifest = ImageManifestManager(
-                    os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file[0])
-                )
-                cloud_storage_manifest.init_index()
-                media_files = sorted(media['image'])
-                content = cloud_storage_manifest.get_subset(media_files)
-                manifest.create(content)
-                manifest.init_index()
                 img_properties = manifest[0]
                 w, h = img_properties['width'], img_properties['height']
             area = h * w

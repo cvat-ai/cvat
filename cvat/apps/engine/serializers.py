@@ -11,7 +11,7 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, check_cloud_storage_existing, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -454,7 +454,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if 'project_id' in attrs.keys() and self.instance is not None:
             project_id = attrs.get('project_id')
             if project_id is not None and not models.Project.objects.filter(id=project_id).count():
-                raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+                    raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
@@ -834,40 +834,58 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             session_token=validated_data.pop('session_token', ''),
             credentials_type = validated_data.get('credentials_type')
         )
+        details = {
+            'resource': validated_data.get('resource'),
+            'credentials': credentials,
+            'specific_attributes': {
+                item.split('=')[0].strip(): item.split('=')[1].strip()
+                    for item in validated_data.get('specific_attributes').split('&')
+                } if len(validated_data.get('specific_attributes', ''))
+                    else dict()
+        }
+        storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
         if should_be_created:
-            details = {
-                'resource': validated_data.get('resource'),
-                'credentials': credentials,
-                'specific_attributes': {
-                    item.split('=')[0].strip(): item.split('=')[1].strip()
-                        for item in validated_data.get('specific_attributes').split('&')
-                    } if len(validated_data.get('specific_attributes', ''))
-                        else dict()
-            }
-            storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
             try:
                 storage.create()
             except Exception as ex:
                 slogger.glob.warning("Failed with creating storage\n{}".format(str(ex)))
                 raise
 
-        manifests = validated_data.pop('manifests')
+        storage_status = storage.get_status()
+        if storage_status == Status.AVAILABLE:
 
-        db_storage = models.CloudStorage.objects.create(
-            credentials=credentials.convert_to_db(),
-            **validated_data
-        )
-        db_storage.save()
+            manifests = validated_data.pop('manifests')
+            # check for existence of manifest files
+            for manifest in manifests:
+                if not storage.get_file_status(manifest.get('filename')) == Status.AVAILABLE:
+                    raise serializers.ValidationError({
+                        'manifests': "The '{}' file does not exist on '{}' cloud storage" \
+                            .format(manifest.get('filename'), storage.name)
+                })
 
-        manifest_file_instances = [models.Manifest(**manifest, cloud_storage=db_storage) for manifest in manifests]
-        models.Manifest.objects.bulk_create(manifest_file_instances)
+            db_storage = models.CloudStorage.objects.create(
+                credentials=credentials.convert_to_db(),
+                **validated_data
+            )
+            db_storage.save()
 
-        cloud_storage_path = db_storage.get_storage_dirname()
-        if os.path.isdir(cloud_storage_path):
-            shutil.rmtree(cloud_storage_path)
+            manifest_file_instances = [models.Manifest(**manifest, cloud_storage=db_storage) for manifest in manifests]
+            models.Manifest.objects.bulk_create(manifest_file_instances)
 
-        os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
-        return db_storage
+            cloud_storage_path = db_storage.get_storage_dirname()
+            if os.path.isdir(cloud_storage_path):
+                shutil.rmtree(cloud_storage_path)
+
+            os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
+            return db_storage
+        elif storage_status == Status.FORBIDDEN:
+            field = 'credentials'
+            message = 'Cannot create resource {} with specified credentials. Access forbidden.'.format(storage.name)
+        else:
+            field = 'recource'
+            message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        slogger.glob.error(message)
+        raise serializers.ValidationError({field: message})
 
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
@@ -882,21 +900,48 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
         instance.display_name = validated_data.get('display_name', instance.display_name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.specific_attributes = validated_data.get('specific_attributes', instance.specific_attributes)
 
-        check_cloud_storage_existing(instance.provider_type, instance.credentials_type, credentials.session_token,
-            credentials.account_name, credentials.key, credentials.secret_key, instance.resource, instance.specific_attributes)
-
-        new_manifest_names = set(i.get('filename') for i in validated_data.get('manifests', []))
-        previos_manifest_names = set(i.filename for i in instance.manifests.all())
-        delta_to_delete = tuple(previos_manifest_names - new_manifest_names)
-        delta_to_create = tuple(new_manifest_names - previos_manifest_names)
-        if delta_to_delete:
-            instance.manifests.filter(filename__in=delta_to_delete).delete()
-        if delta_to_create:
-            manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
-            models.Manifest.objects.bulk_create(manifest_instances)
-        instance.save()
-        return instance
+        # check cloud storage existing
+        details = {
+            'resource': instance.resource,
+            'credentials': credentials,
+            'specific_attributes': {
+                item.split('=')[0].strip(): item.split('=')[1].strip()
+                    for item in instance.specific_attributes.split('&')
+                } if len(instance.specific_attributes)
+                    else dict()
+        }
+        storage = get_cloud_storage_instance(cloud_provider=instance.provider_type, **details)
+        storage_status = storage.get_status()
+        if storage_status == Status.AVAILABLE:
+            new_manifest_names = set(i.get('filename') for i in validated_data.get('manifests', []))
+            previos_manifest_names = set(i.filename for i in instance.manifests.all())
+            delta_to_delete = tuple(previos_manifest_names - new_manifest_names)
+            delta_to_create = tuple(new_manifest_names - previos_manifest_names)
+            if delta_to_delete:
+                instance.manifests.filter(filename__in=delta_to_delete).delete()
+            if delta_to_create:
+                # check manifest files existing
+                for manifest in delta_to_create:
+                    if not storage.get_file_status(manifest) == Status.AVAILABLE:
+                        raise serializers.ValidationError({
+                            'manifests': "The '{}' file does not exist on '{}' cloud storage"
+                                .format(manifest, storage.name)
+                    })
+                manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
+                models.Manifest.objects.bulk_create(manifest_instances)
+            instance.save()
+            return instance
+        elif storage_status == Status.FORBIDDEN:
+            field = 'credentials'
+            message = 'Cannot update resource {} with specified credentials. Access forbidden.'.format(storage.name)
+        else:
+            field = 'recource'
+            message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        slogger.glob.error(message)
+        raise serializers.ValidationError({field: message})
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 

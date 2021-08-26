@@ -86,22 +86,18 @@ class CacheInteraction:
                     cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
                     cloud_storage_instance.initialize_content()
                     for item in reader:
-                        # full_name may be 'sub_dir/image.jpeg'
-                        full_name = f"{item['name']}{item['extension']}"
-                        if full_name not in cloud_storage_instance:
-                            raise Exception('{} file was not found on a {} storage'.format(full_name, cloud_storage_instance.name))
-                        head, file_name = os.path.split(full_name)
-                        abs_head = os.path.join(gettempdir(), head)
-                        os.makedirs(abs_head, exist_ok=True)
-                        with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=file_name, delete=False, dir=abs_head) as temp_file:
+                        file_name = f"{item['name']}{item['extension']}"
+                        if file_name not in cloud_storage_instance:
+                            raise Exception('{} file was not found on a {} storage'.format(file_name, cloud_storage_instance.name))
+                        with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=file_name.replace(os.path.sep, '#'), delete=False) as temp_file:
                             source_path = temp_file.name
-                            buf = cloud_storage_instance.download_fileobj(full_name)
+                            buf = cloud_storage_instance.download_fileobj(file_name)
                             temp_file.write(buf.getvalue())
                             checksum = item.get('checksum', None)
                             if not checksum:
                                 slogger.cloud_storage[db_cloud_storage.id].warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
                             if checksum and not md5_hash(source_path) == checksum:
-                                slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(full_name))
+                                slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(file_name))
                             images.append((source_path, source_path, None))
                 except Exception as ex:
                     if not cloud_storage_instance.exists():
@@ -116,14 +112,9 @@ class CacheInteraction:
         writer.save_as_chunk(images, buff)
         buff.seek(0)
         if db_data.storage == StorageChoice.CLOUD_STORAGE:
-            tmp = gettempdir()
-            created_dirs = set(filter(lambda x: x if x.lstrip(tmp) else None, [os.path.dirname(i[0]) for i in images]))
             images = [image[0] for image in images if os.path.exists(image[0])]
             for image_path in images:
                 os.remove(image_path)
-            for created_dir in created_dirs:
-                if not os.listdir(created_dir):
-                    os.rmdir(created_dir)
         return buff, mime_type
 
     def save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):
