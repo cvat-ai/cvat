@@ -297,6 +297,10 @@ class _ManifestManager(ABC):
         if os.path.exists(self._index.path):
             self._index.remove()
 
+    def set_index(self):
+        self.reset_index()
+        self.init_index()
+
     @abstractmethod
     def create(self, content, **kwargs):
         pass

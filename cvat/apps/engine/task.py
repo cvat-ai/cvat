@@ -260,7 +260,7 @@ def _create_thread(tid, data, isImport=False):
             cloud_storage_manifest = ImageManifestManager(
                 os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file[0])
             )
-            cloud_storage_manifest.init_index()
+            cloud_storage_manifest.set_index()
             media_files = sorted(media['image'])
             content = cloud_storage_manifest.get_subset(media_files)
             manifest.create(content)

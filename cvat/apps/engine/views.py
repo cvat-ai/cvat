@@ -1350,9 +1350,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                     datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
                 storage.download_file(manifest_path, full_manifest_path)
             manifest = ImageManifestManager(full_manifest_path)
-            # need to reset previon index
-            manifest.reset_index()
-            manifest.init_index()
+            # need to update index
+            manifest.set_index()
             manifest_files = manifest.data
             return Response(data=manifest_files, content_type="text/plain")
 
@@ -1408,8 +1407,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                             datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
                         storage.download_file(manifest_model.filename, full_manifest_path)
                     manifest = ImageManifestManager(os.path.join(db_storage.get_storage_dirname(), manifest_model.filename))
-                    manifest.reset_index()
-                    manifest.init_index()
+                    # need to update index
+                    manifest.set_index()
                     if not len(manifest):
                         continue
                     preview_info = manifest[0]
