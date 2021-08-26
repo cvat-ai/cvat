@@ -351,7 +351,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private onTracking = async (e: Event): Promise<void> => {
-        const { trackedShapes } = this.state;
+        const { trackedShapes, activeTracker } = this.state;
         const {
             isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
         } = this.props;
@@ -379,6 +379,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frame,
                 occluded: false,
                 attributes: {},
+                descriptions: [`Trackable (${activeTracker?.name})`],
             });
 
             const [clientID] = await jobInstance.annotations.put([state]);

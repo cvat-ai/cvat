@@ -46,6 +46,12 @@ polyline.cvat_shape_drawing_opacity {
     pointer-events: none;
 }
 
+.cvat_canvas_text_description {
+    font-size: 14px;
+    fill: yellow;
+    font-style: oblique 40deg;
+}
+
 .cvat_canvas_crosshair {
     stroke: red;
 }
@@ -159,9 +165,8 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 .cvat_canvas_removable_interaction_point {
-    cursor:
-        url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K')
-        10 10,
+    cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K')
+            10 10,
         auto;
 }
 
