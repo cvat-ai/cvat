@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('filename', models.CharField(default='manifest.jsonl', max_length=1024)),
-                ('cloud_storage', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='manifests', to='engine.cloudstorage')),
+                ('cloud_storage', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='manifests', to='engine.cloudstorage')),
             ],
         ),
     ]
