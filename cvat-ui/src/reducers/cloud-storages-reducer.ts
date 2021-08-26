@@ -11,6 +11,7 @@ const defaultState: CloudStoragesState = {
     fetching: false,
     count: 0,
     current: [],
+    currentStatuses: [],
     gettingQuery: {
         page: 1,
         id: null,
@@ -41,6 +42,12 @@ const defaultState: CloudStoragesState = {
             fetching: false,
             error: '',
         },
+        getsStatus: {
+            cloudStorageID: null,
+            status: null,
+            fetching: false,
+            error: '',
+        },
     },
 };
 
@@ -64,6 +71,7 @@ export default (
                 fetching: true,
                 count: 0,
                 current: [],
+                currentStatuses: [],
             };
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS: {
             const { count, query } = action.payload;
@@ -264,6 +272,53 @@ export default (
                     ...state.activities,
                     contentLoads: {
                         ...state.activities.contentLoads,
+                        error: action.payload.error.toString(),
+                        fetching: false,
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS:
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    getsStatus: {
+                        cloudStorageID: null,
+                        status: null,
+                        error: '',
+                        fetching: true,
+                    },
+                },
+            };
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS: {
+            const { cloudStorageID, status } = action.payload;
+            const statuses = state.currentStatuses;
+            statuses.push({
+                id: cloudStorageID,
+                status,
+            });
+            return {
+                ...state,
+                currentStatuses: statuses,
+                activities: {
+                    ...state.activities,
+                    getsStatus: {
+                        cloudStorageID,
+                        status,
+                        error: '',
+                        fetching: false,
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    getsStatus: {
+                        ...state.activities.getsStatus,
                         error: action.payload.error.toString(),
                         fetching: false,
                     },

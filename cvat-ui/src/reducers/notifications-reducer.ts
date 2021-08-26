@@ -1238,7 +1238,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     cloudStorages: {
                         ...state.errors.cloudStorages,
-                        updating: {
+                        deleting: {
                             message:
                                 'Could not delete ' +
                                 `<a href="/cloudstorages/${cloudStorageID}" target="_blank">
@@ -1258,10 +1258,45 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     cloudStorages: {
                         ...state.errors.cloudStorages,
-                        updating: {
+                        fetching: {
                             message: `Could not fetch content for cloud storage #${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-fetch-cloud-storage-content-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
+            const { cloudStorageID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        fetching: {
+                            message: `Could not fetch cloud storage #${cloudStorageID} status`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-cloud-storage-status-failed',
+                        },
+                    },
+                },
+            };
+        }
+
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED: {
+            const { cloudStorageID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        fetching: {
+                            message: `Could not fetch preview for cloud storage #${cloudStorageID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-cloud-storage-preview-failed',
                         },
                     },
                 },

@@ -110,13 +110,21 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     }}
                     options={list.map((_cloudStorage) => ({
                         value: _cloudStorage.id.toString(),
-                        label:
-                            <>
-                                {(_cloudStorage.providerType === ProviderType.AWS_S3_BUCKET) ?
-                                    <S3Provider /> :
-                                    <AzureProvider />}
+                        label: (
+                            <span
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-start',
+                                }}
+                            >
+                                {_cloudStorage.providerType === ProviderType.AWS_S3_BUCKET ? (
+                                    <S3Provider />
+                                ) : (
+                                    <AzureProvider />
+                                )}
                                 {_cloudStorage.displayName}
-                            </>,
+                            </span>
+                        ),
                     }))}
                     onSelect={(value: string) => {
                         const selectedCloudStorage =
@@ -136,9 +144,13 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     rules={[{ required: true, message: 'Please, specify a manifest file' }]}
                 >
                     <Select onSelect={(value: string) => setSelectedManifest(value)}>
-                        {cloudStorage.manifests.map((manifest: string): JSX.Element => (
-                            <Option key={manifest} value={manifest}>{manifest}</Option>
-                        ))}
+                        {cloudStorage.manifests.map(
+                            (manifest: string): JSX.Element => (
+                                <Option key={manifest} value={manifest}>
+                                    {manifest}
+                                </Option>
+                            ),
+                        )}
                     </Select>
                 </Form.Item>
             ) : null}

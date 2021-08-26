@@ -5,11 +5,12 @@
 import React, { useEffect, useState } from 'react';
 import Divider from 'antd/lib/divider';
 import Select from 'antd/lib/select';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Form from 'antd/lib/form';
 import notification from 'antd/lib/notification';
+import Tooltip from 'antd/lib/tooltip';
 import consts from '../../consts';
 
 const { Option } = Select;
@@ -33,6 +34,11 @@ export default function S3Region(props: Props): JSX.Element {
     const [newRegionKey, setNewRegionKey] = useState<string>('');
     const [newRegionName, setNewRegionName] = useState<string>('');
     const [regionOptions, setRegionOptions] = useState<JSX.Element[]>([]);
+
+    const style: React.CSSProperties = {
+        paddingLeft: '4px',
+        paddingRight: '0px',
+    };
 
     useEffect(() => {
         if (regions) {
@@ -66,9 +72,21 @@ export default function S3Region(props: Props): JSX.Element {
 
     return (
         <Form.Item
-            label='Region'
+            label={(
+                <>
+                    Region
+                    <Tooltip title='More information'>
+                        <Button
+                            type='link'
+                            style={style}
+                            href='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
+                        >
+                            <QuestionCircleOutlined />
+                        </Button>
+                    </Tooltip>
+                </>
+            )}
             name='region'
-            tooltip='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
             {...internalCommonProps}
         >
             <Select
@@ -102,8 +120,8 @@ export default function S3Region(props: Props): JSX.Element {
                                 }}
                                 onClick={handleAddingRegion}
                             >
-                                <PlusOutlined />
                                 Add region
+                                <PlusCircleOutlined />
                             </Button>
                         </div>
                     </div>

@@ -56,7 +56,8 @@
 
     img {
         height: $grid-unit-size * 24;
-        object-fit: cover;
+        width: auto;
+        margin: auto;
     }
 
     .cvat-cloud-storage-item-menu-button {

@@ -29,7 +29,7 @@ interface DataNode {
 }
 
 interface DataStructure {
-    name: string ;
+    name: string;
     children: Map<string, DataStructure> | null;
     unparsedChildren: string[] | null;
 }
@@ -62,14 +62,16 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
     const parseContent = (mass: string[], root = ''): Map<string, DataStructure> => {
         const data: Map<string, DataStructure> = new Map();
         // define directories
-        const upperDirs: Set<string> = new Set(mass.filter((path: string) => path.includes('/'))
-            .map((path: string) => path.split('/', 1)[0]));
+        const upperDirs: Set<string> = new Set(
+            mass.filter((path: string) => path.includes('/')).map((path: string) => path.split('/', 1)[0]),
+        );
 
         for (const dir of upperDirs) {
             const child: DataStructure = {
                 name: dir,
                 children: null,
-                unparsedChildren: mass.filter((path: string) => path.startsWith(`${dir}/`))
+                unparsedChildren: mass
+                    .filter((path: string) => path.startsWith(`${dir}/`))
                     .map((path: string) => path.replace(`${dir}/`, '')),
             };
             data.set(`${root}${dir}/`, child);
@@ -150,7 +152,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                     title: value.name,
                     key,
                     isLeaf: !value.children && !value.unparsedChildren,
-                    disabled: !!value.children || !!value.unparsedChildren,
+                    disabled: !!value.unparsedChildren,
                     children: [],
                 };
                 if (value.children) {
@@ -195,9 +197,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                     multiple
                     checkable
                     height={256}
-                    onCheck={(checkedKeys: Files) => (
-                        onSelectFiles((checkedKeys as string[]).concat([manifest]))
-                    )}
+                    onCheck={(checkedKeys: Files) => onSelectFiles((checkedKeys as string[]).concat([manifest]))}
                     // onExpand={(expandedKeysValue: React.Key[]) => onExpand(expandedKeysValue)}
                     loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                     treeData={treeData}

@@ -15,7 +15,8 @@ import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 
-import { MinusCircleOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { MinusCircleOutlined, PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import Tooltip from 'antd/lib/tooltip';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
@@ -28,6 +29,9 @@ export interface Props {
     shouldShowCreationNotification?: MutableRefObject<boolean>;
     shouldShowUpdationNotification?: MutableRefObject<boolean>;
 }
+
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -76,6 +80,11 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [manifestNames, setManifestNames] = useState<string[]>([]);
     const maxManifestsCount = useRef<number>(5);
     const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState<boolean>(false);
+
+    const style: React.CSSProperties = {
+        paddingLeft: '4px',
+        paddingRight: '0px',
+    };
 
     const updateManifestFields = (): void => {
         const newManifestFormItems = manifestNames.map((name, idx) => ({
@@ -309,15 +318,26 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         });
     };
 
-    const onFocusCredentialsItem = (
-        credential: 'key' | 'secretKey' | 'accountName' | 'sessionToken',
-        key: 'key' | 'secret_key' | 'account_name' | 'session_token',
-    ): void => {
+    const onFocusCredentialsItem = (credential: CredentialsCamelCaseNames, key: CredentialsFormNames): void => {
         // reset fake credential when updating a cloud storage and cursor is in this field
         if (cloudStorage && formRef.current?.getFieldValue(key) === fakeCredentialsData[credential]) {
             formRef.current.setFieldsValue({
                 [key]: undefined,
             });
+        }
+    };
+
+    const onBlurCredentialsItem = (
+        credential: CredentialsCamelCaseNames,
+        key: CredentialsFormNames,
+        setVisibility: any,
+    ): void => {
+        // set fake credential when updating a cloud storage and cursor disappears from the field and value not changed
+        if (cloudStorage && formRef.current && !formRef.current.getFieldValue(key)) {
+            formRef.current.setFieldsValue({
+                [key]: fakeCredentialsData[credential],
+            });
+            setVisibility(false);
         }
     };
 
@@ -357,6 +377,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             visibilityToggle={keyVisibility}
                             onChange={() => setKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('key', 'key')}
+                            onBlur={() => onBlurCredentialsItem('key', 'key', setKeyVisibility)}
                         />
                     </Form.Item>
                     <Form.Item
@@ -370,6 +391,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             visibilityToggle={secretKeyVisibility}
                             onChange={() => setSecretKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('secretKey', 'secret_key')}
+                            onBlur={() => onBlurCredentialsItem('secretKey', 'secret_key', setSecretKeyVisibility)}
                         />
                     </Form.Item>
                 </>
@@ -394,6 +416,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             visibilityToggle={accountNameVisibility}
                             onChange={() => setAccountNameVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('accountName', 'account_name')}
+                            onBlur={() =>
+                                onBlurCredentialsItem('accountName', 'account_name', setAccountNameVisibility)}
                         />
                     </Form.Item>
                     <Form.Item
@@ -406,6 +430,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             visibilityToggle={sessionTokenVisibility}
                             onChange={() => setSessionTokenVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('sessionToken', 'session_token')}
+                            onBlur={() =>
+                                onBlurCredentialsItem('sessionToken', 'session_token', setSessionTokenVisibility)}
                         />
                     </Form.Item>
                 </>
@@ -539,12 +565,16 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     }}
                 >
                     <Select.Option value={ProviderType.AWS_S3_BUCKET}>
-                        <S3Provider />
-                        AWS S3
+                        <span className='cvat-cloud-storage-select-provider'>
+                            <S3Provider />
+                            AWS S3
+                        </span>
                     </Select.Option>
                     <Select.Option value={ProviderType.AZURE_CONTAINER}>
-                        <AzureProvider />
-                        Azure Blob Container
+                        <span className='cvat-cloud-storage-select-provider'>
+                            <AzureProvider />
+                            Azure Blob Container
+                        </span>
                     </Select.Option>
                 </Select>
             </Form.Item>
@@ -552,14 +582,31 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
             <Form.Item
                 name='manifests'
-                label='Manifests'
+                label={(
+                    <>
+                        Manifests
+                        <Tooltip title='More information'>
+                            <Button
+                                type='link'
+                                style={style}
+                                href='https://openvinotoolkit.github.io/cvat/docs/manual/advanced/dataset_manifest/'
+                            >
+                                <QuestionCircleOutlined />
+                            </Button>
+                        </Tooltip>
+                    </>
+                )}
                 rules={[{ required: true, message: 'Please, specify at least one manifest file' }]}
-            >
-                <Button type='link' onClick={handleAddManifestItem} className='cvat-add-manifest-button'>
-                    <PlusCircleOutlined />
-                </Button>
-            </Form.Item>
+            />
             <Form.List name='manifests'>{renderManifests()}</Form.List>
+            <Row justify='start'>
+                <Col>
+                    <Button type='ghost' onClick={handleAddManifestItem} className='cvat-add-manifest-button'>
+                        Add manifest
+                        <PlusCircleOutlined />
+                    </Button>
+                </Col>
+            </Row>
             <Row justify='end'>
                 <Col>
                     <Button
@@ -568,7 +615,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         className='cvat-cloud-storage-reset-button'
                         disabled={loading}
                     >
-                        Cansel
+                        Cancel
                     </Button>
                 </Col>
                 <Col offset={1}>

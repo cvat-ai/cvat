@@ -14,6 +14,10 @@ export enum CloudStorageActionTypes {
     GET_CLOUD_STORAGES = 'GET_CLOUD_STORAGES',
     GET_CLOUD_STORAGE_SUCCESS = 'GET_CLOUD_STORAGES_SUCCESS',
     GET_CLOUD_STORAGE_FAILED = 'GET_CLOUD_STORAGES_FAILED',
+    GET_CLOUD_STORAGE_STATUS = 'GET_CLOUD_STORAGE_STATUS',
+    GET_CLOUD_STORAGE_STATUS_SUCCESS = 'GET_CLOUD_STORAGE_STATUS_SUCCESS',
+    GET_CLOUD_STORAGE_STATUS_FAILED = 'GET_CLOUD_STORAGE_STATUS_FAILED',
+    GET_CLOUD_STORAGE_PREVIEW_FAILED = 'GET_CLOUD_STORAGE_PREVIEW_FAILED',
     CREATE_CLOUD_STORAGE = 'CREATE_CLOUD_STORAGE',
     CREATE_CLOUD_STORAGE_SUCCESS = 'CREATE_CLOUD_STORAGE_SUCCESS',
     CREATE_CLOUD_STORAGE_FAILED = 'CREATE_CLOUD_STORAGE_FAILED',
@@ -29,9 +33,8 @@ export enum CloudStorageActionTypes {
 }
 
 const cloudStoragesActions = {
-    updateCloudStoragesGettingQuery: (query: Partial<CloudStoragesQuery>) => (
-        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY, { query })
-    ),
+    updateCloudStoragesGettingQuery: (query: Partial<CloudStoragesQuery>) =>
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY, { query }),
     getCloudStorages: () => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGES),
     getCloudStoragesSuccess: (array: any[], previews: string[], count: number, query: Partial<CloudStoragesQuery>) =>
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS, {
@@ -63,6 +66,13 @@ const cloudStoragesActions = {
         createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_SUCCESS, { cloudStorageID, content }),
     loadCloudStorageContentFailed: (cloudStorageID: number, error: any) =>
         createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED, { cloudStorageID, error }),
+    getCloudStorageStatus: () => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS),
+    getCloudStorageStatusSuccess: (cloudStorageID: number, status: string) =>
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS, { cloudStorageID, status }),
+    getCloudStorageStatusFailed: (cloudStorageID: number, error: any) =>
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED, { cloudStorageID, error }),
+    getCloudStoragePreiewFailed: (cloudStorageID: number, error: any) =>
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error }),
 };
 
 export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;
@@ -88,16 +98,13 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
         }
 
         const array = Array.from(result);
-        const promises = array.map((cloudStorage: CloudStorage): string => (cloudStorage as any).getPreview().catch(() => ''));
+        const promises = array.map((cloudStorage: CloudStorage): string =>
+            (cloudStorage as any).getPreview().catch((error: any) => {
+                dispatch(cloudStoragesActions.getCloudStoragePreiewFailed(cloudStorage.id, error));
+                return '';
+            }));
 
-        dispatch(
-            cloudStoragesActions.getCloudStoragesSuccess(
-                array,
-                await Promise.all(promises),
-                result.count,
-                query,
-            ),
-        );
+        dispatch(cloudStoragesActions.getCloudStoragesSuccess(array, await Promise.all(promises), result.count, query));
     };
 }
 
@@ -151,6 +158,18 @@ export function loadCloudStorageContentAsync(cloudStorage: CloudStorage): ThunkA
             dispatch(cloudStoragesActions.loadCloudStorageContentSuccess(cloudStorage.id, result));
         } catch (error) {
             dispatch(cloudStoragesActions.loadCloudStorageContentFailed(cloudStorage.id, error));
+        }
+    };
+}
+
+export function getCloudStorageStatusAsync(cloudStorage: CloudStorage): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(cloudStoragesActions.getCloudStorageStatus());
+        try {
+            const result = await cloudStorage.getStatus();
+            dispatch(cloudStoragesActions.getCloudStorageStatusSuccess(cloudStorage.id, result));
+        } catch (error) {
+            dispatch(cloudStoragesActions.getCloudStorageStatusFailed(cloudStorage.id, error));
         }
     };
 }

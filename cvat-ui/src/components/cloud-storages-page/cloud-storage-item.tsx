@@ -19,12 +19,11 @@ import moment from 'moment';
 import { CloudStorage, CombinedState } from 'reducers/interfaces';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import Status from './cloud-storage-status';
 
 interface Props {
     cloudStorageInstance: CloudStorage;
 }
-
-// TODO: implement status
 
 export default function CloudStorageItemComponent(props: Props): JSX.Element {
     const history = useHistory();
@@ -33,7 +32,13 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
     // cloudStorageInstance: {storage, preview}
     const { cloudStorageInstance } = props;
     const {
-        id, displayName, providerType, owner, createdDate, updatedDate, description,
+        id,
+        displayName,
+        providerType,
+        owner,
+        createdDate,
+        updatedDate,
+        description,
     } = cloudStorageInstance.storage;
     const { preview } = cloudStorageInstance;
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
@@ -116,10 +121,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                             <Text type='secondary'>Last updated </Text>
                             <Text type='secondary'>{moment(updatedDate).fromNow()}</Text>
                         </Paragraph>
-                        <Paragraph>
-                            <Text type='secondary'>Status: </Text>
-                            <Text type='warning'>Not implemented</Text>
-                        </Paragraph>
+                        <Status cloudStorage={cloudStorageInstance.storage} />
                         <Dropdown
                             overlay={(
                                 <Menu className='cvat-project-actions-menu'>
