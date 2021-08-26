@@ -1297,7 +1297,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 msg_body = ""
                 for ex in exceptions.args:
                     for field, ex_msg in ex.items():
-                        msg_body += ": ".join([field, str(ex_msg[0])])
+                        msg_body += ': '.join([field, ex_msg if isinstance(ex_msg, str) else str(ex_msg[0])])
                         msg_body += '\n'
                 return HttpResponseBadRequest(msg_body)
         except APIException as ex:
