@@ -14,7 +14,7 @@ from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
 
 from azure.storage.blob import BlobServiceClient
-from azure.core.exceptions import ResourceExistsError
+from azure.core.exceptions import ResourceExistsError, HttpResponseError
 from azure.storage.blob import PublicAccess
 
 from cvat.apps.engine.log import slogger
@@ -272,23 +272,7 @@ class AzureBlobContainer(_CloudStorage):
             raise Exception(msg)
 
     def _head(self):
-        #TODO
-        raise NotImplementedError()
-
-    def get_status(self):
-        # TODO
-        raise NotImplementedError()
-
-    def get_file_status(self, key):
-        # TODO
-        raise NotImplementedError()
-
-    # def exists(self):
-    #     return self._container_client.exists(timeout=2)
-
-    # def is_object_exist(self, file_name):
-    #     blob_client = self._container_client.get_blob_client(file_name)
-    #     return blob_client.exists()
+        return self._container_client.get_container_properties()
 
     def _head_file(self, key):
         blob_client = self.container.get_blob_client(key)
@@ -296,6 +280,26 @@ class AzureBlobContainer(_CloudStorage):
 
     def get_file_last_modified(self, key):
         return self._head_file(key).last_modified
+
+    def get_status(self):
+        try:
+            self._head()
+            return Status.AVAILABLE
+        except HttpResponseError as ex:
+            if  ex.status_code == 403:
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
+
+    def get_file_status(self, key):
+        try:
+            self._head_file(key)
+            return Status.AVAILABLE
+        except HttpResponseError as ex:
+            if  ex.status_code == 403:
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
 
     def upload_file(self, file_obj, file_name):
         self._container_client.upload_blob(name=file_name, data=file_obj)
