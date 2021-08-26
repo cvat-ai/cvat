@@ -7,7 +7,7 @@ from io import BytesIO
 
 from diskcache import Cache
 from django.conf import settings
-from tempfile import NamedTemporaryFile, gettempdir
+from tempfile import NamedTemporaryFile
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
