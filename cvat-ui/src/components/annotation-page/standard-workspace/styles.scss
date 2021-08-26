@@ -192,6 +192,24 @@
     margin-top: 10px;
 }
 
+.cvat-interactors-tips-icon-container {
+    text-align: center;
+    font-size: 20px;
+}
+
+.cvat-interactor-tip-container {
+    background: $background-color-2;
+    padding: $grid-unit-size;
+    box-shadow: $box-shadow-base;
+    width: $grid-unit-size * 40;
+    text-align: center;
+    border-radius: 4px;
+}
+
+.cvat-interactor-tip-image {
+    width: $grid-unit-size * 37;
+}
+
 .cvat-draw-shape-popover-points-selector {
     width: 100%;
 }

@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from io import BufferedWriter
 import os
 import os.path as osp
+from typing import Callable
 import zipfile
 from collections import OrderedDict
 from glob import glob
@@ -11,7 +13,7 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.extractor import DatasetItem
 
-from cvat.apps.dataset_manager.bindings import match_dm_item
+from cvat.apps.dataset_manager.bindings import TaskData, match_dm_item, ProjectData, get_defaulted_subset
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
 
@@ -42,8 +44,10 @@ def create_xml_dumper(file_object):
             self.xmlgen.characters(self.version)
             self.xmlgen.endElement("version")
 
-        def open_root(self):
+        def open_document(self):
             self.xmlgen.startDocument()
+
+        def open_root(self):
             self.xmlgen.startElement("annotations", {})
             self._level += 1
             self._add_version()
@@ -168,23 +172,34 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("annotations")
+            self._indent()
+
+        def close_document(self):
             self.xmlgen.endDocument()
+
 
     return XmlAnnotationWriter(file_object)
 
-def dump_as_cvat_annotation(file_object, annotations):
-    dumper = create_xml_dumper(file_object)
+def dump_as_cvat_annotation(dumper, annotations):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 
     for frame_annotation in annotations.group_by_frame(include_empty=True):
         frame_id = frame_annotation.frame
-        dumper.open_image(OrderedDict([
+        image_attrs = OrderedDict([
             ("id", str(frame_id)),
             ("name", frame_annotation.name),
+        ])
+        if isinstance(annotations, ProjectData):
+            image_attrs.update(OrderedDict([
+                ("subset", frame_annotation.subset),
+                ("task_id", str(frame_annotation.task_id)),
+            ]))
+        image_attrs.update(OrderedDict([
             ("width", str(frame_annotation.width)),
             ("height", str(frame_annotation.height))
         ]))
+        dumper.open_image(image_attrs)
 
         for shape in frame_annotation.labeled_shapes:
             dump_data = OrderedDict([
@@ -286,8 +301,7 @@ def dump_as_cvat_annotation(file_object, annotations):
         dumper.close_image()
     dumper.close_root()
 
-def dump_as_cvat_interpolation(file_object, annotations):
-    dumper = create_xml_dumper(file_object)
+def dump_as_cvat_interpolation(dumper, annotations):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
     def dump_track(idx, track):
@@ -297,6 +311,13 @@ def dump_as_cvat_interpolation(file_object, annotations):
             ("label", track.label),
             ("source", track.source),
         ])
+
+        if hasattr(track, 'task_id'):
+            task, = filter(lambda task: task.id == track.task_id, annotations.tasks)
+            dump_data.update(OrderedDict([
+                ('task_id', str(track.task_id)),
+                ('subset', get_defaulted_subset(task.subset, annotations.subsets)),
+            ]))
 
         if track.group:
             dump_data['group_id'] = str(track.group)
@@ -383,11 +404,17 @@ def dump_as_cvat_interpolation(file_object, annotations):
         counter += 1
 
     for shape in annotations.shapes:
-        dump_track(counter, annotations.Track(
-            label=shape.label,
-            group=shape.group,
-            source=shape.source,
-            shapes=[annotations.TrackedShape(
+        frame_step = annotations.frame_step if isinstance(annotations, TaskData) else annotations.frame_step[shape.task_id]
+        if isinstance(annotations, TaskData):
+            stop_frame = int(annotations.meta['task']['stop_frame'])
+        else:
+            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta['project']['tasks']))[0][1]
+            stop_frame = int(task_meta['stop_frame'])
+        track = {
+            'label': shape.label,
+            'group': shape.group,
+            'source': shape.source,
+            'shapes': [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
                 occluded=shape.occluded,
@@ -405,13 +432,15 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 outside=True,
                 keyframe=True,
                 z_order=shape.z_order,
-                frame=shape.frame + annotations.frame_step,
+                frame=shape.frame + frame_step,
                 attributes=shape.attributes,
-            )] if shape.frame + annotations.frame_step < \
-                    int(annotations.meta['task']['stop_frame']) \
+            )] if shape.frame + frame_step < \
+                    stop_frame \
                else []
             ),
-        ))
+        }
+        if isinstance(annotations, ProjectData): track['task_id'] = shape.task_id
+        dump_track(counter, annotations.Track(**track))
         counter += 1
 
     dumper.close_root()
@@ -527,39 +556,76 @@ def load(file_object, annotations):
                 tag = None
             el.clear()
 
-def _export(dst_file, task_data, anno_callback, save_images=False):
+def dump_task_anno(dst_file, task_data, callback):
+    dumper = create_xml_dumper(dst_file)
+    dumper.open_document()
+    callback(dumper, task_data)
+    dumper.close_document()
+
+def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callback: Callable):
+    dumper = create_xml_dumper(dst_file)
+    dumper.open_document()
+    callback(dumper, project_data)
+    dumper.close_document()
+
+def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectData = None):
+    ext = ''
+    if task_data.meta['task']['mode'] == 'interpolation':
+        ext = FrameProvider.VIDEO_FRAME_EXT
+
+    frame_provider = FrameProvider(task_data.db_task.data)
+    frames = frame_provider.get_frames(
+        frame_provider.Quality.ORIGINAL,
+        frame_provider.Type.BUFFER)
+    for frame_id, (frame_data, _) in enumerate(frames):
+        frame_name = task_data.frame_info[frame_id]['path'] if project_data is None \
+            else project_data.frame_info[(task_data.db_task.id, frame_id)]['path']
+        img_path = osp.join(img_dir, frame_name + ext)
+        os.makedirs(osp.dirname(img_path), exist_ok=True)
+        with open(img_path, 'wb') as f:
+            f.write(frame_data.getvalue())
+
+def _export_task(dst_file, task_data, anno_callback, save_images=False):
     with TemporaryDirectory() as temp_dir:
         with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
-            anno_callback(f, task_data)
+            dump_task_anno(f, task_data, anno_callback)
 
         if save_images:
-            ext = ''
-            if task_data.meta['task']['mode'] == 'interpolation':
-                ext = FrameProvider.VIDEO_FRAME_EXT
+            dump_media_files(task_data, osp.join(temp_dir, 'images'))
 
-            img_dir = osp.join(temp_dir, 'images')
-            frame_provider = FrameProvider(task_data.db_task.data)
-            frames = frame_provider.get_frames(
-                frame_provider.Quality.ORIGINAL,
-                frame_provider.Type.BUFFER)
-            for frame_id, (frame_data, _) in enumerate(frames):
-                frame_name = task_data.frame_info[frame_id]['path']
-                img_path = osp.join(img_dir, frame_name + ext)
-                os.makedirs(osp.dirname(img_path), exist_ok=True)
-                with open(img_path, 'wb') as f:
-                    f.write(frame_data.getvalue())
+        make_zip_archive(temp_dir, dst_file)
+
+def _export_project(dst_file: str, project_data: ProjectData, anno_callback: Callable, save_images: bool=False):
+    with TemporaryDirectory() as temp_dir:
+        with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
+            dump_project_anno(f, project_data, anno_callback)
+
+        if save_images:
+            for task_data in project_data.task_data:
+                subset = get_defaulted_subset(task_data.db_task.subset, project_data.subsets)
+                subset_dir = osp.join(temp_dir, 'images', subset)
+                os.makedirs(subset_dir, exist_ok=True)
+                dump_media_files(task_data, subset_dir, project_data)
 
         make_zip_archive(temp_dir, dst_file)
 
 @exporter(name='CVAT for video', ext='ZIP', version='1.1')
-def _export_video(dst_file, task_data, save_images=False):
-    _export(dst_file, task_data,
-        anno_callback=dump_as_cvat_interpolation, save_images=save_images)
+def _export_video(dst_file, instance_data, save_images=False):
+    if isinstance(instance_data, ProjectData):
+        _export_project(dst_file, instance_data,
+            anno_callback=dump_as_cvat_interpolation, save_images=save_images)
+    else:
+        _export_task(dst_file, instance_data,
+            anno_callback=dump_as_cvat_interpolation, save_images=save_images)
 
 @exporter(name='CVAT for images', ext='ZIP', version='1.1')
-def _export_images(dst_file, task_data, save_images=False):
-    _export(dst_file, task_data,
-        anno_callback=dump_as_cvat_annotation, save_images=save_images)
+def _export_images(dst_file, instance_data, save_images=False):
+    if isinstance(instance_data, ProjectData):
+        _export_project(dst_file, instance_data,
+            anno_callback=dump_as_cvat_annotation, save_images=save_images)
+    else:
+        _export_task(dst_file, instance_data,
+            anno_callback=dump_as_cvat_annotation, save_images=save_images)
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
 def _import(src_file, task_data):

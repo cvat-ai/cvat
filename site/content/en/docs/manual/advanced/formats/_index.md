@@ -2,6 +2,7 @@
 title: 'Formats'
 linkTitle: 'Formats'
 weight: 31
+description: 'List of annotation formats supported by CVAT.'
 ---
 
 #### CVAT supported the following formats:

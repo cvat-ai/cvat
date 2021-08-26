@@ -8,8 +8,8 @@ import os.path as osp
 import shutil
 from tempfile import TemporaryDirectory
 
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
-    import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+    import_dm_annotations, ProjectData)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.settings.base import BASE_DIR
 from datumaro.components.project import Project
@@ -23,23 +23,28 @@ class DatumaroProjectExporter:
     _TEMPLATES_DIR = osp.join(osp.dirname(__file__), 'export_templates')
 
     @staticmethod
-    def _save_image_info(save_dir, task_data):
+    def _save_image_info(save_dir, instance_data):
         os.makedirs(save_dir, exist_ok=True)
 
         config = {
-            'server_url': task_data._host or 'localhost',
-            'task_id': task_data.db_task.id,
+            'server_url': instance_data._host or 'localhost'
         }
+        if isinstance(instance_data, ProjectData):
+            config['project_id'] = instance_data.db_project.id
+        else:
+            config['task_id'] = instance_data.db_task.id
 
         images = []
         images_meta = { 'images': images, }
-        for frame_id, frame in task_data.frame_info.items():
-            images.append({
+        for frame_id, frame in enumerate(instance_data.frame_info.values()):
+            image_info = {
                 'id': frame_id,
                 'name': osp.basename(frame['path']),
                 'width': frame['width'],
                 'height': frame['height'],
-            })
+            }
+            if isinstance(instance_data, ProjectData):
+                image_info['subset'] = frame['subset']
 
         with open(osp.join(save_dir, 'config.json'),
                 'w', encoding='utf-8') as config_file:
@@ -48,11 +53,12 @@ class DatumaroProjectExporter:
                 'w', encoding='utf-8') as images_file:
             json.dump(images_meta, images_file)
 
-    def _export(self, task_data, save_dir, save_images=False):
-        dataset = CvatTaskDataExtractor(task_data, include_images=save_images)
+    def _export(self, instance_data, save_dir, save_images=False):
+        dataset = GetCVATDataExtractor(instance_data, include_images=save_images)
+        db_instance = instance_data.db_project if isinstance(instance_data, ProjectData) else instance_data.db_task
         dm_env.converters.get('datumaro_project').convert(dataset,
             save_dir=save_dir, save_images=save_images,
-            project_config={ 'project_name': task_data.db_task.name, }
+            project_config={ 'project_name': db_instance.name, }
         )
 
         project = Project.load(save_dir)
@@ -64,13 +70,16 @@ class DatumaroProjectExporter:
 
         if not save_images:
             # add remote links to images
-            source_name = 'task_%s_images' % task_data.db_task.id
+            source_name = '{}_{}_images'.format(
+                'project' if isinstance(instance_data, ProjectData) else 'task',
+                db_instance.id,
+            )
             project.add_source(source_name, {
                 'format': self._REMOTE_IMAGES_EXTRACTOR,
             })
             self._save_image_info(
                 osp.join(save_dir, project.local_source_dir(source_name)),
-                task_data)
+                instance_data)
             project.save()
 
             templates_dir = osp.join(self._TEMPLATES_DIR, 'plugins')
@@ -87,7 +96,7 @@ class DatumaroProjectExporter:
         shutil.copytree(osp.join(BASE_DIR, 'utils', 'cli'),
             osp.join(cvat_utils_dst_dir, 'cli'))
 
-    def __call__(self, dst_file, task_data, save_images=False):
+    def __call__(self, dst_file, instance_data, save_images=False):
         with TemporaryDirectory() as temp_dir:
-            self._export(task_data, save_dir=temp_dir, save_images=save_images)
+            self._export(instance_data, save_dir=temp_dir, save_images=save_images)
             make_zip_archive(temp_dir, dst_file)

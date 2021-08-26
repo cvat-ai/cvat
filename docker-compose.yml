@@ -68,6 +68,7 @@ services:
   traefik:
     image: traefik:v2.4
     container_name: traefik
+    restart: always
     command:
       - "--providers.docker.exposedByDefault=false"
       - "--providers.docker.network=cvat"

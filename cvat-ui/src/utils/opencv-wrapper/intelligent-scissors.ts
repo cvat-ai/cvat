@@ -14,6 +14,7 @@ export interface IntelligentScissorsParams {
         enableSliding: boolean;
         allowRemoveOnlyLast: boolean;
         minPosVertices: number;
+        onChangeToolsBlockerState: (event:string)=>void;
     };
 }
 
@@ -21,6 +22,7 @@ export interface IntelligentScissors {
     reset(): void;
     run(points: number[], image: ImageData, offsetX: number, offsetY: number): number[];
     params: IntelligentScissorsParams;
+    switchBlockMode(mode?:boolean):void;
 }
 
 function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[] {
@@ -34,6 +36,7 @@ function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[]
 
 export default class IntelligentScissorsImplementation implements IntelligentScissors {
     private cv: any;
+    private onChangeToolsBlockerState: (event:string)=>void;
     private scissors: {
         tool: any;
         state: {
@@ -46,12 +49,18 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             }
             >; // point index : start index in path
             image: any | null;
+            blocked: boolean;
         };
     };
 
-    public constructor(cv: any) {
+    public constructor(cv: any, onChangeToolsBlockerState:(event:string)=>void) {
         this.cv = cv;
+        this.onChangeToolsBlockerState = onChangeToolsBlockerState;
         this.reset();
+    }
+
+    public switchBlockMode(mode:boolean): void {
+        this.scissors.state.blocked = mode;
     }
 
     public reset(): void {
@@ -66,6 +75,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 path: [],
                 anchors: {},
                 image: null,
+                blocked: false,
             },
         };
 
@@ -88,7 +98,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         const { tool, state } = scissors;
 
         const points = applyOffset(numberArrayToPoints(coordinates), offsetX, offsetY);
-
         if (points.length > 1) {
             let matImage = null;
             const contour = new cv.Mat();
@@ -108,7 +117,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                             delete state.anchors[+i];
                         }
                     }
-
                     return [...state.path];
                 }
 
@@ -118,14 +126,17 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                     state.path = state.path.slice(0, state.anchors[points.length - 1].start);
                     delete state.anchors[points.length - 1];
                 }
-
-                tool.applyImage(matImage);
-                tool.buildMap(new cv.Point(prevX, prevY));
-                tool.getContour(new cv.Point(curX, curY), contour);
-
                 const pathSegment = [];
-                for (let row = 0; row < contour.rows; row++) {
-                    pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
+                if (!state.blocked) {
+                    tool.applyImage(matImage);
+                    tool.buildMap(new cv.Point(prevX, prevY));
+                    tool.getContour(new cv.Point(curX, curY), contour);
+
+                    for (let row = 0; row < contour.rows; row++) {
+                        pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
+                    }
+                } else {
+                    pathSegment.push(curX + offsetX, curY + offsetY);
                 }
                 state.anchors[points.length - 1] = {
                     point: cur,
@@ -140,13 +151,13 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 contour.delete();
             }
         } else {
+            state.path = [];
             state.path.push(...pointsToNumberArray(applyOffset(points.slice(-1), -offsetX, -offsetY)));
             state.anchors[0] = {
                 point: points[0],
                 start: 0,
             };
         }
-
         return [...state.path];
     }
 
@@ -167,6 +178,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 enableSliding: true,
                 allowRemoveOnlyLast: true,
                 minPosVertices: 1,
+                onChangeToolsBlockerState: this.onChangeToolsBlockerState,
             },
         };
     }

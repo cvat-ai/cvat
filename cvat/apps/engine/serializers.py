@@ -411,6 +411,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validated_project_id = validated_data.get('project_id', None)
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_data.get('project_id', None))
+            if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
+                    raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
@@ -453,7 +455,9 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         # When moving task labels can be mapped to one, but when not names must be unique
         if 'project_id' in attrs.keys() and self.instance is not None:
             project_id = attrs.get('project_id')
-            if project_id is not None and not models.Project.objects.filter(id=project_id).count():
+            if project_id is not None:
+                project = models.Project.objects.filter(id=project_id).first()
+                if project is None:
                     raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
             # Check that all labels can be mapped
             new_label_names = set()
@@ -500,13 +504,15 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
     training_project = TrainingProjectSerializer(required=False, allow_null=True)
+    dimension = serializers.CharField(max_length=16, required=False)
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
-                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project')
-        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
+                  'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'training_project', 'dimension')
+        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
         ordering = ['-id']
 
 
@@ -515,6 +521,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         task_subsets = set(instance.tasks.values_list('subset', flat=True))
         task_subsets.discard('')
         response['task_subsets'] = list(task_subsets)
+        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
         return response
 
 class ProjectSerializer(ProjectWithoutTaskSerializer):
@@ -576,7 +583,9 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
         return value
 
     def to_representation(self, instance):
-        return serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
+        response = serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
+        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
+        return response
 
 class ExceptionSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=255)

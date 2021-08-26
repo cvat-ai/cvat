@@ -128,6 +128,10 @@ button.cvat-predictor-button {
     pointer-events: none;
 }
 
+.cvat-button-active.ant-btn {
+    color: $border-color-hover;
+}
+
 .cvat-annotation-header-player-group > div {
     height: 48px;
     line-height: 0;

@@ -41,6 +41,10 @@ class CLI():
             data['image_quality'] = kwargs.get('image_quality')
         if 'frame_step' in kwargs:
             data['frame_filter'] = f"step={kwargs.get('frame_step')}"
+        if 'copy_data' in kwargs:
+            data['copy_data'] = kwargs.get('copy_data')
+        if 'use_cache' in kwargs:
+            data['use_cache'] = kwargs.get('use_cache')
 
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()

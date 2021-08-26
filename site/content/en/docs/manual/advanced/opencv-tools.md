@@ -2,6 +2,7 @@
 title: 'OpenCV tools'
 linkTitle: 'OpenCV tools'
 weight: 14
+description: 'Guide to using Computer Vision algorithms during annotation.'
 ---
 
 The tool based on [Open CV](https://opencv.org/) Computer Vision library
@@ -36,9 +37,16 @@ displayed as a red square which is tied to the cursor.
   Increasing action threshold will affect the performance.
   During the drawing process you can remove the last point by clicking on it with the left mouse button.
 
+- You can also create a boundary manually (like when 
+  [creating a polygon](/docs/manual/advanced/annotation-with-polygons/manual-drawing/)) by temporarily disabling 
+  the automatic line creation. To do that, switch blocking on by pressing `Ctrl`.
+
 - In the process of drawing, you can select the number of points in the polygon using the switch.
 
   ![](/images/image224.jpg)
+
+- You can use the `Selected opacity` slider in the `Objects sidebar` to change the opacity of the polygon.
+  You can read more in the [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance) section.
 
 - Once all the points are placed, you can complete the creation of the object
   by clicking on the `Done` button on the top panel or press `N` on your keyboard.

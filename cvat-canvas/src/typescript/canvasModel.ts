@@ -59,6 +59,7 @@ export interface Configuration {
     forceDisableEditing?: boolean;
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
+    creationOpacity?: number;
 }
 
 export interface DrawData {
@@ -86,6 +87,7 @@ export interface InteractionData {
         shapeType: string;
         points: number[];
     };
+    onChangeToolsBlockerState?: (event: string) => void;
 }
 
 export interface InteractionResult {
@@ -547,6 +549,16 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
         }
 
+        // install default values for drawing method
+        if (drawData.enabled) {
+            if (drawData.shapeType === 'rectangle') {
+                this.data.drawData.rectDrawingMethod = drawData.rectDrawingMethod || RectDrawingMethod.CLASSIC;
+            }
+            if (drawData.shapeType === 'cuboid') {
+                this.data.drawData.cuboidDrawingMethod = drawData.cuboidDrawingMethod || CuboidDrawingMethod.CLASSIC;
+            }
+        }
+
         this.notify(UpdateReasons.DRAW);
     }
 
@@ -554,15 +566,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-
-        if (interactionData.enabled && !interactionData.intermediateShape) {
+        const thresholdChanged = this.data.interactionData.enableThreshold !== interactionData.enableThreshold;
+        if (interactionData.enabled && !interactionData.intermediateShape && !thresholdChanged) {
             if (this.data.interactionData.enabled) {
                 throw new Error('Interaction has been already started');
             } else if (!interactionData.shapeType) {
                 throw new Error('A shape type was not specified');
             }
         }
-
         this.data.interactionData = interactionData;
         if (typeof this.data.interactionData.crosshair !== 'boolean') {
             this.data.interactionData.crosshair = true;
@@ -654,6 +665,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.forceFrameUpdate === 'boolean') {
             this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
+        }
+
+        if (typeof configuration.creationOpacity === 'number') {
+            this.data.configuration.creationOpacity = configuration.creationOpacity;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);
