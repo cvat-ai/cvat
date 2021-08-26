@@ -13,6 +13,7 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
+from cvat.apps.engine.utils import parse_specific_attributes
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
@@ -846,11 +847,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         details = {
             'resource': validated_data.get('resource'),
             'credentials': credentials,
-            'specific_attributes': {
-                item.split('=')[0].strip(): item.split('=')[1].strip()
-                    for item in validated_data.get('specific_attributes').split('&')
-                } if len(validated_data.get('specific_attributes', ''))
-                    else dict()
+            'specific_attributes': parse_specific_attributes(validate_data.get('specific_attributes'))
         }
         storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
         if should_be_created:
@@ -862,7 +859,6 @@ class CloudStorageSerializer(serializers.ModelSerializer):
 
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
-
             manifests = validated_data.pop('manifests')
             # check for existence of manifest files
             for manifest in manifests:
@@ -916,11 +912,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         details = {
             'resource': instance.resource,
             'credentials': credentials,
-            'specific_attributes': {
-                item.split('=')[0].strip(): item.split('=')[1].strip()
-                    for item in instance.specific_attributes.split('&')
-                } if len(instance.specific_attributes)
-                    else dict()
+            'specific_attributes': parse_specific_attributes(instance.specific_attributes)
         }
         storage = get_cloud_storage_instance(cloud_provider=instance.provider_type, **details)
         storage_status = storage.get_status()

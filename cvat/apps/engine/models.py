@@ -12,6 +12,7 @@ from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from cvat.apps.engine.utils import parse_specific_attributes
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -619,8 +620,4 @@ class CloudStorage(models.Model):
         return os.path.join(self.get_storage_dirname(), 'preview.jpeg')
 
     def get_specific_attributes(self):
-        specific_attributes = self.specific_attributes
-        return {
-            item.split('=')[0].strip(): item.split('=')[1].strip()
-                for item in specific_attributes.split('&')
-        } if specific_attributes else dict()
+        return parse_specific_attributes(self.specific_attributes)
