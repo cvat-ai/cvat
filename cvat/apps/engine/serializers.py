@@ -847,7 +847,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         details = {
             'resource': validated_data.get('resource'),
             'credentials': credentials,
-            'specific_attributes': parse_specific_attributes(validate_data.get('specific_attributes'))
+            'specific_attributes': parse_specific_attributes(validated_data.get('specific_attributes', ''))
         }
         storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
         if should_be_created:
@@ -860,13 +860,19 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
             manifests = validated_data.pop('manifests')
-            # check for existence of manifest files
+            # check manifest files availability
             for manifest in manifests:
-                if not storage.get_file_status(manifest.get('filename')) == Status.AVAILABLE:
+                file_status = storage.get_file_status(manifest.get('filename'))
+                if file_status == Status.NOT_FOUND:
                     raise serializers.ValidationError({
                         'manifests': "The '{}' file does not exist on '{}' cloud storage" \
                             .format(manifest.get('filename'), storage.name)
-                })
+                    })
+                elif file_status == Status.FORBIDDEN:
+                    raise serializers.ValidationError({
+                        'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                            .format(manifest.get('filename'), storage.name)
+                    })
 
             db_storage = models.CloudStorage.objects.create(
                 credentials=credentials.convert_to_db(),
@@ -926,11 +932,17 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             if delta_to_create:
                 # check manifest files existing
                 for manifest in delta_to_create:
-                    if not storage.get_file_status(manifest) == Status.AVAILABLE:
+                    file_status = storage.get_file_status(manifest)
+                    if file_status == Status.NOT_FOUND:
                         raise serializers.ValidationError({
                             'manifests': "The '{}' file does not exist on '{}' cloud storage"
                                 .format(manifest, storage.name)
-                    })
+                        })
+                    elif file_status == Status.FORBIDDEN:
+                        raise serializers.ValidationError({
+                            'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                                .format(manifest.get('filename'), storage.name)
+                        })
                 manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
                 models.Manifest.objects.bulk_create(manifest_instances)
             instance.save()

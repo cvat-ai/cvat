@@ -15,7 +15,7 @@ from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.utils import md5_hash
 class CacheInteraction:
     def __init__(self, dimension=DimensionType.DIM_2D):
@@ -100,9 +100,18 @@ class CacheInteraction:
                                 slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(file_name))
                             images.append((source_path, source_path, None))
                 except Exception as ex:
-                    if not cloud_storage_instance.exists():
-                        msg = 'The resource {} is no longer available. It may have been deleted'.format(cloud_storage_instance.name)
+                    storage_status = cloud_storage_instance.get_status()
+                    if storage_status == Status.FORBIDDEN:
+                        msg = 'The resource {} is no longer available. Access forbidden.'.format(cloud_storage_instance.name)
+                    elif storage_status == Status.NOT_FOUND:
+                        msg = 'The resource {} not found. It may have been deleted.'.format(cloud_storage_instance.name)
                     else:
+                        # check status of last file
+                        file_status = cloud_storage_instance.get_file_status(file_name)
+                        if file_status == Status.NOT_FOUND:
+                            raise Exception("'{}' not found on the cloud storage '{}'".format(file_name, cloud_storage_instance.name))
+                        elif file_status == Status.FORBIDDEN:
+                            raise Exception("Access to the file '{}' on the '{}' cloud storage is denied".format(file_name, cloud_storage_instance.name))
                         msg = str(ex)
                     raise Exception(msg)
             else:
