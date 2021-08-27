@@ -46,11 +46,11 @@ def _import(src_file, task_data):
 
         root_hint = find_dataset_root(dataset, task_data)
 
+        shift = 0
         for item in dataset:
             frame_number = task_data.abs_frame_id(
                 match_dm_item(item, task_data, root_hint=root_hint))
 
-            shift = 0
             track_ids = set()
 
             for ann in item.annotations:
