@@ -108,6 +108,11 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
+    removeinrange: {
+        sessionInstance: null,
+        startFrame: 0,
+        endFrame: 0,
+    },
     aiToolsRef: React.createRef(),
     colors: [],
     sidebarCollapsed: false,
@@ -818,7 +823,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
             const { frames } = action.payload;
-
+            console.log("Reducer invoked: CHANGE_PROPAGATE_FRAMES");
+            console.log("Frames: "+frames);
             return {
                 ...state,
                 propagate: {
@@ -942,6 +948,42 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: null,
                     collapsed: {},
                     states: [],
+                },
+            };
+        }
+        //Added Remove Annotations in Range
+        case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS: {
+            console.log("Reducer Invoked : REMOVE_ANNOTATIONS_INRANGE_SUCCESS");
+            const { sessionInstance } = action.payload;
+            return {
+                ...state,
+                removeinrange: {
+                    ...state.removeinrange,
+                    sessionInstance,
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE: {
+            console.log("Reducer Invoked : REMOVE_ANNOTATIONS_INRANGE");
+            const { sessionInstance } = action.payload;
+            return {
+                ...state,
+                removeinrange: {
+                    ...state.removeinrange,
+                    sessionInstance,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_REMOVE_ANNOTATIONS_RANGE: {
+            console.log("Reducer Invoked : CHANGE_REMOVE_ANNOTATIONS_RANGE");
+            const { startFrame, endFrame } = action.payload;
+            console.log("startFrame:" +  startFrame + " endFrame:" + endFrame);
+            return {
+                ...state,
+                removeinrange: {
+                    ...state.removeinrange,
+                    startFrame,
+                    endFrame,
                 },
             };
         }

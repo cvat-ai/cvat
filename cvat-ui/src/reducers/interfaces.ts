@@ -505,6 +505,11 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    removeinrange: {
+        sessionInstance: any | null;
+        startFrame: number;
+        endFrame: number;
+    };
     colors: any[];
     filtersPanelVisible: boolean;
     requestReviewDialogVisible: boolean;

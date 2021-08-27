@@ -5,12 +5,15 @@
 import React from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
+
+import RemoveAnnotationsRangeContainer from 'containers/annotation-page/top-bar/remove-range-confirm';
 
 interface Props {
     taskMode: string;
@@ -20,6 +23,7 @@ interface Props {
     isReviewer: boolean;
     jobInstance: any;
     onClickMenu(params: MenuInfo, file?: File): void;
+    removeRange(): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
 }
@@ -27,6 +31,7 @@ interface Props {
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
     EXPORT_TASK_DATASET = 'export_task_dataset',
+    REMOVE_ANNO_INRANGE = 'remove_anno_inrange',
     REMOVE_ANNO = 'remove_anno',
     OPEN_TASK = 'open_task',
     REQUEST_REVIEW = 'request_review',
@@ -42,6 +47,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         isReviewer,
         jobInstance,
         onClickMenu,
+        removeRange,
         setForceExitAnnotationFlag,
         saveAnnotations,
     } = props;
@@ -108,20 +114,69 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             }
         } else if (copyParams.key === Actions.REMOVE_ANNO) {
             Modal.confirm({
-                title: 'All the annotations will be removed',
-                content:
-                    'You are going to remove all the annotations from the client. ' +
-                    'It will stay on the server till you save the job. Continue?',
-                className: 'cvat-modal-confirm-remove-annotation',
-                onOk: () => {
-                    onClickMenu(copyParams);
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Delete',
-            });
+                        title: 'All the annotations will be removed',
+                        content:
+                            'You are going to remove all the annotations from the client. ' +
+                            'It will stay on the server till you save the job. Continue?',
+                        className: 'cvat-modal-confirm-remove-annotation',
+                        onOk: () => {
+                            onClickMenu(copyParams);
+                        },
+                        okButtonProps: {
+                            type: 'primary',
+                            danger: true,
+                        },
+                        okText: 'Delete',
+                    });
+        } else if (copyParams.key === Actions.REMOVE_ANNO_INRANGE) {
+            Modal.confirm({
+                        title: 'Selected range of the annotations will be removed',
+                        content:
+                            'You are going to remove a arnge of the annotations from the client. ' +
+                            'It will stay on the server till you save the job. Continue?',
+                        className: 'cvat-modal-confirm-remove-annotation',
+                        onOk: () => {
+                            onClickMenu(copyParams);
+                        },
+                        okButtonProps: {
+                            type: 'primary',
+                        },
+                        okText: 'Select Range',
+                    });
+            // Modal.confirm({
+            //     title: 'Remove Annotations',
+            //     content:
+            //         'Select whether to remove all annotations from the job or remove within a range',
+            //     className: 'cvat-modal-confirm-remove-annotation',
+            //     onOk: () => {
+            //         Modal.confirm({
+            //             title: 'All the annotations will be removed',
+            //             content:
+            //                 'You are going to remove all the annotations from the client. ' +
+            //                 'It will stay on the server till you save the job. Continue?',
+            //             className: 'cvat-modal-confirm-remove-annotation',
+            //             onOk: () => {
+            //                 onClickMenu(copyParams);
+            //             },
+            //             okButtonProps: {
+            //                 type: 'primary',
+            //                 danger: true,
+            //             },
+            //             okText: 'Delete',
+            //         });
+            //     },
+            //     okButtonProps: {
+            //         type: 'primary',
+            //         danger: true
+            //     },
+            //     okText: 'Remove All',
+            //     onCancel: () => {
+            //         copyParams.key = Actions.REMOVE_ANNO_INRANGE;
+            //         console.log("Cancel: This is happening !!"+Actions.REMOVE_ANNO_INRANGE);
+            //         onClickMenu(copyParams);
+            //     },
+            //     cancelText: "Select Range",
+            // });
         } else if ([Actions.REQUEST_REVIEW].includes(copyParams.key as Actions)) {
             checkUnsavedChanges(copyParams);
         } else if (copyParams.key === Actions.FINISH_JOB) {
@@ -166,6 +221,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             })}
             <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
+            <Menu.Item key={Actions.REMOVE_ANNO_INRANGE}>Remove annotations in range</Menu.Item>
+            {/* <Menu.Item ><Button  type='link'  onClick={removeRange}>Remove annotations in Range</Button></Menu.Item> */}
             <Menu.Item key={Actions.OPEN_TASK}>
                 <a href={`/tasks/${taskID}`} onClick={(e: React.MouseEvent) => e.preventDefault()}>
                     Open the task
@@ -178,6 +235,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             )}
             {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
             <ExportDatasetModal />
+            <RemoveAnnotationsRangeContainer/>
         </Menu>
     );
 }

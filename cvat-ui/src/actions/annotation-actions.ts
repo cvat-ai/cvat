@@ -167,6 +167,8 @@ export enum AnnotationActionTypes {
     UPLOAD_JOB_ANNOTATIONS_FAILED = 'UPLOAD_JOB_ANNOTATIONS_FAILED',
     REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
+    REMOVE_ANNOTATIONS_INRANGE = 'REMOVE_ANNOTATIONS_INRANGE',
+    CHANGE_REMOVE_ANNOTATIONS_RANGE = 'CHANGE_REMOVE_ANNOTATIONS_RANGE',
     UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
     UNDO_ACTION_SUCCESS = 'UNDO_ACTION_SUCCESS',
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
@@ -504,9 +506,66 @@ export function changePropagateFrames(frames: number): AnyAction {
     };
 }
 
+
+//Trying to add a function to remove all objects within a range !!!
+export function removeObjectsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, force: boolean): ThunkAction{
+    console.log("IT CAME HERE ATLEAST");
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+        try {
+            for(let frame = startFrame; frame<=endFrame; frame++){
+                console.log("Frame:"+frame);
+                dispatch(changeFrameAsync(frame));
+
+                const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters );
+
+
+                states.forEach((state: any) => {
+                    console.log("State here:");
+                    var result = dispatch(removeObjectAsync(sessionInstance,state,force));
+                    console.log(result);
+                });
+            }
+        }catch(error){
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+
+        }
+    }
+}
+
+
+export function removeAnnotationsinRange(sessionInstance: any | null): AnyAction {
+    console.log("Action Ivoked:" +sessionInstance);
+    return {
+        type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE,
+        payload: {
+            sessionInstance,
+        },
+    };
+}
+
+export function changeRemoveAnnotationRange(startFrame: number, endFrame: number): AnyAction {
+    console.log("Action Ivoked: changeRange: " +startFrame+" "+endFrame);
+    return {
+        type: AnnotationActionTypes.CHANGE_REMOVE_ANNOTATIONS_RANGE,
+        payload: {
+            startFrame,
+            endFrame,
+        },
+    };
+}
+
 export function removeObjectAsync(sessionInstance: any, objectState: any, force: boolean): ThunkAction {
+    console.log("removeObjectAsync:"+objectState.clientID);
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
+            console.log(objectState);
+            console.log(objectState.clientID);
             await sessionInstance.logger.log(LogType.deleteObject, { count: 1 });
             const { frame } = receiveAnnotationsParameters();
 
