@@ -50,11 +50,22 @@ def _import(src_file, task_data):
             frame_number = task_data.abs_frame_id(
                 match_dm_item(item, task_data, root_hint=root_hint))
 
+            shift = 0
+            track_ids = set()
+
             for ann in item.annotations:
                 if ann.type != AnnotationType.polygon:
                     continue
 
-                track_id = ann.attributes['track_id']
+                track_id = ann.attributes['track_id'] + shift
+                group_id = track_id
+
+                if track_id in track_ids:
+                    shift += 1
+                    track_id += shift
+
+                track_ids.add(track_id)
+
                 shape = task_data.TrackedShape(
                     type='polygon',
                     points=ann.points,
@@ -65,6 +76,7 @@ def _import(src_file, task_data):
                     frame=frame_number,
                     attributes=[],
                     source='manual',
+                    group=group_id
                 )
 
                 # build trajectories as lists of shapes in track dict
