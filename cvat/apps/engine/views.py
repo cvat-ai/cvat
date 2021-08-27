@@ -1262,7 +1262,8 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             session_token=serializer.validated_data.get('session_token', ''),
             account_name=serializer.validated_data.get('account_name', ''),
             key=serializer.validated_data.get('key', ''),
-            secret_key=serializer.validated_data.get('secret_key', '')
+            secret_key=serializer.validated_data.get('secret_key', ''),
+            key_file_path=serializer.validated_data.get('key_file_path', '')
         )
         details = {
             'resource': serializer.validated_data.get('resource'),
