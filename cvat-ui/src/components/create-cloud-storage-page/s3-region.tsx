@@ -78,6 +78,7 @@ export default function S3Region(props: Props): JSX.Element {
                     <Tooltip title='More information'>
                         <Button
                             type='link'
+                            target='_blank'
                             style={style}
                             href='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
                         >

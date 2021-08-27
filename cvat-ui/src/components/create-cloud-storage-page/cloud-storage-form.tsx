@@ -588,6 +588,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         <Tooltip title='More information'>
                             <Button
                                 type='link'
+                                target='_blank'
                                 style={style}
                                 href='https://openvinotoolkit.github.io/cvat/docs/manual/advanced/dataset_manifest/'
                             >
