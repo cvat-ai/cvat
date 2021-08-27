@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Explicit "Done" button when drawing any polyshapes (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 - Histogram equalization with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/3447>)
 - Client-side polyshapes approximation when using semi-automatic interactors & scissors (<https://github.com/openvinotoolkit/cvat/pull/3450>)
+- Support of Google Cloud Storage for cloud storage (<https://github.com/openvinotoolkit/cvat/pull/3561>)
 
 ### Changed
 
