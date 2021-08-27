@@ -4,11 +4,15 @@
 
 @import '../../base.scss';
 
-// .ant-select-item-option-content {
-//     display: flex;
-//     justify-content: flex-start;
-//     align-items: 'center';
-// }
+.cvat-cloud-storage-select-provider {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    > svg {
+        margin-right: $grid-unit-size;
+    }
+}
 
 .cvat-update-cloud-storage-form-wrapper,
 .cvat-attach-cloud-storage-form-wrapper {
@@ -32,11 +36,6 @@
         padding: $grid-unit-size * 2;
         background: $background-color-1;
         text-align: initial;
-
-        .cvat-cloud-storage-select-provider {
-            display: flex;
-            justify-content: flex-start;
-        }
 
         .cvat-cloud-storage-form-item {
             justify-content: space-between;
