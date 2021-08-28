@@ -823,6 +823,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
             const { frames } = action.payload;
+
             return {
                 ...state,
                 propagate: {
