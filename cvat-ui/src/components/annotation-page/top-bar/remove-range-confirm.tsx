@@ -15,7 +15,7 @@ interface Props {
     endFrame: number;
     frameNumber: number;
     stopFrame: number;
-    removeObject(): void;
+    removeinRange(): void;
     cancel(): void;
     changeRemoveAnnotationsRange(startFrame: number, endFrame: number): void;
 }
@@ -27,23 +27,23 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
         endFrame,
         frameNumber,
         stopFrame,
-        removeObject,
+        removeinRange,
         changeRemoveAnnotationsRange,
         cancel,
     } = props;
 
-    const minStartFrames = 1;
+    const minStartFrames = 0;
 
-    const minEndFrames = Math.max(startFrame+1,2);
+    const minEndFrames = Math.max(startFrame,0);
 
     return (
         <Modal
             okType='primary'
             okText='Yes'
             cancelText='Cancel'
-            onOk={removeObject}
+            onOk={removeinRange}
             onCancel={cancel}
-            title='Confirm remove annotations in range'
+            title='Confirm to remove annotations in range'
             visible={visible}
         >
             <div className='cvat-propagate-confirm'>
@@ -52,7 +52,7 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
                     className='cvat-propagate-confirm-object-on-frames'
                     size='small'
                     min={minStartFrames}
-                    max={stopFrame-1}
+                    max={stopFrame}
                     value={startFrame}
                     onChange={(value: number | undefined | string) => {
                         if (typeof value !== 'undefined') {

@@ -953,18 +953,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         //Added Remove Annotations in Range
         case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS: {
-            console.log("Reducer Invoked : REMOVE_ANNOTATIONS_INRANGE_SUCCESS");
-            const { sessionInstance } = action.payload;
+            const { sessionInstance, startFrame, endFrame } = action.payload;
             return {
                 ...state,
                 removeinrange: {
                     ...state.removeinrange,
-                    sessionInstance,
+                    startFrame,
+                    endFrame,
                 },
             };
         }
         case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE: {
-            console.log("Reducer Invoked : REMOVE_ANNOTATIONS_INRANGE");
             const { sessionInstance } = action.payload;
             return {
                 ...state,
@@ -975,9 +974,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_REMOVE_ANNOTATIONS_RANGE: {
-            console.log("Reducer Invoked : CHANGE_REMOVE_ANNOTATIONS_RANGE");
             const { startFrame, endFrame } = action.payload;
-            console.log("startFrame:" +  startFrame + " endFrame:" + endFrame);
             return {
                 ...state,
                 removeinrange: {

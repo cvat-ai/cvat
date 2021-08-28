@@ -9,8 +9,7 @@ import Modal from 'antd/lib/modal';
 import {
     removeAnnotationsinRange as removeAnnotationsinRangeAction ,
     changeRemoveAnnotationRange as changeRemoveAnnotationRangeAction,
-    removeObjectAsync,
-    removeObjectsinRangeAsync,
+    removeAnnotationsinRangeAsync,
     changeFrameAsync,
 } from 'actions/annotation-actions';
 
@@ -28,7 +27,6 @@ interface StateToProps {
 
 interface DispatchToProps {
     cancel(): void;
-    removeObject(sessionInstance: any, objectState: any): void;
     removeObjectsinRange(sessionInstance: any, startFrame: number, endFrame: number): void;
     changeRemoveAnnotationsRange(startFrame: number, endFrame: number): void;
     changeFrame(toFrame: number): void;
@@ -65,13 +63,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         removeObjectsinRange(sessionInstance: any, startFrame: number, endFrame: number): void {
-            dispatch((removeObjectsinRangeAsync(sessionInstance, startFrame, endFrame, true)));
-        },
-        removeObject(sessionInstance: any, objectState: any): void {
-            dispatch((removeObjectAsync(sessionInstance, objectState, true)));
+            dispatch((removeAnnotationsinRangeAsync(sessionInstance, startFrame, endFrame, false)));
         },
         changeRemoveAnnotationsRange(startFrame: number, endFrame: number): void {
-            console.log("Cont Function Ivoked: changeRange: " +startFrame+" "+endFrame);
             dispatch(changeRemoveAnnotationRangeAction(startFrame,endFrame));
         },
         async changeFrame(toFrame: number){
@@ -85,37 +79,16 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 class RemoveAnnotationsRangeContainer extends React.PureComponent<Props> {
-    private removeObject = (): void => {
-        console.log("Reached removeRange()");
+    private removeinRange = (): void => {
         const {
-            removeObject, removeObjectsinRange,objectStates,jobInstance, cancel, startFrame, endFrame
+            removeObjectsinRange,jobInstance, cancel, startFrame, endFrame
         } = this.props;
-        console.log("startFrame:" +  startFrame + " endFrame:" + endFrame);
         removeObjectsinRange(jobInstance, startFrame, endFrame);
         cancel();
-        // for(let frame=startFrame; frame<endFrame+1; frame++){
-        //     changeFrame(frame).then(()=>{
-        //         objectStates.forEach((objectState: any) => {
-        //             if(objectState.lock){
-        //                 Modal.confirm({
-        //                     className: 'cvat-modal-confirm',
-        //                     title: 'Object '+ objectState.label.id + objectState.clientID + ' is locked',
-        //                     content: 'Are you sure you want to remove it?',
-        //                     onOk() {
-        //                         removeObject(jobInstance,objectState);
-        //                     },
-        //                 });
-        //             }else{
-        //                 removeObject(jobInstance,objectState);
-        //             }
-        //         });
-        //     });
-        // }
     };
 
 
     private changeRemoveAnnotationsRange = (startFrame: number, endFrame: number): void => {
-        console.log("Cont Function Ivoked: changeRange: " +startFrame+" "+endFrame);
         const { changeRemoveAnnotationsRange } = this.props;
         changeRemoveAnnotationsRange(startFrame,endFrame);
     };
@@ -134,7 +107,7 @@ class RemoveAnnotationsRangeContainer extends React.PureComponent<Props> {
                 endFrame={endFrame}
                 frameNumber={frameNumber}
                 stopFrame={stopFrame}
-                removeObject={this.removeObject}
+                removeinRange={this.removeinRange}
                 changeRemoveAnnotationsRange={this.changeRemoveAnnotationsRange}
                 cancel={cancel}
             />

@@ -77,7 +77,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(removeAnnotationsAsync(sessionInstance));
         },
         removeAnnotationsinRange(sessionInstance: any){
-            console.log("Came here: removeAnnotationsinRange(sessionInstance: any) :"+sessionInstance);
             dispatch(removeAnnotationsinRangeAction(sessionInstance));
         },
         switchRequestReviewDialog(visible: boolean): void {
@@ -134,14 +133,9 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             }
         } else {
             const [action] = params.keyPath;
-            console.log("Action:"+action);
             if (action === Actions.EXPORT_TASK_DATASET) {
-                console.log("Came here:" + Actions.EXPORT_TASK_DATASET);
                 showExportModal(jobInstance.task);
-            } else if (action === Actions.REMOVE_ANNO_INRANGE) {
-                console.log("Came here:" + Actions.REMOVE_ANNO_INRANGE);
-                removeAnnotationsinRange(jobInstance);
-            }  else if (action === Actions.REMOVE_ANNO) {
+            } else if (action === Actions.REMOVE_ANNO) {
                 removeAnnotations(jobInstance);
             } else if (action === Actions.REQUEST_REVIEW) {
                 switchRequestReviewDialog(true);
