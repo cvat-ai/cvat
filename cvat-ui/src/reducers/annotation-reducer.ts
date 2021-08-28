@@ -823,8 +823,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
             const { frames } = action.payload;
-            console.log("Reducer invoked: CHANGE_PROPAGATE_FRAMES");
-            console.log("Frames: "+frames);
             return {
                 ...state,
                 propagate: {
