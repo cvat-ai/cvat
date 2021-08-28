@@ -36,5 +36,6 @@ export default function createRootReducer(): Reducer {
         userAgreements: userAgreementsReducer,
         review: reviewReducer,
         export: exportReducer,
+        import: import
     });
 }

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from django.utils import timezone
 
+from datumaro.components.dataset import Dataset
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label, DimensionType, Image as Img
@@ -515,7 +516,7 @@ class ProjectData(InstanceLabelData):
     Tag.__new__.__defaults__ = (0, )
     Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
 
-    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str, create_callback: Callable = None):
+    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', create_callback: Callable = None):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
         self._db_tasks: OrderedDict[int, Task] = OrderedDict(
@@ -1261,3 +1262,11 @@ def import_dm_annotations(dm_dataset, task_data):
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e))
+
+def import_labels_to_project(project_annotation, dataset):
+    pass
+
+def load_dataset_data(project_annotation, dataset):
+    import_labels_to_project(project_annotation, dataset)
+
+

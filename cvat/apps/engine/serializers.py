@@ -716,6 +716,9 @@ class LogEventSerializer(serializers.Serializer):
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
 
+class DatasetFileSerializer(serializers.Serializer):
+    dataset_file = serializers.FileField()
+
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
 

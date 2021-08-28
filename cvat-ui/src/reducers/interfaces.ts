@@ -115,6 +115,14 @@ export interface ExportState {
     modalVisible: boolean;
 }
 
+export interface ImportState {
+    projects: {
+        [pid: number]: string[];
+    };
+    instance: any;
+    modalVisible: boolean;
+}
+
 export interface FormatsState {
     annotationFormats: any;
     fetching: boolean;
@@ -633,6 +641,7 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
+    import: ImportState;
 }
 
 export enum DimensionType {
