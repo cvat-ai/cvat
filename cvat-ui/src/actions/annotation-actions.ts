@@ -509,36 +509,29 @@ export function changePropagateFrames(frames: number): AnyAction {
 }
 
 
-//Trying to add a function to remove all objects within a range !!!
+//To remove annotation objects present in given range of frames
 export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, force: boolean): ThunkAction{
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
         try {
-            var removedAll = true;
+
             for(let frame = startFrame; frame<=endFrame; frame++){
-                dispatch(changeFrameAsync(frame));
+                await dispatch(changeFrameAsync(frame));
 
                 const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters );
 
-
-                states.forEach((state: any) => {
-                    var result = dispatch(removeObjectAsync(sessionInstance,state,force));
-                    if(result.type === AnnotationActionTypes.REMOVE_OBJECT_FAILED)
-                        removedAll = false;
+                states.forEach(async (state: any) => {
+                    await   dispatch(removeObjectAsync(sessionInstance,state,force));
                 });
             }
 
-            if(removedAll) {
-                dispatch({
-                    type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS,
-                    payload: {
-                        startFrame,
-                        endFrame,
-                    },
-                });
-            }else {
-                throw new Error('Could not remove the locked objects');
-            }
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS,
+                payload: {
+                    startFrame,
+                    endFrame,
+                },
+            });
 
         }catch(error){
             dispatch({
