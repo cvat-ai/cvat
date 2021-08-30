@@ -112,6 +112,7 @@ interface TrackedShape {
     serverlessState: any;
     shapePoints: number[];
     trackOnFrame: number;
+    trackerModel: Model;
 }
 
 interface State {
@@ -123,6 +124,24 @@ interface State {
     pointsRecieved: boolean;
     approxPolyAccuracy: number;
     mode: 'detection' | 'interaction' | 'tracking';
+}
+
+function trackedRectangleMapper(shape: number[]): number[] {
+    return shape.reduce(
+        (acc: number[], value: number, index: number): number[] => {
+            if (index % 2) {
+                // y
+                acc[1] = Math.min(acc[1], value);
+                acc[3] = Math.max(acc[3], value);
+            } else {
+                // x
+                acc[0] = Math.min(acc[0], value);
+                acc[2] = Math.max(acc[2], value);
+            }
+            return acc;
+        },
+        [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+    );
 }
 
 export class ToolsControlComponent extends React.PureComponent<Props, State> {
@@ -391,6 +410,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         serverlessState: null,
                         shapePoints: points,
                         trackOnFrame: frame + 1,
+                        trackerModel: activeTracker as Model,
                     },
                 ],
             });
@@ -442,30 +462,38 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private async checkTrackedStates(prevProps: Props): Promise<void> {
         const {
-            frame, jobInstance, states: objectStates, fetchAnnotations,
+            frame, jobInstance, states: objectStates, fetchAnnotations, trackers,
         } = this.props;
-        const { trackedShapes, activeTracker } = this.state;
+        const { trackedShapes } = this.state;
 
         type AccumulatorType = {
             statefull: {
-                clientIDs: number[];
-                states: any[];
-                shapes: number[][];
+                [index: string]: {
+                    // tracker id
+                    clientIDs: number[];
+                    states: any[];
+                    shapes: number[][];
+                };
             };
             stateless: {
-                clientIDs: number[];
-                shapes: number[][];
+                [index: string]: {
+                    // tracker id
+                    clientIDs: number[];
+                    shapes: number[][];
+                };
             };
         };
 
-        if (prevProps.frame !== frame && trackedShapes.length && activeTracker) {
+        if (prevProps.frame !== frame && trackedShapes.length) {
             // 1. find all trackable objects on the current frame
             // 2. devide them into two groups: with relevant state, without relevant state
             const trackingData = trackedShapes
                 .filter((trackedShape: TrackedShape) => trackedShape.trackOnFrame === frame)
                 .reduce<AccumulatorType>(
                 (acc: AccumulatorType, trackedShape: TrackedShape): AccumulatorType => {
-                    const { serverlessState, shapePoints, clientID } = trackedShape;
+                    const {
+                        serverlessState, shapePoints, clientID, trackerModel,
+                    } = trackedShape;
                     const [clientState] = objectStates.filter(
                         (_state: any): boolean => _state.clientID === clientID,
                     );
@@ -473,141 +501,135 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     if (clientState && !clientState.outside) {
                         const { points } = clientState;
                         const stateIsRelevant =
-                                !!serverlessState &&
+                                serverlessState !== null &&
                                 points.length === shapePoints.length &&
                                 points.every((coord: number, i: number) => coord === shapePoints[i]);
                         if (stateIsRelevant) {
-                            acc.statefull.clientIDs.push(clientID);
-                            acc.statefull.shapes.push(points);
-                            acc.statefull.states.push(serverlessState);
+                            const container = acc.statefull[trackerModel.id] || {
+                                clientIDs: [],
+                                shapes: [],
+                                states: [],
+                            };
+                            container.clientIDs.push(clientID);
+                            container.shapes.push(points);
+                            container.states.push(serverlessState);
+                            acc.statefull[trackerModel.id] = container;
                         } else {
-                            acc.stateless.clientIDs.push(clientID);
-                            acc.stateless.shapes.push(points);
+                            const container = acc.stateless[trackerModel.id] || {
+                                clientIDs: [],
+                                shapes: [],
+                            };
+                            container.clientIDs.push(clientID);
+                            container.shapes.push(points);
+                            acc.stateless[trackerModel.id] = container;
                         }
                     }
 
                     return acc;
                 },
                 {
-                    statefull: {
-                        clientIDs: [],
-                        states: [],
-                        shapes: [],
-                    },
-                    stateless: {
-                        clientIDs: [],
-                        shapes: [],
-                    },
+                    statefull: {},
+                    stateless: {},
                 },
             );
 
             // 3. get relevant state for the second group
-            if (trackingData.stateless.clientIDs.length) {
-                const hideMessage = message.loading('Tracker state is being initialized for some objects..', 0);
+            for (const trackerID of Object.keys(trackingData.stateless)) {
+                let hideMessage = null;
                 try {
-                    const response = await core.lambda.call(jobInstance.task, activeTracker, {
+                    const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
+                    if (!tracker) {
+                        throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
+                    }
+
+                    const trackableObjects = trackingData.stateless[trackerID];
+                    const numOfObjects = trackableObjects.clientIDs.length;
+                    hideMessage = message.loading(
+                        `${tracker.name}: states are being initialized for ${numOfObjects} ${
+                            numOfObjects > 1 ? 'objects' : 'object'
+                        } ..`,
+                        0,
+                    );
+                    // eslint-disable-next-line no-await-in-loop
+                    const response = await core.lambda.call(jobInstance.task, tracker, {
                         task: jobInstance.task,
                         frame: frame - 1,
-                        shapes: trackingData.stateless.shapes,
+                        shapes: trackableObjects.shapes,
                     });
 
-                    const { clientIDs: statelessClientIDs } = trackingData.stateless;
-                    const { shapes, states: serverlessStates } = response;
-                    Array.prototype.push.apply(trackingData.statefull.clientIDs, statelessClientIDs);
-                    Array.prototype.push.apply(trackingData.statefull.shapes, shapes);
-                    Array.prototype.push.apply(trackingData.statefull.states, serverlessStates);
+                    const { states: serverlessStates } = response;
+                    const statefullContainer = trackingData.statefull[trackerID] || {
+                        clientIDs: [],
+                        shapes: [],
+                        states: [],
+                    };
+
+                    Array.prototype.push.apply(statefullContainer.clientIDs, trackableObjects.clientIDs);
+                    Array.prototype.push.apply(statefullContainer.shapes, trackableObjects.shapes);
+                    Array.prototype.push.apply(statefullContainer.states, serverlessStates);
+                    trackingData.statefull[trackerID] = statefullContainer;
+                    delete trackingData.stateless[trackerID];
                 } catch (error) {
                     notification.error({
-                        message: 'Tracker state initialization error',
+                        message: 'Tracker initialization error',
                         description: error.toString(),
                     });
                 } finally {
-                    hideMessage();
+                    if (hideMessage) hideMessage();
                 }
             }
 
-            if (trackingData.statefull.clientIDs.length) {
+            for (const trackerID of Object.keys(trackingData.statefull)) {
                 // 4. run tracking for all the objects
-                const hideMessage = message.loading('Objects are being tracked..', 0);
+                let hideMessage = null;
                 try {
-                    const trackingResults = await core.lambda.call(jobInstance.task, activeTracker, {
+                    const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
+                    if (!tracker) {
+                        throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
+                    }
+
+                    const trackableObjects = trackingData.statefull[trackerID];
+                    const numOfObjects = trackableObjects.clientIDs.length;
+                    hideMessage = message.loading(
+                        `${tracker.name}: ${numOfObjects} ${
+                            numOfObjects > 1 ? 'objects are' : 'object is'
+                        } being tracked..`,
+                        0,
+                    );
+                    // eslint-disable-next-line no-await-in-loop
+                    const response = await core.lambda.call(jobInstance.task, tracker, {
                         task: jobInstance.task,
-                        frame,
-                        shapes: trackingData.statefull.shapes,
-                        states: trackingData.statefull.states,
+                        frame: frame - 1,
+                        shapes: trackableObjects.shapes,
+                        states: trackableObjects.states,
                     });
 
-                    trackingResults.shapes = trackingResults.shapes.map((shape: number[]): number[] =>
-                        shape.reduce(
-                            (acc: number[], value: number, index: number): number[] => {
-                                if (index % 2) {
-                                    // y
-                                    acc[1] = Math.min(acc[1], value);
-                                    acc[3] = Math.max(acc[3], value);
-                                } else {
-                                    // x
-                                    acc[0] = Math.min(acc[0], value);
-                                    acc[2] = Math.max(acc[2], value);
-                                }
-                                return acc;
-                            },
-                            [
-                                Number.MAX_SAFE_INTEGER,
-                                Number.MAX_SAFE_INTEGER,
-                                Number.MIN_SAFE_INTEGER,
-                                Number.MIN_SAFE_INTEGER,
-                            ],
-                        ));
-
-                    await Promise.all(
-                        trackingData.statefull.clientIDs.map(
-                            (clientID: number, i: number): Promise<void> => {
-                                const [objectState] = objectStates.filter(
-                                    (_state: any): boolean => _state.clientID === clientID,
-                                );
-                                const points = trackingResults.shapes[i].reduce(
-                                    (acc: number[], value: number, index: number): number[] => {
-                                        if (index % 2) {
-                                            // y
-                                            acc[1] = Math.min(acc[1], value);
-                                            acc[3] = Math.max(acc[3], value);
-                                        } else {
-                                            // x
-                                            acc[0] = Math.min(acc[0], value);
-                                            acc[2] = Math.max(acc[2], value);
-                                        }
-                                        return acc;
-                                    },
-                                    [
-                                        Number.MAX_SAFE_INTEGER,
-                                        Number.MAX_SAFE_INTEGER,
-                                        Number.MIN_SAFE_INTEGER,
-                                        Number.MIN_SAFE_INTEGER,
-                                    ],
-                                );
-                                objectState.points = points;
-                                return objectState.save();
-                            },
-                        ),
-                    );
-
-                    trackingData.statefull.clientIDs.forEach((clientID: number, i: number) => {
+                    response.shapes = response.shapes.map(trackedRectangleMapper);
+                    for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
+                        const clientID = trackableObjects.clientIDs[i];
+                        const shape = response.shapes[i];
+                        const state = response.states[i];
+                        const [objectState] = objectStates.filter(
+                            (_state: any): boolean => _state.clientID === clientID,
+                        );
                         const [trackedShape] = trackedShapes.filter(
                             (_trackedShape: TrackedShape) => _trackedShape.clientID === clientID,
                         );
-                        trackedShape.serverlessState = trackingResults.states[i];
-                        trackedShape.shapePoints = trackingResults.shapes[i];
-                        trackedShape.trackOnFrame = frame + 1;
-                    });
-
-                    fetchAnnotations();
+                        objectState.points = shape;
+                        objectState.save().then(() => {
+                            trackedShape.serverlessState = state;
+                            trackedShape.shapePoints = shape;
+                            trackedShape.trackOnFrame = frame + 1;
+                        });
+                    }
                 } catch (error) {
                     notification.error({
-                        message: 'Tracking error occured',
+                        message: 'Tracking error',
                         description: error.toString(),
                     });
                 } finally {
-                    hideMessage();
+                    if (hideMessage) hideMessage();
+                    fetchAnnotations();
                 }
             }
         }
