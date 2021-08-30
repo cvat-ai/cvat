@@ -8,8 +8,6 @@ import boto3
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
-import os
-import os.path
 
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
@@ -20,6 +18,7 @@ from azure.core.exceptions import ResourceExistsError, HttpResponseError
 from azure.storage.blob import PublicAccess
 
 from google.cloud import storage
+from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden as GoogleCloudForbidden
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
@@ -341,6 +340,20 @@ class AzureBlobContainer(_CloudStorage):
 class GOOGLE_DRIVE(_CloudStorage):
     pass
 
+def _define_gcs_status(func):
+    def wrapper(self, key=None):
+        try:
+            if not key:
+                func(self)
+            else:
+                func(self, key)
+            return Status.AVAILABLE
+        except GoogleCloudNotFound:
+            return Status.NOT_FOUND
+        except GoogleCloudForbidden:
+            return Status.FORBIDDEN
+    return wrapper
+
 class GoogleCloudStorage(_CloudStorage):
 
     def __init__(self, bucket_name, prefix=None, service_account_json=None, project=None, location=None):
@@ -366,8 +379,20 @@ class GoogleCloudStorage(_CloudStorage):
     def name(self):
         return self._bucket.name
 
-    def exists(self):
-        return self._storage_client.lookup_bucket(self.name) is not None
+    def _head(self):
+        return self._storage_client.get_bucket(bucket_or_name=self.name)
+
+    def _head_file(self, key):
+        blob = self.bucket.blob(key)
+        return self._storage_client._get_resource(blob.path)
+
+    @_define_gcs_status
+    def get_status(self):
+        self._head()
+
+    @_define_gcs_status
+    def get_file_status(self, key):
+        self._head_file(key)
 
     def initialize_content(self):
         self._files = [
@@ -385,9 +410,6 @@ class GoogleCloudStorage(_CloudStorage):
         self._storage_client.download_blob_to_file(blob, buf)
         buf.seek(0)
         return buf
-
-    def is_object_exist(self, key):
-        return self.bucket.blob(key).exists()
 
     def upload_file(self, file_obj, file_name):
         self.bucket.blob(file_name).upload_from_file(file_obj)
@@ -413,7 +435,6 @@ class GoogleCloudStorage(_CloudStorage):
         blob = self.bucket.blob(key)
         blob.reload()
         return blob.updated
-
 
 class Credentials:
     __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
