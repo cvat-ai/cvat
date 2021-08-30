@@ -26,9 +26,9 @@
         <div class="footer-disclaimer text-white ">
           <small>Intel technologies may require enabled hardware, software or service activation. // No product or component can be absolutely secure. // Your costs and results may vary. // Performance varies by use, configuration and other factors. // See our complete legal <u><a href="https://edc.intel.com/content/www/us/en/products/performance/benchmarks/overview/?r=219444055">Notices and Disclaimers</a></u>. // Intel is committed to respecting human rights and avoiding complicity in human rights abuses. See Intel’s <a href="https://www.intel.com/content/www/us/en/policy/policy-human-rights.html"><u>Global Human Rights Principles</u></a>. Intel’s products and software are intended only to be used in applications that do not cause or contribute to a violation of an internationally recognized human right.</small>
       </div>
-	{{ if not .Site.Params.ui.footer_about_disable }}
-		{{ with .Site.GetPage "about" }}<p class="mt-2"><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>{{ end }}
-	{{ end }}
+  {{ if not .Site.Params.ui.footer_about_disable }}
+    {{ with .Site.GetPage "about" }}<p class="mt-2"><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>{{ end }}
+  {{ end }}
       </div>
     </div>
   </div>
