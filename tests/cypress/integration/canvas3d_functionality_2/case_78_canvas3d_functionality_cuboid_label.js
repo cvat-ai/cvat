@@ -57,8 +57,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Change a label via sidear.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
-                .type(`${secondLabel}{Enter}`)
-                .trigger('mouseout');
+                .type(`${secondLabel}{Enter}`);
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_change_label_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_activating_cuboid.png`,
