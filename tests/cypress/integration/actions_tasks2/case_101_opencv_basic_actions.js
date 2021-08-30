@@ -136,9 +136,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
             cy.get('.cvat-opencv-control-popover-visible')
                 .should('not.have.class', 'ant-popover-hidden');
             cy.get('.cvat-opencv-control-popover-visible')
-                .should('have.attr', 'style')
-                .and('not.include', 'pointer-events');
-            cy.get('.cvat-opencv-control-popover-visible')
                 .contains('[role="tab"]', 'Image')
                 .click()
                 .parents('.ant-tabs-tab')
