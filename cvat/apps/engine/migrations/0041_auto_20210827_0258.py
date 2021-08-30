@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0041_auto_20210813_0853'),
+        ('engine', '0040_cloud_storage'),
     ]
 
     operations = [
