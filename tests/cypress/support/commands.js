@@ -242,7 +242,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get('body').focus();
-    cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+    cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mouseover').wait(300);
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
