@@ -57,14 +57,15 @@ def _import(src_file, task_data):
                 if ann.type != AnnotationType.polygon:
                     continue
 
-                track_id = ann.attributes['track_id'] + shift
+                track_id = ann.attributes['track_id']
                 group_id = track_id
 
                 if track_id in track_ids:
-                    shift += 1
-                    track_id += shift
-
-                track_ids.add(track_id)
+                    # use negative id for tracks with the same id on the same frame
+                    shift -= 1
+                    track_id = shift
+                else:
+                    track_ids.add(track_id)
 
                 shape = task_data.TrackedShape(
                     type='polygon',
