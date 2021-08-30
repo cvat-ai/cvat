@@ -37,6 +37,10 @@ displayed as a red square which is tied to the cursor.
   Increasing action threshold will affect the performance.
   During the drawing process you can remove the last point by clicking on it with the left mouse button.
 
+- You can also create a boundary manually (like when 
+  [creating a polygon](/docs/manual/advanced/annotation-with-polygons/manual-drawing/)) by temporarily disabling 
+  the automatic line creation. To do that, switch blocking on by pressing `Ctrl`.
+
 - In the process of drawing, you can select the number of points in the polygon using the switch.
 
   ![](/images/image224.jpg)

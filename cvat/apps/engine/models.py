@@ -542,6 +542,7 @@ class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'
     AZURE_CONTAINER = 'AZURE_CONTAINER'
     GOOGLE_DRIVE = 'GOOGLE_DRIVE'
+    GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE'
 
     @classmethod
     def choices(cls):
@@ -558,6 +559,7 @@ class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
     TEMP_KEY_SECRET_KEY_TOKEN_SET = 'TEMP_KEY_SECRET_KEY_TOKEN_SET' # nosec
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
+    KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
 
     @classmethod

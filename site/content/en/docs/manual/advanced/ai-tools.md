@@ -35,8 +35,8 @@ A list of available out-of-the-box interactors is placed below.
   If you are not satisfied with the result, you can set additional points or remove points.
   To delete a point, hover over the point you want to delete, if the point can be deleted,
   it will enlarge and the cursor will turn into a cross, then left-click on the point.
-  If you want to postpone the request and create a few more points, hold down `Ctrl` and continue,
-  the request will be sent after the key is released.
+  If you want to postpone the request and create a few more points, hold down `Ctrl` and continue (the `Block`
+  button on the top panel will turn blue), the request will be sent after the key is released.
 
   ![](/images/image188_detrac.jpg)
 
