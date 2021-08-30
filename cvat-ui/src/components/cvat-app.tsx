@@ -375,7 +375,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             to={location.pathname.length > 1 ? `/auth/login/?next=${location.pathname}` : '/auth/login'}
                         />
 
-
                     </Switch>
                 </GlobalErrorBoundary>
             );
