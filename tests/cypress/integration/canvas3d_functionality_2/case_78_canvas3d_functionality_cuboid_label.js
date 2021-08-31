@@ -81,7 +81,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-button-lock')
                 .click(); // Lock the cubiod
-            cy.get('.cvat-object-item-button-lock-enabled').should('exist').trigger('mouseout');
+            cy.get('.cvat-object-item-button-lock-enabled').should('exist');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.get(`.cvat-canvas3d-${view}`)
                     .find('.cvat-canvas3d-fullsize')
