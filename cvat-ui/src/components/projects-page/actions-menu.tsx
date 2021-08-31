@@ -37,12 +37,13 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
 
     return (
         <Menu className='cvat-project-actions-menu'>
-            <Menu.Item onClick={onDeleteProject}>Delete</Menu.Item>
             <Menu.Item
                 onClick={() => dispatch(exportActions.openExportModal(projectInstance))}
             >
                 Export project dataset
             </Menu.Item>
+            <hr />
+            <Menu.Item onClick={onDeleteProject}>Delete</Menu.Item>
         </Menu>
     );
 }
