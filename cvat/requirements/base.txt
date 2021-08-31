@@ -47,6 +47,7 @@ diskcache==5.0.2
 open3d==0.11.2
 boto3==1.17.61
 azure-storage-blob==12.8.1
+google-cloud-storage==1.42.0
 # --no-binary=datumaro: workaround for pip to install
 # opencv-headless instead of regular opencv, to actually run setup script
 # --no-binary=pycocotools: workaround for binary incompatibility on numpy 1.20

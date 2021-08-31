@@ -792,6 +792,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
     secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    key_file_path = serializers.CharField(max_length=64, allow_blank=True, required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
 
     class Meta:
@@ -799,7 +800,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'specific_attributes', 'description'
+            'secret_key', 'key_file_path', 'specific_attributes', 'description'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
@@ -816,6 +817,9 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
                 raise serializers.ValidationError('Account name for Azure container was not specified')
+        if attrs.get('provider_type') == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
+            if not attrs.get('key_file_path', ''):
+                raise serializers.ValidationError('Key file path for Google cloud storage was not specified')
         return attrs
 
     def create(self, validated_data):
@@ -826,6 +830,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             key=validated_data.pop('key', ''),
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
+            key_file_path=validated_data.pop('key_file_path', ''),
             credentials_type = validated_data.get('credentials_type')
         )
         if should_be_created:
@@ -859,7 +864,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'type': instance.credentials_type,
             'value': instance.credentials,
         })
-        tmp = {k:v for k,v in validated_data.items() if k in {'key', 'secret_key', 'account_name', 'session_token', 'credentials_type'}}
+        tmp = {k:v for k,v in validated_data.items() if k in {'key', 'secret_key', 'account_name', 'session_token', 'key_file_path', 'credentials_type'}}
         credentials.mapping_with_new_values(tmp)
         instance.credentials = credentials.convert_to_db()
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)

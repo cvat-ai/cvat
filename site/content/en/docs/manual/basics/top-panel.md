@@ -52,6 +52,17 @@ Used to complete the creation of the object. This button appears only when the o
 
 ---
 
+## Block
+
+![](/images/image226.jpg)
+
+Used to pause automatic line creation when drawing a polygon with 
+[OpenCV Intelligent scissors](/docs/manual/advanced/opencv-tools/#intelligent-scissors).
+Also used to postpone server requests when creating an object using [AI Tools](/docs/manual/advanced/ai-tools/).
+When blocking is activated, the button turns blue.
+
+---
+
 ## Player
 
 Go to the first /the latest frames.
