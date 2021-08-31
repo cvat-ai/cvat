@@ -949,7 +949,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated, canvasInstance, labels, states,
+            interactors,
+            detectors,
+            trackers,
+            isActivated,
+            canvasInstance,
+            labels,
+            states,
+            fetchAnnotations,
         } = this.props;
         const {
             fetching, approxPolyAccuracy, pointsRecieved, mode, activeTracker, trackedShapes,
@@ -1030,9 +1037,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                     (trackedShape: TrackedShape) =>
                                                         trackedShape.clientID !== clientID,
                                                 );
-                                                this.setState({
-                                                    trackedShapes: filteredStates,
+                                                /* eslint no-param-reassign: ["error", { "props": false }] */
+                                                objectState.descriptions = [];
+                                                objectState.save().then(() => {
+                                                    this.setState({
+                                                        trackedShapes: filteredStates,
+                                                    });
                                                 });
+                                                fetchAnnotations();
                                             }}
                                         />
                                     </CVATTooltip>
@@ -1040,17 +1052,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     <CVATTooltip overlay={`Enable tracking using ${activeTracker.name}`}>
                                         <ThunderboltOutlined
                                             onClick={() => {
-                                                this.setState({
-                                                    trackedShapes: [
-                                                        ...trackedShapes,
-                                                        {
-                                                            clientID,
-                                                            serverlessState: null,
-                                                            shapePoints: objectState.points,
-                                                            trackerModel: activeTracker,
-                                                        },
-                                                    ],
+                                                objectState.descriptions = [`Trackable (${activeTracker.name})`];
+                                                objectState.save().then(() => {
+                                                    this.setState({
+                                                        trackedShapes: [
+                                                            ...trackedShapes,
+                                                            {
+                                                                clientID,
+                                                                serverlessState: null,
+                                                                shapePoints: objectState.points,
+                                                                trackerModel: activeTracker,
+                                                            },
+                                                        ],
+                                                    });
                                                 });
+                                                fetchAnnotations();
                                             }}
                                         />
                                     </CVATTooltip>

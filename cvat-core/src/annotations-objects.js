@@ -410,17 +410,7 @@
         }
 
         updateTimestamp(updated) {
-            const anyChanges = updated.label
-                || updated.attributes
-                || updated.points
-                || updated.outside
-                || updated.occluded
-                || updated.keyframe
-                || updated.zOrder
-                || updated.hidden
-                || updated.lock
-                || updated.pinned;
-
+            const anyChanges = Object.keys(updated).some((key) => !!updated[key]);
             if (anyChanges) {
                 this.updated = Date.now();
             }
