@@ -43,6 +43,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
     function openOpencvControlPopover() {
         cy.get('body').focus();
         cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+        cy.wait(1000);
     }
 
     before(() => {
