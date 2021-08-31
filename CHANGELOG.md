@@ -15,11 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and project with 3D tasks (<https://github.com/openvinotoolkit/cvat/pull/3502>)
 - Additional inline tips in interactors with demo gifs (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 - Added intelligent scissors blocking feature (<https://github.com/openvinotoolkit/cvat/pull/3510>)
+- Support cloud storage status (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- Support cloud storage preview (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 
 ### Changed
 
 - Non-blocking UI when using interactors (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 - "Selected opacity" slider now defines opacity level for shapes being drawnSelected opacity (<https://github.com/openvinotoolkit/cvat/pull/3473>)
+- Cloud storage creating and updating (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- Way of working with cloud storage content (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 
 ### Deprecated
 
@@ -27,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- TDB
+- Support TEMP_KEY_SECRET_KEY_TOKEN_SET for AWS S3 cloud storage (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 
 ### Fixed
 
