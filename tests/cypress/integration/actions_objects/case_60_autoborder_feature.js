@@ -78,6 +78,8 @@ context('Autoborder feature.', () => {
 
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover-visible')
+                .should('be.visible');
+            cy.get('.cvat-draw-polygon-popover-visible')
                 .invoke('attr', 'style')
                 .should('not.contain', 'pointer-events');
             cy.get('.cvat-draw-polygon-popover-visible').find('[type="button"]').contains('Shape').click();
@@ -94,6 +96,8 @@ context('Autoborder feature.', () => {
 
         it('Start drawing a polyline with autobordering between the two shapes.', () => {
             cy.interactControlButton('draw-polygon');
+            cy.get('.cvat-draw-polygon-popover-visible')
+                .should('be.visible');
             cy.get('.cvat-draw-polygon-popover-visible')
                 .invoke('attr', 'style')
                 .should('not.contain', 'pointer-events');

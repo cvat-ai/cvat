@@ -12,6 +12,8 @@ context('Check if the image is rotated', () => {
     function imageRotate(direction = 'anticlockwise') {
         cy.interactControlButton('rotate-canvas');
         cy.get('.cvat-rotate-canvas-popover-visible')
+            .should('be.visible');
+        cy.get('.cvat-rotate-canvas-popover-visible')
             .invoke('attr', 'style')
             .should('not.contain', 'pointer-events');
         if (direction === 'clockwise') {

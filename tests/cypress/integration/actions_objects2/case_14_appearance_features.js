@@ -172,6 +172,8 @@ context('Appearance features', () => {
             function testDrawShapeCheckOpacity({ shape, drawingMethod, shapeType, fillOpacityBefore, fillOpacityAfter, opacityBefore, opacityAfter }) {
                 cy.interactControlButton(`draw-${shape}`);
                 cy.get(`.cvat-draw-${shape}-popover-visible`)
+                    .should('be.visible');
+                cy.get(`.cvat-draw-${shape}-popover-visible`)
                     .invoke('attr', 'style')
                     .should('not.contain', 'pointer-events');
                 cy.get(`.cvat-draw-${shape}-popover-visible`).within(() => {
