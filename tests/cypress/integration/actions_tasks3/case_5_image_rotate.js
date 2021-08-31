@@ -10,21 +10,17 @@ context('Check if the image is rotated', () => {
     const caseId = '5';
 
     function imageRotate(direction = 'anticlockwise') {
-        cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
+        cy.interactControlButton('rotate-canvas');
         cy.get('.cvat-rotate-canvas-popover-visible')
-            .should('not.have.class', 'ant-popover-hidden')
-            .should('have.attr', 'style')
-            .and('not.include', 'pointer-events');
+            .invoke('attr', 'style')
+            .should('not.contain', 'pointer-events');
         if (direction === 'clockwise') {
             cy.get('.cvat-rotate-canvas-controls-right').click();
         } else {
             cy.get('.cvat-rotate-canvas-controls-left').click();
         }
         cy.get('.cvat-canvas-container').click(); // Hide popover
-        cy.get('.cvat-rotate-canvas-popover')
-            .should('be.hidden')
-            .should('have.attr', 'style')
-            .and('include', 'pointer-events');
+        cy.get('.cvat-rotate-canvas-popover-visible').should('not.exist');
     }
 
     function scaleFitImage() {

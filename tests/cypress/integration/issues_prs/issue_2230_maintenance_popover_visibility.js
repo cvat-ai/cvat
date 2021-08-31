@@ -17,9 +17,8 @@ context('Check maintenance of popups visibility.', () => {
         it('Open a popover for draw an object and apply the "mouseout" event to it. The popover be visible.', () => {
             cy.interactControlButton('draw-rectangle');
             cy.get('.cvat-draw-rectangle-popover-visible')
-                .should('not.have.class', 'ant-popover-hidden')
-                .should('have.attr', 'style')
-                .and('not.include', 'pointer-events');
+                .invoke('attr', 'style')
+                .should('not.contain', 'pointer-events');
             cy.get('.cvat-draw-rectangle-popover-visible').trigger('mouseout').wait(500);
             cy.get('.cvat-draw-rectangle-popover-visible').should('exist');
         });

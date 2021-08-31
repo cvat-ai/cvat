@@ -172,9 +172,8 @@ context('Appearance features', () => {
             function testDrawShapeCheckOpacity({ shape, drawingMethod, shapeType, fillOpacityBefore, fillOpacityAfter, opacityBefore, opacityAfter }) {
                 cy.interactControlButton(`draw-${shape}`);
                 cy.get(`.cvat-draw-${shape}-popover-visible`)
-                    .should('not.have.class', 'ant-popover-hidden')
-                    .should('have.attr', 'style')
-                    .and('not.include', 'pointer-events');
+                    .invoke('attr', 'style')
+                    .should('not.contain', 'pointer-events');
                 cy.get(`.cvat-draw-${shape}-popover-visible`).within(() => {
                         if (drawingMethod) {
                             cy.contains('.ant-radio-wrapper', drawingMethod).click();

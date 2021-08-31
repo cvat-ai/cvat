@@ -21,9 +21,8 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
         it('Cancel drawing.', () => {
             cy.get('.cvat-draw-cuboid-control').trigger('mouseover').wait(300);
             cy.get('.cvat-draw-cuboid-popover-visible')
-                .should('not.have.class', 'ant-popover-hidden')
-                .should('have.attr', 'style')
-                .and('not.include', 'pointer-events');
+                .invoke('attr', 'style')
+                .should('not.contain', 'pointer-events');
             cy.get('.cvat-draw-cuboid-popover-visible').find('.ant-select-selection-item').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
