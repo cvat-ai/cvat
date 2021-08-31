@@ -52,11 +52,6 @@ context('Call HOC component each render.', () => {
 
     function checkNumberOfPointsValue(objectType, numberOfPoints) {
         cy.interactControlButton(`draw-${objectType}`);
-        cy.get(`.cvat-draw-${objectType}-popover-visible`)
-            .should('be.visible');
-        cy.get(`.cvat-draw-${objectType}-popover-visible`)
-            .invoke('attr', 'style')
-            .should('not.contain', 'pointer-events');
         cy.get(`.cvat-draw-${objectType}-popover-visible`).within(() => {
             cy.get('.cvat-draw-shape-popover-points-selector')
                 .find('input')

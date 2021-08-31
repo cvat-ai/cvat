@@ -243,6 +243,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get('body').focus();
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
+    cy.get(`.cvat-${objectType}-popover-visible`).should('exist')
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
@@ -267,11 +268,6 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`)
-        .should('be.visible');
-    cy.get(`.cvat-${objectType}-popover-visible`)
-        .invoke('attr', 'style')
-        .should('not.contain', 'pointer-events');
     cy.get(`.cvat-${objectType}-popover-visible`)
         .find('.ant-select-selection-item')
         .click();
