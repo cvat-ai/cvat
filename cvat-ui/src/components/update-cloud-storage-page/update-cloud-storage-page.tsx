@@ -26,7 +26,7 @@ export default function UpdateCloudStoragePageComponent(): JSX.Element {
     const shouldShowUpdationNotification = useRef(false);
     const cloudStorageId = +useParams<ParamType>().id;
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
-    const cloudStorageQuery = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
+    const isInitialized = useSelector((state: CombinedState) => state.cloudStorages.initialized);
     const cloudStorages = useSelector((state: CombinedState) => state.cloudStorages.current)
         .map((cloudStrage) => cloudStrage.instance);
     const [cloudStorage] = cloudStorages.filter((_cloudStorage) => _cloudStorage.id === cloudStorageId);
@@ -37,7 +37,7 @@ export default function UpdateCloudStoragePageComponent(): JSX.Element {
         }
     }, [isFetching]);
 
-    if (!cloudStorage && cloudStorageQuery.id !== cloudStorageId) {
+    if (!cloudStorage && !isInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
