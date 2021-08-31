@@ -253,9 +253,6 @@ def _create_thread(tid, data, isImport=False):
             }
             cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
             first_sorted_media_image = sorted(media['image'])[0]
-            # create sub directories if the file is not stored in "root"
-            if os.path.dirname(first_sorted_media_image):
-                os.makedirs(os.path.join(upload_dir, os.path.dirname(first_sorted_media_image)), exist_ok=True)
             cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
 
             # prepare task manifest file from cloud storage manifest file
