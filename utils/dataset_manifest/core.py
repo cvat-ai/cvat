@@ -268,6 +268,7 @@ class _ManifestManager(ABC):
     }
     def __init__(self, path, *args, **kwargs):
         self._manifest = _Manifest(path)
+        self._index = _Index(os.path.dirname(self._manifest.path))
 
     def _parse_line(self, line):
         """ Getting a random line from the manifest file """
@@ -286,7 +287,6 @@ class _ManifestManager(ABC):
                 return json.loads(properties)
 
     def init_index(self):
-        self._index = _Index(os.path.dirname(self._manifest.path))
         if os.path.exists(self._index.path):
             self._index.load()
         else:
@@ -294,9 +294,12 @@ class _ManifestManager(ABC):
             self._index.dump()
 
     def reset_index(self):
-        self._index = _Index(os.path.dirname(self._manifest.path))
         if os.path.exists(self._index.path):
             self._index.remove()
+
+    def set_index(self):
+        self.reset_index()
+        self.init_index()
 
     @abstractmethod
     def create(self, content, **kwargs):
@@ -337,6 +340,10 @@ class _ManifestManager(ABC):
 
     @abstractproperty
     def data(self):
+        pass
+
+    @abstractmethod
+    def get_subset(self, subset_names):
         pass
 
 class VideoManifestManager(_ManifestManager):
@@ -402,7 +409,10 @@ class VideoManifestManager(_ManifestManager):
 
     @property
     def data(self):
-        return [self.video_name]
+        return (self.video_name)
+
+    def get_subset(self, subset_names):
+        raise NotImplementedError()
 
 #TODO: add generic manifest structure file validation
 class ManifestValidator:
@@ -484,4 +494,14 @@ class ImageManifestManager(_ManifestManager):
 
     @property
     def data(self):
-        return [f"{image['name']}{image['extension']}" for _, image in self]
+        return (f"{image['name']}{image['extension']}" for _, image in self)
+
+    def get_subset(self, subset_names):
+        return ({
+            'name': f"{image['name']}",
+            'extension': f"{image['extension']}",
+            'width': image['width'],
+            'height': image['height'],
+            'meta': image['meta'],
+            'checksum': f"{image['checksum']}"
+        } for _, image in self if f"{image['name']}{image['extension']}" in subset_names)

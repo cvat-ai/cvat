@@ -1,18 +1,39 @@
-#from dataclasses import dataclass
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+import os
+import boto3
+
 from abc import ABC, abstractmethod, abstractproperty
+from enum import Enum
 from io import BytesIO
 
-import boto3
 from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import WaiterError
+from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
 
 from azure.storage.blob import BlobServiceClient
-from azure.core.exceptions import ResourceExistsError
+from azure.core.exceptions import ResourceExistsError, HttpResponseError
 from azure.storage.blob import PublicAccess
+
+from google.cloud import storage
+from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden as GoogleCloudForbidden
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
+
+class Status(str, Enum):
+    AVAILABLE = 'AVAILABLE'
+    NOT_FOUND = 'NOT_FOUND'
+    FORBIDDEN = 'FORBIDDEN'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
 
 class _CloudStorage(ABC):
 
@@ -32,11 +53,19 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def get_file_last_modified(self, key):
+    def _head(self):
         pass
 
     @abstractmethod
-    def exists(self):
+    def get_status(self):
+        pass
+
+    @abstractmethod
+    def get_file_status(self, key):
+        pass
+
+    @abstractmethod
+    def get_file_last_modified(self, key):
         pass
 
     @abstractmethod
@@ -50,6 +79,7 @@ class _CloudStorage(ABC):
     def download_file(self, key, path):
         file_obj = self.download_fileobj(key)
         if isinstance(file_obj, BytesIO):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb') as f:
                 f.write(file_obj.getvalue())
         else:
@@ -85,44 +115,19 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             account_name=credentials.account_name,
             sas_token=credentials.session_token
         )
+    elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
+        instance = GoogleCloudStorage(
+            bucket_name=resource,
+            service_account_json=credentials.key_file_path,
+            prefix=specific_attributes.get('prefix'),
+            location=specific_attributes.get('location'),
+            project=specific_attributes.get('project')
+        )
     else:
         raise NotImplementedError()
     return instance
 
-def check_cloud_storage_existing(provider_type,
-                                credentials_type,
-                                session_token,
-                                account_name,
-                                key,
-                                secret_key,
-                                resource,
-                                specific_attributes):
-    credentials = Credentials(
-        key=key,
-        secret_key=secret_key,
-        session_token=session_token,
-        account_name=account_name,
-        credentials_type=credentials_type)
-    details = {
-        'resource': resource,
-        'credentials': credentials,
-        'specific_attributes': {
-                item.split('=')[0].strip(): item.split('=')[1].strip()
-                    for item in specific_attributes.split('&')
-                } if len(specific_attributes)
-                    else dict()
-    }
-    storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-    if not storage.exists():
-        message = str('The resource {} unavailable'.format(resource))
-        slogger.glob.error(message)
-        raise Exception(message)
-
 class AWS_S3(_CloudStorage):
-    waiter_config = {
-        'Delay': 1, # The amount of time in seconds to wait between attempts. Default: 5
-        'MaxAttempts': 2, # The maximum number of attempts to be made. Default: 20
-    }
     transfer_config = {
         'max_io_queue': 10,
     }
@@ -166,34 +171,35 @@ class AWS_S3(_CloudStorage):
     def name(self):
         return self._bucket.name
 
-    def exists(self):
-        waiter = self._client_s3.get_waiter('bucket_exists')
-        try:
-            waiter.wait(
-                Bucket=self.name,
-                WaiterConfig=self.waiter_config
-            )
-            return True
-        except WaiterError:
-            return False
-
-    def is_object_exist(self, key_object):
-        waiter = self._client_s3.get_waiter('object_exists')
-        try:
-            waiter.wait(
-                Bucket=self.name,
-                Key=key_object,
-                WaiterConfig=self.waiter_config,
-            )
-            return True
-        except WaiterError:
-            return False
+    def _head(self):
+        return self._client_s3.head_bucket(Bucket=self.name)
 
     def _head_file(self, key):
-        return self._client_s3.head_object(
-            Bucket=self.name,
-            Key=key
-        )
+        return self._client_s3.head_object(Bucket=self.name, Key=key)
+
+    def get_status(self):
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object
+        # return only 3 codes: 200, 403, 404
+        try:
+            self._head()
+            return Status.AVAILABLE
+        except ClientError as ex:
+            code = ex.response['Error']['Code']
+            if code == '403':
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
+
+    def get_file_status(self, key):
+        try:
+            self._head_file(key)
+            return Status.AVAILABLE
+        except ClientError as ex:
+            code = ex.response['Error']['Code']
+            if code == '403':
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
 
     def get_file_last_modified(self, key):
         return self._head_file(key).get('LastModified')
@@ -276,12 +282,8 @@ class AzureBlobContainer(_CloudStorage):
             slogger.glob.info(msg)
             raise Exception(msg)
 
-    def exists(self):
-        return self._container_client.exists(timeout=2)
-
-    def is_object_exist(self, file_name):
-        blob_client = self._container_client.get_blob_client(file_name)
-        return blob_client.exists()
+    def _head(self):
+        return self._container_client.get_container_properties()
 
     def _head_file(self, key):
         blob_client = self.container.get_blob_client(key)
@@ -289,6 +291,26 @@ class AzureBlobContainer(_CloudStorage):
 
     def get_file_last_modified(self, key):
         return self._head_file(key).last_modified
+
+    def get_status(self):
+        try:
+            self._head()
+            return Status.AVAILABLE
+        except HttpResponseError as ex:
+            if  ex.status_code == 403:
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
+
+    def get_file_status(self, key):
+        try:
+            self._head_file(key)
+            return Status.AVAILABLE
+        except HttpResponseError as ex:
+            if  ex.status_code == 403:
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
 
     def upload_file(self, file_obj, file_name):
         self._container_client.upload_blob(name=file_name, data=file_obj)
@@ -318,14 +340,111 @@ class AzureBlobContainer(_CloudStorage):
 class GOOGLE_DRIVE(_CloudStorage):
     pass
 
+def _define_gcs_status(func):
+    def wrapper(self, key=None):
+        try:
+            if not key:
+                func(self)
+            else:
+                func(self, key)
+            return Status.AVAILABLE
+        except GoogleCloudNotFound:
+            return Status.NOT_FOUND
+        except GoogleCloudForbidden:
+            return Status.FORBIDDEN
+    return wrapper
+
+class GoogleCloudStorage(_CloudStorage):
+
+    def __init__(self, bucket_name, prefix=None, service_account_json=None, project=None, location=None):
+        super().__init__()
+        if service_account_json:
+            self._storage_client = storage.Client.from_service_account_json(service_account_json)
+        else:
+            self._storage_client = storage.Client()
+
+        bucket = self._storage_client.lookup_bucket(bucket_name)
+        if bucket is None:
+            bucket = self._storage_client.bucket(bucket_name, user_project=project)
+
+        self._bucket = bucket
+        self._bucket_location = location
+        self._prefix = prefix
+
+    @property
+    def bucket(self):
+        return self._bucket
+
+    @property
+    def name(self):
+        return self._bucket.name
+
+    def _head(self):
+        return self._storage_client.get_bucket(bucket_or_name=self.name)
+
+    def _head_file(self, key):
+        blob = self.bucket.blob(key)
+        return self._storage_client._get_resource(blob.path)
+
+    @_define_gcs_status
+    def get_status(self):
+        self._head()
+
+    @_define_gcs_status
+    def get_file_status(self, key):
+        self._head_file(key)
+
+    def initialize_content(self):
+        self._files = [
+            {
+                'name': blob.name
+            }
+            for blob in self._storage_client.list_blobs(
+                self.bucket, prefix=self._prefix
+            )
+        ]
+
+    def download_fileobj(self, key):
+        buf = BytesIO()
+        blob = self.bucket.blob(key)
+        self._storage_client.download_blob_to_file(blob, buf)
+        buf.seek(0)
+        return buf
+
+    def upload_file(self, file_obj, file_name):
+        self.bucket.blob(file_name).upload_from_file(file_obj)
+
+    def create(self):
+        try:
+            self._bucket = self._storage_client.create_bucket(
+                self.bucket,
+                location=self._bucket_location
+            )
+            slogger.glob.info(
+                'Bucket {} has been created at {} region for {}'.format(
+                    self.name,
+                    self.bucket.location,
+                    self.bucket.user_project,
+                ))
+        except Exception as ex:
+            msg = str(ex)
+            slogger.glob.info(msg)
+            raise Exception(msg)
+
+    def get_file_last_modified(self, key):
+        blob = self.bucket.blob(key)
+        blob.reload()
+        return blob.updated
+
 class Credentials:
-    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'credentials_type')
+    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
 
     def __init__(self, **credentials):
         self.key = credentials.get('key', '')
         self.secret_key = credentials.get('secret_key', '')
         self.session_token = credentials.get('session_token', '')
         self.account_name = credentials.get('account_name', '')
+        self.key_file_path = credentials.get('key_file_path', '')
         self.credentials_type = credentials.get('credentials_type', None)
 
     def convert_to_db(self):
@@ -333,6 +452,7 @@ class Credentials:
             CredentialsTypeChoice.KEY_SECRET_KEY_PAIR : \
                 " ".join([self.key, self.secret_key]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
+            CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
         }
         return converted_credentials[self.credentials_type]
@@ -347,15 +467,40 @@ class Credentials:
             self.session_token, self.key, self.secret_key = ('', '', '')
             # account_name will be in [some_value, '']
             self.account_name = credentials.get('value')
+        elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
+            self.key_file_path = credentials.get('value')
         else:
             raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
 
     def mapping_with_new_values(self, credentials):
         self.credentials_type = credentials.get('credentials_type', self.credentials_type)
-        self.key = credentials.get('key', self.key)
-        self.secret_key = credentials.get('secret_key', self.secret_key)
-        self.session_token = credentials.get('session_token', self.session_token)
-        self.account_name = credentials.get('account_name', self.account_name)
+        if self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
+            self.key = ''
+            self.secret_key = ''
+            self.session_token = ''
+            self.key_file_path = ''
+            self.account_name = credentials.get('account_name', self.account_name)
+        elif self.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
+            self.key = credentials.get('key', self.key)
+            self.secret_key = credentials.get('secret_key', self.secret_key)
+            self.session_token = ''
+            self.account_name = ''
+            self.key_file_path = ''
+        elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
+            self.session_token = credentials.get('session_token', self.session_token)
+            self.account_name = credentials.get('account_name', self.account_name)
+            self.key = ''
+            self.secret_key = ''
+            self.key_file_path = ''
+        elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
+            self.key = ''
+            self.secret_key = ''
+            self.session_token = ''
+            self.account_name = ''
+            self.key_file_path = credentials.get('key_file_path', self.key_file_path)
+        else:
+            raise NotImplementedError('Mapping credentials: unsupported credentials type')
+
 
     def values(self):
-        return [self.key, self.secret_key, self.session_token, self.account_name]
+        return [self.key, self.secret_key, self.session_token, self.account_name, self.key_file_path]

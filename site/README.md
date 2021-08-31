@@ -44,7 +44,7 @@ To build and preview your site locally, use:
     cd <your local directory>/cvat/site/
     hugo server
 
-By default, your site will be available at <http://localhost:1313/>.
+By default, your site will be available at <http://localhost:1313/docs/>.
 
 Instead of a "hugo server" command, you can use the "hugo" command that generates the site into a "public" folder.
 

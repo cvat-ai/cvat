@@ -12,6 +12,7 @@ from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from cvat.apps.engine.utils import parse_specific_attributes
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -542,6 +543,7 @@ class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'
     AZURE_CONTAINER = 'AZURE_CONTAINER'
     GOOGLE_DRIVE = 'GOOGLE_DRIVE'
+    GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE'
 
     @classmethod
     def choices(cls):
@@ -558,6 +560,7 @@ class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR' # nosec
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
+    KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
 
     @classmethod
@@ -573,7 +576,7 @@ class CredentialsTypeChoice(str, Enum):
 
 class Manifest(models.Model):
     filename = models.CharField(max_length=1024, default='manifest.jsonl')
-    cloud_storages = models.ManyToManyField('CloudStorage')
+    cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.CASCADE, null=True, related_name='manifests')
 
     def __str__(self):
         return '{}'.format(self.filename)
@@ -619,8 +622,4 @@ class CloudStorage(models.Model):
         return os.path.join(self.get_storage_dirname(), 'preview.jpeg')
 
     def get_specific_attributes(self):
-        specific_attributes = self.specific_attributes
-        return {
-            item.split('=')[0].strip(): item.split('=')[1].strip()
-                for item in specific_attributes.split('&')
-        } if specific_attributes else dict()
+        return parse_specific_attributes(self.specific_attributes)

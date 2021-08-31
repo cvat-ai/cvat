@@ -8,7 +8,10 @@ description: 'Overview of basic operations available when annotating 3D objects.
 ### Navigation
 
 To move in 3D space you can use several methods:
-- Move using the mouse:
+- Select the `move the image` tool so you can move the camera using the mouse:
+
+  ![](/images/image149.jpg)
+
   - Hold down the left mouse button in the perspective window to turn the camera around the conditional point.
   - Hold down the right mouse button in the perspective window to move the camera inside the 3D space.
   - Move the mouse while holding down the wheel to zoom in/out in the perspective window.
@@ -31,14 +34,14 @@ select the label of the future object and click `shape`.
 
   ![](/images/image217.jpg)
 
-After that the cursor will be followed by a cube. In the creation process you can rotate and move the camera.
-Left double-click will create an object.
+After that the cursor will be followed by a cube. In the creation process you can rotate and move the camera
+only using the keys. Left double-click will create an object.
 You can place an object only near the dots of the point cloud.
 
   ![](/images/gif026_carla_town3.gif)
 
-To adjust the size precisely, you need to edit the cuboid on the projections.
-In each projection you can:
+To adjust the size precisely, you need to edit the cuboid on the projections, for this change `Сursor` on control
+sidebar or press `Esc`. In each projection you can:
 
 Move the object in the projection plane - to do this, hover over the object,
 press the left mouse button and move the object.

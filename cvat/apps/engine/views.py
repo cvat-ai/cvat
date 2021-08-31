@@ -2,16 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+import errno
 import io
 import os
 import os.path as osp
+import pytz
 import shutil
 import traceback
 import uuid
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
-from PIL import Image as PILImage
 
 import cv2
 from django.db.models.query import Prefetch
@@ -40,11 +41,11 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, check_cloud_storage_existing, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.media_extractors import MEDIA_TYPES, ImageListReader
+from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
@@ -1271,23 +1272,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
         return queryset
 
     def perform_create(self, serializer):
-        # check that instance of cloud storage exists
-        provider_type = serializer.validated_data.get('provider_type')
-        credentials_type = serializer.validated_data.get('credentials_type')
-        session_token = serializer.validated_data.get('session_token', '')
-        account_name = serializer.validated_data.get('account_name', '')
-        key = serializer.validated_data.get('key', '')
-        secret_key = serializer.validated_data.get('secret_key', '')
-        resource = serializer.validated_data.get('resource')
-        specific_attributes = serializer.validated_data.get('specific_attributes', '')
-
-        check_cloud_storage_existing(provider_type, credentials_type, session_token, account_name,
-            key, secret_key, resource, specific_attributes)
-        owner = self.request.data.get('owner')
-        if owner:
-            serializer.save()
-        else:
-            serializer.save(owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
     def perform_destroy(self, instance):
         cloud_storage_dirname = instance.get_storage_dirname()
@@ -1312,7 +1297,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 msg_body = ""
                 for ex in exceptions.args:
                     for field, ex_msg in ex.items():
-                        msg_body += ": ".join([field, str(ex_msg[0])])
+                        msg_body += ': '.join([field, ex_msg if isinstance(ex_msg, str) else str(ex_msg[0])])
                         msg_body += '\n'
                 return HttpResponseBadRequest(msg_body)
         except APIException as ex:
@@ -1349,23 +1334,24 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 'specific_attributes': db_storage.get_specific_attributes()
             }
             storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-            if not db_storage.manifest_set.count():
+            if not db_storage.manifests.count():
                 raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
-            if not storage.is_object_exist(manifest_path):
-                import errno
+            file_status = storage.get_file_status(manifest_path)
+            if file_status == Status.NOT_FOUND:
                 raise FileNotFoundError(errno.ENOENT,
                     "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
+            elif file_status == Status.FORBIDDEN:
+                raise PermissionError(errno.EACCES,
+                    "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), manifest_path)
 
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-            if not os.path.exists(full_manifest_path):
-                # or \ os.path.getmtime(full_manifest_path) < storage.get_file_last_modified(full_manifest_path):
-                # TODO: create sub dirs
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
                 storage.download_file(manifest_path, full_manifest_path)
             manifest = ImageManifestManager(full_manifest_path)
-            # need to reset previon index
-            manifest.reset_index()
-            manifest.init_index()
+            # need to update index
+            manifest.set_index()
             manifest_files = manifest.data
             return Response(data=manifest_files, content_type="text/plain")
 
@@ -1378,7 +1364,15 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
-            return HttpResponseBadRequest(str(ex))
+            # check that cloud storage was not deleted
+            storage_status = storage.get_status()
+            if storage_status == Status.FORBIDDEN:
+                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
+            elif storage_status == Status.NOT_FOUND:
+                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+            else:
+                msg = str(ex)
+            return HttpResponseBadRequest(msg)
 
     @swagger_auto_schema(
         method='get',
@@ -1404,28 +1398,88 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                     'specific_attributes': db_storage.get_specific_attributes()
                 }
                 storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-                storage.initialize_content()
-                storage_images = [f for f in storage.content if MEDIA_TYPES['image']['has_mime_type'](f)]
-                if not len(storage_images):
+                if not db_storage.manifests.count():
+                    raise Exception('Cannot get the cloud storage preview. There is no manifest file')
+                preview_path = None
+                for manifest_model in db_storage.manifests.all():
+                    full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
+                    if not os.path.exists(full_manifest_path) or \
+                            datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
+                        storage.download_file(manifest_model.filename, full_manifest_path)
+                    manifest = ImageManifestManager(os.path.join(db_storage.get_storage_dirname(), manifest_model.filename))
+                    # need to update index
+                    manifest.set_index()
+                    if not len(manifest):
+                        continue
+                    preview_info = manifest[0]
+                    preview_path = ''.join([preview_info['name'], preview_info['extension']])
+                    break
+                if not preview_path:
                     msg = 'Cloud storage {} does not contain any images'.format(pk)
                     slogger.cloud_storage[pk].info(msg)
                     return HttpResponseBadRequest(msg)
+
+                file_status = storage.get_file_status(preview_path)
+                if file_status == Status.NOT_FOUND:
+                    raise FileNotFoundError(errno.ENOENT,
+                        "Not found on the cloud storage {}".format(db_storage.display_name), preview_path)
+                elif file_status == Status.FORBIDDEN:
+                    raise PermissionError(errno.EACCES,
+                        "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), preview_path)
                 with NamedTemporaryFile() as temp_image:
-                    storage.download_file(storage_images[0], temp_image.name)
+                    storage.download_file(preview_path, temp_image.name)
                     reader = ImageListReader([temp_image.name])
                     preview = reader.get_preview()
                     preview.save(db_storage.get_preview_path())
-            buf = io.BytesIO()
-            PILImage.open(db_storage.get_preview_path()).save(buf, format='JPEG')
-            buf.seek(0)
             content_type = mimetypes.guess_type(db_storage.get_preview_path())[0]
-            return HttpResponse(buf.getvalue(), content_type)
+            return HttpResponse(open(db_storage.get_preview_path(), 'rb').read(), content_type)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
         except Exception as ex:
-            return HttpResponseBadRequest(str(ex))
+            # check that cloud storage was not deleted
+            storage_status = storage.get_status()
+            if storage_status == Status.FORBIDDEN:
+                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
+            elif storage_status == Status.NOT_FOUND:
+                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+            else:
+                msg = str(ex)
+            return HttpResponseBadRequest(msg)
+
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='Method returns a cloud storage status',
+        responses={
+            '200': openapi.Response(description='Status'),
+        },
+        tags=['cloud storages']
+    )
+    @action(detail=True, methods=['GET'], url_path='status')
+    def status(self, request, pk):
+        try:
+            db_storage = CloudStorageModel.objects.get(pk=pk)
+            credentials = Credentials()
+            credentials.convert_from_db({
+                'type': db_storage.credentials_type,
+                'value': db_storage.credentials,
+            })
+            details = {
+                'resource': db_storage.resource,
+                'credentials': credentials,
+                'specific_attributes': db_storage.get_specific_attributes()
+            }
+            storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+            storage_status = storage.get_status()
+            return HttpResponse(storage_status)
+        except CloudStorageModel.DoesNotExist:
+            message = f"Storage {pk} does not exist"
+            slogger.glob.error(message)
+            return HttpResponseNotFound(message)
+        except Exception as ex:
+            msg = str(ex)
+            return HttpResponseBadRequest(msg)
 
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(
@@ -1565,5 +1619,3 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
-
-
