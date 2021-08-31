@@ -267,11 +267,9 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`).then(($popover) => {
-        cy.get($popover)
-            .should('have.attr', 'style', {timeout: 1000})
-            .and('not.include', 'pointer-events')
-    });
+    cy.get(`.cvat-${objectType}-popover-visible`)
+        .invoke('attr', 'style')
+        .should('not.contain', 'pointer-events');
     cy.get(`.cvat-${objectType}-popover-visible`)
         .find('.ant-select-selection-item')
         .click();
