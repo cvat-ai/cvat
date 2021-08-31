@@ -3,22 +3,24 @@
 #
 # SPDX-License-Identifier: MIT
 
-
-from io import BytesIO
 import os.path as osp
 import tempfile
 import zipfile
+from io import BytesIO
 
 import datumaro
+from django.contrib.auth.models import Group, User
 from PIL import Image
-from django.contrib.auth.models import User, Group
-from rest_framework.test import APITestCase, APIClient
+
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import TaskData, find_dataset_root, CvatTaskDataExtractor
+from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+                                                TaskData, find_dataset_root)
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 
 
@@ -501,7 +503,6 @@ class TaskExportTest(_DbTestBase):
             self.assertTrue(frame.frame in range(6, 10))
         self.assertEqual(i + 1, 4)
 
-
 class FrameMatchingTest(_DbTestBase):
     def _generate_task_images(self, paths): # pylint: disable=no-self-use
         f = BytesIO()
@@ -598,9 +599,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
         self._put_api_v1_task_id_annotations(task["id"], annotations)
         return annotations
 
-    def _generate_task_images(self, count, name="image"):
+    def _generate_task_images(self, count, name="image", **kwargs):
         images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
+            "client_files[%d]" % i: generate_image_file("%s_%d.jpg" % (name, i),
+                **kwargs)
             for i in range(count)
         }
         images["image_quality"] = 75
@@ -912,7 +914,44 @@ class TaskAnnotationsImportTest(_DbTestBase):
             self._generate_annotations(task, format_name)
 
             with self.subTest(format=format_name):
-                if not f.ENABLED:
+                if not f.ENABLED or format_name in {'Sly Point Cloud Format 1.0',
+                    'Kitti Raw Format 1.0'}:
                     self.skipTest("Format is disabled")
 
                 self._test_can_import_annotations(task, format_name)
+
+    def test_can_import_mots_annotations_with_splited_masks(self):
+        #https://github.com/openvinotoolkit/cvat/issues/3360
+        from datumaro.components.dataset import Dataset, DatasetItem
+        from datumaro.components.extractor import Mask
+        from numpy import array
+
+        format_name = 'MOTS PNG 1.0'
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id='image_0',
+                annotations=[
+                    Mask(array([[1, 1, 1, 0, 1, 1, 1]] * 5),
+                    label=0, attributes={'track_id': 0})
+                ]
+            )
+        ], categories=['label_0'])
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            dataset_dir = osp.join(temp_dir, 'dataset')
+            source_dataset.export(dataset_dir, 'mots_png')
+            dataset_path = osp.join(temp_dir, 'annotations.zip')
+            make_zip_archive(dataset_dir, dataset_path)
+
+            images = self._generate_task_images(1, size=(5, 7))
+            task = {
+                'name': 'test',
+                "overlap": 0,
+                "segment_size": 100,
+                "labels": [{'name': 'label_0'}]
+            }
+            task.update()
+            task = self._create_task(task, images)
+
+            dm.task.import_task_annotations(task['id'], dataset_path, format_name)
+            self._test_can_import_annotations(task, format_name)
+
