@@ -83,7 +83,7 @@
     "react": "^16.14.0",
     "react-awesome-query-builder": "^3.0.0",
     "react-color": "^2.19.3",
-    "react-cookie": "^4.0.3",
+    "react-cookie": "^4.1.0",
     "react-dom": "^16.14.0",
     "react-moment": "^1.1.1",
     "react-redux": "^7.2.4",
