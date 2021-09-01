@@ -241,13 +241,14 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
+    cy.get('.cvat-canvas-container').click('bottomLeft'); // Just in case, we close the popover.
     cy.get('body').focus();
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
     cy.get(`.cvat-${objectType}-control`).should('have.class', 'ant-popover-open');
-    cy.get(`.cvat-${objectType}-popover-visible`, {timeout: 30000}).should('exist');
+    cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
     cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
     cy.get(`.cvat-${objectType}-popover-visible`).should('not.have.class', 'ant-zoom-big');
-    cy.get(`.cvat-${objectType}-popover-visible`).invoke('attr', 'style').should('not.include', 'pointer-events');
+    cy.get(`.cvat-${objectType}-popover-visible`).invoke('attr', 'style').should('not.include', 'pointer-events: none');
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {

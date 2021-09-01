@@ -41,6 +41,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
     ];
 
     function openOpencvControlPopover() {
+        cy.get('.cvat-canvas-container').click('bottomLeft'); // Just in case, we close the popover.
         cy.get('body').focus();
         cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
         cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
