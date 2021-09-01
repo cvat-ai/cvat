@@ -352,11 +352,13 @@
      * @enum {string}
      * @name CloudStorageCredentialsType
      * @memberof module:API.cvat.enums
+     * @property {string} KEY_SECRET_KEY_PAIR 'KEY_SECRET_KEY_PAIR'
      * @property {string} ACCOUNT_NAME_TOKEN_PAIR 'ACCOUNT_NAME_TOKEN_PAIR'
      * @property {string} ANONYMOUS_ACCESS 'ANONYMOUS_ACCESS'
      * @readonly
      */
     const CloudStorageCredentialsType = Object.freeze({
+        KEY_SECRET_KEY_PAIR: 'KEY_SECRET_KEY_PAIR',
         ACCOUNT_NAME_TOKEN_PAIR: 'ACCOUNT_NAME_TOKEN_PAIR',
         ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
     });

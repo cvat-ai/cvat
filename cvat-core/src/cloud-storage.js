@@ -249,13 +249,13 @@
                         },
                     },
                     /**
-                     * @name specificAttibutes
+                     * @name specificAttributes
                      * @type {string}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
-                    specificAttibutes: {
+                    specificAttributes: {
                         get: () => data.specific_attributes,
                         set: (attributesValue) => {
                             if (typeof attributesValue === 'string') {
@@ -430,8 +430,8 @@
                 data.session_token = cloudStorageInstance.token;
             }
 
-            if (cloudStorageInstance.specificAttibutes) {
-                data.specific_attributes = cloudStorageInstance.specificAttibutes;
+            if (cloudStorageInstance.specificAttributes) {
+                data.specific_attributes = cloudStorageInstance.specificAttributes;
             }
             return data;
         }
