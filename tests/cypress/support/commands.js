@@ -722,7 +722,7 @@ Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) =>
     cy.interactMenu('Export task dataset');
     cy.intercept('GET', `/api/v1/tasks/**/${type}**`).as(as);
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
-    cy.contains('.cvat-modal-export-option-item', format).click();
+    cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-task').find('[type="checkbox"]').should('not.be.checked').check();
