@@ -210,7 +210,7 @@ Supported URL formats :
 - `github.com/project/repos[.git]`
 - `git@github.com:project/repos[.git]`
 
-The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
+After the task is created, the synchronization status is displayed on the task page.
 
 ### Use LFS
 
