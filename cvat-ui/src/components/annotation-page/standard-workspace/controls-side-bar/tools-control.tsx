@@ -131,6 +131,7 @@ interface State {
     pointsRecieved: boolean;
     approxPolyAccuracy: number;
     mode: 'detection' | 'interaction' | 'tracking';
+    portals: React.ReactPortal[];
 }
 
 function trackedRectangleMapper(shape: number[]): number[] {
@@ -179,6 +180,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             fetching: false,
             pointsRecieved: false,
             mode: 'interaction',
+            portals: [],
         };
 
         this.interaction = {
@@ -200,9 +202,91 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, switchNavigationBlocked,
+            isActivated,
+            defaultApproxPolyAccuracy,
+            canvasInstance,
+            switchNavigationBlocked,
+            states,
+            fetchAnnotations,
         } = this.props;
-        const { approxPolyAccuracy, mode } = this.state;
+        const {
+            approxPolyAccuracy, mode, activeTracker, trackedShapes,
+        } = this.state;
+
+        if (prevProps.states !== states || prevState.activeTracker !== activeTracker) {
+            const trackedClientIDs = trackedShapes.map((trackedShape: TrackedShape) => trackedShape.clientID);
+            const portals = !activeTracker ?
+                [] :
+                states
+                    .filter(
+                        (objectState) => objectState.objectType === 'track' && objectState.shapeType === 'rectangle',
+                    )
+                    .map((objectState: any): React.ReactPortal | null => {
+                        const { clientID } = objectState;
+                        const selectorID = `#cvat-objects-sidebar-state-item-${clientID}`;
+                        let targetElement = window.document.querySelector(
+                            `${selectorID} .cvat-object-item-button-prev-keyframe`,
+                        ) as HTMLElement;
+
+                        const isTracked = trackedClientIDs.includes(clientID);
+                        if (targetElement) {
+                            targetElement = targetElement.parentElement?.parentElement as HTMLElement;
+                            return ReactDOM.createPortal(
+                                <Col>
+                                    {isTracked ? (
+                                        <CVATTooltip overlay='Disable tracking'>
+                                            <ThunderboltFilled
+                                                onClick={() => {
+                                                    const filteredStates = trackedShapes.filter(
+                                                        (trackedShape: TrackedShape) =>
+                                                            trackedShape.clientID !== clientID,
+                                                    );
+                                                    /* eslint no-param-reassign: ["error", { "props": false }] */
+                                                    objectState.descriptions = [];
+                                                    objectState.save().then(() => {
+                                                        this.setState({
+                                                            trackedShapes: filteredStates,
+                                                        });
+                                                    });
+                                                    fetchAnnotations();
+                                                }}
+                                            />
+                                        </CVATTooltip>
+                                    ) : (
+                                        <CVATTooltip overlay={`Enable tracking using ${activeTracker.name}`}>
+                                            <ThunderboltOutlined
+                                                onClick={() => {
+                                                    objectState.descriptions = [`Trackable (${activeTracker.name})`];
+                                                    objectState.save().then(() => {
+                                                        this.setState({
+                                                            trackedShapes: [
+                                                                ...trackedShapes,
+                                                                {
+                                                                    clientID,
+                                                                    serverlessState: null,
+                                                                    shapePoints: objectState.points,
+                                                                    trackerModel: activeTracker,
+                                                                },
+                                                            ],
+                                                        });
+                                                    });
+                                                    fetchAnnotations();
+                                                }}
+                                            />
+                                        </CVATTooltip>
+                                    )}
+                                </Col>,
+                                targetElement,
+                            );
+                        }
+
+                        return null;
+                    })
+                    .filter((portal: ReactPortal | null) => portal !== null);
+            this.setState({
+                portals: portals as ReactPortal[],
+            });
+        }
 
         if (prevProps.isActivated && !isActivated) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
@@ -500,7 +584,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     } = trackedShape;
                     const [clientState] = objectStates.filter((_state: any): boolean => _state.clientID === clientID);
 
-                    if (clientState.keyframes.prev !== frame - 1 || clientState.keyframes.last >= frame) {
+                    if (
+                        !clientState ||
+                        clientState.keyframes.prev !== frame - 1 ||
+                        clientState.keyframes.last >= frame
+                    ) {
                         return acc;
                     }
 
@@ -949,17 +1037,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors,
-            detectors,
-            trackers,
-            isActivated,
-            canvasInstance,
-            labels,
-            states,
-            fetchAnnotations,
+            interactors, detectors, trackers, isActivated, canvasInstance, labels,
         } = this.props;
         const {
-            fetching, approxPolyAccuracy, pointsRecieved, mode, activeTracker, trackedShapes,
+            fetching, approxPolyAccuracy, pointsRecieved, mode, portals,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -1011,74 +1092,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <LoadingOutlined style={{ marginLeft: '10px' }} />
             </Modal>
         ) : null;
-
-        const trackedClientIDs = trackedShapes.map((trackedShape: TrackedShape) => trackedShape.clientID);
-        const portals = !activeTracker ?
-            [] :
-            states
-                .filter((objectState) => objectState.objectType === 'track' && objectState.shapeType === 'rectangle')
-                .map((objectState: any): React.ReactPortal | null => {
-                    const { clientID } = objectState;
-                    const selectorID = `#cvat-objects-sidebar-state-item-${clientID}`;
-                    let targetElement = window.document.querySelector(
-                        `${selectorID} .cvat-object-item-button-prev-keyframe`,
-                    ) as HTMLElement;
-
-                    const isTracked = trackedClientIDs.includes(clientID);
-                    if (targetElement) {
-                        targetElement = targetElement.parentElement?.parentElement as HTMLElement;
-                        return ReactDOM.createPortal(
-                            <Col>
-                                {isTracked ? (
-                                    <CVATTooltip overlay='Disable tracking'>
-                                        <ThunderboltFilled
-                                            onClick={() => {
-                                                const filteredStates = trackedShapes.filter(
-                                                    (trackedShape: TrackedShape) =>
-                                                        trackedShape.clientID !== clientID,
-                                                );
-                                                /* eslint no-param-reassign: ["error", { "props": false }] */
-                                                objectState.descriptions = [];
-                                                objectState.save().then(() => {
-                                                    this.setState({
-                                                        trackedShapes: filteredStates,
-                                                    });
-                                                });
-                                                fetchAnnotations();
-                                            }}
-                                        />
-                                    </CVATTooltip>
-                                ) : (
-                                    <CVATTooltip overlay={`Enable tracking using ${activeTracker.name}`}>
-                                        <ThunderboltOutlined
-                                            onClick={() => {
-                                                objectState.descriptions = [`Trackable (${activeTracker.name})`];
-                                                objectState.save().then(() => {
-                                                    this.setState({
-                                                        trackedShapes: [
-                                                            ...trackedShapes,
-                                                            {
-                                                                clientID,
-                                                                serverlessState: null,
-                                                                shapePoints: objectState.points,
-                                                                trackerModel: activeTracker,
-                                                            },
-                                                        ],
-                                                    });
-                                                });
-                                                fetchAnnotations();
-                                            }}
-                                        />
-                                    </CVATTooltip>
-                                )}
-                            </Col>,
-                            targetElement,
-                        );
-                    }
-
-                    return null;
-                })
-                .filter((portal: ReactPortal | null) => portal !== null);
 
         return showAnyContent ? (
             <>
