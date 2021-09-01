@@ -72,6 +72,7 @@ const { Source } = require('./enums');
                     return reset;
                 },
                 writable: false,
+                enumerable: false,
             });
 
             Object.defineProperties(
