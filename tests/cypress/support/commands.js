@@ -241,7 +241,6 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
-    cy.get('.cvat-canvas-controls-sidebar').click('bottom').click('bottom'); // Just in case, we close the popover.
     cy.get('body').focus();
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
     cy.get(`.cvat-${objectType}-control`).should('have.class', 'ant-popover-open');
@@ -284,6 +283,8 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
     cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover-visible`).should('not.exist');
+    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover`).should('be.hidden');
+    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover`).invoke('attr', 'style').should('include', 'pointer-events: none');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
