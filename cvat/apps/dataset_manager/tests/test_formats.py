@@ -3,12 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import numpy as np
 import os.path as osp
 import tempfile
 import zipfile
 from io import BytesIO
 
 import datumaro
+from datumaro.components.dataset import Dataset, DatasetItem
+from datumaro.components.extractor import Mask
 from django.contrib.auth.models import Group, User
 from PIL import Image
 
@@ -921,15 +924,12 @@ class TaskAnnotationsImportTest(_DbTestBase):
 
     def test_can_import_mots_annotations_with_splited_masks(self):
         #https://github.com/openvinotoolkit/cvat/issues/3360
-        from datumaro.components.dataset import Dataset, DatasetItem
-        from datumaro.components.extractor import Mask
-        from numpy import array
 
         format_name = 'MOTS PNG 1.0'
         source_dataset = Dataset.from_iterable([
             DatasetItem(id='image_0',
                 annotations=[
-                    Mask(array([[1, 1, 1, 0, 1, 1, 1]] * 5),
+                    Mask(np.array([[1, 1, 1, 0, 1, 1, 1]] * 5),
                     label=0, attributes={'track_id': 0})
                 ]
             )
