@@ -59,9 +59,10 @@ context('Filters, sorting jobs.', () => {
     }
 
     function testSetJobFilter({ column, menuItem, reset }) {
-        cy.get(column).find('[role="button"]').click().wait(300); // Waiting for dropdown menu transition
+        cy.get(column).find('[role="button"]').click().wait(500); // Waiting for dropdown menu transition
         cy.get('.ant-dropdown')
             .not('.ant-dropdown-hidden')
+            .should('not.have.attr', 'style', 'poiner-events')
             .within(() => {
                 if (!reset) {
                     cy.contains('[role="menuitem"]', menuItem)
