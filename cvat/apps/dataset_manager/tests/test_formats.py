@@ -599,10 +599,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
         self._put_api_v1_task_id_annotations(task["id"], annotations)
         return annotations
 
-    def _generate_task_images(self, count, name="image", **kwargs):
+    def _generate_task_images(self, count, name="image", **image_params):
         images = {
             "client_files[%d]" % i: generate_image_file("%s_%d.jpg" % (name, i),
-                **kwargs)
+                **image_params)
             for i in range(count)
         }
         images["image_quality"] = 75
