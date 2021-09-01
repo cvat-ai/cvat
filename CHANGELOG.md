@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Selected opacity" slider now defines opacity level for shapes being drawnSelected opacity (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 - Cloud storage creating and updating (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Way of working with cloud storage content (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 
 ### Deprecated
 
