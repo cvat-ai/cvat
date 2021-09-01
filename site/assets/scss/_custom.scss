@@ -133,3 +133,15 @@
 #td-cover-block-0 {
     background-image: url("../images/background-about-page.jpg");
 }
+
+/* Display version menu on mobile version of the site */
+
+@media (max-width: 991.98px) {
+    .td-navbar .td-navbar-nav-scroll .navbar-nav {
+      overflow-x: inherit !important;
+    }
+
+    .td-navbar .td-navbar-nav-scroll {
+      overflow: inherit !important;
+    }
+  }

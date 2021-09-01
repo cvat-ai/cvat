@@ -6,6 +6,6 @@
 <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
   {{ range .Site.Params.versions }}
     {{ $ver := .version }}
-      <a class="dropdown-item" href="{{ .url }}{{ if eq $ver "develop" }}{{ $page_rel_trim }}{{ else }}{{ $page_rel }}{{ end }}">{{ $ver }}</a>
+      <a class="dropdown-item" href="{{ .url }}{{ if eq $ver "Latest version" }}{{ $page_rel_trim }}{{ else }}{{ $page_rel }}{{ end }}">{{ $ver }}</a>
   {{ end }}
 </div>
