@@ -9,7 +9,6 @@ require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
 require('../plugins/compareImages/compareImagesCommand');
-require('cypress-wait-until');
 
 let selectedValueGlobal = '';
 
@@ -244,7 +243,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get('body').focus();
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('exist').and('be.visible');
+    cy.get(`.cvat-${objectType}-popover-visible`, {timeout: 30000}).should('exist').and('be.visible');
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
