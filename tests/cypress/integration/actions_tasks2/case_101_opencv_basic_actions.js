@@ -40,17 +40,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         { x: 400, y: 550 },
     ];
 
-    function openOpencvControlPopover() {
-        cy.get('.cvat-canvas-container').click('bottomLeft'); // Just in case, we close the popover.
-        cy.get('body').focus();
-        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
-        cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
-        cy.get('.cvat-opencv-control-popover-visible').should('exist');
-        cy.get('.cvat-opencv-control-popover-visible').should('be.visible');
-        cy.get('.cvat-opencv-control-popover-visible').should('not.have.class', 'ant-zoom-big');
-        cy.get('.cvat-opencv-control-popover-visible').invoke('attr', 'style').should('not.include', 'pointer-events');
-    }
-
     before(() => {
         cy.openTask(taskName);
         cy.addNewLabel(newLabel);
@@ -59,7 +48,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
-            openOpencvControlPopover();
+            cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-control-popover-visible').find('.cvat-opencv-initialization-button').click();
             // Intelligent cissors button be visible
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
@@ -71,7 +60,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         });
 
         it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
-            openOpencvControlPopover();
+            cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
             pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y);
@@ -114,7 +103,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         });
 
         it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
-            openOpencvControlPopover();
+            cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
             cy.contains('span', 'Block').click();
             cy.get('.cvat_canvas_threshold').should('not.exist');
@@ -130,10 +119,13 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
             cy.get('body').type('{Ctrl}'); // Checking hotkey
             cy.get('.cvat_canvas_threshold').should('exist');
             cy.get('body').type('{Esc}'); // Cancel drawing
+            cy.get('.cvat-opencv-control-popover-visible').should('not.exist');
+            cy.get('.cvat-opencv-control-popover').should('be.hidden');
+            cy.get('.cvat-opencv-control-popover').should('have.attr', 'style').and('include', 'pointer-events: none');
         });
 
         it('Check "Histogram Equalization" feature.', () => {
-            openOpencvControlPopover();
+            cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-control-popover-visible')
                 .contains('[role="tab"]', 'Image')
                 .click()

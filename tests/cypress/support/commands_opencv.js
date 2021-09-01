@@ -6,10 +6,19 @@
 
 let selectedValueGlobal = '';
 
+Cypress.Commands.add('interactOpenCVControlButton', () => {
+    cy.get('body').focus();
+    cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
+    cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
+    cy.get('.cvat-opencv-control-popover-visible').should('exist');
+    cy.get('.cvat-opencv-control-popover-visible').should('be.visible');
+    cy.get('.cvat-opencv-control-popover-visible').should('not.have.class', 'ant-zoom-big');
+    cy.get('.cvat-opencv-control-popover-visible').should('have.attr', 'style').and('not.include', 'pointer-events');
+});
+
 Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
     if (!opencvShapeParams.reDraw) {
-        cy.get('body').focus();
-        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+        cy.interactOpenCVControlButton();
         cy.switchLabel(opencvShapeParams.labelName, 'opencv-control');
         cy.get('.cvat-opencv-control-popover-visible').within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
@@ -33,6 +42,9 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
 });
 
 Cypress.Commands.add('opncvCheckObjectParameters', (objectType) => {
+    cy.get('.cvat-opencv-control-popover-visible').should('not.exist');
+    cy.get('.cvat-opencv-control-popover').should('be.hidden');
+    cy.get('.cvat-opencv-control-popover').should('have.attr', 'style').and('include', 'pointer-events: none');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));

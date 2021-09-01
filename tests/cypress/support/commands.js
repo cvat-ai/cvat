@@ -247,7 +247,7 @@ Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
     cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
     cy.get(`.cvat-${objectType}-popover-visible`).should('not.have.class', 'ant-zoom-big');
-    cy.get(`.cvat-${objectType}-popover-visible`).invoke('attr', 'style').should('not.include', 'pointer-events: none');
+    cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events');
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
@@ -284,7 +284,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
     cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover-visible`).should('not.exist');
     cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover`).should('be.hidden');
-    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover`).invoke('attr', 'style').should('include', 'pointer-events: none');
+    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover`).should('have.attr', 'style').and('include', 'pointer-events: none');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
