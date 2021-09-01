@@ -190,8 +190,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             fieldsValue.secret_key = fakeCredentialsData.secretKey;
         }
 
-        if (cloudStorage.providerType === ProviderType.AWS_S3_BUCKET && cloudStorage.specificAttibutes) {
-            const region = new URLSearchParams(cloudStorage.specificAttibutes).get('region');
+        if (cloudStorage.providerType === ProviderType.AWS_S3_BUCKET && cloudStorage.specificAttributes) {
+            const region = new URLSearchParams(cloudStorage.specificAttributes).get('region');
             if (region) {
                 setSelectedRegion(region);
             }
@@ -428,6 +428,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     >
                         <Input.Password
                             visibilityToggle={sessionTokenVisibility}
+                            maxLength={437}
                             onChange={() => setSessionTokenVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('sessionToken', 'session_token')}
                             onBlur={() =>
