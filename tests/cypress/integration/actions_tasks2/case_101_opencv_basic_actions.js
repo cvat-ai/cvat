@@ -44,8 +44,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         cy.get('body').focus();
         cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
         cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
-        cy.get('.cvat-opencv-control-popover-visible', {timeout: 30000}).should('exist');
+        cy.get('.cvat-opencv-control-popover-visible').should('exist');
         cy.get('.cvat-opencv-control-popover-visible').should('be.visible');
+        cy.get('.cvat-opencv-control-popover-visible').should('not.have.class', 'ant-zoom-big');
         cy.get('.cvat-opencv-control-popover-visible').invoke('attr', 'style').should('not.include', 'pointer-events');
     }
 

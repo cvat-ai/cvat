@@ -246,11 +246,8 @@ Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get(`.cvat-${objectType}-control`).should('have.class', 'ant-popover-open');
     cy.get(`.cvat-${objectType}-popover-visible`, {timeout: 30000}).should('exist');
     cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
+    cy.get(`.cvat-${objectType}-popover-visible`).should('not.have.class', 'ant-zoom-big');
     cy.get(`.cvat-${objectType}-popover-visible`).invoke('attr', 'style').should('not.include', 'pointer-events');
-    cy.get(`.cvat-${objectType}-popover-visible`).then((popover) => {
-        cy.task('log', `Count of popover: ${popover.length}`)
-        cy.task('log', `Attrs of popover: ${popover.attr('style')}`)
-    })
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
