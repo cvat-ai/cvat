@@ -44,8 +44,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         cy.get('body').focus();
         cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
         cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
-        cy.get('.cvat-opencv-control-popover-visible', {timeout: 30000}).should('exist').and('be.visible');
-        cy.get('.cvat-opencv-control-popover-visible').should('not.have.attr', 'style', 'pointer-events');
+        cy.get('.cvat-opencv-control-popover-visible', {timeout: 30000}).should('exist');
+        cy.get('.cvat-opencv-control-popover-visible').should('be.visible');
+        cy.get('.cvat-opencv-control-popover-visible').invoke('attr', 'style').should('not.include', 'pointer-events');
     }
 
     before(() => {
@@ -136,9 +137,11 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
                 .click()
                 .parents('.ant-tabs-tab')
                 .should('have.class', 'ant-tabs-tab-active');
-            cy.get('.cvat-opencv-image-tool').click().should('have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
+            cy.get('.cvat-opencv-image-tool').click();
+            cy.get('.cvat-opencv-image-tool').should('have.class', 'cvat-opencv-image-tool-active');
             cy.get('.cvat-notification-notice-opencv-processing-error').should('not.exist');
-            cy.get('.cvat-opencv-image-tool').click().should('not.have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
+            cy.get('.cvat-opencv-image-tool').click();
+            cy.get('.cvat-opencv-image-tool').should('not.have.class', 'cvat-opencv-image-tool-active');
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
