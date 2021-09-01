@@ -136,12 +136,14 @@
 
 /* Display version menu on mobile version of the site */
 
-@media (max-width: 991.98px) {
-    .td-navbar .td-navbar-nav-scroll .navbar-nav {
-      overflow-x: inherit !important;
-    }
+#dropdown_ver {
+    right: 5px !important;
+    left: auto;
+}
 
-    .td-navbar .td-navbar-nav-scroll {
-      overflow: inherit !important;
+@media (min-width: 992px) {
+    #dropdown_ver {
+    right: 245px !important;
+    left: auto;
     }
-  }
+}
