@@ -42,8 +42,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
 
     function openOpencvControlPopover() {
         cy.get('body').focus();
-        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
-        cy.get('.cvat-opencv-control-popover-visible').should('exist');
+        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
+        cy.get('.cvat-opencv-control-popover-visible', {timeout: 30000}).should('exist').and('be.visible');
     }
 
     before(() => {
