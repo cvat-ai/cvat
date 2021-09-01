@@ -914,8 +914,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             self._generate_annotations(task, format_name)
 
             with self.subTest(format=format_name):
-                if not f.ENABLED or format_name in {'Sly Point Cloud Format 1.0',
-                    'Kitti Raw Format 1.0'}:
+                if not f.ENABLED:
                     self.skipTest("Format is disabled")
 
                 self._test_can_import_annotations(task, format_name)
