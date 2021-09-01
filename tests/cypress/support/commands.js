@@ -241,7 +241,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
-    cy.get('.cvat-canvas-container').click('bottomLeft'); // Just in case, we close the popover.
+    cy.get('.cvat-canvas-controls-sidebar').click('bottom').click('bottom'); // Just in case, we close the popover.
     cy.get('body').focus();
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
     cy.get(`.cvat-${objectType}-control`).should('have.class', 'ant-popover-open');
