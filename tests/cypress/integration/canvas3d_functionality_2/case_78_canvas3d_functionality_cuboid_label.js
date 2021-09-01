@@ -80,7 +80,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Lock/unlock a cuboid via sidear. The control points of the cuboid on the top/side/front view are locked/unlocked.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-button-lock')
-                .click(); // Lock the cubiod
+                .click({force: true}); // Lock the cubiod
             cy.get('.cvat-object-item-button-lock-enabled').should('exist');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.get(`.cvat-canvas3d-${view}`)
