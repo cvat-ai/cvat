@@ -34,10 +34,6 @@ context('Check if the image is rotated', () => {
                 scaleAfter = Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
                 cy.expect(scaleBefore).to.be.greaterThan(scaleAfter);
                 cy.get('#cvat_canvas_content').dblclick();
-                cy.get('.cvat-rotate-canvas-popover')
-                    .should('be.hidden')
-                    .should('have.attr', 'style')
-                    .and('include', 'pointer-events');
                 cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', scaleBefore);
             });
     }

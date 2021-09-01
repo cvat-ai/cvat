@@ -172,11 +172,11 @@ context('Appearance features', () => {
             function testDrawShapeCheckOpacity({ shape, drawingMethod, shapeType, fillOpacityBefore, fillOpacityAfter, opacityBefore, opacityAfter }) {
                 cy.interactControlButton(`draw-${shape}`);
                 cy.get(`.cvat-draw-${shape}-popover-visible`).within(() => {
-                        if (drawingMethod) {
-                            cy.contains('.ant-radio-wrapper', drawingMethod).click();
-                        }
-                        cy.contains('button', shapeType).click();
-                    });
+                    if (drawingMethod) {
+                        cy.contains('.ant-radio-wrapper', drawingMethod).click();
+                    }
+                    cy.contains('button', shapeType).click();
+                });
                 cy.get('.cvat-canvas-container').click(100, 450);
                 if (fillOpacityBefore != null || fillOpacityAfter != null) {
                     cy.get('.cvat-appearance-selected-opacity-slider').click('left');
