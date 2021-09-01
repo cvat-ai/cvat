@@ -12,7 +12,6 @@ Cypress.Commands.add('interactOpenCVControlButton', () => {
     cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
     cy.get('.cvat-opencv-control-popover-visible').should('exist');
     cy.get('.cvat-opencv-control-popover-visible').should('be.visible');
-    cy.get('.cvat-opencv-control-popover-visible').should('not.have.class', 'ant-zoom-big');
     cy.get('.cvat-opencv-control-popover-visible').should('have.attr', 'style').and('not.include', 'pointer-events');
 });
 

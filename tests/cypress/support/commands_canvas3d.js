@@ -20,5 +20,4 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
     cy.wait(1000); // Waiting for a cuboid creation
     cy.get('.cvat-draw-cuboid-popover-visible').should('not.exist');
     cy.get('.cvat-draw-cuboid-popover').should('be.hidden');
-    cy.get('.cvat-draw-cuboid-popover').should('have.attr', 'style').and('include', 'pointer-events: none');
 });

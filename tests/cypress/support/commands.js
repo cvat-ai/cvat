@@ -246,7 +246,6 @@ Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get(`.cvat-${objectType}-control`).should('have.class', 'ant-popover-open');
     cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
     cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('not.have.class', 'ant-zoom-big');
     cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events');
 });
 
