@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added intelligent scissors blocking feature (<https://github.com/openvinotoolkit/cvat/pull/3510>)
 - Support cloud storage status (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Support cloud storage preview (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- cvat-core: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3313>)
 
 ### Changed
 
@@ -37,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed multiple tasks moving (<https://github.com/openvinotoolkit/cvat/pull/3517>)
 - Fixed task creating CLI parameter (<https://github.com/openvinotoolkit/cvat/pull/3519>)
+- Fixed import for MOTS format (<https://github.com/openvinotoolkit/cvat/pull/3612>)
 
 ### Security
 

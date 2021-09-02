@@ -32,7 +32,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 manifest_path: undefined,
-                manifest_set: undefined,
+                manifests: undefined,
             };
 
             for (const property in data) {
@@ -249,13 +249,13 @@
                         },
                     },
                     /**
-                     * @name specificAttibutes
+                     * @name specificAttributes
                      * @type {string}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
-                    specificAttibutes: {
+                    specificAttributes: {
                         get: () => data.specific_attributes,
                         set: (attributesValue) => {
                             if (typeof attributesValue === 'string') {
@@ -312,7 +312,7 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     manifests: {
-                        get: () => data.manifest_set,
+                        get: () => data.manifests,
                         set: (manifests) => {
                             if (Array.isArray(manifests)) {
                                 for (const elem of manifests) {
@@ -320,7 +320,7 @@
                                         throw new ArgumentError('Each element of the manifests array must be a string');
                                     }
                                 }
-                                data.manifest_set = manifests;
+                                data.manifests = manifests;
                             } else {
                                 throw new ArgumentError('Value must be an array');
                             }
@@ -390,6 +390,21 @@
             const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getPreview);
             return result;
         }
+
+        /**
+         * Method returns cloud storage status
+         * @method getStatus
+         * @memberof module:API.cvat.classes.CloudStorage
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async getStatus() {
+            const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getStatus);
+            return result;
+        }
     }
 
     CloudStorage.prototype.save.implementation = async function () {
@@ -415,8 +430,8 @@
                 data.session_token = cloudStorageInstance.token;
             }
 
-            if (cloudStorageInstance.specificAttibutes) {
-                data.specific_attributes = cloudStorageInstance.specificAttibutes;
+            if (cloudStorageInstance.specificAttributes) {
+                data.specific_attributes = cloudStorageInstance.specificAttributes;
             }
             return data;
         }
@@ -433,7 +448,7 @@
             }
 
             if (this.manifests) {
-                initialData.manifest_set = this.manifests;
+                initialData.manifests = this.manifests;
             }
 
             const cloudStorageData = {
@@ -451,7 +466,7 @@
             credentials_type: this.credentialsType,
             provider_type: this.providerType,
             resource: this.resourceName,
-            manifest_set: this.manifests,
+            manifests: this.manifests,
         };
 
         const cloudStorageData = {
@@ -492,6 +507,11 @@
                     reject(error);
                 });
         });
+    };
+
+    CloudStorage.prototype.getStatus.implementation = async function () {
+        const result = await serverProxy.cloudStorages.getStatus(this.id);
+        return result;
     };
 
     module.exports = {
