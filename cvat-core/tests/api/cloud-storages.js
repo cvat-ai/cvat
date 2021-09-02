@@ -72,11 +72,11 @@ describe('Feature: get cloud storages', () => {
         const result = await window.cvat.cloudStorages.get(Object.fromEntries(filters));
 
         const [cloudStorage] = result;
+        expect(Array.isArray(result)).toBeTruthy();
+        expect(result).toHaveLength(1);
+        expect(cloudStorage).toBeInstanceOf(CloudStorage);
+        expect(cloudStorage.id).toBe(1);
         filters.forEach((value, key) => {
-            expect(Array.isArray(result)).toBeTruthy();
-            expect(result).toHaveLength(1);
-            expect(cloudStorage).toBeInstanceOf(CloudStorage);
-            expect(cloudStorage.id).toBe(1);
             expect(cloudStorage[key]).toBe(value);
         });
     });
