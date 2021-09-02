@@ -122,7 +122,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         });
 
         it('Check "Histogram Equalization" feature.', () => {
-            cy.checkOpencvPopoverHidden();
+            cy.checkPopoverHidden('opencv-control');
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-control-popover-visible')
                 .contains('[role="tab"]', 'Image')

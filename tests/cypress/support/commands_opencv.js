@@ -37,14 +37,8 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
             .trigger('keydown', { keyCode: keyCodeN })
             .trigger('keyup', { keyCode: keyCodeN });
     }
-    cy.checkOpencvPopoverHidden();
+    cy.checkPopoverHidden('opencv-control');
     cy.opencvCheckObjectParameters('POLYGON');
-});
-
-Cypress.Commands.add('checkOpencvPopoverHidden', () => {
-    cy.get('.cvat-opencv-control-popover-visible').should('not.exist');
-    cy.get('.cvat-opencv-control-popover').should('be.hidden');
-    cy.get('.cvat-opencv-control-popover').should('have.attr', 'style').and('include', 'pointer-events: none');
 });
 
 Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
