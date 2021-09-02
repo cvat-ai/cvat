@@ -119,12 +119,10 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
             cy.get('body').type('{Ctrl}'); // Checking hotkey
             cy.get('.cvat_canvas_threshold').should('exist');
             cy.get('body').type('{Esc}'); // Cancel drawing
-            cy.get('.cvat-opencv-control-popover-visible').should('not.exist');
-            cy.get('.cvat-opencv-control-popover').should('be.hidden');
-            cy.get('.cvat-opencv-control-popover').should('have.attr', 'style').and('include', 'pointer-events: none');
         });
 
         it('Check "Histogram Equalization" feature.', () => {
+            cy.checkOpencvPopoverHidden();
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-control-popover-visible')
                 .contains('[role="tab"]', 'Image')

@@ -243,7 +243,6 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get('body').focus();
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
-    cy.get(`.cvat-${objectType}-control`).should('have.class', 'ant-popover-open');
     cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
     cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
     cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events');
@@ -267,6 +266,7 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
             .click(createRectangleParams.thirdX, createRectangleParams.thirdY)
             .click(createRectangleParams.fourthX, createRectangleParams.fourthY);
     }
+    cy.checkPopoverHidden('draw-rectangle');
     cy.checkObjectParameters(createRectangleParams, 'RECTANGLE');
 });
 
@@ -280,10 +280,13 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
         .click();
 });
 
+Cypress.Commands.add('checkPopoverHidden', (objectType) => {
+    cy.get(`.cvat-${objectType}-popover-visible`).should('not.exist');
+    cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
+    cy.get(`.cvat-${objectType}-popover`).should('have.attr', 'style').and('include', 'pointer-events: none');
+});
+
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover-visible`).should('not.exist');
-    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover`).should('be.hidden');
-    cy.get(`.cvat-draw-${objectType.toLowerCase()}-popover`).should('have.attr', 'style').and('include', 'pointer-events: none');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -326,6 +329,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
                 .trigger('keyup', { keyCode: keyCodeN });
         }
     }
+    cy.checkPopoverHidden('draw-points');
     cy.checkObjectParameters(createPointParams, 'POINTS');
 });
 
@@ -374,6 +378,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
                 .trigger('keyup', { keyCode: keyCodeN });
         }
     }
+    cy.checkPopoverHidden('draw-polygon');
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
 
@@ -437,6 +442,7 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
         cy.get('.cvat-canvas-container').click(createCuboidParams.thirdX, createCuboidParams.thirdY);
         cy.get('.cvat-canvas-container').click(createCuboidParams.fourthX, createCuboidParams.fourthY);
     }
+    cy.checkPopoverHidden('draw-cuboid');
     cy.checkObjectParameters(createCuboidParams, 'CUBOID');
 });
 
@@ -518,6 +524,7 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
                 .trigger('keyup', { keyCode: keyCodeN });
         }
     }
+    cy.checkPopoverHidden('draw-polyline');
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
 });
 
