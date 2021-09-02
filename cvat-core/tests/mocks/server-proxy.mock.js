@@ -12,6 +12,7 @@ const {
     taskAnnotationsDummyData,
     jobAnnotationsDummyData,
     frameMetaDummyData,
+    cloudStoragesDummyData,
 } = require('./dummy-data.mock');
 
 function QueryStringToJSON(query, ignoreList = []) {
@@ -318,6 +319,63 @@ class ServerProxy {
             return null;
         }
 
+        async function getCloudStorages(filter = '') {
+            const queries = QueryStringToJSON(filter);
+            const result = cloudStoragesDummyData.results.filter((item) => {
+                for (const key in queries) {
+                    if (Object.prototype.hasOwnProperty.call(queries, key)) {
+                        if (queries[key] !== item[key]) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            });
+            return result;
+        }
+
+        async function updateCloudStorage(id, cloudStorageData) {
+            const cloudStorage = cloudStoragesDummyData.results.find((item) => item.id === id);
+            if (cloudStorage) {
+                for (const prop in cloudStorageData) {
+                    if (
+                        Object.prototype.hasOwnProperty.call(cloudStorageData, prop)
+                            && Object.prototype.hasOwnProperty.call(cloudStorage, prop)
+                    ) {
+                        cloudStorage[prop] = cloudStorageData[prop];
+                    }
+                }
+            }
+        }
+
+        async function createCloudStorage(cloudStorageData) {
+            const id = Math.max(...cloudStoragesDummyData.results.map((item) => item.id)) + 1;
+            cloudStoragesDummyData.results.push({
+                id,
+                provider_type: cloudStorageData.provider_type,
+                resource: cloudStorageData.resource,
+                display_name: cloudStorageData.display_name,
+                credentials_type: cloudStorageData.credentials_type,
+                specific_attributes: cloudStorageData.specific_attributes,
+                description: cloudStorageData.description,
+                owner: 1,
+                created_date: '2021-09-01T09:29:47.094244+03:00',
+                updated_date: '2021-09-01T09:29:47.103264+03:00',
+            });
+
+            const result = await getCloudStorages(`?id=${id}`);
+            return result[0];
+        }
+
+        async function deleteCloudStorage(id) {
+            const cloudStorages = cloudStoragesDummyData.results;
+            const cloudStorageId = cloudStorages.findIndex((item) => item.id === id);
+            if (cloudStorageId !== -1) {
+                cloudStorages.splice(cloudStorageId);
+            }
+        }
+
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -383,6 +441,16 @@ class ServerProxy {
                         updateAnnotations,
                         getAnnotations,
                     },
+                },
+
+                cloudStorages: {
+                    value: Object.freeze({
+                        get: getCloudStorages,
+                        update: updateCloudStorage,
+                        create: createCloudStorage,
+                        delete: deleteCloudStorage,
+                    }),
+                    writable: false,
                 },
             }),
         );
