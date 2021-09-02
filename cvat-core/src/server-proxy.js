@@ -595,6 +595,7 @@
                 }
 
                 const taskData = new FormData();
+
                 for (const [key, value] of Object.entries(taskDataSpec)) {
                     if (Array.isArray(value)) {
                         value.forEach((element, idx) => {
@@ -620,19 +621,48 @@
                 }
 
                 onUpdate('The data are being uploaded to the server..');
-                try {
-                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
-                        proxy: config.proxy,
-                    });
-                } catch (errorData) {
+                const file = taskDataSpec.client_files[0];
+                const chunkSize = 1024 * 1024 * 10; // 10 mb
+                const totalChunks = Math.floor(file.size / chunkSize);
+                let currentChunkNumber = 0;
+                console.log(totalChunks, file.size, file);
+                async function upload() {
+                    const fileChunk = file.slice(currentChunkNumber * chunkSize, currentChunkNumber * chunkSize + chunkSize);
+                    console.log(currentChunkNumber * chunkSize, currentChunkNumber * chunkSize + chunkSize);
+                    taskData.append('file_chunk', fileChunk);
+                    taskData.append('total_chunks', totalChunks);
+                    taskData.append('current_chunk', currentChunkNumber);
+                    taskData.append('file_name', file.name);
                     try {
-                        await deleteTask(response.data.id);
-                    } catch (_) {
-                        // ignore
+                        console.log('uploading chunk number', currentChunkNumber);
+                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
+                            proxy: config.proxy,
+                        });
+                        currentChunkNumber++;
+                        if (currentChunkNumber < totalChunks) upload();
+                    } catch (errorData) {
+                        try {
+                            await deleteTask(response.data.id);
+                        } catch (_) {
+                            // ignore
+                        }
+                        throw generateError(errorData);
                     }
-
-                    throw generateError(errorData);
                 }
+                await upload();
+                // try {
+                //     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
+                //         proxy: config.proxy,
+                //     });
+                // } catch (errorData) {
+                //     try {
+                //         await deleteTask(response.data.id);
+                //     } catch (_) {
+                //         // ignore
+                //     }
+
+                //     throw generateError(errorData);
+                // }
 
                 try {
                     await wait(response.data.id);

@@ -6,6 +6,7 @@ import io
 import json
 import os
 import os.path as osp
+import re
 import shutil
 import traceback
 import uuid
@@ -610,12 +611,19 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if db_task.data:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
+            tmp_path = os.path.join('./data/tmp', str(db_task.id))
+            os.makedirs(tmp_path, exist_ok=True)
+            with open(os.path.join(tmp_path, request.data.get('file_name')), 'ab+') as destination:
+                destination.write(request.data.get('file_chunk').read())
+            if request.data.get('total_chunks') != request.data.get('current_chunk'):
+                return Response(data='Chunk '+request.data.get('current_chunk')+' is delivered', status=status.HTTP_202_ACCEPTED)
             serializer = DataSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             db_data = serializer.save()
             db_task.data = db_data
             db_task.save()
             data = {k:v for k, v in serializer.data.items()}
+            print(data)
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
