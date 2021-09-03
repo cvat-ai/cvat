@@ -284,6 +284,17 @@
         return result;
     }
 
+    async function importDataset(instance, format, file) {
+        if (!(format instanceof String || typeof format === 'string')) {
+            throw new ArgumentError('Format must be a string');
+        }
+        if (!(instance instanceof Project)) {
+            throw new ArgumentError('Instance should ne a Project isntance');
+        }
+        // TODO: check file
+        return serverProxy.projects.importDataset(instance.id, format, file);
+    }
+
     function undoActions(session, count) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
@@ -366,6 +377,7 @@
         importAnnotations,
         exportAnnotations,
         exportDataset,
+        importDataset,
         undoActions,
         redoActions,
         freezeHistory,

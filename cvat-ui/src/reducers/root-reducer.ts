@@ -18,6 +18,7 @@ import shortcutsReducer from './shortcuts-reducer';
 import userAgreementsReducer from './useragreements-reducer';
 import reviewReducer from './review-reducer';
 import exportReducer from './export-reducer';
+import importReducer from './import-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -36,6 +37,6 @@ export default function createRootReducer(): Reducer {
         userAgreements: userAgreementsReducer,
         review: reviewReducer,
         export: exportReducer,
-        import: import
+        import: importReducer,
     });
 }

@@ -328,7 +328,9 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         if action in ("import_status",):
             queue = django_rq.get_queue("default")
             rq_job = queue.fetch_job(f"/api/v1/project/{pk}/dataset_import")
-            if rq_job.is_finished:
+            if rq_job is None:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            elif rq_job.is_finished:
                 os.close(rq_job.meta['tmp_file_descriptor'])
                 os.remove(rq_job.meta['tmp_file'])
                 rq_job.delete()

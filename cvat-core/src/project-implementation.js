@@ -7,7 +7,7 @@
     const { getPreview } = require('./frames');
 
     const { Project } = require('./project');
-    const { exportDataset } = require('./annotations');
+    const { exportDataset, importDataset } = require('./annotations');
 
     function implementProject(projectClass) {
         projectClass.prototype.save.implementation = async function () {
@@ -61,9 +61,15 @@
         };
 
         projectClass.prototype.annotations.exportDataset.implementation = async function (
-            format, saveImages, customName,
+            format,
+            saveImages,
+            customName,
         ) {
             const result = exportDataset(this, format, customName, saveImages);
+            return result;
+        };
+        projectClass.prototype.annotations.importDataset.implementation = async function (format, file) {
+            const result = importDataset(this, format, file);
             return result;
         };
 

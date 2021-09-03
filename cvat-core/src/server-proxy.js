@@ -500,6 +500,46 @@
                 };
             }
 
+            async function importDataset(id, format, file) {
+                const { backendAPI } = config;
+                const url = `${backendAPI}/project/${id}/dataset`;
+
+                const formData = new FormData();
+                formData.append('dataset_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.get(`${url}?action=import_status`, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else if (response.status === 201) {
+                                resolve();
+                            } else {
+                                reject(generateError(response));
+                            }
+                        } catch (error) {
+                            if (error.response.status === 404) {
+                                try {
+                                    await Axios.post(`${url}?format=${format}`, formData, {
+                                        proxy: config.proxy,
+                                    });
+                                    setTimeout(request, 3000);
+                                } catch (_error) {
+                                    reject(generateError(error));
+                                }
+                            } else {
+                                reject(generateError(error));
+                            }
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
             async function exportTask(id) {
                 const { backendAPI } = config;
                 const url = `${backendAPI}/tasks/${id}`;
@@ -1145,9 +1185,7 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => (
-                        !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId
-                    );
+                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
@@ -1212,6 +1250,7 @@
                             create: createProject,
                             delete: deleteProject,
                             exportDataset: exportDataset('projects'),
+                            importDataset,
                         }),
                         writable: false,
                     },

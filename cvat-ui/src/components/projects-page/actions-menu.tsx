@@ -7,8 +7,10 @@ import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Menu from 'antd/lib/menu';
 
+import { MenuItem } from 'rc-menu';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
+import { importActions } from 'actions/import-actions';
 
 interface Props {
     projectInstance: any;
@@ -37,11 +39,10 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
 
     return (
         <Menu className='cvat-project-actions-menu'>
-            <Menu.Item
-                onClick={() => dispatch(exportActions.openExportModal(projectInstance))}
-            >
-                Export project dataset
+            <Menu.Item onClick={() => dispatch(exportActions.openExportModal(projectInstance))}>
+                Export dataset
             </Menu.Item>
+            <MenuItem onClick={() => dispatch(importActions.openImportModal(projectInstance))}>Import dataset</MenuItem>
             <hr />
             <Menu.Item onClick={onDeleteProject}>Delete</Menu.Item>
         </Menu>

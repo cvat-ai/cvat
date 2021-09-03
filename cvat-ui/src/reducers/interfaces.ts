@@ -117,7 +117,7 @@ export interface ExportState {
 
 export interface ImportState {
     projects: {
-        [pid: number]: string[];
+        [pid: number]: string;
     };
     instance: any;
     modalVisible: boolean;
@@ -193,7 +193,7 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
-    onChangeToolsBlockerState: (event:string) => void;
+    onChangeToolsBlockerState: (event: string) => void;
     tip: {
         message: string;
         gif: string;
