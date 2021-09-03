@@ -71,8 +71,8 @@ Cypress.Commands.add('exportProject', ({ projectName, as, type, dumpType, archiv
     cy.projectActions(projectName);
     cy.intercept('GET', `/api/v1/projects/**/${type}**`).as(as);
     cy.get('.cvat-project-actions-menu').contains('Export project dataset').click();
-    cy.get('.cvat-modal-export-project').find('.cvat-modal-export-select').click();
-    cy.contains('.cvat-modal-export-option-item', dumpType).click();
+    cy.get('.cvat-modal-export-project').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', dumpType).should('be.visible').click();
     cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-project').find('[type="checkbox"]').should('not.be.checked').check();
