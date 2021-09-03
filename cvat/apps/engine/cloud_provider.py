@@ -1,22 +1,39 @@
-#from dataclasses import dataclass
-from abc import ABC, abstractmethod, abstractproperty
-from io import BytesIO
-import os
-import os.path
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
 
+import os
 import boto3
+
+from abc import ABC, abstractmethod, abstractproperty
+from enum import Enum
+from io import BytesIO
+
 from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import WaiterError
+from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
 
 from azure.storage.blob import BlobServiceClient
-from azure.core.exceptions import ResourceExistsError
+from azure.core.exceptions import ResourceExistsError, HttpResponseError
 from azure.storage.blob import PublicAccess
 
 from google.cloud import storage
+from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden as GoogleCloudForbidden
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
+
+class Status(str, Enum):
+    AVAILABLE = 'AVAILABLE'
+    NOT_FOUND = 'NOT_FOUND'
+    FORBIDDEN = 'FORBIDDEN'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
 
 class _CloudStorage(ABC):
 
@@ -32,7 +49,23 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def exists(self):
+    def _head_file(self, key):
+        pass
+
+    @abstractmethod
+    def _head(self):
+        pass
+
+    @abstractmethod
+    def get_status(self):
+        pass
+
+    @abstractmethod
+    def get_file_status(self, key):
+        pass
+
+    @abstractmethod
+    def get_file_last_modified(self, key):
         pass
 
     @abstractmethod
@@ -95,10 +128,6 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
     return instance
 
 class AWS_S3(_CloudStorage):
-    waiter_config = {
-        'Delay': 5, # The amount of time in seconds to wait between attempts. Default: 5
-        'MaxAttempts': 3, # The maximum number of attempts to be made. Default: 20
-    }
     transfer_config = {
         'max_io_queue': 10,
     }
@@ -115,6 +144,13 @@ class AWS_S3(_CloudStorage):
                 aws_access_key_id=access_key_id,
                 aws_secret_access_key=secret_key,
                 aws_session_token=session_token,
+                region_name=region
+            )
+        elif access_key_id and secret_key:
+            self._s3 = boto3.resource(
+                's3',
+                aws_access_key_id=access_key_id,
+                aws_secret_access_key=secret_key,
                 region_name=region
             )
         elif any([access_key_id, secret_key, session_token]):
@@ -135,26 +171,38 @@ class AWS_S3(_CloudStorage):
     def name(self):
         return self._bucket.name
 
-    def exists(self):
-        waiter = self._client_s3.get_waiter('bucket_exists')
-        try:
-            waiter.wait(
-                Bucket=self.name,
-                WaiterConfig=self.waiter_config
-            )
-        except WaiterError:
-            raise Exception('A resource {} unavailable'.format(self.name))
+    def _head(self):
+        return self._client_s3.head_bucket(Bucket=self.name)
 
-    def is_object_exist(self, key_object):
-        waiter = self._client_s3.get_waiter('object_exists')
+    def _head_file(self, key):
+        return self._client_s3.head_object(Bucket=self.name, Key=key)
+
+    def get_status(self):
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object
+        # return only 3 codes: 200, 403, 404
         try:
-            waiter.wait(
-                Bucket=self._bucket,
-                Key=key_object,
-                WaiterConfig=self.waiter_config
-            )
-        except WaiterError:
-            raise Exception('A file {} unavailable'.format(key_object))
+            self._head()
+            return Status.AVAILABLE
+        except ClientError as ex:
+            code = ex.response['Error']['Code']
+            if code == '403':
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
+
+    def get_file_status(self, key):
+        try:
+            self._head_file(key)
+            return Status.AVAILABLE
+        except ClientError as ex:
+            code = ex.response['Error']['Code']
+            if code == '403':
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
+
+    def get_file_last_modified(self, key):
+        return self._head_file(key).get('LastModified')
 
     def upload_file(self, file_obj, file_name):
         self._bucket.upload_fileobj(
@@ -234,12 +282,35 @@ class AzureBlobContainer(_CloudStorage):
             slogger.glob.info(msg)
             raise Exception(msg)
 
-    def exists(self):
-        return self._container_client.exists(timeout=5)
+    def _head(self):
+        return self._container_client.get_container_properties()
 
-    def is_object_exist(self, file_name):
-        blob_client = self._container_client.get_blob_client(file_name)
-        return blob_client.exists()
+    def _head_file(self, key):
+        blob_client = self.container.get_blob_client(key)
+        return blob_client.get_blob_properties()
+
+    def get_file_last_modified(self, key):
+        return self._head_file(key).last_modified
+
+    def get_status(self):
+        try:
+            self._head()
+            return Status.AVAILABLE
+        except HttpResponseError as ex:
+            if  ex.status_code == 403:
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
+
+    def get_file_status(self, key):
+        try:
+            self._head_file(key)
+            return Status.AVAILABLE
+        except HttpResponseError as ex:
+            if  ex.status_code == 403:
+                return Status.FORBIDDEN
+            else:
+                return Status.NOT_FOUND
 
     def upload_file(self, file_obj, file_name):
         self._container_client.upload_blob(name=file_name, data=file_obj)
@@ -269,6 +340,20 @@ class AzureBlobContainer(_CloudStorage):
 class GOOGLE_DRIVE(_CloudStorage):
     pass
 
+def _define_gcs_status(func):
+    def wrapper(self, key=None):
+        try:
+            if not key:
+                func(self)
+            else:
+                func(self, key)
+            return Status.AVAILABLE
+        except GoogleCloudNotFound:
+            return Status.NOT_FOUND
+        except GoogleCloudForbidden:
+            return Status.FORBIDDEN
+    return wrapper
+
 class GoogleCloudStorage(_CloudStorage):
 
     def __init__(self, bucket_name, prefix=None, service_account_json=None, project=None, location=None):
@@ -294,8 +379,20 @@ class GoogleCloudStorage(_CloudStorage):
     def name(self):
         return self._bucket.name
 
-    def exists(self):
-        return self._storage_client.lookup_bucket(self.name) is not None
+    def _head(self):
+        return self._storage_client.get_bucket(bucket_or_name=self.name)
+
+    def _head_file(self, key):
+        blob = self.bucket.blob(key)
+        return self._storage_client._get_resource(blob.path)
+
+    @_define_gcs_status
+    def get_status(self):
+        self._head()
+
+    @_define_gcs_status
+    def get_file_status(self, key):
+        self._head_file(key)
 
     def initialize_content(self):
         self._files = [
@@ -313,9 +410,6 @@ class GoogleCloudStorage(_CloudStorage):
         self._storage_client.download_blob_to_file(blob, buf)
         buf.seek(0)
         return buf
-
-    def is_object_exist(self, key):
-        return self.bucket.blob(key).exists()
 
     def upload_file(self, file_obj, file_name):
         self.bucket.blob(file_name).upload_from_file(file_obj)
@@ -342,7 +436,6 @@ class GoogleCloudStorage(_CloudStorage):
         blob.reload()
         return blob.updated
 
-
 class Credentials:
     __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
 
@@ -356,33 +449,58 @@ class Credentials:
 
     def convert_to_db(self):
         converted_credentials = {
-            CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET : \
-                " ".join([self.key, self.secret_key, self.session_token]),
+            CredentialsTypeChoice.KEY_SECRET_KEY_PAIR : \
+                " ".join([self.key, self.secret_key]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
             CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
-            CredentialsTypeChoice.ANONYMOUS_ACCESS: "",
+            CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
         }
         return converted_credentials[self.credentials_type]
 
     def convert_from_db(self, credentials):
         self.credentials_type = credentials.get('type')
-        if self.credentials_type == CredentialsTypeChoice.TEMP_KEY_SECRET_KEY_TOKEN_SET:
-            self.key, self.secret_key, self.session_token = credentials.get('value').split()
+        if self.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
+            self.key, self.secret_key = credentials.get('value').split()
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
             self.account_name, self.session_token = credentials.get('value').split()
+        elif self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
+            self.session_token, self.key, self.secret_key = ('', '', '')
+            # account_name will be in [some_value, '']
+            self.account_name = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
             self.key_file_path = credentials.get('value')
         else:
-            self.account_name, self.session_token, self.key, self.secret_key = ('', '', '', '')
-            self.credentials_type = None
+            raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
 
     def mapping_with_new_values(self, credentials):
         self.credentials_type = credentials.get('credentials_type', self.credentials_type)
-        self.key = credentials.get('key', self.key)
-        self.secret_key = credentials.get('secret_key', self.secret_key)
-        self.session_token = credentials.get('session_token', self.session_token)
-        self.account_name = credentials.get('account_name', self.account_name)
-        self.key_file_path = credentials.get('key_file_path', self.key_file_path)
+        if self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
+            self.key = ''
+            self.secret_key = ''
+            self.session_token = ''
+            self.key_file_path = ''
+            self.account_name = credentials.get('account_name', self.account_name)
+        elif self.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
+            self.key = credentials.get('key', self.key)
+            self.secret_key = credentials.get('secret_key', self.secret_key)
+            self.session_token = ''
+            self.account_name = ''
+            self.key_file_path = ''
+        elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
+            self.session_token = credentials.get('session_token', self.session_token)
+            self.account_name = credentials.get('account_name', self.account_name)
+            self.key = ''
+            self.secret_key = ''
+            self.key_file_path = ''
+        elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
+            self.key = ''
+            self.secret_key = ''
+            self.session_token = ''
+            self.account_name = ''
+            self.key_file_path = credentials.get('key_file_path', self.key_file_path)
+        else:
+            raise NotImplementedError('Mapping credentials: unsupported credentials type')
+
 
     def values(self):
         return [self.key, self.secret_key, self.session_token, self.account_name, self.key_file_path]
