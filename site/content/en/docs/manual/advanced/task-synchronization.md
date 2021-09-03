@@ -1,7 +1,7 @@
 ---
 title: 'Task synchronization with a repository'
 linkTitle: 'Task synchronization'
-weight: 25
+weight: 19
 ---
 
 1. At the end of the annotation process, a task is synchronized by clicking
