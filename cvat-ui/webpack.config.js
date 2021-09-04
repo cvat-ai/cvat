@@ -28,6 +28,7 @@ module.exports = (env) => ({
         contentBase: path.join(__dirname, 'dist'),
         compress: false,
         inline: true,
+        host: process.env.CVAT_UI_HOST || 'localhost',
         port: 3000,
         historyApiFallback: true,
         proxy: [

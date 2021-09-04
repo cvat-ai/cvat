@@ -1145,9 +1145,7 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => (
-                        !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId
-                    );
+                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
@@ -1176,6 +1174,121 @@
                         proxy: config.proxy,
                     });
                     return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function createCloudStorage(storageDetail) {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.post(`${backendAPI}/cloudstorages`, JSON.stringify(storageDetail), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function updateCloudStorage(id, cloudStorageData) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/cloudstorages/${id}`, JSON.stringify(cloudStorageData), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function getCloudStorages(filter = '') {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=12&${filter}`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            }
+
+            async function getCloudStorageContent(id, manifestPath) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    const url = `${backendAPI}/cloudstorages/${id}/content${
+                        manifestPath ? `?manifest_path=${manifestPath}` : ''
+                    }`;
+                    response = await Axios.get(url, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getCloudStoragePreview(id) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    const url = `${backendAPI}/cloudstorages/${id}/preview`;
+                    response = await workerAxios.get(url, {
+                        proxy: config.proxy,
+                        responseType: 'arraybuffer',
+                    });
+                } catch (errorData) {
+                    throw generateError({
+                        ...errorData,
+                        message: '',
+                        response: {
+                            ...errorData.response,
+                            data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
+                        },
+                    });
+                }
+
+                return new Blob([new Uint8Array(response)]);
+            }
+
+            async function getCloudStorageStatus(id) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    const url = `${backendAPI}/cloudstorages/${id}/status`;
+                    response = await Axios.get(url, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function deleteCloudStorage(id) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/cloudstorages/${id}`);
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -1307,6 +1420,19 @@
                         value: Object.freeze({
                             status: predictorStatus,
                             predict: predictAnnotations,
+                        }),
+                        writable: false,
+                    },
+
+                    cloudStorages: {
+                        value: Object.freeze({
+                            get: getCloudStorages,
+                            getContent: getCloudStorageContent,
+                            getPreview: getCloudStoragePreview,
+                            getStatus: getCloudStorageStatus,
+                            create: createCloudStorage,
+                            delete: deleteCloudStorage,
+                            update: updateCloudStorage,
                         }),
                         writable: false,
                     },
