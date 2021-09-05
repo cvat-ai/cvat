@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
+            "type": "pwa-chrome",
             "request": "launch",
             "preLaunchTask": "npm: start - cvat-ui",
             "name": "ui.js: debug",
@@ -22,7 +22,7 @@
             "smartStep": true,
         },
         {
-            "type": "node",
+            "type": "pwa-chrome",
             "request": "launch",
             "name": "ui.js: test",
             "cwd": "${workspaceRoot}/tests",
