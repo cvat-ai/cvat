@@ -59,7 +59,7 @@
         },
         {
             "name": "server: chrome",
-            "type": "node",
+            "type": "pwa-chrome",
             "request": "launch",
             "url": "http://localhost:7000/",
             "disableNetworkCache":true,
