@@ -68,3 +68,13 @@ hr {
     z-index: 9999;
     pointer-events: none;
 }
+
+.cvat-cloud-storage-select-provider {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    > svg {
+        margin-right: $grid-unit-size;
+    }
+}

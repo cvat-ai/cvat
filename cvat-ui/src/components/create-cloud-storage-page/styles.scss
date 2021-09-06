@@ -4,16 +4,6 @@
 
 @import '../../base.scss';
 
-.cvat-cloud-storage-select-provider {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-
-    > svg {
-        margin-right: $grid-unit-size;
-    }
-}
-
 .cvat-update-cloud-storage-form-wrapper,
 .cvat-attach-cloud-storage-form-wrapper {
     text-align: center;

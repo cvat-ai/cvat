@@ -112,10 +112,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                         value: _cloudStorage.id.toString(),
                         label: (
                             <span
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'flex-start',
-                                }}
+                                className='cvat-cloud-storage-select-provider'
                             >
                                 {_cloudStorage.providerType === ProviderType.AWS_S3_BUCKET ? (
                                     <S3Provider />
