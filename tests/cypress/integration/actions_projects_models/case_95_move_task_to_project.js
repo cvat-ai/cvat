@@ -90,7 +90,7 @@ context('Move a task to a project.', () => {
             cy.closeNotification('.cvat-notification-notice-update-task-failed');
             cy.goToProjectsList();
             cy.openProject(project.name);
-            cy.get('.cvat-tasks-list-item').should('exist');
+            cy.get('.cvat-tasks-list-item').should('exist').and('have.length', 1);
         });
     });
 });
