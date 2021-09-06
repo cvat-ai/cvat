@@ -22,6 +22,8 @@ function build() {
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
     const { FrameData } = require('./frames');
+    const { CloudStorage } = require('./cloud-storage');
+
 
     const enums = require('./enums');
 
@@ -749,6 +751,41 @@ function build() {
             ServerError,
         },
         /**
+         * Namespace is used for getting cloud storages
+         * @namespace cloudStorages
+         * @memberof module:API.cvat
+         */
+        cloudStorages: {
+            /**
+             * @typedef {Object} CloudStorageFilter
+             * @property {string} displayName Check if displayName contains this value
+             * @property {string} resourceName Check if resourceName contains this value
+             * @property {module:API.cvat.enums.ProviderType} providerType Check if providerType equal this value
+             * @property {integer} id Check if id equals this value
+             * @property {integer} page Get specific page
+             * (default REST API returns 20 clouds storages per request.
+             * In order to get more, it is need to specify next page)
+             * @property {string} owner Check if an owner name contains this value
+             * @property {string} search Combined search of contains among all the fields
+             * @global
+             */
+
+            /**
+             * Method returns a list of cloud storages corresponding to a filter
+             * @method get
+             * @async
+             * @memberof module:API.cvat.cloudStorages
+             * @param {CloudStorageFilter} [filter={}] cloud storage filter
+             * @returns {module:API.cvat.classes.CloudStorage[]}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.cloudStorages.get, filter);
+                return result;
+            },
+        },
+        /**
          * Namespace is used for access to classes
          * @namespace classes
          * @memberof module:API.cvat
@@ -768,6 +805,7 @@ function build() {
             Issue,
             Review,
             FrameData,
+            CloudStorage,
         },
     };
 
@@ -780,6 +818,7 @@ function build() {
     cvat.lambda = Object.freeze(cvat.lambda);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
+    cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
 
     const implementAPI = require('./api-implementation');
 

@@ -22,6 +22,9 @@ const LATEST_COMMENTS_SHOWN_QUICK_ISSUE = 3;
 const QUICK_ISSUE_INCORRECT_POSITION_TEXT = 'Wrong position';
 const QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT = 'Wrong attribute';
 const DEFAULT_PROJECT_SUBSETS = ['Train', 'Test', 'Validation'];
+const INTEL_TERMS_OF_USE_URL = 'https://www.intel.com/content/www/us/en/legal/terms-of-use.html';
+const INTEL_COOKIES_URL = 'https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html';
+const INTEL_PRIVACY_URL = 'https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html';
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -41,4 +44,7 @@ export default {
     QUICK_ISSUE_INCORRECT_POSITION_TEXT,
     QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
     DEFAULT_PROJECT_SUBSETS,
+    INTEL_TERMS_OF_USE_URL,
+    INTEL_COOKIES_URL,
+    INTEL_PRIVACY_URL,
 };

@@ -322,6 +322,13 @@ const defaultKeyMap = ({
         action: 'keydown',
         applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
     },
+    SWITCH_TOOLS_BLOCKER_STATE: {
+        name: 'Switch algorithm blocker',
+        description: 'Postpone running the algorithm for interaction tools',
+        sequences: ['сtrl'],
+        action: 'keydown',
+        applicable: [DimensionType.DIM_2D],
+    },
     CHANGE_OBJECT_COLOR: {
         name: 'Change color',
         description: 'Set the next color for an activated shape',

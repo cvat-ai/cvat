@@ -1012,6 +1012,7 @@
                 use_cache: undefined,
                 copy_data: undefined,
                 dimension: undefined,
+                cloud_storage_id: undefined,
             };
 
             const updatedFields = new FieldUpdateTrigger({
@@ -1373,7 +1374,7 @@
                         get: () => [...data.jobs],
                     },
                     /**
-                     * List of files from shared resource
+                     * List of files from shared resource or list of cloud storage files
                      * @name serverFiles
                      * @type {string[]}
                      * @memberof module:API.cvat.classes.Task
@@ -1534,6 +1535,15 @@
                          * @instance
                          */
                         get: () => data.dimension,
+                    },
+                    /**
+                     * @name cloudStorageId
+                     * @type {integer|null}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     */
+                    cloudStorageId: {
+                        get: () => data.cloud_storage_id,
                     },
                     _internalData: {
                         get: () => data,
@@ -2061,6 +2071,9 @@
         }
         if (typeof this.copyData !== 'undefined') {
             taskDataSpec.copy_data = this.copyData;
+        }
+        if (typeof this.cloudStorageId !== 'undefined') {
+            taskDataSpec.cloud_storage_id = this.cloudStorageId;
         }
 
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
