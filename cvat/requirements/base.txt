@@ -14,7 +14,7 @@ pyunpack==0.2.1
 rcssmin==1.0.6
 redis==3.5.3
 rjsmin==1.1.0
-requests==2.24.0
+requests==2.26.0
 rq==1.5.1
 rq-scheduler==0.10.0
 sqlparse==0.3.1
@@ -54,3 +54,4 @@ google-cloud-storage==1.42.0
 # of pycocotools and tensorflow 2.4.1
 # when pycocotools is installed by wheel in python 3.8+
 datumaro==0.1.10.1 --no-binary=datumaro --no-binary=pycocotools
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
