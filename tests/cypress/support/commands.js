@@ -245,7 +245,7 @@ Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
     cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
     cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events');
+    cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events: none');
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
