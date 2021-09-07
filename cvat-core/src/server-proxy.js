@@ -595,7 +595,9 @@
                 }
 
                 const taskData = new FormData();
-
+                // TODO remove
+                const file = taskDataSpec.client_files[0];
+                delete taskDataSpec.client_files;
                 for (const [key, value] of Object.entries(taskDataSpec)) {
                     if (Array.isArray(value)) {
                         value.forEach((element, idx) => {
@@ -621,25 +623,26 @@
                 }
 
                 onUpdate('The data are being uploaded to the server..');
-                const file = taskDataSpec.client_files[0];
                 const chunkSize = 1024 * 1024 * 10; // 10 mb
-                const totalChunks = Math.floor(file.size / chunkSize);
-                let currentChunkNumber = 0;
+                const totalChunks = Math.ceil(file.size / chunkSize);
+                let currentChunkNumber = 1;
                 console.log(totalChunks, file.size, file);
                 async function upload() {
-                    const fileChunk = file.slice(currentChunkNumber * chunkSize, currentChunkNumber * chunkSize + chunkSize);
-                    console.log(currentChunkNumber * chunkSize, currentChunkNumber * chunkSize + chunkSize);
+                    const prevChunkNumber = currentChunkNumber - 1;
+                    const fileChunk = file.slice(prevChunkNumber * chunkSize, Math.min(prevChunkNumber * chunkSize + chunkSize, file.size));
                     taskData.append('file_chunk', fileChunk);
-                    taskData.append('total_chunks', totalChunks);
                     taskData.append('current_chunk', currentChunkNumber);
                     taskData.append('file_name', file.name);
+                    taskData.append('end_of_upload', currentChunkNumber >= totalChunks);
+                    taskData.append('chunk_file', true);
                     try {
-                        console.log('uploading chunk number', currentChunkNumber);
+                        console.log('uploading chunk number', currentChunkNumber, ` from ${prevChunkNumber * chunkSize}
+                        to ${prevChunkNumber * chunkSize + chunkSize}`);
                         await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
                             proxy: config.proxy,
                         });
                         currentChunkNumber++;
-                        if (currentChunkNumber < totalChunks) upload();
+                        if (currentChunkNumber <= totalChunks) upload();
                     } catch (errorData) {
                         try {
                             await deleteTask(response.data.id);
@@ -649,20 +652,8 @@
                         throw generateError(errorData);
                     }
                 }
-                await upload();
-                // try {
-                //     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
-                //         proxy: config.proxy,
-                //     });
-                // } catch (errorData) {
-                //     try {
-                //         await deleteTask(response.data.id);
-                //     } catch (_) {
-                //         // ignore
-                //     }
 
-                //     throw generateError(errorData);
-                // }
+                await upload();
 
                 try {
                     await wait(response.data.id);
