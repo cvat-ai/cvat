@@ -228,6 +228,7 @@ DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_GROUPS = []
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+DISABLE_SELF_SIGNUP = os.getenv('DISABLE_SELF_SIGNUP', 'FALSE') == 'TRUE'
 
 AUTHENTICATION_BACKENDS = [
     'rules.permissions.ObjectPermissionBackend',

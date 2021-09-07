@@ -33,6 +33,8 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
 
     const { fetching, onLogin, renderResetPassword } = props;
 
+    const disableSelfSignup = (process.env.REACT_APP_DISABLE_SELF_SIGNUP == 'TRUE');
+
     return (
         <Layout>
             <Content>
@@ -45,15 +47,15 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                 onLogin(loginData.username, loginData.password);
                             }}
                         />
-                        <Row justify='start' align='top'>
+                        {disableSelfSignup && <Row justify='start' align='top'>
                             <Col>
                                 <Text strong>
                                     New to CVAT? Create
                                     <Link to='/auth/register'> an account</Link>
                                 </Text>
                             </Col>
-                        </Row>
-                        {renderResetPassword && (
+                        </Row>}
+                        {disableSelfSignup && renderResetPassword && (
                             <Row justify='start' align='top'>
                                 <Col>
                                     <Text strong>
