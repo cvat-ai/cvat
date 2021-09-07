@@ -12,7 +12,14 @@ import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 
-import { DownloadOutlined, InboxOutlined, LoadingOutlined } from '@ant-design/icons';
+import {
+    DownloadOutlined,
+    InboxOutlined,
+    LoadingOutlined,
+    QuestionCircleFilled,
+} from '@ant-design/icons';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 
@@ -56,7 +63,19 @@ function ImportDatasetModal(): JSX.Element {
 
     return (
         <Modal
-            title='Import dataset to project'
+            title={(
+                <>
+                    <Text>Import dataset to project</Text>
+                    <CVATTooltip title={
+                        instance && !instance.labels.length ?
+                            'Labels will be imported from dataset' :
+                            'Labels from project will be used'
+                    }
+                    >
+                        <QuestionCircleFilled />
+                    </CVATTooltip>
+                </>
+            )}
             visible={modalVisible}
             onCancel={closeModal}
             onOk={() => form.submit()}
@@ -76,7 +95,10 @@ function ImportDatasetModal(): JSX.Element {
                     <Select placeholder='Select dataset format' className='cvat-modal-import-select'>
                         {importers
                             .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                            .filter((importer: any): boolean => importer.dimension === instance?.dimension)
+                            .filter((importer: any): boolean =>
+                                instance !== null && (!instance?.dimension ||
+                                    importer.dimension === instance.dimension
+                                ))
                             .map(
                                 (importer: any): JSX.Element => {
                                     const pending = !!projects[instance.id];
