@@ -99,3 +99,10 @@ def md5_hash(frame):
     elif isinstance(frame, str):
         frame = Image.open(frame, 'r')
     return hashlib.md5(frame.tobytes()).hexdigest() # nosec
+
+def parse_specific_attributes(specific_attributes):
+    assert isinstance(specific_attributes, str), 'Specific attributes must be a string'
+    return {
+        item.split('=')[0].strip(): item.split('=')[1].strip()
+            for item in specific_attributes.split('&')
+    } if specific_attributes else dict()
