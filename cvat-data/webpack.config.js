@@ -29,14 +29,7 @@ const cvatData = {
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
-                                },
-                            ],
-                        ],
+                        presets: ['@babel/preset-env'],
                         sourceType: 'unambiguous',
                     },
                 },

@@ -5,7 +5,8 @@
 @import '../../base.scss';
 
 .cvat-models-page {
-    padding-top: 30px;
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
     height: 90%;
     overflow: auto;
     position: fixed;

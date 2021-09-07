@@ -2,6 +2,7 @@
 title: 'Objects sidebar'
 linkTitle: 'Objects sidebar'
 weight: 24
+description: 'Overview of available functions on the objects sidebar of the annotation tool.'
 ---
 ## Hide objects sidebar
 
@@ -148,7 +149,8 @@ Change the opacity of every shape in the annotation.
 
 **Selected Fill Opacity** slider
 
-Change the opacity of the selected object's fill.
+Change the opacity of the selected object's fill. It is possible to change opacity while drawing an object in the case
+of rectangles, polygons and cuboids.
 
 ![](/images/image089_detrac.jpg)
 

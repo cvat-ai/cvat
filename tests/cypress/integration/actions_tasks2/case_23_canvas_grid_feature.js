@@ -5,20 +5,13 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
+import { generateString } from '../../support/utils';
 
 context('Canvas grid feature', () => {
     const caseId = '23';
     const settingsGridSize = 50;
     const gridColor = 'Black';
     const gridOpacity = 80;
-
-    function generateString(countPointsToMove) {
-        let action = '';
-        for (let i = 0; i < countPointsToMove; i++) {
-            action += '{leftarrow}';
-        }
-        return action;
-    }
 
     before(() => {
         cy.openTaskJob(taskName);
@@ -44,7 +37,7 @@ context('Canvas grid feature', () => {
         });
         it('Set "Grid opacity" to 80%.', () => {
             cy.get('.cvat-image-setups-grid-opacity-input').within(() => {
-                cy.get('[role="slider"]').type(generateString(20)); // Moving the slider to the left up to 80.
+                cy.get('[role="slider"]').type(generateString(20, 'leftarrow')); // Moving the slider to the left up to 80.
                 cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', gridOpacity);
             });
         });

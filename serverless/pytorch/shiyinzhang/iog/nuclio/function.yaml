@@ -9,6 +9,8 @@ metadata:
     min_pos_points: 1
     min_neg_points: 0
     startswith_box: true
+    animated_gif: https://raw.githubusercontent.com/openvinotoolkit/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/iog_example.gif
+    help_message: The interactor allows to get a mask of an object using its wrapping boundig box, positive, and negative points inside it
 
 spec:
   description: Interactive Object Segmentation with Inside-Outside Guidance

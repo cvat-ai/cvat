@@ -2,6 +2,7 @@
 title: 'Development environment'
 linkTitle: 'Development environment'
 weight: 2
+description: 'Installing a development environment for different operating systems.'
 ---
 
 - Install necessary dependencies:

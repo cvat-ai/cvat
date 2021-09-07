@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { GridColor, ColorBy, SettingsState } from 'reducers/interfaces';
+import {
+    GridColor, ColorBy, SettingsState, ToolsBlockerState,
+} from 'reducers/interfaces';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -26,6 +28,7 @@ export enum SettingsActionTypes {
     SWITCH_AUTO_SAVE = 'SWITCH_AUTO_SAVE',
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
+    CHANGE_DEFAULT_APPROX_POLY_THRESHOLD = 'CHANGE_DEFAULT_APPROX_POLY_THRESHOLD',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
     SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
@@ -33,6 +36,7 @@ export enum SettingsActionTypes {
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
+    SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -266,6 +270,24 @@ export function switchSettingsDialog(show?: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_SETTINGS_DIALOG,
         payload: {
             show,
+        },
+    };
+}
+
+export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD,
+        payload: {
+            approxPolyAccuracy,
+        },
+    };
+}
+
+export function switchToolsBlockerState(toolsBlockerState: ToolsBlockerState): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_TOOLS_BLOCKER_STATE,
+        payload: {
+            toolsBlockerState,
         },
     };
 }

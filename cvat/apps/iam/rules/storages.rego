@@ -29,10 +29,3 @@ allow {
     input.storage.owner.id == input.user.id
 }
 
-filter = v {
-    utils.is_admin
-    v := ["all"]
-} else = v {
-    v := ["own"]
-}
-

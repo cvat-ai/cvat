@@ -7,6 +7,8 @@ metadata:
     spec:
     framework: openvino
     min_pos_points: 4
+    animated_gif: https://raw.githubusercontent.com/openvinotoolkit/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/dextr_example.gif
+    help_message: The interactor allows to get a mask of an object using its extreme points (more or equal than 4). You can add a point left-clicking the image
 
 spec:
   description: Deep Extreme Cut

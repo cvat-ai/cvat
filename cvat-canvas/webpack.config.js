@@ -8,6 +8,23 @@ const path = require('path');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const DtsBundleWebpack = require('dts-bundle-webpack');
 
+const styleLoaders = [
+    'style-loader',
+    {
+        loader: 'css-loader',
+        options: {
+            importLoaders: 2,
+        },
+    },
+    {
+        loader: 'postcss-loader',
+        options: {
+            plugins: [require('postcss-preset-env')],
+        },
+    },
+    'sass-loader',
+];
+
 const nodeConfig = {
     target: 'node',
     mode: 'production',
@@ -34,7 +51,7 @@ const nodeConfig = {
                             '@babel/plugin-proposal-class-properties',
                             '@babel/plugin-proposal-optional-chaining',
                         ],
-                        presets: [['@babel/preset-env'], ['@babel/typescript']],
+                        presets: [['@babel/preset-env', { targets: 'node > 10' }], '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -42,17 +59,7 @@ const nodeConfig = {
             {
                 test: /\.(css|scss)$/,
                 exclude: /node_modules/,
-                use: [
-                    'style-loader',
-                    {
-                        loader: 'css-loader',
-                        options: {
-                            importLoaders: 2,
-                        },
-                    },
-                    'postcss-loader',
-                    'sass-loader',
-                ],
+                use: styleLoaders,
             },
         ],
     },
@@ -96,15 +103,7 @@ const webConfig = {
                     loader: 'babel-loader',
                     options: {
                         plugins: ['@babel/plugin-proposal-class-properties'],
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
-                                },
-                            ],
-                            ['@babel/typescript'],
-                        ],
+                        presets: ['@babel/preset-env', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -112,17 +111,7 @@ const webConfig = {
             {
                 test: /\.scss$/,
                 exclude: /node_modules/,
-                use: [
-                    'style-loader',
-                    {
-                        loader: 'css-loader',
-                        options: {
-                            importLoaders: 2,
-                        },
-                    },
-                    'postcss-loader',
-                    'sass-loader',
-                ],
+                use: styleLoaders,
             },
         ],
     },

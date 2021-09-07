@@ -60,11 +60,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        sidebarCollapsed,
-        canvasInstance,
-        collapseSidebar,
-        objectsList,
-        jobInstance,
+        sidebarCollapsed, canvasInstance, collapseSidebar, objectsList, jobInstance,
     } = props;
 
     const collapse = (): void => {
@@ -119,13 +115,11 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                     <LabelsList />
                 </Tabs.TabPane>
 
-                {is2D ?
-                    (
-                        <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
-                            <IssuesListComponent />
-                        </Tabs.TabPane>
-                    ) : null}
-
+                {is2D ? (
+                    <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
+                        <IssuesListComponent />
+                    </Tabs.TabPane>
+                ) : null}
             </Tabs>
 
             {!sidebarCollapsed && <AppearanceBlock />}

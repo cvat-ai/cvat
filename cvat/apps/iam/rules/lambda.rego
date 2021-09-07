@@ -6,7 +6,6 @@ allow {
     utils.is_admin
 }
 
-
 allow {
     input.method == utils.GET
     input.path == ["lambda", "functions"]
@@ -30,7 +29,6 @@ allow {
     allowed_methods = {utils.POST, utils.GET}
     allowed_methods[input.method]
     input.path == ["lambda", "requests"]
-    input.resource.owner.id == input.user.id
     utils.has_privilege(utils.BUSINESS)
 }
 
@@ -38,6 +36,5 @@ allow {
     input.method == utils.GET
     request_id = input.path[2]
     input.path == ["lambda", "requests", request_id]
-    input.resource.owner.id == input.user.id
     utils.has_privilege(utils.BUSINESS)
 }

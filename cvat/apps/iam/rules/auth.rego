@@ -28,5 +28,4 @@ allow {
 allow {
     input.method == utils.POST
     input.path == ["auth", "register"]
-    input.restrictions.SIGNUP == "allowed"
 }

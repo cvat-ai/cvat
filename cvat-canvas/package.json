@@ -1,6 +1,6 @@
 {
   "name": "cvat-canvas",
-  "version": "2.5.0",
+  "version": "2.7.0",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
   "main": "src/canvas.ts",
   "scripts": {
@@ -9,6 +9,12 @@
   },
   "author": "Intel",
   "license": "MIT",
+  "browserslist": [
+    "Chrome >= 63",
+    "Firefox > 58",
+    "not IE 11",
+    "> 2%"
+  ],
   "dependencies": {
     "svg.draggable.js": "2.2.2",
     "svg.draw.js": "^2.0.4",
@@ -41,7 +47,7 @@
     "style-loader": "^1.0.0",
     "typescript": "^3.5.3",
     "webpack": "^5.20.2",
-    "webpack-cli": "^3.3.6",
+    "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
   }
 }

@@ -2,6 +2,7 @@
 title: 'Attribute annotation mode (advanced)'
 linkTitle: 'Attribute annotation mode'
 weight: 6
+description: 'Advanced operations available in attribute annotation mode.'
 ---
 
 Basic operations in the mode were described in section [attribute annotation mode (basics)](/docs/manual/basics/attribute-annotation-mode-basics/).
