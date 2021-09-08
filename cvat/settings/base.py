@@ -480,3 +480,4 @@ CACHES = {
 
 USE_CACHE = True
 
+OPA_DATA_URL = 'http://opa:8181/v1/data'
