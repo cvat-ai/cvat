@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
@@ -23,7 +23,6 @@ interface ParamType {
 export default function UpdateCloudStoragePageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const formRef = React.createRef<FormInstance>();
-    const shouldShowUpdationNotification = useRef(false);
     const cloudStorageId = +useParams<ParamType>().id;
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const isInitialized = useSelector((state: CombinedState) => state.cloudStorages.initialized);
@@ -59,7 +58,6 @@ export default function UpdateCloudStoragePageComponent(): JSX.Element {
                 <CreateCloudStorageForm
                     cloudStorage={cloudStorage}
                     formRef={formRef}
-                    shouldShowUpdationNotification={shouldShowUpdationNotification}
                 />
             </Col>
         </Row>

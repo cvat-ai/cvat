@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useState, useEffect, RefObject, useRef, MutableRefObject,
+    useState, useEffect, RefObject, useRef,
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -15,19 +15,16 @@ import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 
-import { MinusCircleOutlined, PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { AzureProvider, S3Provider } from '../../icons';
 import S3Region from './s3-region';
+import ManifestsManager from './manifests-manager';
 
 export interface Props {
     cloudStorage?: CloudStorage;
     formRef: RefObject<FormInstance>;
-    shouldShowCreationNotification?: MutableRefObject<boolean>;
-    shouldShowUpdationNotification?: MutableRefObject<boolean>;
 }
 
 type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token';
@@ -45,16 +42,15 @@ interface CloudStorageForm {
     SAS_token?: string;
     description?: string;
     region?: string;
-    // TODO: it will be required parameter
-    manifests?: string[];
+    manifests: string[];
 }
 
 export default function CreateCloudStorageForm(props: Props): JSX.Element {
-    const {
-        cloudStorage, formRef, shouldShowCreationNotification, shouldShowUpdationNotification,
-    } = props;
+    const { cloudStorage, formRef } = props;
     const dispatch = useDispatch();
     const history = useHistory();
+    const shouldShowCreationNotification = useRef(false);
+    const shouldShowUpdationNotification = useRef(false);
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
     const [selectedRegion, setSelectedRegion] = useState<string | undefined>(undefined);
@@ -78,109 +74,20 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
-    const maxManifestsCount = useRef(5);
-    const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState(false);
-
-    const style: React.CSSProperties = {
-        paddingLeft: '4px',
-        paddingRight: '0px',
-    };
-
-    const updateManifestFields = (): void => {
-        const newManifestFormItems = manifestNames.map((name, idx) => ({
-            id: idx,
-            name,
-        }));
-        formRef.current?.setFieldsValue({
-            manifests: [...newManifestFormItems],
-        });
-    };
-
-    useEffect(() => {
-        updateManifestFields();
-    }, [manifestNames]);
-
-    useEffect(() => {
-        if (limitingAddingManifestNotification) {
-            notification.warning({
-                message: `Unable to add manifest. The maximum number of files is ${maxManifestsCount.current}`,
-                className: 'cvat-notification-limiting-adding-manifest',
-            });
-        }
-    }, [limitingAddingManifestNotification]);
-
-    const handleUpdateManifestPath = (manifestName: string | undefined, manifestId: number): void => {
-        if (manifestName !== undefined) {
-            setManifestNames(manifestNames.map((name, idx) => (idx !== manifestId ? name : manifestName)));
-        }
-    };
-
-    const handleDeleteManifestItem = (key: number): void => {
-        if (maxManifestsCount.current === manifestNames.length && limitingAddingManifestNotification) {
-            setLimitingAddingManifestNotification(false);
-        }
-        setManifestNames(manifestNames.filter((name, idx) => idx !== key));
-    };
-
-    const handleAddManifestItem = (): void => {
-        if (maxManifestsCount.current <= manifestNames.length) {
-            setLimitingAddingManifestNotification(true);
-        } else {
-            setManifestNames(manifestNames.concat(['']));
-        }
-    };
-
-    const renderManifest = (key: number, value: string): JSX.Element => (
-        <Form.Item key={key} shouldUpdate>
-            {() => (
-                <Row justify='space-between' align='top'>
-                    <Col>
-                        <Form.Item
-                            name={[key, 'name']}
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please specify a manifest name',
-                                },
-                            ]}
-                            initialValue={value}
-                        >
-                            <Input
-                                placeholder='manifest.jsonl'
-                                onChange={(event) => handleUpdateManifestPath(event.target.value, key)}
-                            />
-                        </Form.Item>
-                    </Col>
-                    <Col>
-                        <Form.Item>
-                            <Button type='link' onClick={() => handleDeleteManifestItem(key)}>
-                                <MinusCircleOutlined />
-                            </Button>
-                        </Form.Item>
-                    </Col>
-                </Row>
-            )}
-        </Form.Item>
-    );
-
-    // eslint-disable-next-line arrow-body-style
-    const renderManifests = () => {
-        return (): JSX.Element[] => manifestNames.map((name, idx): JSX.Element => renderManifest(idx, name));
-    };
 
     function initializeFields(): void {
+        setManifestNames(cloudStorage.manifests);
         const fieldsValue: CloudStorageForm = {
             credentials_type: cloudStorage.credentialsType,
             display_name: cloudStorage.displayName,
             description: cloudStorage.description,
             provider_type: cloudStorage.providerType,
             resource: cloudStorage.resourceName,
+            manifests: manifestNames,
         };
 
         setProviderType(cloudStorage.providerType);
         setCredentialsType(cloudStorage.credentialsType);
-
-        setManifestNames([...cloudStorage.manifests]);
 
         if (cloudStorage.credentialsType === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
             fieldsValue.account_name = fakeCredentialsData.accountName;
@@ -581,34 +488,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             </Form.Item>
             {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
             {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
-            <Form.Item
-                name='manifests'
-                label={(
-                    <>
-                        Manifests
-                        <Tooltip title='More information'>
-                            <Button
-                                type='link'
-                                target='_blank'
-                                style={style}
-                                href='https://openvinotoolkit.github.io/cvat/docs/manual/advanced/dataset_manifest/'
-                            >
-                                <QuestionCircleOutlined />
-                            </Button>
-                        </Tooltip>
-                    </>
-                )}
-                rules={[{ required: true, message: 'Please, specify at least one manifest file' }]}
-            />
-            <Form.List name='manifests'>{renderManifests()}</Form.List>
-            <Row justify='start'>
-                <Col>
-                    <Button type='ghost' onClick={handleAddManifestItem} className='cvat-add-manifest-button'>
-                        Add manifest
-                        <PlusCircleOutlined />
-                    </Button>
-                </Col>
-            </Row>
+            <ManifestsManager formRef={formRef} manifestNames={manifestNames} setManifestNames={setManifestNames} />
             <Row justify='end'>
                 <Col>
                     <Button

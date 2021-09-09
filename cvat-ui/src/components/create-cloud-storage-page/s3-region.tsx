@@ -35,11 +35,6 @@ export default function S3Region(props: Props): JSX.Element {
     const [newRegionName, setNewRegionName] = useState<string>('');
     const [regionOptions, setRegionOptions] = useState<JSX.Element[]>([]);
 
-    const style: React.CSSProperties = {
-        paddingLeft: '4px',
-        paddingRight: '0px',
-    };
-
     useEffect(() => {
         if (regions) {
             setRegionOptions(
@@ -77,9 +72,9 @@ export default function S3Region(props: Props): JSX.Element {
                     Region
                     <Tooltip title='More information'>
                         <Button
+                            className='cvat-cloud-storage-help-button'
                             type='link'
                             target='_blank'
-                            style={style}
                             href='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
                         >
                             <QuestionCircleOutlined />
@@ -96,29 +91,21 @@ export default function S3Region(props: Props): JSX.Element {
                 dropdownRender={(menu) => (
                     <div>
                         {menu}
-                        <Divider style={{ margin: '4px 0' }} />
-                        <div style={{ display: 'flex', flexWrap: 'nowrap', padding: 8 }}>
+                        <Divider className='cvat-divider' />
+                        <div className='cvat-cloud-storage-region-creator'>
                             <Input
-                                style={{ flex: 'auto' }}
                                 value={newRegionKey}
                                 onChange={(event: any) => setNewRegionKey(event.target.value)}
                                 maxLength={14}
                                 placeholder='key'
                             />
                             <Input
-                                style={{ flex: 'auto' }}
                                 value={newRegionName}
                                 onChange={(event: any) => setNewRegionName(event.target.value)}
                                 placeholder='name'
                             />
                             <Button
                                 type='link'
-                                style={{
-                                    flex: 'none',
-                                    padding: '8px',
-                                    display: 'block',
-                                    cursor: 'pointer',
-                                }}
                                 onClick={handleAddingRegion}
                             >
                                 Add region

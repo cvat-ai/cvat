@@ -45,3 +45,21 @@
         }
     }
 }
+
+.cvat-cloud-storage-region-creator {
+    display: flex;
+    padding: $grid-unit-size;
+
+    > * {
+        margin: 0 $grid-unit-size;
+    }
+
+    > button {
+        cursor: pointer;
+    }
+}
+
+.cvat-cloud-storage-help-button {
+    padding-left: $grid-unit-size * 0.5;
+    padding-right: 0;
+}
