@@ -72,14 +72,14 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         secretKey: 'X'.repeat(40),
     };
 
-    const [keyVisibility, setKeyVisibility] = useState<boolean>(false);
-    const [secretKeyVisibility, setSecretKeyVisibility] = useState<boolean>(false);
-    const [sessionTokenVisibility, setSessionTokenVisibility] = useState<boolean>(false);
-    const [accountNameVisibility, setAccountNameVisibility] = useState<boolean>(false);
+    const [keyVisibility, setKeyVisibility] = useState(false);
+    const [secretKeyVisibility, setSecretKeyVisibility] = useState(false);
+    const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
+    const [accountNameVisibility, setAccountNameVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
-    const maxManifestsCount = useRef<number>(5);
-    const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState<boolean>(false);
+    const maxManifestsCount = useRef(5);
+    const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState(false);
 
     const style: React.CSSProperties = {
         paddingLeft: '4px',
@@ -269,7 +269,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         let cloudStorageData: Record<string, any> = {};
         if (formRef.current) {
             const formValues = await formRef.current.validateFields();
-            cloudStorageData = { ...cloudStorageData, ...formValues };
+            cloudStorageData = { ...formValues };
             if (formValues.region !== undefined) {
                 delete cloudStorageData.region;
                 cloudStorageData.specific_attributes = `region=${selectedRegion}`;
@@ -280,7 +280,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 cloudStorageData.session_token = formValues.SAS_token;
             }
 
-            if (cloudStorageData.manifests) {
+            if (cloudStorageData.manifests && cloudStorageData.manifests.length) {
                 delete cloudStorageData.manifests;
                 cloudStorageData.manifests = formRef.current
                     .getFieldValue('manifests')

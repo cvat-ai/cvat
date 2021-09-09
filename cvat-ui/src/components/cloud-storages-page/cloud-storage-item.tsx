@@ -69,7 +69,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
             },
             okText: 'Delete',
         });
-    }, [cloudStorageInstance]);
+    }, [cloudStorageInstance.storage.id]);
 
     return (
         <Card

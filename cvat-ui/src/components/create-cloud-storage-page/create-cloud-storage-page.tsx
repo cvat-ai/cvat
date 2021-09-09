@@ -16,7 +16,7 @@ export default function CreateCloudStoragePageComponent(): JSX.Element {
     return (
         <Row justify='center' align='top' className='cvat-attach-cloud-storage-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
-                <Text className='cvat-title'>Cloud storage form</Text>
+                <Text className='cvat-title'>Create a cloud storage</Text>
                 <CreateCloudStorageForm
                     formRef={formRef}
                     shouldShowCreationNotification={shouldShowCreationNotification}

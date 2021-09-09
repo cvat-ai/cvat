@@ -23,8 +23,8 @@ export default function StoragesPageComponent(): JSX.Element {
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const current = useSelector((state: CombinedState) => state.cloudStorages.current)
         .map((cloudStrage: CloudStorage) => cloudStrage.instance);
-    const previews = useSelector((state: CombinedState): string[] => state.cloudStorages.current)
-        .map((cloudStrage: CloudStorage) => cloudStrage.preview);
+    const previews = useSelector((state: CombinedState) => state.cloudStorages.current)
+        .map((cloudStrage: CloudStorage) => cloudStrage.preview as string);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
     const onSearch = useCallback(
         (_query: CloudStoragesQuery) => {
@@ -71,9 +71,9 @@ export default function StoragesPageComponent(): JSX.Element {
         onSearch(searchParams);
     }, []);
 
-    const searchWasUsed = Object.entries(query).some(([key, value]: Array<any>) => {
+    const searchWasUsed = Object.entries(query).some(([key, value]) => {
         if (key === 'page') {
-            return Number.isInteger(value) && value > 1;
+            return value && Number.isInteger(value) && value > 1;
         }
 
         return !!value;
