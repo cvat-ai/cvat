@@ -16,7 +16,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
     let annotationVCArchiveNameCustomeName = '';
 
     function confirmUpdate(modalWindowClassName) {
-        cy.get(modalWindowClassName).within(() => {
+        cy.get(modalWindowClassName).should('be.visible').within(() => {
             cy.contains('button', 'Update').click();
         });
     }
