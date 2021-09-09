@@ -65,11 +65,15 @@ from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.backup import import_task
 from . import models, task
 from .log import clogger, slogger
-from cvat.apps.iam.permissions import ServerPermission
+from cvat.apps.iam.permissions import (CloudStoragePermission, CommentPermission,
+    IssuePermission, JobPermission, ProjectPermission, ServerPermission,
+    TaskPermission, UserPermission)
 
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
-    permission_classes = (IsAuthenticated, ServerPermission,)
+
+    def get_permissions(self):
+        return super().get_permissions() + [ServerPermission()]
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -243,6 +247,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
+    def get_permissions(self):
+        permissions = super().get_permissions()
+        if self.request.path.endswith('tasks'):
+            permissions.append(TaskPermission())
+        else:
+            permissions.append(ProjectPermission())
+
+        return permissions
+
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
             return TaskSerializer
@@ -252,11 +265,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return ProjectWithoutTaskSerializer
         else:
             return ProjectSerializer
-
-    def get_permissions(self):
-        permissions = [IsAuthenticated]
-
-        return [perm() for perm in permissions]
 
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
@@ -406,9 +414,13 @@ class TaskViewSet(viewsets.ModelViewSet):
     ordering_fields = ("id", "name", "owner", "status", "assignee")
 
     def get_permissions(self):
-        permissions = [IsAuthenticated]
+        permissions = super().get_permissions()
+        if self.request.path.endswith('jobs'):
+            permissions.append(JobPermission())
+        else:
+            permissions.append(TaskPermission())
 
-        return [perm() for perm in permissions]
+        return permissions
 
     def create(self, request):
         action = self.request.query_params.get('action', None)
@@ -858,9 +870,13 @@ class JobViewSet(viewsets.GenericViewSet,
     serializer_class = JobSerializer
 
     def get_permissions(self):
-        permissions = [IsAuthenticated]
+        permissions = super().get_permissions()
+        if self.request.path.endswith('issues'):
+            permissions.append(IssuePermission())
+        else:
+            permissions.append(JobPermission())
 
-        return [perm() for perm in permissions]
+        return permissions
 
     @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific job')
     @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific job')
@@ -942,9 +958,7 @@ class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.Cr
             return ReviewSerializer
 
     def get_permissions(self):
-        permissions = [IsAuthenticated]
-
-        return [perm() for perm in permissions]
+        return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
         job_id = request.data['job']
@@ -996,6 +1010,14 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.Up
     queryset = Issue.objects.all().order_by('id')
     http_method_names = ['get', 'patch', 'delete', 'options']
 
+    def get_permissions(self):
+        permissions = super().get_permissions()
+        if self.request.path.endswith('comments'):
+            permissions.append(CommentPermission())
+        else:
+            permissions.append(IssuePermission())
+        return permissions
+
     def get_serializer_class(self):
         return IssueSerializer
 
@@ -1013,11 +1035,6 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.Up
             db_issue.save(update_fields=['resolver', 'resolved_date'])
         serializer = self.get_serializer(db_issue)
         return Response(serializer.data)
-
-    def get_permissions(self):
-        permissions = [IsAuthenticated]
-
-        return [perm() for perm in permissions]
 
     @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
         responses={'200': CommentSerializer(many=True)}
@@ -1037,6 +1054,9 @@ class CommentViewSet(viewsets.GenericViewSet,
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
 
+    def get_permissions(self):
+        return super().get_permissions() + [CommentPermission()]
+
     def create(self, request, *args, **kwargs):
         request.data.update({
             'author_id': request.user.id,
@@ -1045,11 +1065,6 @@ class CommentViewSet(viewsets.GenericViewSet,
         db_issue = get_object_or_404(Issue, pk=issue_id)
         self.check_object_permissions(self.request, db_issue.job)
         return super().create(request, args, kwargs)
-
-    def get_permissions(self):
-        permissions = [IsAuthenticated]
-
-        return [perm() for perm in permissions]
 
 class UserFilter(filters.FilterSet):
     class Meta:
@@ -1075,6 +1090,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     search_fields = ('username', 'first_name', 'last_name')
     filterset_class = UserFilter
 
+    def get_permissions(self):
+        return super().get_permissions() + [UserPermission()]
+
     def get_serializer_class(self):
         user = self.request.user
         if user.is_staff:
@@ -1086,11 +1104,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return UserSerializer
             else:
                 return BasicUserSerializer
-
-    def get_permissions(self):
-        permissions = [IsAuthenticated]
-
-        return [perm() for perm in permissions]
 
     @swagger_auto_schema(method='get', operation_summary='Method returns an instance of a user who is currently authorized')
     @action(detail=False, methods=['GET'])
@@ -1166,9 +1179,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     filterset_class = CloudStorageFilter
 
     def get_permissions(self):
-        permissions = [IsAuthenticated]
-
-        return [perm() for perm in permissions]
+        return super().get_permissions() + [CloudStoragePermission()]
 
     def get_serializer_class(self):
         if self.request.method in ("POST", "PATCH"):

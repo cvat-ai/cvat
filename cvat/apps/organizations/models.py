@@ -14,10 +14,10 @@ class Member(models.Model):
     SUPERVISOR = 'S'
     MAINTAINER = 'M'
 
-    user = models.ForeignKey(User, null=True,
-        on_delete=models.SET_NULL, related_name='+')
-    organization = models.ForeignKey(Organization,
-        on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL,
+        related_name='+')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE,
+        related_name='members')
     role = models.CharField(max_length=1, choices=[
         (WORKER, 'Worker'),
         (SUPERVISOR, 'Supervisor'),

@@ -38,45 +38,46 @@ class OpenPolicyAgentPermission(BasePermission):
                     "id": request.user.id,
                     "roles": [group.name for group in request.user.groups.all()]
                 },
+            }
+        }
+
+        if hasattr(obj, "owner_id"):
+            payload.extend({
                 "resource": {
                     "owner": {
                         "id": getattr(obj, "owner_id")
                     }
                 }
-            }
-        }
+            })
 
         return self.check_object_permission(payload)
-
-class AuthenticationPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/auth/allow'
 
 class ServerPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/server/allow'
 
-class CommentsPermission(OpenPolicyAgentPermission):
+class CommentPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/comments/allow'
 
-class IssuesPermission(OpenPolicyAgentPermission):
+class IssuePermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/issues/allow'
 
 class LambdaPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/lambda/allow'
 
-class OrganizationsPermission(OpenPolicyAgentPermission):
+class OrganizationPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/organizations/allow'
 
-class StoragesPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/storages/allow'
+class CloudStoragePermission(OpenPolicyAgentPermission):
+    url = settings.OPA_DATA_URL + '/cloudstorages/allow'
 
-class UsersPermission(OpenPolicyAgentPermission):
+class UserPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/users/allow'
 
-class ProjectsPermission(OpenPolicyAgentPermission):
+class ProjectPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/projects/allow'
 
-class TasksPermission(OpenPolicyAgentPermission):
+class TaskPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/tasks/allow'
 
-class JobsPermission(OpenPolicyAgentPermission):
+class JobPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/jobs/allow'

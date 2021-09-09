@@ -1,3 +1,4 @@
-from django.shortcuts import render
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
 
-# Create your views here.

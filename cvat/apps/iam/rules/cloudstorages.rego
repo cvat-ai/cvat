@@ -1,4 +1,4 @@
-package storages
+package cloudstorages
 import data.utils
 
 default allow = false

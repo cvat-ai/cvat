@@ -4,7 +4,6 @@ from rest_framework import serializers
 
 from django.conf import settings
 
-
 class RegisterSerializerEx(RegisterSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)

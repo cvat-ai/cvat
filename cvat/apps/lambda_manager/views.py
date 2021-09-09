@@ -543,9 +543,7 @@ class FunctionViewSet(viewsets.ViewSet):
     lookup_field = 'func_id'
 
     def get_permissions(self):
-        permissions = [IsAuthenticated, LambdaPermission]
-
-        return [perm() for perm in permissions]
+        return super().get_permissions() + [LambdaPermission()]
 
     @return_response()
     def list(self, request):
@@ -578,9 +576,7 @@ class FunctionViewSet(viewsets.ViewSet):
 
 class RequestViewSet(viewsets.ViewSet):
     def get_permissions(self):
-        permissions = [IsAuthenticated]
-
-        return [perm() for perm in permissions]
+        return super().get_permissions() + [LambdaPermission()]
 
     @return_response()
     def list(self, request):
