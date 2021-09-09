@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from packaging import version
+import shutil
 import subprocess
 
+from packaging import version
 import git
 import toml
 
@@ -32,6 +33,14 @@ def generate_versioning_config(filename, versions, url_prefix=''):
         write_version_item(f, 'Latest version', '{}/'.format(url_prefix))
         for v in versions:
             write_version_item(f, v, '{}/{}'.format(url_prefix, v))
+
+def git_checkout(tagname, cwd):
+    docs_dir = os.path.join(cwd, 'site', 'content', 'en', 'docs')
+    shutil.rmtree(docs_dir)
+    repo.git.checkout(tagname, '--', 'site/content/en/docs')
+    images_dir = os.path.join(cwd, 'site', 'content', 'en', 'images')
+    shutil.rmtree(images_dir)
+    repo.git.checkout(tagname, '--', 'site/content/en/images')
 
 def change_version_menu_toml(filename, version):
     data = toml.load(filename)
@@ -63,8 +72,7 @@ def generate_docs(repo, output_dir, tags):
 
     generate_versioning_config(os.path.join(cwd, 'site', 'versioning.toml'), (t.name for t in tags), '/..')
     for tag in tags:
-        repo.git.checkout(tag.name, '--', 'site/content/en/docs')
-        repo.git.checkout(tag.name, '--', 'site/content/en/images')
+        git_checkout(tag.name, cwd)
         destination_dir = os.path.join(output_dir, tag.name)
         change_version_menu_toml(os.path.join(cwd, 'site', 'versioning.toml'), tag.name)
         os.makedirs(destination_dir)
