@@ -16,7 +16,6 @@ import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
 
 interface Props {
     cloudStorage: CloudStorage;
-    manifest: string;
     onSelectFiles: (checkedKeysValue: string[]) => void;
 }
 
@@ -42,7 +41,7 @@ type Files =
     };
 
 export default function CloudStorageFiles(props: Props): JSX.Element {
-    const { cloudStorage, manifest, onSelectFiles } = props;
+    const { cloudStorage, onSelectFiles } = props;
     const dispatch = useDispatch();
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.fetching);
     const content = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.content);
@@ -53,11 +52,10 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
         children: null,
         unparsedChildren: null,
     });
-    // const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
 
     useEffect(() => {
         dispatch(loadCloudStorageContentAsync(cloudStorage));
-    }, [cloudStorage.id, manifest]); // cloudStorage.manifestPath
+    }, [cloudStorage.id, cloudStorage.manifestPath]);
 
     const parseContent = (mass: string[], root = ''): Map<string, DataStructure> => {
         const data: Map<string, DataStructure> = new Map();
@@ -124,10 +122,6 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
             resolve();
         });
 
-    // const onExpand = (expandedKeysValue: React.Key[]): void => {
-    //     setExpandedKeys(expandedKeys.map((key: ReactText): string => key.toLocaleString()));
-    // };
-
     useEffect(() => {
         if (content) {
             const children = parseContent(content);
@@ -145,23 +139,24 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
         }
     }, [content]);
 
-    useEffect(() => {
-        const prepareNodes = (data: Map<string, DataStructure>, nodes: DataNode[]): DataNode[] => {
-            for (const [key, value] of data) {
-                const node: DataNode = {
-                    title: value.name,
-                    key,
-                    isLeaf: !value.children && !value.unparsedChildren,
-                    disabled: !!value.unparsedChildren,
-                    children: [],
-                };
-                if (value.children) {
-                    node.children = prepareNodes(value.children, []);
-                }
-                nodes.push(node);
+    const prepareNodes = (data: Map<string, DataStructure>, nodes: DataNode[]): DataNode[] => {
+        for (const [key, value] of data) {
+            const node: DataNode = {
+                title: value.name,
+                key,
+                isLeaf: !value.children && !value.unparsedChildren,
+                disabled: !!value.unparsedChildren,
+                children: [],
+            };
+            if (value.children) {
+                node.children = prepareNodes(value.children, []);
             }
-            return nodes;
-        };
+            nodes.push(node);
+        }
+        return nodes;
+    };
+
+    useEffect(() => {
         if (initialData.children && content) {
             // TODO: need to optimizate this
             const nodes = prepareNodes(initialData.children, []);
@@ -197,11 +192,10 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                     multiple
                     checkable
                     height={256}
-                    onCheck={(checkedKeys: Files) => onSelectFiles((checkedKeys as string[]).concat([manifest]))}
-                    // onExpand={(expandedKeysValue: React.Key[]) => onExpand(expandedKeysValue)}
+                    onCheck={(checkedKeys: Files) => onSelectFiles((checkedKeys as string[])
+                        .concat([cloudStorage.manifestPath]))}
                     loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                     treeData={treeData}
-                    // defaultCheckedKeys={}
                 />
             ) : (
                 <Empty className='cvat-empty-cloud-storages-tree' description='The storage is empty' />
