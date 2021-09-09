@@ -11,12 +11,15 @@ import Spin from 'antd/lib/spin';
 import Alert from 'antd/lib/alert';
 import Empty from 'antd/lib/empty';
 import { EventDataNode } from 'antd/lib/tree';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import Divider from 'antd/lib/divider';
 import { CloudStorage, CombinedState } from 'reducers/interfaces';
 import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
 
 interface Props {
     cloudStorage: CloudStorage;
     onSelectFiles: (checkedKeysValue: string[]) => void;
+    selectedFiles: string[];
 }
 
 interface DataNode {
@@ -41,7 +44,7 @@ type Files =
     };
 
 export default function CloudStorageFiles(props: Props): JSX.Element {
-    const { cloudStorage, onSelectFiles } = props;
+    const { cloudStorage, selectedFiles, onSelectFiles } = props;
     const dispatch = useDispatch();
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.fetching);
     const content = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.content);
@@ -187,16 +190,30 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
     return (
         <>
             {treeData.length ? (
-                <Tree.DirectoryTree
-                    selectable={false}
-                    multiple
-                    checkable
-                    height={256}
-                    onCheck={(checkedKeys: Files) => onSelectFiles((checkedKeys as string[])
-                        .concat([cloudStorage.manifestPath]))}
-                    loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
-                    treeData={treeData}
-                />
+                <>
+                    <Checkbox
+                        className='cvat-cloud-storage-files-checkbox'
+                        onChange={(event: CheckboxChangeEvent) => {
+                            if (event.target.checked) {
+                                onSelectFiles((content as string[]).concat([cloudStorage.manifestPath]));
+                            } else onSelectFiles([]);
+                        }}
+                    >
+                        Select all
+                    </Checkbox>
+                    <Divider className='cvat-divider' />
+                    <Tree.DirectoryTree
+                        selectable={false}
+                        multiple
+                        checkable
+                        height={256}
+                        onCheck={(checkedKeys: Files) => onSelectFiles((checkedKeys as string[])
+                            .concat([cloudStorage.manifestPath]))}
+                        loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
+                        treeData={treeData}
+                        checkedKeys={selectedFiles}
+                    />
+                </>
             ) : (
                 <Empty className='cvat-empty-cloud-storages-tree' description='The storage is empty' />
             )}

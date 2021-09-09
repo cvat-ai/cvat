@@ -254,7 +254,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderCloudStorageSelector(): JSX.Element {
-        const { cloudStorage } = this.state;
+        const { cloudStorage, files } = this.state;
         return (
             <Tabs.TabPane
                 key='cloudStorage'
@@ -264,6 +264,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 <CloudStorageTab
                     onSelectFiles={this.onSelectCloudStorageFiles}
                     cloudStorage={cloudStorage}
+                    selectedFiles={files.cloudStorage.filter((item) => !item.endsWith('manifest.jsonl'))}
                     onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
                         this.setState({ cloudStorage: _cloudStorage });
                     }}

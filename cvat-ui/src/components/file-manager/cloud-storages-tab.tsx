@@ -20,6 +20,7 @@ import CloudStorageFiles from './cloud-storages-files';
 interface Props {
     formRef: any;
     cloudStorage: CloudStorage | null;
+    selectedFiles: string[];
     onSelectFiles: (files: string[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
@@ -52,7 +53,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
     const [list, setList] = useState<CloudStorage[]>([]);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
     const {
-        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage,
+        formRef, cloudStorage, selectedFiles, onSelectFiles, onSelectCloudStorage,
     } = props;
 
     useEffect(() => {
@@ -165,6 +166,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 >
                     <CloudStorageFiles
                         cloudStorage={cloudStorage}
+                        selectedFiles={selectedFiles}
                         onSelectFiles={onSelectFiles}
                     />
                 </Form.Item>
