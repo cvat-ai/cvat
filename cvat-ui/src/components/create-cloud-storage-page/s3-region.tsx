@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Divider from 'antd/lib/divider';
 import Select from 'antd/lib/select';
 import { PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
@@ -33,23 +33,6 @@ export default function S3Region(props: Props): JSX.Element {
     const [regions, setRegions] = useState<Map<string, string>>(prepareDefaultRegions());
     const [newRegionKey, setNewRegionKey] = useState<string>('');
     const [newRegionName, setNewRegionName] = useState<string>('');
-    const [regionOptions, setRegionOptions] = useState<JSX.Element[]>([]);
-
-    useEffect(() => {
-        if (regions) {
-            setRegionOptions(
-                Array.from(regions.entries()).map(
-                    ([key, value]): JSX.Element => (
-                        <Option key={key} value={value}>
-                            {value}
-                        </Option>
-                    ),
-                ),
-            );
-        } else {
-            setRegionOptions([]);
-        }
-    }, [regions.size]);
 
     const handleAddingRegion = (): void => {
         if (!newRegionKey || !newRegionName) {
@@ -57,7 +40,12 @@ export default function S3Region(props: Props): JSX.Element {
                 message: 'Incorrect region',
                 className: 'cvat-incorrect-add-region-notification',
             });
-        } else if (!regions.has(newRegionKey)) {
+        } else if (regions.has(newRegionKey)) {
+            notification.warning({
+                message: 'This region already exists',
+                className: 'cvat-incorrect-add-region-notification',
+            });
+        } else {
             const regionsCopy = regions;
             setRegions(regionsCopy.set(newRegionKey, newRegionName));
             setNewRegionKey('');
@@ -116,7 +104,15 @@ export default function S3Region(props: Props): JSX.Element {
                 )}
                 onSelect={(_, instance) => onSelectRegion(instance.key)}
             >
-                {regionOptions}
+                {
+                    Array.from(regions.entries()).map(
+                        ([key, value]): JSX.Element => (
+                            <Option key={key} value={value}>
+                                {value}
+                            </Option>
+                        ),
+                    )
+                }
             </Select>
         </Form.Item>
     );
