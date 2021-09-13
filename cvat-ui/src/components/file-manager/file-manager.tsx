@@ -33,6 +33,7 @@ interface State {
     expandedKeys: string[];
     active: 'local' | 'share' | 'remote' | 'cloudStorage';
     cloudStorage: CloudStorage | null;
+    potentialCloudStorage: string;
 }
 
 interface Props {
@@ -56,6 +57,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 cloudStorage: [],
             },
             cloudStorage: null,
+            potentialCloudStorage: '',
             expandedKeys: [],
             active: 'local',
         };
@@ -112,6 +114,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 cloudStorage: [],
             },
             cloudStorage: null,
+            potentialCloudStorage: '',
         });
     }
 
@@ -254,7 +257,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderCloudStorageSelector(): JSX.Element {
-        const { cloudStorage, files } = this.state;
+        const { cloudStorage, potentialCloudStorage, files } = this.state;
         return (
             <Tabs.TabPane
                 key='cloudStorage'
@@ -262,13 +265,17 @@ export class FileManager extends React.PureComponent<Props, State> {
                 tab={<span> Cloud Storage </span>}
             >
                 <CloudStorageTab
-                    onSelectFiles={this.onSelectCloudStorageFiles}
+                    formRef={this.cloudStorageTabFormRef}
                     cloudStorage={cloudStorage}
                     selectedFiles={files.cloudStorage.filter((item) => !item.endsWith('manifest.jsonl'))}
                     onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
                         this.setState({ cloudStorage: _cloudStorage });
                     }}
-                    formRef={this.cloudStorageTabFormRef}
+                    searchPhrase={potentialCloudStorage}
+                    setSearchPhrase={(_potentialCloudStorage: string) => {
+                        this.setState({ potentialCloudStorage: _potentialCloudStorage });
+                    }}
+                    onSelectFiles={this.onSelectCloudStorageFiles}
                 />
             </Tabs.TabPane>
         );

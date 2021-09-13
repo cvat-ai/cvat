@@ -20,6 +20,8 @@ import CloudStorageFiles from './cloud-storages-files';
 interface Props {
     formRef: any;
     cloudStorage: CloudStorage | null;
+    searchPhrase: string;
+    setSearchPhrase: (searchPhrase: string) => void;
     selectedFiles: string[];
     onSelectFiles: (files: string[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
@@ -49,9 +51,9 @@ const searchCloudStoragesWrapper = debounce((phrase, setList) => {
 }, 500);
 
 export default function CloudStorageTab(props: Props): JSX.Element {
+    const { searchPhrase, setSearchPhrase } = props;
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
     const [list, setList] = useState<CloudStorage[]>([]);
-    const [searchPhrase, setSearchPhrase] = useState('');
     const {
         formRef, cloudStorage, selectedFiles, onSelectFiles, onSelectCloudStorage,
     } = props;
@@ -101,7 +103,6 @@ export default function CloudStorageTab(props: Props): JSX.Element {
         }
     };
 
-    // todo: clear this form after the task was created
     return (
         <Form ref={formRef} className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
             <Form.Item
