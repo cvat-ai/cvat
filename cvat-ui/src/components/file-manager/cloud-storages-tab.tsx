@@ -51,10 +51,11 @@ const searchCloudStoragesWrapper = debounce((phrase, setList) => {
 export default function CloudStorageTab(props: Props): JSX.Element {
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
     const [list, setList] = useState<CloudStorage[]>([]);
-    const [searchPhrase, setSearchPhrase] = useState<string>('');
+    const [searchPhrase, setSearchPhrase] = useState('');
     const {
         formRef, cloudStorage, selectedFiles, onSelectFiles, onSelectCloudStorage,
     } = props;
+    const [selectedManifest, setSelectedManifest] = useState<string | null>(null);
 
     useEffect(() => {
         searchCloudStorages({}).then((data) => {
@@ -73,6 +74,18 @@ export default function CloudStorageTab(props: Props): JSX.Element {
         }
     }, [searchPhrase, initialList]);
 
+    useEffect(() => {
+        if (cloudStorage) {
+            setSelectedManifest(cloudStorage.manifests[0]);
+        }
+    }, [cloudStorage]);
+
+    useEffect(() => {
+        if (selectedManifest) {
+            cloudStorage.manifestPath = selectedManifest;
+        }
+    }, [selectedManifest]);
+
     const onBlur = (): void => {
         if (!searchPhrase && cloudStorage) {
             onSelectCloudStorage(null);
@@ -86,10 +99,6 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 onSelectCloudStorage(potentialStorage);
             }
         }
-    };
-
-    const onSelectManifest = (value: string): void => {
-        cloudStorage.manifestPath = value;
     };
 
     // todo: clear this form after the task was created
@@ -132,6 +141,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                         onSelectCloudStorage(selectedCloudStorage);
                         setSearchPhrase(selectedCloudStorage?.displayName || '');
                     }}
+                    allowClear
                 >
                     <Input />
                 </AutoComplete>
@@ -142,10 +152,10 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     label='Select manifest file'
                     name='manifestSelect'
                     rules={[{ required: true, message: 'Please, specify a manifest file' }]}
-                    initialValue={cloudStorage.manifestPath}
+                    initialValue={cloudStorage.manifests[0]}
                 >
                     <Select
-                        onSelect={(value: string) => onSelectManifest(value)}
+                        onSelect={(value: string) => setSelectedManifest(value)}
                     >
                         {cloudStorage.manifests.map(
                             (manifest: string): JSX.Element => (
@@ -158,7 +168,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 </Form.Item>
             ) : null}
 
-            {cloudStorage && cloudStorage.manifestPath ? (
+            {cloudStorage && selectedManifest ? (
                 <Form.Item
                     label='Files'
                     name='cloudStorageFiles'
@@ -166,6 +176,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 >
                     <CloudStorageFiles
                         cloudStorage={cloudStorage}
+                        selectedManifest={selectedManifest}
                         selectedFiles={selectedFiles}
                         onSelectFiles={onSelectFiles}
                     />

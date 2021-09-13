@@ -18,6 +18,7 @@ import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
 
 interface Props {
     cloudStorage: CloudStorage;
+    selectedManifest: string;
     onSelectFiles: (checkedKeysValue: string[]) => void;
     selectedFiles: string[];
 }
@@ -44,7 +45,9 @@ type Files =
     };
 
 export default function CloudStorageFiles(props: Props): JSX.Element {
-    const { cloudStorage, selectedFiles, onSelectFiles } = props;
+    const {
+        cloudStorage, selectedManifest, selectedFiles, onSelectFiles,
+    } = props;
     const dispatch = useDispatch();
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.fetching);
     const content = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.content);
@@ -56,9 +59,11 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
         unparsedChildren: null,
     });
 
+    const [checkedAll, setCheckedAll] = useState(false);
+
     useEffect(() => {
         dispatch(loadCloudStorageContentAsync(cloudStorage));
-    }, [cloudStorage.id, cloudStorage.manifestPath]);
+    }, [cloudStorage.id, selectedManifest]);
 
     const parseContent = (mass: string[], root = ''): Map<string, DataStructure> => {
         const data: Map<string, DataStructure> = new Map();
@@ -169,6 +174,15 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
         }
     }, [initialData]);
 
+    const onChangeCheckedAll = (checked: boolean): void => {
+        setCheckedAll(checked);
+        if (checked) {
+            onSelectFiles((content as string[]).concat([selectedManifest]));
+        } else {
+            onSelectFiles([]);
+        }
+    };
+
     if (isFetching) {
         return (
             <Row className='cvat-create-task-page-empty-cloud-storage' justify='center' align='middle'>
@@ -193,11 +207,8 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                 <>
                     <Checkbox
                         className='cvat-cloud-storage-files-checkbox'
-                        onChange={(event: CheckboxChangeEvent) => {
-                            if (event.target.checked) {
-                                onSelectFiles((content as string[]).concat([cloudStorage.manifestPath]));
-                            } else onSelectFiles([]);
-                        }}
+                        onChange={(event: CheckboxChangeEvent) => onChangeCheckedAll(event.target.checked)}
+                        checked={checkedAll}
                     >
                         Select all
                     </Checkbox>
@@ -207,8 +218,15 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                         multiple
                         checkable
                         height={256}
-                        onCheck={(checkedKeys: Files) => onSelectFiles((checkedKeys as string[])
-                            .concat([cloudStorage.manifestPath]))}
+                        onCheck={(checkedKeys: Files) => {
+                            const checkedFiles = (checkedKeys as string[]).filter((f) => !f.endsWith('/'));
+                            if (checkedFiles.length === (content as string[]).length) {
+                                setCheckedAll(true);
+                            } else if (checkedAll) {
+                                setCheckedAll(false);
+                            }
+                            onSelectFiles(checkedFiles.concat([selectedManifest]));
+                        }}
                         loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                         treeData={treeData}
                         checkedKeys={selectedFiles}
