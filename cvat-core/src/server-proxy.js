@@ -595,8 +595,10 @@
                 }
 
                 const taskData = new FormData();
-                // TODO remove
-                const file = taskDataSpec.client_files[0];
+
+                const clientFile = taskDataSpec.client_files[0];
+                const clientFiles = taskDataSpec.client_files;
+                const uploadUsingChunks = clientFiles.length === 1;
                 delete taskDataSpec.client_files;
                 for (const [key, value] of Object.entries(taskDataSpec)) {
                     if (Array.isArray(value)) {
@@ -622,38 +624,95 @@
                     throw generateError(errorData);
                 }
 
-                onUpdate('The data are being uploaded to the server..');
-                const chunkSize = 1024 * 1024 * 10; // 10 mb
-                const totalChunks = Math.ceil(file.size / chunkSize);
-                let currentChunkNumber = 1;
-                console.log(totalChunks, file.size, file);
-                async function upload() {
-                    const prevChunkNumber = currentChunkNumber - 1;
-                    const fileChunk = file.slice(prevChunkNumber * chunkSize, Math.min(prevChunkNumber * chunkSize + chunkSize, file.size));
-                    taskData.append('file_chunk', fileChunk);
-                    taskData.append('current_chunk', currentChunkNumber);
-                    taskData.append('file_name', file.name);
-                    taskData.append('end_of_upload', currentChunkNumber >= totalChunks);
-                    taskData.append('chunk_file', true);
-                    try {
-                        console.log('uploading chunk number', currentChunkNumber, ` from ${prevChunkNumber * chunkSize}
-                        to ${prevChunkNumber * chunkSize + chunkSize}`);
-                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
-                            proxy: config.proxy,
-                        });
-                        currentChunkNumber++;
-                        if (currentChunkNumber <= totalChunks) upload();
-                    } catch (errorData) {
+                onUpdate('The data are being uploaded to the server 0%');
+
+                async function chunkUpload(file) {
+                    const chunkSize = 1024 * 1024 * 10; // 10 mb
+                    const totalChunks = Math.ceil(file.size / chunkSize);
+                    let currentChunkNumber = 1;
+                    console.log(totalChunks, file.size, file);
+                    async function upload() {
+                        const prevChunkNumber = currentChunkNumber - 1;
+                        const fileChunk = file.slice(prevChunkNumber * chunkSize, Math.min(prevChunkNumber * chunkSize + chunkSize, file.size));
+                        taskData.set('client_files[0]', fileChunk);
+                        taskData.set('chunk_file_name', file.name);
+                        taskData.set('end_of_upload', currentChunkNumber >= totalChunks);
+                        taskData.set('use_chunk_upload', true);
                         try {
-                            await deleteTask(response.data.id);
-                        } catch (_) {
-                            // ignore
+                            await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
+                                proxy: config.proxy,
+                            });
+                            onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
+                            currentChunkNumber++;
+                            if (currentChunkNumber <= totalChunks) await upload();
+                        } catch (errorData) {
+                            try {
+                                await deleteTask(response.data.id);
+                            } catch (_) {
+                                // ignore
+                            }
+                            throw generateError(errorData);
                         }
-                        throw generateError(errorData);
                     }
+                    await upload();
                 }
 
-                await upload();
+                async function bulkUpload(files) {
+                    const requestLimit = 1024 * 1024; // 1 mb
+                    const fileGroups = [];
+                    let currentGroup = [];
+                    let currentGroupSize = 0;
+                    for (const file of files) {
+                        if (requestLimit - currentGroupSize >= file.size) {
+                            currentGroup.push(file);
+                            currentGroupSize += file.size;
+                        } else {
+                            fileGroups.push(currentGroup);
+                            currentGroupSize = file.size;
+                            currentGroup = [file];
+                        }
+                    }
+                    fileGroups.push(currentGroup);
+                    const totalChunks = fileGroups.length;
+                    console.log(fileGroups);
+                    let currentChunkNumber = 1;
+                    async function upload() {
+                        if (currentChunkNumber > 1) {
+                            fileGroups[currentChunkNumber - 2].forEach((element, idx) => {
+                                taskData.delete(`client_files[${idx}]`);
+                            });
+                        }
+                        fileGroups[currentChunkNumber - 1].forEach((element, idx) => {
+                            taskData.set(`client_files[${idx}]`, element);
+                        });
+                        taskData.set('end_of_upload', currentChunkNumber >= totalChunks);
+                        taskData.set('use_chunk_upload', false);
+                        try {
+                            console.log('uploading group', fileGroups[currentChunkNumber - 1]);
+                            await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
+                                proxy: config.proxy,
+                            });
+                            onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
+                            currentChunkNumber++;
+                            if (currentChunkNumber <= totalChunks) await upload();
+                        } catch (errorData) {
+                            try {
+                                await deleteTask(response.data.id);
+                            } catch (_) {
+                                // ignore
+                            }
+                            throw generateError(errorData);
+                        }
+                    }
+                    await upload();
+                }
+
+
+                if (uploadUsingChunks) {
+                    await chunkUpload(clientFile);
+                } else {
+                    await bulkUpload(clientFiles);
+                }
 
                 try {
                     await wait(response.data.id);

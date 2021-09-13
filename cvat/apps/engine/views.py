@@ -642,23 +642,31 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if db_task.data:
                 return Response(data='Adding more data is not supported',
                                 status=status.HTTP_400_BAD_REQUEST)
+            serializer = DataSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            data = {k: v for k, v in serializer.validated_data.items()}
+            print(data)
             # temp directory
             tmp_path = os.path.join('./data/tmp', pk)
             os.makedirs(tmp_path, exist_ok=True)
-            if request.data.get('chunk_file', False):
+            if data.get('use_chunk_upload'):
                 # write chunk
-                with open(os.path.join(tmp_path, request.data.get('file_name')), 'ab+') as destination:
-                    destination.write(request.data.get('file_chunk').read())
+                with open(os.path.join(tmp_path, data.get('chunk_file_name')), 'ab+') as destination:
+                    destination.write(data.get('client_files')[0]['file'].read())
             else:
                 # write each file
-                pass
-            # response if not end
-            if not request.data.get('end_of_upload', False):
-                return Response(data='Chunk '+request.data.get('current_chunk')+' is delivered', status=status.HTTP_202_ACCEPTED)
-            tmp_files = [file for file in os.listdir(tmp_path) if os.path.isfile(file)]
+                l = data.get('client_files')
+                print(l)
+                for client_file in l:
+                    with open(os.path.join(tmp_path, client_file['file'].name), 'ab+') as destination:
+                        destination.write(client_file['file'].read())
+            if not data.get('end_of_upload'):
+                return Response(data='Chunk is delivered', status=status.HTTP_202_ACCEPTED)
+            tmp_files = [os.path.join(tmp_path, file) for file in os.listdir(tmp_path) if os.path.isfile(os.path.join(tmp_path, file))]
+            print(tmp_files)
             client_files = {'client_files[{}]'.format(i): File(open(f, 'rb')) for i, f in enumerate(tmp_files)}
+            print(client_files)
             request.data.update(client_files)
-            print(request.data)
 
             serializer = DataSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
