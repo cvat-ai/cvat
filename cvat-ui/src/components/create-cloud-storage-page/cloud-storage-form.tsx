@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useState, useEffect, RefObject, useRef,
+    useState, useEffect, useRef,
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Form, { FormInstance } from 'antd/lib/form';
+import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
@@ -24,7 +24,6 @@ import ManifestsManager from './manifests-manager';
 
 export interface Props {
     cloudStorage?: CloudStorage;
-    formRef: RefObject<FormInstance>;
 }
 
 type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token';
@@ -46,9 +45,10 @@ interface CloudStorageForm {
 }
 
 export default function CreateCloudStorageForm(props: Props): JSX.Element {
-    const { cloudStorage, formRef } = props;
+    const { cloudStorage } = props;
     const dispatch = useDispatch();
     const history = useHistory();
+    const [form] = Form.useForm();
     const shouldShowCreationNotification = useRef(false);
     const shouldShowUpdationNotification = useRef(false);
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
@@ -104,7 +104,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             }
         }
 
-        formRef.current?.setFieldsValue(fieldsValue);
+        form.setFieldsValue(fieldsValue);
     }
 
     function onReset(): void {
@@ -113,7 +113,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         } else {
             setManifestNames([]);
             setSelectedRegion(undefined);
-            formRef.current?.resetFields();
+            form.resetFields();
         }
     }
 
@@ -174,50 +174,48 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
     const onSubmit = async (): Promise<void> => {
         let cloudStorageData: Record<string, any> = {};
-        if (formRef.current) {
-            const formValues = await formRef.current.validateFields();
-            cloudStorageData = { ...formValues };
-            if (formValues.region !== undefined) {
-                delete cloudStorageData.region;
-                cloudStorageData.specific_attributes = `region=${selectedRegion}`;
-            }
+        const formValues = await form.validateFields();
+        cloudStorageData = { ...formValues };
+        if (formValues.region !== undefined) {
+            delete cloudStorageData.region;
+            cloudStorageData.specific_attributes = `region=${selectedRegion}`;
+        }
 
-            if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
-                delete cloudStorageData.SAS_token;
-                cloudStorageData.session_token = formValues.SAS_token;
-            }
+        if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
+            delete cloudStorageData.SAS_token;
+            cloudStorageData.session_token = formValues.SAS_token;
+        }
 
-            if (cloudStorageData.manifests && cloudStorageData.manifests.length) {
-                delete cloudStorageData.manifests;
-                cloudStorageData.manifests = formRef.current
-                    .getFieldValue('manifests')
-                    .map((manifest: any): string => manifest.name);
-            }
+        if (cloudStorageData.manifests && cloudStorageData.manifests.length) {
+            delete cloudStorageData.manifests;
+            cloudStorageData.manifests = form
+                .getFieldValue('manifests')
+                .map((manifest: any): string => manifest.name);
+        }
 
-            if (cloudStorage) {
-                cloudStorageData.id = cloudStorage.id;
-                // TODO: it may be coincide with the real account name
-                if (cloudStorageData.account_name === fakeCredentialsData.accountName) {
-                    delete cloudStorageData.account_name;
-                }
-                if (cloudStorageData.key === fakeCredentialsData.key) {
-                    delete cloudStorageData.key;
-                }
-                if (cloudStorageData.secret_key === fakeCredentialsData.secretKey) {
-                    delete cloudStorageData.secret_key;
-                }
-                if (cloudStorageData.session_token === fakeCredentialsData.sessionToken) {
-                    delete cloudStorageData.session_token;
-                }
-                dispatch(updateCloudStorageAsync(cloudStorageData));
-            } else {
-                dispatch(createCloudStorageAsync(cloudStorageData));
+        if (cloudStorage) {
+            cloudStorageData.id = cloudStorage.id;
+            // TODO: it may be coincide with the real account name
+            if (cloudStorageData.account_name === fakeCredentialsData.accountName) {
+                delete cloudStorageData.account_name;
             }
+            if (cloudStorageData.key === fakeCredentialsData.key) {
+                delete cloudStorageData.key;
+            }
+            if (cloudStorageData.secret_key === fakeCredentialsData.secretKey) {
+                delete cloudStorageData.secret_key;
+            }
+            if (cloudStorageData.session_token === fakeCredentialsData.sessionToken) {
+                delete cloudStorageData.session_token;
+            }
+            dispatch(updateCloudStorageAsync(cloudStorageData));
+        } else {
+            dispatch(createCloudStorageAsync(cloudStorageData));
         }
     };
 
     const resetCredentialsValues = (): void => {
-        formRef.current?.setFieldsValue({
+        form.setFieldsValue({
             key: undefined,
             secret_key: undefined,
             session_token: undefined,
@@ -227,8 +225,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
     const onFocusCredentialsItem = (credential: CredentialsCamelCaseNames, key: CredentialsFormNames): void => {
         // reset fake credential when updating a cloud storage and cursor is in this field
-        if (cloudStorage && formRef.current?.getFieldValue(key) === fakeCredentialsData[credential]) {
-            formRef.current.setFieldsValue({
+        if (cloudStorage && form.getFieldValue(key) === fakeCredentialsData[credential]) {
+            form.setFieldsValue({
                 [key]: undefined,
             });
         }
@@ -240,8 +238,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         setVisibility: any,
     ): void => {
         // set fake credential when updating a cloud storage and cursor disappears from the field and value not changed
-        if (cloudStorage && formRef.current && !formRef.current.getFieldValue(key)) {
-            formRef.current.setFieldsValue({
+        if (cloudStorage && !form.getFieldValue(key)) {
+            form.setFieldsValue({
                 [key]: fakeCredentialsData[credential],
             });
             setVisibility(false);
@@ -446,7 +444,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     };
 
     return (
-        <Form className='cvat-cloud-storage-form' layout='horizontal' ref={formRef}>
+        <Form className='cvat-cloud-storage-form' layout='horizontal' form={form}>
             <Form.Item
                 {...commonProps}
                 label='Display name'
@@ -469,7 +467,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     onSelect={(value: ProviderType) => {
                         setProviderType(value);
                         setCredentialsType(null);
-                        formRef.current?.resetFields(['credentials_type']);
+                        form.resetFields(['credentials_type']);
                     }}
                 >
                     <Select.Option value={ProviderType.AWS_S3_BUCKET}>
@@ -488,7 +486,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             </Form.Item>
             {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
             {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
-            <ManifestsManager formRef={formRef} manifestNames={manifestNames} setManifestNames={setManifestNames} />
+            <ManifestsManager form={form} manifestNames={manifestNames} setManifestNames={setManifestNames} />
             <Row justify='end'>
                 <Col>
                     <Button

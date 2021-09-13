@@ -11,7 +11,6 @@ import Spin from 'antd/lib/spin';
 import Result from 'antd/lib/result';
 import Text from 'antd/lib/typography/Text';
 
-import { FormInstance } from 'antd/lib/form';
 import { CombinedState } from 'reducers/interfaces';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import CreateCloudStorageForm from 'components/create-cloud-storage-page/cloud-storage-form';
@@ -22,7 +21,6 @@ interface ParamType {
 
 export default function UpdateCloudStoragePageComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const formRef = React.createRef<FormInstance>();
     const cloudStorageId = +useParams<ParamType>().id;
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const isInitialized = useSelector((state: CombinedState) => state.cloudStorages.initialized);
@@ -55,10 +53,7 @@ export default function UpdateCloudStoragePageComponent(): JSX.Element {
         <Row justify='center' align='top' className='cvat-update-cloud-storage-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>{`Update cloud storage #${cloudStorageId}`}</Text>
-                <CreateCloudStorageForm
-                    cloudStorage={cloudStorage}
-                    formRef={formRef}
-                />
+                <CreateCloudStorageForm cloudStorage={cloudStorage} />
             </Col>
         </Row>
     );

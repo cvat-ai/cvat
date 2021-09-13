@@ -13,13 +13,13 @@ import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
 
 interface Props {
-    formRef: any;
+    form: any;
     manifestNames: string[];
     setManifestNames: (manifestNames: string[]) => void;
 }
 
 export default function ManifestsManager(props: Props): JSX.Element {
-    const { formRef, manifestNames, setManifestNames } = props;
+    const { form, manifestNames, setManifestNames } = props;
     const maxManifestsCount = useRef(5);
     const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState(false);
 
@@ -28,7 +28,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
             id: idx,
             name,
         }));
-        formRef.current?.setFieldsValue({
+        form.setFieldsValue({
             manifests: [...newManifestFormItems],
         });
     };
