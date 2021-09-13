@@ -115,7 +115,7 @@ export default function ActionsMenuComponent(props: Props): JSX.Element {
                 {exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
                 Export task
             </Menu.Item>
-            <hr />
+            <Menu.Divider />
             <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
             <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>
         </Menu>
