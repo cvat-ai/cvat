@@ -30,7 +30,7 @@ function prepareDefaultRegions(): Map<string, string> {
 
 export default function S3Region(props: Props): JSX.Element {
     const { selectedRegion, onSelectRegion, internalCommonProps } = props;
-    const [regions, setRegions] = useState<Map<string, string>>(prepareDefaultRegions());
+    const [regions, setRegions] = useState<Map<string, string>>(() => prepareDefaultRegions());
     const [newRegionKey, setNewRegionKey] = useState<string>('');
     const [newRegionName, setNewRegionName] = useState<string>('');
 
