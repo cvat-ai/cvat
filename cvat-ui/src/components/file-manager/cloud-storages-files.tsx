@@ -166,7 +166,6 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
 
     useEffect(() => {
         if (initialData.children && content) {
-            // TODO: need to optimizate this
             const nodes = prepareNodes(initialData.children, []);
             setTreeData(nodes);
         } else {
