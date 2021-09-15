@@ -110,9 +110,6 @@ class AnnotationIR:
                         interpolated_shapes[stop + 1]['outside']:
                     segment_shapes.append(interpolated_shapes[stop + 1])
 
-            # Should delete 'interpolation_shapes' and 'keyframe' keys because
-            # Track and TrackedShape models don't expect these fields
-            del track['interpolated_shapes']
             for shape in segment_shapes:
                 shape.pop('keyframe', None)
 
@@ -429,15 +426,6 @@ class TrackManager(ObjectManager):
             shape["frame"] = end_frame
             shape["outside"] = True
             obj["shapes"].append(shape)
-            # Need to update cached interpolated shapes
-            # because key shapes were changed
-            if obj.get("interpolated_shapes"):
-                last_interpolated_shape = obj["interpolated_shapes"][-1]
-                for frame in range(last_interpolated_shape["frame"] + 1, end_frame):
-                    last_interpolated_shape = deepcopy(last_interpolated_shape)
-                    last_interpolated_shape["frame"] = frame
-                    obj["interpolated_shapes"].append(last_interpolated_shape)
-                obj["interpolated_shapes"].append(shape)
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
@@ -713,9 +701,6 @@ class TrackManager(ObjectManager):
 
             return shapes
 
-        if track.get("interpolated_shapes"):
-            return track["interpolated_shapes"]
-
         shapes = []
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
@@ -742,8 +727,6 @@ class TrackManager(ObjectManager):
             shape["frame"] = end_frame
             shapes.extend(interpolate(prev_shape, shape))
 
-        track["interpolated_shapes"] = shapes
-
         return shapes
 
     @staticmethod
@@ -760,6 +743,5 @@ class TrackManager(ObjectManager):
 
         track["frame"] = min(obj0["frame"], obj1["frame"])
         track["shapes"] = list(sorted(shapes.values(), key=lambda shape: shape["frame"]))
-        track["interpolated_shapes"] = []
 
         return track

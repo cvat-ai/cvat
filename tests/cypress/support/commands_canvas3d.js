@@ -11,16 +11,13 @@ Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noCh
 });
 
 Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
-    cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
-    cy.get('.cvat-draw-cuboid-popover-visible').find('[type="search"]').click({ force: true });
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
-        .within(() => {
-            cy.contains(new RegExp(`^${cuboidCreationParams.labelName}$`)).click();
-        });
+    cy.interactControlButton('draw-cuboid');
+    cy.switchLabel(cuboidCreationParams.labelName, 'draw-cuboid');
     cy.get('.cvat-draw-cuboid-popover-visible').find('button').click();
     cy.get('.cvat-canvas3d-perspective')
         .trigger('mousemove', cuboidCreationParams.x, cuboidCreationParams.y)
         .dblclick(cuboidCreationParams.x, cuboidCreationParams.y);
     cy.wait(1000); // Waiting for a cuboid creation
+    cy.get('.cvat-draw-cuboid-popover-visible').should('not.exist');
+    cy.get('.cvat-draw-cuboid-popover').should('be.hidden');
 });
