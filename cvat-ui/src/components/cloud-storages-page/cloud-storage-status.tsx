@@ -2,31 +2,18 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
-
-import { CloudStorage, CombinedState } from 'reducers/interfaces';
-import { getCloudStorageStatusAsync } from 'actions/cloud-storage-actions';
 import { StorageStatuses } from '../../utils/enums';
 
 interface Props {
-    cloudStorage: CloudStorage;
+    status: string;
 }
 
 export default function Status(props: Props): JSX.Element {
-    const { cloudStorage } = props;
-    const dispatch = useDispatch();
-    const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.getsStatus.fetching);
-    const statuses = useSelector((state: CombinedState) => state.cloudStorages.currentStatuses);
-    const [status] = statuses.filter((item: any) => item.id === cloudStorage.id).map((item): string => item.status);
-
-    useEffect(() => {
-        if (!status && !isFetching) {
-            dispatch(getCloudStorageStatusAsync(cloudStorage));
-        }
-    }, [isFetching]);
+    const { status } = props;
+    // TODO: make dynamic loading of statuses separately in the future
 
     return (
         <Paragraph>

@@ -11,7 +11,7 @@ const defaultState: CloudStoragesState = {
     fetching: false,
     count: 0,
     current: [],
-    currentStatuses: [],
+    // currentStatuses: [],
     gettingQuery: {
         page: 1,
         id: null,
@@ -42,12 +42,12 @@ const defaultState: CloudStoragesState = {
             fetching: false,
             error: '',
         },
-        getsStatus: {
-            cloudStorageID: null,
-            status: null,
-            fetching: false,
-            error: '',
-        },
+        // getsStatus: {
+        //     cloudStorageID: null,
+        //     status: null,
+        //     fetching: false,
+        //     error: '',
+        // },
     },
 };
 
@@ -71,15 +71,16 @@ export default (
                 fetching: true,
                 count: 0,
                 current: [],
-                currentStatuses: [],
+                // currentStatuses: [],
             };
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS: {
             const { count, query } = action.payload;
 
-            const combinedWithPreviews = action.payload.array.map(
+            const combined = action.payload.array.map(
                 (cloudStorage: any, index: number): CloudStorage => ({
                     instance: cloudStorage,
                     preview: action.payload.previews[index],
+                    status: action.payload.statuses[index],
                 }),
             );
             return {
@@ -91,7 +92,7 @@ export default (
                     ...defaultState.gettingQuery,
                     ...query,
                 },
-                current: combinedWithPreviews,
+                current: combined,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED: {
@@ -278,53 +279,61 @@ export default (
                 },
             };
         }
-        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS:
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    getsStatus: {
-                        cloudStorageID: null,
-                        status: null,
-                        error: '',
-                        fetching: true,
-                    },
-                },
-            };
-        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS: {
-            const { cloudStorageID, status } = action.payload;
-            const statuses = state.currentStatuses;
-            statuses.push({
-                id: cloudStorageID,
-                status,
-            });
-            return {
-                ...state,
-                currentStatuses: statuses,
-                activities: {
-                    ...state.activities,
-                    getsStatus: {
-                        cloudStorageID,
-                        status,
-                        error: '',
-                        fetching: false,
-                    },
-                },
-            };
-        }
-        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    getsStatus: {
-                        ...state.activities.getsStatus,
-                        error: action.payload.error.toString(),
-                        fetching: false,
-                    },
-                },
-            };
-        }
+        // case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS:
+        //     return {
+        //         ...state,
+        //         activities: {
+        //             ...state.activities,
+        //             getsStatus: {
+        //                 cloudStorageID: null,
+        //                 status: null,
+        //                 error: '',
+        //                 fetching: true,
+        //             },
+        //         },
+        //     };
+        // case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS: {
+        //     const { cloudStorageID, status } = action.payload;
+        //     const statuses = state.currentStatuses;
+        //     const index = statuses.findIndex((item) => item.id === cloudStorageID);
+        //     if (index !== -1) {
+        //         statuses[index] = {
+        //             ...statuses[index],
+        //             status,
+        //         };
+        //     } else {
+        //         statuses.push({
+        //             id: cloudStorageID,
+        //             status,
+        //         });
+        //     }
+        //     return {
+        //         ...state,
+        //         currentStatuses: statuses,
+        //         activities: {
+        //             ...state.activities,
+        //             getsStatus: {
+        //                 cloudStorageID,
+        //                 status,
+        //                 error: '',
+        //                 fetching: false,
+        //             },
+        //         },
+        //     };
+        // }
+        // case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
+        //     return {
+        //         ...state,
+        //         activities: {
+        //             ...state.activities,
+        //             getsStatus: {
+        //                 ...state.activities.getsStatus,
+        //                 error: action.payload.error.toString(),
+        //                 fetching: false,
+        //             },
+        //         },
+        //     };
+        // }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
         }

@@ -36,10 +36,17 @@ const cloudStoragesActions = {
     updateCloudStoragesGettingQuery: (query: Partial<CloudStoragesQuery>) =>
         createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY, { query }),
     getCloudStorages: () => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGES),
-    getCloudStoragesSuccess: (array: any[], previews: string[], count: number, query: Partial<CloudStoragesQuery>) =>
+    getCloudStoragesSuccess: (
+        array: any[],
+        previews: string[],
+        statuses: string[],
+        count: number,
+        query: Partial<CloudStoragesQuery>,
+    ) =>
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS, {
             array,
             previews,
+            statuses,
             count,
             query,
         }),
@@ -104,7 +111,19 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
                 return '';
             }));
 
-        dispatch(cloudStoragesActions.getCloudStoragesSuccess(array, await Promise.all(promises), result.count, query));
+        const statusPromises = array.map((cloudStorage: CloudStorage): string =>
+            (cloudStorage as any).getStatus().catch((error: any) => {
+                dispatch(cloudStoragesActions.getCloudStorageStatusFailed(cloudStorage.id, error));
+                return '';
+            }));
+
+        dispatch(cloudStoragesActions.getCloudStoragesSuccess(
+            array,
+            await Promise.all(promises),
+            await Promise.all(statusPromises),
+            result.count,
+            query,
+        ));
     };
 }
 
@@ -162,14 +181,14 @@ export function loadCloudStorageContentAsync(cloudStorage: CloudStorage): ThunkA
     };
 }
 
-export function getCloudStorageStatusAsync(cloudStorage: CloudStorage): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(cloudStoragesActions.getCloudStorageStatus());
-        try {
-            const result = await cloudStorage.getStatus();
-            dispatch(cloudStoragesActions.getCloudStorageStatusSuccess(cloudStorage.id, result));
-        } catch (error) {
-            dispatch(cloudStoragesActions.getCloudStorageStatusFailed(cloudStorage.id, error));
-        }
-    };
-}
+// export function getCloudStorageStatusAsync(cloudStorage: CloudStorage): ThunkAction {
+//     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+//         dispatch(cloudStoragesActions.getCloudStorageStatus());
+//         try {
+//             const result = await cloudStorage.getStatus();
+//             dispatch(cloudStoragesActions.getCloudStorageStatusSuccess(cloudStorage.id, result));
+//         } catch (error) {
+//             dispatch(cloudStoragesActions.getCloudStorageStatusFailed(cloudStorage.id, error));
+//         }
+//     };
+// }

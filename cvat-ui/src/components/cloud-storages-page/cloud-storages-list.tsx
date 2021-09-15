@@ -12,6 +12,7 @@ import CloudStorageItemComponent from './cloud-storage-item';
 interface Props {
     storages: CloudStorage[];
     previews: string[];
+    statuses: string[];
     totalCount: number;
     page: number;
     onChangePage(page: number): void;
@@ -19,7 +20,7 @@ interface Props {
 
 export default function StoragesList(props: Props): JSX.Element {
     const {
-        storages, previews, totalCount, page, onChangePage,
+        storages, previews, statuses, totalCount, page, onChangePage,
     } = props;
 
     const groupedStorages = storages.reduce(
@@ -28,11 +29,13 @@ export default function StoragesList(props: Props): JSX.Element {
                 acc[acc.length - 1].push({
                     storage,
                     preview: previews[index],
+                    status: statuses[index],
                 });
             } else {
                 acc.push([{
                     storage,
                     preview: previews[index],
+                    status: statuses[index],
                 }]);
             }
 
