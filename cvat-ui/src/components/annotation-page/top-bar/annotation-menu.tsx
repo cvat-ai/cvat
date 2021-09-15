@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -48,14 +48,13 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     const jobStatus = jobInstance.status;
     const taskID = jobInstance.task.id;
 
-    let latestParams: MenuInfo | null = null;
+    const [latestParams, setLatestParams] = useState<MenuInfo | null>(null);
     function onClickMenuWrapper(params: MenuInfo | null, file?: File): void {
         const copyParams = params || latestParams;
         if (!copyParams) {
             return;
         }
-        latestParams = params;
-
+        setLatestParams(params);
         function checkUnsavedChanges(_copyParams: MenuInfo): void {
             if (jobInstance.annotations.hasUnsavedChanges()) {
                 Modal.confirm({
@@ -153,7 +152,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
-        <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
+        <Menu onClick={(info) => onClickMenuWrapper(info as MenuInfo)} className='cvat-annotation-menu' selectable={false}>
             {LoadSubmenu({
                 loaders,
                 loadActivity,
