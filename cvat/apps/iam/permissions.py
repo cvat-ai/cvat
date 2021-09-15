@@ -42,7 +42,7 @@ class OpenPolicyAgentPermission(BasePermission):
         }
 
         if hasattr(obj, "owner_id"):
-            payload.extend({
+            payload.update({
                 "resource": {
                     "owner": {
                         "id": getattr(obj, "owner_id")

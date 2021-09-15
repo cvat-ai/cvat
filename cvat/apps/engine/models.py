@@ -13,6 +13,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.organizations import Organization
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -192,6 +193,8 @@ class Project(models.Model):
     updated_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
+    organization = models.ForeignKey(models.Organization, null=True, default=None,
+        blank=True, on_delete=models.SET_NULL, related_name="projects")
     training_project = models.ForeignKey(TrainingProject, null=True, blank=True, on_delete=models.SET_NULL)
 
     def get_project_dirname(self):
@@ -234,6 +237,9 @@ class Task(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
     dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
     subset = models.CharField(max_length=64, blank=True, default="")
+    organization = models.ForeignKey(models.Organization, null=True, default=None,
+        blank=True, on_delete=models.SET_NULL, related_name="tasks")
+
 
     # Extend default permission model
     class Meta:
@@ -601,6 +607,9 @@ class CloudStorage(models.Model):
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=50, blank=True)
     description = models.TextField(blank=True)
+    organization = models.ForeignKey(models.Organization, null=True, default=None,
+        blank=True, on_delete=models.SET_NULL, related_name="cloudstorages")
+
 
     class Meta:
         default_permissions = ()
