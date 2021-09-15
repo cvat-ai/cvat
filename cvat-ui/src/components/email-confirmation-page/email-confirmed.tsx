@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-
+import './styles.scss';
 /**
  * Component for displaying email confirmation message and then redirecting to the loginpage
  */
@@ -29,15 +29,23 @@ class EmailConfirmationMessage extends React.Component {
     }
     render() {
         return (
-            <div>
-                <h1>Your email is confirmed</h1>
-                <p>
-                    Redirecting you in &nbsp;
-                    <span id='countID'>5</span>
-                    s
-                </p>
-                <Link to='/auth/login' id='link'>Or click this link</Link>
-            </div>
+
+            <section className='ant-layout'>
+                <main className='ant-layout-content'>
+                    <div className='ant-row ant-row-center ant-row-middle' id='email-cnf-container'>
+                        <div className='ant-col ant-col-xs-14 ant-col-sm-14 ant-col-md-10 ant-col-lg-4 ant-col-xl-4'>
+                            <h1>Your email is confirmed</h1>
+                            <p>
+                                Redirecting you in &nbsp;
+                                <span id='countID'>5</span>
+                                s
+                            </p>
+                            <Link to='/auth/login' id='link'>Or click this link</Link>
+                        </div>
+                    </div>
+                </main>
+            </section>
+
         );
     }
 }
