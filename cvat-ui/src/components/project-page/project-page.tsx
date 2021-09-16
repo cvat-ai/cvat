@@ -16,6 +16,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { CombinedState, Task } from 'reducers/interfaces';
 import { getProjectsAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
+import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
@@ -111,6 +112,7 @@ export default function ProjectPageComponent(): JSX.Element {
                     </React.Fragment>
                 ))}
             </Col>
+            <ExportDatasetModal />
             <MoveTaskModal />
             <ModelRunnerDialog />
         </Row>

@@ -110,7 +110,7 @@ Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDe
             cy.get('[type="submit"]').click();
         });
     } else if (issueType === 'Quick issue ...') {
-        cy.get('.cvat-quick-issue-from-latest-item')
+        cy.get('[id="quick_issue_from_latest$Menu"]')
             .should('be.visible')
             .contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
             .click();

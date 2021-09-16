@@ -242,10 +242,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get('body').focus();
-    cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events: none');
+    cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mouseover');
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
@@ -266,27 +263,19 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
             .click(createRectangleParams.thirdX, createRectangleParams.thirdY)
             .click(createRectangleParams.fourthX, createRectangleParams.fourthY);
     }
-    cy.checkPopoverHidden('draw-rectangle');
     cy.checkObjectParameters(createRectangleParams, 'RECTANGLE');
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`)
-        .find('.ant-select-selection-item')
-        .click();
+    cy.get(`.cvat-${objectType}-popover-visible`).find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .find(`.ant-select-item-option[title="${labelName}"]`)
         .click();
 });
 
-Cypress.Commands.add('checkPopoverHidden', (objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`).should('not.exist');
-    cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
-    cy.get(`.cvat-${objectType}-popover`).should('have.attr', 'style').and('include', 'pointer-events: none');
-});
-
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
+    cy.get('.cvat-draw-shape-popover').should('be.hidden');
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -294,7 +283,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
             listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
         }
         const maxId = Math.max(...listCanvasShapeId);
-        cy.get(`#cvat_canvas_shape_${maxId}`).should('be.visible');
+        cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').and('be.visible');
         cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
@@ -329,7 +318,6 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
                 .trigger('keyup', { keyCode: keyCodeN });
         }
     }
-    cy.checkPopoverHidden('draw-points');
     cy.checkObjectParameters(createPointParams, 'POINTS');
 });
 
@@ -378,7 +366,6 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
                 .trigger('keyup', { keyCode: keyCodeN });
         }
     }
-    cy.checkPopoverHidden('draw-polygon');
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
 });
 
@@ -442,7 +429,6 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
         cy.get('.cvat-canvas-container').click(createCuboidParams.thirdX, createCuboidParams.thirdY);
         cy.get('.cvat-canvas-container').click(createCuboidParams.fourthX, createCuboidParams.fourthY);
     }
-    cy.checkPopoverHidden('draw-cuboid');
     cy.checkObjectParameters(createCuboidParams, 'CUBOID');
 });
 
@@ -524,7 +510,6 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
                 .trigger('keyup', { keyCode: keyCodeN });
         }
     }
-    cy.checkPopoverHidden('draw-polyline');
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
 });
 
@@ -733,8 +718,8 @@ Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
 Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) => {
     cy.interactMenu('Export task dataset');
     cy.intercept('GET', `/api/v1/tasks/**/${type}**`).as(as);
-    cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
-    cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
+    cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', format).click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-task').find('[type="checkbox"]').should('not.be.checked').check();

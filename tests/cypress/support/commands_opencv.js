@@ -6,18 +6,10 @@
 
 let selectedValueGlobal = '';
 
-Cypress.Commands.add('interactOpenCVControlButton', () => {
-    cy.get('body').focus();
-    cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
-    cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
-    cy.get('.cvat-opencv-control-popover-visible').should('exist');
-    cy.get('.cvat-opencv-control-popover-visible').should('be.visible');
-    cy.get('.cvat-opencv-control-popover-visible').should('have.attr', 'style').and('not.include', 'pointer-events');
-});
-
 Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
     if (!opencvShapeParams.reDraw) {
-        cy.interactOpenCVControlButton();
+        cy.get('body').focus();
+        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
         cy.switchLabel(opencvShapeParams.labelName, 'opencv-control');
         cy.get('.cvat-opencv-control-popover-visible').within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
@@ -37,11 +29,10 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
             .trigger('keydown', { keyCode: keyCodeN })
             .trigger('keyup', { keyCode: keyCodeN });
     }
-    cy.checkPopoverHidden('opencv-control');
-    cy.opencvCheckObjectParameters('POLYGON');
+    cy.opncvCheckObjectParameters('POLYGON');
 });
 
-Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
+Cypress.Commands.add('opncvCheckObjectParameters', (objectType) => {
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));

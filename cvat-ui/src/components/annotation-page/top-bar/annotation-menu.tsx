@@ -8,6 +8,7 @@ import Modal from 'antd/lib/modal';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
+import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
 
@@ -176,6 +177,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
             )}
             {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
+            <ExportDatasetModal />
         </Menu>
     );
 }

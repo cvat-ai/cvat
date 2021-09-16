@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,10 +61,7 @@ function ReviewContextMenu({
                 >
                     {latestComments.map(
                         (comment: string, id: number): JSX.Element => (
-                            <Menu.Item
-                                className='cvat-context-menu-item cvat-quick-issue-from-latest-item'
-                                key={`${id}`}
-                            >
+                            <Menu.Item className='cvat-context-menu-item' key={`${id}`}>
                                 {comment}
                             </Menu.Item>
                         ),
