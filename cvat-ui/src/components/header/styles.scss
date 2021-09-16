@@ -56,11 +56,3 @@
     margin-left: 16px;
     margin-right: 0;
 }
-
-.cvat-header-menu {
-    > li {
-        span[role='img'] {
-            margin-right: $grid-unit-size;
-        }
-    }
-}

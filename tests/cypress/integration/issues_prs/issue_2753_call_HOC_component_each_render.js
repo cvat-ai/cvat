@@ -51,7 +51,7 @@ context('Call HOC component each render.', () => {
     };
 
     function checkNumberOfPointsValue(objectType, numberOfPoints) {
-        cy.interactControlButton(`draw-${objectType}`);
+        cy.get(`.cvat-draw-${objectType}-control`).trigger('mouseover');
         cy.get(`.cvat-draw-${objectType}-popover-visible`).within(() => {
             cy.get('.cvat-draw-shape-popover-points-selector')
                 .find('input')
