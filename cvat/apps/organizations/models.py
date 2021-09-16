@@ -19,6 +19,7 @@ class Member(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE,
         related_name='members')
     is_active = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(auto_now_add=True)
     role = models.CharField(max_length=1, choices=[
         (WORKER, 'Worker'),
         (SUPERVISOR, 'Supervisor'),

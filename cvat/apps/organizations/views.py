@@ -5,9 +5,9 @@
 from django.utils.functional import SimpleLazyObject
 from django.contrib.auth.models import Group
 from rest_framework import viewsets
-from cvat.apps.iam.permissions import OrganizationPermission
+from cvat.apps.iam.permissions import MemberPermission, OrganizationPermission
 from . import models
-from .serializers import OrganizationSerializer
+from .serializers import MemberSerializer, OrganizationSerializer
 
 
 def get_user_group(request):
@@ -47,4 +47,11 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
+
+class MemberViewSet(viewsets.ModelViewSet):
+    queryset = models.Member.objects.all()
+    serializer_class = MemberSerializer
+
+    def get_permissions(self):
+        return super().get_permissions() + [MemberPermission()]
 
