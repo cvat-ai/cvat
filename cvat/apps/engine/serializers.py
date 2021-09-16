@@ -275,7 +275,7 @@ class DataSerializer(serializers.ModelSerializer):
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     use_chunk_upload = serializers.BooleanField(default=False)
     end_of_upload = serializers.BooleanField(default=False)
-    chunk_file_name = serializers.CharField(default='file.txt')
+    chunk_file_name = serializers.CharField(default='')
 
     class Meta:
         model = models.Data
@@ -306,6 +306,7 @@ class DataSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
+        print('validated data', validated_data, type(validated_data))
         client_files = validated_data.pop('client_files')
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
@@ -315,6 +316,7 @@ class DataSerializer(serializers.ModelSerializer):
         validated_data.pop('use_chunk_upload')
         validated_data.pop('end_of_upload')
         validated_data.pop('chunk_file_name')
+        print('validated data2', validated_data)
         db_data = models.Data.objects.create(**validated_data)
 
         data_path = db_data.get_data_dirname()
@@ -325,10 +327,22 @@ class DataSerializer(serializers.ModelSerializer):
         os.makedirs(db_data.get_original_cache_dirname())
         os.makedirs(db_data.get_upload_dirname())
 
+        upload_dir = db_data.get_upload_dirname()
+        i = 1
+        l = len(client_files)
+        client_files1 = []
+        print('client file all', client_files)
         for f in client_files:
+            print(type(f))
             client_file = models.ClientFile(data=db_data, **f)
-            client_file.save()
-
+            tmp_match = re.search(r"/tmp/\d+/",client_file.file.name)
+            print('client file was', client_file.file.name)
+            if tmp_match:
+                client_file.file.name = os.path.join(upload_dir, client_file.file.name[tmp_match.end():])
+            print('client file', client_file.file.name, i,'/',l)
+            i+=1
+            client_files1.append(client_file)
+        models.ClientFile.objects.bulk_create(client_files1)
         for f in server_files:
             server_file = models.ServerFile(data=db_data, **f)
             server_file.save()
