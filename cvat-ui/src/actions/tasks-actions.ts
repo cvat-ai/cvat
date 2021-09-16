@@ -404,6 +404,7 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
                 };
                 gitPlugin.data.task = taskInstance;
                 gitPlugin.data.repos = data.advanced.repository;
+                gitPlugin.data.format = data.advanced.format;
                 gitPlugin.data.lfs = data.advanced.lfs;
             }
         }
