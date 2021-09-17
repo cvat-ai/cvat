@@ -7,6 +7,5 @@ from .views import MemberViewSet, OrganizationViewSet
 
 router = DefaultRouter(trailing_slash=False)
 router.register('organizations', OrganizationViewSet)
-router.register('members', MemberViewSet)
 
 urlpatterns = router.urls

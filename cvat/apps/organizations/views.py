@@ -5,9 +5,10 @@
 from django.utils.functional import SimpleLazyObject
 from django.contrib.auth.models import Group
 from rest_framework import viewsets
-from cvat.apps.iam.permissions import MemberPermission, OrganizationPermission
+from rest_framework.decorators import action
+from cvat.apps.iam.permissions import OrganizationPermission
 from . import models
-from .serializers import MemberSerializer, OrganizationSerializer
+from .serializers import OrganizationSerializer
 
 
 def get_user_group(request):
@@ -48,10 +49,24 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
 
-class MemberViewSet(viewsets.ModelViewSet):
-    queryset = models.Member.objects.all()
-    serializer_class = MemberSerializer
+    # pending invitations
+    @action(detail=True, methods=['get'], url_path="invitations")
+    def get_invitations(self, request, pk=None):
+        pass
 
-    def get_permissions(self):
-        return super().get_permissions() + [MemberPermission()]
+    @action(detail=True, methods=['get'], url_path="failed_invitations")
+    def get_failed_invitations(self, request, pk=None):
+        pass
+
+    @action(detail=True, methods=['post'], url_path="invitations")
+    def send_invitations(self, request, pk=None):
+        pass
+
+    @action(detail=True, methods=['delete'], url_path=r"invitations/(?P<myslug>[-a-zA-Z0-9_]+)")
+    def cancel_invitations(self, request, pk=None):
+        pass
+
+    @action(detail=True, methods=['get'], url_path="members")
+    def get_members(self, request, pk=None):
+        pass
 
