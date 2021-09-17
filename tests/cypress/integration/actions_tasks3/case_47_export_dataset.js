@@ -6,8 +6,9 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Export as a dataset.', () => {
+context('Export task dataset.', () => {
     const caseId = '47';
+    const exportFormat = 'CVAT for images';
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -21,18 +22,39 @@ context('Export as a dataset.', () => {
     before(() => {
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
-        cy.saveJob();
+        cy.saveJob('PATCH', 200, 'saveJobExportDataset');
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Go to Menu. Press "Export as a dataset" -> "CVAT for images".', () => {
-            cy.intercept('GET', '/api/v1/tasks/**/dataset**').as('exportDataset');
-            cy.interactMenu('Export as a dataset');
-            cy.get('.cvat-menu-export-submenu-item').within(() => {
-                cy.contains('CVAT for images').click();
+        it('Export a task as dataset.', () => {
+            const exportDataset = {
+                as: 'exportDataset',
+                type: 'dataset',
+                format: exportFormat,
+            };
+            cy.exportTask(exportDataset);
+            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDataset.format.toLowerCase()}.*.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
+                }
             });
-            cy.wait('@exportDataset', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-            cy.wait('@exportDataset').its('response.statusCode').should('equal', 201);
+        });
+
+        it('Export a task as dataset with renaming the archive.', () => {
+            const exportDataset = {
+                as: 'exportDatasetRenameArchive',
+                type: 'dataset',
+                format: exportFormat,
+                archiveCustomeName: 'task_export_dataset_custome_name'
+            };
+            cy.exportTask(exportDataset);
+            const regex = new RegExp(`^${exportDataset.archiveCustomeName}.zip$`);
+            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+                if (fileName.match(regex)) {
+                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
+                }
+            });
         });
     });
 });

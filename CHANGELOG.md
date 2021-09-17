@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.7.0] - Unreleased
+
+### Added
+
+- TDB
+
+### Changed
+
+- TDB
+
+### Deprecated
+
+- TDB
+
+### Removed
+
+- TDB
+
+### Fixed
+
+- TDB
+
+### Security
+
+- TDB
+
+## \[1.6.0] - 2021-09-17
+
+### Added
+
+- Added ability to import data from share with cli without copying the data (<https://github.com/openvinotoolkit/cvat/issues/2862>)
+- Notification if the browser does not support nesassary API
+- Added ability to export project as a dataset (<https://github.com/openvinotoolkit/cvat/pull/3365>)
+  and project with 3D tasks (<https://github.com/openvinotoolkit/cvat/pull/3502>)
+- Additional inline tips in interactors with demo gifs (<https://github.com/openvinotoolkit/cvat/pull/3473>)
+- Added intelligent scissors blocking feature (<https://github.com/openvinotoolkit/cvat/pull/3510>)
+- Support cloud storage status (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- Support cloud storage preview (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- cvat-core: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3313>)
+
+### Changed
+
+- Non-blocking UI when using interactors (<https://github.com/openvinotoolkit/cvat/pull/3473>)
+- "Selected opacity" slider now defines opacity level for shapes being drawnSelected opacity (<https://github.com/openvinotoolkit/cvat/pull/3473>)
+- Cloud storage creating and updating (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- Way of working with cloud storage content (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+
+### Removed
+
+- Support TEMP_KEY_SECRET_KEY_TOKEN_SET for AWS S3 cloud storage (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+
+### Fixed
+
+- Fixed multiple tasks moving (<https://github.com/openvinotoolkit/cvat/pull/3517>)
+- Fixed task creating CLI parameter (<https://github.com/openvinotoolkit/cvat/pull/3519>)
+- Fixed import for MOTS format (<https://github.com/openvinotoolkit/cvat/pull/3612>)
+
 ## \[1.5.0] - 2021-08-02
 
 ### Added
@@ -17,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Explicit "Done" button when drawing any polyshapes (<https://github.com/openvinotoolkit/cvat/pull/3417>)
 - Histogram equalization with OpenCV javascript (<https://github.com/openvinotoolkit/cvat/pull/3447>)
 - Client-side polyshapes approximation when using semi-automatic interactors & scissors (<https://github.com/openvinotoolkit/cvat/pull/3450>)
+- Support of Google Cloud Storage for cloud storage (<https://github.com/openvinotoolkit/cvat/pull/3561>)
 
 ### Changed
 
@@ -49,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Context image disappears after undo/redo (<https://github.com/openvinotoolkit/cvat/pull/3416>)
 - Using combined data sources (directory and image) when create a task (<https://github.com/openvinotoolkit/cvat/pull/3424>)
 - Creating task with labels in project (<https://github.com/openvinotoolkit/cvat/pull/3454>)
+- Move task and autoannotation modals were invisible from project page (<https://github.com/openvinotoolkit/cvat/pull/3475>)
 
 ## \[1.4.0] - 2021-05-18
 
@@ -844,22 +903,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Template
 
 ```
-## [Unreleased]
+## \[Unreleased]
 ### Added
--
+- TDB
 
 ### Changed
--
+- TDB
 
 ### Deprecated
--
+- TDB
 
 ### Removed
--
+- TDB
 
 ### Fixed
--
+- TDB
 
 ### Security
--
+- TDB
 ```

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,8 +8,9 @@
     const AnnotationsSaver = require('./annotations-saver');
     const AnnotationsHistory = require('./annotations-history');
     const { checkObjectType } = require('./common');
-    const { Task } = require('./session');
-    const { Loader, Dumper } = require('./annotation-formats');
+    const { Project } = require('./project');
+    const { Task, Job } = require('./session');
+    const { Loader } = require('./annotation-formats');
     const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
 
     const jobCache = new WeakMap();
@@ -50,6 +51,7 @@
                 stopFrame,
                 frameMeta,
             });
+            // eslint-disable-next-line no-unsanitized/method
             collection.import(rawAnnotations);
 
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
@@ -232,27 +234,12 @@
         await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, loader.name);
     }
 
-    async function dumpAnnotations(session, name, dumper) {
-        if (!(dumper instanceof Dumper)) {
-            throw new ArgumentError('A dumper must be instance of Dumper class');
-        }
-
-        let result = null;
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        if (sessionType === 'job') {
-            result = await serverProxy.annotations.dumpAnnotations(session.task.id, name, dumper.name);
-        } else {
-            result = await serverProxy.annotations.dumpAnnotations(session.id, name, dumper.name);
-        }
-
-        return result;
-    }
-
     function importAnnotations(session, data) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
+            // eslint-disable-next-line no-unsanitized/method
             return cache.get(session).collection.import(data);
         }
 
@@ -274,16 +261,25 @@
         );
     }
 
-    async function exportDataset(session, format) {
+    async function exportDataset(instance, format, name, saveImages = false) {
         if (!(format instanceof String || typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
-        if (!(session instanceof Task)) {
-            throw new ArgumentError('A dataset can only be created from a task');
+        if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
+            throw new ArgumentError('A dataset can only be created from a job, task or project');
+        }
+        if (typeof saveImages !== 'boolean') {
+            throw new ArgumentError('Save images parameter must be a boolean');
         }
 
         let result = null;
-        result = await serverProxy.tasks.exportDataset(session.id, format);
+        if (instance instanceof Task) {
+            result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages);
+        } else if (instance instanceof Job) {
+            result = await serverProxy.tasks.exportDataset(instance.task.id, format, name, saveImages);
+        } else {
+            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages);
+        }
 
         return result;
     }
@@ -367,7 +363,6 @@
         annotationsStatistics,
         selectObject,
         uploadAnnotations,
-        dumpAnnotations,
         importAnnotations,
         exportAnnotations,
         exportDataset,

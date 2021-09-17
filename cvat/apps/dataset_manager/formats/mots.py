@@ -8,7 +8,7 @@ from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import AnnotationType, ItemTransform
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     find_dataset_root, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -21,9 +21,9 @@ class KeepTracks(ItemTransform):
             if 'track_id' in a.attributes])
 
 @exporter(name='MOTS PNG', ext='ZIP', version='1.0')
-def _export(dst_file, task_data, save_images=False):
-    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
-        task_data, include_images=save_images), env=dm_env)
+def _export(dst_file, instance_data, save_images=False):
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+        instance_data, include_images=save_images), env=dm_env)
     dataset.transform(KeepTracks) # can only export tracks
     dataset.transform('polygons_to_masks')
     dataset.transform('boxes_to_masks')
@@ -46,15 +46,27 @@ def _import(src_file, task_data):
 
         root_hint = find_dataset_root(dataset, task_data)
 
+        shift = 0
         for item in dataset:
             frame_number = task_data.abs_frame_id(
                 match_dm_item(item, task_data, root_hint=root_hint))
+
+            track_ids = set()
 
             for ann in item.annotations:
                 if ann.type != AnnotationType.polygon:
                     continue
 
                 track_id = ann.attributes['track_id']
+                group_id = track_id
+
+                if track_id in track_ids:
+                    # use negative id for tracks with the same id on the same frame
+                    shift -= 1
+                    track_id = shift
+                else:
+                    track_ids.add(track_id)
+
                 shape = task_data.TrackedShape(
                     type='polygon',
                     points=ann.points,
@@ -65,6 +77,7 @@ def _import(src_file, task_data):
                     frame=frame_number,
                     attributes=[],
                     source='manual',
+                    group=group_id
                 )
 
                 # build trajectories as lists of shapes in track dict

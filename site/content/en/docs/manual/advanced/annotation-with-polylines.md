@@ -2,6 +2,7 @@
 title: 'Annotation with polylines'
 linkTitle: 'Annotation with polylines'
 weight: 12
+description: 'Guide to annotating tasks using polylines.'
 ---
 It is used for road markup annotation etc.
 

@@ -49,11 +49,16 @@ anchor = "smart"
     name = "Try it now"
     weight = 50
     url = "https://cvat.org"
+[[menu.main]]
+    name = "GitHub"
+    weight = 60
+    url = "https://github.com/openvinotoolkit/cvat"
+    pre = "<i class='fab fa-github'></i>"
 
 [services]
 [services.googleAnalytics]
 # Comment out the next line to disable GA tracking. Also disables the feature described in [params.ui.feedback].
-id = "UA-00000000-0"
+# id = "UA-00000000-0"
 
 # Language configuration
 

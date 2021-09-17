@@ -2,6 +2,7 @@
 title: 'Branching model'
 linkTitle: 'Branching model'
 weight: 5
+description: 'Information about the branching model that is used in the project.'
 ---
 
 The project uses [a successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model).

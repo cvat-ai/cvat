@@ -8,10 +8,11 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Cancel drawing.', () => {
     const caseId = '85';
-    const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_сancel_drawing.js';
+    const screenshotsPath =
+        'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_cancel_drawing.js';
 
     before(() => {
-        cy.openTask(taskName)
+        cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
     });
@@ -37,7 +38,8 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
             );
         });
 
-        it('Repeat draw.', () => {
+        // Temporarily disabling the test until it is fixed https://github.com/openvinotoolkit/cvat/issues/3438#issuecomment-892432089
+        it.skip('Repeat draw.', () => {
             cy.get('body').type('n');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 450, 250).dblclick(450, 250);

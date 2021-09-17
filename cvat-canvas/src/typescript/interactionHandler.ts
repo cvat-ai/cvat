@@ -8,16 +8,21 @@ import Crosshair from './crosshair';
 import {
     translateToSVG, PropType, stringifyPoints, translateToCanvas,
 } from './shared';
-import { InteractionData, InteractionResult, Geometry } from './canvasModel';
+
+import {
+    InteractionData, InteractionResult, Geometry, Configuration,
+} from './canvasModel';
 
 export interface InteractionHandler {
     transform(geometry: Geometry): void;
     interact(interactData: InteractionData): void;
+    configurate(config: Configuration): void;
     cancel(): void;
 }
 
 export class InteractionHandlerImpl implements InteractionHandler {
     private onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void;
+    private configuration: Configuration;
     private geometry: Geometry;
     private canvas: SVG.Container;
     private interactionData: InteractionData;
@@ -30,6 +35,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private thresholdRectSize: number;
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
     private drawnIntermediateShape: SVG.Shape;
+    private thresholdWasModified: boolean;
 
     private prepareResult(): InteractionResult[] {
         return this.interactionShapes.map(
@@ -137,14 +143,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         _e.preventDefault();
                         _e.stopPropagation();
                         self.remove();
+                        this.shapesWereUpdated = true;
+                        const shouldRaiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self,
                         );
                         if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
                             this.interactionShapes[0].style({ visibility: '' });
                         }
-                        this.shapesWereUpdated = true;
-                        if (this.shouldRaiseEvent(_e.ctrlKey)) {
+                        if (shouldRaiseEvent) {
                             this.onInteraction(this.prepareResult(), true, false);
                         }
                     });
@@ -196,16 +203,21 @@ export class InteractionHandlerImpl implements InteractionHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            });
+            })
+            .fill({ opacity: this.configuration.creationOpacity, color: 'white' });
     }
 
     private initInteraction(): void {
         if (this.interactionData.crosshair) {
             this.addCrosshair();
+        } else if (this.crosshair) {
+            this.removeCrosshair();
         }
-
         if (this.interactionData.enableThreshold) {
             this.addThreshold();
+        } else if (this.threshold) {
+            this.threshold.remove();
+            this.threshold = null;
         }
     }
 
@@ -286,8 +298,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     'shape-rendering': 'geometricprecision',
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                     stroke: erroredShape ? 'red' : 'black',
-                    fill: 'none',
                 })
+                .fill({ opacity: this.configuration.creationOpacity, color: 'white' })
                 .addClass('cvat_canvas_interact_intermediate_shape');
             this.selectize(true, this.drawnIntermediateShape, erroredShape);
         } else {
@@ -327,7 +339,25 @@ export class InteractionHandlerImpl implements InteractionHandler {
         const handler = shape.remember('_selectHandler');
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
+            // move green circle group(anchors) and polygon(lastChild) to the top of svg to make anchors hoverable
+            handler.parent.node.prepend(handler.nested.node);
+            handler.parent.node.prepend(handler.parent.node.lastChild);
         }
+    }
+
+    private visualComponentsChanged(interactionData: InteractionData): boolean {
+        const allowedKeys = ['enabled', 'crosshair', 'enableThreshold', 'onChangeToolsBlockerState'];
+        if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
+            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
+                && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
+                return true;
+            }
+            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
+                && this.interactionData.crosshair !== interactionData.crosshair) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public constructor(
@@ -339,12 +369,14 @@ export class InteractionHandlerImpl implements InteractionHandler {
         ) => void,
         canvas: SVG.Container,
         geometry: Geometry,
+        configuration: Configuration,
     ) {
         this.onInteraction = (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean): void => {
             this.shapesWereUpdated = false;
             onInteraction(shapes, shapesUpdated, isDone, this.threshold ? this.thresholdRectSize / 2 : null);
         };
         this.canvas = canvas;
+        this.configuration = configuration;
         this.geometry = geometry;
         this.shapesWereUpdated = false;
         this.interactionShapes = [];
@@ -369,7 +401,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.threshold) {
                 this.threshold.center(x, y);
             }
-
             if (this.interactionData.enableSliding && this.interactionShapes.length) {
                 if (this.isWithinFrame(x, y)) {
                     if (this.interactionData.enableThreshold && !this.isWithinThreshold(x, y)) return;
@@ -392,6 +423,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.canvas.on('wheel.interaction', (e: WheelEvent): void => {
             if (e.ctrlKey) {
                 if (this.threshold) {
+                    this.thresholdWasModified = true;
                     const { x, y } = this.cursorPosition;
                     e.preventDefault();
                     if (e.deltaY > 0) {
@@ -405,10 +437,24 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
         });
 
-        document.body.addEventListener('keyup', (e: KeyboardEvent): void => {
-            if (e.keyCode === 17 && this.shouldRaiseEvent(false)) {
-                // 17 is ctrl
-                this.onInteraction(this.prepareResult(), true, false);
+        window.addEventListener('keyup', (e: KeyboardEvent): void => {
+            if (this.interactionData.enabled && e.keyCode === 17) {
+                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                    this.interactionData.onChangeToolsBlockerState('keyup');
+                }
+                if (this.shouldRaiseEvent(false)) {
+                    // 17 is ctrl
+                    this.onInteraction(this.prepareResult(), true, false);
+                }
+            }
+        });
+
+        window.addEventListener('keydown', (e: KeyboardEvent): void => {
+            if (this.interactionData.enabled && e.keyCode === 17) {
+                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                    this.interactionData.onChangeToolsBlockerState('keydown');
+                }
+                this.thresholdWasModified = false;
             }
         });
     }
@@ -454,6 +500,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             if (this.interactionData.startWithBox) {
                 this.interactionShapes[0].style({ visibility: 'hidden' });
             }
+        } else if (interactionData.enabled && this.visualComponentsChanged(interactionData)) {
+            this.interactionData = { ...this.interactionData, ...interactionData };
+            this.initInteraction();
         } else if (interactionData.enabled) {
             this.interactionData = interactionData;
             this.initInteraction();
@@ -462,6 +511,25 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.onInteraction(this.prepareResult(), this.shouldRaiseEvent(false), true);
             this.release();
             this.interactionData = interactionData;
+        }
+    }
+
+    public configurate(configuration: Configuration): void {
+        this.configuration = configuration;
+        if (this.drawnIntermediateShape) {
+            this.drawnIntermediateShape.fill({
+                opacity: configuration.creationOpacity,
+            });
+        }
+
+        // when interactRectangle
+        if (this.currentInteractionShape && this.currentInteractionShape.type === 'rect') {
+            this.currentInteractionShape.fill({ opacity: configuration.creationOpacity });
+        }
+
+        // when interactPoints with startwithbbox
+        if (this.interactionShapes[0] && this.interactionShapes[0].type === 'rect') {
+            this.interactionShapes[0].fill({ opacity: configuration.creationOpacity });
         }
     }
 

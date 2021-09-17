@@ -28,6 +28,7 @@ module.exports = (env) => ({
         contentBase: path.join(__dirname, 'dist'),
         compress: false,
         inline: true,
+        host: process.env.CVAT_UI_HOST || 'localhost',
         port: 3000,
         historyApiFallback: true,
         proxy: [
@@ -63,16 +64,7 @@ module.exports = (env) => ({
                                 },
                             ],
                         ],
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
-                                },
-                            ],
-                            ['@babel/preset-react'],
-                            ['@babel/typescript'],
-                        ],
+                        presets: ['@babel/preset-env', '@babel/preset-react', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -87,7 +79,12 @@ module.exports = (env) => ({
                             importLoaders: 2,
                         },
                     },
-                    'postcss-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            plugins: [require('postcss-preset-env')],
+                        },
+                    },
                     'sass-loader',
                 ],
             },

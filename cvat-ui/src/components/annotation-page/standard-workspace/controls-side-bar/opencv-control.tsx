@@ -19,7 +19,7 @@ import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
-    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType,
+    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -34,6 +34,7 @@ import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { ImageProcessing } from 'utils/opencv-wrapper/opencv-interfaces';
+import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -46,6 +47,8 @@ interface Props {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     frameData: any;
+    toolsBlockerState: ToolsBlockerState;
+    activeControl: ActiveControl;
 }
 
 interface DispatchToProps {
@@ -54,6 +57,7 @@ interface DispatchToProps {
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
+    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
 }
 
 interface State {
@@ -87,12 +91,13 @@ function mapStateToProps(state: CombinedState): Props {
             },
         },
         settings: {
-            workspace: { defaultApproxPolyAccuracy },
+            workspace: { defaultApproxPolyAccuracy, toolsBlockerState },
         },
     } = state;
 
     return {
         isActivated: activeControl === ActiveControl.OPENCV_TOOLS,
+        activeControl,
         canvasInstance: canvasInstance as Canvas,
         defaultApproxPolyAccuracy,
         jobInstance,
@@ -101,6 +106,7 @@ function mapStateToProps(state: CombinedState): Props {
         states,
         frame,
         frameData,
+        toolsBlockerState,
     };
 }
 
@@ -110,6 +116,7 @@ const mapDispatchToProps = {
     fetchAnnotations: fetchAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
     changeFrame: changeFrameAsync,
+    onSwitchToolsBlockerState: switchToolsBlockerState,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
@@ -142,7 +149,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const { approxPolyAccuracy } = this.state;
-        const { isActivated, defaultApproxPolyAccuracy, canvasInstance } = this.props;
+        const {
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, toolsBlockerState,
+        } = this.props;
+
         if (!prevProps.isActivated && isActivated) {
             // reset flags & states before using a tool
             this.latestPoints = [];
@@ -150,6 +160,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
             });
             if (this.activeTool) {
+                this.activeTool.switchBlockMode(toolsBlockerState.algorithmsLocked);
                 this.activeTool.reset();
             }
         }
@@ -169,6 +180,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 });
             }
         }
+        if (prevProps.toolsBlockerState.algorithmsLocked !== toolsBlockerState.algorithmsLocked &&
+            !!this.activeTool?.switchBlockMode) {
+            this.activeTool.switchBlockMode(toolsBlockerState.algorithmsLocked);
+        }
     }
 
     public componentWillUnmount(): void {
@@ -180,7 +195,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private interactionListener = async (e: Event): Promise<void> => {
         const { approxPolyAccuracy } = this.state;
         const {
-            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance,
+            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance, toolsBlockerState,
         } = this.props;
         const { activeLabelID } = this.state;
         if (!isActivated || !this.activeTool) {
@@ -191,27 +206,41 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             shapesUpdated, isDone, threshold, shapes,
         } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 0).flat();
-
         try {
             if (shapesUpdated) {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints, threshold);
-                const approx = openCVWrapper.contours.approxPoly(
-                    this.latestPoints,
-                    thresholdFromAccuracy(approxPolyAccuracy),
-                    false,
-                );
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints,
+                    toolsBlockerState.algorithmsLocked ? 0 : threshold);
+                let points = [];
+                if (toolsBlockerState.algorithmsLocked && this.latestPoints.length > 2) {
+                    // disable approximation for lastest two points to disable fickering
+                    const [x, y] = this.latestPoints.slice(-2);
+                    this.latestPoints.splice(this.latestPoints.length - 2, 2);
+                    points = openCVWrapper.contours.approxPoly(
+                        this.latestPoints,
+                        thresholdFromAccuracy(approxPolyAccuracy),
+                        false,
+                    );
+                    points.push([x, y]);
+                } else {
+                    points = openCVWrapper.contours.approxPoly(
+                        this.latestPoints,
+                        thresholdFromAccuracy(approxPolyAccuracy),
+                        false,
+                    );
+                }
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
                         shapeType: ShapeType.POLYGON,
-                        points: approx.flat(),
+                        points: points.flat(),
                     },
                 });
             }
 
             if (isDone) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints, threshold);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints,
+                    toolsBlockerState.algorithmsLocked ? 0 : threshold);
                 const finalObject = new core.classes.ObjectState({
                     frame,
                     objectType: ObjectType.SHAPE,
@@ -229,6 +258,22 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             notification.error({
                 description: error.toString(),
                 message: 'OpenCV.js processing error occured',
+                className: 'cvat-notification-notice-opencv-processing-error',
+            });
+        }
+    };
+
+    private onChangeToolsBlockerState = (event:string):void => {
+        const {
+            isActivated, toolsBlockerState, onSwitchToolsBlockerState, canvasInstance,
+        } = this.props;
+        if (isActivated && event === 'keyup') {
+            onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
+            canvasInstance.interact({
+                enabled: true,
+                crosshair: toolsBlockerState.algorithmsLocked,
+                enableThreshold: toolsBlockerState.algorithmsLocked,
+                onChangeToolsBlockerState: this.onChangeToolsBlockerState,
             });
         }
     };
@@ -263,6 +308,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             notification.error({
                 description: error.toString(),
                 message: 'OpenCV.js processing error occured',
+                className: 'cvat-notification-notice-opencv-processing-error',
             });
         } finally {
             this.disableCanvasForceUpdate();
@@ -277,22 +323,24 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         if (!canvas) {
             throw new Error('Element #cvat_canvas_background was not found');
         }
+        if (!this.activeTool || pressedPoints.length === 0) return [];
 
         const { width, height } = canvas;
         const context = canvas.getContext('2d');
         if (!context) {
             throw new Error('Canvas context is empty');
         }
-
+        let imageData;
         const [x, y] = pressedPoints.slice(-2);
         const startX = Math.round(Math.max(0, x - threshold));
         const startY = Math.round(Math.max(0, y - threshold));
-        const segmentWidth = Math.min(2 * threshold, width - startX);
-        const segmentHeight = Math.min(2 * threshold, height - startY);
-        const imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
-
-        if (!this.activeTool) return [];
-
+        if (threshold !== 0) {
+            const segmentWidth = Math.min(2 * threshold, width - startX);
+            const segmentHeight = Math.min(2 * threshold, height - startY);
+            imageData = context.getImageData(startX, startY, segmentWidth, segmentHeight);
+        } else {
+            imageData = context.getImageData(0, 0, width, height);
+        }
         // Handling via OpenCV.js
         const points = await this.activeTool.run(pressedPoints, imageData, startX, startY);
         return points;
@@ -358,7 +406,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         <CVATTooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
                                 onClick={() => {
-                                    this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
+                                    this.activeTool = openCVWrapper.segmentation
+                                        .intelligentScissorsFactory(this.onChangeToolsBlockerState);
                                     canvasInstance.cancel();
                                     onInteractionStart(this.activeTool, activeLabelID);
                                     canvasInstance.interact({

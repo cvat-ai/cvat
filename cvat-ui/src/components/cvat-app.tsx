@@ -33,7 +33,11 @@ import getCore from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers/interfaces';
 import { customWaViewHit } from 'utils/enviroment';
-import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
+import showPlatformNotification, {
+    platformInfo,
+    stopNotifications,
+    showUnsupportedNotification,
+} from 'utils/platform-checker';
 import '../styles.scss';
 
 interface CVATAppProps {
@@ -87,6 +91,50 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         verifyAuthorized();
+
+        const {
+            name, version, engine, os,
+        } = platformInfo();
+
+        if (showPlatformNotification()) {
+            stopNotifications(false);
+            Modal.warning({
+                title: 'Unsupported platform detected',
+                className: 'cvat-modal-unsupported-platform-warning',
+                content: (
+                    <>
+                        <Row>
+                            <Col>
+                                <Text>
+                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
+                                        ' CVAT was tested in the latest versions of Chrome and Firefox.' +
+                                        ' We recommend to use Chrome (or another Chromium based browser)'}
+                                </Text>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
+                            </Col>
+                        </Row>
+                    </>
+                ),
+                onOk: () => stopNotifications(true),
+            });
+        } else if (showUnsupportedNotification()) {
+            stopNotifications(false);
+            Modal.warning({
+                title: 'Unsupported features detected',
+                className: 'cvat-modal-unsupported-features-warning',
+                content: (
+                    <Text>
+                        {`${name} v${version} does not support API, which is used by CVAT. `}
+                        It is strongly recommended to update your browser.
+                    </Text>
+                ),
+                onOk: () => stopNotifications(true),
+            });
+        }
     }
 
     public componentDidUpdate(): void {
@@ -268,37 +316,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 switchSettingsDialog();
             },
         };
-
-        if (showPlatformNotification()) {
-            stopNotifications(false);
-            const {
-                name, version, engine, os,
-            } = platformInfo();
-
-            Modal.warning({
-                title: 'Unsupported platform detected',
-                className: 'cvat-modal-unsupported-platform-warning',
-                content: (
-                    <>
-                        <Row>
-                            <Col>
-                                <Text>
-                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
-                                        ' CVAT was tested in the latest versions of Chrome and Firefox.' +
-                                        ' We recommend to use Chrome (or another Chromium based browser)'}
-                                </Text>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col>
-                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
-                            </Col>
-                        </Row>
-                    </>
-                ),
-                onOk: () => stopNotifications(true),
-            });
-        }
 
         if (readyForRender) {
             if (user && user.isVerified) {

@@ -2,6 +2,7 @@
 title: 'Top Panel'
 linkTitle: 'Top Panel'
 weight: 21
+description: 'Overview of controls available on the top panel of the annotation tool.'
 ---
 
 ![](/images/image035.jpg)
@@ -48,6 +49,17 @@ Use buttons to undo actions or redo them.
 ![](/images/image223.jpg)
 
 Used to complete the creation of the object. This button appears only when the object is being created.
+
+---
+
+## Block
+
+![](/images/image226.jpg)
+
+Used to pause automatic line creation when drawing a polygon with 
+[OpenCV Intelligent scissors](/docs/manual/advanced/opencv-tools/#intelligent-scissors).
+Also used to postpone server requests when creating an object using [AI Tools](/docs/manual/advanced/ai-tools/).
+When blocking is activated, the button turns blue.
 
 ---
 
