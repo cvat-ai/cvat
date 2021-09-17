@@ -29,6 +29,9 @@ import ModelsPageContainer from 'containers/models-page/models-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import LoginPageContainer from 'containers/login-page/login-page';
 import RegisterPageContainer from 'containers/register-page/register-page';
+import CloudStoragesPageComponent from 'components/cloud-storages-page/cloud-storages-page';
+import CreateCloudStoragePageComponent from 'components/create-cloud-storage-page/create-cloud-storage-page';
+import UpdateCloudStoragePageComponent from 'components/update-cloud-storage-page/update-cloud-storage-page';
 import getCore from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers/interfaces';
@@ -334,6 +337,17 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/create'
+                                            component={CreateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/update/:id'
+                                            component={UpdateCloudStoragePageComponent}
+                                        />
                                         {isModelPluginActive && (
                                             <Route exact path='/models' component={ModelsPageContainer} />
                                         )}

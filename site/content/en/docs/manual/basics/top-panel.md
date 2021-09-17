@@ -1,7 +1,7 @@
 ---
 title: 'Top Panel'
 linkTitle: 'Top Panel'
-weight: 21
+weight: 7
 description: 'Overview of controls available on the top panel of the annotation tool.'
 ---
 

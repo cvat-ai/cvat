@@ -1,7 +1,7 @@
 ---
 title: 'Types of shapes'
 linkTitle: 'Types of shapes'
-weight: 5
+weight: 14
 description: 'List of shapes available for annotation.'
 ---
 There are five shapes which you can annotate your images with:
