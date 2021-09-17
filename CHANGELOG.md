@@ -5,7 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[1.6.0] - Unreleased
+## \[1.7.0] - Unreleased
+
+### Added
+
+- TDB
+
+### Changed
+
+- TDB
+
+### Deprecated
+
+- TDB
+
+### Removed
+
+- TDB
+
+### Fixed
+
+- TDB
+
+### Security
+
+- TDB
+
+## \[1.6.0] - 2021-09-17
 
 ### Added
 
@@ -27,10 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cloud storage creating and updating (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Way of working with cloud storage content (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 
-### Deprecated
-
-- TDB
-
 ### Removed
 
 - Support TEMP_KEY_SECRET_KEY_TOKEN_SET for AWS S3 cloud storage (<https://github.com/openvinotoolkit/cvat/pull/3386>)
@@ -40,10 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed multiple tasks moving (<https://github.com/openvinotoolkit/cvat/pull/3517>)
 - Fixed task creating CLI parameter (<https://github.com/openvinotoolkit/cvat/pull/3519>)
 - Fixed import for MOTS format (<https://github.com/openvinotoolkit/cvat/pull/3612>)
-
-### Security
-
-- TDB
 
 ## \[1.5.0] - 2021-08-02
 
@@ -886,7 +904,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Template
 
 ```
-## [Unreleased]
+## \[Unreleased]
 ### Added
 - TDB
 
