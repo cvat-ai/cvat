@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - TDB
 
-## \[1.6.0] - 2021-09-15
+## \[1.6.0] - 2021-09-17
 
 ### Added
 
