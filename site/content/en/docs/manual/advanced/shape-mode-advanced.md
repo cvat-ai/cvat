@@ -1,7 +1,7 @@
 ---
 title: 'Shape mode (advanced)'
 linkTitle: 'Shape mode'
-weight: 4
+weight: 3
 description: 'Advanced operations available during annotation in shape mode.'
 ---
 

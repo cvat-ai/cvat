@@ -1,7 +1,7 @@
 ---
 title: 'OpenCV tools'
 linkTitle: 'OpenCV tools'
-weight: 14
+weight: 15
 description: 'Guide to using Computer Vision algorithms during annotation.'
 ---
 
