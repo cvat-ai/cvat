@@ -4,7 +4,6 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './styles.scss';
 import { Layout, Row, Col } from 'antd';
 
 const { Content } = Layout;
