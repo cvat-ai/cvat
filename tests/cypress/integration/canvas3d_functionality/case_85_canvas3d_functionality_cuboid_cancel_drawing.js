@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Cancel drawing.', () => {
     const caseId = '85';
     const screenshotsPath =
-        'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_сancel_drawing.js';
+        'cypress/screenshots/canvas3d_functionality/case_85_canvas3d_functionality_cuboid_cancel_drawing.js';
 
     before(() => {
         cy.openTask(taskName);
