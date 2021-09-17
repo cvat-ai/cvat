@@ -5,6 +5,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './styles.scss';
+import { Layout, Row, Col } from 'antd';
+
+const { Content } = Layout;
+
 /**
  * Component for displaying email confirmation message and then redirecting to the loginpage
  */
@@ -29,11 +33,10 @@ class EmailConfirmationMessage extends React.Component {
     }
     render() {
         return (
-
-            <section className='ant-layout'>
-                <main className='ant-layout-content'>
-                    <div className='ant-row ant-row-center ant-row-middle' id='email-cnf-container'>
-                        <div className='ant-col ant-col-xs-14 ant-col-sm-14 ant-col-md-10 ant-col-lg-4 ant-col-xl-4'>
+            <Layout>
+                <Content>
+                    <Row justify='center' align='middle' style={{ height: '100%', textAlign: 'center' }}>
+                        <Col>
                             <h1>Your email is confirmed</h1>
                             <p>
                                 Redirecting you in &nbsp;
@@ -41,10 +44,12 @@ class EmailConfirmationMessage extends React.Component {
                                 s
                             </p>
                             <Link to='/auth/login' id='link'>Or click this link</Link>
-                        </div>
-                    </div>
-                </main>
-            </section>
+
+                        </Col>
+                    </Row>
+                </Content>
+
+            </Layout>
 
         );
     }
