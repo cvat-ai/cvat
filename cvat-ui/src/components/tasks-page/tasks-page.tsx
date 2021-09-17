@@ -30,27 +30,6 @@ interface TasksPageProps {
     taskImporting: boolean;
 }
 
-function getSearchField(gettingQuery: TasksQuery): string {
-    let searchString = '';
-    for (const field of Object.keys(gettingQuery)) {
-        if (gettingQuery[field] !== null && field !== 'page') {
-            if (field === 'search') {
-                return (gettingQuery[field] as any) as string;
-            }
-
-            // not constant condition
-            // eslint-disable-next-line
-            if (typeof (gettingQuery[field] === 'number')) {
-                searchString += `${field}:${gettingQuery[field]} AND `;
-            } else {
-                searchString += `${field}:"${gettingQuery[field]}" AND `;
-            }
-        }
-    }
-
-    return searchString.slice(0, -5);
-}
-
 function updateQuery(previousQuery: TasksQuery, searchString: string): TasksQuery {
     const params = new URLSearchParams(searchString);
     const query = { ...previousQuery };
@@ -127,47 +106,6 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         }
     }
 
-    private handleSearch = (value: string): void => {
-        const { gettingQuery } = this.props;
-
-        const query = { ...gettingQuery };
-        const search = value
-            .replace(/\s+/g, ' ')
-            .replace(/\s*:+\s*/g, ':')
-            .trim();
-
-        const fields = ['name', 'mode', 'owner', 'assignee', 'status', 'id'];
-        for (const field of fields) {
-            query[field] = null;
-        }
-        query.search = null;
-
-        let specificRequest = false;
-        for (const param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
-            if (param.includes(':')) {
-                const [field, fieldValue] = param.split(':');
-                if (fields.includes(field) && !!fieldValue) {
-                    specificRequest = true;
-                    if (field === 'id') {
-                        if (Number.isInteger(+fieldValue)) {
-                            query[field] = +fieldValue;
-                        }
-                    } else {
-                        query[field] = fieldValue;
-                    }
-                }
-            }
-        }
-
-        query.page = 1;
-        if (!specificRequest && value) {
-            // only id
-            query.search = value;
-        }
-
-        this.updateURL(query);
-    };
-
     private handlePagination = (page: number): void => {
         const { gettingQuery } = this.props;
 
@@ -179,7 +117,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         this.updateURL(query);
     };
 
-    private updateURL(gettingQuery: TasksQuery): void {
+    private updateURL = (gettingQuery: TasksQuery): void => {
         const { history } = this.props;
         let queryString = '?';
         for (const field of Object.keys(gettingQuery)) {
@@ -197,7 +135,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
             // force update if any changes
             this.forceUpdate();
         }
-    }
+    };
 
     public render(): JSX.Element {
         const {
@@ -211,8 +149,8 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         return (
             <div className='cvat-tasks-page'>
                 <TopBar
-                    onSearch={this.handleSearch}
-                    searchValue={getSearchField(gettingQuery)}
+                    onSearch={this.updateURL}
+                    query={gettingQuery}
                     onFileUpload={onImportTask}
                     taskImporting={taskImporting}
                 />
