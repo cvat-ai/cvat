@@ -4,7 +4,7 @@
 
 title: 'Simple command line to prepare dataset manifest file'
 linkTitle: 'Dataset manifest'
-weight: 33
+weight: 29
 description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest)
 
 ---
