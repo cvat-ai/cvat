@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- TDB
+- cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
 
 ### Changed
 
@@ -44,7 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support cloud storage status (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Support cloud storage preview (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - cvat-core: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3313>)
-- cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
 
 ### Changed
 
