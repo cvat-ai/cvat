@@ -1,7 +1,7 @@
 ---
 title: 'AI Tools'
 linkTitle: 'AI Tools'
-weight: 15
+weight: 14
 description: 'Overview of semi-automatic and automatic annotation tools available in CVAT.'
 ---
 

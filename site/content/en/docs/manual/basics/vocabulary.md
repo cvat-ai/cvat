@@ -1,7 +1,7 @@
 ---
 title: 'Vocabulary'
 linkTitle: 'Vocabulary'
-weight: 14
+weight: 19
 description: 'List of terms pertaining to annotation in CVAT.'
 ---
 **Label** is a type of an annotated object (e.g. person, car, vehicle, etc.)

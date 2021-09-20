@@ -1,7 +1,7 @@
 ---
 title: 'Objects sidebar'
 linkTitle: 'Objects sidebar'
-weight: 24
+weight: 9
 description: 'Overview of available functions on the objects sidebar of the annotation tool.'
 ---
 ## Hide objects sidebar

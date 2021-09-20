@@ -1,18 +1,18 @@
 {
   "scripts": {
-    "cypress:run:chrome": "cypress run --env coverage=false --headless --browser chrome",
-    "cypress:run:firefox": "cypress run --env coverage=false --headless --browser firefox --config-file cypress_cron_type.json",
-    "cypress:run:chrome:canvas3d": "cypress run --browser chrome --env coverage=false --config-file cypress_canvas3d.json"
+    "cypress:run:chrome": "cypress run --env coverage=false --browser chrome",
+    "cypress:run:firefox": "cypress run --env coverage=false --browser firefox --config-file cypress_cron_type.json",
+    "cypress:run:chrome:canvas3d": "cypress run --headed --browser chrome --env coverage=false --config-file cypress_canvas3d.json"
   },
   "devDependencies": {
-    "@cypress/code-coverage": "^3.9.4",
-    "cypress": "^6.4.0",
-    "cypress-file-upload": "^5.0.2",
-    "cypress-localstorage-commands": "^1.3.1",
+    "@cypress/code-coverage": "^3.9.10",
+    "cypress": "^8.3.1",
+    "cypress-file-upload": "^5.0.8",
+    "cypress-localstorage-commands": "^1.5.0",
     "cypress-plugin-tab": "^1.0.5"
   },
   "dependencies": {
-    "archiver": "^5.0.0",
-    "jimp": "^0.14.0"
+    "archiver": "^5.3.0",
+    "jimp": "^0.16.1"
   }
 }

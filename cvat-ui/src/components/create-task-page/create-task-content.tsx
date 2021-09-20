@@ -30,6 +30,7 @@ export interface CreateTaskData {
     labels: any[];
     files: Files;
     activeFileManagerTab: string;
+    cloudStorageId: number | null;
 }
 
 interface Props {
@@ -58,8 +59,10 @@ const defaultState = {
         local: [],
         share: [],
         remote: [],
+        cloudStorage: [],
     },
     activeFileManagerTab: 'local',
+    cloudStorageId: null,
 };
 
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
@@ -94,12 +97,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 className: 'cvat-notification-create-task-success',
             });
 
-            if (this.basicConfigurationComponent.current) {
-                this.basicConfigurationComponent.current.resetFields();
-            }
-            if (this.advancedConfigurationComponent.current) {
-                this.advancedConfigurationComponent.current.resetFields();
-            }
+            this.basicConfigurationComponent.current?.resetFields();
+            this.advancedConfigurationComponent.current?.resetFields();
 
             this.fileManagerContainer.reset();
 
@@ -116,10 +115,18 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private validateFiles = (): boolean => {
+        const { activeFileManagerTab } = this.state;
         const files = this.fileManagerContainer.getFiles();
+
         this.setState({
             files,
         });
+
+        if (activeFileManagerTab === 'cloudStorage') {
+            this.setState({
+                cloudStorageId: this.fileManagerContainer.getCloudStorageId(),
+            });
+        }
         const totalLen = Object.keys(files).reduce((acc, key) => acc + files[key].length, 0);
 
         return !!totalLen;
@@ -298,7 +305,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     ref={(container: any): void => {
                         this.fileManagerContainer = container;
                     }}
-                    withRemote
                 />
             </Col>
         );
