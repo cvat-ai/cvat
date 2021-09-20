@@ -5,8 +5,7 @@
 import React from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
+import { MenuInfo } from 'antd/node_modules/rc-menu/lib/interface';
 
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
