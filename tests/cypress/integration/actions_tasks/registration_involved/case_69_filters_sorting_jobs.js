@@ -62,7 +62,6 @@ context('Filters, sorting jobs.', () => {
         cy.get(column).find('[role="button"]').click().wait(300); // Waiting for dropdown menu transition
         cy.get('.ant-dropdown')
             .not('.ant-dropdown-hidden')
-            .should('not.have.attr', 'style', 'poiner-events')
             .within(() => {
                 if (!reset) {
                     cy.contains('[role="menuitem"]', menuItem)

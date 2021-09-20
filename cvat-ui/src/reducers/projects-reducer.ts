@@ -19,6 +19,7 @@ const defaultState: ProjectsState = {
         id: null,
         search: null,
         owner: null,
+        assignee: null,
         name: null,
         status: null,
     },
@@ -119,8 +120,10 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 current: state.current.map(
                     (project): Project => ({
                         ...project,
-                        instance: project.instance.id === action.payload.project.id ?
-                            action.payload.project : project.instance,
+                        instance:
+                            project.instance.id === action.payload.project.id ?
+                                action.payload.project :
+                                project.instance,
                     }),
                 ),
             };
@@ -131,8 +134,10 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 current: state.current.map(
                     (project): Project => ({
                         ...project,
-                        instance: project.instance.id === action.payload.project.id ?
-                            action.payload.project : project.instance,
+                        instance:
+                            project.instance.id === action.payload.project.id ?
+                                action.payload.project :
+                                project.instance,
                     }),
                 ),
             };

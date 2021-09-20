@@ -3,6 +3,4 @@ title: "Basics"
 linkTitle: "Basics"
 weight: 1
 description: 'This section contains basic documents for CVAT users'
-hide_feedback: true
-
 ---

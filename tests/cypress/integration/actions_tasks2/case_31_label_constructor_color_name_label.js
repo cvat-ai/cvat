@@ -146,9 +146,6 @@ context('Label constructor. Color label. Label name editing', () => {
                     cy.get('.cvat-change-task-label-color-button').click();
                     cy.get('.cvat-label-color-picker')
                         .not('.ant-popover-hidden')
-                        .should('have.attr', 'style')
-                        .and('not.include', 'pointer-events');
-                    cy.get('.cvat-label-color-picker')
                         .within(() => {
                             cy.contains('hex').prev().clear().type(labelColor.yellowHex);
                             cy.contains('button', 'Cancel').click();

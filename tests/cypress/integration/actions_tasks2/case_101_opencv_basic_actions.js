@@ -40,6 +40,11 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         { x: 400, y: 550 },
     ];
 
+    function openOpencvControlPopover() {
+        cy.get('body').focus();
+        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+    }
+
     before(() => {
         cy.openTask(taskName);
         cy.addNewLabel(newLabel);
@@ -48,7 +53,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
-            cy.interactOpenCVControlButton();
+            openOpencvControlPopover();
             cy.get('.cvat-opencv-control-popover-visible').find('.cvat-opencv-initialization-button').click();
             // Intelligent cissors button be visible
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
@@ -60,7 +65,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         });
 
         it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
-            cy.interactOpenCVControlButton();
+            openOpencvControlPopover();
             cy.get('.cvat-opencv-drawing-tool').click();
             pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y);
@@ -103,7 +108,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         });
 
         it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
-            cy.interactOpenCVControlButton();
+            openOpencvControlPopover();
             cy.get('.cvat-opencv-drawing-tool').click();
             cy.contains('span', 'Block').click();
             cy.get('.cvat_canvas_threshold').should('not.exist');
@@ -122,18 +127,11 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         });
 
         it('Check "Histogram Equalization" feature.', () => {
-            cy.checkPopoverHidden('opencv-control');
-            cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-control-popover-visible')
-                .contains('[role="tab"]', 'Image')
-                .click()
-                .parents('.ant-tabs-tab')
-                .should('have.class', 'ant-tabs-tab-active');
-            cy.get('.cvat-opencv-image-tool').click();
-            cy.get('.cvat-opencv-image-tool').should('have.class', 'cvat-opencv-image-tool-active');
+            openOpencvControlPopover();
+            cy.get('.cvat-opencv-control-popover-visible').contains('[role="tab"]', 'Image').click();
+            cy.get('.cvat-opencv-image-tool').click().should('have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
             cy.get('.cvat-notification-notice-opencv-processing-error').should('not.exist');
-            cy.get('.cvat-opencv-image-tool').click();
-            cy.get('.cvat-opencv-image-tool').should('not.have.class', 'cvat-opencv-image-tool-active');
+            cy.get('.cvat-opencv-image-tool').click().should('not.have.class', 'cvat-opencv-image-tool-active').trigger('mouseout');
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474

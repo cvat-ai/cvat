@@ -1,7 +1,7 @@
 ---
 title: 'Context images for 2d task'
 linkTitle: 'Context images'
-weight: 23
+weight: 25
 description: 'Adding additional contextual images to a task.'
 ---
 

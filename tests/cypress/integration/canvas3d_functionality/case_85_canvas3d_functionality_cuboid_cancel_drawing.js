@@ -19,8 +19,8 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Cancel drawing.', () => {
-            cy.interactControlButton('draw-cuboid');
-            cy.get('.cvat-draw-cuboid-popover-visible').find('.ant-select-selection-item').click();
+            cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
+            cy.get('.cvat-draw-cuboid-popover-visible').find('[type="search"]').click({ force: true });
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {

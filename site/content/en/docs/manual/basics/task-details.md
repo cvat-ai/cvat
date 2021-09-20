@@ -1,7 +1,7 @@
 ---
 title: 'Task details'
 linkTitle: 'Task details'
-weight: 3
+weight: 4
 description: 'Overview of the Task details page.'
 ---
 

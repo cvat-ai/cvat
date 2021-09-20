@@ -7,7 +7,6 @@ import json
 import os.path as osp
 import os
 import av
-from django.http import response
 import numpy as np
 import random
 import xml.etree.ElementTree as ET
@@ -545,7 +544,7 @@ class TaskDumpUploadTest(_DbTestBase):
             "format": dump_format_name,
             "action": "download",
         }
-        test_cases = ['all' 'first']
+        test_cases = ['all', 'first']
         expected = {
             self.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
                          'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True},

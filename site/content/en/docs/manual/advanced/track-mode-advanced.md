@@ -1,7 +1,7 @@
 ---
 title: 'Track mode (advanced)'
 linkTitle: 'Track mode'
-weight: 5
+weight: 4
 description: 'Advanced operations available during annotation in track mode.'
 ---
 
