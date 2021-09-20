@@ -49,24 +49,3 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
 
-    # pending invitations
-    @action(detail=True, methods=['get'], url_path="invitations")
-    def get_invitations(self, request, pk=None):
-        pass
-
-    @action(detail=True, methods=['get'], url_path="failed_invitations")
-    def get_failed_invitations(self, request, pk=None):
-        pass
-
-    @action(detail=True, methods=['post'], url_path="invitations")
-    def send_invitations(self, request, pk=None):
-        pass
-
-    @action(detail=True, methods=['delete'], url_path=r"invitations/(?P<myslug>[-a-zA-Z0-9_]+)")
-    def cancel_invitations(self, request, pk=None):
-        pass
-
-    @action(detail=True, methods=['get'], url_path="members")
-    def get_members(self, request, pk=None):
-        pass
-

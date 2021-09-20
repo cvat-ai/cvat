@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
+from django.contrib.auth import get_user_model
 
 class Organization(models.Model):
     name = models.SlugField(max_length=256, primary_key=True)
@@ -7,10 +8,10 @@ class Organization(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     company = models.CharField(max_length=1024, blank=True)
-    email = models.EmailField(required=False, blank=True)
+    email = models.EmailField(blank=True)
     location = models.CharField(max_length=2048, blank=True)
 
-    owner = models.ForeignKey(User, null=True,
+    owner = models.ForeignKey(get_user_model(), null=True,
         on_delete=models.SET_NULL, related_name='+')
 
 class Membership(models.Model):

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework.routers import DefaultRouter
-from .views import MemberViewSet, OrganizationViewSet
+from .views import OrganizationViewSet
 
 router = DefaultRouter(trailing_slash=False)
 router.register('organizations', OrganizationViewSet)

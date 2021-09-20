@@ -3,16 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework import serializers
-from .models import Organization, Member
+from .models import Organization
 
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ["name", "description", "created_date", "updated_date", "owner"]
-        read_only_fields = ["created_date", "updated_date"]
-
-class MemberSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Member
-        fields = ["user", "role", "organization", "is_active", "date_joined"]
-        read_only_fields = ["date_joined"]
+        fields = ['name', 'description', 'created_at', 'updated_at',
+            'company', 'email', 'location', 'owner']
+        read_only_fields = ['created_at', 'updated_at']
