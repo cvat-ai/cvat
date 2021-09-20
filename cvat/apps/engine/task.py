@@ -133,10 +133,8 @@ def _count_files(data, manifest_file=None):
         if not os.path.dirname(v[0]).startswith(v[1])]
 
     def count_files(file_mapping, counter):
-        print('file map', file_mapping, file_mapping.items())
         for rel_path, full_path in file_mapping.items():
             mime = get_mime(full_path)
-            print('count files', rel_path, full_path)
             if mime in counter:
                 counter[mime].append(rel_path)
             elif 'manifest.jsonl' == os.path.basename(rel_path):
@@ -222,7 +220,6 @@ def _create_thread(tid, data, isImport=False):
     db_task = models.Task.objects.select_for_update().get(pk=tid)
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname()
-    print('upload dir', upload_dir)
 
     if data['remote_files']:
         if db_data.storage != models.StorageChoice.CLOUD_STORAGE:
@@ -285,9 +282,7 @@ def _create_thread(tid, data, isImport=False):
         if media_files:
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
-            print('media files', media_files)
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            print(source_paths)
             if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()
