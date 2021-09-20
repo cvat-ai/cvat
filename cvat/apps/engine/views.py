@@ -646,43 +646,30 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             serializer = DataSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             data = {k: v for k, v in serializer.validated_data.items()}
-            # temp directory
+
             tmp_path = os.path.join('./data/tmp', pk)
             os.makedirs(tmp_path, exist_ok=True)
-            if data.get('use_chunk_upload'):
-                # write chunk
+            if data.get('use_chunk_upload'): # write chunk
                 with open(os.path.join(tmp_path, data.get('chunk_file_name')), 'ab+') as destination:
                     destination.write(data.get('client_files')[0]['file'].read())
-            else:
-                # write each file
-                l = data.get('client_files')
-                print(l)
-                for client_file in l:
+            else: # write each file
+                for client_file in data.get('client_files'):
                     with open(os.path.join(tmp_path, client_file['file'].name), 'ab+') as destination:
                         destination.write(client_file['file'].read())
+
             if not data.get('end_of_upload'):
                 return Response(data='Chunk is delivered', status=status.HTTP_202_ACCEPTED)
-            tmp_files_names = [file for file in os.listdir(tmp_path) if os.path.isfile(os.path.join(tmp_path, file))]
-            print('uploaded tmp_files',tmp_files_names)
-            # for file in tmp_files_1: os.rename(os.path.join(tmp_path, file), os.path.join(upload_dir, file))
-            # tmp_files = [os.path.join(os.path.relpath(upload_dir), file) for file in tmp_files_1]
-            # print('reworked tmp_files',tmp_files)
-            # client_files = {'client_files[{}]'.format(i):  File(open(os.path.join(tmp_path, f), 'rb')) for i, f in enumerate(tmp_files_names)}
-            # client_files = {'client_files[{}]'.format(i): os.path.join(tmp_path, f) for i, f in enumerate(tmp_files_names)}
-            client_files = [{'file':os.path.join(tmp_path, f)} for f in tmp_files_names]
-            print('client_files', client_files)
-            # request.data.update(client_files)
+            tmp_files = [file for file in os.listdir(tmp_path) if os.path.isfile(os.path.join(tmp_path, file))]
+            client_files = [{'file':f} for f in tmp_files]
+            serializer.validated_data.update({'client_files': client_files})
 
-            # serializer = DataSerializer(data=request.data)
-            # serializer.is_valid(raise_exception=True)
-            db_data = serializer.save(сlient_files=client_files)
+            db_data = serializer.save()
             db_task.data = db_data
             db_task.save()
             data = {k: v for k, v in serializer.data.items()}
-            print('data after all operations', data)
 
             upload_dir = os.path.relpath(db_data.get_upload_dirname())
-            for file in tmp_files_names: os.rename(os.path.join(tmp_path, file), os.path.join(upload_dir, file))
+            for file in tmp_files: os.rename(os.path.join(tmp_path, file), os.path.join(upload_dir, file))
             shutil.rmtree(tmp_path)
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
