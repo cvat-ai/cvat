@@ -170,7 +170,7 @@ class CLI():
             # FIXME It is better to use meta information from the server
             # to determine the extension
             # replace '.jpe' or '.jpeg' with a more used '.jpg'
-            if im_ext == '.jpe' or '.jpeg' or None:
+            if im_ext in ('.jpe', '.jpeg', None):
                 im_ext = '.jpg'
 
             outfile = 'task_{}_frame_{:06d}{}'.format(task_id, frame_id, im_ext)
