@@ -4,6 +4,7 @@
 
 from django.urls import path, re_path
 from django.conf import settings
+from django.urls.conf import include
 from rest_auth.views import (
     LoginView, LogoutView, PasswordChangeView,
     PasswordResetView, PasswordResetConfirmView)
@@ -36,3 +37,5 @@ if settings.DJANGO_AUTH_TYPE == 'BASIC':
             path('register/account-email-verification-sent', EmailVerificationSentView.as_view(),
                 name='account_email_verification_sent'),
         ]
+
+urlpatterns = [path('auth/', include(urlpatterns))]

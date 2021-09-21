@@ -16,13 +16,23 @@ class OpenPolicyAgentPermission(BasePermission):
         r = requests.post(self.url, json=payload)
         return r.json()["result"]
 
+    def _get_roles(self, user):
+        roles = []
+        if user.is_superuser:
+            # FIXME: why superuser doesn't have corrent groups?
+            roles.append('admin')
+        else:
+            roles.extend({group.name for group in user.groups.all()})
+
+        return roles
+
     def has_permission(self, request, view):
         payload = {
             "input": {
                 "path": request.path.split('/')[3:],
                 "method": request.method,
                 "user": {
-                    "roles": [group.name for group in request.user.groups.all()]
+                    "roles": self._get_roles(request.user)
                 }
             }
         }
@@ -36,7 +46,7 @@ class OpenPolicyAgentPermission(BasePermission):
                 "method": request.method,
                 "user": {
                     "id": request.user.id,
-                    "roles": [group.name for group in request.user.groups.all()]
+                    "roles": self._get_roles(request.user)
                 },
             }
         }

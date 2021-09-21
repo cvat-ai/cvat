@@ -49,3 +49,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
 
+    def perform_create(self, serializer):
+        extra_kwargs = { 'owner': self.request.user }
+        if not serializer.validated_data.get('name'):
+            extra_kwargs.update({ 'name': serializer.validated_data['slug'] })
+        serializer.save(**extra_kwargs)
+
