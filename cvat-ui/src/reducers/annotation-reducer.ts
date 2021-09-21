@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -109,7 +108,6 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
-    aiToolsRef: React.createRef(),
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,

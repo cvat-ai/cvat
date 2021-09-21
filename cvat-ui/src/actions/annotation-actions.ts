@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { MutableRefObject } from 'react';
 import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
@@ -184,7 +183,6 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
-    SET_AI_TOOLS_REF = 'SET_AI_TOOLS_REF',
     GET_DATA_FAILED = 'GET_DATA_FAILED',
     SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
     SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
@@ -1467,15 +1465,6 @@ export function interactWithCanvas(activeInteractor: Model | OpenCVTool, activeL
         payload: {
             activeInteractor,
             activeLabelID,
-        },
-    };
-}
-
-export function setAIToolsRef(ref: MutableRefObject<any>): AnyAction {
-    return {
-        type: AnnotationActionTypes.SET_AI_TOOLS_REF,
-        payload: {
-            aiToolsRef: ref,
         },
     };
 }

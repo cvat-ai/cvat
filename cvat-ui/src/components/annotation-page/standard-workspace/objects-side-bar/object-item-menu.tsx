@@ -7,12 +7,7 @@ import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Icon, {
-    LinkOutlined,
-    CopyOutlined,
-    BlockOutlined,
-    GatewayOutlined,
-    RetweetOutlined,
-    DeleteOutlined,
+    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -50,7 +45,6 @@ interface Props {
     toForeground(): void;
     resetCuboidPerspective(): void;
     changeColorPickerVisible(visible: boolean): void;
-    activateTracking(): void;
     jobInstance: any;
 }
 
@@ -92,20 +86,6 @@ function PropagateItem(props: ItemProps): JSX.Element {
             <CVATTooltip title={`${propagateShortcut}`}>
                 <Button type='link' icon={<BlockOutlined />} onClick={propagate}>
                     Propagate
-                </Button>
-            </CVATTooltip>
-        </Menu.Item>
-    );
-}
-
-function TrackingItem(props: ItemProps): JSX.Element {
-    const { toolProps, ...rest } = props;
-    const { activateTracking } = toolProps;
-    return (
-        <Menu.Item {...rest}>
-            <CVATTooltip title='Run tracking with the active tracker'>
-                <Button type='link' icon={<GatewayOutlined />} onClick={activateTracking}>
-                    Track
                 </Button>
             </CVATTooltip>
         </Menu.Item>
@@ -240,9 +220,6 @@ export default function ItemMenu(props: Props): JSX.Element {
             <CreateURLItem toolProps={props} />
             {!readonly && <MakeCopyItem toolProps={props} />}
             {!readonly && <PropagateItem toolProps={props} />}
-            {is2D && !readonly && objectType === ObjectType.TRACK && shapeType === ShapeType.RECTANGLE && (
-                <TrackingItem toolProps={props} />
-            )}
             {is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <SwitchOrientationItem toolProps={props} />
             )}

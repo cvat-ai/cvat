@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { MutableRefObject, ReactPortal } from 'react';
+import React, { ReactPortal } from 'react';
 import ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import Icon, {
+    EnvironmentFilled,
+    EnvironmentOutlined,
     LoadingOutlined,
     QuestionCircleOutlined,
-    ThunderboltFilled,
-    ThunderboltOutlined,
 } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Select from 'antd/lib/select';
@@ -60,7 +60,6 @@ interface StateToProps {
     detectors: Model[];
     trackers: Model[];
     curZOrder: number;
-    aiToolsRef: MutableRefObject<any>;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
 }
@@ -99,7 +98,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         frame,
         curZOrder: annotation.annotations.zLayer.cur,
-        aiToolsRef: annotation.aiToolsRef,
         defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
         toolsBlockerState,
     };
@@ -194,8 +192,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        const { canvasInstance, aiToolsRef } = this.props;
-        aiToolsRef.current = this;
+        const { canvasInstance } = this.props;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
@@ -235,7 +232,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 <Col>
                                     {isTracked ? (
                                         <CVATTooltip overlay='Disable tracking'>
-                                            <ThunderboltFilled
+                                            <EnvironmentFilled
                                                 onClick={() => {
                                                     const filteredStates = trackedShapes.filter(
                                                         (trackedShape: TrackedShape) =>
@@ -254,7 +251,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         </CVATTooltip>
                                     ) : (
                                         <CVATTooltip overlay={`Enable tracking using ${activeTracker.name}`}>
-                                            <ThunderboltOutlined
+                                            <EnvironmentOutlined
                                                 onClick={() => {
                                                     objectState.descriptions = [`Trackable (${activeTracker.name})`];
                                                     objectState.save().then(() => {
@@ -336,8 +333,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        const { canvasInstance, aiToolsRef } = this.props;
-        aiToolsRef.current = undefined;
+        const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
