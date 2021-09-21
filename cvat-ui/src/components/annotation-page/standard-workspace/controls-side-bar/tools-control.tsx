@@ -199,12 +199,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated,
-            defaultApproxPolyAccuracy,
-            canvasInstance,
-            switchNavigationBlocked,
-            states,
-            fetchAnnotations,
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, states, fetchAnnotations,
         } = this.props;
         const {
             approxPolyAccuracy, mode, activeTracker, trackedShapes,
@@ -326,10 +321,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
         }
 
-        switchNavigationBlocked(true);
-        this.checkTrackedStates(prevProps).finally(() => {
-            switchNavigationBlocked(false);
-        });
+        this.checkTrackedStates(prevProps);
     }
 
     public componentWillUnmount(): void {
@@ -548,9 +540,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private async checkTrackedStates(prevProps: Props): Promise<void> {
         const {
-            frame, jobInstance, states: objectStates, fetchAnnotations, trackers,
+            frame,
+            jobInstance,
+            states: objectStates,
+            trackers,
+            fetchAnnotations,
+            switchNavigationBlocked,
         } = this.props;
         const { trackedShapes } = this.state;
+        let withServerRequest = false;
 
         type AccumulatorType = {
             statefull: {
@@ -590,6 +588,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                     if (clientState && !clientState.outside) {
                         const { points } = clientState;
+                        withServerRequest = true;
                         const stateIsRelevant =
                             serverlessState !== null &&
                             points.length === shapePoints.length &&
@@ -623,102 +622,111 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 },
             );
 
-            // 3. get relevant state for the second group
-            for (const trackerID of Object.keys(trackingData.stateless)) {
-                let hideMessage = null;
-                try {
-                    const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
-                    if (!tracker) {
-                        throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
-                    }
-
-                    const trackableObjects = trackingData.stateless[trackerID];
-                    const numOfObjects = trackableObjects.clientIDs.length;
-                    hideMessage = message.loading(
-                        `${tracker.name}: states are being initialized for ${numOfObjects} ${
-                            numOfObjects > 1 ? 'objects' : 'object'
-                        } ..`,
-                        0,
-                    );
-                    // eslint-disable-next-line no-await-in-loop
-                    const response = await core.lambda.call(jobInstance.task, tracker, {
-                        task: jobInstance.task,
-                        frame: frame - 1,
-                        shapes: trackableObjects.shapes,
-                    });
-
-                    const { states: serverlessStates } = response;
-                    const statefullContainer = trackingData.statefull[trackerID] || {
-                        clientIDs: [],
-                        shapes: [],
-                        states: [],
-                    };
-
-                    Array.prototype.push.apply(statefullContainer.clientIDs, trackableObjects.clientIDs);
-                    Array.prototype.push.apply(statefullContainer.shapes, trackableObjects.shapes);
-                    Array.prototype.push.apply(statefullContainer.states, serverlessStates);
-                    trackingData.statefull[trackerID] = statefullContainer;
-                    delete trackingData.stateless[trackerID];
-                } catch (error) {
-                    notification.error({
-                        message: 'Tracker initialization error',
-                        description: error.toString(),
-                    });
-                } finally {
-                    if (hideMessage) hideMessage();
+            try {
+                if (withServerRequest) {
+                    switchNavigationBlocked(true);
                 }
-            }
+                // 3. get relevant state for the second group
+                for (const trackerID of Object.keys(trackingData.stateless)) {
+                    let hideMessage = null;
+                    try {
+                        const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
+                        if (!tracker) {
+                            throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
+                        }
 
-            for (const trackerID of Object.keys(trackingData.statefull)) {
-                // 4. run tracking for all the objects
-                let hideMessage = null;
-                try {
-                    const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
-                    if (!tracker) {
-                        throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
-                    }
-
-                    const trackableObjects = trackingData.statefull[trackerID];
-                    const numOfObjects = trackableObjects.clientIDs.length;
-                    hideMessage = message.loading(
-                        `${tracker.name}: ${numOfObjects} ${
-                            numOfObjects > 1 ? 'objects are' : 'object is'
-                        } being tracked..`,
-                        0,
-                    );
-                    // eslint-disable-next-line no-await-in-loop
-                    const response = await core.lambda.call(jobInstance.task, tracker, {
-                        task: jobInstance.task,
-                        frame: frame - 1,
-                        shapes: trackableObjects.shapes,
-                        states: trackableObjects.states,
-                    });
-
-                    response.shapes = response.shapes.map(trackedRectangleMapper);
-                    for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
-                        const clientID = trackableObjects.clientIDs[i];
-                        const shape = response.shapes[i];
-                        const state = response.states[i];
-                        const [objectState] = objectStates.filter(
-                            (_state: any): boolean => _state.clientID === clientID,
+                        const trackableObjects = trackingData.stateless[trackerID];
+                        const numOfObjects = trackableObjects.clientIDs.length;
+                        hideMessage = message.loading(
+                            `${tracker.name}: states are being initialized for ${numOfObjects} ${
+                                numOfObjects > 1 ? 'objects' : 'object'
+                            } ..`,
+                            0,
                         );
-                        const [trackedShape] = trackedShapes.filter(
-                            (_trackedShape: TrackedShape) => _trackedShape.clientID === clientID,
-                        );
-                        objectState.points = shape;
-                        objectState.save().then(() => {
-                            trackedShape.serverlessState = state;
-                            trackedShape.shapePoints = shape;
+                        // eslint-disable-next-line no-await-in-loop
+                        const response = await core.lambda.call(jobInstance.task, tracker, {
+                            task: jobInstance.task,
+                            frame: frame - 1,
+                            shapes: trackableObjects.shapes,
                         });
+
+                        const { states: serverlessStates } = response;
+                        const statefullContainer = trackingData.statefull[trackerID] || {
+                            clientIDs: [],
+                            shapes: [],
+                            states: [],
+                        };
+
+                        Array.prototype.push.apply(statefullContainer.clientIDs, trackableObjects.clientIDs);
+                        Array.prototype.push.apply(statefullContainer.shapes, trackableObjects.shapes);
+                        Array.prototype.push.apply(statefullContainer.states, serverlessStates);
+                        trackingData.statefull[trackerID] = statefullContainer;
+                        delete trackingData.stateless[trackerID];
+                    } catch (error) {
+                        notification.error({
+                            message: 'Tracker initialization error',
+                            description: error.toString(),
+                        });
+                    } finally {
+                        if (hideMessage) hideMessage();
                     }
-                } catch (error) {
-                    notification.error({
-                        message: 'Tracking error',
-                        description: error.toString(),
-                    });
-                } finally {
-                    if (hideMessage) hideMessage();
-                    fetchAnnotations();
+                }
+
+                for (const trackerID of Object.keys(trackingData.statefull)) {
+                    // 4. run tracking for all the objects
+                    let hideMessage = null;
+                    try {
+                        const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
+                        if (!tracker) {
+                            throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
+                        }
+
+                        const trackableObjects = trackingData.statefull[trackerID];
+                        const numOfObjects = trackableObjects.clientIDs.length;
+                        hideMessage = message.loading(
+                            `${tracker.name}: ${numOfObjects} ${
+                                numOfObjects > 1 ? 'objects are' : 'object is'
+                            } being tracked..`,
+                            0,
+                        );
+                        // eslint-disable-next-line no-await-in-loop
+                        const response = await core.lambda.call(jobInstance.task, tracker, {
+                            task: jobInstance.task,
+                            frame: frame - 1,
+                            shapes: trackableObjects.shapes,
+                            states: trackableObjects.states,
+                        });
+
+                        response.shapes = response.shapes.map(trackedRectangleMapper);
+                        for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
+                            const clientID = trackableObjects.clientIDs[i];
+                            const shape = response.shapes[i];
+                            const state = response.states[i];
+                            const [objectState] = objectStates.filter(
+                                (_state: any): boolean => _state.clientID === clientID,
+                            );
+                            const [trackedShape] = trackedShapes.filter(
+                                (_trackedShape: TrackedShape) => _trackedShape.clientID === clientID,
+                            );
+                            objectState.points = shape;
+                            objectState.save().then(() => {
+                                trackedShape.serverlessState = state;
+                                trackedShape.shapePoints = shape;
+                            });
+                        }
+                    } catch (error) {
+                        notification.error({
+                            message: 'Tracking error',
+                            description: error.toString(),
+                        });
+                    } finally {
+                        if (hideMessage) hideMessage();
+                        fetchAnnotations();
+                    }
+                }
+            } finally {
+                if (withServerRequest) {
+                    switchNavigationBlocked(false);
                 }
             }
         }
