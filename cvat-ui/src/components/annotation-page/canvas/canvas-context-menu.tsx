@@ -5,7 +5,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Menu from 'antd/lib/menu';
-import { MenuInfo } from 'antd/node_modules/rc-menu/lib/interface';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { Workspace } from 'reducers/interfaces';

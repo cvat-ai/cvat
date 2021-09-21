@@ -5,7 +5,8 @@
 import React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
-import { MenuInfo } from 'antd/node_modules/rc-menu/lib/interface';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import { CombinedState, TaskStatus } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';

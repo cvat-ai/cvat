@@ -7,7 +7,8 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import { LoadingOutlined } from '@ant-design/icons';
-import { MenuInfo } from 'antd/node_modules/rc-menu/lib/interface';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import LoadSubmenu from './load-submenu';
 import { DimensionType } from '../../reducers/interfaces';

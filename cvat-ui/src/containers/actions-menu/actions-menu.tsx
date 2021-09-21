@@ -4,7 +4,8 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { MenuInfo } from 'antd/node_modules/rc-menu/lib/interface';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
 import { CombinedState } from 'reducers/interfaces';
