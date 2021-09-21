@@ -611,7 +611,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if request.method == 'POST':
             if db_task.data:
                 return Response(data='Adding more data is not supported',
-                                status=status.HTTP_400_BAD_REQUEST)
+                    status=status.HTTP_400_BAD_REQUEST)
             serializer = DataSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             data = {k: v for k, v in serializer.validated_data.items()}
@@ -625,8 +625,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 for client_file in data.get('client_files'):
                     with open(os.path.join(tmp_path, client_file['file'].name), 'ab+') as destination:
                         destination.write(client_file['file'].read())
-
-            if not data.get('end_of_upload'):
+            if 'end_of_upload' in request.data and not data.get('end_of_upload'):
                 return Response(data='Chunk is delivered', status=status.HTTP_202_ACCEPTED)
             tmp_files = [file for file in os.listdir(tmp_path) if os.path.isfile(os.path.join(tmp_path, file))]
             client_files = [{'file':f} for f in tmp_files]
@@ -653,8 +652,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if db_data.cloud_storage:
                 db_task.data.storage = StorageChoice.CLOUD_STORAGE
                 db_task.data.save(update_fields=['storage'])
-                # if the value of stop_frame is 0, then inside the function we cannot know
-                # the value specified by the user or it's default value from the database
+            # if the value of stop_frame is 0, then inside the function we cannot know
+            # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
             task.create(db_task.id, data)
