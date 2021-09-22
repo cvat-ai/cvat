@@ -150,7 +150,6 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
-    SELECT_OBJECTS = 'SELECT_OBJECTS',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
     PROPAGATE_OBJECT = 'PROPAGATE_OBJECT',
@@ -556,15 +555,6 @@ export function copyShape(objectState: any): AnyAction {
     };
 }
 
-export function selectObjects(selectedStatesID: number[]): AnyAction {
-    return {
-        type: AnnotationActionTypes.SELECT_OBJECTS,
-        payload: {
-            selectedStatesID,
-        },
-    };
-}
-
 export function activateObject(activatedStateID: number | null, activatedAttributeID: number | null): AnyAction {
     return {
         type: AnnotationActionTypes.ACTIVATE_OBJECT,
@@ -689,8 +679,12 @@ export function getPredictionsAsync(): ThunkAction {
     };
 }
 
-export function changeFrameAsync(toFrame: number, fillBuffer?: boolean, frameStep?: number,
-    forceUpdate?: boolean): ThunkAction {
+export function changeFrameAsync(
+    toFrame: number,
+    fillBuffer?: boolean,
+    frameStep?: number,
+    forceUpdate?: boolean,
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const { instance: job } = state.annotation.job;
