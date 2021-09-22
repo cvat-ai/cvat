@@ -1,6 +1,6 @@
 package utils
 
-# System roles
+# Groups
 ADMIN := "admin"
 BUSINESS := "business"
 USER := "user"
@@ -18,41 +18,31 @@ DELETE := "DELETE"
 PATCH := "PATCH"
 PUT := "PUT"
 
-has_role(name) {
-    input.user.roles[_] == name
-}
-
-has_any_role {
-    count(input.user.roles) != 0
-}
-
-get_privilege(role) = ret {
-    ret := {
+get_priority(privilege) = priority {
+    priority := {
         ADMIN: 0,
         BUSINESS: 50,
         USER: 75,
         WORKER: 100
-    }[role]
+    }[privilege]
 }
 
-has_privilege(role) {
-    privileges = [x | x := get_privilege(input.user.roles[_])]
-    highest_privilege := sort(privileges)[0]
-    highest_privilege <= get_privilege(role)
+has_privilege(privilege) {
+    get_priority(input.user.privilege) <= get_priority(privilege)
 }
 
 is_admin {
-    has_role(ADMIN)
+    input.user.privilege == ADMIN
 }
 
 is_business {
-    has_role(BUSINESS)
+    input.user.privilege == BUSINESS
 }
 
 is_user {
-    has_role(USER)
+    input.user.privilege == USER
 }
 
 is_worker {
-    has_role(WORKER)
+    input.user.privilege == WORKER
 }
