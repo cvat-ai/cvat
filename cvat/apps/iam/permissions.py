@@ -77,9 +77,11 @@ class LambdaPermission(OpenPolicyAgentPermission):
 class OrganizationPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/organizations/allow'
 
-class MemberPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/members/allow'
+class MembershipPermission(OpenPolicyAgentPermission):
+    url = settings.OPA_DATA_URL + '/memberships/allow'
 
+class InvitationPermission(OpenPolicyAgentPermission):
+    url = settings.OPA_DATA_URL + '/invitations/allow'
 class CloudStoragePermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/cloudstorages/allow'
 

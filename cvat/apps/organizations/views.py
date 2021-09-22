@@ -2,13 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.utils.functional import SimpleLazyObject
 from django.contrib.auth.models import Group
-from rest_framework import viewsets
+from django.db.models import query
+from django.utils.functional import SimpleLazyObject
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
-from cvat.apps.iam.permissions import OrganizationPermission
+
+from cvat.apps.engine import serializers
+from cvat.apps.iam.permissions import (OrganizationPermission,
+    MembershipPermission, InvitationPermission)
+
 from . import models
-from .serializers import OrganizationSerializer
+from .serializers import (InvitationSerializer, MembershipSerializer,
+    OrganizationSerializer)
 
 
 def get_user_group(request):
@@ -55,3 +61,18 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             extra_kwargs.update({ 'name': serializer.validated_data['slug'] })
         serializer.save(**extra_kwargs)
 
+class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
+    mixins.ListModelMixin, viewsets.GenericViewSet):
+
+    queryset = models.Membership.objects.all()
+    serializer_class = MembershipSerializer
+
+    def get_permissions(self):
+        return super().get_permissions() + [MembershipPermission()]
+
+class InvitationViewSet(viewsets.ModelViewSet):
+    queryset = models.Invitation.objects.all()
+    serializer_class = InvitationSerializer
+
+    def get_permissions(self):
+        return super().get_permissions() + [InvitationPermission()]

@@ -1,4 +1,4 @@
-package members
+package memberships
 import data.utils
 
 default allow = false

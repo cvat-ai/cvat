@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import User, Group
 from django.contrib.auth import get_user_model
 
 class Organization(models.Model):
@@ -47,6 +46,9 @@ class Invitation(models.Model):
     created_date = models.DateTimeField(null=True)
     owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.CASCADE)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
+
+    def send(self):
+        pass
 
     class Meta:
         default_permissions = ()
