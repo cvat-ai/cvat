@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "launch",
             "preLaunchTask": "npm: start - cvat-ui",
             "name": "ui.js: debug",
@@ -59,7 +59,7 @@
         },
         {
             "name": "server: chrome",
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "launch",
             "url": "http://localhost:7000/",
             "disableNetworkCache":true,

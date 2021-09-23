@@ -55,7 +55,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
     }
 
     function confirmUpdate(modalWindowClassName) {
-        cy.get(modalWindowClassName).within(() => {
+        cy.get(modalWindowClassName).should('be.visible').within(() => {
             cy.contains('button', 'Update').click();
         });
     }
@@ -114,11 +114,8 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                         .get('input[type=file]')
                         .attachFile(annotationArchiveName);
                 });
-            cy.intercept('PUT', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsPut');
-            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
             confirmUpdate('.cvat-modal-content-load-job-annotation');
-            cy.wait('@uploadAnnotationsPut', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-            cy.wait('@uploadAnnotationsPut').its('response.statusCode').should('equal', 201);
+            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
