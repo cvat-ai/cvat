@@ -40,7 +40,7 @@ class OpenPolicyAgentPermission(BasePermission):
                 "is_owner": is_owner,
                 "role": org_role,
             },
-            "privilege": context["privilege"],
+            "privilege": context["privilege"].name,
         }
 
         return context
@@ -69,7 +69,7 @@ class OpenPolicyAgentPermission(BasePermission):
         payload = self.get_payload(request, view, obj)
         return self.check_object_permission(payload)
 
-    def filter(self, request):
+    def filter(self, request, queryset):
         url = self.url.replace('/allow', '/filter')
         payload = self.get_payload(request, None, None)
         r = requests.post(url, json=payload)
@@ -80,7 +80,7 @@ class OpenPolicyAgentPermission(BasePermission):
             '~': operator.not_,
         }
         for token in r.json()["result"]:
-            if token in ops_dict:
+            if isinstance(token, str):
                 val1 = qobjects.pop()
                 if token == '~':
                     qobjects.append(ops_dict[token](val1))
@@ -95,7 +95,7 @@ class OpenPolicyAgentPermission(BasePermission):
         else:
             qobjects.append(Q())
 
-        return self.model.objects.filter(qobjects[0])
+        return queryset.filter(qobjects[0])
 
 class ServerPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/server/allow'
@@ -110,7 +110,6 @@ class LambdaPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/lambda/allow'
 
 class OrganizationPermission(OpenPolicyAgentPermission):
-    model = Organization
     url = settings.OPA_DATA_URL + '/organizations/allow'
 
     def get_payload(self, request, view, obj):
@@ -118,15 +117,15 @@ class OrganizationPermission(OpenPolicyAgentPermission):
 
         # add information about obj (e.g. organization)
         user_id = request.user.id
-        payload["organization"] = {}
-        payload["organization"]["count"] = Organization.objects.filter(
+        resource_payload = {}
+        resource_payload["count"] = Organization.objects.filter(
             owner_id=user_id).count()
         if obj:
-            org_payload = payload["organization"]
-            org_payload["is_owner"] = obj.owner.id == user_id
+            resource_payload["is_owner"] = obj.owner.id == user_id
             membership = Membership.objects.filter(organization=obj, user=request.user).first()
-            org_payload["role"] = membership.role if membership else None
+            resource_payload["role"] = membership.role if membership else None
 
+        payload["input"]["organization"] = resource_payload
         return payload
 
 

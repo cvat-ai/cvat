@@ -60,6 +60,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
 
+    def get_queryset(self):
+         return OrganizationPermission().filter(self.request, super().get_queryset())
+
     def perform_create(self, serializer):
         extra_kwargs = { 'owner': self.request.user }
         if not serializer.validated_data.get('name'):
