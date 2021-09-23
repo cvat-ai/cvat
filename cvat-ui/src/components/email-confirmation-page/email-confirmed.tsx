@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
@@ -21,25 +21,18 @@ function EmailConfirmationPage(): JSX.Element {
     const onFinish = () => {
         linkRef.current.click();
     };
-    const [deadline, setDeadline] = useState<null | number>(null);
-    useEffect(() => {
-        setDeadline(Date.now() + 1000 * 6);
-    }, []);
-
     return (
-        deadline === null ? null : (
-            <Layout>
-                <Content>
-                    <Row justify='center' align='middle' id='email-confirmation-page-container'>
-                        <Col>
-                            <h1>Your email is confirmed</h1>
-                            <Countdown format='ss' title='Redirecting to login page after...' value={deadline} onFinish={onFinish} />
-                            <Link to='/auth/login' ref={linkRef}>Or click this link</Link>
-                        </Col>
-                    </Row>
-                </Content>
-            </Layout>
-        )
+        <Layout>
+            <Content>
+                <Row justify='center' align='middle' id='email-confirmation-page-container'>
+                    <Col>
+                        <h1>Your email is confirmed</h1>
+                        <Countdown format='ss' title='Redirecting to login page after...' value={Date.now() + 1000 * 6} onFinish={onFinish} />
+                        <Link to='/auth/login' ref={linkRef}>Or click this link</Link>
+                    </Col>
+                </Row>
+            </Content>
+        </Layout>
     );
 }
 
