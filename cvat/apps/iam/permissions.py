@@ -59,7 +59,7 @@ class OpenPolicyAgentPermission(BasePermission):
 
     def has_permission(self, request, view):
         payload = self.get_payload(request, view, None)
-        return self.check_permission(payload)
+        return view.detail or self.check_permission(payload)
 
     def has_object_permission(self, request, view, obj):
         payload = self.get_payload(request, view, obj)

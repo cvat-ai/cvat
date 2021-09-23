@@ -46,10 +46,9 @@ allow { # CREATE many organizations
     utils.has_privilege(utils.BUSINESS)
 }
 
-allow { # LIST/VIEW organizations is always allowed, run filter to get Q object
+allow { # LIST organizations is always allowed, run filter to get Q object
     input.method == utils.GET
-    input.path[0] == "organizations"
-    input.resource.id == null # has_permissions DRF check
+    input.path == ["organizations"]
 }
 
 filter = [] { # Django Q object to filter list of entries
