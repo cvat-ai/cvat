@@ -237,7 +237,7 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
-    onChangeToolsBlockerState: (event:string) => void;
+    onChangeToolsBlockerState: (event: string) => void;
     tip: {
         message: string;
         gif: string;
@@ -531,7 +531,6 @@ export interface AnnotationState {
         activeInitialState?: any;
     };
     annotations: {
-        selectedStatesID: number[];
         activatedStateID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
