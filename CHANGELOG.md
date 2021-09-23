@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TDB
+- Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
 
 ### Security
 

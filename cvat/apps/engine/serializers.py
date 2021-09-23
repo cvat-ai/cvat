@@ -274,16 +274,12 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    use_chunk_upload = serializers.BooleanField(default=False)
-    end_of_upload = serializers.BooleanField(default=False)
-    chunk_file_name = serializers.CharField(default='')
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'use_chunk_upload', 'end_of_upload',
-            'chunk_file_name')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -313,9 +309,6 @@ class DataSerializer(serializers.ModelSerializer):
         validated_data.pop('use_zip_chunks')
         validated_data.pop('use_cache')
         validated_data.pop('copy_data')
-        validated_data.pop('use_chunk_upload')
-        validated_data.pop('end_of_upload')
-        validated_data.pop('chunk_file_name')
         db_data = models.Data.objects.create(**validated_data)
 
         data_path = db_data.get_data_dirname()
@@ -330,7 +323,7 @@ class DataSerializer(serializers.ModelSerializer):
         client_objects = []
         for f in client_files:
             client_file = models.ClientFile(data=db_data, **f)
-            client_file.file.name = os.path.join(upload_dir, client_file.file.name)
+            client_file.file.name = os.path.join(os.path.relpath(upload_dir), client_file.file.name)
             client_objects.append(client_file)
         models.ClientFile.objects.bulk_create(client_objects)
 

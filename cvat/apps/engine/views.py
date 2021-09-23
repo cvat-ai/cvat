@@ -616,20 +616,26 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             data = {k: v for k, v in serializer.validated_data.items()}
 
-            tmp_path = os.path.join('./data/tmp', pk)
+            tmp_path = os.path.join(settings.TMP_DATA_ROOT, pk)
             os.makedirs(tmp_path, exist_ok=True)
-            if data.get('use_chunk_upload'): # write chunk
-                with open(os.path.join(tmp_path, data.get('chunk_file_name')), 'ab+') as destination:
-                    destination.write(data.get('client_files')[0]['file'].read())
-            else: # write each file
-                for client_file in data.get('client_files'):
-                    with open(os.path.join(tmp_path, client_file['file'].name), 'ab+') as destination:
-                        destination.write(client_file['file'].read())
-            if 'end_of_upload' in request.data and not data.get('end_of_upload'):
-                return Response(data='Chunk is delivered', status=status.HTTP_202_ACCEPTED)
-            tmp_files = [file for file in os.listdir(tmp_path) if os.path.isfile(os.path.join(tmp_path, file))]
-            client_files = [{'file':f} for f in tmp_files]
-            serializer.validated_data.update({'client_files': client_files})
+
+            action = request.query_params.get('action', None)
+            if action == 'append':
+                file = data.get('client_files')[0]['file']
+                append_chunk = len(data.get('client_files')) == 1 and file.content_type == 'application/octet-stream'
+                if append_chunk: # write chunk
+                    with open(os.path.join(tmp_path, file.name), 'ab+') as destination:
+                        destination.write(file.read())
+                else: # write each file
+                    for client_file in data.get('client_files'):
+                        with open(os.path.join(tmp_path, client_file['file'].name), 'ab+') as destination:
+                            destination.write(client_file['file'].read())
+                return Response(status=status.HTTP_202_ACCEPTED)
+            elif action == 'submit' or not action:
+                tmp_files = [file for file in os.listdir(tmp_path) if os.path.isfile(os.path.join(tmp_path, file))]
+                client_files = [{'file':f} for f in tmp_files]
+                client_files.extend(data.get('client_files'))
+                serializer.validated_data.update({'client_files': client_files})
 
             db_data = serializer.save()
             db_task.data = db_data

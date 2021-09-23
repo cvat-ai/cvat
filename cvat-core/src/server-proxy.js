@@ -596,9 +596,10 @@
 
                 const taskData = new FormData();
 
-                const clientFile = taskDataSpec.client_files[0];
+                const chunkSize = 1024 * 1024 * 100; // 100 mb
+                const [clientFile] = taskDataSpec.client_files;
                 const clientFiles = taskDataSpec.client_files;
-                const uploadUsingChunks = clientFiles.length === 1;
+                const uploadUsingChunks = clientFiles.length === 1 && clientFile.size > chunkSize;
                 delete taskDataSpec.client_files;
                 for (const [key, value] of Object.entries(taskDataSpec)) {
                     if (Array.isArray(value)) {
@@ -626,89 +627,74 @@
 
                 onUpdate('The data are being uploaded to the server 0%');
 
-                async function chunkUpload(file) {
-                    const chunkSize = 1024 * 1024 * 100; // 100 mb
-                    const totalChunks = Math.ceil(file.size / chunkSize);
-                    let currentChunkNumber = 1;
-                    async function upload() {
-                        const prevChunkNumber = currentChunkNumber - 1;
-                        const fileChunk = file.slice(prevChunkNumber * chunkSize, Math.min(prevChunkNumber * chunkSize + chunkSize, file.size));
-                        taskData.set('client_files[0]', fileChunk);
-                        taskData.set('chunk_file_name', file.name);
-                        taskData.set('end_of_upload', currentChunkNumber >= totalChunks);
-                        taskData.set('use_chunk_upload', true);
-                        try {
-                            await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
-                                proxy: config.proxy,
-                            });
-                            onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
-                            currentChunkNumber++;
-                            if (currentChunkNumber <= totalChunks) await upload();
-                        } catch (errorData) {
-                            try {
-                                await deleteTask(response.data.id);
-                            } catch (_) {
-                                // ignore
-                            }
-                            throw generateError(errorData);
+                function clearClientFiles(data) {
+                    const reg = /client_files[[0-9]+]/;
+                    for (const key of data.keys()) {
+                        if (reg.test(key)) {
+                            data.delete(key);
                         }
                     }
-                    await upload();
+                }
+
+                async function chunkUpload(file) {
+                    const totalChunks = Math.ceil(file.size / chunkSize);
+                    let currentChunkNumber = 1;
+                    while (currentChunkNumber <= totalChunks) {
+                        const prevChunkNumber = currentChunkNumber - 1;
+                        const chunkOffset = prevChunkNumber * chunkSize;
+                        const fileChunk = file.slice(chunkOffset, Math.min(chunkOffset + chunkSize, file.size));
+                        taskData.set('client_files[0]', fileChunk, file.name);
+                        onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
+                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=append`, taskData, {
+                            proxy: config.proxy,
+                        });
+                        currentChunkNumber++;
+                    }
                 }
 
                 async function bulkUpload(files) {
-                    const requestLimit = 1024 * 1024 * 100; // 100 mb
-                    const fileGroups = [];
-                    let currentGroup = [];
-                    let currentGroupSize = 0;
-                    for (const file of files) {
-                        if (requestLimit - currentGroupSize >= file.size) {
-                            currentGroup.push(file);
-                            currentGroupSize += file.size;
+                    const fileBulks = files.reduce((fileGroups, file) => {
+                        const lastBulk = fileGroups[fileGroups.length - 1];
+                        if (chunkSize - lastBulk.size >= file.size) {
+                            lastBulk.files.push(file);
+                            lastBulk.size += file.size;
                         } else {
-                            fileGroups.push(currentGroup);
-                            currentGroupSize = file.size;
-                            currentGroup = [file];
+                            fileGroups.push({ files: [file], size: file.size });
                         }
-                    }
-                    fileGroups.push(currentGroup);
-                    const totalChunks = fileGroups.length;
+                        return fileGroups;
+                    }, [{ files: [], size: 0 }]);
+                    const totalBulks = fileBulks.length;
                     let currentChunkNumber = 1;
-                    async function upload() {
-                        if (currentChunkNumber > 1) {
-                            fileGroups[currentChunkNumber - 2].forEach((element, idx) => {
-                                taskData.delete(`client_files[${idx}]`);
-                            });
-                        }
-                        fileGroups[currentChunkNumber - 1].forEach((element, idx) => {
+                    while (currentChunkNumber <= totalBulks) {
+                        clearClientFiles(taskData);
+                        fileBulks[currentChunkNumber - 1].files.forEach((element, idx) => {
                             taskData.set(`client_files[${idx}]`, element);
                         });
-                        taskData.set('end_of_upload', currentChunkNumber >= totalChunks);
-                        taskData.set('use_chunk_upload', false);
-                        try {
-                            await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
-                                proxy: config.proxy,
-                            });
-                            onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
-                            currentChunkNumber++;
-                            if (currentChunkNumber <= totalChunks) await upload();
-                        } catch (errorData) {
-                            try {
-                                await deleteTask(response.data.id);
-                            } catch (_) {
-                                // ignore
-                            }
-                            throw generateError(errorData);
-                        }
+                        onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalBulks) * 100)}%`);
+                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=append`, taskData, {
+                            proxy: config.proxy,
+                        });
+                        currentChunkNumber++;
                     }
-                    await upload();
                 }
 
-
-                if (uploadUsingChunks) {
-                    await chunkUpload(clientFile);
-                } else {
-                    await bulkUpload(clientFiles);
+                try {
+                    if (uploadUsingChunks) {
+                        await chunkUpload(clientFile);
+                    } else {
+                        await bulkUpload(clientFiles);
+                    }
+                    clearClientFiles(taskData);
+                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    try {
+                        await deleteTask(response.data.id);
+                    } catch (_) {
+                        // ignore
+                    }
+                    throw generateError(errorData);
                 }
 
                 try {
