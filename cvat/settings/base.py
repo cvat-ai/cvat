@@ -191,6 +191,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
+    'cvat.apps.organizations.views.AuthContextMiddleware',
 ]
 
 UI_URL = ''

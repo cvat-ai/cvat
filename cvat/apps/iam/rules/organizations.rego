@@ -2,17 +2,26 @@ package organizations
 import data.utils
 
 # input: {
-#     "method": "<"GET"|"POST"|...>"
-#     "path": ["...", "..."],
+#     "method": <"GET"|"POST"|...>,
+#     "path": [...],
 #     "user": {
-#         "id": <num>,
+#         "id": <num>
+#     },
+#     "context": {
 #         "privilege": <"admin"|"business"|"user"|"worker"|null>,
-#         "organization": {
+#         "org": {
+#             "slug": <slug>,
 #             "is_owner": <true|false>,
 #             "role": <"maintainer"|"supervisor"|"worker"|null>
 #         }
-#         "own_orgs_count": <num>
+#     },
+#     "organization": {
+#         "count": <num>,
+#         "is_owner": <true|false>,
+#         "role": <"maintainer"|"supervisor"|"worker"|null>
 #     }
+# }
+
 
 MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
@@ -26,7 +35,7 @@ allow { # ADMIN has no restrictions
 allow { # CREATE one organization
     input.method == utils.POST
     input.path == ["organizations"]
-    input.user.own_orgs_count == 0
+    input.organization.count == 0
     utils.has_privilege(utils.USER)
 }
 
@@ -44,37 +53,42 @@ allow { # LIST organizations is always allowed, run filter to get Q object
 filter = [] { # Django Q object to filter list of entries
     utils.is_admin
 } else = qobject {
-    qobject := [ {"owner_id": input.user.id}, "|", {"members__user_id": input.user.id} ]
+    qobject := [ {"owner_id": input.user.id}, {"members__user_id": input.user.id}, "|" ]
 }
 
 allow { # VIEW an organization (owner)
     input.method == utils.GET
-    input.path == ["organizations", id]
-    input.user.organization.is_owner
+    org_slug := input.path[1]
+    input.path == ["organizations", org_slug]
+    input.organization.is_owner
 }
 
 allow { # VIEW an organization (member)
     input.method == utils.GET
-    input.path == ["organizations", id]
-    input.user.organization.role != null
+    org_slug := input.path[1]
+    input.path == ["organizations", org_slug]
+    input.organization.role != null
 }
 
 allow { # UPDATE an organization (owner)
     input.method == utils.PATCH
-    input.path == ["organizations", id]
-    input.user.organization.is_owner
+    org_slug := input.path[1]
+    input.path == ["organizations", org_slug]
+    input.organization.is_owner
 }
 
 allow { # UPDATE an organization (maintainer)
     input.method == utils.PATCH
-    input.path == ["organizations", id]
+    org_slug := input.path[1]
+    input.path == ["organizations", org_slug]
     utils.has_privilege(utils.USER)
-    input.user.organization.role == MAINTAINER
+    input.organization.role == MAINTAINER
 }
 
 allow { # DELETE an organization (owner)
     input.method == utils.DELETE
-    input.path == ["organizations", id]
+    org_slug := input.path[1]
+    input.path == ["organizations", org_slug]
     utils.has_privilege(utils.WORKER)
-    input.user.organization.is_owner
+    input.organization.is_owner
 }

@@ -2,10 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.organizations.models import Organization
-from django.conf import settings
-from rest_framework.permissions import BasePermission
+import operator
+
 import requests
+from django.conf import settings
+from django.db.models import Q
+from rest_framework.permissions import BasePermission
+
+from cvat.apps.organizations.models import Membership, Organization
+
 
 class OpenPolicyAgentPermission(BasePermission):
     # pylint: disable=no-self-use
@@ -17,6 +22,30 @@ class OpenPolicyAgentPermission(BasePermission):
         r = requests.post(self.url, json=payload)
         return r.json()["result"]
 
+    def _get_context(self, request):
+        context = request.auth_context
+
+        org_slug = None
+        is_owner = False
+        org_role = None
+        if context["organization"]:
+            org_slug = context["organization"].slug
+            is_owner = context["organization"].owner.id == request.user.id
+        if context["membership"]:
+            org_role = context["membership"].role
+
+        context = {
+            "org": {
+                "slug": org_slug,
+                "is_owner": is_owner,
+                "role": org_role,
+            },
+            "privilege": context["privilege"],
+        }
+
+        return context
+
+
     def get_payload(self, request, view, obj):
         payload = {
             "input": {
@@ -24,8 +53,8 @@ class OpenPolicyAgentPermission(BasePermission):
                 "method": request.method,
                 "user": {
                     "id": request.user.id,
-                    "privilege": request.user.privilege,
-                }
+                },
+                "context": self._get_context(request)
             }
         }
 
@@ -40,6 +69,34 @@ class OpenPolicyAgentPermission(BasePermission):
         payload = self.get_payload(request, view, obj)
         return self.check_object_permission(payload)
 
+    def filter(self, request):
+        url = self.url.replace('/allow', '/filter')
+        payload = self.get_payload(request, None, None)
+        r = requests.post(url, json=payload)
+        qobjects = []
+        ops_dict = {
+            '|': operator.or_,
+            '&': operator.and_,
+            '~': operator.not_,
+        }
+        for token in r.json()["result"]:
+            if token in ops_dict:
+                val1 = qobjects.pop()
+                if token == '~':
+                    qobjects.append(ops_dict[token](val1))
+                else:
+                    val2 = qobjects.pop()
+                    qobjects.append(ops_dict[token](val1, val2))
+            else:
+                qobjects.append(Q(**token))
+
+        if qobjects:
+            assert len(qobjects) == 1
+        else:
+            qobjects.append(Q())
+
+        return self.model.objects.filter(qobjects[0])
+
 class ServerPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/server/allow'
 
@@ -53,20 +110,25 @@ class LambdaPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/lambda/allow'
 
 class OrganizationPermission(OpenPolicyAgentPermission):
+    model = Organization
     url = settings.OPA_DATA_URL + '/organizations/allow'
+
     def get_payload(self, request, view, obj):
         payload = super().get_payload(request, view, obj)
+
+        # add information about obj (e.g. organization)
         user_id = request.user.id
-        payload["user"]["own_orgs_count"] = Organization.objects.filter(
+        payload["organization"] = {}
+        payload["organization"]["count"] = Organization.objects.filter(
             owner_id=user_id).count()
         if obj:
-            org_payload = payload["user"]["organization"]
+            org_payload = payload["organization"]
             org_payload["is_owner"] = obj.owner.id == user_id
-            member = [member for member in obj.members if member.user_id == user_id]
-            assert len(member) <= 1
-            org_payload["role"] = member[0].role if member else None
+            membership = Membership.objects.filter(organization=obj, user=request.user).first()
+            org_payload["role"] = membership.role if membership else None
 
         return payload
+
 
 class MembershipPermission(OpenPolicyAgentPermission):
     url = settings.OPA_DATA_URL + '/memberships/allow'

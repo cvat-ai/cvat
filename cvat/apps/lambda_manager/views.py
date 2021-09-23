@@ -17,7 +17,7 @@ from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from rest_framework.permissions import IsAuthenticated
 from cvat.apps.engine.models import ShapeType, SourceType
-from cvat.apps.iam import LambdaPermission
+from cvat.apps.iam.permissions import LambdaPermission
 
 class LambdaType(Enum):
     DETECTOR = "detector"
