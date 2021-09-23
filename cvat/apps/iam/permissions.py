@@ -117,15 +117,17 @@ class OrganizationPermission(OpenPolicyAgentPermission):
 
         # add information about obj (e.g. organization)
         user_id = request.user.id
-        resource_payload = {}
+        resource_payload = { "id": None }
         resource_payload["count"] = Organization.objects.filter(
             owner_id=user_id).count()
         if obj:
+            resource_payload["id"] = obj.slug
             resource_payload["is_owner"] = obj.owner.id == user_id
             membership = Membership.objects.filter(organization=obj, user=request.user).first()
             resource_payload["role"] = membership.role if membership else None
 
-        payload["input"]["organization"] = resource_payload
+        payload["input"]["resource"] = resource_payload
+
         return payload
 
 
