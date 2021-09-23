@@ -18,10 +18,6 @@ class OpenPolicyAgentPermission(BasePermission):
         r = requests.post(self.url, json=payload)
         return r.json()["result"]
 
-    def check_object_permission(self, payload):
-        r = requests.post(self.url, json=payload)
-        return r.json()["result"]
-
     def _get_context(self, request):
         context = request.auth_context
 
@@ -67,7 +63,7 @@ class OpenPolicyAgentPermission(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         payload = self.get_payload(request, view, obj)
-        return self.check_object_permission(payload)
+        return self.check_permission(payload)
 
     def filter(self, request, queryset):
         url = self.url.replace('/allow', '/filter')
