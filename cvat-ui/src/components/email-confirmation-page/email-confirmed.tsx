@@ -2,56 +2,39 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout, Row, Col } from 'antd';
+import { Col, Row } from 'antd/lib/grid';
+import Layout from 'antd/lib/layout';
+import Statistic from 'antd/lib/statistic';
+import './styles.scss';
 
 const { Content } = Layout;
+const { Countdown } = Statistic;
+const deadline = Date.now() + 1000 * 6;
 
 /**
- * Component for displaying email confirmation message and then redirecting to the loginpage
+ * Component for displaying email confirmation message and then redirecting to the login page
  */
-class EmailConfirmationMessage extends React.Component {
-    componentDidMount() {
-        let counter = 5;
-        const id = setInterval(() => {
-            counter--;
-            document.getElementById('countID').innerHTML = counter;
 
-            if (counter === 0) {
-                try {
-                    document.getElementById('link').click();
-                } catch (error) {
-                    // console.log(error);
-
-                }
-                clearInterval(id);
-            }
-        }, 1000);
-        document.getElementById('link').onclick = function () { clearInterval(id); };
-    }
-    render() {
-        return (
-            <Layout>
-                <Content>
-                    <Row justify='center' align='middle' style={{ height: '100%', textAlign: 'center' }}>
-                        <Col>
-                            <h1>Your email is confirmed</h1>
-                            <p>
-                                Redirecting you in &nbsp;
-                                <span id='countID'>5</span>
-                                s
-                            </p>
-                            <Link to='/auth/login' id='link'>Or click this link</Link>
-
-                        </Col>
-                    </Row>
-                </Content>
-
-            </Layout>
-
-        );
-    }
+function EmailConfirmationPage() {
+    const linkRef = useRef();
+    const onFinish = () => {
+        linkRef.current.click();
+    };
+    return (
+        <Layout>
+            <Content>
+                <Row justify='center' align='middle' id='email-confirmation-page-container'>
+                    <Col>
+                        <h1>Your email is confirmed</h1>
+                        <Countdown format='ss' title='Redirecting to login page after...' value={deadline} onFinish={onFinish} />
+                        <Link to='/auth/login' ref={linkRef}>Or click this link</Link>
+                    </Col>
+                </Row>
+            </Content>
+        </Layout>
+    );
 }
 
-export default EmailConfirmationMessage;
+export default EmailConfirmationPage;
