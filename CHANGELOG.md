@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed JSON transform issues in network requests (https://github.com/openvinotoolkit/cvat/pull/3706)
+- Fixed JSON transform issues in network requests (<https://github.com/openvinotoolkit/cvat/pull/3706>)
 
 ### Security
 
