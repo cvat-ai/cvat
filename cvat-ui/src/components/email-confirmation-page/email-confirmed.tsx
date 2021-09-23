@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
@@ -11,29 +11,35 @@ import './styles.scss';
 
 const { Content } = Layout;
 const { Countdown } = Statistic;
-const deadline = Date.now() + 1000 * 6;
 
 /**
  * Component for displaying email confirmation message and then redirecting to the login page
  */
 
-function EmailConfirmationPage() {
+function EmailConfirmationPage(): JSX.Element {
     const linkRef = useRef();
     const onFinish = () => {
         linkRef.current.click();
     };
+    const [deadline, setDeadline] = useState<null | number>(null);
+    useEffect(() => {
+        setDeadline(Date.now() + 1000 * 6);
+    }, []);
+
     return (
-        <Layout>
-            <Content>
-                <Row justify='center' align='middle' id='email-confirmation-page-container'>
-                    <Col>
-                        <h1>Your email is confirmed</h1>
-                        <Countdown format='ss' title='Redirecting to login page after...' value={deadline} onFinish={onFinish} />
-                        <Link to='/auth/login' ref={linkRef}>Or click this link</Link>
-                    </Col>
-                </Row>
-            </Content>
-        </Layout>
+        deadline === null ? null : (
+            <Layout>
+                <Content>
+                    <Row justify='center' align='middle' id='email-confirmation-page-container'>
+                        <Col>
+                            <h1>Your email is confirmed</h1>
+                            <Countdown format='ss' title='Redirecting to login page after...' value={deadline} onFinish={onFinish} />
+                            <Link to='/auth/login' ref={linkRef}>Or click this link</Link>
+                        </Col>
+                    </Row>
+                </Content>
+            </Layout>
+        )
     );
 }
 
