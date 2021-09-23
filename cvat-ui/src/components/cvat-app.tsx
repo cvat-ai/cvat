@@ -42,6 +42,7 @@ import showPlatformNotification, {
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
+import EmailConfirmationPage from './email-confirmation-page/email-confirmed';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -381,6 +382,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             path='/auth/password/reset/confirm'
                             component={ResetPasswordPageConfirmComponent}
                         />
+
+                        <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
+
                         <Redirect
                             to={location.pathname.length > 1 ? `/auth/login/?next=${location.pathname}` : '/auth/login'}
                         />
