@@ -2515,8 +2515,8 @@ def generate_manifest_file(data_type, manifest_path, sources):
         manifest = VideoManifestManager(manifest_path)
     else:
         manifest = ImageManifestManager(manifest_path)
-    prepared_meta = manifest.prepare_meta(**kwargs[data_type])
-    manifest.create(prepared_meta)
+    manifest.link(**kwargs[data_type])
+    manifest.create()
 
 class TaskDataAPITestCase(APITestCase):
     _image_sizes = {}

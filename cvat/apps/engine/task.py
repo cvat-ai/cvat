@@ -435,17 +435,16 @@ def _create_thread(tid, data, isImport=False):
                     if not manifest_is_prepared:
                         _update_status('Start prepare a manifest file')
                         manifest = VideoManifestManager(db_data.get_manifest_path())
-                        meta_info = manifest.prepare_meta(
+                        manifest.link(
                             media_file=media_files[0],
                             upload_dir=upload_dir,
                             chunk_size=db_data.chunk_size
                         )
-                        manifest.create(meta_info)
-                        manifest.init_index()
+                        manifest.create()
                         _update_status('A manifest had been created')
 
-                        all_frames = meta_info.get_size()
-                        video_size = meta_info.frame_sizes
+                        all_frames = len(manifest.reader)
+                        video_size = manifest.reader.resolution
                         manifest_is_prepared = True
 
                     db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 \
@@ -465,23 +464,19 @@ def _create_thread(tid, data, isImport=False):
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
                     if db_task.dimension == models.DimensionType.DIM_2D:
-                        meta_info = manifest.prepare_meta(
+                        manifest.link(
                             sources=extractor.absolute_source_paths,
                             meta={ k: {'related_images': related_images[k] } for k in related_images },
                             data_dir=upload_dir
                         )
-                        content = meta_info.content
                     else:
-                        content = []
-                        for source in extractor.absolute_source_paths:
-                            name, ext = os.path.splitext(os.path.relpath(source, upload_dir))
-                            content.append({
-                                'name': name,
-                                'meta': { 'related_images': related_images[''.join((name, ext))] },
-                                'extension': ext
-                            })
-                    manifest.create(content)
-                manifest.init_index()
+                        manifest.link(
+                            sources=extractor.absolute_source_paths,
+                            meta={ k: {'related_images': related_images[k] } for k in related_images },
+                            data_dir=upload_dir,
+                            DIM_3D = True,
+                        )
+                    manifest.create()
                 counter = itertools.count()
                 for _, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
                     chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
