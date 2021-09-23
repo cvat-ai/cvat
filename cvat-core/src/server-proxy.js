@@ -679,12 +679,14 @@
                 }
 
                 try {
-                    if (uploadUsingChunks) {
-                        await chunkUpload(clientFile);
-                    } else {
-                        await bulkUpload(clientFiles);
+                    if (clientFiles.length !== 0) {
+                        if (uploadUsingChunks) {
+                            await chunkUpload(clientFile);
+                        } else {
+                            await bulkUpload(clientFiles);
+                        }
+                        clearClientFiles(taskData);
                     }
-                    clearClientFiles(taskData);
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
                         proxy: config.proxy,
                     });
