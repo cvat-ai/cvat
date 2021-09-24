@@ -1267,6 +1267,9 @@ def import_labels_to_project(project_annotation, dataset):
     pass
 
 def load_dataset_data(project_annotation, dataset):
-    import_labels_to_project(project_annotation, dataset)
+    # Check that there are no labels
+    # If not then import
+        import_labels_to_project(project_annotation, dataset)
+    # Save data to tasks somehow
 
 

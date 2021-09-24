@@ -20,6 +20,7 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
+import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -115,6 +116,7 @@ export default function ProjectPageComponent(): JSX.Element {
             <ExportDatasetModal />
             <MoveTaskModal />
             <ModelRunnerDialog />
+            <ImportDatasetModal />
         </Row>
     );
 }

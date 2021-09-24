@@ -502,7 +502,7 @@
 
             async function importDataset(id, format, file) {
                 const { backendAPI } = config;
-                const url = `${backendAPI}/project/${id}/dataset`;
+                const url = `${backendAPI}/projects/${id}/dataset`;
 
                 const formData = new FormData();
                 formData.append('dataset_file', file);

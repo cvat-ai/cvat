@@ -322,44 +322,6 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             '405': openapi.Response(description='Format is not available'),
         }
     )
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset')
-    def dataset_export(self, request, pk):
-        db_project = self.get_object() # force to call check_object_permissions
-        action = request.query_params.get("action", "").lower()
-
-
-        if action in ("import_status",):
-            queue = django_rq.get_queue("default")
-            rq_job = queue.fetch_job(f"/api/v1/project/{pk}/dataset_import")
-            if rq_job is None:
-                return Response(status=status.HTTP_404_NOT_FOUND)
-            elif rq_job.is_finished:
-                os.close(rq_job.meta['tmp_file_descriptor'])
-                os.remove(rq_job.meta['tmp_file'])
-                rq_job.delete()
-                return Response(status=status.HTTP_201_CREATED)
-            elif rq_job.is_failed:
-                os.close(rq_job.meta['tmp_file_descriptor'])
-                os.remove(rq_job.meta['tmp_file'])
-                rq_job.delete()
-                #TODO: Should we check CVATImportError here?
-                return Response(
-                    data=str(rq_job.exc_info),
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            format_name = request.query_params.get("format", "")
-            return _export_annotations(
-                db_instance=db_project,
-                rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
-                request=request,
-                action=action,
-                callback=dm.views.export_project_as_dataset,
-                format_name=format_name,
-                filename=request.query_params.get("filename", "").lower(),
-            )
-
     @swagger_auto_schema(method='post', operation_summary='Import dataset in specific format as a project',
         manual_parameters=[
             openapi.Parameter('format', openapi.IN_QUERY,
@@ -371,21 +333,57 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             '405': openapi.Response(description='Format is not available'),
         }
     )
-    @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset')
-    def dataset_import(self, request, pk):
-        project: Project = self.get_object() # force to call check_object_permissions
-        format_name = request.query_params.get("format", "")
+    @action(detail=True, methods=['GET', 'POST'], serializer_class=None,
+        url_path='dataset')
+    def dataset(self, request, pk):
+        db_project = self.get_object() # force to call check_object_permissions
 
-        if project.tasks.count():
-            raise ValidationError("Cannot import dataset in non empty project")
+        if request.method == 'POST':
+            format_name = request.query_params.get("format", "")
+            if db_project.tasks.count():
+                raise ValidationError("Cannot import dataset in non empty project")
 
-        return _import_project_dataset(
-            request=request,
-            rq_id=f"/api/v1/project/{pk}/dataset_import",
-            rq_func=dm.project.import_dataset_as_project,
-            pk=pk,
-            format_name=format_name,
-        )
+            return _import_project_dataset(
+                request=request,
+                rq_id=f"/api/v1/project/{pk}/dataset_import",
+                rq_func=dm.project.import_dataset_as_project,
+                pk=pk,
+                format_name=format_name,
+            )
+        else:
+            action = request.query_params.get("action", "").lower()
+            if action in ("import_status",):
+                queue = django_rq.get_queue("default")
+                rq_job = queue.fetch_job(f"/api/v1/project/{pk}/dataset_import")
+                if rq_job is None:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
+                elif rq_job.is_finished:
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response(status=status.HTTP_201_CREATED)
+                elif rq_job.is_failed:
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    #TODO: Should we check CVATImportError here?
+                    return Response(
+                        data=str(rq_job.exc_info),
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+                else:
+                    return Response(status=status.HTTP_202_ACCEPTED)
+            else:
+                format_name = request.query_params.get("format", "")
+                return _export_annotations(
+                    db_instance=db_project,
+                    rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
+                    request=request,
+                    action=action,
+                    callback=dm.views.export_project_as_dataset,
+                    format_name=format_name,
+                    filename=request.query_params.get("filename", "").lower(),
+                )
 
     @swagger_auto_schema(method='get', operation_summary='Method allows to download project annotations',
         manual_parameters=[
@@ -1676,6 +1674,8 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
     if format_desc is None:
         raise serializers.ValidationError(
             "Unknown input format '{}'".format(format_name))
+    elif not format_desc.ENABLED:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
@@ -1683,7 +1683,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
     if not rq_job:
         serializer = DatasetFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            dataset_file = serializers.validated_data['dataset_file']
+            dataset_file = serializer.validated_data['dataset_file']
             fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
             with open(filename, 'wb+') as f:
                 for chunk in dataset_file.chunks():
@@ -1699,4 +1699,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
             rq_job.meta['tmp_file_descriptor'] = fd
             rq_job.save_meta()
     else:
+        #TODO: Should it be a response?
         raise ValidationError("Import job already exists")
+
+    return Response(status=status.HTTP_202_ACCEPTED)
