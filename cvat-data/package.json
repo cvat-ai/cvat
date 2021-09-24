@@ -34,7 +34,7 @@
     "worker-loader": "^2.0.0"
   },
   "dependencies": {
-    "async-mutex": "^0.3.1",
+    "async-mutex": "^0.3.2",
     "jszip": "3.7.1"
   }
 }

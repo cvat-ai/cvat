@@ -365,10 +365,10 @@ context('Review pipeline feature', () => {
 
         it('Issue navigation. Navigation works and go only to frames with issues.', () => {
             cy.get('.cvat-issues-sidebar-previous-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-next-frame').click();
+            cy.get('.cvat-issues-sidebar-next-frame').should('not.have.css', 'pointer-events', 'none').click();
             cy.checkFrameNum(2); // Frame changed to 2
             cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-previous-frame').click();
+            cy.get('.cvat-issues-sidebar-previous-frame').should('not.have.css', 'pointer-events', 'none').click();
             cy.checkFrameNum(0); // Frame changed to 0
         });
 
