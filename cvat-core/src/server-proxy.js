@@ -666,7 +666,6 @@
                     const totalBulks = fileBulks.length;
                     let currentChunkNumber = 1;
                     while (currentChunkNumber <= totalBulks) {
-                        clearClientFiles(taskData);
                         fileBulks[currentChunkNumber - 1].files.forEach((element, idx) => {
                             taskData.set(`client_files[${idx}]`, element);
                         });
@@ -674,6 +673,7 @@
                         await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=append`, taskData, {
                             proxy: config.proxy,
                         });
+                        clearClientFiles(taskData);
                         currentChunkNumber++;
                     }
                 }
@@ -685,8 +685,8 @@
                         } else {
                             await bulkUpload(clientFiles);
                         }
-                        clearClientFiles(taskData);
                     }
+                    clearClientFiles(taskData);
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
                         proxy: config.proxy,
                     });
