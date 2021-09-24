@@ -111,37 +111,33 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         updateJob,
     } = props;
 
-    const onClickMenu = (params: MenuInfo, file?: File): void => {
-        if (params.keyPath.length > 1) {
-            const [additionalKey, action] = params.keyPath;
-            if (action === Actions.LOAD_JOB_ANNO) {
-                const format = additionalKey;
-                const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
-                if (loader && file) {
-                    loadAnnotations(jobInstance, loader, file);
-                }
-            }
-        } else {
-            const [action] = params.keyPath;
-            if (action === Actions.EXPORT_TASK_DATASET) {
-                showExportModal(jobInstance.task);
-            } else if (action === Actions.REMOVE_ANNO) {
-                removeAnnotations(jobInstance);
-            } else if (action === Actions.REQUEST_REVIEW) {
-                switchRequestReviewDialog(true);
-            } else if (action === Actions.SUBMIT_REVIEW) {
-                switchSubmitReviewDialog(true);
-            } else if (action === Actions.RENEW_JOB) {
-                jobInstance.status = TaskStatus.ANNOTATION;
-                updateJob(jobInstance);
-                history.push(`/tasks/${jobInstance.task.id}`);
-            } else if (action === Actions.FINISH_JOB) {
-                jobInstance.status = TaskStatus.COMPLETED;
-                updateJob(jobInstance);
-                history.push(`/tasks/${jobInstance.task.id}`);
-            } else if (action === Actions.OPEN_TASK) {
-                history.push(`/tasks/${jobInstance.task.id}`);
-            }
+    const onUploadAnnotations = (format: string, file: File): void => {
+        const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
+        if (loader && file) {
+            loadAnnotations(jobInstance, loader, file);
+        }
+    };
+
+    const onClickMenu = (params: MenuInfo): void => {
+        const [action] = params.keyPath;
+        if (action === Actions.EXPORT_TASK_DATASET) {
+            showExportModal(jobInstance.task);
+        } else if (action === Actions.REMOVE_ANNO) {
+            removeAnnotations(jobInstance);
+        } else if (action === Actions.REQUEST_REVIEW) {
+            switchRequestReviewDialog(true);
+        } else if (action === Actions.SUBMIT_REVIEW) {
+            switchSubmitReviewDialog(true);
+        } else if (action === Actions.RENEW_JOB) {
+            jobInstance.status = TaskStatus.ANNOTATION;
+            updateJob(jobInstance);
+            history.push(`/tasks/${jobInstance.task.id}`);
+        } else if (action === Actions.FINISH_JOB) {
+            jobInstance.status = TaskStatus.COMPLETED;
+            updateJob(jobInstance);
+            history.push(`/tasks/${jobInstance.task.id}`);
+        } else if (action === Actions.OPEN_TASK) {
+            history.push(`/tasks/${jobInstance.task.id}`);
         }
     };
 
@@ -153,6 +149,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             loaders={loaders}
             dumpers={dumpers}
             loadActivity={loadActivity}
+            onUploadAnnotations={onUploadAnnotations}
             onClickMenu={onClickMenu}
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}
             saveAnnotations={saveAnnotations}
