@@ -7,7 +7,9 @@ description: 'Overview of the Cloud storages page.'
 
 ![](/images/image227.jpg)
 
-The cloud storages page contains elements, each of them relating to a separate cloud storage. Each element contains: preview, cloud storage name, provider, creation and update info, status, `?` button for displaying the description and the actions menu.
+The cloud storages page contains elements, each of them relating to a separate cloud storage. 
+Each element contains: preview, cloud storage name, provider, creation and update info, status,
+`?` button for displaying the description and the actions menu.
 
 Each button in the action menu is responsible for a specific function:
 - `Update` — update this cloud storage
