@@ -2,7 +2,7 @@
 title: 'Cloud storages page'
 linkTitle: 'Cloud storages page'
 weight: 20
-description: 'Overview of the Cloud storages page.'
+description: 'Overview of the cloud storages page.'
 ---
 
 ![](/images/image227.jpg)
