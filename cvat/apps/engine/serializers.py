@@ -323,7 +323,8 @@ class DataSerializer(serializers.ModelSerializer):
         client_objects = []
         for f in client_files:
             client_file = models.ClientFile(data=db_data, **f)
-            client_file.file.name = os.path.join(os.path.relpath(upload_dir), client_file.file.name)
+            if isinstance(f['file'], str):
+                client_file.file.name = os.path.join(os.path.relpath(upload_dir), client_file.file.name)
             client_objects.append(client_file)
         models.ClientFile.objects.bulk_create(client_objects)
 
