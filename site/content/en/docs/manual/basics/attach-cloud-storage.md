@@ -29,12 +29,13 @@ of an item on сloud storages page.
     - [`Autorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html)
 
     - `Key id and secret access key pair`
-        - `ACCESS KEY ID`
-        - `SECRET ACCESS KEY ID`
+      - `ACCESS KEY ID`
+      - `SECRET ACCESS KEY ID`
 
     - `Anonymous access`
 
-    - `Region` - here you can choose a region from the list or add a new one. To get more information click on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
+    - `Region` - here you can choose a region from the list or add a new one. To get more information click
+    on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
 
     </br>
   - [Azur Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
@@ -44,16 +45,18 @@ of an item on сloud storages page.
     - `Autorization type`
 
     - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs)
-        - `Account name`
-        - `SAS token`
-        
+      - `Account name`
+      - `SAS token`
+
     - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
-        - `Account name`
+      - `Account name`
 
     </br>
-- `Manifest` - the path to the manifest file on your cloud storage. You can add multiple file manifests using the add manifest button.
+- `Manifest` - the path to the manifest file on your cloud storage.
+You can add multiple file manifests using the add manifest button.
 For more information click on [`?`](/docs/manual/advanced/dataset_manifest/).
 
-To publish the cloud storage, click `submit`, after which it will be avaiable on the [Cloud storages page](/docs/manual/basics/cloud-storages/).
+To publish the cloud storage, click `submit`, after which it will be available on
+the [Cloud storages page](/docs/manual/basics/cloud-storages/).
 You can mount the cloud storage using command line interface. More information is available on the
 [Mounting cloud storage](/docs/administration/advanced/mounting_cloud_storages) page.
