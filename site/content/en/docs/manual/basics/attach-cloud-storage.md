@@ -2,7 +2,7 @@
 title: 'Attach cloud storage'
 linkTitle: 'Attach cloud storage'
 weight: 21
-description: ''
+description: 'Instructions on how to attach cloud storage using UI'
 ---
 
 In CVAT you can use AWS-S3 and Azur Blob Container cloud storages to store image datasets for your tasks.
@@ -19,20 +19,20 @@ button on the `Cloud storages` page and fill out the following form:
 
 - `Display name` - the display name of the cloud storage.
 - `Description` (optional) - description of the cloud storage, appears when you click on the `?` button
-of an item on сloud storages page.
-- `Provider` - chose provider of the cloud storage:
+of an item on cloud storages page.
+- `Provider` - choose provider of the cloud storage:
 
   - [AWS-S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html):
 
-    - `Bucket` - container name cloud storage
+    - `Bucket` - cloud storage bucket name
 
-    - [`Autorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html)
+    - [`Autorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html):
 
-    - `Key id and secret access key pair`
-      - `ACCESS KEY ID`
-      - `SECRET ACCESS KEY ID`
+        - `Key id and secret access key pair`:
+            - `ACCESS KEY ID`
+            - `SECRET ACCESS KEY ID`
 
-    - `Anonymous access`
+        - `Anonymous access`
 
     - `Region` - here you can choose a region from the list or add a new one. To get more information click
     on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
@@ -42,18 +42,19 @@ of an item on сloud storages page.
 
     - `Container name` - name of the cloud storage container
 
-    - `Autorization type`
+    - `Autorization type`:
 
-    - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs)
-      - `Account name`
-      - `SAS token`
+        - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
 
-    - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
-      - `Account name`
+            - `Account name`
+            - `SAS token`
+
+        - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
+            - `Account name`
 
     </br>
 - `Manifest` - the path to the manifest file on your cloud storage.
-You can add multiple file manifests using the add manifest button.
+You can add multiple file manifests using the `Add manifest` button.
 For more information click on [`?`](/docs/manual/advanced/dataset_manifest/).
 
 To publish the cloud storage, click `submit`, after which it will be available on
