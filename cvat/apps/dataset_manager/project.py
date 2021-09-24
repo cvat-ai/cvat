@@ -12,6 +12,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from .annotation import AnnotationIR
 from .bindings import ProjectData, load_dataset_data
 from .formats.registry import make_exporter, make_importer
+from .util import bulk_create
 
 def export_project(project_id, dst_file, format_name,
         server_url=None, save_images=False):
@@ -36,6 +37,8 @@ class ProjectAnnotationAndData:
         self.task_annotations: dict[int, TaskAnnotation] = dict()
         self.annotation_irs: dict[int, AnnotationIR] = dict()
 
+        self.tasks_to_add: list[models.Task] = []
+
     def reset(self):
         for annotation_ir in self.annotation_irs.values():
             annotation_ir.reset()
@@ -51,6 +54,9 @@ class ProjectAnnotationAndData:
 
     def delete(self, data=None):
         raise NotImplementedError()
+
+    def add_task(self, task: models.Task):
+        self.tasks_to_add.append(task)
 
     def init_from_db(self):
         self.reset()
@@ -79,10 +85,11 @@ class ProjectAnnotationAndData:
             db_project=self.db_project,
         )
 
-
-
         importer(dataset_file, project_data, self.load_dataset_data)
-        self.create(None)
+
+        # TODO: check if filter is needed here
+        bulk_create(models.Task, self.tasks_to_add, {})
+        self.tasks_to_add.clear()
 
     @property
     def data(self) -> dict:

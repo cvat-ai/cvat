@@ -29,6 +29,7 @@ export const importActions = {
 };
 
 export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => async (dispatch) => {
+    let project: any;
     try {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
@@ -36,13 +37,13 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
             throw Error('Only one importing of dataset allowed at the same time');
         }
         dispatch(importActions.importDataset(instance, format));
-        await instance.annotations.importDataset(format, file);
+        project = await instance.annotations.importDataset(format, file);
     } catch (error) {
         dispatch(importActions.importDatasetFailed(instance, error));
         return;
     }
 
-    dispatch(importActions.importDatasetSuccess(instance, format));
+    dispatch(importActions.importDatasetSuccess(project, format));
 };
 
 export type ImportActions = ActionUnion<typeof importActions>;

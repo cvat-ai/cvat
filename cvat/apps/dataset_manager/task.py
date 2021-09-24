@@ -6,7 +6,6 @@
 from collections import OrderedDict
 from enum import Enum
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -17,6 +16,7 @@ from cvat.apps.profiler import silk_profile
 from .annotation import AnnotationIR, AnnotationManager
 from .bindings import TaskData
 from .formats.registry import make_exporter, make_importer
+from .util import bulk_create
 
 
 class dotdict(OrderedDict):
@@ -38,21 +38,6 @@ class PatchAction(str, Enum):
 
     def __str__(self):
         return self.value
-
-def bulk_create(db_model, objects, flt_param):
-    if objects:
-        if flt_param:
-            if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
-                return db_model.objects.bulk_create(objects)
-            else:
-                ids = list(db_model.objects.filter(**flt_param).values_list('id', flat=True))
-                db_model.objects.bulk_create(objects)
-
-                return list(db_model.objects.exclude(id__in=ids).filter(**flt_param))
-        else:
-            return db_model.objects.bulk_create(objects)
-
-    return []
 
 def _merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows

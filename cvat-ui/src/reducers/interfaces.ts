@@ -342,6 +342,14 @@ export interface NotificationsState {
         predictor: {
             prediction: null | ErrorState;
         };
+        exporting: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
+        };
+        importing: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
+        };
     };
     messages: {
         tasks: {

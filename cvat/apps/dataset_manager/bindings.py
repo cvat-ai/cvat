@@ -1191,7 +1191,7 @@ def find_dataset_root(dm_dataset, task_data):
         prefix = prefix[:-1]
     return prefix
 
-def import_dm_annotations(dm_dataset, task_data):
+def import_dm_annotations(dm_dataset, instance_data):
     shapes = {
         datumaro.AnnotationType.bbox: ShapeType.RECTANGLE,
         datumaro.AnnotationType.polygon: ShapeType.POLYGON,
@@ -1203,13 +1203,16 @@ def import_dm_annotations(dm_dataset, task_data):
     if len(dm_dataset) == 0:
         return
 
+    if isinstance(instance_data, ProjectData):
+        return
+
     label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
 
-    root_hint = find_dataset_root(dm_dataset, task_data)
+    root_hint = find_dataset_root(dm_dataset, instance_data)
 
     for item in dm_dataset:
-        frame_number = task_data.abs_frame_id(
-            match_dm_item(item, task_data, root_hint=root_hint))
+        frame_number = instance_data.abs_frame_id(
+            match_dm_item(item, instance_data, root_hint=root_hint))
 
         # do not store one-item groups
         group_map = {0: 0}
@@ -1238,7 +1241,7 @@ def import_dm_annotations(dm_dataset, task_data):
                         except Exception as e:
                             ann.points = ann.points
                         ann.z_order = 0
-                    task_data.add_shape(task_data.LabeledShape(
+                    instance_data.add_shape(instance_data.LabeledShape(
                         type=shapes[ann.type],
                         frame=frame_number,
                         points = ann.points,
@@ -1247,16 +1250,16 @@ def import_dm_annotations(dm_dataset, task_data):
                         z_order=ann.z_order,
                         group=group_map.get(ann.group, 0),
                         source='manual',
-                        attributes=[task_data.Attribute(name=n, value=str(v))
+                        attributes=[instance_data.Attribute(name=n, value=str(v))
                             for n, v in ann.attributes.items()],
                     ))
                 elif ann.type == datumaro.AnnotationType.label:
-                    task_data.add_tag(task_data.Tag(
+                    instance_data.add_tag(instance_data.Tag(
                         frame=frame_number,
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
                         source='manual',
-                        attributes=[task_data.Attribute(name=n, value=str(v))
+                        attributes=[instance_data.Attribute(name=n, value=str(v))
                             for n, v in ann.attributes.items()],
                     ))
             except Exception as e:
@@ -1266,10 +1269,17 @@ def import_dm_annotations(dm_dataset, task_data):
 def import_labels_to_project(project_annotation, dataset):
     pass
 
-def load_dataset_data(project_annotation, dataset):
-    # Check that there are no labels
-    # If not then import
-        import_labels_to_project(project_annotation, dataset)
-    # Save data to tasks somehow
-
-
+def load_dataset_data(project_annotation, dataset: Dataset):
+    if not project_annotation.db_project.label_set.count():
+        raise Exception('Cannot import dataset to a project without labels')
+        # Will be implemented later
+        # import_labels_to_project(project_annotation, dataset)
+    for subset in dataset.subsets().values():
+        db_task = Task(
+            project=project_annotation.db_project,
+            name=subset.name,
+            owner=project_annotation.db_project.owner,
+            subset=subset.name,
+        )
+        # Need to add data to a task here
+        project_annotation.add_task(db_task)
