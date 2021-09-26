@@ -21,7 +21,7 @@ def get_auth_context(request):
     groups.sort(key=lambda group: group.name)
     # FIXME: understand why createsuperuser doesn't add 'admin' group
     if request.user.is_superuser:
-        admin = Group.objects.get(name='admin')
+        admin, _ = Group.objects.get_or_create(name='admin')
         groups.insert(0, admin)
 
 
