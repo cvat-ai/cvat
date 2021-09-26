@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
+- Add HRNet interactive segmentation serverless function (<>)
 
 ### Changed
 
