@@ -3,10 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from django.utils.functional import SimpleLazyObject
+from django.contrib.auth.models import Group
 from rest_framework import mixins, viewsets
-from rest_framework.decorators import action
-
-from cvat.apps.engine import serializers
 from cvat.apps.iam.permissions import (InvitationPermission,
                                        MembershipPermission,
                                        OrganizationPermission)
@@ -23,14 +21,15 @@ def get_auth_context(request):
     groups.sort(key=lambda group: group.name)
     # FIXME: understand why createsuperuser doesn't add 'admin' group
     if request.user.is_superuser:
-        groups.insert(0, 'admin')
+        admin = Group.objects.get(name='admin')
+        groups.insert(0, admin)
 
 
-    org_slug = request.GET.get('org', None)
+    org_id = request.GET.get('org', None)
     organization = None
     membership = None
-    if org_slug:
-        organization = Organization.objects.get(slug=org_slug)
+    if org_id:
+        organization = Organization.objects.get(slug=org_id)
         membership = Membership.objects.filter(organization=organization,
             user=request.user).first()
 

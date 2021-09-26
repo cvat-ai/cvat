@@ -9,8 +9,8 @@ from .models import Invitation, Membership, Organization
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ['slug', 'name', 'description', 'created_date', 'updated_date',
-            'company', 'email', 'location', 'owner']
+        fields = ['id', 'slug', 'name', 'description', 'created_date',
+            'updated_date', 'company', 'email', 'location', 'owner']
         read_only_fields = ['created_date', 'updated_date', 'owner']
 
 class MembershipSerializer(serializers.ModelSerializer):

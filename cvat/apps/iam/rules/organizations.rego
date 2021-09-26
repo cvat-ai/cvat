@@ -10,7 +10,7 @@ import data.utils
 #     "context": {
 #         "privilege": <"admin"|"business"|"user"|"worker"|null>,
 #         "org": {
-#             "slug": <slug>,
+#             "id": <id>,
 #             "is_owner": <true|false>,
 #             "role": <"maintainer"|"supervisor"|"worker"|null>
 #         }

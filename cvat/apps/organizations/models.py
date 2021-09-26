@@ -2,14 +2,14 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 class Organization(models.Model):
-    slug = models.SlugField(max_length=16, primary_key=True)
-    name = models.CharField(max_length=256, blank=True)
+    slug = models.SlugField(max_length=16, blank=False, unique=True)
+    name = models.CharField(max_length=64, blank=True)
     description = models.TextField(blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    company = models.CharField(max_length=1024, blank=True)
+    company = models.CharField(max_length=64, blank=True)
     email = models.EmailField(blank=True)
-    location = models.CharField(max_length=2048, blank=True)
+    location = models.CharField(max_length=256, blank=True)
 
     owner = models.ForeignKey(get_user_model(), null=True,
         blank=True, on_delete=models.SET_NULL, related_name='+')
