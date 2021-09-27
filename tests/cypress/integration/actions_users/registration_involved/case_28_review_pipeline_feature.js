@@ -268,7 +268,7 @@ context('Review pipeline feature', () => {
                 .should('exist')
                 .trigger('mousemove')
                 .trigger('mouseover');
-            cy.get('[id="quick_issue_from_latest$Menu"]').within(() => {
+            cy.get('.cvat-quick-issue-from-latest-item').within(() => {
                 cy.contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
                     .should('exist')
                     .and('have.text', customeIssueDescription);
