@@ -26,30 +26,31 @@ of an item on cloud storages page.
 
     - `Bucket` - cloud storage bucket name
 
-    - [`Autorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html):
+    - [`Authorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html):
 
-        - `Key id and secret access key pair`:
-            - `ACCESS KEY ID`
-            - `SECRET ACCESS KEY ID`
+      - `Key id and secret access key pair`:
+        - `ACCESS KEY ID`
+        - `SECRET ACCESS KEY ID`
 
-        - `Anonymous access`
+      - `Anonymous access`
 
     - `Region` - here you can choose a region from the list or add a new one. To get more information click
     on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
 
     </br>
-  - [Azur Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
 
-    - `Container name` - name of the cloud storage container
+  - [Azure Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
 
-    - `Autorization type`:
+      - `Container name` - name of the cloud storage container
 
-        - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
+        - `Authorization type`:
+
+          - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
 
             - `Account name`
             - `SAS token`
 
-        - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
+          - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
             - `Account name`
 
     </br>
