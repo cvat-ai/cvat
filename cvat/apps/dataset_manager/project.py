@@ -87,7 +87,7 @@ class ProjectAnnotationAndData:
 
         importer(dataset_file, project_data, self.load_dataset_data)
 
-        # TODO: check if filter is needed here
+        # TODO: check if filter is needed here      \/
         bulk_create(models.Task, self.tasks_to_add, {})
         self.tasks_to_add.clear()
 

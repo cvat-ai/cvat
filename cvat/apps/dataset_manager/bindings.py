@@ -14,7 +14,7 @@ from django.utils import timezone
 from datumaro.components.dataset import Dataset
 import datumaro.components.extractor as datumaro
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label, DimensionType, Image as Img
+from cvat.apps.engine.models import AttributeType, Data, ShapeType, Project, Task, Label, DimensionType, Image as Img
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
 
@@ -1281,5 +1281,16 @@ def load_dataset_data(project_annotation, dataset: Dataset):
             owner=project_annotation.db_project.owner,
             subset=subset.name,
         )
+
+        subset_dataset = subset.as_dataset()
+        subset_dataset_size = len(subset_dataset)
+        db_task.data = Data(
+            chunk_size=subset_dataset_size
+            size=subset_dataset_size,
+            stop_frame=subset_dataset_size,
+        )
+
         # Need to add data to a task here
         project_annotation.add_task(db_task)
+
+

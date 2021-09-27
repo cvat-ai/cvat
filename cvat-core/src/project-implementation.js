@@ -69,9 +69,7 @@
             return result;
         };
         projectClass.prototype.annotations.importDataset.implementation = async function (format, file) {
-            await importDataset(this, format, file);
-            const [project] = await serverProxy.projects.get(`id=${this.id}`);
-            return new Project(project);
+            return importDataset(this, format, file);
         };
 
         return projectClass;

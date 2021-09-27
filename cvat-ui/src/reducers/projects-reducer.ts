@@ -6,7 +6,6 @@ import { AnyAction } from 'redux';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { ImportActions, ImportActionTypes } from 'actions/import-actions';
 
 import { Project, ProjectsState } from './interfaces';
 
@@ -184,18 +183,6 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                         ...deletes,
                     },
                 },
-            };
-        }
-        case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
-            return {
-                ...state,
-                current: state.current.map(
-                    (project): Project => ({
-                        ...project,
-                        instance: project.instance.id === action.payload.instance.id ?
-                            action.payload.instance : project.instance,
-                    }),
-                ),
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

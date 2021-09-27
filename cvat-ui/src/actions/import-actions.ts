@@ -5,6 +5,7 @@
 import { getCVATStore } from 'cvat-store';
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers/interfaces';
+import { getProjectsAsync } from './projects-actions';
 
 export enum ImportActionTypes {
     OPEN_IMPORT_MODAL = 'OPEN_IMPORT_MODAL',
@@ -29,7 +30,6 @@ export const importActions = {
 };
 
 export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => async (dispatch) => {
-    let project: any;
     try {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
@@ -37,13 +37,15 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
             throw Error('Only one importing of dataset allowed at the same time');
         }
         dispatch(importActions.importDataset(instance, format));
-        project = await instance.annotations.importDataset(format, file);
+        await instance.annotations.importDataset(format, file);
     } catch (error) {
         dispatch(importActions.importDatasetFailed(instance, error));
         return;
     }
 
-    dispatch(importActions.importDatasetSuccess(project, format));
+    dispatch(importActions.importDatasetSuccess(instance, format));
+    // TODO: should we call this in component or here?
+    dispatch(getProjectsAsync({ id: instance.id }));
 };
 
 export type ImportActions = ActionUnion<typeof importActions>;
