@@ -19,3 +19,26 @@
         display: block;
     }
 }
+
+.cvat-create-task-page-cloud-storages-tab {
+    display: flex;
+    justify-content: space-between;
+}
+
+.cvat-create-task-page-cloud-storages-tab-form {
+    .cvat-empty-cloud-storages-tree {
+        background-color: $background-color-2;
+        border: 1px;
+        box-sizing: border-box;
+        border-radius: $grid-unit-size * 0.5;
+        text-align: center;
+
+        > .ant-typography {
+            margin-top: $grid-unit-size * 1.25;
+        }
+
+        > .cvat-cloud-storage-icon {
+            font-size: $grid-unit-size * 20;
+        }
+    }
+}

@@ -31,7 +31,6 @@ interface Props {
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
-    selectedStatesID: number[];
     annotations: any[];
     frameIssues: any[] | null;
     frameData: any;
@@ -82,7 +81,6 @@ interface Props {
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject(activatedStateID: number | null): void;
-    onSelectObjects(selectedStatesID: number[]): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;

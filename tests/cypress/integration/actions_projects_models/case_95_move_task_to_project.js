@@ -15,6 +15,10 @@ context('Move a task to a project.', () => {
         labelSecond: 'Car',
         attrNameSecons: 'Color',
         attrValueSecond: 'Red',
+        name3d: `Case ${caseID} 3D`,
+        label3d: 'Bus',
+        attrName3d: 'Type',
+        attrValue3d: 'Сity bus',
     };
 
     const project = {
@@ -32,6 +36,7 @@ context('Move a task to a project.', () => {
     const posY = 10;
     const color = 'gray';
     const archiveName = `${imageFileName}.zip`;
+    const archiveName3d = '../../cypress/integration/canvas3d_functionality/assets/test_canvas3d.zip';
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
@@ -43,6 +48,7 @@ context('Move a task to a project.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToTaskList();
         cy.createAnnotationTask(task.nameSecond, task.labelSecond, task.attrNameSecons, task.attrValueSecond, archiveName);
+        cy.createAnnotationTask(task.name3d, task.label3d, task.attrName3d, task.attrValue3d, archiveName3d);
     });
 
     beforeEach(() => {
@@ -72,15 +78,19 @@ context('Move a task to a project.', () => {
             cy.get('.cvat-tasks-list-item').should('exist').and('have.length', 2);
         });
 
-        it('Move a task from task.', () => {
+        it('Move a task from task. Attempt to add a 3D task to a project with a 2D task.', () => {
             cy.openProject(project.name);
             cy.get('.cvat-tasks-list-item').should('not.exist');
             cy.goToTaskList();
             cy.openTask(task.name);
             cy.movingTask(task.name, project.name, task.label, project.label, true);
+            cy.goToTaskList();
+            cy.movingTask(task.name3d, project.name, task.label3d, project.label);
+            cy.get('.cvat-notification-notice-update-task-failed').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-update-task-failed');
             cy.goToProjectsList();
             cy.openProject(project.name);
-            cy.get('.cvat-tasks-list-item').should('exist');
+            cy.get('.cvat-tasks-list-item').should('exist').and('have.length', 1);
         });
     });
 });

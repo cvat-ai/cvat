@@ -42,7 +42,6 @@ interface StateToProps {
     sidebarCollapsed: boolean;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
-    selectedStatesID: number[];
     frameIssues: any[] | null;
     frameAngle: number;
     frameFetching: boolean;
@@ -109,7 +108,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states: annotations,
                 activatedStateID,
                 activatedAttributeID,
-                selectedStatesID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             sidebarCollapsed,
@@ -153,7 +151,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frame,
         activatedStateID,
         activatedAttributeID,
-        selectedStatesID,
         opacity,
         colorBy,
         selectedOpacity,

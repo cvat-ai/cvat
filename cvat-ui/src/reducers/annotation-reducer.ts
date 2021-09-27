@@ -76,7 +76,6 @@ const defaultState: AnnotationState = {
         activeObjectType: ObjectType.SHAPE,
     },
     annotations: {
-        selectedStatesID: [],
         activatedStateID: null,
         activatedAttributeID: null,
         saving: {
@@ -717,17 +716,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SELECT_OBJECTS: {
-            const { selectedStatesID } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    selectedStatesID,
-                },
-            };
-        }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
             const contextMenuClientID = state.canvas.contextMenu.clientID;
@@ -924,7 +912,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     states,
-                    selectedStatesID: [],
                     activatedStateID: null,
                     collapsed: {},
                 },
@@ -937,7 +924,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     history,
-                    selectedStatesID: [],
                     activatedStateID: null,
                     collapsed: {},
                     states: [],

@@ -1,7 +1,7 @@
 ---
 title: 'Annotation with cuboids'
 linkTitle: 'Annotation with cuboids'
-weight: 17
+weight: 12
 description: 'Guide to creating and editing cuboids.'
 ---
 

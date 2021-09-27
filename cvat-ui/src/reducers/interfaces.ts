@@ -29,6 +29,7 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
+    assignee: string | null;
     [key: string]: string | boolean | number | null | undefined;
 }
 
@@ -118,6 +119,57 @@ export interface FormatsState {
     annotationFormats: any;
     fetching: boolean;
     initialized: boolean;
+}
+
+export interface CloudStoragesQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    owner: string | null;
+    displayName: string | null;
+    description: string | null;
+    resourceName: string | null;
+    providerType: string | null;
+    credentialsType: string | null;
+    [key: string]: string | number | null | undefined;
+}
+
+export type CloudStorage = any;
+
+export interface CloudStoragesState {
+    initialized: boolean;
+    fetching: boolean;
+    count: number;
+    current: CloudStorage[];
+    // currentStatuses: any[];
+    gettingQuery: CloudStoragesQuery;
+    activities: {
+        creates: {
+            attaching: boolean;
+            id: null | number;
+            error: string;
+        };
+        updates: {
+            updating: boolean;
+            cloudStorageID: null | number;
+            error: string;
+        };
+        deletes: {
+            [cloudStorageID: number]: boolean;
+        };
+        contentLoads: {
+            cloudStorageID: number | null;
+            content: any | null;
+            fetching: boolean;
+            error: string;
+        };
+        // getsStatus: {
+        //     cloudStorageID: number | null;
+        //     status: string | null;
+        //     fetching: boolean;
+        //     error: string;
+        // };
+    };
 }
 
 export enum SupportedPlugins {
@@ -333,6 +385,12 @@ export interface NotificationsState {
         predictor: {
             prediction: null | ErrorState;
         };
+        cloudStorages: {
+            creating: null | ErrorState;
+            fetching: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -473,7 +531,6 @@ export interface AnnotationState {
         activeInitialState?: any;
     };
     annotations: {
-        selectedStatesID: number[];
         activatedStateID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
@@ -632,6 +689,7 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
+    cloudStorages: CloudStoragesState;
 }
 
 export enum DimensionType {
