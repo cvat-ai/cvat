@@ -5,12 +5,12 @@ weight: 21
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 
-In CVAT you can use AWS-S3 and Azur Blob Container cloud storages to store image datasets for your tasks.
+In CVAT you can use AWS-S3 and Azure Blob Container cloud storages to store image datasets for your tasks.
 Initially you need to create a manifest file for your image dataset. Information on how to do that is available
 on the [Simple command line to prepare dataset manifest file](/docs/manual/advanced/dataset_manifest) page.
 
 After the manifest file has been created, you can upload it and your dataset to an AWS-S3 or
-Azur Blob Container cloud storage.
+Azure Blob Container cloud storage.
 
 After that you will be able to attach a cloud storage. To do this, press the `Attach new cloud storage`
 button on the `Cloud storages` page and fill out the following form:
@@ -41,17 +41,17 @@ of an item on cloud storages page.
 
   - [Azure Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
 
-      - `Container name` - name of the cloud storage container
+    - `Container name` - name of the cloud storage container
 
-        - `Authorization type`:
+      - `Authorization type`:
 
-          - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
+        - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
 
-            - `Account name`
-            - `SAS token`
+          - `Account name`
+          - `SAS token`
 
-          - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
-            - `Account name`
+        - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
+          - `Account name`
 
     </br>
 - `Manifest` - the path to the manifest file on your cloud storage.
