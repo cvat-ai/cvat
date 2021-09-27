@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,6 @@ onmessage = (e) => {
         .catch((error) => {
             postMessage({
                 id: e.data.id,
-                error: error,
                 status: error.response.status,
                 responseData: error.response.data,
                 isSuccess: false,
