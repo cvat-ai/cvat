@@ -91,7 +91,7 @@ context('Cloud storage.', () => {
         it('Check "Azure Blob Container" provider fields.', () => {
             cy.contains('.cvat-cloud-storage-select-provider', 'AWS').click();
             cy.contains('.cvat-cloud-storage-select-provider', 'Azure').click();
-            // Check fields with "Key id and secret access key pair"
+            // Check fields with "Account name and SAS token"
             cy.get('#credentials_type').should('exist').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
