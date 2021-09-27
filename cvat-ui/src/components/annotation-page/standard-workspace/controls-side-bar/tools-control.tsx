@@ -150,6 +150,40 @@ function trackedRectangleMapper(shape: number[]): number[] {
     );
 }
 
+function registerPlugin(): (callback: null | (() => void)) => void {
+    let onTrigger: null | (() => void) = null;
+    const listener = {
+        name: 'Remove annotations listener',
+        description: 'Tracker needs to know when annotations is reset in the job',
+        cvat: {
+            classes: {
+                Job: {
+                    prototype: {
+                        annotations: {
+                            clear: {
+                                leave(self: any, result: any) {
+                                    if (typeof onTrigger === 'function') {
+                                        onTrigger();
+                                    }
+                                    return result;
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    core.plugins.register(listener);
+
+    return (callback: null | (() => void)) => {
+        onTrigger = callback;
+    };
+}
+
+const onRemoveAnnotations = registerPlugin();
+
 export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interaction: {
         id: string | null;
@@ -193,90 +227,26 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
+        onRemoveAnnotations(() => {
+            this.setState({ trackedShapes: [] });
+        });
+
+        this.setState({
+            portals: this.collectTrackerPortals(),
+        });
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, states, fetchAnnotations,
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, states,
         } = this.props;
-        const {
-            approxPolyAccuracy, mode, activeTracker, trackedShapes,
-        } = this.state;
+        const { approxPolyAccuracy, mode, activeTracker } = this.state;
 
         if (prevProps.states !== states || prevState.activeTracker !== activeTracker) {
-            const trackedClientIDs = trackedShapes.map((trackedShape: TrackedShape) => trackedShape.clientID);
-            const portals = !activeTracker ?
-                [] :
-                states
-                    .filter(
-                        (objectState) => objectState.objectType === 'track' && objectState.shapeType === 'rectangle',
-                    )
-                    .map((objectState: any): React.ReactPortal | null => {
-                        const { clientID } = objectState;
-                        const selectorID = `#cvat-objects-sidebar-state-item-${clientID}`;
-                        let targetElement = window.document.querySelector(
-                            `${selectorID} .cvat-object-item-button-prev-keyframe`,
-                        ) as HTMLElement;
-
-                        const isTracked = trackedClientIDs.includes(clientID);
-                        if (targetElement) {
-                            targetElement = targetElement.parentElement?.parentElement as HTMLElement;
-                            return ReactDOM.createPortal(
-                                <Col>
-                                    {isTracked ? (
-                                        <CVATTooltip overlay='Disable tracking'>
-                                            <EnvironmentFilled
-                                                onClick={() => {
-                                                    const filteredStates = trackedShapes.filter(
-                                                        (trackedShape: TrackedShape) =>
-                                                            trackedShape.clientID !== clientID,
-                                                    );
-                                                    /* eslint no-param-reassign: ["error", { "props": false }] */
-                                                    objectState.descriptions = [];
-                                                    objectState.save().then(() => {
-                                                        this.setState({
-                                                            trackedShapes: filteredStates,
-                                                        });
-                                                    });
-                                                    fetchAnnotations();
-                                                }}
-                                            />
-                                        </CVATTooltip>
-                                    ) : (
-                                        <CVATTooltip overlay={`Enable tracking using ${activeTracker.name}`}>
-                                            <EnvironmentOutlined
-                                                onClick={() => {
-                                                    objectState.descriptions = [`Trackable (${activeTracker.name})`];
-                                                    objectState.save().then(() => {
-                                                        this.setState({
-                                                            trackedShapes: [
-                                                                ...trackedShapes,
-                                                                {
-                                                                    clientID,
-                                                                    serverlessState: null,
-                                                                    shapePoints: objectState.points,
-                                                                    trackerModel: activeTracker,
-                                                                },
-                                                            ],
-                                                        });
-                                                    });
-                                                    fetchAnnotations();
-                                                }}
-                                            />
-                                        </CVATTooltip>
-                                    )}
-                                </Col>,
-                                targetElement,
-                            );
-                        }
-
-                        return null;
-                    })
-                    .filter((portal: ReactPortal | null) => portal !== null);
             this.setState({
-                portals: portals as ReactPortal[],
+                portals: this.collectTrackerPortals(),
             });
         }
 
@@ -326,6 +296,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
+        onRemoveAnnotations(null);
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().removeEventListener('canvas.canceled', this.cancelListener);
     }
@@ -537,6 +508,81 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             onSwitchToolsBlockerState({ algorithmsLocked: false });
         }
     };
+
+    private collectTrackerPortals(): React.ReactPortal[] {
+        const { states, fetchAnnotations } = this.props;
+        const { trackedShapes, activeTracker } = this.state;
+
+        const trackedClientIDs = trackedShapes.map((trackedShape: TrackedShape) => trackedShape.clientID);
+        const portals = !activeTracker ?
+            [] :
+            states
+                .filter((objectState) => objectState.objectType === 'track' && objectState.shapeType === 'rectangle')
+                .map((objectState: any): React.ReactPortal | null => {
+                    const { clientID } = objectState;
+                    const selectorID = `#cvat-objects-sidebar-state-item-${clientID}`;
+                    let targetElement = window.document.querySelector(
+                        `${selectorID} .cvat-object-item-button-prev-keyframe`,
+                    ) as HTMLElement;
+
+                    const isTracked = trackedClientIDs.includes(clientID);
+                    if (targetElement) {
+                        targetElement = targetElement.parentElement?.parentElement as HTMLElement;
+                        return ReactDOM.createPortal(
+                            <Col>
+                                {isTracked ? (
+                                    <CVATTooltip overlay='Disable tracking'>
+                                        <EnvironmentFilled
+                                            onClick={() => {
+                                                const filteredStates = trackedShapes.filter(
+                                                    (trackedShape: TrackedShape) =>
+                                                        trackedShape.clientID !== clientID,
+                                                );
+                                                /* eslint no-param-reassign: ["error", { "props": false }] */
+                                                objectState.descriptions = [];
+                                                objectState.save().then(() => {
+                                                    this.setState({
+                                                        trackedShapes: filteredStates,
+                                                    });
+                                                });
+                                                fetchAnnotations();
+                                            }}
+                                        />
+                                    </CVATTooltip>
+                                ) : (
+                                    <CVATTooltip overlay={`Enable tracking using ${activeTracker.name}`}>
+                                        <EnvironmentOutlined
+                                            onClick={() => {
+                                                objectState.descriptions = [`Trackable (${activeTracker.name})`];
+                                                objectState.save().then(() => {
+                                                    this.setState({
+                                                        trackedShapes: [
+                                                            ...trackedShapes,
+                                                            {
+                                                                clientID,
+                                                                serverlessState: null,
+                                                                shapePoints: objectState.points,
+                                                                trackerModel: activeTracker,
+                                                            },
+                                                        ],
+                                                    });
+                                                });
+                                                fetchAnnotations();
+                                            }}
+                                        />
+                                    </CVATTooltip>
+                                )}
+                            </Col>,
+                            targetElement,
+                        );
+                    }
+
+                    return null;
+                })
+                .filter((portal: ReactPortal | null) => portal !== null);
+
+        return portals as React.ReactPortal[];
+    }
 
     private async checkTrackedStates(prevProps: Props): Promise<void> {
         const {

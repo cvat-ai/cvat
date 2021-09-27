@@ -258,12 +258,14 @@ export function fetchAnnotationsAsync(): ThunkAction {
                 filters, frame, showAllInterpolationTracks, jobInstance,
             } = receiveAnnotationsParameters();
             const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const history = await jobInstance.actions.get();
             const [minZ, maxZ] = computeZRange(states);
 
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    history,
                     minZ,
                     maxZ,
                 },
