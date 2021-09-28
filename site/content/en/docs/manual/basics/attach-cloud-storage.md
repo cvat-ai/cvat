@@ -50,7 +50,7 @@ of an item on cloud storages page.
           - `Account name`
           - `SAS token`
 
-        - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent)
+        - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal)
           - `Account name`
 
     </br>
@@ -60,5 +60,3 @@ For more information click on [`?`](/docs/manual/advanced/dataset_manifest/).
 
 To publish the cloud storage, click `submit`, after which it will be available on
 the [Cloud storages page](/docs/manual/basics/cloud-storages/).
-You can mount the cloud storage using command line interface. More information is available on the
-[Mounting cloud storage](/docs/administration/advanced/mounting_cloud_storages) page.
