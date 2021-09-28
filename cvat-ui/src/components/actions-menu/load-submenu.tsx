@@ -24,7 +24,7 @@ export default function LoadSubmenu(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Menu.SubMenu key={menuKey} title='Upload annotations'>
+        <Menu.SubMenu key={menuKey} title='Upload annotations' popupClassName='cvat-upload-anno-submenu'>
             {loaders
                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
                 .filter((loader: any): boolean => loader.dimension === taskDimension)
