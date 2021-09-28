@@ -233,24 +233,45 @@ export default function ItemMenu(props: Props): JSX.Element {
         readonly, shapeType, objectType, colorBy, jobInstance,
     } = props;
 
+    enum MenuKeys {
+        CREATE_URL = 'create_url',
+        COPY = 'copy',
+        PROPAGATE = 'propagate',
+        TRACK = 'track',
+        SWITCH_ORIENTATION = 'switch_orientation',
+        RESET_PERSPECIVE = 'reset_perspective',
+        TO_BACKGROUND = 'to_background',
+        TO_FOREGROUND = 'to_foreground',
+        SWITCH_COLOR = 'switch_color',
+        REMOVE_ITEM = 'remove_item',
+    }
+
     const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
         <Menu className='cvat-object-item-menu' selectable={false}>
-            <CreateURLItem toolProps={props} />
-            {!readonly && <MakeCopyItem toolProps={props} />}
-            {!readonly && <PropagateItem toolProps={props} />}
+            <CreateURLItem key={MenuKeys.CREATE_URL} toolProps={props} />
+            {!readonly && <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />}
+            {!readonly && <PropagateItem key={MenuKeys.PROPAGATE} toolProps={props} />}
             {is2D && !readonly && objectType === ObjectType.TRACK && shapeType === ShapeType.RECTANGLE && (
-                <TrackingItem toolProps={props} />
+                <TrackingItem key={MenuKeys.TRACK} toolProps={props} />
             )}
             {is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
-                <SwitchOrientationItem toolProps={props} />
+                <SwitchOrientationItem key={MenuKeys.SWITCH_ORIENTATION} toolProps={props} />
             )}
-            {is2D && !readonly && shapeType === ShapeType.CUBOID && <ResetPerspectiveItem toolProps={props} />}
-            {is2D && objectType !== ObjectType.TAG && <ToBackgroundItem toolProps={props} />}
-            {is2D && !readonly && objectType !== ObjectType.TAG && <ToForegroundItem toolProps={props} />}
-            {[ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy) && <SwitchColorItem toolProps={props} />}
-            {!readonly && <RemoveItem toolProps={props} />}
+            {is2D && !readonly && shapeType === ShapeType.CUBOID && (
+                <ResetPerspectiveItem key={MenuKeys.RESET_PERSPECIVE} toolProps={props} />
+            )}
+            {is2D && objectType !== ObjectType.TAG && (
+                <ToBackgroundItem key={MenuKeys.TO_BACKGROUND} toolProps={props} />
+            )}
+            {is2D && !readonly && objectType !== ObjectType.TAG && (
+                <ToForegroundItem key={MenuKeys.TO_FOREGROUND} toolProps={props} />
+            )}
+            {[ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy) && (
+                <SwitchColorItem key={MenuKeys.SWITCH_COLOR} toolProps={props} />
+            )}
+            {!readonly && <RemoveItem key={MenuKeys.REMOVE_ITEM} toolProps={props} />}
         </Menu>
     );
 }
