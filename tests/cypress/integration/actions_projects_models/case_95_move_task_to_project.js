@@ -48,7 +48,6 @@ context('Move a task to a project.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToTaskList();
         cy.createAnnotationTask(task.nameSecond, task.labelSecond, task.attrNameSecons, task.attrValueSecond, archiveName);
-        cy.createAnnotationTask(task.name3d, task.label3d, task.attrName3d, task.attrValue3d, archiveName3d);
     });
 
     beforeEach(() => {
@@ -79,6 +78,9 @@ context('Move a task to a project.', () => {
         });
 
         it('Move a task from task. Attempt to add a 3D task to a project with a 2D task.', () => {
+            cy.goToTaskList();
+            cy.createAnnotationTask(task.name3d, task.label3d, task.attrName3d, task.attrValue3d, archiveName3d);
+            cy.goToProjectsList();
             cy.openProject(project.name);
             cy.get('.cvat-tasks-list-item').should('not.exist');
             cy.goToTaskList();
