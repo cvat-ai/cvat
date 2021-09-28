@@ -57,8 +57,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Change a label via sidear.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
-                .type(`${secondLabel}{Enter}`)
-                .trigger('mouseout');
+                .type(`${secondLabel}{Enter}`);
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_change_label_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_activating_cuboid.png`,
@@ -81,8 +80,8 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Lock/unlock a cuboid via sidear. The control points of the cuboid on the top/side/front view are locked/unlocked.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-button-lock')
-                .click(); // Lock the cubiod
-            cy.get('.cvat-object-item-button-lock-enabled').should('exist').trigger('mouseout');
+                .click({force: true}); // Lock the cubiod
+            cy.get('.cvat-object-item-button-lock-enabled').should('exist');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.get(`.cvat-canvas3d-${view}`)
                     .find('.cvat-canvas3d-fullsize')
