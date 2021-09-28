@@ -7,6 +7,9 @@ from typing import Callable
 from django.db import transaction
 
 from cvat.apps.engine import models
+from cvat.apps.engine import serializers
+from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
 
 from .annotation import AnnotationIR
@@ -55,8 +58,27 @@ class ProjectAnnotationAndData:
     def delete(self, data=None):
         raise NotImplementedError()
 
-    def add_task(self, task: models.Task):
-        self.tasks_to_add.append(task)
+    def add_task(self, task: models.Task, files: list[str]):
+        task.project = self.db_project
+
+        serializer = DataSerializer(data={
+            "server_files": files,
+            #TODO: followed fields whould be replaced with proper input values from request
+            "use_cache": False,
+            "use_zip_chunks": True,
+            "image_quality": 70,
+        })
+        serializer.is_valid(raise_exception=True)
+        db_data = serializer.save()
+        task.data = db_data
+        task.save()
+        data = {k:v for k, v in serializer.data.items()}
+        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+        data['use_cache'] = serializer.validated_data['use_cache']
+        data['copy_data'] = serializer.validated_data['copy_data']
+        data['stop_frame'] = None
+        create_task(task, data)
+        #TODO: update db_tasks
 
     def init_from_db(self):
         self.reset()
@@ -86,10 +108,6 @@ class ProjectAnnotationAndData:
         )
 
         importer(dataset_file, project_data, self.load_dataset_data)
-
-        # TODO: check if filter is needed here      \/
-        bulk_create(models.Task, self.tasks_to_add, {})
-        self.tasks_to_add.clear()
 
     @property
     def data(self) -> dict:

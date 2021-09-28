@@ -1283,14 +1283,14 @@ def load_dataset_data(project_annotation, dataset: Dataset):
         )
 
         subset_dataset = subset.as_dataset()
-        subset_dataset_size = len(subset_dataset)
-        db_task.data = Data(
-            chunk_size=subset_dataset_size
-            size=subset_dataset_size,
-            stop_frame=subset_dataset_size,
-        )
 
+        dataset_files = []
+
+        for dataset_item in subset_dataset:
+            if dataset_item.image and dataset_item.image.has_data:
+                dataset_files.append(dataset_item.image.path)
+
+        project_annotation.add_task(db_task, dataset_files)
         # Need to add data to a task here
-        project_annotation.add_task(db_task)
 
 

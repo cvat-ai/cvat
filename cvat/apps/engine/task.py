@@ -214,15 +214,17 @@ def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 @transaction.atomic
-def _create_thread(tid, data, isImport=False):
-    slogger.glob.info("create task #{}".format(tid))
+def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
+    if isinstance(db_task, int):
+        db_task = models.Task.objects.select_for_update().get(pk=db_task)
 
-    db_task = models.Task.objects.select_for_update().get(pk=tid)
+    slogger.glob.info("create task #{}".format(db_task.id))
+
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname()
 
     if data['remote_files']:
-        if db_data.storage != models.StorageChoice.CLOUD_STORAGE:
+        if db_data.storage != models.StorageChoice.CLOUD_STORAGE and not isDatasetImport:
             data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     manifest_file = []
@@ -297,7 +299,7 @@ def _create_thread(tid, data, isImport=False):
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()
                 db_data.storage = models.StorageChoice.LOCAL
-            if isImport and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
+            if isBackupRestore and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
                 manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
                 db_data.start_frame = 0
                 data['stop_frame'] = None
