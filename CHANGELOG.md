@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed JSON transform issues in network requests (<https://github.com/openvinotoolkit/cvat/pull/3706>)
+- Display a more user-friendly exception message (<https://github.com/openvinotoolkit/cvat/pull/3721>)
 - Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
 
 ### Security
