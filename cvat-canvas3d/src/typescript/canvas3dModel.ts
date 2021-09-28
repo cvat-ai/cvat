@@ -67,11 +67,14 @@ export interface ShapeProperties {
     outlineColor: string;
     selectedOpacity: number;
     colorBy: string;
+    resetZoom: boolean;
+    canvasBackgroundColor: string;
 }
 
 export enum UpdateReasons {
     IMAGE_CHANGED = 'image_changed',
     OBJECTS_UPDATED = 'objects_updated',
+    UPDATE_CANVAS_BACKGROUND = 'update_canvas_background',
     DRAW = 'draw',
     SELECT = 'select',
     CANCEL = 'cancel',
@@ -80,6 +83,7 @@ export enum UpdateReasons {
     SHAPE_ACTIVATED = 'shape_activated',
     GROUP = 'group',
     FITTED_CANVAS = 'fitted_canvas',
+    UPDATE_OPACITY = 'update_opacity'
 }
 
 export enum Mode {
@@ -172,6 +176,8 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 outlineColor: '#000000',
                 selectedOpacity: 60,
                 colorBy: 'Label',
+                resetZoom: true,
+                canvasBackgroundColor: '#000000',
             },
         };
     }
@@ -324,13 +330,18 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public configureShapes(shapeProperties: ShapeProperties): void {
+        const { opacity, selectedOpacity } = this.data.shapeProperties;
         this.data.drawData.enabled = false;
         this.data.mode = Mode.IDLE;
         this.cancel();
         this.data.shapeProperties = {
             ...shapeProperties,
         };
-        this.notify(UpdateReasons.OBJECTS_UPDATED);
+        if(opacity !== shapeProperties.opacity || selectedOpacity !== shapeProperties.selectedOpacity){
+            this.notify(UpdateReasons.UPDATE_OPACITY)
+        }else{
+            this.notify(UpdateReasons.OBJECTS_UPDATED);
+        }
     }
 
     public fit(): void {

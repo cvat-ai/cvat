@@ -55,6 +55,8 @@ interface Props {
     automaticBordering: boolean;
     showObjectsTextAlways: boolean;
     frame: number;
+    resetZoom : boolean;
+    canvasBackgroundColor: string;
 }
 
 interface ViewSize {
@@ -188,6 +190,8 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         onShapeDrawn,
         onCreateAnnotations,
         frameFetching,
+        resetZoom,
+        canvasBackgroundColor,
     } = props;
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
 
@@ -374,7 +378,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
 
     useEffect(() => {
         updateShapesView();
-    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy]);
+    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, resetZoom, canvasBackgroundColor]);
 
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
@@ -386,6 +390,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
         canvasInstanceDOM.perspective.addEventListener('canvas.fit', onResize);
         canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped);
+        canvasInstanceDOM.perspective.addEventListener('canvas.settings', onCanvasShapeDrawn);
         window.addEventListener('resize', onResize);
 
         return () => {
@@ -396,6 +401,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
             canvasInstanceDOM.perspective.removeEventListener('canvas.fit', onResize);
             canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.settings', onCanvasShapeDrawn);
             window.removeEventListener('resize', onResize);
         };
     }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
