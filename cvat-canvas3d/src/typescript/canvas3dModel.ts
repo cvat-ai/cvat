@@ -83,7 +83,7 @@ export enum UpdateReasons {
     SHAPE_ACTIVATED = 'shape_activated',
     GROUP = 'group',
     FITTED_CANVAS = 'fitted_canvas',
-    UPDATE_OPACITY = 'update_opacity'
+    UPDATE_OPACITY = 'update_opacity',
 }
 
 export enum Mode {
@@ -337,9 +337,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.data.shapeProperties = {
             ...shapeProperties,
         };
-        if(opacity !== shapeProperties.opacity || selectedOpacity !== shapeProperties.selectedOpacity){
-            this.notify(UpdateReasons.UPDATE_OPACITY)
-        }else{
+        if (opacity !== shapeProperties.opacity || selectedOpacity !== shapeProperties.selectedOpacity) {
+            this.notify(UpdateReasons.UPDATE_OPACITY);
+        } else {
             this.notify(UpdateReasons.OBJECTS_UPDATED);
         }
     }

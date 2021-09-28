@@ -757,23 +757,22 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private setupObjects(selected?: boolean): void {
         const { clientID } = this.model.data.activeElement;
         if (this.views.perspective.scene.children[0]) {
-            if(!selected) {
+            if (!selected) {
                 this.clearSceneObjects();
             }
-            this.resetColor()
+            this.resetColor();
             this.setHelperVisibility(false);
             for (let i = 0; i < this.model.data.objects.length; i++) {
                 const object = this.model.data.objects[i];
-                if(selected){
-                    const target = this.views.perspective.scene.getObjectByName(clientID)
-                    if (object.clientID+"" !==clientID){
-                        continue
-                    }
-                    else{
+                if (selected) {
+                    const target = this.views.perspective.scene.getObjectByName(clientID);
+                    if (`${object.clientID}` !== clientID) {
+                        continue;
+                    } else {
                         this.views.perspective.scene.children[0].remove(target);
-                        this.views.side.scene.children[0].children = []
-                        this.views.front.scene.children[0].children = []
-                        this.views.top.scene.children[0].children = []
+                        this.views.side.scene.children[0].children = [];
+                        this.views.front.scene.children[0].children = [];
+                        this.views.top.scene.children[0].children = [];
                     }
                 }
                 this.setupObject(object, true);
@@ -793,12 +792,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.perspective.renderer.domElement.dispatchEvent(event);
     }
 
-    private cancelDraw(): void{
+    private cancelDraw(): void {
         this.controller.drawData.enabled = false;
-            this.controller.drawData.redraw = undefined;
-            Object.keys(this.views).forEach((view: string): void => {
-                this.views[view as keyof Views].scene.children[0].remove(this.cube[view as keyof Views]);
-            });
+        this.controller.drawData.redraw = undefined;
+        Object.keys(this.views).forEach((view: string): void => {
+            this.views[view as keyof Views].scene.children[0].remove(this.cube[view as keyof Views]);
+        });
     }
 
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
@@ -817,19 +816,19 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             loader.load(objectURL, this.addScene.bind(this));
             URL.revokeObjectURL(objectURL);
             this.dispatchEvent(new CustomEvent('canvas.setup'));
-        }else if(reason === UpdateReasons.UPDATE_CANVAS_BACKGROUND){
-            const {canvasBackgroundColor} = this.model.data.shapeProperties;
+        } else if (reason === UpdateReasons.UPDATE_CANVAS_BACKGROUND) {
+            const { canvasBackgroundColor } = this.model.data.shapeProperties;
             this.views.top.scene.background = new THREE.Color(canvasBackgroundColor);
             this.views.perspective.scene.background = new THREE.Color(canvasBackgroundColor);
             this.views.side.scene.background = new THREE.Color(canvasBackgroundColor);
             this.views.front.scene.background = new THREE.Color(canvasBackgroundColor);
-        } else if(reason == UpdateReasons.UPDATE_OPACITY){
+        } else if (reason === UpdateReasons.UPDATE_OPACITY) {
             this.resetColor();
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             const { clientID } = this.model.data.activeElement;
-            if(clientID !== 'null'){
+            if (clientID !== 'null') {
                 this.setupObjects(true);
-            }else{
+            } else {
                 this.setupObjects();
             }
             if (clientID !== 'null') {
@@ -1193,21 +1192,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     };
 
     private resetColor(): void {
-        const {
-            opacity, selectedOpacity
-        } = this.model.data.shapeProperties;
+        const { opacity, selectedOpacity } = this.model.data.shapeProperties;
         this.model.data.objects.forEach((object: any): void => {
             const { clientID } = object;
             const target = this.views.perspective.scene.getObjectByName(String(clientID));
             if (target) {
                 ((target as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set((target as any).originalColor);
-                if (this.model.data.activeElement.clientID === String(clientID)){
-                    ((target as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = selectedOpacity/100
-                }else{
-                    ((target as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = opacity/100
+                if (this.model.data.activeElement.clientID === String(clientID)) {
+                    ((target as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = selectedOpacity / 100;
+                } else {
+                    ((target as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = opacity / 100;
                 }
             }
-
         });
     }
 
