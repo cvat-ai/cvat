@@ -22,7 +22,7 @@ context('Check maintenance of popups visibility.', () => {
 
         it('Click to another element. The popover hidden.', () => {
             cy.get('.cvat-canvas-container').click();
-            cy.get('.cvat-draw-rectangle-popover').should('not.exist');
+            cy.get('.cvat-draw-rectangle-popover').should('be.hidden');
         });
     });
 });
