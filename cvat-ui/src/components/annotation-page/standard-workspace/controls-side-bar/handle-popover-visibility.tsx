@@ -16,6 +16,10 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
         return (
             <WrappedComponent
                 {...rest}
+                overlayStyle={{
+                    animationDuration: '0s',
+                    animationDelay: '0s',
+                }}
                 trigger={visible ? 'click' : 'hover'}
                 overlayClassName={overlayClassNames.join(' ').trim()}
                 onVisibleChange={(_visible: boolean) => {
@@ -23,6 +27,8 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                         const [element] = window.document.getElementsByClassName(popoverClassName);
                         if (element) {
                             element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                            (element as HTMLElement).style.pointerEvents = '';
+                            (element as HTMLElement).style.opacity = '';
                         }
                     }
                     setVisible(_visible);
