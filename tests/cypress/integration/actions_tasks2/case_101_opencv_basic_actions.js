@@ -9,7 +9,7 @@ import { generateString } from '../../support/utils';
 
 context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
     const caseId = '101';
-    const newLabel = `Case ${caseId}`
+    const newLabel = `Case ${caseId}`;
     const createOpencvShape = {
         labelName: labelName,
         pointsMap: [
@@ -49,7 +49,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
             cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-control-popover-visible').find('.cvat-opencv-initialization-button').click();
+            cy.get('.cvat-opencv-control-popover').find('.cvat-opencv-initialization-button').click();
             // Intelligent cissors button be visible
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
         });
@@ -78,7 +78,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
                     // Get count of points againe
                     const intermediateShapeNumberPointsAfterChange = intermediateShape.attr('points').split(' ').length;
                     // expected 7 to be below 10
-                    expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(intermediateShapeNumberPointsAfterChange);
+                    expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(
+                        intermediateShapeNumberPointsAfterChange,
+                    );
                 });
             });
             cy.get('.cvat-appearance-selected-opacity-slider')
@@ -86,17 +88,23 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
                 .find('[role="slider"]')
                 .then((sliderSelectedOpacityLeft) => {
                     const sliderSelectedOpacityValuenow = sliderSelectedOpacityLeft.attr('aria-valuenow');
-                    cy.get('.cvat_canvas_interact_intermediate_shape')
-                        .should('have.attr', 'fill-opacity', sliderSelectedOpacityValuenow / 100);
-            });
+                    cy.get('.cvat_canvas_interact_intermediate_shape').should(
+                        'have.attr',
+                        'fill-opacity',
+                        sliderSelectedOpacityValuenow / 100,
+                    );
+                });
             cy.get('.cvat-appearance-selected-opacity-slider')
                 .click('right')
                 .find('[role="slider"]')
                 .then((sliderSelectedOpacityRight) => {
                     const sliderSelectedOpacityValuenow = sliderSelectedOpacityRight.attr('aria-valuenow');
-                    cy.get('.cvat_canvas_interact_intermediate_shape')
-                        .should('have.attr', 'fill-opacity', sliderSelectedOpacityValuenow / 100);
-            });
+                    cy.get('.cvat_canvas_interact_intermediate_shape').should(
+                        'have.attr',
+                        'fill-opacity',
+                        sliderSelectedOpacityValuenow / 100,
+                    );
+                });
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
             cy.get('.cvat_canvas_shape').should('have.length', 2);
@@ -114,7 +122,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
                 // Get count of points
                 const intermediateShapeNumberPoints = intermediateShape.attr('points').split(' ').length;
                 // The last point on the crosshair
-                expect(intermediateShapeNumberPoints - 1).to.be.equal(pointsMap.length)
+                expect(intermediateShapeNumberPoints - 1).to.be.equal(pointsMap.length);
             });
             cy.get('body').type('{Ctrl}'); // Checking hotkey
             cy.get('.cvat_canvas_threshold').should('exist');
@@ -124,7 +132,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
         it('Check "Histogram Equalization" feature.', () => {
             cy.checkPopoverHidden('opencv-control');
             cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-control-popover-visible')
+            cy.get('.cvat-opencv-control-popover')
                 .contains('[role="tab"]', 'Image')
                 .click()
                 .parents('.ant-tabs-tab')
@@ -147,8 +155,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }).trigger('keyup');
             cy.get('.cvat-tools-control').should('have.attr', 'tabindex');
             createOpencvShape.pointsMap.forEach((el) => {
-                cy.get('.cvat-canvas-container')
-                    .click(el.x + 150, el.y + 50)
+                cy.get('.cvat-canvas-container').click(el.x + 150, el.y + 50);
             });
             cy.get('body').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
         });
