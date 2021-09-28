@@ -49,8 +49,12 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             .within(() => {
                 cy.get('.cvat-menu-load-submenu-item-button').click();
             });
-        cy.get('.cvat-annotation-menu').trigger('mouseout').should('be.hidden');
-        cy.get('input[type=file]').attachFile(annotationArchiveNameCustomeName);
+        // when a user clicks, menu is closing and it triggers rerender
+        // we use mouseout here to emulate user behaviour
+        cy.get('.cvat-actions-menu').trigger('mouseout').should('be.hidden');
+        cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0]).within(() => {
+            cy.get('input[type=file]').attachFile(annotationArchiveNameCustomeName);
+        });
     }
 
     function confirmUpdate(modalWindowClassName) {
@@ -114,8 +118,12 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 .within(() => {
                     cy.get('.cvat-menu-load-submenu-item-button').click();
                 });
+            // when a user clicks, menu is closing and it triggers rerender
+            // we use mouseout here to emulate user behaviour
             cy.get('.cvat-annotation-menu').trigger('mouseout').should('be.hidden');
-            cy.get('input[type=file]').attachFile(annotationArchiveName);
+            cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0]).within(() => {
+                cy.get('input[type=file]').attachFile(annotationArchiveName);
+            });
             confirmUpdate('.cvat-modal-content-load-job-annotation');
             cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
