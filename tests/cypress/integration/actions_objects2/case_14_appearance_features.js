@@ -204,22 +204,30 @@ context('Appearance features', () => {
             });
             // not affect opacity level
             testDrawShapeCheckOpacity({
+                shape: 'polyline',
+                shapeType: 'Shape',
+                fillOpacityBefore: 0,
+                fillOpacityAfter: 0,
+            });
+            // not affect opacity level
+            testDrawShapeCheckOpacity({
                 shape: 'rectangle',
                 drawingMethod: 'By 4 Points',
                 shapeType: 'Shape',
                 opacityBefore: 0,
                 opacityAfter: 0,
             });
-            // not affect opacity level
-            testDrawShapeCheckOpacity({
-                shape: 'polyline',
-                shapeType: 'Shape',
-                fillOpacityBefore: 0,
-                fillOpacityAfter: 0,
-            });
             // affect opacity level
             testDrawShapeCheckOpacity({
                 shape: 'polygon',
+                shapeType: 'Shape',
+                fillOpacityBefore: 0,
+                fillOpacityAfter: 1,
+            });
+            // affect opacity level
+            testDrawShapeCheckOpacity({
+                shape: 'cuboid',
+                drawingMethod: 'From rectangle',
                 shapeType: 'Shape',
                 fillOpacityBefore: 0,
                 fillOpacityAfter: 1,
@@ -230,14 +238,6 @@ context('Appearance features', () => {
                 shapeType: 'Shape',
                 opacityBefore: 0,
                 opacityAfter: 0,
-            });
-            // affect opacity level
-            testDrawShapeCheckOpacity({
-                shape: 'cuboid',
-                drawingMethod: 'From rectangle',
-                shapeType: 'Shape',
-                fillOpacityBefore: 0,
-                fillOpacityAfter: 1,
             });
             // not have 'fill-opacity' or 'opacity' attributes
             testDrawShapeCheckOpacity({
