@@ -128,16 +128,20 @@ Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, lab
         .click();
     cy.get('.cvat-task-move-modal').find('.cvat-project-search-field').click();
     cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
+        .last()
+        .should('be.visible')
         .within(() => {
             cy.get(`[title="${projectName}"]`).click();
         });
     if (labelMappingFrom !== labelMappingTo) {
         cy.get('.cvat-move-task-label-mapper-item').within(() => {
             cy.contains(labelMappingFrom).should('exist');
-            cy.get('.cvat-move-task-label-mapper-item-select').click();
+            cy.get('.cvat-move-task-label-mapper-item-select').should('be.visible').click();
         });
-        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').find(`[title="${labelMappingTo}"]`).click();
+        cy.get('.ant-select-dropdown')
+            .last()
+            .should('be.visible')
+            .find(`[title="${labelMappingTo}"]`).click();
     } else {
         cy.get('.cvat-move-task-label-mapper-item').within(() => {
             cy.get('.cvat-move-task-label-mapper-item-select').should('have.text', labelMappingFrom);
