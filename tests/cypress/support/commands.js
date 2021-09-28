@@ -242,10 +242,12 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get('body').focus();
-    cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events: none');
+    cy.get(`.cvat-${objectType}-control`).trigger('mouseover');
+    cy.get(`.cvat-${objectType}-popover-visible`)
+        .should('exist')
+        .should('be.visible')
+        .should('have.attr', 'style')
+        .and('not.include', 'pointer-events: none');
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
@@ -271,9 +273,7 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`)
-        .find('.ant-select-selection-item')
-        .click();
+    cy.get(`.cvat-${objectType}-popover-visible`).find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .find(`.ant-select-item-option[title="${labelName}"]`)
@@ -322,7 +322,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     if (createPointParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else {
-        if (! createPointParams.numberOfPoints) {
+        if (!createPointParams.numberOfPoints) {
             const keyCodeN = 78;
             cy.get('.cvat-canvas-container')
                 .trigger('keydown', { keyCode: keyCodeN })
@@ -371,7 +371,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (createPolygonParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else {
-        if (! createPolygonParams.numberOfPoints) {
+        if (!createPolygonParams.numberOfPoints) {
             const keyCodeN = 78;
             cy.get('.cvat-canvas-container')
                 .trigger('keydown', { keyCode: keyCodeN })
@@ -517,7 +517,7 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     if (createPolylineParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else {
-        if (! createPolylineParams.numberOfPoints) {
+        if (!createPolylineParams.numberOfPoints) {
             const keyCodeN = 78;
             cy.get('.cvat-canvas-container')
                 .trigger('keydown', { keyCode: keyCodeN })
@@ -747,5 +747,5 @@ Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) =>
     cy.closeNotification('.cvat-notification-notice-export-task-start');
     cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
-    cy.wait(2000) // Waiting for a full file download
+    cy.wait(2000); // Waiting for a full file download
 });

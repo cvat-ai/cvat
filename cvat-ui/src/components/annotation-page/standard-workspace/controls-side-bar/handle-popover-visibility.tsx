@@ -2,42 +2,54 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 import Popover, { PopoverProps } from 'antd/lib/popover';
-import waitFor from 'utils/wait-for';
 
 export default function withVisibilityHandling(WrappedComponent: typeof Popover, popoverType: string) {
     return (props: PopoverProps): JSX.Element => {
+        const [initialized, setInitialized] = useState<boolean>(false);
         const [visible, setVisible] = useState<boolean>(false);
         const { overlayClassName, ...rest } = props;
         const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
         const popoverClassName = `cvat-${popoverType}-popover`;
         const visiblePopoverClassName = `cvat-${popoverType}-popover-visible`;
         overlayClassNames.push(popoverClassName);
+        const [classList, setClassList] = useState<string[]>(overlayClassNames);
         if (visible) {
             overlayClassNames.push(visiblePopoverClassName);
         }
+
+        useLayoutEffect(() => {
+            if (visible) {
+                const [element] = window.document.getElementsByClassName(popoverClassName);
+                if (element && !initialized) {
+                    setInitialized(true);
+                    element.addEventListener('animationend', (event: Event) => {
+                        if ((event as AnimationEvent).animationName === 'antZoomBigIn') {
+                            setTimeout(() => {
+                                setClassList(overlayClassNames);
+                            });
+                        }
+                    });
+                }
+            } else {
+                setClassList(overlayClassNames);
+            }
+        }, [visible]);
 
         return (
             <WrappedComponent
                 {...rest}
                 trigger={visible ? 'click' : 'hover'}
-                overlayClassName={overlayClassNames.join(' ').trim()}
+                overlayClassName={classList.join(' ').trim()}
                 onVisibleChange={(_visible: boolean) => {
-                    const [element] = window.document.getElementsByClassName(popoverClassName);
-                    if (element) {
-                        if (_visible) {
+                    if (_visible) {
+                        const [element] = window.document.getElementsByClassName(popoverClassName);
+                        if (element) {
                             element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                            waitFor(60, () => {
-                                const style = window.getComputedStyle(element);
-                                return style.display !== 'none' && style.pointerEvents !== 'none';
-                            }).then(() => {
-                                setVisible(_visible);
-                            });
-                        } else {
-                            setVisible(_visible);
                         }
                     }
+                    setVisible(_visible);
                 }}
             />
         );
