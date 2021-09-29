@@ -22,7 +22,6 @@ import {
     groupAnnotationsAsync,
     splitAnnotationsAsync,
     activateObject,
-    selectObjects,
     updateCanvasContextMenu,
     addZLayer,
     switchZLayer,
@@ -58,7 +57,6 @@ interface StateToProps {
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
-    selectedStatesID: number[];
     annotations: any[];
     frameIssues: any[] | null;
     frameData: any;
@@ -112,7 +110,6 @@ interface DispatchToProps {
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject: (activatedStateID: number | null) => void;
-    onSelectObjects: (selectedStatesID: number[]) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -142,7 +139,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states: annotations,
                 activatedStateID,
                 activatedAttributeID,
-                selectedStatesID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             sidebarCollapsed,
@@ -187,7 +183,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frame,
         activatedStateID,
         activatedAttributeID,
-        selectedStatesID,
         annotations,
         opacity: opacity / 100,
         colorBy,
@@ -274,9 +269,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             }
 
             dispatch(activateObject(activatedStateID, null));
-        },
-        onSelectObjects(selectedStatesID: number[]): void {
-            dispatch(selectObjects(selectedStatesID));
         },
         onUpdateContextMenu(
             visible: boolean,

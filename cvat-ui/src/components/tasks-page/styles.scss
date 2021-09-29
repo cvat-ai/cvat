@@ -19,9 +19,8 @@
                 > div:nth-child(1) {
                     display: flex;
 
-                    > span:nth-child(2) {
-                        width: 200px;
-                        margin-left: 10px;
+                    span {
+                        margin-right: $grid-unit-size;
                     }
                 }
             }

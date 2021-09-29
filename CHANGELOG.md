@@ -5,7 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[1.6.0] - Unreleased
+## \[1.7.0] - Unreleased
+
+### Added
+
+- cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
+- Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+
+### Changed
+
+- UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+
+### Deprecated
+
+- TDB
+
+### Removed
+
+- TDB
+
+### Fixed
+
+- Fixed JSON transform issues in network requests (<https://github.com/openvinotoolkit/cvat/pull/3706>)
+- Display a more user-friendly exception message (<https://github.com/openvinotoolkit/cvat/pull/3721>)
+- Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
+- Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
+
+### Security
+
+- TDB
+
+## \[1.6.0] - 2021-09-17
 
 ### Added
 
@@ -17,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added intelligent scissors blocking feature (<https://github.com/openvinotoolkit/cvat/pull/3510>)
 - Support cloud storage status (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Support cloud storage preview (<https://github.com/openvinotoolkit/cvat/pull/3386>)
+- cvat-core: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3313>)
 
 ### Changed
 
@@ -24,10 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Selected opacity" slider now defines opacity level for shapes being drawnSelected opacity (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 - Cloud storage creating and updating (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Way of working with cloud storage content (<https://github.com/openvinotoolkit/cvat/pull/3386>)
-
-### Deprecated
-
-- TDB
 
 ### Removed
 
@@ -37,10 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed multiple tasks moving (<https://github.com/openvinotoolkit/cvat/pull/3517>)
 - Fixed task creating CLI parameter (<https://github.com/openvinotoolkit/cvat/pull/3519>)
-
-### Security
-
-- TDB
+- Fixed import for MOTS format (<https://github.com/openvinotoolkit/cvat/pull/3612>)
 
 ## \[1.5.0] - 2021-08-02
 
@@ -883,7 +907,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Template
 
 ```
-## [Unreleased]
+## \[Unreleased]
 ### Added
 - TDB
 

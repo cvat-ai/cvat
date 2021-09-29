@@ -16,13 +16,20 @@
         camelToSnake,
     } = require('./common');
 
-    const { TaskStatus, TaskMode, DimensionType } = require('./enums');
+    const {
+        TaskStatus,
+        TaskMode,
+        DimensionType,
+        CloudStorageProviderType,
+        CloudStorageCredentialsType,
+    } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
     const { Project } = require('./project');
+    const { CloudStorage } = require('./cloud-storage');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -261,6 +268,49 @@
         };
 
         cvat.projects.searchNames.implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
+
+        cvat.cloudStorages.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                page: isInteger,
+                displayName: isString,
+                resourceName: isString,
+                description: isString,
+                id: isInteger,
+                owner: isString,
+                search: isString,
+                providerType: isEnum.bind(CloudStorageProviderType),
+                credentialsType: isEnum.bind(CloudStorageCredentialsType),
+            });
+
+            checkExclusiveFields(filter, ['id', 'search'], ['page']);
+
+            const searchParams = new URLSearchParams();
+            for (const field of [
+                'displayName',
+                'credentialsType',
+                'providerType',
+                'owner',
+                'search',
+                'id',
+                'page',
+                'description',
+            ]) {
+                if (Object.prototype.hasOwnProperty.call(filter, field)) {
+                    searchParams.set(camelToSnake(field), filter[field]);
+                }
+            }
+
+            if (Object.prototype.hasOwnProperty.call(filter, 'resourceName')) {
+                searchParams.set('resource', filter.resourceName);
+            }
+
+            const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
+            const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
+
+            cloudStorages.count = cloudStoragesData.count;
+
+            return cloudStorages;
+        };
 
         return cvat;
     }

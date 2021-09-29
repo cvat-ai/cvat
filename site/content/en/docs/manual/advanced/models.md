@@ -1,7 +1,7 @@
 ---
 title: 'Models'
 linkTitle: 'Models'
-weight: 26
+weight: 13
 ---
 
 The Models page contains a list of deep learning (DL) models deployed for semi-automatic and automatic annotation.

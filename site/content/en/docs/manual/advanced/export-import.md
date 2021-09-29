@@ -1,7 +1,7 @@
 ---
 title: 'Export/import a task'
 linkTitle: 'Export/import'
-weight: 25
+weight: 17
 ---
 
 In CVAT you can export and import tasks.
