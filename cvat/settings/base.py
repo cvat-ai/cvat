@@ -138,8 +138,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.iam.TokenAuthenticationEx',
-        'cvat.apps.iam.SignatureAuthentication',
+        'cvat.apps.iam.authentication.TokenAuthenticationEx',
+        'cvat.apps.iam.authentication.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
     ],
@@ -225,8 +225,8 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 # Django Auth
 DJANGO_AUTH_TYPE = 'BASIC'
 DJANGO_AUTH_DEFAULT_ROLES = [] # no roles by default
-DJANGO_AUTH_ADMIN = 'ADMIN'
-DJANGO_AUTH_ROLES = ['WORKER', 'USER', 'BUSINESS', DJANGO_AUTH_ADMIN]
+DJANGO_AUTH_ADMIN = 'admin'
+DJANGO_AUTH_ROLES = ['worker', 'user', 'business', DJANGO_AUTH_ADMIN]
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 

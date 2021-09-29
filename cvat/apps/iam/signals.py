@@ -4,15 +4,11 @@
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.db.models.signals import post_migrate, post_save
-
-def create_groups(sender, **kwargs):
-    for role in settings.DJANGO_AUTH_ROLES:
-        db_group, _ = Group.objects.get_or_create(name=role)
-        db_group.save()
+from django.db.models.signals import post_save
 
 # Create all groups which corresponds system roles
-post_migrate.connect(create_groups, weak=False)
+for role in settings.DJANGO_AUTH_ROLES:
+    Group.objects.get_or_create(name=role)
 
 if settings.DJANGO_AUTH_TYPE == 'BASIC':
     from allauth.account import app_settings as allauth_settings
