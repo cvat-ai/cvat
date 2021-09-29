@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
+- Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 
 ### Changed
 
-- TDB
+- UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 
 ### Deprecated
 
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed JSON transform issues in network requests (<https://github.com/openvinotoolkit/cvat/pull/3706>)
 - Display a more user-friendly exception message (<https://github.com/openvinotoolkit/cvat/pull/3721>)
 - Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
+- Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
 
 ### Security
 
@@ -46,7 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support cloud storage status (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Support cloud storage preview (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - cvat-core: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3313>)
-- Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 
 ### Changed
 
@@ -54,7 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Selected opacity" slider now defines opacity level for shapes being drawnSelected opacity (<https://github.com/openvinotoolkit/cvat/pull/3473>)
 - Cloud storage creating and updating (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Way of working with cloud storage content (<https://github.com/openvinotoolkit/cvat/pull/3386>)
-- UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 
 ### Removed
 
@@ -65,7 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed multiple tasks moving (<https://github.com/openvinotoolkit/cvat/pull/3517>)
 - Fixed task creating CLI parameter (<https://github.com/openvinotoolkit/cvat/pull/3519>)
 - Fixed import for MOTS format (<https://github.com/openvinotoolkit/cvat/pull/3612>)
-- Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
 
 ## \[1.5.0] - 2021-08-02
 
