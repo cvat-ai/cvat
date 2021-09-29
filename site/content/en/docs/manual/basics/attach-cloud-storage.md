@@ -56,7 +56,7 @@ they will need to be used in CVAT when adding cloud storage.
 Initially you need to create a manifest file for your image dataset. Information on how to do that is available
 on the [Simple command line to prepare dataset manifest file](/docs/manual/advanced/dataset_manifest) page.
 After the manifest file has been created, you can upload it and your dataset to an AWS-S3 cloud storage.
-Go to your bucket and click upload, drag the manifest file and dataset on the page and click upload.
+Go to your bucket and click `Upload`, drag the manifest file and dataset on the page and click `Upload`.
 
 ![](/images/aws-s3_tutorial_5.jpg)
 
@@ -73,9 +73,9 @@ button on the `Cloud storages` page and fill out the following form:
 of an item on cloud storages page.
 - `Provider` - choose provider of the cloud storage:
 
-  - [AWS-S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html):
+  - [AWS-S3](#using-aws-s3):
 
-    - `Bucket` - cloud storage bucket name
+    - [`Bucket`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket) - cloud storage bucket name
 
     - [`Authorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html):
 
@@ -161,7 +161,7 @@ aws s3 cp <s3://bucket-name> <yourfolder> --recursive
 After copying the files, you can create a manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
 
 ```
-python <cvat reposytory>/utils/dataset_manifest/create.py --output-dir myfolder myfolder
+python <cvat reposytory>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
 ```
 
 When the manifest file is ready, you can upload it to aws s3 bucket. If you gave full write permissions
