@@ -159,7 +159,7 @@ class DatasetImagesReader:
                 else os.path.basename(image)
             name, extension = os.path.splitext(img_name)
             image_properties = {
-                'name': name,
+                'name': name.replace('\\', '/'),
                 'extension': extension,
                 'width': img.width,
                 'height': img.height,
