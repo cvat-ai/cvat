@@ -45,6 +45,7 @@ def migrate2meta(apps, shema_editor):
                 logger.info('Preparing of the video meta has begun')
                 manifest = VideoManifestManager(manifest_path=upload_dir)
                 manifest.link(media_file=media_file, force=True)
+                manifest.init_index()
                 with open(meta_path, "w") as meta_file:
                     for idx, pts, _ in manifest.reader:
                         meta_file.write(f"{idx} {pts}\n")

@@ -7,10 +7,11 @@ import json
 import os
 from abc import ABC, abstractmethod, abstractproperty
 from contextlib import closing
+from tempfile import NamedTemporaryFile
+
 from PIL import Image
 from tqdm import tqdm
 from .utils import md5_hash, rotate_image
-from tempfile import NamedTemporaryFile
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -315,10 +316,11 @@ class _ManifestManager(ABC):
         'version' : 1,
         'type': 2,
     }
-    def __init__(self, path, *args, **kwargs):
+    def __init__(self, path, create_index, *args, **kwargs):
         self._manifest = _Manifest(path)
         self._index = _Index(os.path.dirname(self._manifest.path))
         self._reader = None
+        self._create_index = create_index
 
     @property
     def reader(self):
@@ -354,6 +356,11 @@ class _ManifestManager(ABC):
     def set_index(self):
         self.reset_index()
         self.init_index()
+
+    def remove(self):
+        self.reset_index()
+        if os.path.exists(self.path):
+            os.remove(self.path)
 
     @abstractmethod
     def create(self):
@@ -401,8 +408,8 @@ class _ManifestManager(ABC):
         pass
 
 class VideoManifestManager(_ManifestManager):
-    def __init__(self, manifest_path):
-        super().__init__(manifest_path)
+    def __init__(self, manifest_path, create_index=True):
+        super().__init__(manifest_path, create_index)
         setattr(self._manifest, 'TYPE', 'video')
         self.BASE_INFORMATION['properties'] = 3
 
@@ -452,7 +459,8 @@ class VideoManifestManager(_ManifestManager):
             with open(self._manifest.path, 'w') as manifest_file:
                 _write_base_information(manifest_file)
                 _write_core_part(manifest_file)
-        self.set_index()
+        if self._create_index:
+            self.set_index()
 
     def partial_update(self, number, properties):
         pass
@@ -523,8 +531,8 @@ class VideoManifestValidator(VideoManifestManager):
                 return
 
 class ImageManifestManager(_ManifestManager):
-    def __init__(self, manifest_path):
-        super().__init__(manifest_path)
+    def __init__(self, manifest_path, create_index=True):
+        super().__init__(manifest_path, create_index)
         setattr(self._manifest, 'TYPE', 'images')
 
     def link(self, **kwargs):
@@ -549,7 +557,8 @@ class ImageManifestManager(_ManifestManager):
                     key: value for key, value in image_properties.items()
                 }, separators=(',', ':'))
                 manifest_file.write(f"{json_line}\n")
-        self.set_index()
+        if self._create_index:
+            self.set_index()
 
     def partial_update(self, number, properties):
         pass

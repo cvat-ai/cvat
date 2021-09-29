@@ -264,7 +264,6 @@ def _create_thread(tid, data, isImport=False):
             media_files = sorted(media['image'])
             content = cloud_storage_manifest.get_subset(media_files)
             manifest.create(content)
-            manifest.init_index()
 
     av_scan_paths(upload_dir)
 
@@ -423,8 +422,7 @@ def _create_thread(tid, data, isImport=False):
                             video_size = manifest.video_resolution
                             manifest_is_prepared = True
                         except Exception as ex:
-                            if os.path.exists(db_data.get_index_path()):
-                                os.remove(db_data.get_index_path())
+                            manifest.remove()
                             if isinstance(ex, AssertionError):
                                 base_msg = str(ex)
                             else:
@@ -452,10 +450,8 @@ def _create_thread(tid, data, isImport=False):
                     video_path = os.path.join(upload_dir, media_files[0])
                 except Exception as ex:
                     db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
-                    if os.path.exists(db_data.get_manifest_path()):
-                        os.remove(db_data.get_manifest_path())
-                    if os.path.exists(db_data.get_index_path()):
-                        os.remove(db_data.get_index_path())
+                    manifest.remove()
+                    del manifest
                     base_msg = str(ex) if isinstance(ex, AssertionError) \
                         else "Uploaded video does not support a quick way of task creating."
                     _update_status("{} The task will be created using the old method".format(base_msg))
@@ -463,20 +459,15 @@ def _create_thread(tid, data, isImport=False):
                 db_data.size = len(extractor)
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
-                    if db_task.dimension == models.DimensionType.DIM_2D:
-                        manifest.link(
-                            sources=extractor.absolute_source_paths,
-                            meta={ k: {'related_images': related_images[k] } for k in related_images },
-                            data_dir=upload_dir
-                        )
-                    else:
-                        manifest.link(
-                            sources=extractor.absolute_source_paths,
-                            meta={ k: {'related_images': related_images[k] } for k in related_images },
-                            data_dir=upload_dir,
-                            DIM_3D = True,
-                        )
+                    manifest.link(
+                        sources=extractor.absolute_source_paths,
+                        meta={ k: {'related_images': related_images[k] } for k in related_images },
+                        data_dir=upload_dir,
+                        DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+                    )
                     manifest.create()
+                else:
+                    manifest.init_index()
                 counter = itertools.count()
                 for _, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
                     chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]

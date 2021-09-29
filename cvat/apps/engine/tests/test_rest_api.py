@@ -2512,9 +2512,9 @@ def generate_manifest_file(data_type, manifest_path, sources):
     }
 
     if data_type == 'video':
-        manifest = VideoManifestManager(manifest_path)
+        manifest = VideoManifestManager(manifest_path, create_index=False)
     else:
-        manifest = ImageManifestManager(manifest_path)
+        manifest = ImageManifestManager(manifest_path, create_index=False)
     manifest.link(**kwargs[data_type])
     manifest.create()
 
