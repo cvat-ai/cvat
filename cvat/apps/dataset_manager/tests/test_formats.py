@@ -27,7 +27,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 
 
-def generate_image_file(filename, size=(100, 50)):
+def generate_image_file(filename, size=(100, 100)):
     f = BytesIO()
     image = Image.new('RGB', size=size)
     image.save(f, 'jpeg')
@@ -294,8 +294,8 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
-
+            'Sly Point Cloud Format 1.0',
+            'Cityscapes 1.0'
         })
 
     def test_import_formats_query(self):
@@ -321,7 +321,8 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
+            'Sly Point Cloud Format 1.0',
+            'Cityscapes 1.0'
         })
 
     def test_exports(self):
@@ -368,6 +369,7 @@ class TaskExportTest(_DbTestBase):
             ('ICDAR Recognition 1.0', 'icdar_word_recognition'),
             ('ICDAR Localization 1.0', 'icdar_text_localization'),
             ('ICDAR Segmentation 1.0', 'icdar_text_segmentation'),
+            # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
@@ -698,6 +700,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
                         }
                     ]
                 },
+                {
+                    "name": "background",
+                    "attributes": [],
+                },
                 {"name": "person"}
             ]
 
@@ -834,7 +840,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     {
                         "frame": 0,
                         "attributes": [],
-                        "points": [1.0, 2.1, 10.6, 53.22, 100, 300.222],
+                        "points": [1.0, 2.1, 10.6, 53.22, 90, 90.222],
                         "type": "polygon",
                         "occluded": False,
                         "outside": False
@@ -875,10 +881,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
             elif annotation_format == "MOTS PNG 1.0":
                 tracks = [track_wo_attrs]
             else:
-                shapes = [rectangle_shape_wo_attrs,
+                shapes = [rectangle_shape_wo_attrs, \
                     rectangle_shape_with_attrs]
-                tags = tag_wo_attrs
-                tracks = track_wo_attrs
+                tags = [tag_wo_attrs]
+                tracks = [track_wo_attrs]
 
         annotations = {
             "version": 0,

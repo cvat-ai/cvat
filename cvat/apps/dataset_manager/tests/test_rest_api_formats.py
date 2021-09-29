@@ -355,12 +355,12 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=dump_format_name):
                     images = self._generate_task_images(3)
                     # create task with annotations
-                    if dump_format_name == "Market-1501 1.0":
-                        task = self._create_task(tasks["market1501"], images)
-                    elif dump_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
-                        task = self._create_task(tasks["icdar_localization_and_recognition"], images)
-                    elif dump_format_name == "ICDAR Segmentation 1.0":
-                        task = self._create_task(tasks["icdar_segmentation"], images)
+                    if dump_format_name in [
+                        "Market-1501 1.0", "Cityscapes 1.0", \
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                        "ICDAR Segmentation 1.0"
+                    ]:
+                        task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
@@ -368,7 +368,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0"\
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -417,12 +417,12 @@ class TaskDumpUploadTest(_DbTestBase):
                         for user, edata in list(expected.items()):
                             # remove all annotations from task (create new task without annotation)
                             images = self._generate_task_images(3)
-                            if upload_format_name == "Market-1501 1.0":
-                                task = self._create_task(tasks["market1501"], images)
-                            elif upload_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
-                                task = self._create_task(tasks["icdar_localization_and_recognition"], images)
-                            elif upload_format_name == "ICDAR Segmentation 1.0":
-                                task = self._create_task(tasks["icdar_segmentation"], images)
+                            if upload_format_name in [
+                                "Market-1501 1.0", "Cityscapes 1.0", \
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                                "ICDAR Segmentation 1.0"
+                            ]:
+                                task = self._create_task(tasks[upload_format_name], images)
                             else:
                                 task = self._create_task(tasks["main"], images)
                             task_id = task["id"]
@@ -460,12 +460,12 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=dump_format_name):
                     # create task with annotations
                     video = self._generate_task_videos(1)
-                    if dump_format_name == "Market-1501 1.0":
-                        task = self._create_task(tasks["market1501"], video)
-                    elif dump_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
-                        task = self._create_task(tasks["icdar_localization_and_recognition"], video)
-                    elif dump_format_name == "ICDAR Segmentation 1.0":
-                        task = self._create_task(tasks["icdar_segmentation"], video)
+                    if dump_format_name in [
+                        "Market-1501 1.0", "Cityscapes 1.0", \
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                        "ICDAR Segmentation 1.0"
+                    ]:
+                        task = self._create_task(tasks[dump_format_name], video)
                     else:
                         task = self._create_task(tasks["main"], video)
                     task_id = task["id"]
@@ -474,7 +474,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             "MOT 1.1", "MOTS PNG 1.0", \
                             "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                             "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                            "WiderFace 1.0", "VGGFace2 1.0", \
+                            "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0" \
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -521,12 +521,12 @@ class TaskDumpUploadTest(_DbTestBase):
                         for user, edata in list(expected.items()):
                             # remove all annotations from task (create new task without annotation)
                             video = self._generate_task_videos(1)
-                            if upload_format_name == "Market-1501 1.0":
-                                task = self._create_task(tasks["market1501"], video)
-                            elif upload_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
-                                task = self._create_task(tasks["icdar_localization_and_recognition"], video)
-                            elif upload_format_name == "ICDAR Segmentation 1.0":
-                                task = self._create_task(tasks["icdar_segmentation"], video)
+                            if upload_format_name in [
+                                "Market-1501 1.0", "Cityscapes 1.0", \
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                                "ICDAR Segmentation 1.0"
+                            ]:
+                                task = self._create_task(tasks[upload_format_name], video)
                             else:
                                 task = self._create_task(tasks["main"], video)
                             task_id = task["id"]
@@ -802,12 +802,12 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=dump_format_name):
                     images = self._generate_task_images(3)
                     # create task with annotations
-                    if dump_format_name == "Market-1501 1.0":
-                        task = self._create_task(tasks["market1501"], images)
-                    elif dump_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
-                        task = self._create_task(tasks["icdar_localization_and_recognition"], images)
-                    elif dump_format_name == "ICDAR Segmentation 1.0":
-                        task = self._create_task(tasks["icdar_segmentation"], images)
+                    if dump_format_name in [
+                        "Market-1501 1.0", "Cityscapes 1.0", \
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                        "ICDAR Segmentation 1.0"
+                    ]:
+                        task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
@@ -871,6 +871,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=upload_format_name):
                     if upload_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
+                        "Cityscapes 1.0" # formats doesn't support empty annotations
                     ]:
                         self.skipTest("Format is fail")
                     images = self._generate_task_images(3)
@@ -898,18 +899,18 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
                         "Datumaro 1.0", # Datumaro 1.0 is not in the list of import format
-                        'Kitti Raw Format 1.0',
-                        'Sly Point Cloud Format 1.0'
-
+                        "Kitti Raw Format 1.0",
+                        "Sly Point Cloud Format 1.0",
+                        "Cityscapes 1.0" # expanding annotations due to background mask
                     ]:
                         self.skipTest("Format is fail")
                     images = self._generate_task_images(3)
-                    if dump_format_name == "Market-1501 1.0":
-                        task = self._create_task(tasks["market1501"], images)
-                    elif dump_format_name in ["ICDAR Localization 1.0", "ICDAR Recognition 1.0"]:
-                        task = self._create_task(tasks["icdar_localization_and_recognition"], images)
-                    elif dump_format_name == "ICDAR Segmentation 1.0":
-                        task = self._create_task(tasks["icdar_segmentation"], images)
+                    if dump_format_name in [
+                        "Market-1501 1.0", "Cityscapes 1.0", \
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                        "ICDAR Segmentation 1.0"
+                    ]:
+                        task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
@@ -917,7 +918,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0"\
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1008,19 +1009,19 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Segmentation mask 1.1", # changed points values
                         "ICDAR Segmentation 1.0", # changed points values
                         'Kitti Raw Format 1.0',
-                        'Sly Point Cloud Format 1.0'
+                        'Sly Point Cloud Format 1.0',
+                        'Cityscapes 1.0' # changed points value
                     ]:
                         self.skipTest("Format is fail")
 
                     # create task
                     images = self._generate_task_images(3)
-                    if dump_format_name == "Market-1501 1.0":
-                        task = self._create_task(tasks["market1501"], images)
-                    elif dump_format_name in ["ICDAR Localization 1.0",
-                            "ICDAR Recognition 1.0"]:
-                        task = self._create_task(tasks["icdar_localization_and_recognition"], images)
-                    elif dump_format_name == "ICDAR Segmentation 1.0":
-                        task = self._create_task(tasks["icdar_segmentation"], images)
+                    if dump_format_name in [
+                        "Market-1501 1.0", "Cityscapes 1.0", \
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
+                        "ICDAR Segmentation 1.0"
+                    ]:
+                        task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
 
