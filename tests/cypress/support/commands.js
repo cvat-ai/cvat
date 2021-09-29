@@ -281,7 +281,6 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 
 Cypress.Commands.add('checkPopoverHidden', (objectType) => {
     cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
-    cy.get(`.cvat-${objectType}-popover`).should('have.attr', 'style').and('include', 'pointer-events: none');
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
