@@ -16,7 +16,7 @@ following the instructions
 (even if you plan to use a free basic account you may need to link a credit card to verify your identity).
 
 To learn more about the operation and benefits of AWS cloud,
-take a free course [AWS Cloud Practitioner Essentials](https://www.aws.training/Details/eLearning?id=60697)
+take a free [AWS Cloud Practitioner Essentials](https://www.aws.training/Details/eLearning?id=60697) course,
 which will be available after registration.
 
 ### Create a bucket
@@ -26,21 +26,21 @@ and click `Create bucket`.
 
 ![](/images/aws-s3_tutorial_1.jpg)
 
-You'll be taken to the creation bucket page. Here you have to specify the name of the basket, region,
-optionally you can copy the settings of another bucket by clicking on the choose bucket button.
+You'll be taken to the bucket creation page. Here you have to specify the name of the bucket, region,
+optionally you can copy the settings of another bucket by clicking on the `choose bucket` button.
 Checkbox block all public access can be enabled as we will use `access key ID` and `secret access key` to gain access.
-In the following sections you can leave the default settings and click create bucket.
+In the following sections you can leave the default settings and click `create bucket`.
 After you create the bucket it will appear in the list of buckets.
 
 ### Create user and configure permissions
 
-To access bucket you will need to create a user to do this go [IAM](https://console.aws.amazon.com/iamv2/home#/users)
+To access bucket you will need to create a user, to do this, go [IAM](https://console.aws.amazon.com/iamv2/home#/users)
 and click `add users`. You need to choose AWS access type have access key ID and secret access key.
 
 ![](/images/aws-s3_tutorial_2.jpg)
 
-After pressing `next` button to configure permissions. You need to create a user group
-to do this click `create a group` input the `group name` and select permission policies add `AmazonS3ReadOnlyAccess`
+After pressing `next` button to configure permissions, you need to create a user group.
+To do this click `create a group`, input the `group name` and select permission policies add `AmazonS3ReadOnlyAccess`
 using the search (if you want the user you create to have write rights to bucket select `AmazonS3FullAccess`).
 
 ![](/images/aws-s3_tutorial_3.jpg)
@@ -119,8 +119,8 @@ the [Cloud storages page](/docs/manual/basics/cloud-storages/).
 You can use AWS Data Exchange to add image datasets.
 For example, consider adding a set of datasets `500 Image & Metadata Free Sample`.
 Go to [browse catalog](https://console.aws.amazon.com/dataexchange) and use the search to find
-`500 Image & Metadata Free Sample` open the dataset page and click `continue to subscribe`,
-you will be taken to the page complete subscription request read the information provided
+`500 Image & Metadata Free Sample`, open the dataset page and click `continue to subscribe`,
+you will be taken to the page complete subscription request, read the information provided
 and click send subscription request to provider.
 
 ![](/images/aws-s3_tutorial_6.jpg)
@@ -131,7 +131,7 @@ After that, this dataset will appear in the
 [list subscriptions](https://console.aws.amazon.com/dataexchange/home/subscriptions#/subscriptions).
 Now you need to export the dataset to `Amazon S3`.
 First, let's create a new one bucket similar to [described above](#create-a-bucket).
-To export one of the datasets to new bucket open it entitled data select one of the datasets,
+To export one of the datasets to a new bucket open it `entitled data` select one of the datasets,
 select the corresponding revision and click export to Amazon S3
 (please note that if bucket and dataset are located in different regions, export fees may apply).
 In the window that appears, select the created bucket and click export.
@@ -139,10 +139,10 @@ In the window that appears, select the created bucket and click export.
 ![](/images/aws-s3_tutorial_7.jpg)
 
 ### Prepare manifest file
-Now you need to prepare manifest file I used [AWS cli](https://aws.amazon.com/cli/) and
+Now you need to prepare manifest file. I used [AWS cli](https://aws.amazon.com/cli/) and
 [script for prepare manifest file](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest).
 Perform the installation using the manual [aws-shell](https://github.com/awslabs/aws-shell),
-I use `aws-cli 1.20.49` `Python 3.7.9` `Windows 10`.
+I used `aws-cli 1.20.49` `Python 3.7.9` `Windows 10`.
 You can configure credentials by running.
 You will need to enter `Access Key ID` and `Secret Access Key` as well as region.
 
@@ -152,19 +152,19 @@ Access Key ID: <your Access Key ID>
 Secret Access Key: <your Secret Access Key>
 ```
 
-Copy the content bucket to a folder on your computer:
+Copy the content of the bucket to a folder on your computer:
 
 ```
 aws s3 cp <s3://bucket-name> <yourfolder> --recursive
 ```
 
-After copying the files, you can create manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
+After copying the files, you can create a manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
 
 ```
 python <cvat reposytory>/utils/dataset_manifest/create.py --output-dir myfolder myfolder
 ```
 
-When the manifest file is ready, you can upload it to aws s3 bucketIf you gave full write permissions
+When the manifest file is ready, you can upload it to aws s3 bucket. If you gave full write permissions
 when you created the user, run:
 
 ```
