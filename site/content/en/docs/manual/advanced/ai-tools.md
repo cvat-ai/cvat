@@ -69,6 +69,14 @@ It is recommended to run the model on GPU, if possible.
 
 ![](/images/fbrs_example.gif)
 
+### High Resolution Net (HRNet)
+
+The model allows to get a mask for an object using positive points
+(should be left-clicked on the foreground), and negative points
+(should be right-clicked on the background, if necessary).
+It is recommended to run the model on GPU, if possible.
+
+
 ### Inside-Outside-Guidance
 
 The model uses a bounding box and inside/outside points to create a mask.

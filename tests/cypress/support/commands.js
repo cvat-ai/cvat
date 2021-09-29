@@ -241,17 +241,18 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 });
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
-    cy.get('body').focus();
-    cy.get(`.cvat-${objectType}-control`).trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('exist');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('be.visible');
-    cy.get(`.cvat-${objectType}-popover-visible`).should('have.attr', 'style').and('not.include', 'pointer-events: none');
+    cy.get('body').trigger('mousedown');
+    cy.get(`.cvat-${objectType}-control`).trigger('mouseover');
+    cy.get(`.cvat-${objectType}-popover`)
+        .should('be.visible')
+        .should('have.attr', 'style')
+        .should('not.include', 'pointer-events: none');
 });
 
 Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     cy.interactControlButton('draw-rectangle');
     cy.switchLabel(createRectangleParams.labelName, 'draw-rectangle');
-    cy.get('.cvat-draw-rectangle-popover-visible').within(() => {
+    cy.get('.cvat-draw-rectangle-popover').within(() => {
         cy.get('.ant-select-selection-item').then(($labelValue) => {
             selectedValueGlobal = $labelValue.text();
         });
@@ -271,9 +272,7 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
 });
 
 Cypress.Commands.add('switchLabel', (labelName, objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`)
-        .find('.ant-select-selection-item')
-        .click();
+    cy.get(`.cvat-${objectType}-popover`).find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .find(`.ant-select-item-option[title="${labelName}"]`)
@@ -281,9 +280,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
 });
 
 Cypress.Commands.add('checkPopoverHidden', (objectType) => {
-    cy.get(`.cvat-${objectType}-popover-visible`).should('not.exist');
     cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
-    cy.get(`.cvat-${objectType}-popover`).should('have.attr', 'style').and('include', 'pointer-events: none');
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
@@ -307,7 +304,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
 Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.interactControlButton('draw-points');
     cy.switchLabel(createPointParams.labelName, 'draw-points');
-    cy.get('.cvat-draw-points-popover-visible').within(() => {
+    cy.get('.cvat-draw-points-popover').within(() => {
         cy.get('.ant-select-selection-item').then(($labelValue) => {
             selectedValueGlobal = $labelValue.text();
         });
@@ -322,7 +319,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     if (createPointParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else {
-        if (! createPointParams.numberOfPoints) {
+        if (!createPointParams.numberOfPoints) {
             const keyCodeN = 78;
             cy.get('.cvat-canvas-container')
                 .trigger('keydown', { keyCode: keyCodeN })
@@ -355,7 +352,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (!createPolygonParams.reDraw) {
         cy.interactControlButton('draw-polygon');
         cy.switchLabel(createPolygonParams.labelName, 'draw-polygon');
-        cy.get('.cvat-draw-polygon-popover-visible').within(() => {
+        cy.get('.cvat-draw-polygon-popover').within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
@@ -371,7 +368,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     if (createPolygonParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else {
-        if (! createPolygonParams.numberOfPoints) {
+        if (!createPolygonParams.numberOfPoints) {
             const keyCodeN = 78;
             cy.get('.cvat-canvas-container')
                 .trigger('keydown', { keyCode: keyCodeN })
@@ -429,7 +426,7 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
 Cypress.Commands.add('createCuboid', (createCuboidParams) => {
     cy.interactControlButton('draw-cuboid');
     cy.switchLabel(createCuboidParams.labelName, 'draw-cuboid');
-    cy.get('.cvat-draw-cuboid-popover-visible').within(() => {
+    cy.get('.cvat-draw-cuboid-popover').within(() => {
         cy.get('.ant-select-selection-item').then(($labelValue) => {
             selectedValueGlobal = $labelValue.text();
         });
@@ -502,7 +499,7 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
 Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     cy.interactControlButton('draw-polyline');
     cy.switchLabel(createPolylineParams.labelName, 'draw-polyline');
-    cy.get('.cvat-draw-polyline-popover-visible').within(() => {
+    cy.get('.cvat-draw-polyline-popover').within(() => {
         cy.get('.ant-select-selection-item').then(($labelValue) => {
             selectedValueGlobal = $labelValue.text();
         });
@@ -517,7 +514,7 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     if (createPolylineParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else {
-        if (! createPolylineParams.numberOfPoints) {
+        if (!createPolylineParams.numberOfPoints) {
             const keyCodeN = 78;
             cy.get('.cvat-canvas-container')
                 .trigger('keydown', { keyCode: keyCodeN })
@@ -642,7 +639,7 @@ Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
 Cypress.Commands.add('createTag', (labelName) => {
     cy.interactControlButton('setup-tag');
     cy.switchLabel(labelName, 'setup-tag');
-    cy.get('.cvat-setup-tag-popover-visible').within(() => {
+    cy.get('.cvat-setup-tag-popover').within(() => {
         cy.get('button').click();
     });
 });
@@ -747,5 +744,5 @@ Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) =>
     cy.closeNotification('.cvat-notification-notice-export-task-start');
     cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
-    cy.wait(2000) // Waiting for a full file download
+    cy.wait(2000); // Waiting for a full file download
 });
