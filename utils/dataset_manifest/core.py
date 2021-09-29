@@ -232,23 +232,19 @@ class _Manifest:
     FILE_NAME = 'manifest.jsonl'
     VERSION = '1.1'
 
-    def __init__(self, path, is_created=False):
+    def __init__(self, path, upload_dir=None):
         assert path, 'A path to manifest file not found'
         self._path = os.path.join(path, self.FILE_NAME) if os.path.isdir(path) else path
-        self._is_created = is_created
+        self._upload_dir = upload_dir
 
     @property
     def path(self):
         return self._path
 
     @property
-    def is_created(self):
-        return self._is_created
-
-    @is_created.setter
-    def is_created(self, value):
-        assert isinstance(value, bool)
-        self._is_created = value
+    def name(self):
+        return os.path.basename(self._path) if not self._upload_dir \
+            else os.path.relpath(self._path, self._upload_dir)
 
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
@@ -316,8 +312,14 @@ class _ManifestManager(ABC):
         'version' : 1,
         'type': 2,
     }
-    def __init__(self, path, create_index, *args, **kwargs):
-        self._manifest = _Manifest(path)
+
+    def _json_item_is_valid(self, **state):
+        for item in self._requared_item_attributes:
+            if state.get(item, None) is None:
+                raise Exception(f"Invalid '{self.manifest.name} file structure': '{item}' is required, but not found")
+
+    def __init__(self, path, create_index, upload_dir=None, *args, **kwargs):
+        self._manifest = _Manifest(path, upload_dir)
         self._index = _Index(os.path.dirname(self._manifest.path))
         self._reader = None
         self._create_index = create_index
@@ -340,7 +342,9 @@ class _ManifestManager(ABC):
                 offset = self._index[line]
                 manifest_file.seek(offset)
                 properties = manifest_file.readline()
-                return json.loads(properties)
+                parsed_properties = json.loads(properties)
+                self._json_item_is_valid(**parsed_properties)
+                return parsed_properties
 
     def init_index(self):
         if os.path.exists(self._index.path):
@@ -378,7 +382,9 @@ class _ManifestManager(ABC):
             while line:
                 if not line.strip():
                     continue
-                yield (image_number, json.loads(line))
+                parsed_properties = json.loads(line)
+                self._json_item_is_valid(**parsed_properties)
+                yield (image_number, parsed_properties)
                 image_number += 1
                 line = manifest_file.readline()
 
@@ -408,6 +414,8 @@ class _ManifestManager(ABC):
         pass
 
 class VideoManifestManager(_ManifestManager):
+    _requared_item_attributes = {'number', 'pts'}
+
     def __init__(self, manifest_path, create_index=True):
         super().__init__(manifest_path, create_index)
         setattr(self._manifest, 'TYPE', 'video')
@@ -461,6 +469,7 @@ class VideoManifestManager(_ManifestManager):
                 _write_core_part(manifest_file)
         if self._create_index:
             self.set_index()
+
 
     def partial_update(self, number, properties):
         pass
@@ -531,8 +540,10 @@ class VideoManifestValidator(VideoManifestManager):
                 return
 
 class ImageManifestManager(_ManifestManager):
-    def __init__(self, manifest_path, create_index=True):
-        super().__init__(manifest_path, create_index)
+    _requared_item_attributes = {'name', 'extension'}
+
+    def __init__(self, manifest_path, upload_dir=None, create_index=True):
+        super().__init__(manifest_path, create_index, upload_dir)
         setattr(self._manifest, 'TYPE', 'images')
 
     def link(self, **kwargs):

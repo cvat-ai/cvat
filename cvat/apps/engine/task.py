@@ -258,7 +258,8 @@ def _create_thread(tid, data, isImport=False):
             # prepare task manifest file from cloud storage manifest file
             manifest = ImageManifestManager(db_data.get_manifest_path())
             cloud_storage_manifest = ImageManifestManager(
-                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file[0])
+                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file[0]),
+                db_data.cloud_storage.get_storage_dirname()
             )
             cloud_storage_manifest.set_index()
             media_files = sorted(media['image'])
