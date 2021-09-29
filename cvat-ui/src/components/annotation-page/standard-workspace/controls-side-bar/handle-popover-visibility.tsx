@@ -13,10 +13,12 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
         const popoverClassName = `cvat-${popoverType}-popover`;
         overlayClassNames.push(popoverClassName);
 
+        const { overlayStyle } = props;
         return (
             <WrappedComponent
                 {...rest}
                 overlayStyle={{
+                    ...(typeof overlayStyle === 'object' ? overlayStyle : {}),
                     animationDuration: '0s',
                     animationDelay: '0s',
                 }}
