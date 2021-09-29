@@ -32,24 +32,6 @@
         span[role='img'] {
             font-size: 24px;
             line-height: 24px;
-
-            &[aria-label='question-circle'] {
-                animation: higlightGuideButton 1s 5;
-            }
-        }
-    }
-
-    @keyframes higlightGuideButton {
-        0% {
-            color: black;
-        }
-
-        50% {
-            color: $info-icon-color;
-        }
-
-        100% {
-            color: black;
         }
     }
 }
@@ -97,6 +79,45 @@
     > li {
         span[role='img'] {
             margin-right: $grid-unit-size;
+        }
+    }
+}
+
+.cvat-header-organizations-selector {
+    margin-right: $grid-unit-size;
+
+    > button {
+        background: none;
+        border: none;
+        color: black;
+        outline: none;
+        display: flex;
+        align-items: center;
+
+        &:hover,
+        &:focus,
+        &:active {
+            background: none;
+            border: none;
+            color: black;
+            outline: none;
+        }
+
+        ::after {
+            display: none;
+        }
+    }
+
+    > button:first-child {
+        > span[role=img] {
+            font-size: 16px;
+        }
+
+        > span:last-child {
+            max-width: $grid-unit-size * 16;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
     }
 }

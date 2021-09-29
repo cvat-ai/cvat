@@ -17,6 +17,8 @@ import Icon, {
     QuestionCircleOutlined,
     CaretDownOutlined,
     ControlOutlined,
+    TeamOutlined,
+    UsergroupAddOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -35,6 +37,7 @@ import { logoutAsync, authActions } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import SettingsModal from './settings-modal/settings-modal';
+import Select from 'antd/lib/select';
 
 const core = getCore();
 
@@ -256,6 +259,20 @@ function HeaderContainer(props: Props): JSX.Element {
         </Menu>
     );
 
+    const menu1 = (
+        <Menu>
+            <Menu.Item key='1'>
+                1st menu item
+            </Menu.Item>
+            <Menu.Item key='2'>
+                2nd menu item
+            </Menu.Item>
+            <Menu.Item key='create'>
+                <Text strong>Create ..</Text>
+            </Menu.Item>
+        </Menu>
+    );
+
     return (
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
@@ -353,6 +370,32 @@ function HeaderContainer(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
+                <div>
+                    <Dropdown.Button className='cvat-header-organizations-selector' overlay={menu1}>
+                        <TeamOutlined />
+                        <Text strong>Organization name</Text>
+                    </Dropdown.Button>
+                    {/* <Select>
+                        <Select.Option value='test'>test</Select.Option>
+                        <Select.Option value='test1'>test</Select.Option>
+                        <Select.Option value='test2'>test</Select.Option>
+                        <Select.Option value='test3'>test</Select.Option>
+                    </Select> */}
+                </div>
+                {/* <Button
+                    icon={<UsergroupAddOutlined />}
+                    size='large'
+                    className='cvat-header-button'
+                    type='link'
+                    href={GUIDE_URL}
+                    onClick={(event: React.MouseEvent): void => {
+                        // event.preventDefault();
+                        // window.open(GUIDE_URL, '_blank');
+                    }}
+                    onMouseOver={() => {
+
+                    }}
+                /> */}
                 <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
                     <span>
                         <Icon className='cvat-header-account-icon' component={AccountIcon} />
