@@ -176,4 +176,4 @@ drag the manifest file to the page and click upload.
 
 ![](/images/aws-s3_tutorial_5.jpg)
 
-Now you can [attach new cloud storage](attach-new-cloud-storage) using the dataset `500 Image & Metadata Free Sample`.
+Now you can [attach new cloud storage](#attach-new-cloud-storage) using the dataset `500 Image & Metadata Free Sample`.
