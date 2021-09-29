@@ -39,6 +39,7 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
@@ -92,7 +93,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.30.2-rootless
+    image: openpolicyagent/opa:0.32.1-rootless
     restart: always
     networks:
       cvat:
