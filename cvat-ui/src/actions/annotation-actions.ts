@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { MutableRefObject } from 'react';
 import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
@@ -183,7 +182,6 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
-    SET_AI_TOOLS_REF = 'SET_AI_TOOLS_REF',
     GET_DATA_FAILED = 'GET_DATA_FAILED',
     SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
     SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
@@ -196,6 +194,7 @@ export enum AnnotationActionTypes {
     GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
     GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
     GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
+    SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -258,12 +257,14 @@ export function fetchAnnotationsAsync(): ThunkAction {
                 filters, frame, showAllInterpolationTracks, jobInstance,
             } = receiveAnnotationsParameters();
             const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const history = await jobInstance.actions.get();
             const [minZ, maxZ] = computeZRange(states);
 
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
                     states,
+                    history,
                     minZ,
                     maxZ,
                 },
@@ -1460,15 +1461,6 @@ export function interactWithCanvas(activeInteractor: Model | OpenCVTool, activeL
     };
 }
 
-export function setAIToolsRef(ref: MutableRefObject<any>): AnyAction {
-    return {
-        type: AnnotationActionTypes.SET_AI_TOOLS_REF,
-        payload: {
-            aiToolsRef: ref,
-        },
-    };
-}
-
 export function repeatDrawShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
@@ -1658,5 +1650,14 @@ export function getContextImageAsync(): ThunkAction {
                 payload: { error },
             });
         }
+    };
+}
+
+export function switchNavigationBlocked(navigationBlocked: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_NAVIGATION_BLOCKED,
+        payload: {
+            navigationBlocked,
+        },
     };
 }

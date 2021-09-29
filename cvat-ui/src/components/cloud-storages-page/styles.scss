@@ -56,7 +56,7 @@
 
     img {
         height: $grid-unit-size * 24;
-        width: auto;
+        object-fit: cover;
         margin: auto;
     }
 
