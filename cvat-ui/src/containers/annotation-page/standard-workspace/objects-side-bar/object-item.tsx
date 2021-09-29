@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { MutableRefObject } from 'react';
+import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
@@ -22,7 +22,6 @@ import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
 } from 'reducers/interfaces';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { ToolsControlComponent } from 'components/annotation-page/standard-workspace/controls-side-bar/tools-control';
 import { shift } from 'utils/math';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
@@ -48,7 +47,6 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    aiToolsRef: MutableRefObject<ToolsControlComponent>;
     canvasInstance: Canvas | Canvas3d;
 }
 
@@ -76,7 +74,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance, ready, activeControl },
-            aiToolsRef,
         },
         settings: {
             shapes: { colorBy },
@@ -105,7 +102,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        aiToolsRef,
         canvasInstance,
     };
 }
@@ -241,13 +237,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const { collapseOrExpand, objectState, collapsed } = this.props;
 
         collapseOrExpand([objectState], !collapsed);
-    };
-
-    private activateTracking = (): void => {
-        const { objectState, readonly, aiToolsRef } = this.props;
-        if (!readonly && aiToolsRef.current && aiToolsRef.current.trackingAvailable()) {
-            aiToolsRef.current.trackState(objectState);
-        }
     };
 
     private changeColor = (color: string): void => {
@@ -392,7 +381,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
-                activateTracking={this.activateTracking}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );

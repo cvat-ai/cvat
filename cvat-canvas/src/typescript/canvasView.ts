@@ -1458,6 +1458,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             shapeType: state.shapeType,
             points: [...state.points],
             attributes: { ...state.attributes },
+            descriptions: [...state.descriptions],
             zOrder: state.zOrder,
             pinned: state.pinned,
             updated: state.updated,
@@ -1544,7 +1545,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if (drawnState.label.id !== state.label.id) {
+            const stateDescriptions = state.descriptions;
+            const drawnStateDescriptions = drawnState.descriptions;
+
+            if (
+                drawnState.label.id !== state.label.id
+                || drawnStateDescriptions.length !== stateDescriptions.length
+                || drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
+            ) {
                 // need to remove created text and create it again
                 if (text) {
                     text.remove();
@@ -1967,7 +1975,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private addText(state: any): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
         const {
-            label, clientID, attributes, source,
+            label, clientID, attributes, source, descriptions,
         } = state;
         const attrNames = label.attributes.reduce((acc: any, val: any): void => {
             acc[val.id] = val.name;
@@ -1977,13 +1985,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.adoptedText
             .text((block): void => {
                 block.tspan(`${label.name} ${clientID} (${source})`).style('text-transform', 'uppercase');
+                for (const desc of descriptions) {
+                    block
+                        .tspan(`${desc}`)
+                        .attr({
+                            dy: '1em',
+                            x: 0,
+                        })
+                        .addClass('cvat_canvas_text_description');
+                }
                 for (const attrID of Object.keys(attributes)) {
                     const value = attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID];
-                    block.tspan(`${attrNames[attrID]}: ${value}`).attr({
-                        attrID,
-                        dy: '1em',
-                        x: 0,
-                    });
+                    block
+                        .tspan(`${attrNames[attrID]}: ${value}`)
+                        .attr({
+                            attrID,
+                            dy: '1em',
+                            x: 0,
+                        })
+                        .addClass('cvat_canvas_text_attribute');
                 }
             })
             .move(0, 0)

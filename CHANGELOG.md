@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
+- interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
+- Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 
 ### Changed
 
-- TDB
+- UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 
 ### Deprecated
 
@@ -25,7 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TDB
+- Fixed JSON transform issues in network requests (<https://github.com/openvinotoolkit/cvat/pull/3706>)
+- Display a more user-friendly exception message (<https://github.com/openvinotoolkit/cvat/pull/3721>)
+- Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
+- Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
 
 ### Security
 

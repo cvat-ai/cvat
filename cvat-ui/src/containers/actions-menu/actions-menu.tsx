@@ -47,9 +47,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         formats: { annotationFormats },
         tasks: {
-            activities: {
-                loads, backups,
-            },
+            activities: { loads, backups },
         },
     } = state;
 
@@ -91,7 +89,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         loadActivity,
         inferenceIsActive,
         exportIsActive,
-
         loadAnnotations,
         showExportModal,
         deleteTask,
@@ -100,31 +97,27 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         openMoveTaskToProjectWindow,
     } = props;
 
-    function onClickMenu(params: MenuInfo, file?: File): void {
-        if (params.keyPath.length > 1) {
-            const [additionalKey, action] = params.keyPath;
-            if (action === Actions.LOAD_TASK_ANNO) {
-                const format = additionalKey;
-                const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
-                if (loader && file) {
-                    loadAnnotations(taskInstance, loader, file);
-                }
-            }
-        } else {
-            const [action] = params.keyPath;
-            if (action === Actions.EXPORT_TASK_DATASET) {
-                showExportModal(taskInstance);
-            } else if (action === Actions.DELETE_TASK) {
-                deleteTask(taskInstance);
-            } else if (action === Actions.OPEN_BUG_TRACKER) {
-                window.open(`${taskInstance.bugTracker}`, '_blank');
-            } else if (action === Actions.RUN_AUTO_ANNOTATION) {
-                openRunModelWindow(taskInstance);
-            } else if (action === Actions.EXPORT_TASK) {
-                exportTask(taskInstance);
-            } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
-                openMoveTaskToProjectWindow(taskInstance.id);
-            }
+    function onClickMenu(params: MenuInfo): void {
+        const [action] = params.keyPath;
+        if (action === Actions.EXPORT_TASK_DATASET) {
+            showExportModal(taskInstance);
+        } else if (action === Actions.DELETE_TASK) {
+            deleteTask(taskInstance);
+        } else if (action === Actions.OPEN_BUG_TRACKER) {
+            window.open(`${taskInstance.bugTracker}`, '_blank');
+        } else if (action === Actions.RUN_AUTO_ANNOTATION) {
+            openRunModelWindow(taskInstance);
+        } else if (action === Actions.EXPORT_TASK) {
+            exportTask(taskInstance);
+        } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
+            openMoveTaskToProjectWindow(taskInstance.id);
+        }
+    }
+
+    function onUploadAnnotations(format: string, file: File): void {
+        const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
+        if (loader && file) {
+            loadAnnotations(taskInstance, loader, file);
         }
     }
 
@@ -138,6 +131,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             loadActivity={loadActivity}
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
+            onUploadAnnotations={onUploadAnnotations}
             taskDimension={taskInstance.dimension}
             exportIsActive={exportIsActive}
         />

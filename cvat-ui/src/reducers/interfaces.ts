@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -237,7 +236,7 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
-    onChangeToolsBlockerState: (event:string) => void;
+    onChangeToolsBlockerState: (event: string) => void;
     tip: {
         message: string;
         gif: string;
@@ -512,6 +511,7 @@ export interface AnnotationState {
             delay: number;
             changeTime: number | null;
         };
+        navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
         contextImage: {
@@ -531,7 +531,6 @@ export interface AnnotationState {
         activeInitialState?: any;
     };
     annotations: {
-        selectedStatesID: number[];
         activatedStateID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
@@ -571,7 +570,6 @@ export interface AnnotationState {
     appearanceCollapsed: boolean;
     workspace: Workspace;
     predictor: PredictorState;
-    aiToolsRef: MutableRefObject<any>;
 }
 
 export enum Workspace {

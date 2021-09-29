@@ -191,8 +191,8 @@ class LambdaFunction:
             elif self.kind == LambdaType.TRACKER:
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
-                    "shape": data.get("shape", None),
-                    "state": data.get("state", None)
+                    "shapes": data.get("shapes", []),
+                    "states": data.get("states", [])
                 })
             else:
                 raise ValidationError(
