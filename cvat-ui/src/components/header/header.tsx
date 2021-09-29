@@ -33,6 +33,7 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import SettingsModal from './settings-modal/settings-modal';
 
 const core = getCore();
@@ -148,7 +149,7 @@ function HeaderContainer(props: Props): JSX.Element {
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, FORUM_URL, GITHUB_URL,
+        CHANGELOG_URL, LICENSE_URL, GITTER_URL, FORUM_URL, GITHUB_URL, GUIDE_URL,
     } = consts;
 
     const history = useHistory();
@@ -326,30 +327,32 @@ function HeaderContainer(props: Props): JSX.Element {
                 )}
             </div>
             <div className='cvat-right-header'>
-                <Button
-                    className='cvat-header-button'
-                    type='link'
-                    href={GITHUB_URL}
-                    onClick={(event: React.MouseEvent): void => {
-                        event.preventDefault();
-                        window.open(GITHUB_URL, '_blank');
-                    }}
-                >
-                    <GithubOutlined />
-                </Button>
-                <Button
-                    className='cvat-header-button'
-                    type='link'
-                    href='https://openvinotoolkit.github.io/cvat/docs'
-                    onClick={(event: React.MouseEvent): void => {
-                        event.preventDefault();
-                        // false positive
-                        // eslint-disable-next-line
-                        window.open('https://openvinotoolkit.github.io/cvat/docs');
-                    }}
-                >
-                    <QuestionCircleOutlined />
-                </Button>
+                <CVATTooltip overlay='Click to open repository'>
+                    <Button
+                        icon={<GithubOutlined />}
+                        size='large'
+                        className='cvat-header-button'
+                        type='link'
+                        href={GITHUB_URL}
+                        onClick={(event: React.MouseEvent): void => {
+                            event.preventDefault();
+                            window.open(GITHUB_URL, '_blank');
+                        }}
+                    />
+                </CVATTooltip>
+                <CVATTooltip overlay='Click to open guide'>
+                    <Button
+                        icon={<QuestionCircleOutlined />}
+                        size='large'
+                        className='cvat-header-button'
+                        type='link'
+                        href={GUIDE_URL}
+                        onClick={(event: React.MouseEvent): void => {
+                            event.preventDefault();
+                            window.open(GUIDE_URL, '_blank');
+                        }}
+                    />
+                </CVATTooltip>
                 <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
                     <span>
                         <Icon className='cvat-header-account-icon' component={AccountIcon} />

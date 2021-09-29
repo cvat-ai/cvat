@@ -31,6 +31,25 @@
 
         span[role='img'] {
             font-size: 24px;
+            line-height: 24px;
+
+            &[aria-label='question-circle'] {
+                animation: higlightGuideButton 1s 5;
+            }
+        }
+    }
+
+    @keyframes higlightGuideButton {
+        0% {
+            color: black;
+        }
+
+        50% {
+            color: $info-icon-color;
+        }
+
+        100% {
+            color: black;
         }
     }
 }
@@ -52,6 +71,15 @@
     align-items: center;
     border-left: 1px solid $border-color-1;
     padding: 0 $grid-unit-size * 2 0 0;
+
+    > span:nth-child(2) {
+        max-width: $grid-unit-size * 16;
+        height: $grid-unit-size * 5;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        line-height: $grid-unit-size * 5;
+    }
 }
 
 .anticon.cvat-header-account-icon {
