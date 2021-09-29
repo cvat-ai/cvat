@@ -139,14 +139,17 @@ In the window that appears, select the created bucket and click export.
 ![](/images/aws-s3_tutorial_7.jpg)
 
 ### Prepare manifest file
-Now you need to prepare manifest file I used [AWS cli](https://aws.amazon.com/cli/) and util/create.py.
+Now you need to prepare manifest file I used [AWS cli](https://aws.amazon.com/cli/) and
+[script for prepare manifest file](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest).
 Perform the installation using the manual [aws-shell](https://github.com/awslabs/aws-shell),
-I use aws-cli/1.20.49 Python/3.7.9 Windows/10 botocore/1.21.49.
+I use `aws-cli 1.20.49` `Python 3.7.9` `Windows 10`.
 You can configure credentials by running.
 You will need to enter `Access Key ID` and `Secret Access Key` as well as region.
 
 ```
 aws configure
+Access Key ID: <your Access Key ID>
+Secret Access Key: <your Secret Access Key>
 ```
 
 Copy the content bucket to a folder on your computer:
