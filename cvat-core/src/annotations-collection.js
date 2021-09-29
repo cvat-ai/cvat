@@ -722,6 +722,8 @@
                     checkObjectType('state occluded', state.occluded, 'boolean', null);
                     checkObjectType('state points', state.points, null, Array);
                     checkObjectType('state zOrder', state.zOrder, 'integer', null);
+                    checkObjectType('state descriptions', state.descriptions, null, Array);
+                    state.descriptions.forEach((desc) => checkObjectType('state description', desc, 'string'));
 
                     for (const coord of state.points) {
                         checkObjectType('point coordinate', coord, 'number', null);
@@ -736,6 +738,7 @@
                     if (state.objectType === 'shape') {
                         constructed.shapes.push({
                             attributes,
+                            descriptions: state.descriptions,
                             frame: state.frame,
                             group: 0,
                             label_id: state.label.id,
@@ -748,6 +751,7 @@
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
                             attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
+                            descriptions: state.descriptions,
                             frame: state.frame,
                             group: 0,
                             source: state.source,

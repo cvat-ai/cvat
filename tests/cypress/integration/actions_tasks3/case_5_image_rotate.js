@@ -17,7 +17,7 @@ context('Check if the image is rotated', () => {
             cy.get('.cvat-rotate-canvas-controls-left').click();
         }
         cy.get('.cvat-canvas-container').click(); // Hide popover
-        cy.get('.cvat-rotate-canvas-popover-visible').should('not.exist');
+        cy.get('.cvat-rotate-canvas-popover').should('be.hidden');
     }
 
     function scaleFitImage() {
@@ -36,6 +36,7 @@ context('Check if the image is rotated', () => {
                 cy.get('#cvat_canvas_content').dblclick();
                 cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', scaleBefore);
             });
+        cy.get('.cvat-rotate-canvas-popover-visible').should('not.exist');
     }
 
     before(() => {

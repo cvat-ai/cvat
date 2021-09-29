@@ -7,12 +7,7 @@ import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import Icon, {
-    LinkOutlined,
-    CopyOutlined,
-    BlockOutlined,
-    GatewayOutlined,
-    RetweetOutlined,
-    DeleteOutlined,
+    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -50,7 +45,6 @@ interface Props {
     toForeground(): void;
     resetCuboidPerspective(): void;
     changeColorPickerVisible(visible: boolean): void;
-    activateTracking(): void;
     jobInstance: any;
 }
 
@@ -92,20 +86,6 @@ function PropagateItem(props: ItemProps): JSX.Element {
             <CVATTooltip title={`${propagateShortcut}`}>
                 <Button type='link' icon={<BlockOutlined />} onClick={propagate}>
                     Propagate
-                </Button>
-            </CVATTooltip>
-        </Menu.Item>
-    );
-}
-
-function TrackingItem(props: ItemProps): JSX.Element {
-    const { toolProps, ...rest } = props;
-    const { activateTracking } = toolProps;
-    return (
-        <Menu.Item {...rest}>
-            <CVATTooltip title='Run tracking with the active tracker'>
-                <Button type='link' icon={<GatewayOutlined />} onClick={activateTracking}>
-                    Track
                 </Button>
             </CVATTooltip>
         </Menu.Item>
@@ -237,7 +217,6 @@ export default function ItemMenu(props: Props): JSX.Element {
         CREATE_URL = 'create_url',
         COPY = 'copy',
         PROPAGATE = 'propagate',
-        TRACK = 'track',
         SWITCH_ORIENTATION = 'switch_orientation',
         RESET_PERSPECIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
@@ -253,9 +232,6 @@ export default function ItemMenu(props: Props): JSX.Element {
             <CreateURLItem key={MenuKeys.CREATE_URL} toolProps={props} />
             {!readonly && <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />}
             {!readonly && <PropagateItem key={MenuKeys.PROPAGATE} toolProps={props} />}
-            {is2D && !readonly && objectType === ObjectType.TRACK && shapeType === ShapeType.RECTANGLE && (
-                <TrackingItem key={MenuKeys.TRACK} toolProps={props} />
-            )}
             {is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <SwitchOrientationItem key={MenuKeys.SWITCH_ORIENTATION} toolProps={props} />
             )}

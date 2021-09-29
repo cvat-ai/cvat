@@ -17,6 +17,7 @@ import {
     changeFrameAsync,
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';
+import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
@@ -266,7 +267,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
                 const frame =
                     typeof activeObjectState.keyframes.next === 'number' ? activeObjectState.keyframes.next : null;
-                if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                if (frame !== null && isAbleToChangeFrame()) {
                     changeFrame(frame);
                 }
             }
@@ -276,7 +277,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
                 const frame =
                     typeof activeObjectState.keyframes.prev === 'number' ? activeObjectState.keyframes.prev : null;
-                if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                if (frame !== null && isAbleToChangeFrame()) {
                     changeFrame(frame);
                 }
             }
