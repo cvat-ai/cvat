@@ -25,6 +25,14 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
+
+    > a.ant-btn {
+        height: 24px;
+
+        span[role='img'] {
+            font-size: 24px;
+        }
+    }
 }
 
 .anticon.cvat-logo-icon {
@@ -35,15 +43,15 @@
 
 .ant-btn.cvat-header-button {
     color: $text-color;
-    padding: 0 10px;
-    margin-right: 10px;
+    padding: 0 $grid-unit-size;
+    margin-right: $grid-unit-size;
 }
 
 .ant-dropdown-trigger.cvat-header-menu-dropdown {
     display: flex;
     align-items: center;
     border-left: 1px solid $border-color-1;
-    padding: 0 20px;
+    padding: 0 $grid-unit-size * 2 0 0;
 }
 
 .anticon.cvat-header-account-icon {

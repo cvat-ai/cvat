@@ -336,7 +336,6 @@ function HeaderContainer(props: Props): JSX.Element {
                     }}
                 >
                     <GithubOutlined />
-                    <Text className='cvat-text-color'>GitHub</Text>
                 </Button>
                 <Button
                     className='cvat-header-button'
@@ -350,7 +349,6 @@ function HeaderContainer(props: Props): JSX.Element {
                     }}
                 >
                     <QuestionCircleOutlined />
-                    Help
                 </Button>
                 <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
                     <span>
