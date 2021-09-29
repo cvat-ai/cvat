@@ -46,6 +46,12 @@ polyline.cvat_shape_drawing_opacity {
     pointer-events: none;
 }
 
+.cvat_canvas_text_description {
+    font-size: 14px;
+    fill: yellow;
+    font-style: oblique 40deg;
+}
+
 .cvat_canvas_crosshair {
     stroke: red;
 }

@@ -45,6 +45,7 @@ export interface DrawnState {
     shapeType: string;
     points?: number[];
     attributes: Record<number, string>;
+    descriptions: string[];
     zOrder?: number;
     pinned?: boolean;
     updated: number;
