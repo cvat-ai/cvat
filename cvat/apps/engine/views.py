@@ -1349,7 +1349,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             if not os.path.exists(full_manifest_path) or \
                     datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
                 storage.download_file(manifest_path, full_manifest_path)
-            manifest = ImageManifestManager(full_manifest_path)
+            manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
             # need to update index
             manifest.set_index()
             manifest_files = manifest.data
@@ -1406,7 +1406,10 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                     if not os.path.exists(full_manifest_path) or \
                             datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
                         storage.download_file(manifest_model.filename, full_manifest_path)
-                    manifest = ImageManifestManager(os.path.join(db_storage.get_storage_dirname(), manifest_model.filename))
+                    manifest = ImageManifestManager(
+                        os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
+                        db_storage.get_storage_dirname()
+                    )
                     # need to update index
                     manifest.set_index()
                     if not len(manifest):
