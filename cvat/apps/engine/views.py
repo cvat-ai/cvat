@@ -48,7 +48,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, Project, Review, Issue,
+    Job, StatusChoice, Task, Data, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice, Image,
     CredentialsTypeChoice, CloudProviderChoice
 )
@@ -451,7 +451,17 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def create(self, request):
         action = self.request.query_params.get('action', None)
         if action is None:
-            return super().create(request)
+            serializer = TaskSerializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            db_task = serializer.save()
+            empty_data = Data.objects.create()
+            os.makedirs(empty_data.get_compressed_cache_dirname())
+            os.makedirs(empty_data.get_original_cache_dirname())
+            os.makedirs(empty_data.get_upload_dirname())
+            db_task.data = empty_data
+            db_task.save()
+            headers = super().get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         elif action == 'import':
             self._validate_task_limit(owner=self.request.user)
             if 'rq_id' in request.data:
@@ -609,31 +619,31 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def data(self, request, pk):
         db_task = self.get_object() # call check_object_permissions as well
         if request.method == 'POST':
-            if db_task.data:
+            task_data = db_task.data
+            if task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
-            serializer = DataSerializer(data=request.data)
+
+            upload_dir = task_data.get_upload_dirname()
+            serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
             data = {k: v for k, v in serializer.validated_data.items()}
-
-            tmp_path = os.path.join(settings.TMP_DATA_ROOT, pk)
-            os.makedirs(tmp_path, exist_ok=True)
 
             action = request.query_params.get('action', None)
             if action == 'append':
                 file = data.get('client_files')[0]['file']
                 append_chunk = len(data.get('client_files')) == 1 and file.content_type == 'application/octet-stream'
                 if append_chunk: # write chunk
-                    with open(os.path.join(tmp_path, file.name), 'ab+') as destination:
+                    with open(os.path.join(upload_dir, file.name), 'ab+') as destination:
                         destination.write(file.read())
                 else: # write each file
                     for client_file in data.get('client_files'):
-                        with open(os.path.join(tmp_path, client_file['file'].name), 'ab+') as destination:
+                        with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
                             destination.write(client_file['file'].read())
                 return Response(status=status.HTTP_202_ACCEPTED)
             elif action == 'submit' or not action:
-                tmp_files = [file for file in os.listdir(tmp_path) if os.path.isfile(os.path.join(tmp_path, file))]
-                client_files = [{'file':f} for f in tmp_files]
+                uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
+                client_files = [{'file':f} for f in uploaded_files]
                 client_files.extend(data.get('client_files'))
                 serializer.validated_data.update({'client_files': client_files})
 
@@ -641,10 +651,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             db_task.data = db_data
             db_task.save()
             data = {k: v for k, v in serializer.data.items()}
-
-            upload_dir = os.path.relpath(db_data.get_upload_dirname())
-            for file in tmp_files: os.rename(os.path.join(tmp_path, file), os.path.join(upload_dir, file))
-            shutil.rmtree(tmp_path)
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']

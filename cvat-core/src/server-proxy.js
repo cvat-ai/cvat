@@ -594,22 +594,27 @@
                     });
                 }
 
-                const taskData = new FormData();
 
                 const chunkSize = 1024 * 1024 * 100; // 100 mb
                 const [clientFile] = taskDataSpec.client_files;
                 const clientFiles = taskDataSpec.client_files;
                 const uploadUsingChunks = clientFiles.length === 1 && clientFile.size > chunkSize;
                 delete taskDataSpec.client_files;
-                for (const [key, value] of Object.entries(taskDataSpec)) {
-                    if (Array.isArray(value)) {
-                        value.forEach((element, idx) => {
-                            taskData.append(`${key}[${idx}]`, element);
-                        });
-                    } else {
-                        taskData.set(key, value);
+
+                function createTaskData() {
+                    const taskData = new FormData();
+                    for (const [key, value] of Object.entries(taskDataSpec)) {
+                        if (Array.isArray(value)) {
+                            value.forEach((element, idx) => {
+                                taskData.append(`${key}[${idx}]`, element);
+                            });
+                        } else {
+                            taskData.set(key, value);
+                        }
                     }
+                    return taskData;
                 }
+
 
                 let response = null;
 
@@ -627,15 +632,6 @@
 
                 onUpdate('The data are being uploaded to the server 0%');
 
-                function clearClientFiles(data) {
-                    const reg = /client_files[[0-9]+]/;
-                    for (const key of data.keys()) {
-                        if (reg.test(key)) {
-                            data.delete(key);
-                        }
-                    }
-                }
-
                 async function chunkUpload(file) {
                     const totalChunks = Math.ceil(file.size / chunkSize);
                     let currentChunkNumber = 1;
@@ -643,6 +639,7 @@
                         const prevChunkNumber = currentChunkNumber - 1;
                         const chunkOffset = prevChunkNumber * chunkSize;
                         const fileChunk = file.slice(chunkOffset, Math.min(chunkOffset + chunkSize, file.size));
+                        const taskData = createTaskData();
                         taskData.set('client_files[0]', fileChunk, file.name);
                         onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
                         await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=append`, taskData, {
@@ -666,14 +663,14 @@
                     const totalBulks = fileBulks.length;
                     let currentChunkNumber = 1;
                     while (currentChunkNumber <= totalBulks) {
-                        fileBulks[currentChunkNumber - 1].files.forEach((element, idx) => {
+                        const taskData = createTaskData();
+                        for (const [idx, element] of fileBulks[currentChunkNumber - 1].files.entries()) {
                             taskData.set(`client_files[${idx}]`, element);
-                        });
+                        }
                         onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalBulks) * 100)}%`);
                         await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=append`, taskData, {
                             proxy: config.proxy,
                         });
-                        clearClientFiles(taskData);
                         currentChunkNumber++;
                     }
                 }
@@ -686,8 +683,8 @@
                             await bulkUpload(clientFiles);
                         }
                     }
-                    clearClientFiles(taskData);
-                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
+                    const taskData = createTaskData();
+                    Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {

@@ -374,9 +374,6 @@ os.makedirs(MIGRATIONS_LOGS_ROOT, exist_ok=True)
 CLOUD_STORAGE_ROOT = os.path.join(DATA_ROOT, 'storages')
 os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
-TMP_DATA_ROOT = os.path.join(DATA_ROOT, 'tmp')
-os.makedirs(TMP_DATA_ROOT, exist_ok=True)
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
