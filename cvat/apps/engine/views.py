@@ -40,7 +40,6 @@ from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.authentication import auth
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -66,9 +65,15 @@ from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.backup import import_task
 from . import models, task
 from .log import clogger, slogger
+from cvat.apps.iam.permissions import (CloudStoragePermission, CommentPermission,
+    IssuePermission, JobPermission, ProjectPermission, ServerPermission,
+    TaskPermission, UserPermission)
 
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
+
+    def get_permissions(self):
+        return super().get_permissions() + [ServerPermission()]
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -235,12 +240,21 @@ class ProjectFilter(filters.FilterSet):
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
-class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
+class ProjectViewSet(viewsets.ModelViewSet):
     queryset = models.Project.objects.all().order_by('-id')
     search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+
+    def get_permissions(self):
+        permissions = super().get_permissions()
+        if self.request.path.endswith('tasks'):
+            permissions.append(TaskPermission())
+        else:
+            permissions.append(ProjectPermission())
+
+        return permissions
 
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
@@ -252,37 +266,11 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         else:
             return ProjectSerializer
 
-    def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.ProjectAccessPermission)
-        elif http_method in ["POST"]:
-            permissions.append(auth.ProjectCreatePermission)
-        elif http_method in ["PATCH"]:
-            permissions.append(auth.ProjectChangePermission)
-        elif http_method in ["DELETE"]:
-            permissions.append(auth.ProjectDeletePermission)
-        else:
-            permissions.append(auth.AdminRolePermission)
-
-        return [perm() for perm in permissions]
-
     def perform_create(self, serializer):
-        def validate_project_limit(owner):
-            admin_perm = auth.AdminRolePermission()
-            is_admin = admin_perm.has_permission(self.request, self)
-            if not is_admin and settings.RESTRICTIONS['project_limit'] is not None and \
-                Project.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['project_limit']:
-                raise serializers.ValidationError('The user has the maximum number of projects')
-
         owner = self.request.data.get('owner', None)
         if owner:
-            validate_project_limit(owner)
             serializer.save()
         else:
-            validate_project_limit(self.request.user)
             serializer.save(owner=self.request.user)
 
     @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
@@ -291,7 +279,6 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Task.objects.filter(project_id=pk).order_by('-id')
-        queryset = auth.filter_task_queryset(queryset, request.user)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -416,7 +403,7 @@ class DjangoFilterInspector(CoreAPICompatInspector):
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a task by id'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific task, all attached jobs, annotations, and data'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a task'))
-class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
+class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all().prefetch_related(
             "label_set__attributespec_set",
             "segment_set__job_set",
@@ -427,35 +414,19 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     ordering_fields = ("id", "name", "owner", "status", "assignee")
 
     def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.TaskAccessPermission)
-        elif http_method in ["POST"]:
-            permissions.append(auth.TaskCreatePermission)
-        elif self.action == 'annotations' or http_method in ["PATCH", "PUT"]:
-            permissions.append(auth.TaskChangePermission)
-        elif http_method in ["DELETE"]:
-            permissions.append(auth.TaskDeletePermission)
+        permissions = super().get_permissions()
+        if self.request.path.endswith('jobs'):
+            permissions.append(JobPermission())
         else:
-            permissions.append(auth.AdminRolePermission)
+            permissions.append(TaskPermission())
 
-        return [perm() for perm in permissions]
-
-    def _validate_task_limit(self, owner):
-        admin_perm = auth.AdminRolePermission()
-        is_admin = admin_perm.has_permission(self.request, self)
-        if not is_admin and settings.RESTRICTIONS['task_limit'] is not None and \
-            Task.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['task_limit']:
-            raise serializers.ValidationError('The user has the maximum number of tasks')
+        return permissions
 
     def create(self, request):
         action = self.request.query_params.get('action', None)
         if action is None:
             return super().create(request)
         elif action == 'import':
-            self._validate_task_limit(owner=self.request.user)
             if 'rq_id' in request.data:
                 rq_id = request.data['rq_id']
             else:
@@ -567,10 +538,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
         if owner:
-            self._validate_task_limit(owner)
             serializer.save()
         else:
-            self._validate_task_limit(self.request.user)
             serializer.save(owner=self.request.user)
 
     def perform_destroy(self, instance):
@@ -901,17 +870,13 @@ class JobViewSet(viewsets.GenericViewSet,
     serializer_class = JobSerializer
 
     def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.JobAccessPermission)
-        elif http_method in ['PATCH', 'PUT', 'DELETE']:
-            permissions.append(auth.JobChangePermission)
+        permissions = super().get_permissions()
+        if self.request.path.endswith('issues'):
+            permissions.append(IssuePermission())
         else:
-            permissions.append(auth.AdminRolePermission)
+            permissions.append(JobPermission())
 
-        return [perm() for perm in permissions]
+        return permissions
 
     @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific job')
     @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific job')
@@ -993,13 +958,7 @@ class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.Cr
             return ReviewSerializer
 
     def get_permissions(self):
-        permissions = [IsAuthenticated]
-        if self.request.method == 'POST':
-            permissions.append(auth.JobReviewPermission)
-        else:
-            permissions.append(auth.AdminRolePermission)
-
-        return [perm() for perm in permissions]
+        return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
         job_id = request.data['job']
@@ -1051,6 +1010,14 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.Up
     queryset = Issue.objects.all().order_by('id')
     http_method_names = ['get', 'patch', 'delete', 'options']
 
+    def get_permissions(self):
+        permissions = super().get_permissions()
+        if self.request.path.endswith('comments'):
+            permissions.append(CommentPermission())
+        else:
+            permissions.append(IssuePermission())
+        return permissions
+
     def get_serializer_class(self):
         return IssueSerializer
 
@@ -1068,21 +1035,6 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.Up
             db_issue.save(update_fields=['resolver', 'resolved_date'])
         serializer = self.get_serializer(db_issue)
         return Response(serializer.data)
-
-    def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.IssueAccessPermission)
-        elif http_method in ['DELETE']:
-            permissions.append(auth.IssueDestroyPermission)
-        elif http_method in ['PATCH']:
-            permissions.append(auth.IssueChangePermission)
-        else:
-            permissions.append(auth.AdminRolePermission)
-
-        return [perm() for perm in permissions]
 
     @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
         responses={'200': CommentSerializer(many=True)}
@@ -1102,6 +1054,9 @@ class CommentViewSet(viewsets.GenericViewSet,
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
 
+    def get_permissions(self):
+        return super().get_permissions() + [CommentPermission()]
+
     def create(self, request, *args, **kwargs):
         request.data.update({
             'author_id': request.user.id,
@@ -1110,19 +1065,6 @@ class CommentViewSet(viewsets.GenericViewSet,
         db_issue = get_object_or_404(Issue, pk=issue_id)
         self.check_object_permissions(self.request, db_issue.job)
         return super().create(request, args, kwargs)
-
-    def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in ['PATCH', 'DELETE']:
-            permissions.append(auth.CommentChangePermission)
-        elif http_method in ['POST']:
-            permissions.append(auth.CommentCreatePermission)
-        else:
-            permissions.append(auth.AdminRolePermission)
-
-        return [perm() for perm in permissions]
 
 class UserFilter(filters.FilterSet):
     class Meta:
@@ -1148,6 +1090,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     search_fields = ('username', 'first_name', 'last_name')
     filterset_class = UserFilter
 
+    def get_permissions(self):
+        return super().get_permissions() + [UserPermission()]
+
     def get_serializer_class(self):
         user = self.request.user
         if user.is_staff:
@@ -1159,17 +1104,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return UserSerializer
             else:
                 return BasicUserSerializer
-
-    def get_permissions(self):
-        permissions = [IsAuthenticated]
-        user = self.request.user
-
-        if not self.request.method in SAFE_METHODS:
-            is_self = int(self.kwargs.get("pk", 0)) == user.id
-            if not is_self:
-                permissions.append(auth.AdminRolePermission)
-
-        return [perm() for perm in permissions]
 
     @swagger_auto_schema(method='get', operation_summary='Method returns an instance of a user who is currently authorized')
     @action(detail=False, methods=['GET'])
@@ -1238,23 +1172,14 @@ class CloudStorageFilter(filters.FilterSet):
         field_inspectors=[RedefineDescriptionField]
     )
 )
-class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewSet):
+class CloudStorageViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
     search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
     filterset_class = CloudStorageFilter
 
     def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.CloudStorageAccessPermission)
-        elif http_method in ("POST", "PATCH", "DELETE"):
-            permissions.append(auth.CloudStorageChangePermission)
-        else:
-            permissions.append(auth.AdminRolePermission)
-        return [perm() for perm in permissions]
+        return super().get_permissions() + [CloudStoragePermission()]
 
     def get_serializer_class(self):
         if self.request.method in ("POST", "PATCH"):

@@ -1,0 +1,18 @@
+{
+  "input": {
+    "method": "POST",
+    "path": ["projects"],
+    "user": {
+      "first_name": "John",
+      "last_name": "Smith",
+      "roles": ["user"]
+    },
+    "org": null,
+    "owner": {
+      "projects": [1, 2]
+    },
+    "restrictions": {
+      "USER_PROJECTS_COUNT": 3
+    }
+  }
+}

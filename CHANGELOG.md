@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+- Updated Django till 3.2.7 (automatic AppConfig discovery)
 
 ### Deprecated
 

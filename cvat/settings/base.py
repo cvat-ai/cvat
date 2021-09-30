@@ -103,8 +103,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cvat.apps.authentication',
+    'cvat.apps.iam',
     'cvat.apps.dataset_manager',
+    'cvat.apps.organizations',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
     'cvat.apps.restrictions',
@@ -116,7 +117,6 @@ INSTALLED_APPS = [
     'sendfile',
     'dj_pagination',
     'revproxy',
-    'rules',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
@@ -130,9 +130,6 @@ INSTALLED_APPS = [
     'rest_auth.registration'
 ]
 
-if strtobool(os.environ.get("ADAPTIVE_AUTO_ANNOTATION", 'false')):
-    INSTALLED_APPS.append('cvat.apps.training')
-
 SITE_ID = 1
 
 REST_FRAMEWORK = {
@@ -140,8 +137,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.authentication.auth.TokenAuthentication',
-        'cvat.apps.authentication.auth.SignatureAuthentication',
+        'cvat.apps.iam.authentication.TokenAuthenticationEx',
+        'cvat.apps.iam.authentication.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
     ],
@@ -175,7 +172,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 
 REST_AUTH_SERIALIZERS = {
-    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.authentication.serializers.PasswordResetSerializerEx',
+    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
@@ -193,6 +190,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
+    'cvat.apps.iam.views.ContextMiddleware',
 ]
 
 UI_URL = ''
@@ -223,14 +221,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cvat.wsgi.application'
 
-# Django Auth
-DJANGO_AUTH_TYPE = 'BASIC'
-DJANGO_AUTH_DEFAULT_GROUPS = []
+# IAM settings
+IAM_TYPE = 'BASIC'
+IAM_DEFAULT_ROLES = ['user']
+IAM_ADMIN_ROLE = 'admin'
+# Index in the list below corresponds to the priority (0 has highest priority)
+IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
+IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
 AUTHENTICATION_BACKENDS = [
-    'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
@@ -481,4 +482,3 @@ CACHES = {
 }
 
 USE_CACHE = True
-

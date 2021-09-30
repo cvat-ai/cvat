@@ -20,6 +20,7 @@ __pycache__
 *.pyc
 ._*
 .coverage
+.husky/
 
 # Ignore development npm files
 node_modules

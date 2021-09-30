@@ -1,0 +1,7 @@
+{
+  "input": {
+    "path": ["server", "about"],
+    "method": "GET",
+    "user": { "roles": [] }
+  }
+}
