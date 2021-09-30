@@ -871,6 +871,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=upload_format_name):
                     if upload_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
+                        "KITTI 1.0", # format does not support empty annotation
                     ]:
                         self.skipTest("Format is fail")
                     images = self._generate_task_images(3)
@@ -917,7 +918,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "KITTI 1.0"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1008,7 +1009,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Segmentation mask 1.1", # changed points values
                         "ICDAR Segmentation 1.0", # changed points values
                         'Kitti Raw Format 1.0',
-                        'Sly Point Cloud Format 1.0'
+                        'Sly Point Cloud Format 1.0',
+                        'KITTI 1.0', # changed points values
                     ]:
                         self.skipTest("Format is fail")
 
@@ -1029,7 +1031,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "KITTI 1.0" \
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
