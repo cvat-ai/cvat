@@ -18,7 +18,9 @@ import Icon, {
     CaretDownOutlined,
     ControlOutlined,
     TeamOutlined,
-    UsergroupAddOutlined,
+    PlusOutlined,
+    UserOutlined,
+    ExpandAltOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -30,14 +32,13 @@ import Text from 'antd/lib/typography/Text';
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
 
-import { CVATLogo, AccountIcon } from 'icons';
+import { CVATLogo } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import SettingsModal from './settings-modal/settings-modal';
-import Select from 'antd/lib/select';
 
 const core = getCore();
 
@@ -212,7 +213,7 @@ function HeaderContainer(props: Props): JSX.Element {
         });
     }
 
-    const menu = (
+    const userMenu = (
         <Menu className='cvat-header-menu' mode='vertical'>
             {user.isStaff && (
                 <Menu.Item
@@ -259,17 +260,31 @@ function HeaderContainer(props: Props): JSX.Element {
         </Menu>
     );
 
-    const menu1 = (
-        <Menu>
-            <Menu.Item key='1'>
-                1st menu item
+    enum OrganizationMenuKeys {
+        CREATE = 'create',
+        OPEN = 'open',
+        LIST = 'list',
+    }
+
+    const organizationMenu = (
+        <Menu className='cvat-header-menu'>
+            <Menu.Item className='cvat-header-organiz' key={OrganizationMenuKeys.CREATE}>
+                <PlusOutlined />
+                <Text strong>Create</Text>
             </Menu.Item>
-            <Menu.Item key='2'>
-                2nd menu item
+            <Menu.Item key={OrganizationMenuKeys.OPEN}>
+                <ExpandAltOutlined />
+                Open
             </Menu.Item>
-            <Menu.Item key='create'>
-                <Text strong>Create ..</Text>
-            </Menu.Item>
+            <Menu.ItemGroup title='Your organizations' key={OrganizationMenuKeys.LIST}>
+                <Menu.Item key='1'>
+                    <CVATTooltip overlay='Internet Computer Vision'>
+                        <div>ICV</div>
+                    </CVATTooltip>
+                </Menu.Item>
+                <Menu.Item key='2'>IDT</Menu.Item>
+                <Menu.Item key='3'>ODT</Menu.Item>
+            </Menu.ItemGroup>
         </Menu>
     );
 
@@ -370,39 +385,20 @@ function HeaderContainer(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <div>
-                    <Dropdown.Button className='cvat-header-organizations-selector' overlay={menu1}>
-                        <TeamOutlined />
-                        <Text strong>Organization name</Text>
-                    </Dropdown.Button>
-                    {/* <Select>
-                        <Select.Option value='test'>test</Select.Option>
-                        <Select.Option value='test1'>test</Select.Option>
-                        <Select.Option value='test2'>test</Select.Option>
-                        <Select.Option value='test3'>test</Select.Option>
-                    </Select> */}
-                </div>
-                {/* <Button
-                    icon={<UsergroupAddOutlined />}
-                    size='large'
-                    className='cvat-header-button'
-                    type='link'
-                    href={GUIDE_URL}
-                    onClick={(event: React.MouseEvent): void => {
-                        // event.preventDefault();
-                        // window.open(GUIDE_URL, '_blank');
-                    }}
-                    onMouseOver={() => {
-
-                    }}
-                /> */}
-                <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
+                <Dropdown overlay={organizationMenu} className='cvat-header-menu-organization-dropdown'>
                     <span>
-                        <Icon className='cvat-header-account-icon' component={AccountIcon} />
+                        <TeamOutlined className='cvat-header-dropdown-icon' />
+                        <Text strong>ICV</Text>
+                        <CaretDownOutlined className='cvat-header-dropdown-icon' />
+                    </span>
+                </Dropdown>
+                <Dropdown overlay={userMenu} className='cvat-header-menu-user-dropdown'>
+                    <span>
+                        <UserOutlined className='cvat-header-dropdown-icon' />
                         <Text strong>
                             {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
                         </Text>
-                        <CaretDownOutlined className='cvat-header-menu-icon' />
+                        <CaretDownOutlined className='cvat-header-dropdown-icon' />
                     </span>
                 </Dropdown>
             </div>

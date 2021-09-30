@@ -48,14 +48,29 @@
     margin-right: $grid-unit-size;
 }
 
-.ant-dropdown-trigger.cvat-header-menu-dropdown {
+.cvat-header-menu-user-dropdown,
+.cvat-header-menu-organization-dropdown {
     display: flex;
     align-items: center;
     border-left: 1px solid $border-color-1;
-    padding: 0 $grid-unit-size * 2 0 0;
+
+    &.cvat-header-menu-organization-dropdown {
+        > span:nth-child(2) {
+            width: $grid-unit-size * 12;
+        }
+    }
+
+    .anticon.cvat-header-dropdown-icon {
+        &.anticon-caret-down {
+            font-size: 12px;
+        }
+
+        font-size: 20px;
+        padding: $grid-unit-size;
+    }
 
     > span:nth-child(2) {
-        max-width: $grid-unit-size * 16;
+        max-width: $grid-unit-size * 12;
         height: $grid-unit-size * 5;
         overflow: hidden;
         white-space: nowrap;
@@ -64,60 +79,13 @@
     }
 }
 
-.anticon.cvat-header-account-icon {
-    > svg {
-        transform: scale(0.4);
-    }
-}
-
-.anticon.cvat-header-menu-icon {
-    margin-left: 16px;
-    margin-right: 0;
-}
-
 .cvat-header-menu {
-    > li {
-        span[role='img'] {
-            margin-right: $grid-unit-size;
-        }
-    }
-}
-
-.cvat-header-organizations-selector {
-    margin-right: $grid-unit-size;
-
-    > button {
-        background: none;
-        border: none;
-        color: black;
-        outline: none;
-        display: flex;
-        align-items: center;
-
-        &:hover,
-        &:focus,
-        &:active {
-            background: none;
-            border: none;
-            color: black;
-            outline: none;
-        }
-
-        ::after {
-            display: none;
-        }
-    }
-
-    > button:first-child {
-        > span[role=img] {
-            font-size: 16px;
-        }
-
-        > span:last-child {
-            max-width: $grid-unit-size * 16;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+    .ant-dropdown-menu-item {
+        .ant-dropdown-menu-title-content {
+            span[role='img'] {
+                font-size: 16px;
+                margin-right: $grid-unit-size;
+            }
         }
     }
 }
