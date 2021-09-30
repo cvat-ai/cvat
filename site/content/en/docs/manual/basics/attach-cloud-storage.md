@@ -64,7 +64,7 @@ For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.
 
   ![](/images/aws-s3_tutorial_5.jpg)
 
-- Drag the manifest file and dataset on the page and click `Upload`:
+- Drag the manifest file and image folder on the page and click `Upload`:
 
   ![](/images/aws-s3_tutorial_1.gif)
 
