@@ -19,7 +19,7 @@ urlpatterns = [
     path('signing', SigningView.as_view(), name='signing')
 ]
 
-if settings.DJANGO_AUTH_TYPE == 'BASIC':
+if settings.IAM_TYPE == 'BASIC':
     urlpatterns += [
         path('register', RegisterViewEx.as_view(), name='rest_register'),
         path('password/reset', PasswordResetView.as_view(),

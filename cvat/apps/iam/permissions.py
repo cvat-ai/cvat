@@ -19,7 +19,7 @@ class OpenPolicyAgentPermission(BasePermission):
         return r.json()["result"]
 
     def _get_context(self, request):
-        context = request.auth_context
+        context = request.iam_context
 
         org_id = None
         is_owner = False
@@ -94,19 +94,19 @@ class OpenPolicyAgentPermission(BasePermission):
         return queryset.filter(qobjects[0])
 
 class ServerPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/server/allow'
+    url = settings.IAM_OPA_DATA_URL + '/server/allow'
 
 class CommentPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/comments/allow'
+    url = settings.IAM_OPA_DATA_URL + '/comments/allow'
 
 class IssuePermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/issues/allow'
+    url = settings.IAM_OPA_DATA_URL + '/issues/allow'
 
 class LambdaPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/lambda/allow'
+    url = settings.IAM_OPA_DATA_URL + '/lambda/allow'
 
 class OrganizationPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/organizations/allow'
+    url = settings.IAM_OPA_DATA_URL + '/organizations/allow'
 
     def get_payload(self, request, view, obj):
         payload = super().get_payload(request, view, obj)
@@ -128,21 +128,21 @@ class OrganizationPermission(OpenPolicyAgentPermission):
 
 
 class MembershipPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/memberships/allow'
+    url = settings.IAM_OPA_DATA_URL + '/memberships/allow'
 
 class InvitationPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/invitations/allow'
+    url = settings.IAM_OPA_DATA_URL + '/invitations/allow'
 class CloudStoragePermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/cloudstorages/allow'
+    url = settings.IAM_OPA_DATA_URL + '/cloudstorages/allow'
 
 class UserPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/users/allow'
+    url = settings.IAM_OPA_DATA_URL + '/users/allow'
 
 class ProjectPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/projects/allow'
+    url = settings.IAM_OPA_DATA_URL + '/projects/allow'
 
 class TaskPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/tasks/allow'
+    url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
 class JobPermission(OpenPolicyAgentPermission):
-    url = settings.OPA_DATA_URL + '/jobs/allow'
+    url = settings.IAM_OPA_DATA_URL + '/jobs/allow'

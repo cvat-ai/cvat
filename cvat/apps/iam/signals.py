@@ -7,10 +7,10 @@ from django.contrib.auth.models import User, Group
 from django.db.models.signals import post_save
 
 # Create all groups which corresponds system roles
-for role in settings.DJANGO_AUTH_ROLES:
+for role in settings.IAM_ROLES:
     Group.objects.get_or_create(name=role)
 
-if settings.DJANGO_AUTH_TYPE == 'BASIC':
+if settings.IAM_TYPE == 'BASIC':
     from allauth.account import app_settings as allauth_settings
     from allauth.account.models import EmailAddress
 
@@ -18,7 +18,7 @@ if settings.DJANGO_AUTH_TYPE == 'BASIC':
         from django.contrib.auth.models import Group
 
         if instance.is_superuser and instance.is_staff:
-            db_group = Group.objects.get(name=settings.DJANGO_AUTH_ADMIN)
+            db_group = Group.objects.get(name=settings.IAM_ADMIN_ROLE)
             instance.groups.add(db_group)
 
             # create and verify EmailAddress for superuser accounts
@@ -26,25 +26,25 @@ if settings.DJANGO_AUTH_TYPE == 'BASIC':
                 EmailAddress.objects.get_or_create(user=instance,
                     email=instance.email, primary=True, verified=True)
 
-        for role in settings.DJANGO_AUTH_DEFAULT_ROLES:
+        for role in settings.IAM_DEFAULT_ROLES:
             db_group = Group.objects.get(name=role)
             instance.groups.add(db_group)
 
     # Add default groups and add admin rights to super users.
     post_save.connect(create_user, sender=User)
 
-elif settings.DJANGO_AUTH_TYPE == 'LDAP':
+elif settings.IAM_TYPE == 'LDAP':
     import django_auth_ldap.backend
 
     def create_user(sender, user=None, ldap_user=None, **kwargs):
         user_groups = []
-        for role in settings.DJANGO_AUTH_ROLES:
+        for role in settings.IAM_ROLES:
             db_group = Group.objects.get(name=role)
 
             for ldap_group in settings.DJANGO_AUTH_LDAP_GROUPS[role]:
                 if ldap_group.lower() in ldap_user.group_dns:
                     user_groups.append(db_group)
-                    if role == settings.DJANGO_AUTH_ADMIN:
+                    if role == settings.IAM_ADMIN_ROLE:
                         user.is_staff = user.is_superuser = True
                     break
 

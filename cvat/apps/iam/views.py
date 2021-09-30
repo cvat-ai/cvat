@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.utils.functional import SimpleLazyObject
 from rest_framework import views
 from rest_framework.exceptions import ValidationError
+from django.conf import settings
 from rest_framework.response import Response
 from rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
@@ -14,6 +16,42 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from .authentication import Signer
+
+
+def get_context(request):
+    from cvat.apps.organizations.models import Organization, Membership
+
+    IAM_ROLES = {role:priority for priority, role in enumerate(settings.IAM_ROLES)}
+    groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
+    groups.sort(key=lambda group: IAM_ROLES[group.name])
+
+    org_id = request.GET.get('org', None)
+    organization = None
+    membership = None
+    if org_id:
+        organization = Organization.objects.get(slug=org_id)
+        membership = Membership.objects.filter(organization=organization,
+            user=request.user).first()
+
+
+    context = {
+        "privilege": groups[0] if groups else None,
+        "membership": membership,
+        "organization": organization,
+    }
+
+    return context
+class ContextMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+
+        # https://stackoverflow.com/questions/26240832/django-and-middleware-which-uses-request-user-is-always-anonymous
+        request.iam_context = SimpleLazyObject(lambda: get_context(request))
+
+        return self.get_response(request)
+
 
 @method_decorator(name='post', decorator=swagger_auto_schema(
     request_body=openapi.Schema(

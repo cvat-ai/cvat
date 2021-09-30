@@ -117,7 +117,6 @@ INSTALLED_APPS = [
     'sendfile',
     'dj_pagination',
     'revproxy',
-    'rules',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
@@ -191,7 +190,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
-    'cvat.apps.organizations.views.AuthContextMiddleware',
+    'cvat.apps.iam.views.ContextMiddleware',
 ]
 
 UI_URL = ''
@@ -222,16 +221,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cvat.wsgi.application'
 
-# Django Auth
-DJANGO_AUTH_TYPE = 'BASIC'
-DJANGO_AUTH_DEFAULT_ROLES = [] # no roles by default
-DJANGO_AUTH_ADMIN = 'admin'
-DJANGO_AUTH_ROLES = ['worker', 'user', 'business', DJANGO_AUTH_ADMIN]
+# IAM settings
+IAM_TYPE = 'BASIC'
+IAM_DEFAULT_ROLES = ['user']
+IAM_ADMIN_ROLE = 'admin'
+# Index in the list below corresponds to the priority (0 has highest priority)
+IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
+IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
 AUTHENTICATION_BACKENDS = [
-    'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
@@ -482,5 +482,3 @@ CACHES = {
 }
 
 USE_CACHE = True
-
-OPA_DATA_URL = 'http://opa:8181/v1/data'
