@@ -57,16 +57,16 @@ For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.
 - Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
 - Unpack the archive into the prepared folder.
   and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
-```
-python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
-```
+  ```
+  python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
+  ```
 - When the manifest file is ready, open the previously prepared bucket and click `Upload`:
 
-![](/images/aws-s3_tutorial_5.jpg)
+  ![](/images/aws-s3_tutorial_5.jpg)
 
 - Drag the manifest file and dataset on the page and click `Upload`:
 
-![](/images/aws-s3_tutorial_1.gif)
+  ![](/images/aws-s3_tutorial_1.gif)
 
 ## Attach new cloud storage
 
