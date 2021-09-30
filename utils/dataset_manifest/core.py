@@ -307,6 +307,13 @@ class _Index:
     def __len__(self):
         return len(self._index)
 
+def _set_index(func):
+    def wrapper(self, *args, **kwargs):
+        func(self, *args,  **kwargs)
+        if self._create_index:
+            self.set_index()
+    return wrapper
+
 class _ManifestManager(ABC):
     BASE_INFORMATION = {
         'version' : 1,
@@ -367,7 +374,7 @@ class _ManifestManager(ABC):
             os.remove(self.path)
 
     @abstractmethod
-    def create(self):
+    def create(self, content=None):
         pass
 
     @abstractmethod
@@ -428,48 +435,49 @@ class VideoManifestManager(_ManifestManager):
             chunk_size,
             force)
 
+    def _write_base_information(self, file):
+        base_info = {
+            'version': self._manifest.VERSION,
+            'type': self._manifest.TYPE,
+            'properties': {
+                'name': os.path.basename(self._reader.source_path),
+                'resolution': self._reader.resolution,
+                'length': len(self._reader),
+            },
+        }
+        for key, value in base_info.items():
+            json_item = json.dumps({key: value}, separators=(',', ':'))
+            file.write(f'{json_item}\n')
+
+    def _write_core_part(self, file):
+        for item in tqdm(self._reader,
+                        desc="Manifest creating",
+                        total=len(self._reader)):
+            if isinstance(item, tuple):
+                json_item = json.dumps({
+                    'number': item[0],
+                    'pts': item[1],
+                    'checksum': item[2]
+                }, separators=(',', ':'))
+                file.write(f"{json_item}\n")
+
+    # pylint: disable=arguments-differ
+    @_set_index
     def create(self):
         """ Creating and saving a manifest file """
-        def _write_base_information(file):
-            base_info = {
-                'version': self._manifest.VERSION,
-                'type': self._manifest.TYPE,
-                'properties': {
-                    'name': os.path.basename(self._reader.source_path),
-                    'resolution': self._reader.resolution,
-                    'length': len(self._reader),
-                },
-            }
-            for key, value in base_info.items():
-                json_item = json.dumps({key: value}, separators=(',', ':'))
-                file.write(f'{json_item}\n')
-        def _write_core_part(file):
-            for item in tqdm(self._reader,
-                            desc="Manifest creating",
-                            total=len(self._reader)):
-                if isinstance(item, tuple):
-                    json_item = json.dumps({
-                        'number': item[0],
-                        'pts': item[1],
-                        'checksum': item[2]
-                    }, separators=(',', ':'))
-                    file.write(f"{json_item}\n")
         if not len(self._reader):
             with NamedTemporaryFile(mode='w', delete=False)as tmp_file:
-                _write_core_part(tmp_file)
+                self._write_core_part(tmp_file)
             temp = tmp_file.name
             with open(self._manifest.path, 'w') as manifest_file:
-                _write_base_information(manifest_file)
+                self._write_base_information(manifest_file)
                 with open(temp, 'r') as tmp_file:
                     manifest_file.write(tmp_file.read())
             os.remove(temp)
         else:
             with open(self._manifest.path, 'w') as manifest_file:
-                _write_base_information(manifest_file)
-                _write_core_part(manifest_file)
-        if self._create_index:
-            self.set_index()
-
+                self._write_base_information(manifest_file)
+                self._write_core_part(manifest_file)
 
     def partial_update(self, number, properties):
         pass
@@ -550,26 +558,32 @@ class ImageManifestManager(_ManifestManager):
         ReaderClass = DatasetImagesReader if not kwargs.get('DIM_3D', None) else Dataset3DImagesReader
         self._reader = ReaderClass(**kwargs)
 
-    def create(self):
+    def _write_base_information(self, file):
+        base_info = {
+            'version': self._manifest.VERSION,
+            'type': self._manifest.TYPE,
+        }
+        for key, value in base_info.items():
+            json_line = json.dumps({key: value}, separators=(',', ':'))
+            file.write(f'{json_line}\n')
+
+    def _write_core_part(self, file, iterable_obj):
+        total = None if not hasattr(iterable_obj, '__len__') else len(iterable_obj)
+        for image_properties in tqdm(iterable_obj,
+                                    desc="Manifest creating",
+                                    total=total):
+            json_line = json.dumps({
+                key: value for key, value in image_properties.items()
+            }, separators=(',', ':'))
+            file.write(f"{json_line}\n")
+
+    @_set_index
+    def create(self, content=None):
         """ Creating and saving a manifest file for the specialized dataset"""
         with open(self._manifest.path, 'w') as manifest_file:
-            base_info = {
-                'version': self._manifest.VERSION,
-                'type': self._manifest.TYPE,
-            }
-            for key, value in base_info.items():
-                json_line = json.dumps({key: value}, separators=(',', ':'))
-                manifest_file.write(f'{json_line}\n')
-
-            for image_properties in tqdm(self._reader,
-                                         desc="Manifest creating",
-                                         total=len(self._reader)):
-                json_line = json.dumps({
-                    key: value for key, value in image_properties.items()
-                }, separators=(',', ':'))
-                manifest_file.write(f"{json_line}\n")
-        if self._create_index:
-            self.set_index()
+            self._write_base_information(manifest_file)
+            iterable_obj = content if content else self._reader
+            self._write_core_part(manifest_file, iterable_obj)
 
     def partial_update(self, number, properties):
         pass
