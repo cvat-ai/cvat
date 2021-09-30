@@ -55,7 +55,7 @@ they will need to be used in CVAT when adding cloud storage.
 
 For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
 - Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
-- Unpack the archive into the prepared folder.
+- Unpack the archive into the prepared folder
   and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
   ```
   python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
