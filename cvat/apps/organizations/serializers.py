@@ -24,11 +24,13 @@ class InvitationSerializer(serializers.ModelSerializer):
         (Membership.WORKER, 'Worker'),
         (Membership.SUPERVISOR, 'Supervisor'),
         (Membership.MAINTAINER, 'Maintainer'),
-    ])
+    ], source='membership.role')
     user = serializers.PrimaryKeyRelatedField(
-        queryset=get_user_model().objects.all())
+        queryset=get_user_model().objects.all(),
+        source='membership.user')
     organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all())
+        queryset=Organization.objects.all(),
+        source='membership.organization')
 
     class Meta:
         model = Invitation
@@ -37,11 +39,7 @@ class InvitationSerializer(serializers.ModelSerializer):
         read_only_fields = ['key', 'accepted', 'created_date', 'owner']
 
     def create(self, validated_data):
-        membership_data = {
-            'organization': validated_data.pop('organization'),
-            'role': validated_data.pop('role'),
-            'user': validated_data.pop('user'),
-        }
+        membership_data = validated_data.pop('membership')
         membership = Membership.objects.create(**membership_data)
         invitation = Invitation.objects.create(**validated_data,
             membership=membership)

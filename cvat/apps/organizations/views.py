@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework import mixins, viewsets
+from django.utils.crypto import get_random_string
 from cvat.apps.iam.permissions import (InvitationPermission,
                                        MembershipPermission,
                                        OrganizationPermission)
@@ -16,6 +17,8 @@ from .serializers import (InvitationSerializer, MembershipSerializer,
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+    ordering = ['-id']
+
 
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
@@ -34,6 +37,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
 
     queryset = Membership.objects.all()
     serializer_class = MembershipSerializer
+    ordering = ['-id']
 
     def get_permissions(self):
         return super().get_permissions() + [MembershipPermission()]
@@ -41,6 +45,17 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
 class InvitationViewSet(viewsets.ModelViewSet):
     queryset = Invitation.objects.all()
     serializer_class = InvitationSerializer
+    ordering = ['-created_date']
 
     def get_permissions(self):
         return super().get_permissions() + [InvitationPermission()]
+
+    def get_queryset(self):
+         return InvitationPermission().filter(self.request, super().get_queryset())
+
+    def perform_create(self, serializer):
+        extra_kwargs = {
+            'owner': self.request.user,
+            'key': get_random_string(length=64),
+        }
+        serializer.save(**extra_kwargs)
