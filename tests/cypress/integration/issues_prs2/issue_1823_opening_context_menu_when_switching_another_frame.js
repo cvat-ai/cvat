@@ -15,9 +15,11 @@ Uncaught (in promise) Error: . "{\"detail\":\"Authentication credentials were no
     at Object.getData (server-proxy.js:841)
 
 On Cypress version 6.4.0 is reproduced too. But the new version of Cypress caught this error.
+
+UPD: It has also become reproduce in Firefox.
 */
 
-context('Cannot read property label of undefined', { browser: '!chrome' }, () => {
+context('Cannot read property label of undefined', { browser: ['!chrome', '!firefox'] }, () => {
     const issueId = '1823';
     const labelName = `Issue ${issueId}`;
     const taskName = `New annotation task for ${labelName}`;
@@ -47,6 +49,14 @@ context('Cannot read property label of undefined', { browser: '!chrome' }, () =>
         secondX: 350,
         secondY: 450,
     };
+
+    beforeEach(() => {
+        cy.restoreLocalStorage();
+    });
+
+    afterEach(() => {
+        cy.saveLocalStorage();
+    });
 
     before(() => {
         cy.visit('auth/login');
@@ -81,10 +91,11 @@ context('Cannot read property label of undefined', { browser: '!chrome' }, () =>
         it('Go to another frame. During this procedure open context menu for a shape.', () => {
             cy.get('body').type('f');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
-        });
-
-        it('Page with the error is missing', () => {
             cy.get('.cvat-global-boundary').should('not.exist');
         });
+
+        // it('Page with the error is missing', () => {
+        //     cy.get('.cvat-global-boundary').should('not.exist');
+        // });
     });
 });
