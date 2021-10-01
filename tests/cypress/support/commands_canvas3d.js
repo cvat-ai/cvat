@@ -23,10 +23,13 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
     let getEl;
+    let padding;
     if (element.includes('perspective')) {
         getEl = cy.get(element);
+        padding = -130;
     } else {
         getEl = cy.get(element).find('.cvat-canvas3d-fullsize');
+        padding = -40;
     }
-    getEl.screenshot(screenshotName, {padding: -50});
+    getEl.screenshot(screenshotName, {padding: padding});
 });
