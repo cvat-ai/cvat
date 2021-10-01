@@ -31,6 +31,6 @@ Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
         } else {
             getEl = cy.get(element).find('.cvat-canvas3d-fullsize');
         }
-        getEl.screenshot(screenshotName, {clip: {x: 20, y: 20, width: elWidth - 50, height: elHeight - 50}});
+        getEl.screenshot(screenshotName, {padding: -50});
     });
 });
