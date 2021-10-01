@@ -20,7 +20,6 @@ import fcntl
 import shutil
 import subprocess
 import mimetypes
-from distutils.util import strtobool
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -230,6 +229,10 @@ IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
 IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+
+# ORG settings
+ORG_INVITATION_CONFIRM = 'No'
+
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',

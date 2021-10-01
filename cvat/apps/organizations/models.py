@@ -1,3 +1,5 @@
+from distutils.util import strtobool
+from django.conf import settings
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -43,12 +45,17 @@ class Membership(models.Model):
 class Invitation(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     accepted = models.BooleanField(default=False)
-    created_date = models.DateTimeField(null=True)
-    owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.CASCADE)
+    created_date = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
 
     def send(self):
-        pass
+        if not strtobool(settings.ORG_INVITATION_CONFIRM):
+            self.membership.is_active = True
+            self.membership.joined_date = self.created_date
+            self.membership.save()
+
+        # TODO: use email backend to send invitations as well
 
     class Meta:
         default_permissions = ()
