@@ -3,7 +3,7 @@ import data.utils
 
 # input: {
 #     "method": <"GET"|"POST"|"PATCH"|"DELETE">,
-#     "path": ["organizations", ...],
+#     "path": ["organizations"] | ["organizations", "id"]
 #     "user": {
 #         "id": <num>,
 #         "privilege": <"admin"|"business"|"user"|"worker"|null>,
@@ -12,13 +12,13 @@ import data.utils
 #         }
 #     },
 #     "organization": {
-#         "id": <id>,
+#         "id": <num>,
 #         "is_owner": <true|false>,
 #         "role": <"maintainer"|"supervisor"|"worker"|null>
 #     } or null,
 #     "resources": {
 #         "organization": {
-#             "id": <id>,
+#             "id": <num>,
 #             "is_owner": <true|false>,
 #             "role": <"maintainer"|"supervisor"|"worker"|null>
 #         }
@@ -60,32 +60,37 @@ filter = [] { # Django Q object to filter list of entries
 
 allow { # VIEW an organization (owner)
     input.method == utils.GET
-    input.path == ["organizations", input.resources.organization.id]
+    org_id := format_int(input.resources.organization.id, 10)
+    input.path == ["organizations", org_id]
     input.resources.organization.is_owner
 }
 
 allow { # VIEW an organization (member)
     input.method == utils.GET
-    input.path == ["organizations", input.resources.organization.id]
+    org_id := format_int(input.resources.organization.id, 10)
+    input.path == ["organizations", org_id]
     input.resources.organization.role != null
 }
 
 allow { # UPDATE an organization (owner)
     input.method == utils.PATCH
-    input.path == ["organizations", input.resources.organization.id]
+    org_id := format_int(input.resources.organization.id, 10)
+    input.path == ["organizations", org_id]
     input.resources.organization.is_owner
 }
 
 allow { # UPDATE an organization (maintainer)
     input.method == utils.PATCH
-    input.path == ["organizations", input.resources.organization.id]
+    org_id := format_int(input.resources.organization.id, 10)
+    input.path == ["organizations", org_id]
     utils.has_privilege(utils.USER)
     input.resources.organization.role == MAINTAINER
 }
 
 allow { # DELETE an organization (owner)
     input.method == utils.DELETE
-    input.path == ["organizations", input.resources.organization.id]
+    org_id := format_int(input.resources.organization.id, 10)
+    input.path == ["organizations", org_id]
     utils.has_privilege(utils.WORKER)
     input.resources.organization.is_owner
 }
