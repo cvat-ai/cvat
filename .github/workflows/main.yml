@@ -182,7 +182,7 @@ jobs:
         run: |
             docker logs cvat > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
       - name: Uploading cypress screenshots as an artifact
-        if: failure()
+        # if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: cypress_screenshots_${{ matrix.specs }}

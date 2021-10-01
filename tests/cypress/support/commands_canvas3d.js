@@ -26,6 +26,6 @@ Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
         const width = Number(canvas.attr('width'))
         const height = Number(canvas.attr('height'))
         cy.get(element)
-            .screenshot(screenshotName, {clip: {x: 20, y: 20, width: width - 50, height: height - 50}});
+            .screenshot(screenshotName, { padding: -40 });
     });
 });
