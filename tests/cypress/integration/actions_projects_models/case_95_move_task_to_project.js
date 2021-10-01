@@ -4,7 +4,10 @@
 
 /// <reference types="cypress" />
 
-context('Move a task to a project.', () => {
+// Temporarily disabling the test for Firefox browser
+// Cypress issue: https://github.com/cypress-io/cypress/issues/18325
+
+context('Move a task to a project.', { browser: '!firefox' }, () => {
     const caseID = '95';
     const task = {
         name: `Case ${caseID}`,

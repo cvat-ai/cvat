@@ -50,14 +50,6 @@ context('Cannot read property label of undefined', { browser: ['!chrome', '!fire
         secondY: 450,
     };
 
-    beforeEach(() => {
-        cy.restoreLocalStorage();
-    });
-
-    afterEach(() => {
-        cy.saveLocalStorage();
-    });
-
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -91,11 +83,10 @@ context('Cannot read property label of undefined', { browser: ['!chrome', '!fire
         it('Go to another frame. During this procedure open context menu for a shape.', () => {
             cy.get('body').type('f');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
-            cy.get('.cvat-global-boundary').should('not.exist');
         });
 
-        // it('Page with the error is missing', () => {
-        //     cy.get('.cvat-global-boundary').should('not.exist');
-        // });
+        it('Page with the error is missing', () => {
+            cy.get('.cvat-global-boundary').should('not.exist');
+        });
     });
 });

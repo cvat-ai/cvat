@@ -63,13 +63,13 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
         });
 
         it('Enable/disable outlined borders.', () => {
-            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').check();
+            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').should('not.be.checked').check();
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_enable_outlined_borders');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_enable_outlined_borders.png`,
                 `${screenshotsPath}/canvas3d_perspective_selected_opacty_0.png`,
             );
-            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').uncheck();
+            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').should('be.checked').uncheck();
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_disable_outlined_borders');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_disable_outlined_borders.png`,
