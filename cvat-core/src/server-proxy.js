@@ -116,6 +116,10 @@
             Axios.defaults.withCredentials = true;
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
+            Axios.interceptors.request.use((reqConfig) => {
+                reqConfig.params = { ...enableOrganization(), ...(reqConfig.params || {}) };
+                return reqConfig;
+            });
             const workerAxios = new WorkerWrappedAxios();
 
             let token = store.get('token');
@@ -140,7 +144,7 @@
 
             async function share(directory) {
                 const { backendAPI } = config;
-                directory = encodeURIComponent(directory);
+                directory = encodeURI(directory);
 
                 let response = null;
                 try {
@@ -1227,7 +1231,8 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
+                    const predicate = () => !predictAnnotations.latestRequest.fetching
+                        || predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
