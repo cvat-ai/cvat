@@ -94,7 +94,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
             ].forEach(([viewAfterCubiodChangeLabel, viewAfterCubiodLock]) => {
                 cy.compareImagesAndCheckResult(`${screenshotsPath}/${viewAfterCubiodChangeLabel}`, `${screenshotsPath}/${viewAfterCubiodLock}`);
             });
-            cy.get('.cvat-object-item-button-lock-enabled').click(); // Unlock the cubiod
+            cy.get('.cvat-object-item-button-lock-enabled').click({force: true}); // Unlock the cubiod
             cy.get('.cvat-object-item-button-lock').should('exist').trigger('mouseout');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.get(`.cvat-canvas3d-${view}`)
@@ -113,15 +113,13 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Switch occluded property for a cuboid via sidear. The cuboid on the perpective view are occluded.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-button-occluded')
-                .click(); // Switch occluded property
-            cy.get('.cvat-object-item-button-occluded-enabled').should('exist').trigger('mouseout');
+                .click({force: true}); // Switch occluded property
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_enable_occlud_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_activating_cuboid.png`,
                 `${screenshotsPath}/canvas3d_perspective_enable_occlud_cuboid.png`,
             );
-            cy.get('.cvat-object-item-button-occluded-enabled').click(); // Switch occluded property again
-            cy.get('.cvat-object-item-button-occluded').should('exist').trigger('mouseout');
+            cy.get('.cvat-object-item-button-occluded-enabled').click({force: true}); // Switch occluded property again
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_disable_occlud_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_enable_occlud_cuboid.png`,
@@ -132,8 +130,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Hide/unhide a cuboid via sidear. The cuboid on the perpective/top/side/front view be hidden/unhidden.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-button-hidden')
-                .click(); // Hide the cuboid
-            cy.get('.cvat-object-item-button-hidden-enabled').should('exist').trigger('mouseout');
+                .click({force: true}); // Hide the cuboid
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_hide_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_disable_occlud_cuboid.png`,
@@ -151,8 +148,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
             ].forEach(([viewAfterCubiodUnlock, viewAfterCubiodHide]) => {
                 cy.compareImagesAndCheckResult(`${screenshotsPath}/${viewAfterCubiodUnlock}`, `${screenshotsPath}/${viewAfterCubiodHide}`);
             });
-            cy.get('.cvat-object-item-button-hidden-enabled').click(); // Unhide the cuboid
-            cy.get('.cvat-object-item-button-hidden').should('exist').trigger('mouseout');
+            cy.get('.cvat-object-item-button-hidden-enabled').click({force: true}); // Unhide the cuboid
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_unhide_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_hide_cuboid.png`,
