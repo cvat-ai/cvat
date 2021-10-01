@@ -22,15 +22,11 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 });
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
-    cy.get(element).find('canvas').then((canvas) => {
-        const elWidth = Number(canvas.attr('width'));
-        const elHeight = Number(canvas.attr('height'));
-        let getEl;
-        if (element.includes('perspective')) {
-            getEl = cy.get(element);
-        } else {
-            getEl = cy.get(element).find('.cvat-canvas3d-fullsize');
-        }
-        getEl.screenshot(screenshotName, {padding: -50});
-    });
+    let getEl;
+    if (element.includes('perspective')) {
+        getEl = cy.get(element);
+    } else {
+        getEl = cy.get(element).find('.cvat-canvas3d-fullsize');
+    }
+    getEl.screenshot(screenshotName, {padding: -50});
 });
