@@ -16,7 +16,7 @@ class OpenPolicyAgentPermission(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, payload):
         r = requests.post(self.url, json=payload)
-        return r.json()["result"]
+        return r.json()['result']
 
     def _get_context(self, request):
         context = request.iam_context
@@ -24,33 +24,44 @@ class OpenPolicyAgentPermission(BasePermission):
         org_id = None
         is_owner = False
         org_role = None
-        if context["organization"]:
-            org_id = context["organization"].id
-            is_owner = context["organization"].owner.id == request.user.id
-        if context["membership"]:
-            org_role = context["membership"].role
+        if context['organization']:
+            org_id = context['organization'].id
+            is_owner = context['organization'].owner.id == request.user.id
+        if context['membership']:
+            org_role = context['membership'].role
 
         context = {
-            "org": {
-                "id": org_id,
-                "is_owner": is_owner,
-                "role": org_role,
+            'organization': {
+                'id': org_id,
+                'is_owner': is_owner,
+                'role': org_role,
             },
-            "privilege": context["privilege"].name,
+            'privilege': context['privilege'].name,
         }
 
         return context
 
 
     def get_payload(self, request, view, obj):
+        privilege = request.iam_context['privilege']
+        organization = request.iam_context['organization']
+        membership = request.iam_context['membership']
+
         payload = {
-            "input": {
-                "path": request.path.split('/')[3:],
-                "method": request.method,
-                "user": {
-                    "id": request.user.id,
+            'input': {
+                'path': request.path.split('/')[3:],
+                'method': request.method,
+                'user': {
+                    'id': request.user.id,
+                    'privilege': privilege.name,
+                    'stats': {},
                 },
-                "context": self._get_context(request)
+                'organization': {
+                    'id': organization.id,
+                    'is_owner': organization.owner.id == request.user.id,
+                    'role': getattr(membership, 'role', None),
+                } if organization else None,
+                'resources': {},
             }
         }
 
@@ -75,7 +86,7 @@ class OpenPolicyAgentPermission(BasePermission):
             '&': operator.and_,
             '~': operator.not_,
         }
-        for token in r.json()["result"]:
+        for token in r.json()['result']:
             if isinstance(token, str):
                 val1 = qobjects.pop()
                 if token == '~':
@@ -111,18 +122,21 @@ class OrganizationPermission(OpenPolicyAgentPermission):
     def get_payload(self, request, view, obj):
         payload = super().get_payload(request, view, obj)
 
-        # add information about obj (e.g. organization)
         user_id = request.user.id
-        resource_payload = { "id": None }
-        resource_payload["count"] = Organization.objects.filter(
-            owner_id=user_id).count()
-        if obj:
-            resource_payload["id"] = obj.id
-            resource_payload["is_owner"] = obj.owner.id == user_id
-            membership = Membership.objects.filter(organization=obj, user=request.user).first()
-            resource_payload["role"] = membership.role if membership else None
+        payload['input']['user']['stats'] = {
+            'orgs_count': Organization.objects.filter(owner_id=user_id).count()
+        }
 
-        payload["input"]["resource"] = resource_payload
+        if obj:
+            # add information about obj (e.g. organization)
+            membership = Membership.objects.filter(organization=obj, user=request.user).first()
+            payload['input']['resources'] = {
+                'organization': {
+                    'id': obj.id,
+                    'is_owner': obj.owner.id == user_id,
+                    'role': membership.role if membership else None,
+                }
+            }
 
         return payload
 

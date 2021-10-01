@@ -28,21 +28,21 @@ get_priority(privilege) = priority {
 }
 
 has_privilege(privilege) {
-    get_priority(input.context.privilege) <= get_priority(privilege)
+    get_priority(input.user.privilege) <= get_priority(privilege)
 }
 
 is_admin {
-    input.context.privilege == ADMIN
+    input.user.privilege == ADMIN
 }
 
 is_business {
-    input.context.privilege == BUSINESS
+    input.user.privilege == BUSINESS
 }
 
 is_user {
-    input.context.privilege == USER
+    input.user.privilege == USER
 }
 
 is_worker {
-    input.context.privilege == WORKER
+    input.user.privilege == WORKER
 }
