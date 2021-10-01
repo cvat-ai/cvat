@@ -18,7 +18,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     ordering = ['-id']
-
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
