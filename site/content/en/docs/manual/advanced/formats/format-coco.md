@@ -5,11 +5,11 @@ weight: 5
 
 # [MS COCO Object Detection](http://cocodataset.org/#format-data)
 
-- [Format specification](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/formats/coco_user_manual.md#format-specification)
+- [Format specification](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/)
 
 ## COCO export
 
-Downloaded file: a zip archive with the structure described [here](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/formats/coco_user_manual.md#load-coco-dataset)
+Downloaded file: a zip archive with the structure described [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
 
 - supported annotations: Polygons, Rectangles
 - supported attributes:
@@ -21,7 +21,7 @@ Downloaded file: a zip archive with the structure described [here](https://githu
   - `score` (number) - the annotation `score` field
   - arbitrary attributes - will be stored in the `attributes` annotation section
 
-Support for COCO tasks via Datumaro is described [here](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/formats/coco_user_manual.md#export-to-coco)
+Support for COCO tasks via Datumaro is described [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#export-to-other-formats)
 For example, [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582):
 
 1. Install [Datumaro](https://github.com/openvinotoolkit/datumaro)
@@ -36,14 +36,14 @@ keypoint lists (without the `visibility` COCO flag).
 ## COCO import
 
 Uploaded file: a single unpacked `*.json` or a zip archive with the structure described
-[here](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/formats/coco_user_manual.md#load-coco-dataset)
+[here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
 (without images).
 
 - supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 
 ## How to create a task from MS COCO dataset
 
-1. Download the [MS COCO dataset](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/formats/coco_user_manual.md#load-COCO-dataset).
+1. Download the [MS COCO dataset](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset).
 
    For example `val images` and `instances` annotations
 
@@ -57,8 +57,8 @@ Uploaded file: a single unpacked `*.json` or a zip archive with the structure de
    (See [Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/)
    guide for details)
 
-2. Unpack `annotations_trainval2017.zip`
+1. Unpack `annotations_trainval2017.zip`
 
-3. click `Upload annotation` button,
+1. click `Upload annotation` button,
    choose `COCO 1.1` and select `instances_val2017.json`
    annotation file. It can take some time.
