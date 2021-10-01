@@ -22,10 +22,5 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 });
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
-    cy.get(element).find('canvas').then((canvas) => {
-        const width = Number(canvas.attr('width'))
-        const height = Number(canvas.attr('height'))
-        cy.get(element)
-            .screenshot(screenshotName, { padding: -40 });
-    });
+    cy.get(element).find('canvas').screenshot(screenshotName, { padding: -40 });
 });

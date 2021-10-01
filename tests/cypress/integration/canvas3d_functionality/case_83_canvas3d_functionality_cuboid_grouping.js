@@ -55,7 +55,7 @@ context('Canvas 3D functionality. Grouping.', () => {
         cy.create3DCuboid(secondCuboidCreationParams);
         cy.create3DCuboid(thirdCuboidCreationParams);
         cy.create3DCuboid(fourthCuboidCreationParams);
-        cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_cuboid_creation');
+        cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_cuboid_creation');
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -77,7 +77,7 @@ context('Canvas 3D functionality. Grouping.', () => {
                     expect(bgColorItem1).not.be.equal(bgColorItem3);
                 });
             });
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_cuboid_grouping');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_cuboid_grouping');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_cuboid_creation.png`,
                 `${screenshotsPath}/canvas3d_perspective_cuboid_grouping.png`,
@@ -92,7 +92,7 @@ context('Canvas 3D functionality. Grouping.', () => {
                     .should('have.attr', 'style')
                     .and('contain', `background-color: rgba(${yellowRgb}`);
             }
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_change_group_color');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_change_group_color');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_cuboid_grouping.png`,
                 `${screenshotsPath}/canvas3d_perspective_change_group_color.png`,
@@ -100,7 +100,7 @@ context('Canvas 3D functionality. Grouping.', () => {
         });
 
         it('Reset group.', () => {
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_before_reset_group');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_reset_group');
             cy.get('.cvat-group-control').click();
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270).click(480, 270);
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 430, 220).click(430, 220);
@@ -111,7 +111,7 @@ context('Canvas 3D functionality. Grouping.', () => {
             cy.get('#cvat-objects-sidebar-state-item-3').invoke('attr', 'style').then((bgColorItem3) => {
                 expect(bgColorItem).to.be.equal(bgColorItem3);
             });
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_reset_group');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_reset_group');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_before_reset_group.png`,
                 `${screenshotsPath}/canvas3d_perspective_after_reset_group.png`,
