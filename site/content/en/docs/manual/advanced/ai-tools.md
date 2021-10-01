@@ -98,7 +98,8 @@ Trackers are used to automatically annotate an object using bounding box.
 Supported DL models are not bound to the label and can be used for any objects.
 
 - Before you start, select the `magic wand` on the controls sidebar and go to the `Trackers` tab.
-  Then select a label for the object and сlick `Track`. Then annotate the desired objects with the bounding box in the first frame.
+  Then select a label for the object and сlick `Track`. Then annotate the desired objects with the
+  bounding box in the first frame.
 
   ![Start tracking an object](/images/trackers_tab.png)
 
