@@ -268,7 +268,12 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const organizationMenu = (
         <Menu className='cvat-header-menu'>
-            <Menu.Item className='cvat-header-organiz' key={OrganizationMenuKeys.CREATE}>
+            <Menu.Item
+                key={OrganizationMenuKeys.CREATE}
+                onClick={() => {
+                    history.push('/organizations/create');
+                }}
+            >
                 <PlusOutlined />
                 <Text strong>Create</Text>
             </Menu.Item>
