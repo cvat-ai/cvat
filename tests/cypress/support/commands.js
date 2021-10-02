@@ -582,6 +582,7 @@ Cypress.Commands.add('goToTaskList', () => {
 Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
     cy.get('.cvat-label-color-picker')
         .not('.ant-popover-hidden')
+        .should('be.visible')
         .within(() => {
             cy.contains('hex').prev().clear().type(labelColor);
             cy.contains('button', 'Ok').click();
