@@ -5,7 +5,7 @@
 /// <reference types="cypress" />
 
 context('Connected file share.', () => {
-    const caseId = '106';
+    const caseId = '107';
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
     let stdoutToList;
@@ -21,7 +21,7 @@ context('Connected file share.', () => {
             cy.get('[title]').should('have.length', 4) // Also "root"
             cy.exec('docker exec -i cvat /bin/bash -c "ls ~/share"').then((command) => {
                 stdoutToList = command.stdout.split('\n');
-                // [image_case_106_1.png, image_case_106_2.png, image_case_106_3.png]
+                // [image_case_107_1.png, image_case_107_2.png, image_case_107_3.png]
                 expect (stdoutToList.length).to.be.eq(3);
                 stdoutToList.forEach((el) => {
                     cy.get(`[title="${el}"]`).should('exist');
@@ -74,11 +74,11 @@ context('Connected file share.', () => {
                 });
             cy.exec(`docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"`)
                 .then((findFilesCommand) => {
-                    // [image_case_106_2.png, image_case_106_3.png]
+                    // [image_case_107_2.png, image_case_107_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
                 });
             cy.openJob(0, true, false);
-            // Error: . "\"No such file or directory /home/django/share/image_case_106_1.png\"".
+            // Error: . "\"No such file or directory /home/django/share/image_case_107_1.png\"".
             cy.get('.cvat-notification-notice-fetch-frame-data-from-the-server-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-fetch-frame-data-from-the-server-failed');
         });
