@@ -9,6 +9,7 @@ context('Connected file share.', () => {
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
     let stdoutToList;
+    const assetLocalPath = `cypress/integration/actions_tasks3/assets/case_${caseId}`;
 
     function createOpenTaskWithShare() {
         cy.get('#cvat-create-task-button').should('be.visible').click();
@@ -46,7 +47,7 @@ context('Connected file share.', () => {
     });
 
     after(() => {
-        cy.exec(`docker exec -i cvat /bin/bash -c "mv ~/share/${stdoutToList[0]}.bk ~/share/${stdoutToList[0]}"`);
+        cy.exec(`mv ${assetLocalPath}/${stdoutToList[0]}.bk ${assetLocalPath}/${stdoutToList[0]}`);
         cy.exec('docker exec -i cvat /bin/bash -c "ls -la ~/share"').then((command) => {
             cy.task('log', `After all: ${command.stdout}`);
         });
@@ -59,7 +60,7 @@ context('Connected file share.', () => {
             cy.get('.cvat-player-filename-wrapper').then((playerFilenameWrapper) => {
                 for (let el = 0; el < stdoutToList.length; el++) {
                     cy.get(playerFilenameWrapper).should('have.text', stdoutToList[el]);
-                    cy.checkFrameNum(el)
+                    cy.checkFrameNum(el);
                     cy.get('.cvat-player-next-button').click().trigger('mouseout');
                 }
             });
@@ -72,10 +73,8 @@ context('Connected file share.', () => {
                 cy.task('log', `Before rename: ${command.stdout}`);
             });
             // Rename the image
-            cy.exec(`docker exec -i cvat /bin/bash -c "mv ~/share/${stdoutToList[0]} ~/share/${stdoutToList[0]}.bk"`)
+            cy.exec(`mv ${assetLocalPath}/${stdoutToList[0]} ${assetLocalPath}/${stdoutToList[0]}.bk`)
                 .then((fileRenameCommand) => {
-                    cy.task('log', `fileRenameCommand.stderr: ${fileRenameCommand.stderr}`);
-                    cy.task('log', `fileRenameCommand.stdout: ${fileRenameCommand.stdout}`);
                     expect(fileRenameCommand.code).to.be.eq(0);
                 });
             cy.exec('docker exec -i cvat /bin/bash -c "ls -la ~/share"').then((command) => {
