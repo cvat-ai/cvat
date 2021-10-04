@@ -47,10 +47,8 @@ context('Connected file share.', () => {
     });
 
     after(() => {
+        // Renaming to the original name
         cy.exec(`mv ${assetLocalPath}/${stdoutToList[0]}.bk ${assetLocalPath}/${stdoutToList[0]}`);
-        cy.exec('docker exec -i cvat /bin/bash -c "ls -la ~/share"').then((command) => {
-            cy.task('log', `After all: ${command.stdout}`);
-        });
     })
 
     describe(`Testing case "${caseId}"`, () => {
@@ -69,17 +67,11 @@ context('Connected file share.', () => {
         it('Check "Fix problem with getting cloud storages in Firefox".', () => {
             cy.goToTaskList();
             createOpenTaskWithShare();
-            cy.exec('docker exec -i cvat /bin/bash -c "ls -la ~/share"').then((command) => {
-                cy.task('log', `Before rename: ${command.stdout}`);
-            });
             // Rename the image
             cy.exec(`mv ${assetLocalPath}/${stdoutToList[0]} ${assetLocalPath}/${stdoutToList[0]}.bk`)
                 .then((fileRenameCommand) => {
                     expect(fileRenameCommand.code).to.be.eq(0);
                 });
-            cy.exec('docker exec -i cvat /bin/bash -c "ls -la ~/share"').then((command) => {
-                cy.task('log', `After rename: ${command.stdout}`);
-            });
             cy.exec(`docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"`)
                 .then((findFilesCommand) => {
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
