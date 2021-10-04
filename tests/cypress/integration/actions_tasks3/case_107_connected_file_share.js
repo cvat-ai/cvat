@@ -77,7 +77,8 @@ context('Connected file share.', () => {
                     // [image_case_107_2.png, image_case_107_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
                 });
-            cy.openJob(0, true, false);
+            cy.openJob();
+            cy.get('.cvat-annotation-header').should('exist');
             // Error: . "\"No such file or directory /home/django/share/image_case_107_1.png\"".
             cy.get('.cvat-notification-notice-fetch-frame-data-from-the-server-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-fetch-frame-data-from-the-server-failed');
