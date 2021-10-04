@@ -39,7 +39,6 @@ interface Props {
     changeColor(color: string): void;
     collapse(): void;
     resetCuboidPerspective(): void;
-    activateTracking(): void;
 }
 
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
@@ -92,7 +91,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeColor,
         collapse,
         resetCuboidPerspective,
-        activateTracking,
         jobInstance,
     } = props;
 
@@ -144,7 +142,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toBackground={toBackground}
                     toForeground={toForeground}
                     resetCuboidPerspective={resetCuboidPerspective}
-                    activateTracking={activateTracking}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (

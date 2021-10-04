@@ -15,4 +15,9 @@ Each button in the action menu is responsible for a specific function:
 - `Update` — update this cloud storage
 - `Delete` — delete cloud storage.
 
+![](/images/cloud_storage_icon.jpg)
+
+This preview will appear when it is impossible to get a real preview (e.g. storage is empty or
+invalid credentials were used).
+
 Click the `Attach a new storage` button to [attach a new storage](/docs/manual/basics/attach-cloud-storage/).

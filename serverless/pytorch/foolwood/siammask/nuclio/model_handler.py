@@ -62,5 +62,5 @@ class ModelHandler:
             shape = state['ploygon'].flatten().tolist()
             state = self.encode_state(state)
 
-        return {"shape": shape, "state": state}
+        return shape, state
 
