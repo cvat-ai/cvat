@@ -103,7 +103,7 @@ Supported DL models are not bound to the label and can be used for any objects.
 
   ![Start tracking an object](/images/trackers_tab.png)
 
-- All annotated objects will be automatically tracked when you move to the next frame . 
+- All annotated objects will be automatically tracked when you move to the next frame.
   For tracking, use `Next` button on the top panel or the `F` button to move on to the next frame.
 
 - You can enable/disable tracking using `tracker switcher` on sidebar.
