@@ -168,8 +168,7 @@ class DatasetImagesReader:
 
     @start.setter
     def start(self, value):
-        assert isinstance(value, int)
-        self._start = value
+        self._start = int(value)
 
     @property
     def stop(self):
@@ -177,8 +176,7 @@ class DatasetImagesReader:
 
     @stop.setter
     def stop(self, value):
-        assert isinstance(value, int)
-        self._stop = value
+        self._stop = int(value)
 
     @property
     def step(self):
@@ -186,8 +184,7 @@ class DatasetImagesReader:
 
     @step.setter
     def step(self, value):
-        assert isinstance(value, int)
-        self._step = value
+        self._step = int(value)
 
     def __iter__(self):
         for idx in range(self._start, self._stop, self._step):
