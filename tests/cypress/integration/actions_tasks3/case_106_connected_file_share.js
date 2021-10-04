@@ -10,39 +10,48 @@ context('Connected file share.', () => {
     const labelName = taskName;
     let stdoutToList;
 
+    function createOpenTaskWithShare() {
+        cy.get('#cvat-create-task-button').should('be.visible').click();
+        cy.get('#name').type(taskName);
+        cy.addNewLabel(labelName);
+        cy.contains('[role="tab"]', 'Connected file share').click();
+        cy.get('.cvat-share-tree').should('be.visible').within(() => {
+            cy.get('[aria-label="plus-square"]').click();
+            cy.get('[title]').should('have.length', 4) // Also "root"
+            cy.exec('docker exec -i cvat /bin/bash -c "ls ~/share"').then((command) => {
+                stdoutToList = command.stdout.split('\n');
+                // [image_case_106_1.png, image_case_106_2.png, image_case_106_3.png]
+                expect (stdoutToList.length).to.be.eq(3);
+                stdoutToList.forEach((el) => {
+                    cy.get(`[title="${el}"]`).should('exist');
+                    // Click on the checkboxes
+                    cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
+                });
+            });
+        });
+        cy.contains('button', 'Submit').click();
+        cy.get('.cvat-notification-create-task-success').should('exist').find('button').click();
+        cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
+        cy.get('.cvat-task-details').should('exist');
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
     });
 
-    after(() => {
+    afterEach(() => {
         cy.goToTaskList();
         cy.deleteTask(taskName);
     });
 
+    after(() => {
+        cy.exec(`docker exec -i cvat /bin/bash -c "mv ~/share/${stdoutToList[0]}.bk ~/share/${stdoutToList[0]}"`);
+    })
+
     describe(`Testing case "${caseId}"`, () => {
         it('Create a task with "Connected file share".', () => {
-            cy.get('#cvat-create-task-button').should('be.visible').click();
-            cy.get('#name').type(taskName);
-            cy.addNewLabel(labelName);
-            cy.contains('[role="tab"]', 'Connected file share').click();
-            cy.get('.cvat-share-tree').should('be.visible').within(() => {
-                cy.get('[aria-label="plus-square"]').click();
-                cy.get('[title]').should('have.length', 4) // Also "root"
-                cy.exec('docker exec -i cvat /bin/bash -c "ls ~/share"').then((command) => {
-                    stdoutToList = command.stdout.split('\n');
-                    // [image_case_106_1.png, image_case_106_2.png, image_case_106_3.png]
-                    expect (stdoutToList.length).to.be.eq(3);
-                    stdoutToList.forEach((el) => {
-                        cy.get(`[title="${el}"]`).should('exist');
-                        // Click on the checkboxes
-                        cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
-                    });
-                });
-            });
-            cy.contains('button', 'Submit').click();
-            cy.get('.cvat-notification-create-task-success').should('exist').find('button').click();
-            cy.get('.cvat-task-details').should('exist');
+            createOpenTaskWithShare();
             cy.openJob();
             cy.get('.cvat-player-filename-wrapper').then((playerFilenameWrapper) => {
                 for (let el = 0; el < stdoutToList.length; el++) {
@@ -51,6 +60,24 @@ context('Connected file share.', () => {
                     cy.get('.cvat-player-next-button').click().trigger('mouseout');
                 }
             });
+        });
+
+        it('Check "Fix problem with getting cloud storages in Firefox".', () => {
+            cy.goToTaskList();
+            createOpenTaskWithShare();
+            // Rename the image
+            cy.exec(`docker exec -i cvat /bin/bash -c "mv ~/share/${stdoutToList[0]} ~/share/${stdoutToList[0]}.bk"`)
+                .then((filreRenameCommand) => {
+                    expect(filreRenameCommand.code).to.be.eq(0);
+                });
+            cy.exec(`docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"`)
+                .then((findFilesCommand) => {
+                    expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
+                });
+            cy.openJob();
+            // Error: . "\"No such file or directory /home/django/share/image_case_106_1.png\"".
+            cy.get('.cvat-notification-notice-fetch-frame-data-from-the-server-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-fetch-frame-data-from-the-server-failed');
         });
     });
 });
