@@ -3,32 +3,18 @@ import data.utils
 
 default allow = false
 allow {
-    input.method == utils.GET
-    input.path == ["server", "about"]
+    input.scope == utils.VIEW
 }
 
 allow {
-    input.method == utils.GET
-    input.path == ["server", "annotation", "formats"]
+    input.scope == utils.SEND_EXCEPTION
 }
 
 allow {
-    input.method == utils.POST
-    input.path == ["server", "exception"]
+    input.scope == utils.SEND_LOGS
 }
 
 allow {
-    input.method == utils.POST
-    input.path == ["server", "logs"]
-}
-
-allow {
-    input.method == utils.GET
-    input.path == ["server", "plugins"]
-}
-
-allow {
-    input.method == utils.GET
-    input.path == ["server", "share"]
+    input.scope == utils.LIST_CONTENT
     utils.has_privilege(utils.USER)
 }

@@ -8,6 +8,5 @@ allow {
 }
 
 allow {
-    input.method == utils.GET
-    input.path == ["users", "self"]
+    input.scope == utils.VIEW_SELF
 }

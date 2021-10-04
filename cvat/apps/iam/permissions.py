@@ -18,29 +18,8 @@ class OpenPolicyAgentPermission(BasePermission):
         r = requests.post(self.url, json=payload)
         return r.json()['result']
 
-    def _get_context(self, request):
-        context = request.iam_context
-
-        org_id = None
-        is_owner = False
-        org_role = None
-        if context['organization']:
-            org_id = context['organization'].id
-            is_owner = context['organization'].owner.id == request.user.id
-        if context['membership']:
-            org_role = context['membership'].role
-
-        context = {
-            'organization': {
-                'id': org_id,
-                'is_owner': is_owner,
-                'role': org_role,
-            },
-            'privilege': context['privilege'].name,
-        }
-
-        return context
-
+    def get_scope(self, request, view, obj):
+        raise NotImplementedError
 
     def get_payload(self, request, view, obj):
         privilege = request.iam_context['privilege']
@@ -49,8 +28,7 @@ class OpenPolicyAgentPermission(BasePermission):
 
         payload = {
             'input': {
-                'path': request.path.split('/')[3:],
-                'method': request.method,
+                'scope': self.get_scope(request, view, obj),
                 'user': {
                     'id': request.user.id,
                     'privilege': privilege.name,
@@ -105,18 +83,57 @@ class OpenPolicyAgentPermission(BasePermission):
         return queryset.filter(qobjects[0])
 
 class ServerPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return {
+            'annotation_formats': 'VIEW',
+            'about': 'VIEW',
+            'plugins': 'VIEW',
+            'exception': 'SEND_EXCEPTION',
+            'logs': 'SEND_LOGS',
+            'share': 'LIST_CONTENT'
+        }[view.action]
+
     url = settings.IAM_OPA_DATA_URL + '/server/allow'
 
 class CommentPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/comments/allow'
 
 class IssuePermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/issues/allow'
 
 class LambdaPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return {
+            ('function', 'list'): 'LIST',
+            ('function', 'retrive'): 'VIEW',
+            ('function', 'call'): 'CALL_ONLINE',
+            ('request', 'create'): 'CALL_OFFLINE',
+            ('request', 'list'): 'CALL_OFFLINE',
+            ('request', 'retrive'): 'CALL_OFFLINE',
+            ('request', 'destroy'): 'CALL_OFFLINE',
+        }[(view.basename, view.action)]
+
     url = settings.IAM_OPA_DATA_URL + '/lambda/allow'
 
 class OrganizationPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        if getattr(view, 'action', None):
+            return {
+                'list': 'LIST',
+                'create': 'CREATE',
+                'destroy': 'DELETE',
+                'partial_update': 'UPDATE',
+                'retrieve': 'VIEW'
+            }[view.action]
+        else:
+            return None # filter, OPTIONS
+
     url = settings.IAM_OPA_DATA_URL + '/organizations/allow'
 
     def get_payload(self, request, view, obj):
@@ -142,21 +159,48 @@ class OrganizationPermission(OpenPolicyAgentPermission):
 
 
 class MembershipPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/memberships/allow'
 
 class InvitationPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/invitations/allow'
 class CloudStoragePermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/cloudstorages/allow'
 
 class UserPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        if view.action == 'self':
+            return 'VIEW_SELF'
+
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/users/allow'
 
 class ProjectPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/projects/allow'
 
 class TaskPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return {
+            'list': 'LIST',
+            'destroy': 'DELETE',
+        }[view.action]
+
     url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
 class JobPermission(OpenPolicyAgentPermission):
+    def get_scope(self, request, view, obj):
+        return super().get_scope(request, view, obj)
+
     url = settings.IAM_OPA_DATA_URL + '/jobs/allow'

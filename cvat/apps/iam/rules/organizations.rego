@@ -2,7 +2,7 @@ package organizations
 import data.utils
 
 # input: {
-#     "method": <"GET"|"POST"|"PATCH"|"DELETE">,
+#     "scope": <"CREATE"|"LIST"|"UPDATE"|"VIEW"|"DELETE">,
 #     "path": ["organizations"] | ["organizations", "id"]
 #     "user": {
 #         "id": <num>,
@@ -29,27 +29,32 @@ MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
 WORKER     := "worker"
 
+is_maintainer {
+    input.organization.is_owner
+}
+
+is_maintainer {
+    input.organization.role == MAINTAINER
+}
+
 default allow = false
-allow { # ADMIN has no restrictions
+allow {
     utils.is_admin
 }
 
-allow { # CREATE one organization
-    input.method == utils.POST
-    input.path == ["organizations"]
+allow {
+    input.scope == utils.CREATE
     input.user.stats.orgs_count == 0
     utils.has_privilege(utils.USER)
 }
 
-allow { # CREATE many organizations
-    input.method == utils.POST
-    input.path == ["organizations"]
+allow {
+    input.scope == utils.CREATE
     utils.has_privilege(utils.BUSINESS)
 }
 
-allow { # LIST organizations is always allowed, run filter to get Q object
-    input.method == utils.GET
-    input.path == ["organizations"]
+allow {
+    input.scope == utils.LIST
 }
 
 filter = [] { # Django Q object to filter list of entries
@@ -58,39 +63,30 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [ {"owner_id": input.user.id}, {"members__user_id": input.user.id}, "|" ]
 }
 
-allow { # VIEW an organization (owner)
-    input.method == utils.GET
-    org_id := format_int(input.resources.organization.id, 10)
-    input.path == ["organizations", org_id]
+allow {
+    input.scope == utils.VIEW
     input.resources.organization.is_owner
 }
 
-allow { # VIEW an organization (member)
-    input.method == utils.GET
-    org_id := format_int(input.resources.organization.id, 10)
-    input.path == ["organizations", org_id]
+allow {
+    input.scope == utils.VIEW
     input.resources.organization.role != null
 }
 
-allow { # UPDATE an organization (owner)
-    input.method == utils.PATCH
-    org_id := format_int(input.resources.organization.id, 10)
-    input.path == ["organizations", org_id]
+allow {
+    input.scope == utils.UPDATE
+    utils.has_privilege(utils.WORKER)
     input.resources.organization.is_owner
 }
 
-allow { # UPDATE an organization (maintainer)
-    input.method == utils.PATCH
-    org_id := format_int(input.resources.organization.id, 10)
-    input.path == ["organizations", org_id]
+allow {
+    input.scope == utils.UPDATE
     utils.has_privilege(utils.USER)
     input.resources.organization.role == MAINTAINER
 }
 
-allow { # DELETE an organization (owner)
-    input.method == utils.DELETE
-    org_id := format_int(input.resources.organization.id, 10)
-    input.path == ["organizations", org_id]
+allow {
+    input.scope == utils.DELETE
     utils.has_privilege(utils.WORKER)
     input.resources.organization.is_owner
 }

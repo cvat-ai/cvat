@@ -9,23 +9,18 @@ allow {
 }
 
 allow {
-    input.method == utils.POST
-    input.path == ["cloudstorages"]
+    input.scope == utils.CREATE
     utils.has_privilege(utils.USER)
 }
 
 allow {
-    allowed_methods = {utils.GET, utils.PATCH, utils.DELETE}
-    allowed_methods[input.method]
-    storage_id := input.path[1]
-    input.path == ["cloudstorages", storage_id]
+    allowed_actions = {utils.DELETE, utils.UPDATE, utils.VIEW}
+    allowed_actions[input.scope]
     input.storage.owner.id == input.user.id
 }
 
 allow {
-    input.method == utils.GET
-    storage_id := input.path[1]
-    input.path == ["cloudstorages", storage_id, "content"]
+    input.scope == utils.LIST_CONTENT
     input.storage.owner.id == input.user.id
 }
 
