@@ -76,7 +76,7 @@ context('Connected file share.', () => {
                 .then((findFilesCommand) => {
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
                 });
-            cy.openJob();
+            cy.openJob(0, true, false);
             // Error: . "\"No such file or directory /home/django/share/image_case_106_1.png\"".
             cy.get('.cvat-notification-notice-fetch-frame-data-from-the-server-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-fetch-frame-data-from-the-server-failed');
