@@ -74,6 +74,7 @@ context('Connected file share.', () => {
                 });
             cy.exec(`docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"`)
                 .then((findFilesCommand) => {
+                    // [image_case_106_2.png, image_case_106_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
                 });
             cy.openJob(0, true, false);
