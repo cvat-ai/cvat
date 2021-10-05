@@ -294,8 +294,8 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
-
+            'Sly Point Cloud Format 1.0',
+            'LFW 1.0',
         })
 
     def test_import_formats_query(self):
@@ -321,7 +321,8 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
+            'Sly Point Cloud Format 1.0',
+            'LFW 1.0'
         })
 
     def test_exports(self):
@@ -368,6 +369,7 @@ class TaskExportTest(_DbTestBase):
             ('ICDAR Recognition 1.0', 'icdar_word_recognition'),
             ('ICDAR Localization 1.0', 'icdar_text_localization'),
             ('ICDAR Segmentation 1.0', 'icdar_text_segmentation'),
+            ('LFW 1.0', 'lfw')
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
