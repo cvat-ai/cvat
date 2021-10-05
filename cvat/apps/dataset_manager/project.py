@@ -89,6 +89,12 @@ class ProjectAnnotationAndData:
         create_task(task, data)
         #TODO: update db_tasks
 
+    def add_labels(self, labels: List[models.Label]):
+        for label in labels:
+            label.project = self.db_project
+
+        models.Label.objects.bulk_create(labels)
+
     def init_from_db(self):
         self.reset()
 

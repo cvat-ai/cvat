@@ -13,8 +13,9 @@ from django.utils import timezone
 
 from datumaro.components.dataset import Dataset
 import datumaro.components.extractor as datumaro
+from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, Data, ShapeType, Project, Task, Label, DimensionType, Image as Img
+from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label, DimensionType, Image as Img
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
 
@@ -1266,14 +1267,25 @@ def import_dm_annotations(dm_dataset, instance_data):
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e))
 
-def import_labels_to_project(project_annotation, dataset):
-    pass
+def import_labels_to_project(project_annotation, dataset: Dataset):
+    labels = []
+    label_names = []
+    for label in dataset.categories()[datumaro.AnnotationType.label].items:
+        db_label = Label(
+            name=label.name,
+            color=get_label_color(label.name, label_names)
+        )
+        labels.append(db_label)
+        label_names.append(label.name)
+    project_annotation.add_labels(labels)
 
 def load_dataset_data(project_annotation, dataset: Dataset):
     if not project_annotation.db_project.label_set.count():
-        raise Exception('Cannot import dataset to a project without labels')
-        # Will be implemented later
-        # import_labels_to_project(project_annotation, dataset)
+        import_labels_to_project(project_annotation, dataset)
+    else:
+        for label in dataset.categories()[datumaro.AnnotationType.label].items:
+            if not project_annotation.db_project.label_set.filter(name=label.name).exists():
+                raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset in dataset.subsets().values():
         db_task = Task(
             project=project_annotation.db_project,
