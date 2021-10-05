@@ -630,11 +630,29 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             data = {k: v for k, v in serializer.validated_data.items()}
 
             action = request.query_params.get('action', None)
-            if action == 'append':
+            if action == 'init-chunk-upload':
+                upload_id = uuid.uuid4().hex
+                chunk_dir = os.path.join(upload_dir, upload_id)
+                os.makedirs(chunk_dir)
+                return Response(data=upload_id, status=status.HTTP_200_OK)
+            elif action == 'finish-chunk-upload':
+                upload_id = request.query_params.get('upload_id', None)
+                chunk_dir = os.path.join(upload_dir, upload_id)
+                chunks = [os.path.join(chunk_dir, file) for file in os.listdir(chunk_dir) if os.path.isfile(os.path.join(chunk_dir, file))]
+                chunks.sort()
+                with open(os.path.join(upload_dir, data.get('chunk_file_name')), 'ab+') as destination:
+                    for chunk in chunks:
+                        chunk_file = open(chunk, 'rb')
+                        destination.write(chunk_file.read())
+                        chunk_file.close()
+                shutil.rmtree(chunk_dir)
+                return Response(status=status.HTTP_200_OK)
+            elif action == 'append':
                 file = data.get('client_files')[0]['file']
-                append_chunk = len(data.get('client_files')) == 1 and file.content_type == 'application/octet-stream'
-                if append_chunk: # write chunk
-                    with open(os.path.join(upload_dir, file.name), 'ab+') as destination:
+                upload_id = request.query_params.get('upload_id', None)
+                if upload_id: # write chunk
+                    file_dir = os.path.join(upload_dir, upload_id)
+                    with open(os.path.join(file_dir, str(data.get('chunk_number'))), 'wb') as destination:
                         destination.write(file.read())
                 else: # write each file
                     for client_file in data.get('client_files'):

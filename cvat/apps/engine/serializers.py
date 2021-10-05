@@ -274,12 +274,14 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    chunk_number = serializers.IntegerField(required=False)
+    chunk_file_name = serializers.CharField(allow_null=True, required=False)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'chunk_number', 'chunk_file_name')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
