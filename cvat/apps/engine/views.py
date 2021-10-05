@@ -340,8 +340,6 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
 
         if request.method == 'POST':
             format_name = request.query_params.get("format", "")
-            if db_project.tasks.count():
-                raise ValidationError("Cannot import dataset in non empty project")
 
             return _import_project_dataset(
                 request=request,
