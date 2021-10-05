@@ -19,14 +19,14 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Cancel drawing.', () => {
-            cy.get('.cvat-draw-cuboid-control').trigger('mouseover');
-            cy.get('.cvat-draw-cuboid-popover-visible').find('[type="search"]').click({ force: true });
+            cy.interactControlButton('draw-cuboid');
+            cy.get('.cvat-draw-cuboid-popover').find('.ant-select-selection-item').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
                     cy.contains(new RegExp(`^${labelName}$`)).click();
                 });
-            cy.get('.cvat-draw-cuboid-popover-visible').find('button').click();
+            cy.get('.cvat-draw-cuboid-popover').find('button').click();
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_drawning');
             cy.get('body').type('{Esc}');
