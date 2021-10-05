@@ -391,6 +391,11 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
         };
+        organizations: {
+            fetching: null | ErrorState;
+            creating: null | ErrorState;
+            updating: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -673,6 +678,14 @@ export interface ReviewState {
     };
 }
 
+export interface OrganizationState {
+    list: any[];
+    current: any | null;
+    fetching: boolean;
+    creating: boolean;
+    saving: boolean;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -690,6 +703,7 @@ export interface CombinedState {
     review: ReviewState;
     export: ExportState;
     cloudStorages: CloudStoragesState;
+    organizations: OrganizationState;
 }
 
 export enum DimensionType {

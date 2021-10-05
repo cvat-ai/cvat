@@ -1231,8 +1231,7 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => !predictAnnotations.latestRequest.fetching
-                        || predictAnnotations.latestRequest.id !== closureId;
+                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
@@ -1380,6 +1379,37 @@
                 }
             }
 
+            async function getOrganizations() {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/organizations`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createOrganization(data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/organizations`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -1519,6 +1549,14 @@
                             create: createCloudStorage,
                             delete: deleteCloudStorage,
                             update: updateCloudStorage,
+                        }),
+                        writable: false,
+                    },
+
+                    organizations: {
+                        value: Object.freeze({
+                            get: getOrganizations,
+                            create: createOrganization,
                         }),
                         writable: false,
                     },

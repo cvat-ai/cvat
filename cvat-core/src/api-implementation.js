@@ -30,6 +30,7 @@
     const { Task } = require('./session');
     const { Project } = require('./project');
     const { CloudStorage } = require('./cloud-storage');
+    const Organization = require('./organization');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -306,10 +307,16 @@
 
             const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
-
             cloudStorages.count = cloudStoragesData.count;
-
             return cloudStorages;
+        };
+
+        cvat.organizations.get.implementation = async () => {
+            const organizationsData = await serverProxy.organizations.get();
+            const organizations = organizationsData.results.map(
+                (organizationData) => new Organization(organizationData),
+            );
+            return organizations;
         };
 
         return cvat;

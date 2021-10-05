@@ -18,6 +18,7 @@ import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
+import { OrganizationActionsTypes } from 'actions/organization-actions';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
@@ -119,6 +120,11 @@ const defaultState: NotificationsState = {
             fetching: null,
             updating: null,
             deleting: null,
+        },
+        organizations: {
+            fetching: null,
+            creating: null,
+            updating: null,
         },
     },
     messages: {
@@ -1297,6 +1303,43 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: `Could not fetch preview for cloud storage #${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-fetch-cloud-storage-preview-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        fetching: {
+                            message: 'Could not fetch organizations list',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-organizations-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS: {
+            return {
+                ...state,
+            };
+        }
+        case OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        creating: {
+                            message: `Could not create organization ${action.payload.slug}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-organization-failed',
                         },
                     },
                 },

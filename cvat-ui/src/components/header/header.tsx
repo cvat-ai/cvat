@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
-import { connect } from 'react-redux';
+import React, { useEffect } from 'react';
+import { connect, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Icon, {
@@ -37,6 +37,7 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
+import { getOrganizationsAsync } from 'actions/organization-actions';
 import { CombinedState } from 'reducers/interfaces';
 import SettingsModal from './settings-modal/settings-modal';
 
@@ -72,6 +73,9 @@ interface StateToProps {
     isAnalyticsPluginActive: boolean;
     isModelsPluginActive: boolean;
     isGitPluginActive: boolean;
+    organizationsFetching: boolean;
+    organizationsList: any[];
+    currentOrganization: any | null;
 }
 
 interface DispatchToProps {
@@ -93,6 +97,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         about: { server, packageVersion },
         shortcuts: { normalizedKeyMap },
         settings: { showDialog: settingsDialogShown },
+        organizations: { fetching: organizationsFetching, list: organizationsList, current: currentOrganization },
     } = state;
 
     return {
@@ -123,6 +128,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
         isGitPluginActive: list.GIT_INTEGRATION,
+        organizationsList,
+        organizationsFetching,
+        currentOrganization,
     };
 }
 
@@ -150,6 +158,9 @@ function HeaderContainer(props: Props): JSX.Element {
         renderChangePasswordItem,
         isAnalyticsPluginActive,
         isModelsPluginActive,
+        organizationsFetching,
+        organizationsList,
+        currentOrganization,
     } = props;
 
     const {
@@ -157,6 +168,11 @@ function HeaderContainer(props: Props): JSX.Element {
     } = consts;
 
     const history = useHistory();
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        dispatch(getOrganizationsAsync());
+    }, []);
 
     function showAboutModal(): void {
         Modal.info({
@@ -277,19 +293,25 @@ function HeaderContainer(props: Props): JSX.Element {
                 <PlusOutlined />
                 <Text strong>Create</Text>
             </Menu.Item>
-            <Menu.Item key={OrganizationMenuKeys.OPEN}>
-                <ExpandAltOutlined />
-                Open
-            </Menu.Item>
-            <Menu.ItemGroup title='Your organizations' key={OrganizationMenuKeys.LIST}>
-                <Menu.Item key='1'>
-                    <CVATTooltip overlay='Internet Computer Vision'>
-                        <div>ICV</div>
-                    </CVATTooltip>
+            {currentOrganization ? (
+                <Menu.Item key={OrganizationMenuKeys.OPEN}>
+                    <ExpandAltOutlined />
+                    Open
                 </Menu.Item>
-                <Menu.Item key='2'>IDT</Menu.Item>
-                <Menu.Item key='3'>ODT</Menu.Item>
-            </Menu.ItemGroup>
+            ) : null}
+            {organizationsList.length ? (
+                <Menu.ItemGroup title='Your organizations' key={OrganizationMenuKeys.LIST}>
+                    {organizationsList.map(
+                        (organization: any): JSX.Element => (
+                            <Menu.Item key={organization.slug}>
+                                <CVATTooltip overlay={organization.name}>
+                                    <div>{organization.slug}</div>
+                                </CVATTooltip>
+                            </Menu.Item>
+                        ),
+                    )}
+                </Menu.ItemGroup>
+            ) : null}
         </Menu>
     );
 
@@ -390,11 +412,23 @@ function HeaderContainer(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <Dropdown overlay={organizationMenu} className='cvat-header-menu-organization-dropdown'>
+                <Dropdown
+                    disabled={organizationsFetching}
+                    overlay={organizationMenu}
+                    className='cvat-header-menu-organization-dropdown'
+                >
                     <span>
                         <TeamOutlined className='cvat-header-dropdown-icon' />
-                        <Text strong>ICV</Text>
-                        <CaretDownOutlined className='cvat-header-dropdown-icon' />
+                        {currentOrganization ? (
+                            <Text strong>{currentOrganization.slug}</Text>
+                        ) : (
+                            <Text type='secondary'>Not selected</Text>
+                        )}
+                        {organizationsFetching ? (
+                            <LoadingOutlined className='cvat-header-dropdown-icon' />
+                        ) : (
+                            <CaretDownOutlined className='cvat-header-dropdown-icon' />
+                        )}
                     </span>
                 </Dropdown>
                 <Dropdown overlay={userMenu} className='cvat-header-menu-user-dropdown'>

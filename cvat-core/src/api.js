@@ -23,6 +23,7 @@ function build() {
     const MLModel = require('./ml-model');
     const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
+    const Organization = require('./organization');
 
     const enums = require('./enums');
 
@@ -785,6 +786,26 @@ function build() {
             },
         },
         /**
+         * This namespace could be used to get organizations list from the server
+         * @namespace cloudStorages
+         * @memberof module:API.cvat
+         */
+        organizations: {
+            /**
+             * Method returns a list of organizations
+             * @method get
+             * @async
+             * @memberof module:API.cvat.organizations
+             * @returns {module:API.cvat.classes.Organization[]}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async get() {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
+                return result;
+            },
+        },
+        /**
          * Namespace is used for access to classes
          * @namespace classes
          * @memberof module:API.cvat
@@ -805,6 +826,7 @@ function build() {
             Review,
             FrameData,
             CloudStorage,
+            Organization,
         },
     };
 
@@ -818,6 +840,7 @@ function build() {
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
+    cvat.organizations = Object.freeze(cvat.organizations);
 
     const implementAPI = require('./api-implementation');
 

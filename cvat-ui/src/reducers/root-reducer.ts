@@ -19,6 +19,7 @@ import userAgreementsReducer from './useragreements-reducer';
 import reviewReducer from './review-reducer';
 import exportReducer from './export-reducer';
 import cloudStoragesReducer from './cloud-storages-reducer';
+import organizationsReducer from './organizations-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -36,7 +37,8 @@ export default function createRootReducer(): Reducer {
         shortcuts: shortcutsReducer,
         userAgreements: userAgreementsReducer,
         review: reviewReducer,
-        export: exportReducer,  
+        export: exportReducer,
         cloudStorages: cloudStoragesReducer,
+        organizations: organizationsReducer,
     });
 }
