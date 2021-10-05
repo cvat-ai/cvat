@@ -114,6 +114,6 @@ Supported DL models are not bound to the label and can be used for any objects.
 
   ![Tracker indication](/images/tracker_indication.png)
 
-- Tracking does not block the UI. A pop-up window displays information about the number of tracked objects.
+- A pop-up window displays information about the number of tracked objects.
 
   ![Tracker pop-up window](/images/tracker_pop-up_window.png)
