@@ -23,8 +23,6 @@
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-typescript": "^7.3.3",
     "@types/node": "^12.6.8",
-    "@typescript-eslint/eslint-plugin": "^1.13.0",
-    "@typescript-eslint/parser": "^1.13.0",
     "babel-loader": "^8.0.6",
     "css-loader": "^3.4.2",
     "dts-bundle-webpack": "^1.0.2",

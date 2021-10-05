@@ -27,8 +27,6 @@
     "@babel/preset-react": "^7.0.0",
     "@babel/preset-typescript": "^7.6.0",
     "@types/mousetrap": "^1.6.5",
-    "@typescript-eslint/eslint-plugin": "^4.5.0",
-    "@typescript-eslint/parser": "^4.5.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-import": "^1.12.2",
     "copy-webpack-plugin": "^5.1.2",
