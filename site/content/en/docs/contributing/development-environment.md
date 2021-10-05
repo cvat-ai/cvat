@@ -14,8 +14,8 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```sh
-  # Install Node.js 12
-  curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+  # Install Node.js 16
+  curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
   sudo apt-get install -y nodejs
   ```
 
