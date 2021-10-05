@@ -29,13 +29,13 @@ and click `Create bucket`.
 You'll be taken to the bucket creation page. Here you have to specify the name of the bucket, region,
 optionally you can copy the settings of another bucket by clicking on the `choose bucket` button.
 Checkbox block all public access can be enabled as we will use `access key ID` and `secret access key` to gain access.
-In the following sections you can leave the default settings and click `create bucket`.
+In the following sections, you can leave the default settings and click `create bucket`.
 After you create the bucket it will appear in the list of buckets.
 
 ### Create user and configure permissions
 
 To access bucket you will need to create a user, to do this, go [IAM](https://console.aws.amazon.com/iamv2/home#/users)
-and click `add users`. You need to choose AWS access type have access key ID and secret access key.
+and click `add users`. You need to choose AWS access type, have an access key ID and secret access key.
 
 ![](/images/aws-s3_tutorial_2.jpg)
 
@@ -147,11 +147,11 @@ In the window that appears, select the created bucket and click export.
 ![](/images/aws-s3_tutorial_7.jpg)
 
 ### Prepare manifest file
-Now you need to prepare manifest file. I used [AWS cli](https://aws.amazon.com/cli/) and
+Now you need to prepare a manifest file. I used [AWS cli](https://aws.amazon.com/cli/) and
 [script for prepare manifest file](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest).
 Perform the installation using the manual [aws-shell](https://github.com/awslabs/aws-shell),
 I used `aws-cli 1.20.49` `Python 3.7.9` `Windows 10`.
-You can configure credentials by running.
+You can configure credentials by running `aws configure`.
 You will need to enter `Access Key ID` and `Secret Access Key` as well as region.
 
 ```
