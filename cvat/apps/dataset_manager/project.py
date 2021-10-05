@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Callable
+import os
+from typing import Callable, List
 
 from django.db import transaction
 
 from cvat.apps.engine import models
-from cvat.apps.engine import serializers
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
@@ -15,7 +15,6 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from .annotation import AnnotationIR
 from .bindings import ProjectData, load_dataset_data
 from .formats.registry import make_exporter, make_importer
-from .util import bulk_create
 
 def export_project(project_id, dst_file, format_name,
         server_url=None, save_images=False):
@@ -58,9 +57,17 @@ class ProjectAnnotationAndData:
     def delete(self, data=None):
         raise NotImplementedError()
 
-    def add_task(self, task: models.Task, files: list[str]):
-        task.project = self.db_project
+    def add_task(self, task: models.Task, files: List[str]):
+        def split_name(file):
+            path, name = os.path.split(file)
+            if os.path.exists(path):
+                data['server_files_path'] = path
+            else:
+                data['server_files_path'] = os.path.join(os.path.abspath(os.sep), path)
+            return name
 
+
+        task.project = self.db_project
         serializer = DataSerializer(data={
             "server_files": files,
             #TODO: followed fields whould be replaced with proper input values from request
@@ -77,6 +84,8 @@ class ProjectAnnotationAndData:
         data['use_cache'] = serializer.validated_data['use_cache']
         data['copy_data'] = serializer.validated_data['copy_data']
         data['stop_frame'] = None
+        data['server_files'] = list(map(split_name, data['server_files']))
+
         create_task(task, data)
         #TODO: update db_tasks
 

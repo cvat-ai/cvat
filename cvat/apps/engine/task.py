@@ -53,13 +53,16 @@ def rq_handler(job, exc_type, exc_value, traceback):
 
 ############################# Internal implementation for server API
 
-def _copy_data_from_share(server_files, upload_dir):
+def _copy_data_from_source(server_files, upload_dir, server_dir=None):
     job = rq.get_current_job()
-    job.meta['status'] = 'Data are being copied from share..'
+    job.meta['status'] = 'Data are being copied from source..'
     job.save_meta()
 
     for path in server_files:
-        source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+        if server_dir is None:
+            source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+        else:
+            source_path = os.path.join(server_dir, os.path.normpath(path))
         target_path = os.path.join(upload_dir, path)
         if os.path.isdir(source_path):
             copy_tree(source_path, target_path)
@@ -236,7 +239,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
-            _copy_data_from_share(data['server_files'], upload_dir)
+            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
         elif db_data.storage == models.StorageChoice.SHARE:
             upload_dir = settings.SHARE_ROOT
         else: # cloud storage
