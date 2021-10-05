@@ -8,7 +8,7 @@ import tempfile
 from datetime import timedelta
 
 import django_rq
-from datumaro.cli.util import make_file_name
+from datumaro.util.os_util import make_file_name
 from datumaro.util import to_snake_case
 from django.utils import timezone
 
