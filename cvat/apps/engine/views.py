@@ -453,8 +453,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if action is None:
             serializer = TaskSerializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            db_task = serializer.save()
+            db_task = self.perform_create(serializer)
             empty_data = Data.objects.create()
+            data_path = empty_data.get_data_dirname()
+            if os.path.isdir(data_path):
+                shutil.rmtree(data_path)
             os.makedirs(empty_data.get_compressed_cache_dirname())
             os.makedirs(empty_data.get_original_cache_dirname())
             os.makedirs(empty_data.get_upload_dirname())
@@ -576,10 +579,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         owner = self.request.data.get('owner', None)
         if owner:
             self._validate_task_limit(owner)
-            serializer.save()
+            db_task = serializer.save()
         else:
             self._validate_task_limit(self.request.user)
-            serializer.save(owner=self.request.user)
+            db_task = serializer.save(owner=self.request.user)
+        return db_task
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()

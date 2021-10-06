@@ -322,7 +322,8 @@ class DataSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         files = self._pop_data(validated_data);
-        [setattr(instance, k, v) for k, v in validated_data.items()]
+        for k, v in validated_data.items():
+            setattr(instance, k, v)
         self._create_files(instance, files)
         instance.save()
         return instance
