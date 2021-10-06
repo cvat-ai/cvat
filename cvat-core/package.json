@@ -18,18 +18,10 @@
     "> 2%"
   ],
   "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/core": "^7.4.4",
-    "@babel/preset-env": "^7.4.4",
-    "airbnb": "0.0.2",
-    "babel-eslint": "^10.0.1",
-    "babel-loader": "^8.0.6",
     "coveralls": "^3.0.5",
     "jest": "^26.6.3",
     "jest-junit": "^6.4.0",
-    "jsdoc": "^3.6.6",
-    "webpack": "^4.31.0",
-    "webpack-cli": "^3.3.2"
+    "jsdoc": "^3.6.6"
   },
   "dependencies": {
     "axios": "^0.21.4",

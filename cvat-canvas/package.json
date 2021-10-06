@@ -23,25 +23,7 @@
     "svg.select.js": "3.0.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.12.13",
-    "@babel/core": "^7.6.0",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
-    "@babel/plugin-proposal-optional-chaining": "^7.11.0",
-    "@babel/preset-env": "^7.6.0",
-    "@babel/preset-typescript": "^7.6.0",
-    "@types/node": "^12.6.8",
-    "babel-loader": "^8.0.6",
-    "css-loader": "^3.4.2",
-    "dts-bundle-webpack": "^1.0.2",
     "node-sass": "^6.0.1",
-    "nodemon": "^2.0.7",
-    "postcss-loader": "^3.0.0",
-    "postcss-preset-env": "^6.7.0",
-    "sass-loader": "^10.0.0",
-    "style-loader": "^1.0.0",
-    "typescript": "^3.5.3",
-    "webpack": "^4.46.0",
-    "webpack-cli": "^3.3.12",
-    "webpack-dev-server": "^3.11.0"
+    "sass-loader": "^10.0.0"
   }
 }
