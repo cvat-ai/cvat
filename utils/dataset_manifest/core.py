@@ -10,7 +10,6 @@ from contextlib import closing
 from tempfile import NamedTemporaryFile
 
 from PIL import Image
-from tqdm import tqdm
 from .utils import md5_hash, rotate_image
 
 class VideoStreamReader:
@@ -187,43 +186,56 @@ class DatasetImagesReader:
         self._step = int(value)
 
     def __iter__(self):
-        for idx in range(self._start, self._stop, self._step):
-            image = self._sources[idx]
-            img = Image.open(image, mode='r')
-            img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                else os.path.basename(image)
-            name, extension = os.path.splitext(img_name)
-            image_properties = {
-                'name': name,
-                'extension': extension,
-                'width': img.width,
-                'height': img.height,
-            }
-            if self._meta and img_name in self._meta:
-                image_properties['meta'] = self._meta[img_name]
-            if self._use_image_hash:
-                image_properties['checksum'] = md5_hash(img)
-            yield image_properties
+        sources = (i for i in self._sources)
+        for idx in range(self._stop):
+            if idx in self.range_:
+                image = next(sources)
+                img = Image.open(image, mode='r')
+                img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
+                    else os.path.basename(image)
+                name, extension = os.path.splitext(img_name)
+                image_properties = {
+                    'name': name,
+                    'extension': extension,
+                    'width': img.width,
+                    'height': img.height,
+                }
+                if self._meta and img_name in self._meta:
+                    image_properties['meta'] = self._meta[img_name]
+                if self._use_image_hash:
+                    image_properties['checksum'] = md5_hash(img)
+                yield image_properties
+            else:
+                yield dict()
+
+    @property
+    def range_(self):
+        return range(self._start, self._stop, self._step)
 
     def __len__(self):
-        return len(range(self._start, self._stop, self._step))
+        return len(self.range_)
 
 class Dataset3DImagesReader(DatasetImagesReader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def __iter__(self):
-        for image in self._sources:
-            img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                else os.path.basename(image)
-            name, extension = os.path.splitext(img_name)
-            image_properties = {
-                'name': name,
-                'extension': extension,
-            }
-            if self._meta and img_name in self._meta:
-                image_properties['meta'] = self._meta[img_name]
-            yield image_properties
+        sources = (i for i in self._sources)
+        for idx in range(self._stop):
+            if idx in self.range_:
+                image = next(sources)
+                img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
+                    else os.path.basename(image)
+                name, extension = os.path.splitext(img_name)
+                image_properties = {
+                    'name': name,
+                    'extension': extension,
+                }
+                if self._meta and img_name in self._meta:
+                    image_properties['meta'] = self._meta[img_name]
+                yield image_properties
+            else:
+                yield dict()
 
 class _Manifest:
     FILE_NAME = 'manifest.jsonl'
@@ -371,7 +383,7 @@ class _ManifestManager(ABC):
             os.remove(self.path)
 
     @abstractmethod
-    def create(self, content=None):
+    def create(self, content=None, _tqdm=None):
         pass
 
     @abstractmethod
@@ -446,10 +458,10 @@ class VideoManifestManager(_ManifestManager):
             json_item = json.dumps({key: value}, separators=(',', ':'))
             file.write(f'{json_item}\n')
 
-    def _write_core_part(self, file):
-        for item in tqdm(self._reader,
-                        desc="Manifest creating",
-                        total=len(self._reader)):
+    def _write_core_part(self, file, _tqdm):
+        iterable_obj = self._reader if _tqdm is None else \
+            _tqdm(self._reader, desc="Manifest creating", total=len(self._reader))
+        for item in iterable_obj:
             if isinstance(item, tuple):
                 json_item = json.dumps({
                     'number': item[0],
@@ -460,11 +472,11 @@ class VideoManifestManager(_ManifestManager):
 
     # pylint: disable=arguments-differ
     @_set_index
-    def create(self):
+    def create(self, _tqdm=None):
         """ Creating and saving a manifest file """
         if not len(self._reader):
             with NamedTemporaryFile(mode='w', delete=False)as tmp_file:
-                self._write_core_part(tmp_file)
+                self._write_core_part(tmp_file, _tqdm)
             temp = tmp_file.name
             with open(self._manifest.path, 'w') as manifest_file:
                 self._write_base_information(manifest_file)
@@ -474,7 +486,7 @@ class VideoManifestManager(_ManifestManager):
         else:
             with open(self._manifest.path, 'w') as manifest_file:
                 self._write_base_information(manifest_file)
-                self._write_core_part(manifest_file)
+                self._write_core_part(manifest_file, _tqdm)
 
     def partial_update(self, number, properties):
         pass
@@ -564,23 +576,23 @@ class ImageManifestManager(_ManifestManager):
             json_line = json.dumps({key: value}, separators=(',', ':'))
             file.write(f'{json_line}\n')
 
-    def _write_core_part(self, file, iterable_obj):
-        total = None if not hasattr(iterable_obj, '__len__') else len(iterable_obj)
-        for image_properties in tqdm(iterable_obj,
-                                    desc="Manifest creating",
-                                    total=total):
+    def _write_core_part(self, file, obj, _tqdm):
+        iterable_obj = obj if _tqdm is None else \
+            _tqdm(obj, desc="Manifest creating",
+                  total=None if not hasattr(obj, '__len__') else len(obj))
+        for image_properties in iterable_obj:
             json_line = json.dumps({
                 key: value for key, value in image_properties.items()
             }, separators=(',', ':'))
             file.write(f"{json_line}\n")
 
     @_set_index
-    def create(self, content=None):
+    def create(self, content=None, _tqdm=None):
         """ Creating and saving a manifest file for the specialized dataset"""
         with open(self._manifest.path, 'w') as manifest_file:
             self._write_base_information(manifest_file)
-            iterable_obj = content if content else self._reader
-            self._write_core_part(manifest_file, iterable_obj)
+            obj = content if content else self._reader
+            self._write_core_part(manifest_file, obj, _tqdm)
 
     def partial_update(self, number, properties):
         pass
