@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import { LogType } from 'cvat-logger';
-import { Canvas } from 'cvat-canvas-wrapper';
+import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
 import { updateAnnotationsAsync, changeFrameAsync } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers/interfaces';
@@ -25,7 +25,6 @@ interface StateToProps {
     jobInstance: any;
     frameNumber: number;
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas;
     outsideDisabled: boolean;
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
@@ -44,7 +43,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
-            canvas: { instance: canvasInstance },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -59,7 +57,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         normalizedKeyMap,
         frameNumber,
         jobInstance,
-        canvasInstance,
         outsideDisabled: typeof outsideDisabled === 'undefined' ? false : outsideDisabled,
         hiddenDisabled: typeof hiddenDisabled === 'undefined' ? false : hiddenDisabled,
         keyframeDisabled: typeof keyframeDisabled === 'undefined' ? false : keyframeDisabled,
@@ -217,8 +214,8 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     }
 
     private changeFrame(frame: number): void {
-        const { changeFrame, canvasInstance } = this.props;
-        if (canvasInstance.isAbleToChangeFrame()) {
+        const { changeFrame } = this.props;
+        if (isAbleToChangeFrame()) {
             changeFrame(frame);
         }
     }

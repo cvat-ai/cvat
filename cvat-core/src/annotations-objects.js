@@ -332,6 +332,14 @@
                 }
             }
 
+            if (updated.descriptions) {
+                if (!Array.isArray(data.descriptions) || data.descriptions.some((desc) => typeof desc !== 'string')) {
+                    throw new ArgumentError(
+                        `Descriptions are expected to be an array of strings but got ${data.descriptions}`,
+                    );
+                }
+            }
+
             if (updated.points) {
                 checkObjectType('points', data.points, null, Array);
                 checkNumberOfPoints(this.shapeType, data.points);
@@ -402,17 +410,7 @@
         }
 
         updateTimestamp(updated) {
-            const anyChanges = updated.label
-                || updated.attributes
-                || updated.points
-                || updated.outside
-                || updated.occluded
-                || updated.keyframe
-                || updated.zOrder
-                || updated.hidden
-                || updated.lock
-                || updated.pinned;
-
+            const anyChanges = Object.keys(updated).some((key) => !!updated[key]);
             if (anyChanges) {
                 this.updated = Date.now();
             }
@@ -446,9 +444,14 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.frameMeta = injection.frameMeta;
+            this.descriptions = data.descriptions || [];
             this.hidden = false;
             this.pinned = true;
             this.shapeType = null;
+        }
+
+        _saveDescriptions(descriptions) {
+            this.descriptions = [...descriptions];
         }
 
         _savePinned(pinned, frame) {
@@ -533,6 +536,7 @@
                 zOrder: this.zOrder,
                 points: [...this.points],
                 attributes: { ...this.attributes },
+                descriptions: [...this.descriptions],
                 label: this.label,
                 group: this.groupObject,
                 color: this.color,
@@ -641,6 +645,10 @@
 
             if (updated.attributes) {
                 this._saveAttributes(data.attributes, frame);
+            }
+
+            if (updated.descriptions) {
+                this._saveDescriptions(data.descriptions);
             }
 
             if (updated.points && fittedPoints.length) {
@@ -760,6 +768,7 @@
             return {
                 ...this.getPosition(frame, prev, next),
                 attributes: this.getAttributes(frame),
+                descriptions: [...this.descriptions],
                 group: this.groupObject,
                 objectType: ObjectType.TRACK,
                 shapeType: this.shapeType,
@@ -1202,6 +1211,10 @@
 
             if (updated.attributes) {
                 this._saveAttributes(data.attributes, frame);
+            }
+
+            if (updated.descriptions) {
+                this._saveDescriptions(data.descriptions);
             }
 
             if (updated.keyframe) {
