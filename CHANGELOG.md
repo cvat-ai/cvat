@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
+- Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
 
 ### Changed
 
-- TDB
+- Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
 
 ### Deprecated
 
