@@ -18,7 +18,7 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
         screenshotNameAfter,
         arrow,
     ) {
-        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameBefore);
+        cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.wait(300);
         arrow
             ? cy.get(button).trigger('mouseover').click()
@@ -34,7 +34,7 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
             ? cy.get(button).trigger('mouseout')
             : cy.contains('button', new RegExp(`^${button}$`)).trigger('mouseout');
         cy.contains(expectedTooltipText).should('not.exist');
-        cy.get('.cvat-canvas3d-perspective').screenshot(screenshotNameAfter);
+        cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
             `${screenshotsPath}/${screenshotNameAfter}.png`,
