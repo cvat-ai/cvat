@@ -11,7 +11,6 @@ import Spin from 'antd/lib/spin';
 import { CombinedState, ProjectsQuery } from 'reducers/interfaces';
 import { getProjectsAsync } from 'actions/projects-actions';
 import FeedbackComponent from 'components/feedback/feedback';
-import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
@@ -57,7 +56,6 @@ export default function ProjectsPageComponent(): JSX.Element {
             <TopBarComponent />
             {projectsCount ? <ProjectListComponent /> : <EmptyListComponent notFound={anySearchQuery} />}
             <FeedbackComponent />
-            <ExportDatasetModal />
             <ImportDatasetModal />
         </div>
     );

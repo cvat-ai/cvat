@@ -18,6 +18,7 @@ import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 import { ImportActionTypes } from 'actions/import-actions';
+import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
@@ -121,6 +122,12 @@ const defaultState: NotificationsState = {
         importing: {
             dataset: null,
             annotation: null,
+        },
+        cloudStorages: {
+            creating: null,
+            fetching: null,
+            updating: null,
+            deleting: null,
         },
     },
     messages: {
@@ -1198,6 +1205,126 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         prediction: {
                             message: 'Could not fetch prediction data',
                             reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        fetching: {
+                            message: 'Could not fetch cloud storage',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        creating: {
+                            message: 'Could not create the cloud storage',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-cloud-storage-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED: {
+            const { cloudStorage, error } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        updating: {
+                            message: `Could not update cloud storage #${cloudStorage.id}`,
+                            reason: error.toString(),
+                            className: 'cvat-notification-notice-update-cloud-storage-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.DELETE_CLOUD_STORAGE_FAILED: {
+            const { cloudStorageID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        deleting: {
+                            message:
+                                'Could not delete ' +
+                                `<a href="/cloudstorages/${cloudStorageID}" target="_blank">
+                                cloud storage ${cloudStorageID}</a>`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-cloud-storage-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED: {
+            const { cloudStorageID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        fetching: {
+                            message: `Could not fetch content for cloud storage #${cloudStorageID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-cloud-storage-content-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
+            const { cloudStorageID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        fetching: {
+                            message: `Could not fetch cloud storage #${cloudStorageID} status`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-cloud-storage-status-failed',
+                        },
+                    },
+                },
+            };
+        }
+
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED: {
+            const { cloudStorageID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    cloudStorages: {
+                        ...state.errors.cloudStorages,
+                        fetching: {
+                            message: `Could not fetch preview for cloud storage #${cloudStorageID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-cloud-storage-preview-failed',
                         },
                     },
                 },

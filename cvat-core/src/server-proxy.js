@@ -57,7 +57,6 @@
                         requests[e.data.id].resolve(e.data.responseData);
                     } else {
                         requests[e.data.id].reject({
-                            error: e.data.error,
                             response: {
                                 status: e.data.status,
                                 data: e.data.responseData,
@@ -879,7 +878,6 @@
                     );
                 } catch (errorData) {
                     throw generateError({
-                        ...errorData,
                         message: '',
                         response: {
                             ...errorData.response,
@@ -1296,7 +1294,6 @@
                     });
                 } catch (errorData) {
                     throw generateError({
-                        ...errorData,
                         message: '',
                         response: {
                             ...errorData.response,

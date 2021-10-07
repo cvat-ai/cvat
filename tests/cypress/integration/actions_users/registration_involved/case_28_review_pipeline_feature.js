@@ -268,7 +268,7 @@ context('Review pipeline feature', () => {
                 .should('exist')
                 .trigger('mousemove')
                 .trigger('mouseover');
-            cy.get('[id="quick_issue_from_latest$Menu"]').within(() => {
+            cy.get('.cvat-quick-issue-from-latest-item').within(() => {
                 cy.contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
                     .should('exist')
                     .and('have.text', customeIssueDescription);
@@ -365,10 +365,10 @@ context('Review pipeline feature', () => {
 
         it('Issue navigation. Navigation works and go only to frames with issues.', () => {
             cy.get('.cvat-issues-sidebar-previous-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-next-frame').click();
+            cy.get('.cvat-issues-sidebar-next-frame').trigger('mouseout').click();
             cy.checkFrameNum(2); // Frame changed to 2
             cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-previous-frame').click();
+            cy.get('.cvat-issues-sidebar-previous-frame').trigger('mouseout').click();
             cy.checkFrameNum(0); // Frame changed to 0
         });
 

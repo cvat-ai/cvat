@@ -17,7 +17,7 @@ rjsmin==1.1.0
 requests==2.26.0
 rq==1.5.1
 rq-scheduler==0.10.0
-sqlparse==0.3.1
+sqlparse==0.4.2
 django-sendfile==0.3.11
 dj-pagination==2.5.0
 python-logstash-async==2.2.0

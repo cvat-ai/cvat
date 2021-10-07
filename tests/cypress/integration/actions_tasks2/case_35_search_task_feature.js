@@ -11,7 +11,7 @@ context('Search task feature.', () => {
 
     function searchTask(option, result) {
         cy.intercept('GET', '/api/v1/tasks**').as('searchTask');
-        cy.get('.cvat-task-page-search-task').find('[placeholder="Search"]').clear().type(`${option}{Enter}`);
+        cy.get('.cvat-search-field').find('[placeholder="Search"]').clear().type(`${option}{Enter}`);
         cy.wait('@searchTask').its('response.statusCode').should('equal', 200);
         cy.contains('.cvat-item-task-name', taskName).should(result);
     }
@@ -30,7 +30,7 @@ context('Search task feature.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Tooltip task filter contain all the possible options.', () => {
-            cy.get('.cvat-task-page-search-task').trigger('mouseover');
+            cy.get('.cvat-search-field').trigger('mouseover');
             cy.get('.cvat-tasks-search-tooltip').should('be.visible');
         });
 

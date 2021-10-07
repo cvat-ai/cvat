@@ -1,7 +1,7 @@
 ---
 title: 'Objects sidebar'
 linkTitle: 'Objects sidebar'
-weight: 24
+weight: 9
 description: 'Overview of available functions on the objects sidebar of the annotation tool.'
 ---
 ## Hide objects sidebar
@@ -85,6 +85,10 @@ You can change the way an object is displayed on a frame (show or hide).
 `Switch pinned property` - when enabled, a shape cannot be moved by dragging or dropping.
 
 ![](/images/image052.jpg)
+
+`Tracker switcher` - enable/disable [tracking](/docs/manual/advanced/ai-tools#trackers) for the object.
+
+![](/images/tracker_switcher.jpg)
 
 By clicking on the `Details` button you can collapse or expand the field with all the attributes of the object.
 
