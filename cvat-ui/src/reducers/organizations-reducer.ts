@@ -26,6 +26,9 @@ export default function (state: OrganizationState = defaultState, action: Organi
                 ...state,
                 fetching: false,
                 list: action.payload.list,
+                current:
+                    action.payload.list.find((_org) => _org.slug === localStorage.getItem('currentOrganization')) ||
+                    null,
             };
         case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED:
             return {

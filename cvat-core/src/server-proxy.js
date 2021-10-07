@@ -10,7 +10,7 @@
     const DownloadWorker = require('./download.worker');
 
     function enableOrganization() {
-        return config.organizationID !== null ? { organization: config.organizationID } : {};
+        return config.organizationID !== null ? { org: config.organizationID } : {};
     }
 
     function waitFor(frequencyHz, predicate) {
@@ -117,6 +117,10 @@
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
             Axios.interceptors.request.use((reqConfig) => {
+                if ('params' in reqConfig && 'org' && reqConfig.params) {
+                    return reqConfig;
+                }
+
                 reqConfig.params = { ...enableOrganization(), ...(reqConfig.params || {}) };
                 return reqConfig;
             });
@@ -359,7 +363,6 @@
                     response = await Axios.get(`${backendAPI}/projects`, {
                         proxy,
                         params: {
-                            ...enableOrganization(),
                             names_only: true,
                             page: 1,
                             page_size: limit,
@@ -382,7 +385,6 @@
                     response = await Axios.get(`${backendAPI}/projects`, {
                         proxy,
                         params: {
-                            ...enableOrganization(),
                             ...filter,
                             page_size: 12,
                         },
@@ -401,7 +403,6 @@
                 try {
                     await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -417,7 +418,6 @@
                 try {
                     await Axios.delete(`${backendAPI}/projects/${id}`, {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -430,7 +430,6 @@
                 try {
                     const response = await Axios.post(`${backendAPI}/projects`, JSON.stringify(projectSpec), {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -448,7 +447,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/tasks`, {
                         params: {
-                            ...enableOrganization(),
                             ...filter,
                             page_size: 10,
                         },
@@ -468,7 +466,6 @@
                 try {
                     await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -484,7 +481,6 @@
                 try {
                     await Axios.delete(`${backendAPI}/tasks/${id}`, {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -701,7 +697,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -717,7 +712,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews`, {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -733,7 +727,6 @@
                 try {
                     response = await Axios.post(`${backendAPI}/reviews`, JSON.stringify(data), {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -752,7 +745,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -768,7 +760,6 @@
                 try {
                     response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -787,7 +778,6 @@
                 try {
                     response = await Axios.patch(`${backendAPI}/issues/${issueID}`, JSON.stringify(data), {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -805,7 +795,6 @@
                 try {
                     await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -823,7 +812,6 @@
                     response = await Axios.get(`${backendAPI}/users`, {
                         proxy: config.proxy,
                         params: {
-                            ...enableOrganization(),
                             ...filter,
                         },
                     });
@@ -856,7 +844,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/tasks/${tid}/data`, {
                         params: {
-                            ...enableOrganization(),
                             type: 'preview',
                         },
                         proxy: config.proxy,
@@ -877,7 +864,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/tasks/${tid}/data`, {
                         params: {
-                            ...enableOrganization(),
                             quality: 'original',
                             type: 'context_image',
                             number: frame,
@@ -899,7 +885,6 @@
                 try {
                     response = await workerAxios.get(`${backendAPI}/tasks/${tid}/data`, {
                         params: {
-                            ...enableOrganization(),
                             quality: 'compressed',
                             type: 'chunk',
                             number: chunk,
@@ -926,7 +911,6 @@
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/tasks/${tid}/data/meta`, {
-                        params: enableOrganization(),
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -944,7 +928,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/${session}s/${id}/annotations`, {
                         proxy: config.proxy,
-                        params: enableOrganization(),
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -957,7 +940,7 @@
             async function updateAnnotations(session, id, data, action) {
                 const { backendAPI } = config;
                 const url = `${backendAPI}/${session}s/${id}/annotations`;
-                const params = enableOrganization();
+                const params = {};
                 let requestFunc = null;
 
                 if (action.toUpperCase() === 'PUT') {
@@ -1162,7 +1145,6 @@
                         try {
                             const response = await Axios.get(`${backendAPI}/predict/status`, {
                                 params: {
-                                    ...enableOrganization(),
                                     project: projectId,
                                 },
                             });
@@ -1200,7 +1182,6 @@
                         try {
                             const response = await Axios.get(`${backendAPI}/predict/frame`, {
                                 params: {
-                                    ...enableOrganization(),
                                     task: taskId,
                                     frame,
                                 },
@@ -1389,6 +1370,18 @@
                     throw generateError(errorData);
                 }
 
+                // TODO: Remove after server fix
+                await Promise.all(
+                    response.data.results.map(
+                        (result) => new Promise((resolve) => {
+                            getUsers({ id: result.owner }).then((users) => {
+                                [result.owner] = users;
+                                resolve();
+                            });
+                        }),
+                    ),
+                );
+
                 return response.data;
             }
 
@@ -1401,6 +1394,29 @@
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function getOrganizationMembers(orgSlug, page, pageSize) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/memberships`, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        params: {
+                            org: orgSlug,
+                            page,
+                            pageSize,
                         },
                     });
                 } catch (errorData) {
@@ -1557,6 +1573,7 @@
                         value: Object.freeze({
                             get: getOrganizations,
                             create: createOrganization,
+                            members: getOrganizationMembers,
                         }),
                         writable: false,
                     },

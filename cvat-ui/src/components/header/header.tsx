@@ -21,6 +21,7 @@ import Icon, {
     PlusOutlined,
     UserOutlined,
     ExpandAltOutlined,
+    CloseOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -294,16 +295,41 @@ function HeaderContainer(props: Props): JSX.Element {
                 <Text strong>Create</Text>
             </Menu.Item>
             {currentOrganization ? (
-                <Menu.Item key={OrganizationMenuKeys.OPEN}>
+                <Menu.Item
+                    key={OrganizationMenuKeys.OPEN}
+                    onClick={(): void => {
+                        history.push('/organization');
+                    }}
+                >
                     <ExpandAltOutlined />
                     Open
+                </Menu.Item>
+            ) : null}
+            {currentOrganization ? (
+                <Menu.Item
+                    key='$disable'
+                    onClick={() => {
+                        localStorage.removeItem('currentOrganization');
+                        window.location.reload();
+                    }}
+                >
+                    <CloseOutlined />
+                    <Text strong>Disable</Text>
                 </Menu.Item>
             ) : null}
             {organizationsList.length ? (
                 <Menu.ItemGroup title='Your organizations' key={OrganizationMenuKeys.LIST}>
                     {organizationsList.map(
                         (organization: any): JSX.Element => (
-                            <Menu.Item key={organization.slug}>
+                            <Menu.Item
+                                key={organization.slug}
+                                onClick={() => {
+                                    if (!currentOrganization || currentOrganization.slug !== organization.slug) {
+                                        localStorage.setItem('currentOrganization', organization.slug);
+                                        window.location.pathname = '/';
+                                    }
+                                }}
+                            >
                                 <CVATTooltip overlay={organization.name}>
                                     <div>{organization.slug}</div>
                                 </CVATTooltip>

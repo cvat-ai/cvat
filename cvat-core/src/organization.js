@@ -156,6 +156,30 @@ class Organization {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save);
         return result;
     }
+
+    /**
+     * Method returns paginatable list of organization members
+     * @method save
+     * @returns {module:API.cvat.classes.Organization}
+     * @param page page number
+     * @param page_size number of results per page
+     * @memberof module:API.cvat.classes.Organization
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async members(page = 1, page_size = 10) {
+        const result = await PluginRegistry.apiWrapper.call(
+            this,
+            Organization.prototype.members,
+            this.slug,
+            page,
+            page_size,
+        );
+        return result;
+    }
 }
 
 Organization.prototype.save.implementation = async function () {
@@ -174,7 +198,26 @@ Organization.prototype.save.implementation = async function () {
     return new Organization(result);
 };
 
+Organization.prototype.members.implementation = async function (orgSlug, page, pageSize) {
+    if (page === 1) {
+        pageSize -= 1;
+    }
+    const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
+    const members = [
+        {
+            id: -1,
+            user: this.owner,
+            organization: this.id,
+            is_active: true,
+            joined_date: this.createdDate,
+            role: 'maintainer', // add owner role to the list artificially
+        },
+        ...result.results,
+    ];
+    members.count = result.count;
+    return members;
+};
+
 module.exports = Organization;
 
-// TODO: add select organization method and fix issues in cvat-proxy
 // TODO: add patch method, actions and reducers

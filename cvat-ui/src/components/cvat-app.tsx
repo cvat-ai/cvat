@@ -38,6 +38,7 @@ import CloudStoragesPageComponent from 'components/cloud-storages-page/cloud-sto
 import CreateCloudStoragePageComponent from 'components/create-cloud-storage-page/create-cloud-storage-page';
 import UpdateCloudStoragePageComponent from 'components/update-cloud-storage-page/update-cloud-storage-page';
 
+import OrganizationPage from 'components/organization-page/organization-page';
 import CreateOrganizationComponent from 'components/create-organization-page/create-organization-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
@@ -363,6 +364,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             path='/organizations/create'
                                             component={CreateOrganizationComponent}
                                         />
+                                        <Route exact path='/organization' component={OrganizationPage} />
                                         {isModelPluginActive && (
                                             <Route exact path='/models' component={ModelsPageContainer} />
                                         )}
