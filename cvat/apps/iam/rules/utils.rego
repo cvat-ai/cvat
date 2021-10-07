@@ -11,12 +11,19 @@ PUBLIC := "public"
 PRIVATE := "private"
 INTERNAL := "internal"
 
-# HTTP methods
-POST := "POST"
-GET := "GET"
+# Scopes
+CREATE := "CREATE"
+LIST := "LIST"
+VIEW := "VIEW"
+UPDATE := "UPDATE"
+ACCEPT := "ACCEPT"
 DELETE := "DELETE"
-PATCH := "PATCH"
-PUT := "PUT"
+LIST_CONTENT := "LIST_CONTENT"
+CALL_ONLINE := "CALL_ONLINE"
+CALL_OFFLINE := "CALL_OFFLINE"
+SEND_EXCEPTION := "SEND_EXCEPTION"
+SEND_LOGS := "SEND_LOGS"
+VIEW_SELF := "VIEW_SELF"
 
 get_priority(privilege) = priority {
     priority := {
@@ -28,21 +35,21 @@ get_priority(privilege) = priority {
 }
 
 has_privilege(privilege) {
-    get_priority(input.context.privilege) <= get_priority(privilege)
+    get_priority(input.user.privilege) <= get_priority(privilege)
 }
 
 is_admin {
-    input.context.privilege == ADMIN
+    input.user.privilege == ADMIN
 }
 
 is_business {
-    input.context.privilege == BUSINESS
+    input.user.privilege == BUSINESS
 }
 
 is_user {
-    input.context.privilege == USER
+    input.user.privilege == USER
 }
 
 is_worker {
-    input.context.privilege == WORKER
+    input.user.privilege == WORKER
 }

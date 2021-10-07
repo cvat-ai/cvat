@@ -25,11 +25,14 @@ def get_context(request):
     groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
     groups.sort(key=lambda group: IAM_ROLES[group.name])
 
-    org_id = request.GET.get('org', None)
+    org_param = request.GET.get('org', None)
     organization = None
     membership = None
-    if org_id:
-        organization = Organization.objects.get(slug=org_id)
+    if org_param:
+        if org_param.isdigit():
+            organization = Organization.objects.get(id=org_param)
+        else:
+            organization = Organization.objects.get(slug=org_param)
         membership = Membership.objects.filter(organization=organization,
             user=request.user).first()
 

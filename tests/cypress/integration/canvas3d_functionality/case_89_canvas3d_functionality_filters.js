@@ -28,7 +28,7 @@ context('Canvas 3D functionality. Filters.', () => {
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(firstCuboidCreationParams);
         cy.create3DCuboid(secondCuboidCreationParams);
-        cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboids');
+        cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboids');
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -44,7 +44,7 @@ context('Canvas 3D functionality. Filters.', () => {
             });
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-2').should('not.exist');
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_set_filter_label');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_set_filter_label');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_add_cuboids.png`,
                 `${screenshotsPath}/canvas3d_perspective_set_filter_label.png`,
@@ -64,7 +64,7 @@ context('Canvas 3D functionality. Filters.', () => {
             });
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
             cy.get('#cvat-objects-sidebar-state-item-2').should('exist');
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_set_filter_objectid');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_set_filter_objectid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_set_filter_objectid.png`,
                 `${screenshotsPath}/canvas3d_perspective_set_filter_label.png`,

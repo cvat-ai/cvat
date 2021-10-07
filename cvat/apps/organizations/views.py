@@ -18,7 +18,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     ordering = ['-id']
-
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_permissions(self):
         return super().get_permissions() + [OrganizationPermission()]
@@ -46,12 +46,17 @@ class InvitationViewSet(viewsets.ModelViewSet):
     queryset = Invitation.objects.all()
     serializer_class = InvitationSerializer
     ordering = ['-created_date']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_permissions(self):
         return super().get_permissions() + [InvitationPermission()]
 
     def get_queryset(self):
-         return InvitationPermission().filter(self.request, super().get_queryset())
+        queryset = super().get_queryset()
+        organization = self.request.iam_context['organization']
+        if organization:
+            queryset = queryset.filter(membership__organization=organization)
+        return InvitationPermission().filter(self.request, queryset)
 
     def perform_create(self, serializer):
         extra_kwargs = {

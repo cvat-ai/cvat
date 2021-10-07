@@ -7,34 +7,20 @@ allow {
 }
 
 allow {
-    input.method == utils.GET
-    input.path == ["lambda", "functions"]
+    input.scope == utils.LIST
 }
 
 allow {
-    input.method == utils.GET
-    function_id = input.path[2]
-    input.path == ["lambda", "functions", function_id]
+    input.scope == utils.VIEW
 }
 
 allow {
-    input.method == utils.POST
-    function_id = input.path[2]
-    input.path == ["lambda", "functions", function_id]
+    input.scope == utils.CALL_ONLINE
     utils.has_privilege(utils.WORKER)
 }
 
 # Business can call a lambda function for own jobs, tasks, and projects
 allow {
-    allowed_methods = {utils.POST, utils.GET}
-    allowed_methods[input.method]
-    input.path == ["lambda", "requests"]
-    utils.has_privilege(utils.BUSINESS)
-}
-
-allow {
-    input.method == utils.GET
-    request_id = input.path[2]
-    input.path == ["lambda", "requests", request_id]
+    input.scope == utils.CALL_OFFLINE
     utils.has_privilege(utils.BUSINESS)
 }
