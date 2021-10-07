@@ -21,16 +21,16 @@ function MemberItem(props: Props): JSX.Element {
 
     return (
         <Row className='cvat-organization-member-item' justify='space-between'>
-            <Col span={4} className='cvat-organization-member-item-username'>
+            <Col span={5} className='cvat-organization-member-item-username'>
                 <Text strong>{username}</Text>
             </Col>
             <Col span={6} className='cvat-organization-member-item-name'>
                 <Text strong>{`${firstName}Boris Sekachev ${lastName}`}</Text>
             </Col>
-            <Col span={7} className='cvat-organization-member-item-dates'>
+            <Col span={8} className='cvat-organization-member-item-dates'>
                 <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text>
             </Col>
-            <Col span={5} className='cvat-organization-member-item-role'>
+            <Col span={3} className='cvat-organization-member-item-role'>
                 <Select value={role} disabled={user.id === ownerID}>
                     <Select.Option value='worker'>Worker</Select.Option>
                     <Select.Option value='supervisor'>Supervisor</Select.Option>

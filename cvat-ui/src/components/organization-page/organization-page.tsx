@@ -21,14 +21,16 @@ function OrganizationPage(): JSX.Element | null {
         return <Spin className='cvat-spinner' />;
     }
 
-    if (!organization) {
-        return <Empty description='You are not in an organization' />;
-    }
-
     return (
         <div className='cvat-organization-page'>
-            <TopBarComponent organizationInstance={organization} userInstance={user} />
-            <MembersList organizationInstance={organization} userInstance={user} />
+            {!organization ? (
+                <Empty description='You are not in an organization' />
+            ) : (
+                <>
+                    <TopBarComponent organizationInstance={organization} userInstance={user} />
+                    <MembersList organizationInstance={organization} userInstance={user} />
+                </>
+            )}
         </div>
     );
 }

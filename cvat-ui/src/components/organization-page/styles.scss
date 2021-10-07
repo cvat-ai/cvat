@@ -10,6 +10,13 @@
     width: $grid-unit-size * 120;
     margin: 0 auto;
 
+    .ant-empty {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
     > div:nth-child(1) {
         align-items: flex-end;
 
