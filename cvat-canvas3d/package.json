@@ -15,10 +15,7 @@
     "not IE 11",
     "> 2%"
   ],
-  "devDependencies": {
-    "sass": "^1.42.1",
-    "sass-loader": "^10.0.0"
-  },
+  "devDependencies": {},
   "dependencies": {
     "@types/three": "^0.125.3",
     "camera-controls": "^1.25.3",
