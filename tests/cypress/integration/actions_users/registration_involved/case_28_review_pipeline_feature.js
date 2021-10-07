@@ -341,8 +341,9 @@ context('Review pipeline feature', () => {
 
         it('Go to "Issues" tab at right sidebar and select an issue.', () => {
             cy.get('.cvat-objects-sidebar').within(() => {
-                cy.contains('Issues').click();
+                cy.contains('[role="tab"]', 'Issues').click().should('have.attr', 'aria-selected', 'true');
             });
+            cy.get('.cvat-objects-sidebar-issues-list-header').should('be.visible');
             cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
                 cy.get('.cvat-hidden-issue-label').then((issueLabels) => {
                     expect(sidebarIssueItems.length).to.be.equal(issueLabels.length);
@@ -365,10 +366,10 @@ context('Review pipeline feature', () => {
 
         it('Issue navigation. Navigation works and go only to frames with issues.', () => {
             cy.get('.cvat-issues-sidebar-previous-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-next-frame').trigger('mouseout').click();
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
             cy.checkFrameNum(2); // Frame changed to 2
             cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-previous-frame').trigger('mouseout').click();
+            cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
             cy.checkFrameNum(0); // Frame changed to 0
         });
 
