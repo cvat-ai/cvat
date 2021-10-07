@@ -48,7 +48,12 @@
         margin-bottom: 0;
     }
 
+    .cvat-cloud-storage-item-loading-preview,
     .cvat-cloud-storage-item-empty-preview {
+        .ant-spin {
+            position: inherit;
+        }
+
         font-size: $grid-unit-size * 15;
         text-align: center;
         height: $grid-unit-size * 24;

@@ -4,7 +4,9 @@
 
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { CloudStoragesState, CloudStorage, CloudStorageStatus } from './interfaces';
+import {
+    CloudStoragesState, CloudStorage, CloudStorageStatus, CloudStoragePreview,
+} from './interfaces';
 
 const defaultState: CloudStoragesState = {
     initialized: false,
@@ -12,6 +14,7 @@ const defaultState: CloudStoragesState = {
     count: 0,
     current: [],
     statuses: [],
+    previews: [],
     gettingQuery: {
         page: 1,
         id: null,
@@ -66,16 +69,17 @@ export default (
                 count: 0,
                 current: [],
                 statuses: [],
+                previews: [],
             };
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS: {
-            const { count, query } = action.payload;
+            const { count, query, array } = action.payload;
 
-            const combined = action.payload.array.map(
-                (cloudStorage: any, index: number): CloudStorage => ({
-                    instance: cloudStorage,
-                    preview: action.payload.previews[index],
-                }),
-            );
+            // const combined = action.payload.array.map(
+            //     (cloudStorage: any, index: number): CloudStorage => ({
+            //         instance: cloudStorage,
+            //         preview: action.payload.previews[index],
+            //     }),
+            // );
             return {
                 ...state,
                 initialized: true,
@@ -85,7 +89,7 @@ export default (
                     ...defaultState.gettingQuery,
                     ...query,
                 },
-                current: combined,
+                current: array,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED: {
@@ -325,11 +329,75 @@ export default (
                 statuses[index] = {
                     ...statuses[index],
                     error,
+                    initialized: true,
+                    fetching: false,
                 };
             }
             return {
                 ...state,
                 ...statuses,
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW: {
+            const { cloudStorageID } = action.payload;
+            const { previews } = state;
+            const index = previews.findIndex((item: CloudStoragePreview) => item.id === cloudStorageID);
+            const newItem: CloudStoragePreview = {
+                id: cloudStorageID,
+                preview: '',
+                fetching: true,
+                initialized: false,
+                error: null,
+            };
+            if (index !== -1) {
+                previews[index] = newItem;
+            } else {
+                previews.push(newItem);
+            }
+            return {
+                ...state,
+                ...previews,
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS: {
+            const { cloudStorageID, preview } = action.payload;
+            const { previews } = state;
+            const index = previews.findIndex((item) => item.id === cloudStorageID);
+            if (index !== -1) {
+                previews[index] = {
+                    ...previews[index],
+                    preview,
+                    initialized: true,
+                    fetching: false,
+                };
+            }
+            // TODO
+            // } else {
+            //     statuses.push({
+            //         id: cloudStorageID,
+            //         status,
+            //     });
+            // }
+            return {
+                ...state,
+                ...previews,
+            };
+        }
+        case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED: {
+            const { cloudStorageID, error } = action.payload;
+            const { previews } = state;
+            const index = previews.findIndex((item) => item.id === cloudStorageID);
+            if (index !== -1) {
+                previews[index] = {
+                    ...previews[index],
+                    error,
+                    initialized: true,
+                    fetching: false,
+                };
+            }
+            return {
+                ...state,
+                ...previews,
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {

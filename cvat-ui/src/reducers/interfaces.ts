@@ -142,6 +142,14 @@ export interface CloudStorageStatus {
     error: string | null;
 }
 
+export interface CloudStoragePreview {
+    fetching: boolean;
+    initialized: boolean;
+    id: number | null;
+    preview: string;
+    error: string | null;
+}
+
 export type CloudStorage = any;
 
 export interface CloudStoragesState {
@@ -150,6 +158,7 @@ export interface CloudStoragesState {
     count: number;
     current: CloudStorage[];
     statuses: CloudStorageStatus[];
+    previews: CloudStoragePreview[];
     gettingQuery: CloudStoragesQuery;
     activities: {
         creates: {
