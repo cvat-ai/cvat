@@ -16,7 +16,7 @@
     "> 2%"
   ],
   "devDependencies": {
-    "node-sass": "^6.0.1",
+    "sass": "^1.42.1",
     "sass-loader": "^10.0.0"
   },
   "dependencies": {
