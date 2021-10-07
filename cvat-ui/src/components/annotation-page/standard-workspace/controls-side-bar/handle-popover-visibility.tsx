@@ -4,7 +4,6 @@
 
 import React, { useState } from 'react';
 import Popover, { PopoverProps } from 'antd/lib/popover';
-import waitFor from 'utils/wait-for';
 
 export default function withVisibilityHandling(WrappedComponent: typeof Popover, popoverType: string) {
     return (props: PopoverProps): JSX.Element => {
@@ -12,32 +11,29 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
         const { overlayClassName, ...rest } = props;
         const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
         const popoverClassName = `cvat-${popoverType}-popover`;
-        const visiblePopoverClassName = `cvat-${popoverType}-popover-visible`;
         overlayClassNames.push(popoverClassName);
-        if (visible) {
-            overlayClassNames.push(visiblePopoverClassName);
-        }
 
+        const { overlayStyle } = props;
         return (
             <WrappedComponent
                 {...rest}
+                overlayStyle={{
+                    ...(typeof overlayStyle === 'object' ? overlayStyle : {}),
+                    animationDuration: '0s',
+                    animationDelay: '0s',
+                }}
                 trigger={visible ? 'click' : 'hover'}
                 overlayClassName={overlayClassNames.join(' ').trim()}
                 onVisibleChange={(_visible: boolean) => {
-                    const [element] = window.document.getElementsByClassName(popoverClassName);
-                    if (element) {
-                        if (_visible) {
+                    if (_visible) {
+                        const [element] = window.document.getElementsByClassName(popoverClassName);
+                        if (element) {
                             element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                            waitFor(60, () => {
-                                const style = window.getComputedStyle(element);
-                                return style.display !== 'none' && style.pointerEvents !== 'none';
-                            }).then(() => {
-                                setVisible(_visible);
-                            });
-                        } else {
-                            setVisible(_visible);
+                            (element as HTMLElement).style.pointerEvents = '';
+                            (element as HTMLElement).style.opacity = '';
                         }
                     }
+                    setVisible(_visible);
                 }}
             />
         );

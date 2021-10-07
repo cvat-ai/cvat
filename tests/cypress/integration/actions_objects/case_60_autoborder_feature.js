@@ -77,7 +77,7 @@ context('Autoborder feature.', () => {
             testCollectCxCircleCoord(rectangleSvgJsCircleIdSecond);
 
             cy.interactControlButton('draw-polygon');
-            cy.get('.cvat-draw-polygon-popover-visible').find('[type="button"]').contains('Shape').click();
+            cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
             cy.get('body').type('{Ctrl}'); // Autoborder activation
             testAutoborderPointsCount(8); // 8 points at the rectangles
             cy.get('.cvat-canvas-container').click(400, 350).click(450, 250).click(500, 350).click(500, 450);
@@ -91,7 +91,7 @@ context('Autoborder feature.', () => {
 
         it('Start drawing a polyline with autobordering between the two shapes.', () => {
             cy.interactControlButton('draw-polyline');
-            cy.get('.cvat-draw-polyline-popover-visible').find('[type="button"]').contains('Shape').click();
+            cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
             testAutoborderPointsCount(12); // 8 points at the rectangles + 4 at the polygon
             cy.get('.cvat-canvas-container') // Drawning
                 .click(600, 350)
