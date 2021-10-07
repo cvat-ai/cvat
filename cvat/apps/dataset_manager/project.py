@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Mapping
 from django.db import transaction
 
 from cvat.apps.engine import models
-from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.serializers import DataSerializer, TaskSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
 
@@ -65,7 +65,7 @@ class ProjectAnnotationAndData:
             for task_annotation in self.task_annotations.values():
                 task_annotation.delete()
 
-    def add_task(self, task: models.Task, files: List[str], project_data: ProjectData = None):
+    def add_task(self, task_fields: dict, files: List[str], project_data: ProjectData = None):
         def split_name(file):
             path, name = os.path.split(file)
             if os.path.exists(path):
@@ -75,29 +75,31 @@ class ProjectAnnotationAndData:
             return name
 
 
-        task.project = self.db_project
-        serializer = DataSerializer(data={
+        data_serializer = DataSerializer(data={
             "server_files": files,
             #TODO: followed fields whould be replaced with proper input values from request in future
             "use_cache": False,
             "use_zip_chunks": True,
             "image_quality": 70,
         })
-        serializer.is_valid(raise_exception=True)
-        db_data = serializer.save()
-        task.data = db_data
-        task.save()
-        data = {k:v for k, v in serializer.data.items()}
-        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-        data['use_cache'] = serializer.validated_data['use_cache']
-        data['copy_data'] = serializer.validated_data['copy_data']
+        data_serializer.is_valid(raise_exception=True)
+        db_data = data_serializer.save()
+        db_task = TaskSerializer.create(None, {
+            **task_fields,
+            'data_id': db_data.id,
+            'project_id': self.db_project.id
+        })
+        data = {k:v for k, v in data_serializer.data.items()}
+        data['use_zip_chunks'] = data_serializer.validated_data['use_zip_chunks']
+        data['use_cache'] = data_serializer.validated_data['use_cache']
+        data['copy_data'] = data_serializer.validated_data['copy_data']
         data['stop_frame'] = None
         data['server_files'] = list(map(split_name, data['server_files']))
 
-        create_task(task, data)
+        create_task(db_task, data)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).order_by('id')
         self.init_from_db()
-        project_data.new_tasks.add(task.id)
+        project_data.new_tasks.add(db_task.id)
         project_data.init()
 
     def add_labels(self, labels: List[models.Label]):

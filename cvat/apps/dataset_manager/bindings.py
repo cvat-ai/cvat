@@ -1307,12 +1307,12 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
             if not project_annotation.db_project.label_set.filter(name=label.name).exists():
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset in dataset.subsets().values():
-        db_task = Task(
-            project=project_annotation.db_project,
-            name=subset.name,
-            owner=project_annotation.db_project.owner,
-            subset=subset.name,
-        )
+        task_fields = {
+            'project': project_annotation.db_project,
+            'name': subset.name,
+            'owner': project_annotation.db_project.owner,
+            'subset': subset.name,
+        }
 
         subset_dataset = subset.as_dataset()
 
@@ -1322,7 +1322,7 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
             if dataset_item.image and dataset_item.image.has_data:
                 dataset_files.append(dataset_item.image.path)
 
-        project_annotation.add_task(db_task, dataset_files, project_data)
+        project_annotation.add_task(task_fields, dataset_files, project_data)
         # Need to add data to a task here
 
 
