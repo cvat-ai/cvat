@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.6.3",
-    "@types/lodash": "^4.14.172",
+    "@types/lodash": "^4.14.173",
     "@types/platform": "^1.3.4",
     "@types/react": "^16.14.15",
     "@types/react-color": "^3.0.5",
