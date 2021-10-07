@@ -12,6 +12,9 @@ import data.organizations
 #     "organization": {
 #         "id": <num>,
 #         "is_owner": <true|false>,
+#             "owner": {
+#                 "id": <num>
+#             },
 #         "role": <"maintainer"|"supervisor"|"worker"|null>
 #     } or null,
 #     "resources": {
@@ -89,5 +92,6 @@ filter = [] { # Django Q object to filter list of entries
     utils.has_privilege(utils.USER)
     organizations.is_maintainer
 } else = qobject {
-    qobject := [ {"owner": input.user.id}, {"membership__user": input.user.id}, "|" ]
+    user := input.auth.user
+    qobject := [ {"owner": user.id}, {"membership__user": user.id}, "|" ]
 }

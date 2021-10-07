@@ -72,9 +72,6 @@ from cvat.apps.iam.permissions import (CloudStoragePermission, CommentPermission
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
 
-    def get_permissions(self):
-        return super().get_permissions() + [ServerPermission()]
-
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
     def get_serializer(self, *args, **kwargs):
@@ -247,15 +244,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
-    def get_permissions(self):
-        permissions = super().get_permissions()
-        if self.request.path.endswith('tasks'):
-            permissions.append(TaskPermission())
-        else:
-            permissions.append(ProjectPermission())
-
-        return permissions
-
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
             return TaskSerializer
@@ -412,15 +400,6 @@ class TaskViewSet(viewsets.ModelViewSet):
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
-
-    def get_permissions(self):
-        permissions = super().get_permissions()
-        if self.request.path.endswith('jobs'):
-            permissions.append(JobPermission())
-        else:
-            permissions.append(TaskPermission())
-
-        return permissions
 
     def create(self, request):
         action = self.request.query_params.get('action', None)
@@ -869,15 +848,6 @@ class JobViewSet(viewsets.GenericViewSet,
     queryset = Job.objects.all().order_by('id')
     serializer_class = JobSerializer
 
-    def get_permissions(self):
-        permissions = super().get_permissions()
-        if self.request.path.endswith('issues'):
-            permissions.append(IssuePermission())
-        else:
-            permissions.append(JobPermission())
-
-        return permissions
-
     @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific job')
     @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific job')
     @swagger_auto_schema(method='patch', manual_parameters=[
@@ -1010,14 +980,6 @@ class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.Up
     queryset = Issue.objects.all().order_by('id')
     http_method_names = ['get', 'patch', 'delete', 'options']
 
-    def get_permissions(self):
-        permissions = super().get_permissions()
-        if self.request.path.endswith('comments'):
-            permissions.append(CommentPermission())
-        else:
-            permissions.append(IssuePermission())
-        return permissions
-
     def get_serializer_class(self):
         return IssueSerializer
 
@@ -1054,9 +1016,6 @@ class CommentViewSet(viewsets.GenericViewSet,
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
 
-    def get_permissions(self):
-        return super().get_permissions() + [CommentPermission()]
-
     def create(self, request, *args, **kwargs):
         request.data.update({
             'author_id': request.user.id,
@@ -1089,9 +1048,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     search_fields = ('username', 'first_name', 'last_name')
     filterset_class = UserFilter
-
-    def get_permissions(self):
-        return super().get_permissions() + [UserPermission()]
 
     def get_serializer_class(self):
         user = self.request.user
@@ -1177,9 +1133,6 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
     search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
     filterset_class = CloudStorageFilter
-
-    def get_permissions(self):
-        return super().get_permissions() + [CloudStoragePermission()]
 
     def get_serializer_class(self):
         if self.request.method in ("POST", "PATCH"):

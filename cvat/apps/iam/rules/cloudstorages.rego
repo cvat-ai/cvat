@@ -16,11 +16,11 @@ allow {
 allow {
     allowed_actions = {utils.DELETE, utils.UPDATE, utils.VIEW}
     allowed_actions[input.scope]
-    input.storage.owner.id == input.user.id
+    input.storage.owner.id == input.auth.user.id
 }
 
 allow {
     input.scope == utils.LIST_CONTENT
-    input.storage.owner.id == input.user.id
+    input.storage.owner.id == input.auth.user.id
 }
 

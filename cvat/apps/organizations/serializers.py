@@ -17,7 +17,7 @@ class MembershipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
-        read_only_fields = ['is_active', 'joined_date']
+        read_only_fields = ['is_active', 'joined_date', 'user', 'organization']
 
 class InvitationSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=[
@@ -36,7 +36,7 @@ class InvitationSerializer(serializers.ModelSerializer):
         model = Invitation
         fields = ['key', 'accepted', 'created_date', 'owner', 'role',
             'user', 'organization']
-        read_only_fields = ['key', 'accepted', 'created_date', 'owner']
+        read_only_fields = ['key', 'created_date', 'owner']
 
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')

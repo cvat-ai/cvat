@@ -542,9 +542,6 @@ class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
 
-    def get_permissions(self):
-        return super().get_permissions() + [LambdaPermission()]
-
     @return_response()
     def list(self, request):
         gateway = LambdaGateway()
@@ -552,11 +549,13 @@ class FunctionViewSet(viewsets.ViewSet):
 
     @return_response()
     def retrieve(self, request, func_id):
+        self.check_object_permissions(request, func_id)
         gateway = LambdaGateway()
         return gateway.get(func_id).to_dict()
 
     @return_response()
     def call(self, request, func_id):
+        self.check_object_permissions(request, func_id)
         try:
             task_id = request.data['task']
             db_task = TaskModel.objects.get(pk=task_id)
@@ -575,9 +574,6 @@ class FunctionViewSet(viewsets.ViewSet):
         return lambda_func.invoke(db_task, request.data)
 
 class RequestViewSet(viewsets.ViewSet):
-    def get_permissions(self):
-        return super().get_permissions() + [LambdaPermission()]
-
     @return_response()
     def list(self, request):
         queue = LambdaQueue()
@@ -614,6 +610,7 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def retrieve(self, request, pk):
+        self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
 
@@ -621,6 +618,7 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response(status.HTTP_204_NO_CONTENT)
     def delete(self, request, pk):
+        self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
         job.delete()

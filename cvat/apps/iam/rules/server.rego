@@ -1,6 +1,24 @@
 package server
 import data.utils
 
+# input: {
+#     "scope": <"SEND_LOGS"|"SEND_EXCEPTION"|"VIEW"|"LIST_CONTENT"> or null,
+#     "auth": {
+#         "user": {
+#             "id": <num>,
+#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#         },
+#         "organization": {
+#             "id": <num>,
+#             "is_owner": <true|false>,
+#             "owner": {
+#                 "id": <num>
+#             },
+#             "role": <"maintainer"|"supervisor"|"worker"> or null
+#         } or null,
+#     }
+# }
+
 default allow = false
 allow {
     input.scope == utils.VIEW
