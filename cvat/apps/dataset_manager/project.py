@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from typing import Callable, List
+from typing import Any, Callable, List, Mapping
 
 from django.db import transaction
 
@@ -45,19 +45,27 @@ class ProjectAnnotationAndData:
         for annotation_ir in self.annotation_irs.values():
             annotation_ir.reset()
 
-    def put(self, data):
-        raise NotImplementedError()
+    def put(self, tasks_data: Mapping[int,Any]):
+        for task_id, data in tasks_data.items():
+            self.task_annotations[task_id].put(data)
 
-    def create(self, data):
-        raise NotImplementedError()
+    def create(self, tasks_data: Mapping[int,Any]):
+        for task_id, data in tasks_data.items():
+            self.task_annotations[task_id].create(data)
 
-    def update(self, data):
-        raise NotImplementedError()
+    def update(self, tasks_data: Mapping[int,Any]):
+        for task_id, data in tasks_data.items():
+            self.task_annotations[task_id].update(data)
 
-    def delete(self, data=None):
-        raise NotImplementedError()
+    def delete(self, tasks_data: Mapping[int,Any]=None):
+        if tasks_data is not None:
+            for task_id, data in tasks_data.items():
+                self.task_annotations[task_id].put(data)
+        else:
+            for task_annotation in self.task_annotations.values():
+                task_annotation.delete()
 
-    def add_task(self, task: models.Task, files: List[str]):
+    def add_task(self, task: models.Task, files: List[str], project_data: ProjectData = None):
         def split_name(file):
             path, name = os.path.split(file)
             if os.path.exists(path):
@@ -70,7 +78,7 @@ class ProjectAnnotationAndData:
         task.project = self.db_project
         serializer = DataSerializer(data={
             "server_files": files,
-            #TODO: followed fields whould be replaced with proper input values from request
+            #TODO: followed fields whould be replaced with proper input values from request in future
             "use_cache": False,
             "use_zip_chunks": True,
             "image_quality": 70,
@@ -87,7 +95,10 @@ class ProjectAnnotationAndData:
         data['server_files'] = list(map(split_name, data['server_files']))
 
         create_task(task, data)
-        #TODO: update db_tasks
+        self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).order_by('id')
+        self.init_from_db()
+        project_data.new_tasks.add(task.id)
+        project_data.init()
 
     def add_labels(self, labels: List[models.Label]):
         for label in labels:
@@ -120,9 +131,12 @@ class ProjectAnnotationAndData:
         project_data = ProjectData(
             annotation_irs=self.annotation_irs,
             db_project=self.db_project,
+            task_annotations=self.task_annotations,
         )
 
         importer(dataset_file, project_data, self.load_dataset_data)
+
+        self.create({tid: ir for tid, ir in self.annotation_irs.items() if tid in project_data.new_tasks})
 
     @property
     def data(self) -> dict:

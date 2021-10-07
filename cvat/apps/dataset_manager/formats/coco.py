@@ -32,7 +32,7 @@ def _import(src_file, instance_data, load_data_callback=None):
 
             dataset = Dataset.import_from(tmp_dir, 'coco', env=dm_env)
             if load_data_callback is not None:
-                load_data_callback(dataset)
+                load_data_callback(dataset, instance_data)
             import_dm_annotations(dataset, instance_data)
     else:
         dataset = Dataset.import_from(src_file.name,

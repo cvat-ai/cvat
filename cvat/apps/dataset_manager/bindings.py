@@ -6,7 +6,7 @@
 import sys
 import os.path as osp
 from collections import namedtuple
-from typing import Any, Callable, DefaultDict, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union
+from typing import Any, Callable, DefaultDict, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union, Set
 from pathlib import Path
 
 from django.utils import timezone
@@ -517,29 +517,21 @@ class ProjectData(InstanceLabelData):
     Tag.__new__.__defaults__ = (0, )
     Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
 
-    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', create_callback: Callable = None):
+    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', create_callback: Callable = None, task_annotations: Mapping[int, Any] = None):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
-        self._db_tasks: OrderedDict[int, Task] = OrderedDict(
-            ((db_task.id, db_task) for db_task in db_project.tasks.order_by("subset","id").all())
-        )
-        self._subsets = set()
+        self._task_annotaions = task_annotations
         self._host = host
         self._create_callback = create_callback
         self._MAX_ANNO_SIZE = 30000
         self._frame_info: Dict[Tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
         self._frame_mapping: Dict[Tuple[str, str], Tuple[str, str]] = dict()
-        self._frame_steps: Dict[int, int] = {task.id: task.data.get_frame_step() for task in self._db_tasks.values()}
-
-        for task in self._db_tasks.values():
-            self._subsets.add(task.subset)
-        self._subsets: List[str] = list(self._subsets)
+        self._frame_steps: Dict[int, int] = {}
+        self.new_tasks: Set[int] = set()
 
         InstanceLabelData.__init__(self, db_project)
+        self.init()
 
-        self._init_task_frame_offsets()
-        self._init_frame_info()
-        self._init_meta()
 
     def abs_frame_id(self, task_id: int, relative_id: int) -> int:
         task = self._db_tasks[task_id]
@@ -554,6 +546,24 @@ class ProjectData(InstanceLabelData):
         if m or d not in range(0, task.data.size):
             raise ValueError(f"Unknown frame {absolute_id}")
         return d
+
+    def init(self):
+        self._init_tasks()
+        self._init_task_frame_offsets()
+        self._init_frame_info()
+        self._init_meta()
+
+    def _init_tasks(self):
+        self._db_tasks: OrderedDict[int, Task] = OrderedDict(
+            ((db_task.id, db_task) for db_task in self._db_project.tasks.order_by("subset","id").all())
+        )
+
+        subsets = set()
+        for task in self._db_tasks.values():
+            subsets.add(task.subset)
+        self._subsets: List[str] = list(subsets)
+
+        self._frame_steps: Dict[int, int] = {task.id: task.data.get_frame_step() for task in self._db_tasks.values()}
 
     def _init_task_frame_offsets(self):
         self._task_frame_offsets: Dict[int, int] = dict()
@@ -786,7 +796,12 @@ class ProjectData(InstanceLabelData):
     @property
     def task_data(self):
         for task_id, task in self._db_tasks.items():
-            yield TaskData(self._annotation_irs[task_id], task, self._host)
+            yield TaskData(
+                annotation_ir=self._annotation_irs[task_id],
+                db_task=task,
+                host=self._host,
+                create_callback=self._task_annotaions[task_id].create,
+            )
 
     @staticmethod
     def _get_filename(path):
@@ -1192,7 +1207,7 @@ def find_dataset_root(dm_dataset, task_data):
         prefix = prefix[:-1]
     return prefix
 
-def import_dm_annotations(dm_dataset, instance_data):
+def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, ProjectData]):
     shapes = {
         datumaro.AnnotationType.bbox: ShapeType.RECTANGLE,
         datumaro.AnnotationType.polygon: ShapeType.POLYGON,
@@ -1205,6 +1220,11 @@ def import_dm_annotations(dm_dataset, instance_data):
         return
 
     if isinstance(instance_data, ProjectData):
+        for task_data in instance_data.task_data:
+            if task_data._db_task.id not in instance_data.new_tasks:
+                continue
+            subset_dataset = dm_dataset.subsets()[task_data.db_task.subset].as_dataset()
+            import_dm_annotations(subset_dataset, task_data)
         return
 
     label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
@@ -1279,7 +1299,7 @@ def import_labels_to_project(project_annotation, dataset: Dataset):
         label_names.append(label.name)
     project_annotation.add_labels(labels)
 
-def load_dataset_data(project_annotation, dataset: Dataset):
+def load_dataset_data(project_annotation, dataset: Dataset, project_data):
     if not project_annotation.db_project.label_set.count():
         import_labels_to_project(project_annotation, dataset)
     else:
@@ -1302,7 +1322,7 @@ def load_dataset_data(project_annotation, dataset: Dataset):
             if dataset_item.image and dataset_item.image.has_data:
                 dataset_files.append(dataset_item.image.path)
 
-        project_annotation.add_task(db_task, dataset_files)
+        project_annotation.add_task(db_task, dataset_files, project_data)
         # Need to add data to a task here
 
 
