@@ -134,6 +134,14 @@ export interface CloudStoragesQuery {
     [key: string]: string | number | null | undefined;
 }
 
+export interface CloudStorageStatus {
+    fetching: boolean;
+    initialized: boolean;
+    id: number | null;
+    status: string | null;
+    error: string | null;
+}
+
 export type CloudStorage = any;
 
 export interface CloudStoragesState {
@@ -141,7 +149,7 @@ export interface CloudStoragesState {
     fetching: boolean;
     count: number;
     current: CloudStorage[];
-    // currentStatuses: any[];
+    statuses: CloudStorageStatus[];
     gettingQuery: CloudStoragesQuery;
     activities: {
         creates: {
@@ -163,12 +171,6 @@ export interface CloudStoragesState {
             fetching: boolean;
             error: string;
         };
-        // getsStatus: {
-        //     cloudStorageID: number | null;
-        //     status: string | null;
-        //     fetching: boolean;
-        //     error: string;
-        // };
     };
 }
 

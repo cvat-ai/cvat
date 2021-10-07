@@ -2,27 +2,53 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { getCloudStorageStatusAsync } from 'actions/cloud-storage-actions';
+import { CombinedState, CloudStorageStatus, CloudStorage } from 'reducers/interfaces';
 import { StorageStatuses } from '../../utils/enums';
 
 interface Props {
-    status: string;
+    cloudStorage: CloudStorage;
 }
 
 export default function Status(props: Props): JSX.Element {
-    const { status } = props;
-    // TODO: make dynamic loading of statuses separately in the future
+    const { cloudStorage } = props;
+    const dispatch = useDispatch();
+    const [status] = useSelector((state: CombinedState) => state.cloudStorages.statuses.filter(
+        (item: CloudStorageStatus) => item.id === cloudStorage.id,
+    ), shallowEqual);
+
+    useEffect(() => {
+        if (status === undefined) {
+            dispatch(getCloudStorageStatusAsync(cloudStorage));
+        }
+    }, [status]);
+
+    if (!status || (status && status.fetching)) {
+        return (
+            <Paragraph>
+                <Text type='secondary'>Status: </Text>
+                <Text type='warning'>Loading ...</Text>
+            </Paragraph>
+        );
+    }
+
+    if (status.initialized && status.error) {
+        return (
+            <Paragraph>
+                <Text type='secondary'>Status: </Text>
+                <Text type='danger'>Error</Text>
+            </Paragraph>
+        );
+    }
 
     return (
         <Paragraph>
             <Text type='secondary'>Status: </Text>
-            {status ? (
-                <Text type={status === StorageStatuses.AVAILABLE ? 'success' : 'danger'}>{status}</Text>
-            ) : (
-                <Text type='warning'>Loading ...</Text>
-            )}
+            <Text type={status.status === StorageStatuses.AVAILABLE ? 'success' : 'danger'}>{status.status}</Text>
         </Paragraph>
     );
 }

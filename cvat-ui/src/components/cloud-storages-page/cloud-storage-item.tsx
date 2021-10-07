@@ -29,7 +29,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
 
-    // cloudStorageInstance: {storage, preview, status}
+    // cloudStorageInstance: {storage, preview}
     const { cloudStorageInstance } = props;
     const {
         id,
@@ -40,7 +40,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
         updatedDate,
         description,
     } = cloudStorageInstance.storage;
-    const { preview, status } = cloudStorageInstance;
+    const { preview } = cloudStorageInstance;
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
     const deleted = cloudStorageInstance.storage.id in deletes ? deletes[cloudStorageInstance.storage.id] : false;
 
@@ -121,7 +121,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                             <Text type='secondary'>Last updated </Text>
                             <Text type='secondary'>{moment(updatedDate).fromNow()}</Text>
                         </Paragraph>
-                        <Status status={status} />
+                        <Status cloudStorage={cloudStorageInstance.storage} />
                         <Dropdown
                             overlay={(
                                 <Menu className='cvat-project-actions-menu'>

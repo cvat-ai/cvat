@@ -25,8 +25,6 @@ export default function StoragesPageComponent(): JSX.Element {
         .map((cloudStrage: CloudStorage) => cloudStrage.instance);
     const previews = useSelector((state: CombinedState) => state.cloudStorages.current)
         .map((cloudStrage: CloudStorage) => cloudStrage.preview as string);
-    const statuses = useSelector((state: CombinedState) => state.cloudStorages.current)
-        .map((cloudStrage: CloudStorage) => cloudStrage.status as string);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
     const onSearch = useCallback(
         (_query: CloudStoragesQuery) => {
@@ -99,7 +97,6 @@ export default function StoragesPageComponent(): JSX.Element {
                         page={query.page}
                         storages={current}
                         previews={previews}
-                        statuses={statuses}
                         onChangePage={onChangePage}
                     />
                 ) : (
