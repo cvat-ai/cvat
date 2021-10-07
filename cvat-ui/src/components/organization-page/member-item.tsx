@@ -45,3 +45,9 @@ function MemberItem(props: Props): JSX.Element {
 }
 
 export default React.memo(MemberItem);
+
+// TODO: get information about who invited
+// TODO: add dialog to leave organization
+// TODO: add dialog to remove organization
+// TODO: add dialog to kick user
+// Write core code to invite/kick and remove organization

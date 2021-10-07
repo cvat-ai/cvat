@@ -12,6 +12,9 @@ export enum OrganizationActionsTypes {
     GET_ORGANIZATIONS = 'GET_ORGANIZATIONS',
     GET_ORGANIZATIONS_SUCCESS = 'GET_ORGANIZATIONS_SUCCESS',
     GET_ORGANIZATIONS_FAILED = 'GET_ORGANIZATIONS_FAILED',
+    ACTIVATE_ORGANIZATION = 'ACTIVATE_ORGANIZATION',
+    ACTIVATE_ORGANIZATION_SUCCESS = 'ACTIVATE_ORGANIZATION_SUCCESS',
+    ACTIVATE_ORGANIZATION_FAILED = 'ACTIVATE_ORGANIZATION_FAILED',
     CREATE_ORGANIZATION = 'CREATE_ORGANIZATION',
     CREATE_ORGANIZATION_SUCCESS = 'CREATE_ORGANIZATION_SUCCESS',
     CREATE_ORGANIZATION_FAILED = 'CREATE_ORGANIZATION_FAILED',
@@ -27,7 +30,30 @@ const organizationActions = {
         createAction(OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS, { organization }),
     createOrganizationFailed: (slug: string, error: any) =>
         createAction(OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED, { slug, error }),
+    activateOrganization: () => createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION),
+    activateOrganizationSuccess: (organization: any) =>
+        createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization }),
+    activateOrganizationFailed: (error: any, slug: string | null) =>
+        createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED, { slug, error }),
 };
+
+export function activateOrganizationAsync(organizations: any[]): ThunkAction {
+    return async function (dispatch) {
+        dispatch(organizationActions.activateOrganization());
+        try {
+            const curSlug = localStorage.getItem('currentOrganization');
+            if (curSlug) {
+                const currentOrganization = organizations.find((organization) => organization.slug === curSlug);
+                await core.organizations.activate(currentOrganization);
+                dispatch(organizationActions.activateOrganizationSuccess(currentOrganization));
+            }
+        } catch (error) {
+            dispatch(
+                organizationActions.activateOrganizationFailed(error, localStorage.getItem('currentOrganization')),
+            );
+        }
+    };
+}
 
 export function getOrganizationsAsync(): ThunkAction {
     return async function (dispatch) {
@@ -36,6 +62,7 @@ export function getOrganizationsAsync(): ThunkAction {
         try {
             const organizations = await core.organizations.get();
             dispatch(organizationActions.getOrganizationsSuccess(organizations));
+            dispatch(activateOrganizationAsync(organizations));
         } catch (error) {
             dispatch(organizationActions.getOrganizationsFailed(error));
         }

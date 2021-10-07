@@ -26,15 +26,31 @@ export default function (state: OrganizationState = defaultState, action: Organi
                 ...state,
                 fetching: false,
                 list: action.payload.list,
-                current:
-                    action.payload.list.find((_org) => _org.slug === localStorage.getItem('currentOrganization')) ||
-                    null,
             };
         case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED:
             return {
                 ...state,
                 fetching: false,
             };
+        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION: {
+            return {
+                ...state,
+                fetching: true,
+            };
+        }
+        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS: {
+            return {
+                ...state,
+                fetching: false,
+                current: action.payload.organization,
+            };
+        }
+        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                fetching: false,
+            };
+        }
         case OrganizationActionsTypes.CREATE_ORGANIZATION: {
             return {
                 ...state,

@@ -125,6 +125,7 @@ const defaultState: NotificationsState = {
             fetching: null,
             creating: null,
             updating: null,
+            activation: null,
         },
     },
     messages: {
@@ -1340,6 +1341,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: `Could not create organization ${action.payload.slug}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-create-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        creating: {
+                            message: `Could not activate organization ${action.payload.slug || ''}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-activate-organization-failed',
                         },
                     },
                 },

@@ -1354,7 +1354,9 @@
                 const { backendAPI } = config;
 
                 try {
-                    await Axios.delete(`${backendAPI}/cloudstorages/${id}`);
+                    await Axios.delete(`${backendAPI}/cloudstorages/${id}`, {
+                        proxy: config.proxy,
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -1365,7 +1367,9 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/organizations`);
+                    response = await Axios.get(`${backendAPI}/organizations`, {
+                        proxy: config.proxy,
+                    });
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -1410,9 +1414,6 @@
                 try {
                     response = await Axios.get(`${backendAPI}/memberships`, {
                         proxy: config.proxy,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
                         params: {
                             org: orgSlug,
                             page,

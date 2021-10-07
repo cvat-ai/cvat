@@ -787,7 +787,7 @@ function build() {
         },
         /**
          * This namespace could be used to get organizations list from the server
-         * @namespace cloudStorages
+         * @namespace organizations
          * @memberof module:API.cvat
          */
         organizations: {
@@ -802,6 +802,30 @@ function build() {
              */
             async get() {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
+                return result;
+            },
+            /**
+             * Method activates organization context
+             * @method activate
+             * @async
+             * @param {module:API.cvat.classes.Organization}
+             * @memberof module:API.cvat.organizations
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
+            async activate(organization) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.activate, organization);
+                return result;
+            },
+            /**
+             * Method deactivates organization context
+             * @method deactivate
+             * @async
+             * @memberof module:API.cvat.organizations
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
+            async deactivate() {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
                 return result;
             },
         },

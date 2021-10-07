@@ -326,6 +326,7 @@ function HeaderContainer(props: Props): JSX.Element {
                                 onClick={() => {
                                     if (!currentOrganization || currentOrganization.slug !== organization.slug) {
                                         localStorage.setItem('currentOrganization', organization.slug);
+                                        // TODO: better handling for current location
                                         window.location.pathname = '/';
                                     }
                                 }}

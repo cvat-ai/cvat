@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+const config = require('./config');
+
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
@@ -14,6 +16,7 @@
         checkFilter,
         checkExclusiveFields,
         camelToSnake,
+        checkObjectType,
     } = require('./common');
 
     const {
@@ -317,6 +320,15 @@
                 (organizationData) => new Organization(organizationData),
             );
             return organizations;
+        };
+
+        cvat.organizations.activate.implementation = (organization) => {
+            checkObjectType('organization', organization, null, Organization);
+            config.organizationID = organization.slug;
+        };
+
+        cvat.organizations.deactivate.implementation = async () => {
+            config.organizationID = null;
         };
 
         return cvat;
