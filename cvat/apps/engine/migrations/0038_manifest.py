@@ -43,10 +43,11 @@ def migrate2meta(apps, shema_editor):
                     continue
                 media_file = os.path.join(data_dir, db_data.video.path)
                 logger.info('Preparing of the video meta has begun')
-                meta = VideoManifestManager(manifest_path=upload_dir) \
-                    .prepare_meta(media_file=media_file, force=True)
+                manifest = VideoManifestManager(manifest_path=upload_dir)
+                manifest.link(media_file=media_file, force=True)
+                manifest.init_index()
                 with open(meta_path, "w") as meta_file:
-                    for idx, pts, _ in meta:
+                    for idx, pts, _ in manifest.reader:
                         meta_file.write(f"{idx} {pts}\n")
             else:
                 name_format = "dummy_{}.txt"
@@ -87,12 +88,9 @@ def migrate2manifest(apps, shema_editor):
             if hasattr(db_data, 'video'):
                 media_file = os.path.join(data_dir, db_data.video.path)
                 manifest = VideoManifestManager(manifest_path=upload_dir)
-                logger.info('Preparing of the video meta information has begun')
-                meta_info = manifest.prepare_meta(media_file=media_file, force=True)
+                manifest.link(media_file=media_file, force=True)
                 logger.info('Manifest creating has begun')
-                manifest.create(meta_info)
-                logger.info('Index creating has begun')
-                manifest.init_index()
+                manifest.create()
             else:
                 manifest = ImageManifestManager(manifest_path=upload_dir)
                 sources = []
@@ -105,36 +103,21 @@ def migrate2manifest(apps, shema_editor):
                     sources = [os.path.join(data_dir, db_image.path) for db_image in db_data.images.all().order_by('frame')]
                 if any(list(filter(lambda x: x.dimension==DimensionType.DIM_3D, db_data.tasks.all()))):
                     logger.info('Preparing of images 3d meta information has begun')
-                    content = []
-                    for source in sources:
-                        name, ext = os.path.splitext(os.path.relpath(source, upload_dir))
-                        content.append({
-                            'name': name,
-                            'extension': ext
-                        })
+                    manifest.link(sources=sources, data_dir=data_dir, DIM_3D=True)
                 else:
                     logger.info('Preparing of 2d images meta information has begun')
-                    meta_info = manifest.prepare_meta(sources=sources, data_dir=data_dir)
-                    content = meta_info.content
+                    manifest.link(sources=sources, data_dir=data_dir)
 
                 if db_data.storage == StorageChoice.SHARE:
                     def _get_frame_step(str_):
                         match = search("step\s*=\s*([1-9]\d*)", str_)
                         return int(match.group(1)) if match else 1
                     logger.info('Data is located on the share, metadata update has been started')
-                    step = _get_frame_step(db_data.frame_filter)
-                    start = db_data.start_frame
-                    stop = db_data.stop_frame + 1
-                    images_range = range(start, stop, step)
-                    result_content = []
-                    for i in range(stop):
-                        item = content.pop(0) if i in images_range else dict()
-                        result_content.append(item)
-                    content = result_content
+                    manifest.step = _get_frame_step(db_data.frame_filter)
+                    manifest.start = db_data.start_frame
+                    manifest.stop = db_data.stop_frame + 1
                 logger.info('Manifest creating has begun')
-                manifest.create(content)
-                logger.info('Index creating has begun')
-                manifest.init_index()
+                manifest.create()
             logger.info('Succesfull migration for the data({})'.format(db_data.id))
         except Exception as ex:
             logger.error(str(ex))
