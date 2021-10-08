@@ -88,7 +88,7 @@ To learn more about Azure, read [documentation](https://docs.microsoft.com/en-us
 ### Create a storage account
 
 After registration, go to [Azure portal](https://portal.azure.com/#home).
-Hover over the resource groups and click `create` in the window that appears. 
+Hover over the resource groups and click `create` in the window that appears.
 
 ![](/images/azure_blob_container_tutorial1.jpg)
 
@@ -173,7 +173,7 @@ button on the `Cloud storages` page and fill out the following form:
     - [`Authorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html):
 
       - `Key id and secret access key pair` - available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users)
-        to obtain an access key and a secret key, create a user using IAM and grant the appropriate rights [learn more](#сreate-user-and-configure-permissions)
+        to obtain an access key and a secret key, create a user using IAM and grant the appropriate rights [learn more](#create-user-and-configure-permissions)
 
         - `ACCESS KEY ID`
         - `SECRET ACCESS KEY ID`
