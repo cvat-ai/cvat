@@ -114,8 +114,10 @@ Click next to go to the advanced section.
 
 #### Advanced
 
-In the advanced section, you can change public access, disabled `enable blob public access` for denied anonymous access to the container
-If you want to change public access you can find this switch in the `configuration` section of your storage account.After that, go to the review section, check the entered data and click `create`.
+In the advanced section, you can change public access, disabled `enable blob public access`
+for denied anonymous access to the container
+If you want to change public access you can find this switch in the `configuration` section of your storage account.
+After that, go to the review section, check the entered data and click `create`.
 
 ![](/images/azure_blob_container_tutorial5.jpg)
 
