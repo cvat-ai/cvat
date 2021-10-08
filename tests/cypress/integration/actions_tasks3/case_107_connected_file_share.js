@@ -20,11 +20,12 @@ context('Connected file share.', () => {
             .should('be.visible')
             .within(() => {
                 cy.get('[aria-label="plus-square"]').click();
-                cy.get('[title]').should('have.length', 4); // Also "root"
                 cy.exec('docker exec -i cvat /bin/bash -c "ls ~/share"').then((command) => {
                     stdoutToList = command.stdout.split('\n');
                     // [image_case_107_1.png, image_case_107_2.png, image_case_107_3.png]
                     expect(stdoutToList.length).to.be.eq(3);
+                    // Number of images to select + selection of all images.
+                    cy.get('[title]').should('have.length', stdoutToList.length + 1);
                     stdoutToList.forEach((el) => {
                         cy.get(`[title="${el}"]`).should('exist');
                         // Click on the checkboxes
